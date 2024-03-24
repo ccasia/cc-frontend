@@ -37,6 +37,7 @@ function Container({ children }) {
 
   const check = useCallback(() => {
     if (!authenticated) {
+      console.log(authenticated);
       const searchParams = new URLSearchParams({
         returnTo: window.location.pathname,
       }).toString();
