@@ -35,7 +35,7 @@ export default function AuthClassicLayout({ children, image, title }) {
         mx: 'auto',
         maxWidth: 480,
         px: { xs: 2, md: 8 },
-        pt: { xs: 15, md: 20 },
+        pt: { xs: 15, md: 30 },
         pb: { xs: 15, md: 0 },
       }}
     >
@@ -59,20 +59,22 @@ export default function AuthClassicLayout({ children, image, title }) {
         }),
       }}
     >
-      <Typography variant="h3" sx={{ maxWidth: 480, textAlign: 'center' }}>
-        {title || 'Hi, Welcome back'}
+      <Typography variant="h3" sx={{ maxWidth: 480, textAlign: 'center', fontWeight: 900 }}>
+        {title || 'Cult Creative'}
       </Typography>
 
       <Box
         component="img"
         alt="auth"
-        src={image || '/assets/illustrations/illustration_dashboard.png'}
+        src={image || '/assets/images/admin.jpg'}
+        width={500}
         sx={{
           maxWidth: {
             xs: 480,
             lg: 560,
             xl: 720,
           },
+          borderRadius: 10,
         }}
       />
     </Stack>
