@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-import FiveView from 'src/sections/five/view';
+import Profile from 'src/sections/profile/view';
 
 // ----------------------------------------------------------------------
 
@@ -8,10 +8,10 @@ export default function Page() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Five</title>
+        <title>Profile</title>
       </Helmet>
 
-      <FiveView />
+      <Profile />
     </>
   );
 }
