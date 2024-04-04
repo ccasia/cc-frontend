@@ -27,7 +27,8 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { RHFSelect } from 'src/components/hook-form/rhf-select';
 // import { RHFAutocomplete } from 'src/components/hook-form copy';
-import FormProvider from 'src/components/hook-form copy/form-provider';
+
+import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
@@ -59,6 +60,7 @@ const Profile = () => {
   };
 
   const methods = useForm({ defaultValues, resolver: yupResolver(UpdateUserSchema) });
+  
   const { handleSubmit, setValue } = methods;
 
   const [image, setImage] = useState();
