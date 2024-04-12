@@ -21,24 +21,32 @@ import {
 import { paths } from 'src/routes/paths';
 
 import { countries } from 'src/assets/data';
-import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { RHFSelect } from 'src/components/hook-form/rhf-select';
 // import { RHFAutocomplete } from 'src/components/hook-form copy';
 
+import { useMockedUser } from 'src/hooks/use-mocked-user';
+
+import { _userAbout } from 'src/_mock';
+
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
+import CreatorProfile from 'src/sections/creator/profile/general';
+
 import UploadPhoto from './dropzone';
 import AccountSecurity from './security';
+import { Billing } from '../creator/profile/billing';
+import AccountSocialLinks from '../creator/profile/social';
+import AccountNotifications from '../creator/profile/notification';
 
 const Profile = () => {
   const settings = useSettingsContext();
   const theme = useTheme();
-  const { user } = useAuthContext();
+  const { user } = useMockedUser();
   const [currentTab, setCurrentTab] = useState('general');
 
   const UpdateUserSchema = Yup.object().shape({
@@ -60,7 +68,7 @@ const Profile = () => {
   };
 
   const methods = useForm({ defaultValues, resolver: yupResolver(UpdateUserSchema) });
-  
+
   const { handleSubmit, setValue } = methods;
 
   const [image, setImage] = useState();
@@ -77,19 +85,6 @@ const Profile = () => {
   const handleChangeTab = useCallback((event, newValue) => {
     setCurrentTab(newValue);
   }, []);
-
-  // const handleUpload = async () => {
-  //   if (!image) {
-  //     alert('Upload image first');
-  //     return;
-  //   }
-
-  //   await axios.post(
-  //     endpoints.auth.upload,
-  //     { id: user?.id, image: url },
-  //     { headers: { 'content-type': 'multipart/form-data' } }
-  //   );
-  // };
 
   const onSubmit = handleSubmit((data) => {
     try {
@@ -167,7 +162,7 @@ const Profile = () => {
     </Grid>
   );
 
-  const tabs = (
+  const Admintabs = (
     <Tabs
       value={currentTab}
       onChange={handleChangeTab}
@@ -188,6 +183,71 @@ const Profile = () => {
     </Tabs>
   );
 
+  const CreatorTabs = (
+    <Tabs
+      value={currentTab}
+      onChange={handleChangeTab}
+      sx={{
+        mb: { xs: 3, md: 5 },
+      }}
+    >
+      <Tab
+        label="General"
+        value="general"
+        icon={<Iconify icon="solar:user-id-bold" width={24} />}
+      />
+
+      <Tab
+        label="Social"
+        value="Social Links"
+        icon={<Iconify icon="solar:share-bold" width={24} />}
+      />
+      <Tab
+        label="Security"
+        value="security"
+        icon={<Iconify icon="ic:round-vpn-key" width={24} />}
+      />
+      <Tab
+        value="Billing"
+        label="Billing"
+        icon={<Iconify icon="solar:bill-list-bold" width={24} />}
+      />
+      <Tab
+        value="Notifications"
+        label="Notifications"
+        icon={<Iconify icon="solar:bell-bing-bold" width={24} />}
+      />
+    </Tabs>
+  );
+
+  const adminContents = (
+    <>
+      {currentTab === 'security' && <AccountSecurity />}
+
+      {currentTab === 'general' && (
+        <Grid container spacing={3}>
+          {renderPicture}
+
+          {renderForm}
+        </Grid>
+      )}
+    </>
+  );
+
+  const creatorContents = (
+    <>
+      {currentTab === 'security' && <AccountSecurity />}
+
+      {currentTab === 'general' && <CreatorProfile />}
+
+      {currentTab === 'Billing' && <Billing />}
+
+      {currentTab === 'Social Links' && <AccountSocialLinks socialLinks={_userAbout.socialLinks} />}
+
+      {currentTab === 'Notifications' && <AccountNotifications />}
+    </>
+  );
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -205,17 +265,8 @@ const Profile = () => {
         }}
       />
 
-      {tabs}
-
-      {currentTab === 'security' && <AccountSecurity />}
-
-      {currentTab === 'general' && (
-        <Grid container spacing={3}>
-          {renderPicture}
-
-          {renderForm}
-        </Grid>
-      )}
+      {user.role === 'admin' ? Admintabs : CreatorTabs}
+      {user.role === 'admin' ? adminContents : creatorContents}
     </Container>
   );
 };
