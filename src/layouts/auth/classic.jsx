@@ -46,7 +46,7 @@ export default function AuthClassicLayout({ children, image, title }) {
   const renderSection = (
     <Stack
       flexGrow={1}
-      spacing={10}
+      spacing={5}
       alignItems="center"
       justifyContent="center"
       sx={{
@@ -59,7 +59,10 @@ export default function AuthClassicLayout({ children, image, title }) {
         }),
       }}
     >
-      <Typography variant="h3" sx={{ maxWidth: 480, textAlign: 'center', fontWeight: 900 }}>
+      <Typography
+        variant="h3"
+        sx={{ maxWidth: 480, textAlign: 'center', fontWeight: 900, fontStyle: 'italic' }}
+      >
         {title || 'Cult Creative'}
       </Typography>
 
@@ -67,7 +70,7 @@ export default function AuthClassicLayout({ children, image, title }) {
         component="img"
         alt="auth"
         src={image || '/assets/images/admin.jpg'}
-        width={500}
+        width={400}
         sx={{
           maxWidth: {
             xs: 480,
@@ -89,6 +92,8 @@ export default function AuthClassicLayout({ children, image, title }) {
       }}
     >
       {renderLogo}
+
+      {/* {renderOptions} */}
 
       {mdUp && renderSection}
 

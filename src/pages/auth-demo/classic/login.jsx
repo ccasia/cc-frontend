@@ -3,20 +3,21 @@ import { Helmet } from 'react-helmet-async';
 
 import { AuthLayoutContext } from 'src/layouts/auth/general';
 
-import { JwtRegisterView } from 'src/sections/auth/jwt';
-import { ModernRegisterView } from 'src/sections/auth-demo/modern';
+import { ModernLoginView } from 'src/sections/auth-demo/modern';
+import { ClassicLoginView } from 'src/sections/auth-demo/classic';
 
 // ----------------------------------------------------------------------
 
-export default function RegisterPage() {
+export default function LoginPage() {
   const option = useContext(AuthLayoutContext);
+
   return (
     <>
       <Helmet>
-        <title> Jwt: Register</title>
+        <title> Auth Classic: Login</title>
       </Helmet>
 
-      {option === 'admin' ? <JwtRegisterView /> : <ModernRegisterView />}
+      {option === 'admin' ? <ClassicLoginView /> : <ModernLoginView />}
     </>
   );
 }
