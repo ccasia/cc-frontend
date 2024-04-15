@@ -13,7 +13,7 @@ import AuthClassicLayout from './classic';
 
 export const AuthLayoutContext = createContext();
 
-const AuthLayoutProvider = ({ children, role = 'admin', title }) => {
+const AuthLayoutProvider = ({ children, role = 'creator', title }) => {
   const [option, setOption] = useState(role);
   const theme = useTheme();
   const router = useRouter();
