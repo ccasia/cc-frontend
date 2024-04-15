@@ -58,16 +58,16 @@ const authAdmin = {
         </GuestGuard>
       ),
     },
-    // {
-    //   path: 'adminForm',
-    //   element: (
-    //     <GuestGuard>
-    //       <AuthLayoutProvider title="admin Form">
-    //         <AdminForm />
-    //       </AuthLayoutProvider>
-    //     </GuestGuard>
-    //   ),
-    // },
+    {
+      path: 'adminForm',
+      element: (
+        <GuestGuard>
+          <AuthLayoutProvider title="admin Form">
+            <AdminForm />
+          </AuthLayoutProvider>
+        </GuestGuard>
+      ),
+    },
     {
       element: (
         <CompactLayout>
