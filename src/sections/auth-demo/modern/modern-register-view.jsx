@@ -8,6 +8,7 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import { useAuthContext } from 'src/auth/hooks';
 
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
@@ -21,6 +22,7 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 export default function ModernRegisterView() {
   const password = useBoolean();
+  const {register} = useAuthContext();
 
   const RegisterSchema = Yup.object().shape({
     firstName: Yup.string().required('First name required'),
@@ -48,7 +50,7 @@ export default function ModernRegisterView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await register(data);
       console.info('DATA', data);
     } catch (error) {
       console.error(error);

@@ -17,26 +17,35 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import axios from 'axios';
+import { endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export default function ModernLoginView() {
+export default function ModernRegisterView() {
   const password = useBoolean();
-  const {login} = useAuthContext();
-
-
-  const LoginSchema = Yup.object().shape({
+  const {register} = useAuthContext();
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  console.log(token)
+//  const token = window.Location.search.split('=')[1];
+//   console.log("token" ,token);
+  const RegisterSchema = Yup.object().shape({
+    firstName: Yup.string().required('First name required'),
+    lastName: Yup.string().required('Last name required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     password: Yup.string().required('Password is required'),
   });
 
   const defaultValues = {
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
   };
 
   const methods = useForm({
-    resolver: yupResolver(LoginSchema),
+    resolver: yupResolver(RegisterSchema),
     defaultValues,
   });
 
@@ -47,29 +56,58 @@ export default function ModernLoginView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await  login(data.email, data.password);
-      console.info('DATA', data);
+      const respone = await axios.post(endpoints.auth.register, {data, token});
+      console.log(data)
     } catch (error) {
       console.error(error);
     }
   });
 
   const renderHead = (
-    <Stack spacing={2} sx={{ mb: 5 }}>
-      <Typography variant="h4">Sign in to Minimal</Typography>
+    <Stack spacing={2} sx={{ mb: 5, position: 'relative' }}>
+      <Typography variant="h4"> Register to our system</Typography>
 
       <Stack direction="row" spacing={0.5}>
-        <Typography variant="body2">New user?</Typography>
+        <Typography variant="body2"> Already have an account?</Typography>
 
-        <Link component={RouterLink} href={paths.auth.jwt.register} variant="subtitle2">
-          Create an account
+        <Link href={paths.auth.jwt.login} component={RouterLink} variant="subtitle2">
+          Sign in
         </Link>
       </Stack>
     </Stack>
   );
 
+  const renderTerms = (
+    <Typography
+      component="div"
+      sx={{
+        mt: 2.5,
+        textAlign: 'center',
+        typography: 'caption',
+        color: 'text.secondary',
+      }}
+    >
+      {'By signing up, I agree to '}
+      <Link underline="always" color="text.primary">
+        Terms of Service
+      </Link>
+      {' and '}
+      <Link underline="always" color="text.primary">
+        Privacy Policy
+      </Link>
+      .
+    </Typography>
+  );
+
   const renderForm = (
     <Stack spacing={2.5}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <RHFTextField name="firstName" label="First name" />
+        <RHFTextField name="lastName" label="Last name" />
+      </Stack>
+     
+      <RHFTextField name="phoneNumber" label="Phone Number" />
+              
       <RHFTextField name="email" label="Email address" />
 
       <RHFTextField
@@ -87,17 +125,6 @@ export default function ModernLoginView() {
         }}
       />
 
-      <Link
-        component={RouterLink}
-        href={paths.auth.jwt.forgetPassword}
-        variant="body2"
-        color="inherit"
-        underline="always"
-        sx={{ alignSelf: 'flex-end' }}
-      >
-        Forgot password?
-      </Link>
-
       <LoadingButton
         fullWidth
         color="inherit"
@@ -108,7 +135,7 @@ export default function ModernLoginView() {
         endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
         sx={{ justifyContent: 'space-between', pl: 2, pr: 1.5 }}
       >
-        Login
+        Create account
       </LoadingButton>
     </Stack>
   );
@@ -118,6 +145,8 @@ export default function ModernLoginView() {
       {renderHead}
 
       {renderForm}
+
+      {renderTerms}
     </FormProvider>
   );
 }
