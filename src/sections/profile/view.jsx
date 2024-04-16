@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
 import React, { useState, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import axios, { endpoints } from 'src/utils/axios';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -43,12 +44,13 @@ import { Billing } from '../creator/profile/billing';
 import AccountSocialLinks from '../creator/profile/social';
 import AccountNotifications from '../creator/profile/notification';
 
+
 const Profile = () => {
   const settings = useSettingsContext();
   const theme = useTheme();
   const { user } = useMockedUser();
   const [currentTab, setCurrentTab] = useState('general');
-
+  const [email , setEmail] = useState('')
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
@@ -118,6 +120,33 @@ const Profile = () => {
       </Card>
     </Grid>
   );
+  const emailMethode = useForm()
+
+const renderAdminForm = (
+  <Grid item xs={12} md={8} lg={8}>
+  <FormProvider methods={emailMethode} onSubmit={(e)=>{
+    console.log(e);
+  }}>
+    <Card sx={{ p: 1 }}>
+      <Stack alignItems="flex-end" sx={{ mt: 3 }}>
+        <Grid container spacing={2} p={3}>
+          <Grid item xs={12} sm={6} md={6} lg={6}>
+            <RHFTextField name="email" label="Email" setEmail={setEmail}   />
+          </Grid>
+          <Grid item xs={12} sm={12} md={12} lg={12} sx={{ textAlign: 'end' }}>
+            <Button onClick={async()=>{
+              const data = {email ,userid:sessionStorage.getItem('userid')}
+              const response = await axios.post(endpoints.mail.adminInvite ,data);
+              console.log(response);
+            }}>Send</Button>
+          </Grid>
+        </Grid>
+      </Stack>
+    </Card>
+  </FormProvider>
+</Grid>
+);
+    
 
   const renderForm = (
     <Grid item xs={12} md={8} lg={8}>
@@ -180,6 +209,11 @@ const Profile = () => {
         value="security"
         icon={<Iconify icon="ic:round-vpn-key" width={24} />}
       />
+         <Tab
+        label="Invite"
+        value="invite"
+        icon={<Iconify icon="ic:round-vpn-key" width={24} />}
+      />
     </Tabs>
   );
 
@@ -223,6 +257,8 @@ const Profile = () => {
   const adminContents = (
     <>
       {currentTab === 'security' && <AccountSecurity />}
+      {currentTab === 'invite' && (   <Grid container spacing={3}> {renderAdminForm}</Grid>)}
+
 
       {currentTab === 'general' && (
         <Grid container spacing={3}>

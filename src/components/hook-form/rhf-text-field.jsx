@@ -5,9 +5,9 @@ import TextField from '@mui/material/TextField';
 
 // ----------------------------------------------------------------------
 
-export default function RHFTextField({ name, helperText, type, ...other }) {
+export default function RHFTextField({ name, helperText, type,setEmail,...other }) {
   const { control } = useFormContext();
-
+  
   return (
     <Controller
       name={name}
@@ -23,6 +23,7 @@ export default function RHFTextField({ name, helperText, type, ...other }) {
               field.onChange(Number(event.target.value));
             } else {
               field.onChange(event.target.value);
+              setEmail(event.target.value)
             }
           }}
           error={!!error}
@@ -38,4 +39,5 @@ RHFTextField.propTypes = {
   helperText: PropTypes.object,
   name: PropTypes.string,
   type: PropTypes.string,
+  setEmail:PropTypes.func
 };

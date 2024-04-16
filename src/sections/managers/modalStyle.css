@@ -1,0 +1,14 @@
+.form_model {
+    position: absolute;
+    background-color: whitesmoke;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+    height: 80%;
+    box-shadow: 24px;
+    padding: 25px;
+    border-radius: 3px;
+    overflow: scroll;
+  }
+

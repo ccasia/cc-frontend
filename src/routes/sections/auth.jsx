@@ -13,7 +13,7 @@ import { SplashScreen } from 'src/components/loading-screen';
 // JWT
 const JwtLoginPage = lazy(() => import('src/pages/auth/jwt/login'));
 const JwtRegisterPage = lazy(() => import('src/pages/auth/jwt/register'));
-
+const AdminForm = lazy(() => import('src/pages/auth/jwt/adminForm'));
 // ----------------------------------------------------------------------
 
 // CLASSIC
@@ -54,6 +54,16 @@ const authAdmin = {
         <GuestGuard>
           <AuthLayoutProvider title="Cult Creative">
             <JwtRegisterPage />
+          </AuthLayoutProvider>
+        </GuestGuard>
+      ),
+    },
+    {
+      path: 'adminForm',
+      element: (
+        <GuestGuard>
+          <AuthLayoutProvider title="admin Form">
+            <AdminForm />
           </AuthLayoutProvider>
         </GuestGuard>
       ),

@@ -1,39 +1,55 @@
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import axios, { endpoints } from 'src/utils/axios';
 
+import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
+import { alpha } from '@mui/material/styles';
+import Container from '@mui/material/Container';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
-import { useAuthContext } from 'src/auth/hooks';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
+import PropTypes from 'prop-types';
+import Button from '@mui/material/Button';
 
-import { paths } from 'src/routes/paths';
-import { RouterLink } from 'src/routes/components';
+// import { useTheme } from '@mui/material/styles';
 
+import { useSettingsContext } from 'src/components/settings';
+import { Modal } from '@mui/material';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
-// ----------------------------------------------------------------------
+const style = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 400,
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
+  boxShadow: 24,
+  p: 4,
+};
 
-export default function ModernRegisterView() {
+export default function FormModal({ isEditing, handleSaveClick }) {
   const password = useBoolean();
-  const {register} = useAuthContext();
 
   const RegisterSchema = Yup.object().shape({
-    firstName: Yup.string().required('First name required'),
-    lastName: Yup.string().required('Last name required'),
+    firstname: Yup.string().required('First name required'),
+    lastname: Yup.string().required('Last name required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     password: Yup.string().required('Password is required'),
   });
 
   const defaultValues = {
-    firstName: '',
-    lastName: '',
+    firstname: '',
+    lastname: '',
     email: '',
     password: '',
   };
@@ -50,54 +66,21 @@ export default function ModernRegisterView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await register(data);
+      // await register(data);
+      console.log(data);
+      const response = await axios.post(endpoints.auth.registerAdmin,data);
       console.info('DATA', data);
+      handleSaveClick();
     } catch (error) {
       console.error(error);
     }
   });
 
-  const renderHead = (
-    <Stack spacing={2} sx={{ mb: 5, position: 'relative' }}>
-      <Typography variant="h4">Get started absolutely free</Typography>
-
-      <Stack direction="row" spacing={0.5}>
-        <Typography variant="body2"> Already have an account? </Typography>
-
-        <Link href={paths.auth.jwt.login} component={RouterLink} variant="subtitle2">
-          Sign in
-        </Link>
-      </Stack>
-    </Stack>
-  );
-
-  const renderTerms = (
-    <Typography
-      component="div"
-      sx={{
-        mt: 2.5,
-        textAlign: 'center',
-        typography: 'caption',
-        color: 'text.secondary',
-      }}
-    >
-      {'By signing up, I agree to '}
-      <Link underline="always" color="text.primary">
-        Terms of Service
-      </Link>
-      {' and '}
-      <Link underline="always" color="text.primary">
-        Privacy Policy
-      </Link>
-      .
-    </Typography>
-  );
-
   const renderForm = (
     <Stack spacing={2.5}>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <RHFTextField name="firstName" label="First name" />
-        <RHFTextField name="lastName" label="Last name" />
+        <RHFTextField name="firstname" label="First name" />
+        <RHFTextField name="lastname" label="Last name" />
       </Stack>
 
       <RHFTextField name="email" label="Email address" />
@@ -133,12 +116,36 @@ export default function ModernRegisterView() {
   );
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      {renderHead}
+    <Modal
+      open={isEditing}
+      onClose={handleSaveClick}
+      aria-labelledby="modal-modal-title"
+      aria-describedby="modal-modal-description"
+    >
+      <Box sx={style}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 2,
+          }}
+        >
+          <Typography variant="h4">Invite Admin</Typography>
+          <Button onClick={handleSaveClick}>
+            <Iconify icon="eva:close-fill" />
+          </Button>
+        </Box>
 
-      {renderForm}
-
-      {renderTerms}
-    </FormProvider>
+        <FormProvider methods={methods} onSubmit={onSubmit}>
+          {renderForm}
+        </FormProvider>
+      </Box>
+    </Modal>
   );
 }
+
+FormModal.propTypes = {
+  isEditing: PropTypes.bool,
+  handleSaveClick: PropTypes.func,
+};

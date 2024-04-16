@@ -8,6 +8,7 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import { useAuthContext } from 'src/auth/hooks';
 
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
@@ -21,6 +22,8 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 export default function ModernLoginView() {
   const password = useBoolean();
+  const {login} = useAuthContext();
+
 
   const LoginSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
@@ -44,7 +47,7 @@ export default function ModernLoginView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await  login(data.email, data.password);
       console.info('DATA', data);
     } catch (error) {
       console.error(error);

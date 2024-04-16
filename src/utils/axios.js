@@ -5,7 +5,7 @@ import { HOST_API } from 'src/config-global';
 // ----------------------------------------------------------------------
 
 const axiosInstance = axios.create({ baseURL: HOST_API });
-
+axiosInstance.defaults.withCredentials = true;
 axiosInstance.interceptors.response.use(
   (res) => res,
   (error) => Promise.reject((error.response && error.response.data) || 'Something went wrong')
@@ -33,11 +33,15 @@ export const endpoints = {
     me: '/api/auth/me',
     login: '/api/auth/login',
     register: '/api/auth/register',
+    registerCreator: '/api/auth/registerCreator',
+    registerAdmin: '/api/auth/registerAdmin',
+    verfiyAdmin: '/api/auth/verfiyAdmin',
   },
   mail: {
     list: '/api/mail/list',
     details: '/api/mail/details',
     labels: '/api/mail/labels',
+    adminInvite:'api/auth/adminEmail'
   },
   post: {
     list: '/api/post/list',
