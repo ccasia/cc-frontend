@@ -52,8 +52,8 @@ export function useNavData() {
         subheader: 'Cult Creative',
         items: [
           { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
-          {title:"managers" ,   path:paths.dashboard.managers ,icon:ICONS.user},
-      ],
+          { title: 'managers', path: paths.dashboard.managers, icon: ICONS.user },
+        ],
       },
     ],
     []

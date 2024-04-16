@@ -1,5 +1,5 @@
-import React from 'react';
 import * as Yup from 'yup';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -8,12 +8,15 @@ import { Card, Grid, Stack, IconButton, InputAdornment } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 const AccountSecurity = () => {
   const password = useBoolean();
+  const [loading, setLoading] = useState(false);
 
   const ChangePassWordSchema = Yup.object().shape({
     oldPassword: Yup.string().required('Old Password is required'),
@@ -38,8 +41,18 @@ const AccountSecurity = () => {
 
   const { handleSubmit } = methods;
 
-  const onSubmit = handleSubmit((data) => {
-    alert(data);
+  const onSubmit = handleSubmit(async (data) => {
+    setLoading(true);
+    try {
+      const res = await axiosInstance.patch(endpoints.auth.changePass, data);
+      setLoading(false);
+      alert(res.data.message);
+      methods.reset(defaultValues);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   });
 
   return (
@@ -101,7 +114,7 @@ const AccountSecurity = () => {
             />
           </Grid>
           <Grid item xs={12} sm={12} md={12} lg={12} sx={{ textAlign: 'end' }}>
-            <LoadingButton type="submit" variant="contained">
+            <LoadingButton type="submit" variant="contained" loading={loading}>
               Save Changes
             </LoadingButton>
           </Grid>

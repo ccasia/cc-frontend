@@ -36,12 +36,14 @@ export const endpoints = {
     registerCreator: '/api/auth/registerCreator',
     registerAdmin: '/api/auth/registerAdmin',
     verfiyAdmin: '/api/auth/verfiyAdmin',
+    updateProfile: '/api/user/updateProfile',
+    changePass: '/api/auth/changePassword',
   },
   mail: {
     list: '/api/mail/list',
     details: '/api/mail/details',
     labels: '/api/mail/labels',
-    adminInvite:'api/auth/adminEmail'
+    adminInvite: 'api/auth/adminEmail',
   },
   post: {
     list: '/api/post/list',

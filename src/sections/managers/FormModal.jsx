@@ -1,25 +1,22 @@
 import * as Yup from 'yup';
+import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import axios, { endpoints } from 'src/utils/axios';
 
 import Box from '@mui/material/Box';
-import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
-import { alpha } from '@mui/material/styles';
-import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-import PropTypes from 'prop-types';
-import Button from '@mui/material/Button';
+
+import axios, { endpoints } from 'src/utils/axios';
 
 // import { useTheme } from '@mui/material/styles';
 
-import { useSettingsContext } from 'src/components/settings';
 import { Modal } from '@mui/material';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Iconify from 'src/components/iconify';
@@ -32,9 +29,10 @@ const style = {
   transform: 'translate(-50%, -50%)',
   width: 400,
   bgcolor: 'background.paper',
-  border: '2px solid #000',
+
   boxShadow: 24,
   p: 4,
+  borderRadius: 5,
 };
 
 export default function FormModal({ isEditing, handleSaveClick }) {
@@ -66,10 +64,8 @@ export default function FormModal({ isEditing, handleSaveClick }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      // await register(data);
-      console.log(data);
-      const response = await axios.post(endpoints.auth.registerAdmin,data);
-      console.info('DATA', data);
+      await axios.post(endpoints.auth.registerAdmin, data);
+
       handleSaveClick();
     } catch (error) {
       console.error(error);
@@ -131,7 +127,7 @@ export default function FormModal({ isEditing, handleSaveClick }) {
             marginBottom: 2,
           }}
         >
-          <Typography variant="h4">Invite Admin</Typography>
+          <Typography variant="h4">Invite New Admin</Typography>
           <Button onClick={handleSaveClick}>
             <Iconify icon="eva:close-fill" />
           </Button>

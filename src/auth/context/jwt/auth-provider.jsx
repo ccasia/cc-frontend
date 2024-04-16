@@ -105,10 +105,10 @@ export function AuthProvider({ children }) {
     };
 
     const response = await axios.post(endpoints.auth.login, data);
-    console.log(response);
+    // console.log(response);
     const { accessToken, user } = response.data;
 
-    setSession(accessToken,user?.id);
+    setSession(accessToken, user?.id);
 
     dispatch({
       type: 'LOGIN',
@@ -147,11 +147,11 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  const emailInvite = useCallback(async(email)=>{
-    const response = await axios.post(endpoints.mail.adminInvite ,email);
-    const {message} = response;
-    console.log(message);
-  },[])
+  // const emailInvite = useCallback(async(email)=>{
+  //   const response = await axios.post(endpoints.mail.adminInvite ,email);
+  //   const {message} = response;
+  //   console.log(message);
+  // },[])
 
   // LOGOUT
   const logout = useCallback(async () => {
