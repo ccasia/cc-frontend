@@ -7,7 +7,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 
-import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
 import { EmailInboxIcon } from 'src/assets/icons';
@@ -83,7 +82,7 @@ export default function ClassicVerifyView() {
 
       <Link
         component={RouterLink}
-        href={paths.authDemo.classic.login}
+        // href={paths.authDemo.classic.login}
         color="inherit"
         variant="subtitle2"
         sx={{
