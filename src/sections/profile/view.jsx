@@ -178,17 +178,18 @@ const Profile = () => {
                 <RHFTextField name="phoneNumber" label="Phone Number" />
               </Grid>
               {/* Change later Add more data */}
-              {!user?.user?.role === 'superadmin' && (
-                <Grid item xs={12} sm={6} md={6} lg={6}>
-                  <RHFSelect name="designation" label="Designation">
-                    <MenuItem value="CSM">Customer Success Manager</MenuItem>
-                    <MenuItem value="FINANCE">Finace</MenuItem>
-                    <MenuItem value="BD">Board Director</MenuItem>
-                    <MenuItem value="GROWTH">Growt</MenuItem>
-                  </RHFSelect>
-                </Grid>
-              )}
-              <Grid item xs={12} sm={12} md={12} lg={12}>
+
+              <Grid item xs={12} sm={6} md={6} lg={6}>
+                <RHFSelect name="designation" label="Designation">
+                  <MenuItem defaultChecked>None</MenuItem>
+                  <MenuItem value="CSM">Customer Success Manager</MenuItem>
+                  <MenuItem value="FINANCE">Finace</MenuItem>
+                  <MenuItem value="BD">Board Director</MenuItem>
+                  <MenuItem value="GROWTH">Growth</MenuItem>
+                </RHFSelect>
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={6} lg={6}>
                 <RHFAutocomplete
                   name="country"
                   type="country"
@@ -236,7 +237,7 @@ const Profile = () => {
         value="security"
         icon={<Iconify icon="ic:round-vpn-key" width={24} />}
       />
-      <Tab label="Invite" value="invite" icon={<Iconify icon="ic:round-vpn-key" width={24} />} />
+      {/* <Tab label="Invite" value="invite" icon={<Iconify icon="ic:round-vpn-key" width={24} />} /> */}
     </Tabs>
   );
 

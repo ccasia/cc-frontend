@@ -27,12 +27,12 @@ export const dashboardRoutes = [
     ),
     children: [
       { element: <IndexPage />, index: true },
-      { path: 'managers', element: <ManagersPage /> },
+      { path: 'admins', element: <ManagersPage /> },
       {
         path: 'user',
         children: [
           { element: <ProfilePage />, index: true },
-        
+
           { path: 'profile', element: <ProfilePage /> },
         ],
       },

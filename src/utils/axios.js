@@ -39,6 +39,9 @@ export const endpoints = {
     updateProfile: '/api/user/updateProfile',
     changePass: '/api/auth/changePassword',
   },
+  users: {
+    admins: '/api/user/admins',
+  },
   mail: {
     list: '/api/mail/list',
     details: '/api/mail/details',

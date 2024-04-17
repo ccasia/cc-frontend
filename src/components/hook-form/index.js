@@ -1,5 +1,5 @@
 export * from './rhf-upload';
-// export * from './rhf-select';
+export * from './rhf-select';
 // export * from './rhf-checkbox';
 
 export { default } from './form-provider';
