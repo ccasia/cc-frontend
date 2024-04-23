@@ -1,4 +1,5 @@
 import isEqual from 'lodash/isEqual';
+import toast, { Toaster } from 'react-hot-toast';
 import { useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
@@ -12,14 +13,27 @@ import Container from '@mui/material/Container';
 import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
+import {
+  Menu,
+  Stack,
+  Dialog,
+  MenuItem,
+  TextField,
+  Typography,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetAdmins from 'src/hooks/use-get-admins';
 import { useAdmins } from 'src/hooks/zustands/useAdmins';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { _roles, USER_STATUS_OPTIONS } from 'src/_mock';
 
@@ -80,6 +94,26 @@ export default function UserListView() {
   useGetAdmins();
   const { admins } = useAdmins();
   const { enqueueSnackbar } = useSnackbar();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const handleClickOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
   const table = useTable();
 
@@ -166,6 +200,61 @@ export default function UserListView() {
     [handleFilters]
   );
 
+  const handleSubmit = async (email) => {
+    try {
+      await axiosInstance.post(endpoints.users.newAdmin, { email });
+      toast.success('Successfully created a new admin!');
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const inviteAdminDialog = (
+    <Dialog
+      open={openDialog}
+      onClose={handleCloseDialog}
+      PaperProps={{
+        component: 'form',
+        onSubmit: async (event) => {
+          event.preventDefault();
+          const formData = new FormData(event.currentTarget);
+          const formJson = Object.fromEntries(formData.entries());
+          const { email } = formJson;
+          await handleSubmit(email);
+          handleCloseDialog();
+          handleClose();
+        },
+      }}
+    >
+      <DialogTitle>Invite Admin</DialogTitle>
+      <DialogContent>
+        <DialogContentText>Please enter the email you wish to use the system.</DialogContentText>
+        <TextField
+          autoFocus
+          required
+          margin="dense"
+          id="name"
+          name="email"
+          label="Email Address"
+          type="email"
+          fullWidth
+          variant="standard"
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button
+          onClick={() => {
+            handleCloseDialog();
+            handleClose();
+          }}
+        >
+          Cancel
+        </Button>
+        <Button type="submit">Invite</Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   useEffect(() => {
     setTableData(admins);
   }, [admins]);
@@ -174,27 +263,63 @@ export default function UserListView() {
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs
-          heading="List"
+          heading="List Managers"
           links={[
             { name: 'Dashboard', href: paths.dashboard.root },
             { name: 'Admin' },
             { name: 'List' },
           ]}
           action={
-            <Button
-              component={RouterLink}
-              href={paths.dashboard.user.new}
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-            >
-              New User
-            </Button>
+            <>
+              <IconButton
+                sx={{
+                  bgcolor: 'whitesmoke',
+                }}
+                onClick={handleClick}
+              >
+                <Iconify icon="mingcute:add-line" />
+              </IconButton>
+              <Menu
+                id="basic-menu"
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                MenuListProps={{
+                  'aria-labelledby': 'basic-button',
+                }}
+                anchorOrigin={{
+                  vertical: 'center',
+                  horizontal: 'left',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem
+                  onClick={() => {
+                    handleClickOpenDialog();
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" gap={1}>
+                    <Iconify icon="mdi:invite" />
+                    <Typography variant="button">Invite admin</Typography>
+                  </Stack>
+                </MenuItem>
+                <MenuItem onClick={handleClose}>
+                  <Stack direction="row" alignItems="center" gap={1}>
+                    <Iconify icon="material-symbols:add" />
+                    <Typography variant="button">Create admin</Typography>
+                  </Stack>
+                </MenuItem>
+              </Menu>
+            </>
           }
           sx={{
             mb: { xs: 3, md: 5 },
           }}
         />
-
+        {inviteAdminDialog}
         <Card>
           <Tabs
             value={filters.status}
@@ -231,12 +356,7 @@ export default function UserListView() {
             ))}
           </Tabs>
 
-          <UserTableToolbar
-            filters={filters}
-            onFilters={handleFilters}
-            //
-            roleOptions={_roles}
-          />
+          <UserTableToolbar filters={filters} onFilters={handleFilters} roleOptions={_roles} />
 
           {canReset && (
             <UserTableFiltersResult
@@ -271,7 +391,6 @@ export default function UserListView() {
             />
 
             <Scrollbar>
-              {/* {admins && JSON.stringify(admins)} */}
               <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
                 <TableHeadCustom
                   order={table.order}
@@ -351,6 +470,7 @@ export default function UserListView() {
           </Button>
         }
       />
+      <Toaster />
     </>
   );
 }
@@ -372,7 +492,7 @@ function applyFilter({ inputData, comparator, filters }) {
 
   if (name) {
     inputData = inputData.filter(
-      (user) => user.name.toLowerCase().indexOf(name.toLowerCase()) !== -1
+      (user) => user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 

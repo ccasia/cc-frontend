@@ -35,12 +35,15 @@ export const endpoints = {
     register: '/api/auth/register',
     registerCreator: '/api/auth/registerCreator',
     registerAdmin: '/api/auth/registerAdmin',
-    verfiyAdmin: '/api/auth/verfiyAdmin',
+    verifyAdmin: '/api/auth/verifyAdmin',
     updateProfile: '/api/user/updateProfile',
+
     changePass: '/api/auth/changePassword',
   },
   users: {
+    newAdmin: '/api/user/newAdmin',
     admins: '/api/user/admins',
+    updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
   },
   mail: {
     list: '/api/mail/list',

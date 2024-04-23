@@ -42,8 +42,8 @@ export default function JwtLoginView() {
   });
 
   const defaultValues = {
-    email: 'demo@minimals.cc',
-    password: 'demo1234',
+    email: 'super@cultcreativeasia.com',
+    password: 'super123_',
   };
 
   const methods = useForm({

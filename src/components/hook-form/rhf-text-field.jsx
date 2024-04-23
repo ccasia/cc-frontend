@@ -23,7 +23,6 @@ export default function RHFTextField({ name, helperText, type, ...other }) {
               field.onChange(Number(event.target.value));
             } else {
               field.onChange(event.target.value);
-              // setEmail(event.target.value);
             }
           }}
           error={!!error}

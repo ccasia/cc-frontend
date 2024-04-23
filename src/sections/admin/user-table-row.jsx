@@ -22,7 +22,6 @@ import UserQuickEditForm from './user-quick-edit-form';
 // ----------------------------------------------------------------------
 
 export default function UserTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
-  // const { name, avatarUrl, company, role, status, email, phoneNumber } = row;
   const { name, designation, country, phoneNumber, mode, status } = row;
 
   const confirm = useBoolean();
@@ -42,8 +41,7 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
           <Avatar alt={name} sx={{ mr: 2 }} />
 
           <ListItemText
-            primary={name}
-            // secondary={email}
+            primary={name || 'null'}
             primaryTypographyProps={{ typography: 'body2' }}
             secondaryTypographyProps={{
               component: 'span',
@@ -52,13 +50,13 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
           />
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{phoneNumber}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{phoneNumber || 'null'}</TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{designation}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{designation || 'null'}</TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{country}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{country || 'null'}</TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{mode}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{mode || 'null'}</TableCell>
 
         <TableCell>
           <Label

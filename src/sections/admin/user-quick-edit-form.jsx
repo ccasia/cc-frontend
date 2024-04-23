@@ -40,7 +40,7 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
   const defaultValues = useMemo(
     () => ({
       name: currentUser?.name || '',
-      email: currentUser?.email || '',
+      email: currentUser?.user.email || '',
       phoneNumber: currentUser?.phoneNumber || '',
       address: currentUser?.address || '',
       country: currentUser?.country || '',
