@@ -83,7 +83,6 @@ export function AuthProvider({ children }) {
         });
       }
     } catch (error) {
-      console.error(error);
       dispatch({
         type: 'INITIAL',
         payload: {
@@ -98,17 +97,18 @@ export function AuthProvider({ children }) {
   }, [initialize]);
 
   // LOGIN
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, type) => {
     const data = {
       email,
       password,
+      type,
     };
 
     const response = await axios.post(endpoints.auth.login, data);
-    // console.log(response);
+
     const { accessToken, user } = response.data;
 
-    setSession(accessToken, user?.id);
+    setSession(accessToken);
 
     dispatch({
       type: 'LOGIN',
@@ -147,14 +147,9 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  // const emailInvite = useCallback(async(email)=>{
-  //   const response = await axios.post(endpoints.mail.adminInvite ,email);
-  //   const {message} = response;
-  //   console.log(message);
-  // },[])
-
   // LOGOUT
   const logout = useCallback(async () => {
+    await axios.post(endpoints.auth.logout);
     setSession(null);
     dispatch({
       type: 'LOGOUT',

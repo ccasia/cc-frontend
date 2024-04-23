@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 
 import { paths } from 'src/routes/paths';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import SvgColor from 'src/components/svg-color';
 
 // ----------------------------------------------------------------------
@@ -44,19 +46,34 @@ const ICONS = {
 // ----------------------------------------------------------------------
 
 export function useNavData() {
+  const { user } = useAuthContext();
+
+  let items;
+
+  switch (user?.user?.role) {
+    case 'superadmin':
+      items = [
+        { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
+        { title: 'Admin', path: paths.dashboard.admins, icon: ICONS.user },
+      ];
+      break;
+    case 'admin':
+      items = [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }];
+      break;
+    default:
+      break;
+  }
+
   const data = useMemo(
     () => [
       // OVERVIEW
       // ----------------------------------------------------------------------
       {
         subheader: 'Cult Creative',
-        items: [
-          { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
-          { title: 'Admin', path: paths.dashboard.admins, icon: ICONS.user },
-        ],
+        items,
       },
     ],
-    []
+    [items]
   );
 
   return data;

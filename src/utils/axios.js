@@ -32,12 +32,12 @@ export const endpoints = {
   auth: {
     me: '/api/auth/me',
     login: '/api/auth/login',
+    logout: '/api/auth/logout',
     register: '/api/auth/register',
     registerCreator: '/api/auth/registerCreator',
     registerAdmin: '/api/auth/registerAdmin',
     verifyAdmin: '/api/auth/verifyAdmin',
     updateProfile: '/api/user/updateProfile',
-
     changePass: '/api/auth/changePassword',
   },
   users: {

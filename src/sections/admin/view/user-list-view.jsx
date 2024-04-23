@@ -63,15 +63,6 @@ import UserTableFiltersResult from '../user-table-filters-result';
 
 const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
-// const TABLE_HEAD = [
-//   { id: 'name', label: 'Name' },
-//   { id: 'phoneNumber', label: 'Phone Number', width: 180 },
-//   { id: 'company', label: 'Company', width: 220 },
-//   { id: 'role', label: 'Role', width: 180 },
-//   { id: 'status', label: 'Status', width: 100 },
-//   { id: '', width: 88 },
-// ];
-
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
   { id: 'phoneNumber', label: 'Phone Number', width: 220 },
@@ -123,7 +114,6 @@ export default function UserListView() {
 
   const confirm = useBoolean();
 
-  // const [tableData, setTableData] = useState(_userList);
   const [tableData, setTableData] = useState(admins);
 
   const [filters, setFilters] = useState(defaultFilters);
@@ -208,6 +198,19 @@ export default function UserListView() {
       toast.error(error.message);
     }
   };
+
+  // const getAdmins = useCallback(async () => {
+  //   try {
+  //     const res = await axiosInstance.get(endpoints.users.admins);
+  //     setTableData(res?.data);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }, []);
+
+  // useEffect(() => {
+  //   getAdmins();
+  // }, [getAdmins]);
 
   const inviteAdminDialog = (
     <Dialog
@@ -480,15 +483,15 @@ export default function UserListView() {
 function applyFilter({ inputData, comparator, filters }) {
   const { name, status, role } = filters;
 
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
+  const stabilizedThis = inputData?.map((el, index) => [el, index]);
 
-  stabilizedThis.sort((a, b) => {
+  stabilizedThis?.sort((a, b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     return a[1] - b[1];
   });
 
-  inputData = stabilizedThis.map((el) => el[0]);
+  inputData = stabilizedThis?.map((el) => el[0]);
 
   if (name) {
     inputData = inputData.filter(

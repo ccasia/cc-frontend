@@ -10,31 +10,14 @@ const useGetAdmins = () => {
   const getAdmins = useCallback(async () => {
     try {
       const res = await axiosInstance.get(endpoints.users.admins);
-      setAdmin(res.data);
+      setAdmin(res?.data);
     } catch (error) {
-      // return error;
-      alert(error);
+      alert(JSON.stringify(error));
     }
   }, [setAdmin]);
 
-  // const getAdmins = async () => {
-  //   try {
-  //     const res = await axiosInstance.get(endpoints.users.admins);
-  //     setAdmin(res.data);
-  //   } catch (error) {
-  //     // return error;
-  //     alert(error);
-  //   }
-  // };
-
   useEffect(() => {
-    const controller = new AbortController();
-
     getAdmins();
-
-    return () => {
-      controller.abort();
-    };
   }, [getAdmins]);
 
   return { getAdmins };

@@ -21,6 +21,7 @@ import NavToggleButton from '../common/nav-toggle-button';
 // ----------------------------------------------------------------------
 
 export default function NavVertical({ openNav, onCloseNav }) {
+  // const { user } = useAuthContext();
   const { user } = useMockedUser();
 
   const pathname = usePathname();
@@ -67,6 +68,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
         width: { lg: NAV.W_VERTICAL },
       }}
     >
+      {/* <h1>PENINGG</h1> */}
       <NavToggleButton />
 
       {lgUp ? (

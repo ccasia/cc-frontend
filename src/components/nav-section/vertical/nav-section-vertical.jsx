@@ -40,7 +40,7 @@ function Group({ subheader, items, slotProps }) {
     setOpen((prev) => !prev);
   }, []);
 
-  const renderContent = items.map((list) => (
+  const renderContent = items?.map((list) => (
     <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />
   ));
 

@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import MenuItem from '@mui/material/MenuItem';
@@ -13,6 +12,10 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+
+import useGetAdmins from 'src/hooks/use-get-admins';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 import { USER_STATUS_OPTIONS } from 'src/_mock';
@@ -25,16 +28,16 @@ import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/comp
 export default function UserQuickEditForm({ currentUser, open, onClose }) {
   const { enqueueSnackbar } = useSnackbar();
 
+  const { getAdmins } = useGetAdmins();
+
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     phoneNumber: Yup.string().required('Phone number is required'),
-    address: Yup.string().required('Address is required'),
     country: Yup.string().required('Country is required'),
-    company: Yup.string().required('Company is required'),
-    state: Yup.string().required('State is required'),
-    city: Yup.string().required('City is required'),
+    designation: Yup.string().required('Designation is required'),
     role: Yup.string().required('Role is required'),
+    mode: Yup.string().required('Mode is required'),
   });
 
   const defaultValues = useMemo(
@@ -42,14 +45,11 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
       name: currentUser?.name || '',
       email: currentUser?.user.email || '',
       phoneNumber: currentUser?.phoneNumber || '',
-      address: currentUser?.address || '',
       country: currentUser?.country || '',
-      state: currentUser?.state || '',
-      city: currentUser?.city || '',
-      zipCode: currentUser?.zipCode || '',
       status: currentUser?.status,
-      company: currentUser?.company || '',
-      role: currentUser?.role || '',
+      role: currentUser?.user?.role || '',
+      designation: currentUser?.designation || '',
+      mode: currentUser?.mode || '',
     }),
     [currentUser]
   );
@@ -67,11 +67,15 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
+      await axiosInstance.patch(endpoints.auth.updateProfile, {
+        ...data,
+        userId: currentUser?.user?.id,
+      });
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       onClose();
       enqueueSnackbar('Update success!');
-      console.info('DATA', data);
+      getAdmins();
     } catch (error) {
       console.error(error);
     }
@@ -91,14 +95,11 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
         <DialogTitle>Quick Update</DialogTitle>
 
         <DialogContent>
-          <Alert variant="outlined" severity="info" sx={{ mb: 3 }}>
-            Account is waiting for confirmation
-          </Alert>
-
           <Box
             rowGap={3}
             columnGap={2}
             display="grid"
+            mt={2}
             gridTemplateColumns={{
               xs: 'repeat(1, 1fr)',
               sm: 'repeat(2, 1fr)',
@@ -128,12 +129,18 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
               getOptionLabel={(option) => option}
             />
 
-            <RHFTextField name="state" label="State/Region" />
-            <RHFTextField name="city" label="City" />
-            <RHFTextField name="address" label="Address" />
-            <RHFTextField name="zipCode" label="Zip/Code" />
-            <RHFTextField name="company" label="Company" />
-            <RHFTextField name="role" label="Role" />
+            <RHFSelect name="role" label="Role">
+              <MenuItem value="admin">CSM</MenuItem>
+              <MenuItem value="finance admin">Finance Admin</MenuItem>
+              <MenuItem value="bd">BD</MenuItem>
+              <MenuItem value="growth">Growth</MenuItem>
+            </RHFSelect>
+
+            <RHFTextField name="designation" label="Designation" />
+            <RHFSelect name="mode" label="Mode">
+              <MenuItem value="normal">Normal</MenuItem>
+              <MenuItem value="god">God</MenuItem>
+            </RHFSelect>
           </Box>
         </DialogContent>
 

@@ -2,8 +2,10 @@ import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
+import toast, { Toaster } from 'react-hot-toast';
 import React, { useState, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -23,20 +25,13 @@ import { paths } from 'src/routes/paths';
 
 import axios, { endpoints } from 'src/utils/axios';
 
+import { _userAbout } from 'src/_mock';
 import { countries } from 'src/assets/data';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { RHFSelect } from 'src/components/hook-form/rhf-select';
-// import { RHFAutocomplete } from 'src/components/hook-form copy';
-
-// import axiosInstance, { endpoints } from 'src/utils/axios';
-
-import localizedFormat from 'dayjs/plugin/localizedFormat';
-
-import { _userAbout } from 'src/_mock';
-import { useAuthContext } from 'src/auth/hooks';
-
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
@@ -56,7 +51,7 @@ const Profile = () => {
   const theme = useTheme();
   const { user } = useAuthContext();
   const [currentTab, setCurrentTab] = useState('general');
-  const [email, setEmail] = useState('');
+
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
@@ -96,10 +91,10 @@ const Profile = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await axios.patch(endpoints.auth.updateProfile, { userId: user?.id, ...data });
-      alert('Success');
+      await axios.patch(endpoints.auth.updateProfile, { userId: user?.user.id, ...data });
+      toast.success('Successfully updated profile.');
     } catch (error) {
-      console.error(error);
+      toast.error('Error in updating profile');
     }
   });
 
@@ -125,40 +120,6 @@ const Profile = () => {
           </Button>
         </Stack>
       </Card>
-    </Grid>
-  );
-
-  const emailMethode = useForm();
-
-  const renderAdminForm = (
-    <Grid item xs={12} md={8} lg={8}>
-      <FormProvider
-        methods={emailMethode}
-        onSubmit={(e) => {
-          console.log(e);
-        }}
-      >
-        <Card sx={{ p: 1 }}>
-          <Stack alignItems="flex-end" sx={{ mt: 3 }}>
-            <Grid container spacing={2} p={3}>
-              <Grid item xs={12} sm={6} md={6} lg={6}>
-                <RHFTextField name="email" label="Email" setEmail={setEmail} />
-              </Grid>
-              <Grid item xs={12} sm={12} md={12} lg={12} sx={{ textAlign: 'end' }}>
-                <Button
-                  onClick={async () => {
-                    const data = { email, userid: sessionStorage.getItem('userid') };
-                    const response = await axios.post(endpoints.mail.adminInvite, data);
-                    console.log(response);
-                  }}
-                >
-                  Send
-                </Button>
-              </Grid>
-            </Grid>
-          </Stack>
-        </Card>
-      </FormProvider>
     </Grid>
   );
 
@@ -219,6 +180,7 @@ const Profile = () => {
     </Grid>
   );
 
+  // Tabs
   const Admintabs = (
     <Tabs
       value={currentTab}
@@ -237,7 +199,6 @@ const Profile = () => {
         value="security"
         icon={<Iconify icon="ic:round-vpn-key" width={24} />}
       />
-      {/* <Tab label="Invite" value="invite" icon={<Iconify icon="ic:round-vpn-key" width={24} />} /> */}
     </Tabs>
   );
 
@@ -278,15 +239,10 @@ const Profile = () => {
     </Tabs>
   );
 
+  // Contents
   const adminContents = (
     <>
       {currentTab === 'security' && <AccountSecurity />}
-      {currentTab === 'invite' && (
-        <Grid container spacing={3}>
-          {' '}
-          {renderAdminForm}
-        </Grid>
-      )}
 
       {currentTab === 'general' && (
         <Grid container spacing={3}>
@@ -329,8 +285,10 @@ const Profile = () => {
         }}
       />
 
-      {user?.user?.role === 'superadmin' ? Admintabs : CreatorTabs}
-      {user?.user?.role === 'superadmin' ? adminContents : creatorContents}
+      {['superadmin', 'admin'].includes(user?.user?.role) ? Admintabs : CreatorTabs}
+      {['superadmin', 'admin'].includes(user?.user?.role) ? adminContents : creatorContents}
+
+      <Toaster />
     </Container>
   );
 };

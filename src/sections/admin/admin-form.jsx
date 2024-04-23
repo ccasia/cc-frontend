@@ -91,6 +91,7 @@ const AdminForm = () => {
         sm: 'repeat(2, 1fr)',
       }}
     >
+      <RHFTextField name="email" label="Email" type="email" value={user?.email} />
       <RHFTextField name="name" label="Name" type="text" />
       <RHFTextField name="designation" label="Designation" type="text" />
       <RHFAutocomplete
