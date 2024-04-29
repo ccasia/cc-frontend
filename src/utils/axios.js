@@ -39,6 +39,9 @@ export const endpoints = {
     verifyAdmin: '/api/auth/verifyAdmin',
     updateProfile: '/api/user/updateProfile',
     changePass: '/api/auth/changePassword',
+    getCurrentUser: '/api/auth/currentUser',
+    checkCreator : '/api/auth/checkCreator',
+    updateCreator : '/api/auth/updateCreator',
   },
   users: {
     newAdmin: '/api/user/newAdmin',

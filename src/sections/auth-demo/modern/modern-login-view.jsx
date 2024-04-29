@@ -48,7 +48,7 @@ export default function ModernLoginView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await  login(data.email, data.password);
+      await  login(data.email, data.password ,{admin:false});
       console.info('DATA', data);
     } catch (error) {
       console.error(error);
