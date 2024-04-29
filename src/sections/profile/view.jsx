@@ -14,6 +14,7 @@ import {
   Card,
   Tabs,
   Stack,
+  alpha,
   Avatar,
   Button,
   MenuItem,
@@ -174,8 +175,9 @@ const Profile = () => {
         textAlign="end"
         color="lightgrey"
         mt={2}
+        sx={{ color: alpha(theme.palette.grey[600], 0.5) }}
       >
-        Last updated: {dayjs(user?.user?.updatedAt).format('LL')}
+        Last updated: {dayjs(user?.user?.updatedAt).format('LLL')}
       </Typography>
     </Grid>
   );
