@@ -14,7 +14,7 @@ import CreatorForm from './creatorForm';
 
 export default function OneView() {
   const settings = useSettingsContext();
-  const [dialogOpen, setDialogOpen] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [creator, setCreator] = useState({});
 
   // get user role if creator send request to backend to check if the data is complete
