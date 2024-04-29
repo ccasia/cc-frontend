@@ -12,7 +12,7 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function RHFAutocomplete({ name, label, type, helperText, placeholder, ...other }) {
+export default function RHFAutocomplete({ name, label, type, helperText, placeholder,freeSolo, ...other }) {
   const { control, setValue } = useFormContext();
 
   const { multiple } = other;
@@ -116,6 +116,7 @@ export default function RHFAutocomplete({ name, label, type, helperText, placeho
           <Autocomplete
             {...field}
             id={`autocomplete-${name}`}
+            freeSolo={freeSolo}
             onChange={(event, newValue) => setValue(name, newValue, { shouldValidate: true })}
             renderInput={(params) => (
               <TextField
@@ -123,6 +124,7 @@ export default function RHFAutocomplete({ name, label, type, helperText, placeho
                 label={label}
                 placeholder={placeholder}
                 error={!!error}
+                
                 helperText={error ? error?.message : helperText}
                 inputProps={{
                   ...params.inputProps,
@@ -144,6 +146,7 @@ RHFAutocomplete.propTypes = {
   label: PropTypes.string,
   helperText: PropTypes.node,
   placeholder: PropTypes.string,
+  freeSolo: PropTypes.bool,
 };
 
 // ----------------------------------------------------------------------

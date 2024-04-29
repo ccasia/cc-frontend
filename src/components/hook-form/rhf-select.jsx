@@ -20,6 +20,7 @@ export function RHFSelect({
   helperText,
   children,
   PaperPropsSx,
+  multiple,
   ...other
 }) {
   const { control } = useFormContext();
@@ -28,13 +29,18 @@ export function RHFSelect({
     <Controller
       name={name}
       control={control}
+      
       render={({ field, fieldState: { error } }) => (
         <TextField
           {...field}
+          label={name}
           select
           fullWidth
+          
+          value={ multiple ? field.value || [''] : field.value || ''}
           SelectProps={{
             native,
+            multiple,
             MenuProps: {
               PaperProps: {
                 sx: {
@@ -65,6 +71,7 @@ RHFSelect.propTypes = {
   maxHeight: PropTypes.number,
   name: PropTypes.string,
   native: PropTypes.bool,
+  multiple: PropTypes.bool,
 };
 
 // ----------------------------------------------------------------------
