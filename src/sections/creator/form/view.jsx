@@ -11,7 +11,6 @@ import { useSettingsContext } from 'src/components/settings';
 
 import CreatorForm from './creatorForm';
 
-
 // ----------------------------------------------------------------------
 
 export default function OneView() {
@@ -23,6 +22,7 @@ export default function OneView() {
   const getUserRoleAndCheckData = async () => {
     // get user role
     let role;
+
     try {
       const response = await axios.get(endpoints.auth.getCurrentUser);
       role = response.data?.user.role;
@@ -56,7 +56,7 @@ export default function OneView() {
           border: (theme) => `dashed 1px ${theme.palette.divider}`,
         }}
       />
-      <CreatorForm open={dialogOpen} onClose={() => setDialogOpen(false)} creator={creator}/>
+      <CreatorForm open={dialogOpen} onClose={() => setDialogOpen(false)} creator={creator} />
     </Container>
   );
 }

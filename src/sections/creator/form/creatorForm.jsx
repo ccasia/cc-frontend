@@ -29,6 +29,7 @@ import { countries } from 'src/assets/data';
 import FormProvider, {
   RHFSelect,
   RHFTextField,
+  RHFDatePicker,
   RHFAutocomplete,
   //   RHFDatePicker,
 } from 'src/components/hook-form';
@@ -48,11 +49,8 @@ export default function CreatorForm({ creator, open, onClose }) {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  // const handleReset = () => {
-  //   setActiveStep(0);
-  // };
-
   const langList = ['English', 'Malay', 'Mandarin', 'Hindi', 'All of the above', 'Others'];
+
   const intersList = [
     'Art',
     'Beauty',
@@ -81,7 +79,7 @@ export default function CreatorForm({ creator, open, onClose }) {
     pronounce: Yup.string().required('pronounce is required'),
     location: Yup.string().required('location is required'),
     Interests: Yup.array().min(3, 'Choose at least three option'),
-    lanaugages: Yup.array().min(1, 'Choose at least one option'),
+    languages: Yup.array().min(1, 'Choose at least one option'),
     instagram: Yup.string()
       .matches(
         /((https?):\/\/)?(www.)?[a-z0-9]+(\.[a-z]{2,}){1,3}(#?\/?[a-zA-Z0-9#]+)*\/?(\?[a-zA-Z0-9-_]+=[a-zA-Z0-9-%]+&?)?$/,
@@ -101,7 +99,7 @@ export default function CreatorForm({ creator, open, onClose }) {
       pronounce: creator?.pronounce || '',
       location: creator?.location || '',
       Interests: creator?.Interests || [],
-      lanaugages: creator?.lanaugages || [],
+      languages: creator?.languages || [],
       instagram: creator?.instagram || '',
       industries: creator?.industries || [],
       employment: creator?.employment || '',
@@ -185,31 +183,12 @@ export default function CreatorForm({ creator, open, onClose }) {
               <MenuItem value="they/them">They/Them</MenuItem>
               <MenuItem value="others">Others</MenuItem>
             </RHFSelect>
-            <RHFTextField name="birthDate" label="birthDate" type="date" />
 
-            {/* <Controller
-                name="birthDate"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <DatePicker
-                    {...field}
-                    format="dd/MM/yyyy"
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: !!error,
-                        helperText: error?.message,
-                      },
-                    }}
-                  />
-                )}
-              /> */}
-
-            {/* <RHFDatePicker name="birthDate"  helperText="enter your birthday" /> */}
+            <RHFDatePicker name="birthDate" helperText="enter your birthday" />
 
             <RHFAutocomplete
-              name="lanaugages"
-              placeholder="+ lanaugages"
+              name="languages"
+              placeholder="+ languages"
               multiple
               freeSolo={false}
               disableCloseOnSelect
