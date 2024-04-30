@@ -169,7 +169,7 @@ export default function CreatorForm({ creator, open, onClose }) {
             <RHFSelect name="employment" label="Employment Status" multiple={false}>
               <MenuItem value="fulltime">Full-time</MenuItem>
               <MenuItem value="freelance">Freelance</MenuItem>
-              <MenuItem value="part-time">Part-time</MenuItem>
+              <MenuItem value="parttime">Part-time</MenuItem>
               <MenuItem value="student">Student</MenuItem>
               <MenuItem value="in_between">In between jobs/transitioning </MenuItem>
               <MenuItem value="unemployed">Unemployed</MenuItem>
