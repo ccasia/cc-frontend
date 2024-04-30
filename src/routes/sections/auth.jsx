@@ -114,7 +114,6 @@ const authCreator = {
       children: [
         { path: 'forgot-password', element: <ForgotPasswordClassicPage /> },
         { path: 'new-password', element: <NewPasswordClassicPage /> },
-        { path: 'verify', element: <VerifyClassicPage /> },
       ],
     },
   ],

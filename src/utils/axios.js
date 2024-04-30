@@ -40,8 +40,9 @@ export const endpoints = {
     updateProfile: '/api/user/updateProfile',
     changePass: '/api/auth/changePassword',
     getCurrentUser: '/api/auth/currentUser',
-    checkCreator : '/api/auth/checkCreator',
-    updateCreator : '/api/auth/updateCreator',
+    checkCreator: '/api/auth/checkCreator',
+    updateCreator: '/api/auth/updateCreator',
+    verifyCreator: '/api/auth/verifyCreator',
   },
   users: {
     newAdmin: '/api/user/newAdmin',

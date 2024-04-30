@@ -1,8 +1,10 @@
 import * as Yup from 'yup';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
+import { Alert } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -23,8 +25,8 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 export default function ModernLoginView() {
   const password = useBoolean();
-  const {login} = useAuthContext();
-
+  const { login } = useAuthContext();
+  const [error, setError] = useState();
 
   const LoginSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
@@ -48,10 +50,9 @@ export default function ModernLoginView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await  login(data.email, data.password ,{admin:false});
-      console.info('DATA', data);
-    } catch (error) {
-      console.error(error);
+      await login(data.email, data.password, { admin: false });
+    } catch (err) {
+      setError(err.message);
     }
   });
 
@@ -117,6 +118,12 @@ export default function ModernLoginView() {
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       {renderHead}
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
       {renderForm}
     </FormProvider>

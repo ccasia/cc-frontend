@@ -2,6 +2,9 @@ import { Navigate, useRoutes } from 'react-router-dom';
 
 import { PATH_AFTER_LOGIN } from 'src/config-global';
 
+import Verify from 'src/sections/creator/verify';
+import VerifyConfirmation from 'src/sections/creator/verifyConfirmation';
+
 import { mainRoutes } from './main';
 import { authRoutes } from './auth';
 import { adminRoutes } from './admin';
@@ -27,6 +30,8 @@ export default function Router() {
 
     ...adminRoutes,
 
+    { path: '/auth/verify', element: <Verify /> },
+    { path: '/auth/verify/:token', element: <VerifyConfirmation /> },
     // No match 404
     { path: '*', element: <Navigate to="/404" replace /> },
     { path: '/adminInvite', element: <Navigate to="/404" replace /> },

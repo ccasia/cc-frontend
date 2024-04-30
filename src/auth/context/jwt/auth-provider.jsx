@@ -38,6 +38,12 @@ const reducer = (state, action) => {
       user: action.payload.user,
     };
   }
+  if (action.type === 'VERIFY') {
+    return {
+      ...state,
+      user: action.payload.user,
+    };
+  }
   if (action.type === 'LOGOUT') {
     return {
       ...state,
@@ -57,11 +63,10 @@ export function AuthProvider({ children }) {
   const initialize = useCallback(async () => {
     try {
       const accessToken = sessionStorage.getItem(STORAGE_KEY);
+      const response = await axios.get(endpoints.auth.me);
 
       if (accessToken && isValidToken(accessToken)) {
         setSession(accessToken);
-
-        const response = await axios.get(endpoints.auth.me);
 
         const { user } = response.data;
 
@@ -70,7 +75,7 @@ export function AuthProvider({ children }) {
           payload: {
             user: {
               ...user,
-              accessToken,
+              // accessToken,
             },
           },
         });
@@ -132,12 +137,29 @@ export function AuthProvider({ children }) {
 
     const response = await axios.post(endpoints.auth.registerCreator, data);
 
-    const { accessToken, user } = response.data;
+    const { user } = response.data;
 
-    sessionStorage.setItem(STORAGE_KEY, accessToken);
+    return user;
+
+    // dispatch({
+    //   type: 'REGISTER',
+    //   payload: {
+    //     user: {
+    //       ...user,
+    //     },
+    //   },
+    // });
+  }, []);
+
+  const verify = useCallback(async (token) => {
+    const response = await axios.post(endpoints.auth.verifyCreator, { token });
+
+    const { user, accessToken } = response.data;
+
+    setSession(accessToken);
 
     dispatch({
-      type: 'REGISTER',
+      type: 'VERIFY',
       payload: {
         user: {
           ...user,
@@ -172,9 +194,10 @@ export function AuthProvider({ children }) {
       //
       login,
       register,
+      verify,
       logout,
     }),
-    [login, logout, register, state.user, status]
+    [login, logout, register, verify, state.user, status]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;

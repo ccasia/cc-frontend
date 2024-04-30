@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
+import { Toaster } from 'react-hot-toast';
 import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 
@@ -14,6 +15,7 @@ root.render(
     <BrowserRouter>
       <Suspense>
         <App />
+        <Toaster />
       </Suspense>
     </BrowserRouter>
   </HelmetProvider>

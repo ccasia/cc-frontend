@@ -1,8 +1,10 @@
 import * as Yup from 'yup';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
+import { Alert } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -10,9 +12,11 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useCreator } from 'src/hooks/zustands/useCreator';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -23,7 +27,10 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 export default function ModernRegisterView() {
   const password = useBoolean();
-  const {register} = useAuthContext();
+  const { register } = useAuthContext();
+  const [error, setError] = useState();
+  const router = useRouter();
+  const { setEmail } = useCreator();
 
   const RegisterSchema = Yup.object().shape({
     firstName: Yup.string().required('First name required'),
@@ -51,10 +58,12 @@ export default function ModernRegisterView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await register(data);
-      console.info('DATA', data);
-    } catch (error) {
-      console.error(error);
+      const user = await register(data);
+      // set an email
+      setEmail(user);
+      router.push(paths.auth.verify);
+    } catch (err) {
+      setError(err.message);
     }
   });
 
@@ -136,6 +145,12 @@ export default function ModernRegisterView() {
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       {renderHead}
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
       {renderForm}
 

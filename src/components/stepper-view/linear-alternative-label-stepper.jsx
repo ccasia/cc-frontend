@@ -17,7 +17,7 @@ export default function LinearAlternativeLabel() {
   const [activeStep, setActiveStep] = useState(0);
   // const [skipped, setSkipped] = useState();
 
-  const isStepOptional = (step) => step === 1;
+  // const isStepOptional = (step) => step === 1;
 
   // const isStepSkipped = (step) => skipped?.has(step);
 
@@ -54,6 +54,7 @@ export default function LinearAlternativeLabel() {
   const handleReset = () => {
     setActiveStep(0);
   };
+
   function getStepContent(step) {
     switch (step) {
       case 0:

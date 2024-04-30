@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
-import { useSettingsContext } from 'src/components/settings';
 import axios, { endpoints } from 'src/utils/axios';
+
+import { useSettingsContext } from 'src/components/settings';
 
 import CreatorForm from './creatorForm';
 

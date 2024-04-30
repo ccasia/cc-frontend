@@ -1,28 +1,30 @@
 import * as Yup from 'yup';
-import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { enqueueSnackbar, SnackbarProvider } from 'notistack';
 
-import Chip from '@mui/material/Chip';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Step from '@mui/material/Step';
+import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Rating from '@mui/material/Rating';
+import Stepper from '@mui/material/Stepper';
+import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
+import StepLabel from '@mui/material/StepLabel';
+import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import Step from '@mui/material/Step';
-import Paper from '@mui/material/Paper';
-import Stepper from '@mui/material/Stepper';
-import { alpha } from '@mui/material/styles';
-import StepLabel from '@mui/material/StepLabel';
-import Typography from '@mui/material/Typography';
-import Rating from '@mui/material/Rating';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { countries } from 'src/assets/data';
 
 import FormProvider, {
   RHFSelect,
@@ -31,13 +33,7 @@ import FormProvider, {
   //   RHFDatePicker,
 } from 'src/components/hook-form';
 
-import { countries } from 'src/assets/data';
-import { alert } from 'src/theme/overrides/components/alert';
-import { SnackbarProvider, enqueueSnackbar } from 'notistack';
-
-
 const steps = ['Welcome !', 'Fill Form', 'Rate your Interests and Industries'];
-
 
 export default function CreatorForm({ creator, open, onClose }) {
   const [activeStep, setActiveStep] = useState(0);
@@ -52,9 +48,9 @@ export default function CreatorForm({ creator, open, onClose }) {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleReset = () => {
-    setActiveStep(0);
-  };
+  // const handleReset = () => {
+  //   setActiveStep(0);
+  // };
 
   const langList = ['English', 'Malay', 'Mandarin', 'Hindi', 'All of the above', 'Others'];
   const intersList = [
@@ -506,7 +502,6 @@ export default function CreatorForm({ creator, open, onClose }) {
           </>
         )}
       </>
-   
     </Dialog>
   );
 }
