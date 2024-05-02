@@ -6,6 +6,12 @@ import { HOST_API } from 'src/config-global';
 
 const axiosInstance = axios.create({ baseURL: HOST_API });
 axiosInstance.defaults.withCredentials = true;
+
+axiosInstance.interceptors.request.use((request) => {
+  request.headers.lol = 'Cult Creative App';
+  return request;
+});
+
 axiosInstance.interceptors.response.use(
   (res) => res,
   (error) => Promise.reject((error.response && error.response.data) || 'Something went wrong')
