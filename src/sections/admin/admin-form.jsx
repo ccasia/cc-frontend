@@ -72,7 +72,7 @@ const AdminForm = () => {
   const onSubmit = handleSubmit(async (data) => {
     try {
       await axiosInstance.put(endpoints.users.updateProfileNewAdmin, { data, userId: user.id });
-      toast.success('You are noe verified to use the system!');
+      toast.success('You are now verified to use the system!');
       navigate('/auth/jwt/admin/login');
     } catch (error) {
       alert(error);

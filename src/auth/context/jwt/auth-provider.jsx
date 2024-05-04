@@ -55,18 +55,18 @@ const reducer = (state, action) => {
 
 // ----------------------------------------------------------------------
 
-const STORAGE_KEY = 'accessToken';
+// const STORAGE_KEY = 'accessToken';
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const initialize = useCallback(async () => {
     try {
-      const accessToken = sessionStorage.getItem(STORAGE_KEY);
+      // const accessToken = sessionStorage.getItem(STORAGE_KEY);
       const response = await axios.get(endpoints.auth.me);
 
-      if (accessToken && isValidToken(accessToken)) {
-        setSession(accessToken);
+      if (response.status === 200 && isValidToken(response?.data?.accessToken)) {
+        // setSession(accessToken);
 
         const { user } = response.data;
 
@@ -113,7 +113,7 @@ export function AuthProvider({ children }) {
 
     const { accessToken, user } = response.data;
 
-    setSession(accessToken);
+    // setSession(accessToken);
 
     dispatch({
       type: 'LOGIN',
