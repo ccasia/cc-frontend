@@ -47,10 +47,10 @@ export default function AccountGeneral() {
   });
 
   const defaultValues = {
-    displayName: user?.firstName || '',
-    email: user?.user?.email || '',
+    displayName: user?.name || '',
+    email: user?.email || '',
     photoURL: user?.photoURL || null,
-    phoneNumber: user?.phone || '',
+    phoneNumber: user?.phoneNumber || '',
     country: user?.Nationality || '',
     address: user?.location || '',
     isPublic: user?.isPublic || false,

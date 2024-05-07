@@ -1,9 +1,11 @@
+/* eslint-disable no-unused-vars */
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
+import { useMemo, useState } from 'react';
+import { SnackbarProvider } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { enqueueSnackbar, SnackbarProvider } from 'notistack';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -11,43 +13,37 @@ import Step from '@mui/material/Step';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Rating from '@mui/material/Rating';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
+import { Stack, Slider } from '@mui/material';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
-import LoadingButton from '@mui/lab/LoadingButton';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 
+import Iconify from 'src/components/iconify';
 import FormProvider, {
   RHFSelect,
   RHFTextField,
   RHFDatePicker,
   RHFAutocomplete,
-  //   RHFDatePicker,
 } from 'src/components/hook-form';
 
-const steps = ['Welcome !', 'Fill Form', 'Rate your Interests and Industries'];
+const steps = [
+  'Fill in your details',
+  'Provide your social media information',
+  'Rate your Interests and Industries',
+];
 
 export default function CreatorForm({ creator, open, onClose }) {
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
   const [ratingIndustries, setRatingIndustries] = useState([]);
-
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
 
   const langList = ['English', 'Malay', 'Mandarin', 'Hindi', 'All of the above', 'Others'];
 
@@ -67,222 +63,335 @@ export default function CreatorForm({ creator, open, onClose }) {
     'Travel',
   ];
 
-  // total 11 fields
-  const CreatorSchema = Yup.object().shape({
+  // First step schema
+  const firstSchema = Yup.object().shape({
     phone: Yup.string().required('Phone number is required'),
-    tiktok: Yup.string()
-      .matches(
-        /((https?):\/\/)?(www.)?[a-z0-9]+(\.[a-z]{2,}){1,3}(#?\/?[a-zA-Z0-9#]+)*\/?(\?[a-zA-Z0-9-_]+=[a-zA-Z0-9-%]+&?)?$/,
-        'Enter correct url!'
-      )
-      .required('Please enter Tiktok link!'),
     pronounce: Yup.string().required('pronounce is required'),
     location: Yup.string().required('location is required'),
     Interests: Yup.array().min(3, 'Choose at least three option'),
     languages: Yup.array().min(1, 'Choose at least one option'),
-    instagram: Yup.string()
-      .matches(
-        /((https?):\/\/)?(www.)?[a-z0-9]+(\.[a-z]{2,}){1,3}(#?\/?[a-zA-Z0-9#]+)*\/?(\?[a-zA-Z0-9-_]+=[a-zA-Z0-9-%]+&?)?$/,
-        'Enter correct url!'
-      )
-      .required('Please enter Instagram link!'),
     industries: Yup.array().min(3, 'Choose at least three option'),
     employment: Yup.string().required('pronounce is required'),
     birthDate: Yup.mixed().nullable().required('birthDate date is required'),
     Nationality: Yup.string().required('Nationality is required'),
   });
 
+  // Second Step Schema
+  const secondSchema = Yup.object().shape({
+    // tiktok: Yup.string().required('Please enter your tiktok username'),
+    instagram: Yup.string().required('Please enter your instagram username'),
+  });
+
+  const testSchema = Yup.object().shape({
+    phone: Yup.string().required('Phone number is required'),
+    pronounce: Yup.string().required('pronounce is required'),
+    location: Yup.string().required('location is required'),
+    interests: Yup.array().min(3, 'Choose at least three option'),
+    languages: Yup.array().min(1, 'Choose at least one option'),
+    industries: Yup.array().min(3, 'Choose at least three option'),
+    employment: Yup.string().required('pronounce is required'),
+    birthDate: Yup.mixed().nullable().required('birthDate date is required'),
+    Nationality: Yup.string().required('Nationality is required'),
+    instagram: Yup.string().required('Please enter your instagram username'),
+  });
+
+  // const defaultValues = useMemo(
+  //   () => ({
+  //     phone: creator?.phone || '',
+  //     tiktok: creator?.tiktok || '',
+  //     pronounce: creator?.pronounce || '',
+  //     location: creator?.location || '',
+  //     Interests: creator?.Interests || [],
+  //     languages: creator?.languages || [],
+  //     instagram: creator?.instagram || '',
+  //     industries: creator?.industries || [],
+  //     employment: creator?.employment || '',
+  //     birthDate: creator?.birthDate || null,
+  //     Nationality: creator?.Nationality || '',
+  //   }),
+  //   [creator]
+  // );
+
   const defaultValues = useMemo(
     () => ({
-      phone: creator?.phone || '',
-      tiktok: creator?.tiktok || '',
-      pronounce: creator?.pronounce || '',
-      location: creator?.location || '',
-      Interests: creator?.Interests || [],
-      languages: creator?.languages || [],
-      instagram: creator?.instagram || '',
-      industries: creator?.industries || [],
-      employment: creator?.employment || '',
-      birthDate: creator?.birthDate || null,
-      Nationality: creator?.Nationality || '',
+      phone: '',
+      tiktok: '',
+      pronounce: '',
+      location: '',
+      Interests: [],
+      languages: [],
+      instagram: '',
+      industries: [],
+      employment: '',
+      birthDate: null,
+      Nationality: '',
     }),
-    [creator]
+    []
   );
 
   const methods = useForm({
-    resolver: yupResolver(CreatorSchema),
+    // resolver: yupResolver(activeStep === 0 ? firstSchema : activeStep === 1 && secondSchema),
+    resolver: yupResolver(testSchema),
     defaultValues,
   });
 
   const {
     reset,
     handleSubmit,
-    formState: { isSubmitting },
+    watch,
+    getValues,
+    formState: { errors },
   } = methods;
 
+  const handleNext = () => {
+    // if (activeStep === 0 && !isValid) {
+    //   setStepError([...stepError, activeStep]);
+    // } else if (activeStep === 1 && !isValid) {
+    //   setStepError([...stepError, activeStep]);
+    // } else {
+    //   stepError.splice(activeStep, 1);
+    //   setStepError(stepError);
+    // }
+
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
   const onSubmit = handleSubmit(async (data) => {
-    setNewCreator(data);
+    if (ratingInterst.length < 3) {
+      toast.error('Please rate all your interests.');
+    } else if (ratingIndustries.length < 3) {
+      toast.error('Please rate all your industries.');
+    }
+
+    const newData = {
+      ...data,
+      interests: ratingInterst,
+      industries: ratingIndustries,
+    };
+
+    try {
+      const response = await axiosInstance.put(endpoints.auth.updateCreator, newData);
+      console.log(response);
+      toast.success('Data updates successfully');
+      // enqueueSnackbar('Data updated successfully', { variant: 'success' });
+      onClose();
+    } catch (error) {
+      toast.error('Something went wrong');
+      // enqueueSnackbar('Something went wrong', { variant: 'error' });
+    }
+
+    // if (Object.keys(errors).length > 0) {
+    //   toast.error('Please fill all the required fields');
+    //   setActiveStep((prevActiveStep) => prevActiveStep - 2);
+    // } else {
+    // }
   });
 
   function getStepContent(step) {
     switch (step) {
-      // case 0:
-      //   return 'Step 1: Please complete the following fields to update your info!';
       case 0:
         return formComponent();
       case 1:
+        return socialMediaForm;
+      case 2:
         return ratingComponent(newCreator);
       default:
         return 'Unknown step';
     }
   }
+
   function formComponent() {
     return (
-      <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>Update your Info !</DialogTitle>
+      <DialogContent>
+        <Box
+          rowGap={3}
+          columnGap={2}
+          display="grid"
+          mt={2}
+          gridTemplateColumns={{
+            xs: 'repeat(1, 1fr)',
+            sm: 'repeat(2, 1fr)',
+          }}
+        >
+          {/* <RHFTextField name="instagram" label="instagram Account" />
+            <RHFTextField name="tiktok" label="tiktok Account" /> */}
 
-        <DialogContent>
-          <Box
-            rowGap={3}
-            columnGap={2}
-            display="grid"
-            mt={2}
-            gridTemplateColumns={{
-              xs: 'repeat(1, 1fr)',
-              sm: 'repeat(2, 1fr)',
-            }}
-          >
-            <RHFTextField name="instagram" label="instagram Account" />
-            <RHFTextField name="tiktok" label="tiktok Account" />
+          <RHFAutocomplete
+            name="Nationality"
+            type="country"
+            // label="Nationality"
+            placeholder="Choose your Nationality"
+            fullWidth
+            options={countries.map((option) => option.label)}
+            getOptionLabel={(option) => option}
+          />
 
-            <RHFAutocomplete
-              name="Nationality"
-              type="country"
-              label="Nationality"
-              placeholder="Choose your Nationality"
-              fullWidth
-              options={countries.map((option) => option.label)}
-              getOptionLabel={(option) => option}
-            />
-            <RHFTextField name="location" label="Current location" />
+          <RHFTextField name="location" label="Current location" />
 
-            <RHFSelect name="employment" label="Employment Status" multiple={false}>
-              <MenuItem value="fulltime">Full-time</MenuItem>
-              <MenuItem value="freelance">Freelance</MenuItem>
-              <MenuItem value="part-time">Part-time</MenuItem>
-              <MenuItem value="student">Student</MenuItem>
-              <MenuItem value="in_between">In between jobs/transitioning </MenuItem>
-              <MenuItem value="unemployed">Unemployed</MenuItem>
-              <MenuItem value="others ">Others </MenuItem>
-            </RHFSelect>
-            <RHFTextField name="phone" label="phone" />
+          <RHFSelect name="employment" label="Employment Status" multiple={false}>
+            <MenuItem value="fulltime">Full-time</MenuItem>
+            <MenuItem value="freelance">Freelance</MenuItem>
+            <MenuItem value="part-time">Part-time</MenuItem>
+            <MenuItem value="student">Student</MenuItem>
+            <MenuItem value="in_between">In between jobs/transitioning </MenuItem>
+            <MenuItem value="unemployed">Unemployed</MenuItem>
+            <MenuItem value="others ">Others </MenuItem>
+          </RHFSelect>
+          <RHFTextField name="phone" label="Phone Number" />
 
-            <RHFSelect name="pronounce" label="Pronounce" multiple={false}>
-              <MenuItem value="he/him">He/Him</MenuItem>
-              <MenuItem value="she/her">She/Her</MenuItem>
-              <MenuItem value="they/them">They/Them</MenuItem>
-              <MenuItem value="others">Others</MenuItem>
-            </RHFSelect>
+          <RHFSelect name="pronounce" label="Pronounce" multiple={false}>
+            <MenuItem value="he/him">He/Him</MenuItem>
+            <MenuItem value="she/her">She/Her</MenuItem>
+            <MenuItem value="they/them">They/Them</MenuItem>
+            <MenuItem value="others">Others</MenuItem>
+          </RHFSelect>
 
-            <RHFDatePicker name="birthDate" helperText="enter your birthday" />
+          <RHFDatePicker name="birthDate" />
 
-            <RHFAutocomplete
-              name="languages"
-              placeholder="+ languages"
-              multiple
-              freeSolo={false}
-              disableCloseOnSelect
-              options={langList.map((option) => option)}
-              getOptionLabel={(option) => option}
-              renderOption={(props, option) => (
-                <li {...props} key={option}>
-                  {option}
-                </li>
-              )}
-              renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option}
-                    label={option}
-                    size="small"
-                    color="info"
-                    variant="soft"
-                  />
-                ))
-              }
-            />
+          <RHFAutocomplete
+            name="languages"
+            placeholder="+ languages"
+            multiple
+            freeSolo={false}
+            disableCloseOnSelect
+            options={langList.map((option) => option)}
+            getOptionLabel={(option) => option}
+            renderOption={(props, option) => (
+              <li {...props} key={option}>
+                {option}
+              </li>
+            )}
+            renderTags={(selected, getTagProps) =>
+              selected.map((option, index) => (
+                <Chip
+                  {...getTagProps({ index })}
+                  key={option}
+                  label={option}
+                  size="small"
+                  color="info"
+                  variant="soft"
+                />
+              ))
+            }
+          />
 
-            <RHFAutocomplete
-              name="Interests"
-              placeholder="+ Interests"
-              multiple
-              freeSolo="true"
-              disableCloseOnSelect
-              options={intersList.map((option) => option)}
-              getOptionLabel={(option) => option}
-              renderOption={(props, option) => (
-                <li {...props} key={option}>
-                  {option}
-                </li>
-              )}
-              renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option}
-                    label={option}
-                    size="small"
-                    color="info"
-                    variant="soft"
-                  />
-                ))
-              }
-            />
+          <RHFAutocomplete
+            name="interests"
+            placeholder="+ Interests"
+            multiple
+            freeSolo="true"
+            disableCloseOnSelect
+            options={intersList.map((option) => option)}
+            getOptionLabel={(option) => option}
+            renderOption={(props, option) => (
+              <li {...props} key={option}>
+                {option}
+              </li>
+            )}
+            renderTags={(selected, getTagProps) =>
+              selected.map((option, index) => (
+                <Chip
+                  {...getTagProps({ index })}
+                  key={option}
+                  label={option}
+                  size="small"
+                  color="info"
+                  variant="soft"
+                />
+              ))
+            }
+          />
 
-            <RHFAutocomplete
-              name="industries"
-              placeholder="+ Industries"
-              multiple
-              freeSolo="true"
-              disableCloseOnSelect
-              options={intersList.map((option) => option)}
-              getOptionLabel={(option) => option}
-              renderOption={(props, option) => (
-                <li {...props} key={option}>
-                  {option}
-                </li>
-              )}
-              renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option}
-                    label={option}
-                    size="small"
-                    color="info"
-                    variant="soft"
-                  />
-                ))
-              }
-            />
-          </Box>
-        </DialogContent>
-
-        <DialogActions>
-          {/* <Button variant="outlined" onClick={onClose}>
-          Cancel
-        </Button> */}
-
-          <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-            Save
-          </LoadingButton>
-        </DialogActions>
-      </FormProvider>
+          <RHFAutocomplete
+            name="industries"
+            placeholder="+ Industries"
+            multiple
+            freeSolo="true"
+            disableCloseOnSelect
+            options={intersList.map((option) => option)}
+            getOptionLabel={(option) => option}
+            renderOption={(props, option) => (
+              <li {...props} key={option}>
+                {option}
+              </li>
+            )}
+            renderTags={(selected, getTagProps) =>
+              selected.map((option, index) => (
+                <Chip
+                  {...getTagProps({ index })}
+                  key={option}
+                  label={option}
+                  size="small"
+                  color="info"
+                  variant="soft"
+                />
+              ))
+            }
+          />
+        </Box>
+      </DialogContent>
     );
   }
 
-  function ratingComponent(data) {
+  const socialMediaForm = (
+    <Box
+      rowGap={3}
+      columnGap={2}
+      display="grid"
+      mt={2}
+      gridTemplateColumns={{
+        xs: 'repeat(1, 1fr)',
+        sm: 'repeat(2, 1fr)',
+      }}
+    >
+      <Stack gap={1}>
+        <Iconify icon="mdi:instagram" width={30} />
+        <RHFTextField name="instagram" label="Instagram Username" />
+      </Stack>
+      <Stack gap={1}>
+        <Iconify icon="ic:baseline-tiktok" width={30} />
+        <RHFTextField name="tiktok" label="Tiktok Username" />
+      </Stack>
+    </Box>
+  );
+
+  function ratingComponent() {
+    const interest = getValues('interests');
+    const industries = getValues('industries');
+
+    const handleChangeInterest = (elem, val) => {
+      if (!ratingInterst.some((item) => item.name === elem)) {
+        // If an item with the same name doesn't exist, add it to the array
+        setRatingInterst((prevRatingInterst) => [...prevRatingInterst, { name: elem, rank: val }]);
+      } else {
+        // If the item exists, update its rank
+        const updatedRatingInterst = ratingInterst.map((item) =>
+          item.name === elem ? { ...item, rank: val } : item
+        );
+        setRatingInterst(updatedRatingInterst);
+      }
+    };
+
+    const handleChangeIndustries = (elem, val) => {
+      if (!ratingIndustries.some((item) => item.name === elem)) {
+        // If an item with the same name doesn't exist, add it to the array
+        setRatingIndustries((prevRatingIndustry) => [
+          ...prevRatingIndustry,
+          { name: elem, rank: val },
+        ]);
+      } else {
+        // If the item exists, update its rank
+        const updatedRatingIndustry = ratingIndustries.map((item) =>
+          item.name === elem ? { ...item, rank: val } : item
+        );
+        setRatingIndustries(updatedRatingIndustry);
+      }
+    };
+
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', p: 2, m: 2 }}>
         <Typography variant="h4">Rate your interests and industries</Typography>
@@ -290,7 +399,7 @@ export default function CreatorForm({ creator, open, onClose }) {
           <Typography variant="h6">Rate your Interests </Typography>
           <Box
             rowGap={3}
-            columnGap={2}
+            columnGap={5}
             display="grid"
             mt={2}
             gridTemplateColumns={{
@@ -298,25 +407,22 @@ export default function CreatorForm({ creator, open, onClose }) {
               sm: 'repeat(2, 1fr)',
             }}
           >
-            {Object.keys(data).length !== 0 ? (
-              data?.Interests.map((value, index) => (
-                <Box>
-                  <Typography>{value}</Typography>
-                  <Rating
-                    name="simple-controlled"
-                    value={ratingInterst[index]?.value}
-                    onChange={(event, newValue) => {
-                      setRatingInterst([...ratingInterst, { name: value, rank: newValue }]);
-                    }}
+            {interest &&
+              interest.map((elem, index) => (
+                <Stack>
+                  <Typography>{elem}</Typography>
+                  <Slider
+                    defaultValue={0}
+                    valueLabelDisplay="auto"
+                    step={1}
+                    marks
+                    min={0}
+                    max={5}
+                    value={ratingInterst[index]?.rank}
+                    onChange={(event, val) => handleChangeInterest(elem, val)}
                   />
-                </Box>
-              ))
-            ) : (
-              <Typography variant="h5" color="red">
-                {' '}
-                No interst added
-              </Typography>
-            )}
+                </Stack>
+              ))}
           </Box>
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', m: 1 }}>
@@ -331,24 +437,22 @@ export default function CreatorForm({ creator, open, onClose }) {
               sm: 'repeat(2, 1fr)',
             }}
           >
-            {Object.keys(data).length !== 0 ? (
-              data?.industries.map((value, index) => (
-                <Box>
-                  <Typography>{value}</Typography>
-                  <Rating
-                    name="simple-controlled"
-                    value={ratingIndustries[index]?.value}
-                    onChange={(event, newValue) => {
-                      setRatingIndustries([...ratingIndustries, { name: value, rank: newValue }]);
-                    }}
+            {industries &&
+              industries.map((elem, index) => (
+                <Stack>
+                  <Typography>{elem}</Typography>
+                  <Slider
+                    defaultValue={0}
+                    valueLabelDisplay="auto"
+                    step={1}
+                    marks
+                    min={0}
+                    max={5}
+                    value={ratingInterst[index]?.rank}
+                    onChange={(event, val) => handleChangeIndustries(elem, val)}
                   />
-                </Box>
-              ))
-            ) : (
-              <Typography variant="h5" color="red">
-                No industries Added
-              </Typography>
-            )}
+                </Stack>
+              ))}
           </Box>
         </Box>
       </Box>
@@ -356,10 +460,10 @@ export default function CreatorForm({ creator, open, onClose }) {
   }
 
   const finalSubmit = async () => {
-    // enqueueSnackbar('Please fill all the fields');
     onSubmit();
     if (!methods.formState.isValid) {
-      enqueueSnackbar('Please fill all the fields');
+      toast.error('Please fill all the required fields');
+      // enqueueSnackbar('Please fill all the fields');
       setActiveStep((prevActiveStep) => prevActiveStep - 2);
     } else {
       const data = {
@@ -368,23 +472,23 @@ export default function CreatorForm({ creator, open, onClose }) {
         industries: ratingIndustries,
       };
       console.log(data);
-      try {
-        const response = await axiosInstance.put(endpoints.auth.updateCreator, data);
-        console.log(response);
-        enqueueSnackbar('Data updated successfully', { variant: 'success' });
-        onClose();
-      } catch (error) {
-        console.error(error);
-        enqueueSnackbar('Something went wrong', { variant: 'error' });
-      }
+      // try {
+      //   const response = await axiosInstance.put(endpoints.auth.updateCreator, data);
+      //   console.log(response);
+      //   enqueueSnackbar('Data updated successfully', { variant: 'success' });
+      //   onClose();
+      // } catch (error) {
+      //   console.error(error);
+      //   enqueueSnackbar('Something went wrong', { variant: 'error' });
+      // }
     }
   };
+
   return (
     <Dialog
       fullWidth
       maxWidth={false}
       open={open}
-      //   onClose={onClose}
       scroll="paper"
       PaperProps={{
         sx: { maxWidth: 720 },
@@ -403,6 +507,7 @@ export default function CreatorForm({ creator, open, onClose }) {
           {steps.map((label, index) => {
             const stepProps = {};
             const labelProps = {};
+            // labelProps.error = stepError.includes(index) && true;
             return (
               <Step key={label} {...stepProps}>
                 <StepLabel {...labelProps}>{label}</StepLabel>
@@ -410,6 +515,7 @@ export default function CreatorForm({ creator, open, onClose }) {
             );
           })}
         </Stepper>
+
         {activeStep === steps.length ? (
           <>
             <Paper
@@ -457,7 +563,11 @@ export default function CreatorForm({ creator, open, onClose }) {
                 bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
               }}
             >
-              <Typography sx={{ my: 1 }}>{getStepContent(activeStep)}</Typography>
+              <Box sx={{ my: 3 }}>
+                <FormProvider methods={methods} onSubmit={onSubmit}>
+                  {getStepContent(activeStep)}
+                </FormProvider>
+              </Box>
             </Paper>
             <Box sx={{ display: 'flex', m: 2 }}>
               <Button
@@ -469,14 +579,15 @@ export default function CreatorForm({ creator, open, onClose }) {
                 Back
               </Button>
               <Box sx={{ flexGrow: 1 }} />
-              {/* {isStepOptional(activeStep) && (
-              <Button color="inherit" onClick={handleSkip} sx={{ mr: 1 }}>
-                Skip
-              </Button>
-            )} */}
-              <Button variant="contained" onClick={handleNext}>
-                {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
-              </Button>
+              {activeStep === steps.length - 1 ? (
+                <Button variant="contained" onClick={onSubmit}>
+                  Submit
+                </Button>
+              ) : (
+                <Button variant="contained" onClick={handleNext}>
+                  Next
+                </Button>
+              )}
             </Box>
           </>
         )}

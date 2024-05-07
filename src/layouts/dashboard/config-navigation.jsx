@@ -4,6 +4,7 @@ import { paths } from 'src/routes/paths';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
 
 // ----------------------------------------------------------------------
@@ -50,28 +51,51 @@ export function useNavData() {
 
   let items;
 
-  switch (user?.user?.role) {
-    case 'superadmin':
-      items = [
-        { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
-        { title: 'Admin', path: paths.dashboard.admins, icon: ICONS.user },
-      ];
-      break;
-    case 'admin':
-      items = [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }];
-      break;
-    default:
-      break;
+  // Differentiate the list of sidebar for different user role
+  if (user.admin) {
+    switch (user?.admin?.mode) {
+      case 'god':
+        items = [
+          {
+            items: [
+              { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
+              { title: 'Admin', path: paths.dashboard.admins, icon: ICONS.user },
+            ],
+          },
+          {
+            subheader: 'Creator',
+            items: [
+              {
+                title: 'Creator',
+                path: paths.dashboard.creator.root,
+                icon: <Iconify icon="solar:users-group-rounded-bold" />,
+              },
+            ],
+          },
+        ];
+
+        break;
+      case 'normal':
+        items = [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }];
+        break;
+      default:
+        break;
+    }
+  } else {
+    items = [
+      {
+        items: [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }],
+      },
+    ];
   }
 
   const data = useMemo(
     () => [
-      // OVERVIEW
-      // ----------------------------------------------------------------------
       {
         subheader: 'Cult Creative',
-        items,
       },
+
+      ...items,
     ],
     [items]
   );

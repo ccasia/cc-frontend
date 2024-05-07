@@ -26,5 +26,8 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/user`,
       profile: `${ROOTS.DASHBOARD}/user/profile`,
     },
+    creator: {
+      root: `${ROOTS.DASHBOARD}/creator`,
+    },
   },
 };

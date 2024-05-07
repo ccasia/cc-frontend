@@ -24,7 +24,7 @@ import {
 
 import { paths } from 'src/routes/paths';
 
-import axios, { endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { _userAbout } from 'src/_mock';
 import { countries } from 'src/assets/data';
@@ -52,11 +52,11 @@ const Profile = () => {
   const theme = useTheme();
   const { user } = useAuthContext();
   const [currentTab, setCurrentTab] = useState('general');
+  const [image, setImage] = useState(null);
 
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
-    photoURL: Yup.mixed().nullable().required('Avatar is required'),
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
     designation: Yup.string().required('Address is required'),
@@ -64,24 +64,21 @@ const Profile = () => {
 
   const defaultValues = {
     name: user?.name || '',
-    email: user?.user?.email || '',
+    email: user?.email || '',
     phoneNumber: user?.phoneNumber || '',
-    designation: user?.designation || '',
+    designation: user?.admin?.designation || '',
     country: user?.country || '',
-    photoURL: user?.photoURL || '',
   };
 
   const methods = useForm({ defaultValues, resolver: yupResolver(UpdateUserSchema) });
 
   const { handleSubmit, setValue } = methods;
 
-  const [image, setImage] = useState();
-
   const onDrop = useCallback(
     (e) => {
       const preview = URL.createObjectURL(e[0]);
-      setValue('photoUrl', e[0]);
       setImage(preview);
+      setValue('image', e[0]);
     },
     [setValue]
   );
@@ -92,9 +89,18 @@ const Profile = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await axios.patch(endpoints.auth.updateProfile, { userId: user?.user.id, ...data });
+      await axiosInstance.patch(
+        endpoints.auth.updateProfileAdmin,
+        { userId: user?.id, ...data },
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
       toast.success('Successfully updated profile.');
     } catch (error) {
+      console.log(error);
       toast.error('Error in updating profile');
     }
   });
@@ -110,7 +116,7 @@ const Profile = () => {
                 height: 1,
                 borderRadius: '50%',
               }}
-              src={image || user.photoURL}
+              src={image || user?.photoURL}
             />
           </UploadPhoto>
           <Typography display="block" color={theme.palette.grey['600']} sx={{ fontSize: 12 }}>
@@ -145,9 +151,9 @@ const Profile = () => {
                 <RHFSelect name="designation" label="Designation">
                   <MenuItem defaultChecked>None</MenuItem>
                   <MenuItem value="CSM">Customer Success Manager</MenuItem>
-                  <MenuItem value="FINANCE">Finace</MenuItem>
+                  <MenuItem value="Finance">Finance</MenuItem>
                   <MenuItem value="BD">Board Director</MenuItem>
-                  <MenuItem value="GROWTH">Growth</MenuItem>
+                  <MenuItem value="Growth">Growth</MenuItem>
                 </RHFSelect>
               </Grid>
 
@@ -159,10 +165,14 @@ const Profile = () => {
                   placeholder="Choose a country"
                   options={countries.map((option) => option.label)}
                   getOptionLabel={(option) => option}
+                  s
                 />
               </Grid>
+              {/* {JSON.stringify(methods)} */}
               <Grid item xs={12} sm={12} md={12} lg={12} sx={{ textAlign: 'end' }}>
-                <LoadingButton type="submit">Save Changes</LoadingButton>
+                <LoadingButton type="submit" disabled={!methods.formState.isDirty && !image}>
+                  Save Changes
+                </LoadingButton>
               </Grid>
             </Grid>
           </Stack>
@@ -287,8 +297,8 @@ const Profile = () => {
         }}
       />
 
-      {['superadmin', 'admin'].includes(user?.user?.role) ? Admintabs : CreatorTabs}
-      {['superadmin', 'admin'].includes(user?.user?.role) ? adminContents : creatorContents}
+      {['admin'].includes(user?.role) ? Admintabs : CreatorTabs}
+      {['admin'].includes(user?.role) ? adminContents : creatorContents}
 
       <Toaster />
     </Container>

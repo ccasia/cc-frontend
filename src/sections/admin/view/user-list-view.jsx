@@ -150,18 +150,14 @@ export default function UserListView() {
     setFilters(defaultFilters);
   }, []);
 
-  const handleDeleteRow = useCallback(
-    (id) => {
-      const deleteRow = tableData.filter((row) => row.id !== id);
-
-      enqueueSnackbar('Delete success!');
-
-      setTableData(deleteRow);
-
-      table.onUpdatePageDeleteRow(dataInPage.length);
-    },
-    [dataInPage.length, enqueueSnackbar, table, tableData]
-  );
+  const handleDeleteRow = useCallback(async (id) => {
+    try {
+      await axiosInstance.delete(`${endpoints.admin.delete}/${id}`);
+      toast.success('Successfully deleted admin');
+    } catch (error) {
+      toast.error('Error delete admin');
+    }
+  }, []);
 
   const handleDeleteRows = useCallback(() => {
     const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
@@ -193,24 +189,11 @@ export default function UserListView() {
   const handleSubmit = async (email) => {
     try {
       await axiosInstance.post(endpoints.users.newAdmin, { email });
-      toast.success('Successfully created a new admin!');
+      toast.success('Link has been sent to admin!');
     } catch (error) {
       toast.error(error.message);
     }
   };
-
-  // const getAdmins = useCallback(async () => {
-  //   try {
-  //     const res = await axiosInstance.get(endpoints.users.admins);
-  //     setTableData(res?.data);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }, []);
-
-  // useEffect(() => {
-  //   getAdmins();
-  // }, [getAdmins]);
 
   const inviteAdminDialog = (
     <Dialog

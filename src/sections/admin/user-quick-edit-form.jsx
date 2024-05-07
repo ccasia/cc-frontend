@@ -1,6 +1,7 @@
 import * as Yup from 'yup';
 import { useMemo } from 'react';
 import PropTypes from 'prop-types';
+import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -20,14 +21,11 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { countries } from 'src/assets/data';
 import { USER_STATUS_OPTIONS } from 'src/_mock';
 
-import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
 export default function UserQuickEditForm({ currentUser, open, onClose }) {
-  const { enqueueSnackbar } = useSnackbar();
-
   const { getAdmins } = useGetAdmins();
 
   const NewUserSchema = Yup.object().shape({
@@ -43,13 +41,13 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
   const defaultValues = useMemo(
     () => ({
       name: currentUser?.name || '',
-      email: currentUser?.user.email || '',
+      email: currentUser?.email || '',
       phoneNumber: currentUser?.phoneNumber || '',
       country: currentUser?.country || '',
       status: currentUser?.status,
-      role: currentUser?.user?.role || '',
-      designation: currentUser?.designation || '',
-      mode: currentUser?.mode || '',
+      role: currentUser?.role || '',
+      designation: currentUser?.admin?.designation || '',
+      mode: currentUser?.admin?.mode || '',
     }),
     [currentUser]
   );
@@ -67,14 +65,14 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await axiosInstance.patch(endpoints.auth.updateProfile, {
+      await axiosInstance.patch(endpoints.auth.updateProfileAdmin, {
         ...data,
-        userId: currentUser?.user?.id,
+        userId: currentUser?.id,
       });
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       onClose();
-      enqueueSnackbar('Update success!');
+      toast.success('Success');
       getAdmins();
     } catch (error) {
       console.error(error);
@@ -130,7 +128,7 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
             />
 
             <RHFSelect name="role" label="Role">
-              <MenuItem value="admin">CSM</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
               <MenuItem value="finance admin">Finance Admin</MenuItem>
               <MenuItem value="bd">BD</MenuItem>
               <MenuItem value="growth">Growth</MenuItem>

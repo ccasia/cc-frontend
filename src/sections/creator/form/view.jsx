@@ -13,16 +13,14 @@ import CreatorForm from './creatorForm';
 
 // ----------------------------------------------------------------------
 
-export default function OneView() {
+export default function CreatorView() {
   const settings = useSettingsContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creator, setCreator] = useState({});
 
-  // get user role if creator send request to backend to check if the data is complete
+  // Get user role if creator send request to backend to check if the data is complete
   const getUserRoleAndCheckData = async () => {
-    // get user role
     let role;
-
     try {
       const response = await axios.get(endpoints.auth.getCurrentUser);
       role = response.data?.user.role;
@@ -32,9 +30,11 @@ export default function OneView() {
     // check if role is creator
     if (role === 'creator') {
       const response = await axios.get(endpoints.auth.checkCreator);
+      console.log(response);
       setCreator(response.data?.creator);
-      const isDataEmpty = Object.values(response.data?.creator).some((value) => !value);
-      setDialogOpen(isDataEmpty);
+      const openFormModal = response?.data?.creator?.user?.status === 'Pending';
+      // const isDataEmpty = Object.values(response.data?.creator).some((value) => !value);
+      setDialogOpen(openFormModal);
     }
   };
 

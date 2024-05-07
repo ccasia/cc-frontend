@@ -93,7 +93,15 @@ const AdminForm = () => {
     >
       <RHFTextField name="email" label="Email" type="email" value={user?.email} />
       <RHFTextField name="name" label="Name" type="text" />
-      <RHFTextField name="designation" label="Designation" type="text" />
+      <RHFAutocomplete
+        name="designation"
+        type="designation"
+        label="Designation"
+        placeholder="Choose your designation"
+        fullWidth
+        options={['Finance', 'CSM', 'BD', 'Growth']}
+        getOptionLabel={(option) => option}
+      />
       <RHFAutocomplete
         name="country"
         type="country"

@@ -85,8 +85,7 @@ export default function AccountPopover() {
             border: (theme) => `solid 2px ${theme.palette.background.default}`,
           }}
         >
-          {user?.name}
-          {/* {user?.admin?.name?.charAt(0).toUpperCase()} */}
+          ADWAD
         </Avatar>
       </IconButton>
 
@@ -97,7 +96,7 @@ export default function AccountPopover() {
           </Typography>
 
           <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-            {user?.user?.email}
+            {user?.email}
           </Typography>
         </Box>
 

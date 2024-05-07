@@ -6,6 +6,8 @@ import { AuthGuard, RoleBasedGuard } from 'src/auth/guard';
 
 import { LoadingScreen } from 'src/components/loading-screen';
 
+import CreatorList from 'src/sections/creator/creator-list';
+
 // ----------------------------------------------------------------------
 
 const IndexPage = lazy(() => import('src/pages/dashboard/one'));
@@ -30,7 +32,7 @@ export const dashboardRoutes = [
       {
         path: 'admins',
         element: (
-          <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+          <RoleBasedGuard roles={['god']} hasContent>
             <ManagersPage />
           </RoleBasedGuard>
         ),
@@ -39,9 +41,16 @@ export const dashboardRoutes = [
         path: 'user',
         children: [
           { element: <ProfilePage />, index: true },
-
           { path: 'profile', element: <ProfilePage /> },
         ],
+      },
+      {
+        path: 'creator',
+        element: (
+          <RoleBasedGuard roles={['god']} hasContent>
+            <CreatorList />
+          </RoleBasedGuard>
+        ),
       },
     ],
   },

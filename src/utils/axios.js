@@ -43,7 +43,7 @@ export const endpoints = {
     registerCreator: '/api/auth/registerCreator',
     registerAdmin: '/api/auth/registerAdmin',
     verifyAdmin: '/api/auth/verifyAdmin',
-    updateProfile: '/api/user/updateProfile',
+    updateProfileAdmin: '/api/user/updateProfileAdmin',
     changePass: '/api/auth/changePassword',
     getCurrentUser: '/api/auth/currentUser',
     checkCreator: '/api/auth/checkCreator',
@@ -71,5 +71,8 @@ export const endpoints = {
     list: '/api/product/list',
     details: '/api/product/details',
     search: '/api/product/search',
+  },
+  admin: {
+    delete: '/api/admin',
   },
 };
