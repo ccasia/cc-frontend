@@ -6,13 +6,15 @@ import { AuthGuard, RoleBasedGuard } from 'src/auth/guard';
 
 import { LoadingScreen } from 'src/components/loading-screen';
 
-import CreatorList from 'src/sections/creator/creator-list';
+// import CreatorList from 'src/sections/creator/creator-list';
 
 // ----------------------------------------------------------------------
 
 const IndexPage = lazy(() => import('src/pages/dashboard/one'));
 const ProfilePage = lazy(() => import('src/pages/dashboard/profile'));
 const ManagersPage = lazy(() => import('src/pages/dashboard/managers'));
+const CreatorList = lazy(() => import('src/sections/creator/creator-list'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [

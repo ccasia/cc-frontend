@@ -1,5 +1,15 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
+import { CreatorTableView } from './creator-list-table/view';
 
-const CreatorList = () => <div>CreatorList</div>;
+export default function CreatorList() {
+  return (
+    <>
+      <Helmet>
+        <title>Creator</title>
+      </Helmet>
 
-export default CreatorList;
+      <CreatorTableView />
+    </>
+  );
+}
