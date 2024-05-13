@@ -49,13 +49,14 @@ const ICONS = {
 export function useNavData() {
   const { user } = useAuthContext();
 
-  let items;
+  // let items;
+  let navigations;
 
   // Differentiate the list of sidebar for different user role
   if (user.admin) {
     switch (user?.admin?.mode) {
       case 'god':
-        items = [
+        navigations = [
           {
             items: [
               { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
@@ -72,17 +73,50 @@ export function useNavData() {
               },
             ],
           },
+          {
+            subheader: 'Landing pages',
+            items: [
+              {
+                title: 'Creator list',
+                path: paths.dashboard.landing.creator,
+                icon: <Iconify icon="fluent:people-team-28-regular" />,
+              },
+              {
+                title: 'Brands list',
+                path: paths.dashboard.landing.brand,
+                icon: <Iconify icon="material-symbols:corporate-fare" />,
+              },
+            ],
+          },
         ];
-
         break;
       case 'normal':
-        items = [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }];
+        navigations = [
+          {
+            items: [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }],
+          },
+          {
+            subheader: 'Landing pages',
+            items: [
+              {
+                title: 'Creator list',
+                path: paths.dashboard.landing.creator,
+                icon: <Iconify icon="fluent:people-team-28-regular" />,
+              },
+              {
+                title: 'Brands list',
+                path: paths.dashboard.landing.brand,
+                icon: <Iconify icon="material-symbols:corporate-fare" />,
+              },
+            ],
+          },
+        ];
         break;
       default:
         break;
     }
   } else {
-    items = [
+    navigations = [
       {
         items: [
           { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
@@ -102,9 +136,9 @@ export function useNavData() {
         subheader: 'Cult Creative',
       },
 
-      ...items,
+      ...navigations,
     ],
-    [items]
+    [navigations]
   );
 
   return data;

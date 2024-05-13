@@ -13,6 +13,10 @@ const ProfilePage = lazy(() => import('src/pages/dashboard/profile'));
 const ManagersPage = lazy(() => import('src/pages/dashboard/admin'));
 const CreatorList = lazy(() => import('src/pages/dashboard/creator/list'));
 const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'));
+
+// Landing Page temporary
+const CreatorLists = lazy(() => import('src/pages/dashboard/landing/creator'));
+const BrandLists = lazy(() => import('src/pages/dashboard/landing/brand'));
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -55,6 +59,19 @@ export const dashboardRoutes = [
       {
         path: 'mediakit',
         element: <CreatorMediaKit />,
+      },
+      {
+        path: 'landing',
+        children: [
+          {
+            path: 'creator',
+            element: <CreatorLists />,
+          },
+          {
+            path: 'brand',
+            element: <BrandLists />,
+          },
+        ],
       },
     ],
   },

@@ -21,7 +21,7 @@ import CreatorQuickForm from './creator-quick-edit';
 // ----------------------------------------------------------------------
 
 export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
-  const { name, creator, country, phoneNumber, status, photoURL } = row;
+  const { name, creator, country, status, photoURL } = row;
 
   const confirm = useBoolean();
 

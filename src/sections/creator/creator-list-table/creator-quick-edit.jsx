@@ -3,7 +3,6 @@
 import * as Yup from 'yup';
 import { useMemo } from 'react';
 import PropTypes from 'prop-types';
-import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -16,8 +15,6 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
 import { countries } from 'src/assets/data';
 import { USER_STATUS_OPTIONS } from 'src/_mock';
 
@@ -26,16 +23,12 @@ import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/comp
 // ----------------------------------------------------------------------
 
 export default function CeatorQuickForm({ currentUser, open, onClose }) {
-
-
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
   });
-
-
 
   const defaultValues = useMemo(
     () => ({
@@ -44,7 +37,6 @@ export default function CeatorQuickForm({ currentUser, open, onClose }) {
       phoneNumber: currentUser?.phoneNumber || '',
       country: currentUser?.country || '',
       status: currentUser?.status,
-
     }),
     [currentUser]
   );
@@ -55,14 +47,14 @@ export default function CeatorQuickForm({ currentUser, open, onClose }) {
   });
 
   const {
-    reset,
+    // reset,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     console.log(data);
-    
+
     // try {
     //   await axiosInstance.patch(endpoints.auth.updateProfileAdmin, {
     //     ...data,
@@ -123,7 +115,6 @@ export default function CeatorQuickForm({ currentUser, open, onClose }) {
               options={countries.map((option) => option.label)}
               getOptionLabel={(option) => option}
             />
-
           </Box>
         </DialogContent>
 

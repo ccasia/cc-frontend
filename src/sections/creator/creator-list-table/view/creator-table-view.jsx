@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import isEqual from 'lodash/isEqual';
 import toast, { Toaster } from 'react-hot-toast';
 import { useState, useEffect, useCallback } from 'react';
@@ -108,6 +109,8 @@ function CreatorTableView() {
 
   const confirm = useBoolean();
 
+  
+
   const [tableData, setTableData] = useState(creators);
 
   const [filters, setFilters] = useState(defaultFilters);
@@ -156,6 +159,7 @@ function CreatorTableView() {
     },
     [router]
   );
+
   const handleDeleteRow = useCallback(
     async (id) => {
       try {
@@ -199,7 +203,7 @@ function CreatorTableView() {
             { name: 'Creators' },
             { name: 'List' },
           ]}
-          action={<></>}
+          // action={<></>}
           sx={{
             mb: { xs: 3, md: 5 },
           }}

@@ -4,8 +4,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useCreator } from './zustands/useCreator';
 
-const useGetAdmins = () => {
-    
+const useGetCreators = () => {
   const { setCreators } = useCreator();
 
   const getCreators = useCallback(async () => {
@@ -23,4 +22,4 @@ const useGetAdmins = () => {
 
   return { getCreators };
 };
-export default useGetAdmins;
+export default useGetCreators;

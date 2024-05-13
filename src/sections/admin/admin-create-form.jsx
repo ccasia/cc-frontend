@@ -1,5 +1,4 @@
 import * as Yup from 'yup';
-import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -13,23 +12,19 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
-import useGetAdmins from 'src/hooks/use-get-admins';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
-import { USER_STATUS_OPTIONS } from 'src/_mock';
 
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
-import toast from 'react-hot-toast';
 
 // ----------------------------------------------------------------------
 
 export default function AdminCreateManager({ currentUser, open, onClose }) {
   const { enqueueSnackbar } = useSnackbar();
 
-  const { getAdmins } = useGetAdmins();
+  // const { getAdmins } = useGetAdmins();
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -54,7 +49,7 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
   });
 
   const {
-    reset,
+    // reset,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;

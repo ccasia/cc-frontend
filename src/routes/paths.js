@@ -30,5 +30,9 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/creator`,
       mediaKit: `${ROOTS.DASHBOARD}/mediakit`,
     },
+    landing: {
+      creator: `${ROOTS.DASHBOARD}/landing/creator`,
+      brand: `${ROOTS.DASHBOARD}/landing/brand`,
+    },
   },
 };
