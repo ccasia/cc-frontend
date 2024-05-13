@@ -1,15 +1,24 @@
-import React from 'react';
+/* eslint-disable no-unused-vars */
+import React, { lazy } from 'react';
 
-import { Box, Grid, alpha, Container } from '@mui/material';
+import { Container } from '@mui/material';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import { useSettingsContext } from 'src/components/settings';
+
+const DashboardFinance = lazy(() => import('src/sections/admin/Finance/Dashboard'));
 
 const DashboardAdmin = () => {
   const settings = useSettingsContext();
 
+  const { user } = useAuthContext();
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <Grid container columnSpacing={5}>
+      {user?.admin?.designation === 'Finance' && <DashboardFinance />}
+      {/* <Grid container columnSpacing={5}>
+        {JSON.stringify(user)}
         <Grid item xs={12} md={8}>
           <Box
             sx={{
@@ -34,7 +43,7 @@ const DashboardAdmin = () => {
             }}
           />
         </Grid>
-      </Grid>
+      </Grid> */}
     </Container>
   );
 };

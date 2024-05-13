@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React from 'react';
 
 import { deepOrange } from '@mui/material/colors';
@@ -5,43 +6,30 @@ import { Box, Chip, Stack, Avatar, useTheme, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
-const MediaKitCover = () => {
+const MediaKitCover = ({ user }) => {
   const theme = useTheme();
 
   return (
     <Box
       sx={{
-        // height: 1,
         p: 5,
       }}
     >
       <Stack direction="column" alignItems="center" gap={2}>
         <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }}>N</Avatar>
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
-          Afiq Danial
+          {user.name}
         </Typography>
         <Stack direction="row" gap={2}>
-          <Chip
-            label="Humor"
-            sx={{
-              borderRadius: 10,
-              fontWeight: 800,
-            }}
-          />
-          <Chip
-            label="Lifestyle"
-            sx={{
-              borderRadius: 10,
-              fontWeight: 800,
-            }}
-          />
-          <Chip
-            label="Toys"
-            sx={{
-              borderRadius: 10,
-              fontWeight: 800,
-            }}
-          />
+          {user?.creator?.interests.map((elem) => (
+            <Chip
+              label={elem?.name}
+              sx={{
+                borderRadius: 10,
+                fontWeight: 800,
+              }}
+            />
+          ))}
         </Stack>
         <Stack gap={2}>
           <Typography
@@ -61,13 +49,13 @@ const MediaKitCover = () => {
             <Stack direction="row" gap={2}>
               <Iconify icon="mingcute:location-fill" />
               <Typography variant="subtitle2" gutterBottom fontWeight={800}>
-                Live at Andorra
+                Live at {user?.country}
               </Typography>
             </Stack>
             <Stack direction="row" gap={2}>
               <Iconify icon="mdi:email" />
               <Typography variant="subtitle2" gutterBottom fontWeight={800}>
-                test@gmail.com
+                {user?.email}
               </Typography>
             </Stack>
           </Stack>

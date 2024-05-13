@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 
 import { Tab, Card, Tabs, Container } from '@mui/material';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
@@ -10,9 +12,8 @@ import MediaKitSocial from './media-kit-social/view';
 
 const MediaKit = () => {
   const settings = useSettingsContext();
-  // const theme = useTheme();
+  const { user } = useAuthContext();
 
-  // const [currentTab, setCurrentTab] = useState('social');
   const [currentTab, setCurrentTab] = useState('instagram');
 
   return (
@@ -23,7 +24,7 @@ const MediaKit = () => {
         borderRadius: 2,
       }}
     >
-      {/* <ProfileCover /> */}
+      {/* {JSON.stringify(user)} */}
       <Card
         sx={{
           mb: 3,
@@ -32,7 +33,7 @@ const MediaKit = () => {
           bgcolor: 'transparent',
         }}
       >
-        <MediaKitCover />
+        <MediaKitCover user={user} />
 
         <Tabs
           value={currentTab}
