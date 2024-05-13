@@ -19,24 +19,26 @@ export default function CreatorView() {
   const [creator, setCreator] = useState({});
 
   // Get user role if creator send request to backend to check if the data is complete
-  const getUserRoleAndCheckData = async () => {
-    let role;
-    try {
-      const response = await axios.get(endpoints.auth.getCurrentUser);
-      role = response.data?.user.role;
-    } catch (error) {
-      console.error(error);
-    }
-    // check if role is creator
-    if (role === 'creator') {
-      const response = await axios.get(endpoints.auth.checkCreator);
-      setCreator(response.data?.creator);
-      const openFormModal = response?.data?.creator?.user?.status === 'Pending';
-      setDialogOpen(openFormModal);
-    }
-  };
 
   useEffect(() => {
+    const getUserRoleAndCheckData = async () => {
+      let role;
+      try {
+        const response = await axios.get(endpoints.auth.getCurrentUser);
+        role = response.data?.user.role;
+      } catch (error) {
+        console.error(error);
+      }
+      // check if role is creator
+      if (role === 'creator') {
+        const response = await axios.get(endpoints.auth.checkCreator);
+        console.log(response);
+        setCreator(response.data?.creator);
+        const openFormModal = response?.data?.creator?.user?.status === 'Pending';
+        setDialogOpen(openFormModal);
+      }
+    };
+
     getUserRoleAndCheckData();
   }, []);
 

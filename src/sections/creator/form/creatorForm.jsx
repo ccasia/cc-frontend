@@ -174,14 +174,11 @@ export default function CreatorForm({ creator, open, onClose }) {
     };
 
     try {
-      const response = await axiosInstance.put(endpoints.auth.updateCreator, newData);
-      console.log(response);
-      toast.success('Data updates successfully');
-      // enqueueSnackbar('Data updated successfully', { variant: 'success' });
+      await axiosInstance.put(endpoints.auth.updateCreator, newData);
+      toast.success('Data updated successfully');
       onClose();
     } catch (error) {
       toast.error('Something went wrong');
-      // enqueueSnackbar('Something went wrong', { variant: 'error' });
     }
 
     // if (Object.keys(errors).length > 0) {
@@ -235,7 +232,7 @@ export default function CreatorForm({ creator, open, onClose }) {
           <RHFSelect name="employment" label="Employment Status" multiple={false}>
             <MenuItem value="fulltime">Full-time</MenuItem>
             <MenuItem value="freelance">Freelance</MenuItem>
-            <MenuItem value="part-time">Part-time</MenuItem>
+            <MenuItem value="part_time">Part-time</MenuItem>
             <MenuItem value="student">Student</MenuItem>
             <MenuItem value="in_between">In between jobs/transitioning </MenuItem>
             <MenuItem value="unemployed">Unemployed</MenuItem>
