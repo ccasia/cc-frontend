@@ -50,10 +50,15 @@ export const endpoints = {
     updateCreator: '/api/auth/updateCreator',
     verifyCreator: '/api/auth/verifyCreator',
   },
+  creators:{
+    getCreators: '/api/creator/getAll',
+    deleteCreator: '/api/creator/delete',
+  },
   users: {
     newAdmin: '/api/user/newAdmin',
     admins: '/api/user/admins',
     updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
+    createAdmin: '/api/user/createAdmin', 
   },
   mail: {
     list: '/api/mail/list',

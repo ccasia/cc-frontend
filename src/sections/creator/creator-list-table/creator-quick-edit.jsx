@@ -1,3 +1,5 @@
+// creator quick edit functions
+
 import * as Yup from 'yup';
 import { useMemo } from 'react';
 import PropTypes from 'prop-types';
@@ -14,8 +16,6 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
-import useGetAdmins from 'src/hooks/use-get-admins';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
@@ -25,18 +25,17 @@ import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/comp
 
 // ----------------------------------------------------------------------
 
-export default function UserQuickEditForm({ currentUser, open, onClose }) {
-  const { getAdmins } = useGetAdmins();
+export default function CeatorQuickForm({ currentUser, open, onClose }) {
+
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
-    designation: Yup.string().required('Designation is required'),
-    adminRole: Yup.string().required('Role is required'),
-    mode: Yup.string().required('Mode is required'),
   });
+
+
 
   const defaultValues = useMemo(
     () => ({
@@ -45,14 +44,11 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
       phoneNumber: currentUser?.phoneNumber || '',
       country: currentUser?.country || '',
       status: currentUser?.status,
-      adminRole: currentUser?.admin?.adminRole || '',
-      designation: currentUser?.admin?.designation || '',
-      mode: currentUser?.admin?.mode || '',
+
     }),
     [currentUser]
   );
 
-  console.log(currentUser?.admin);
   const methods = useForm({
     resolver: yupResolver(NewUserSchema),
     defaultValues,
@@ -65,19 +61,21 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    try {
-      await axiosInstance.patch(endpoints.auth.updateProfileAdmin, {
-        ...data,
-        userId: currentUser?.id,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      reset();
-      onClose();
-      toast.success('Success');
-      getAdmins();
-    } catch (error) {
-      console.error(error);
-    }
+    console.log(data);
+    
+    // try {
+    //   await axiosInstance.patch(endpoints.auth.updateProfileAdmin, {
+    //     ...data,
+    //     userId: currentUser?.id,
+    //   });
+    //   await new Promise((resolve) => setTimeout(resolve, 500));
+    //   reset();
+    //   onClose();
+    //   toast.success('Success');
+    //   getAdmins();
+    // } catch (error) {
+    //   console.error(error);
+    // }
   });
 
   return (
@@ -112,7 +110,6 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
               ))}
             </RHFSelect>
 
-
             <RHFTextField name="name" label="Full Name" />
             <RHFTextField name="email" label="Email Address" />
             <RHFTextField name="phoneNumber" label="Phone Number" />
@@ -127,21 +124,6 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
               getOptionLabel={(option) => option}
             />
 
-          
-
-            <RHFTextField name="designation" label="Designation" />
-
-            <RHFSelect name="adminRole" label="Role">
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="finance admin">Finance Admin</MenuItem>
-              <MenuItem value="bd">BD</MenuItem>
-              <MenuItem value="growth">Growth</MenuItem>
-            </RHFSelect>
-
-            <RHFSelect name="mode" label="Mode">
-              <MenuItem value="normal">Normal</MenuItem>
-              <MenuItem value="god">God</MenuItem>
-            </RHFSelect>
           </Box>
         </DialogContent>
 
@@ -159,7 +141,7 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
   );
 }
 
-UserQuickEditForm.propTypes = {
+CeatorQuickForm.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   currentUser: PropTypes.object,
