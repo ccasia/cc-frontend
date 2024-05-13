@@ -13,25 +13,13 @@ import Container from '@mui/material/Container';
 import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
-import {
-  Menu,
-  Stack,
-  Dialog,
-  MenuItem,
-  TextField,
-  Typography,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
-} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import useGetAdmins from 'src/hooks/use-get-admins';
-import { useAdmins } from 'src/hooks/zustands/useAdmins';
+import useGetCreators from 'src/hooks/use-get-creators';
+import { useCreator } from 'src/hooks/zustands/useCreator';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -55,21 +43,18 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import UserTableRow from '../user-table-row';
-import UserTableToolbar from '../user-table-toolbar';
-import UserTableFiltersResult from '../user-table-filters-result';
-import AdminCreateManager from '../admin-create-form';
-
-// ----------------------------------------------------------------------
+import CreatorTableRow from '../creator-table-row';
+import CreatorTableToolbar from '../creator-table-toolbar';
+import CreatorTableFilter from '../creator-table-filters-result';
 
 const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
-  { id: 'phoneNumber', label: 'Phone Number', width: 220 },
-  { id: 'designation', label: 'Designation', width: 180 },
-  { id: 'country', label: 'Country', width: 100 },
-  { id: 'mode', label: 'Mode', width: 100 },
+  { id: 'pronounce', label: 'Pronounce', width: 180 },
+  { id: 'tiktok', label: 'Tiktok Account', width: 180 },
+  { id: 'instagram', label: 'Instagram Account', width: 180 },
+  { id: 'country', label: 'Country', width: 180 },
   { id: 'status', label: 'Status', width: 100 },
   { id: '', width: 88 },
 ];
@@ -82,9 +67,9 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function UserListView() {
-  useGetAdmins();
-  const { admins } = useAdmins();
+function CreatorTableView() {
+  useGetCreators();
+  const { creators } = useCreator();
   const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -123,7 +108,7 @@ export default function UserListView() {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(admins);
+  const [tableData, setTableData] = useState(creators);
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -159,14 +144,33 @@ export default function UserListView() {
     setFilters(defaultFilters);
   }, []);
 
-  const handleDeleteRow = useCallback(async (id) => {
-    try {
-      await axiosInstance.delete(`${endpoints.admin.delete}/${id}`);
-      toast.success('Successfully deleted admin');
-    } catch (error) {
-      toast.error('Error delete admin');
-    }
-  }, []);
+  const handleFilterStatus = useCallback(
+    (event, newValue) => {
+      handleFilters('status', newValue);
+    },
+    [handleFilters]
+  );
+  const handleEditRow = useCallback(
+    (id) => {
+      router.push(paths.dashboard.user.edit(id));
+    },
+    [router]
+  );
+  const handleDeleteRow = useCallback(
+    async (id) => {
+      try {
+        await axiosInstance.delete(`${endpoints.creators.deleteCreator}/${id}`);
+        confirm.onFalse();
+        toast.success('Successfully deleted Creator');
+      } catch (error) {
+        console.log(error);
+        toast.error('Error delete Creator');
+      }
+    },
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   const handleDeleteRows = useCallback(() => {
     const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
@@ -181,144 +185,29 @@ export default function UserListView() {
     });
   }, [dataFiltered.length, dataInPage.length, enqueueSnackbar, table, tableData]);
 
-  const handleEditRow = useCallback(
-    (id) => {
-      router.push(paths.dashboard.user.edit(id));
-    },
-    [router]
-  );
-
-  const handleFilterStatus = useCallback(
-    (event, newValue) => {
-      handleFilters('status', newValue);
-    },
-    [handleFilters]
-  );
-
-  const handleSubmit = async (email) => {
-    try {
-      await axiosInstance.post(endpoints.users.newAdmin, { email });
-      toast.success('Link has been sent to admin!');
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
-
-  const inviteAdminDialog = (
-    <Dialog
-      open={openDialog}
-      onClose={handleCloseDialog}
-      PaperProps={{
-        component: 'form',
-        onSubmit: async (event) => {
-          event.preventDefault();
-          const formData = new FormData(event.currentTarget);
-          const formJson = Object.fromEntries(formData.entries());
-          const { email } = formJson;
-          await handleSubmit(email);
-          handleCloseDialog();
-          handleClose();
-        },
-      }}
-    >
-      <DialogTitle>Invite Admin</DialogTitle>
-      <DialogContent>
-        <DialogContentText>Please enter the email you wish to use the system.</DialogContentText>
-        <TextField
-          autoFocus
-          required
-          margin="dense"
-          id="name"
-          name="email"
-          label="Email Address"
-          type="email"
-          fullWidth
-          variant="standard"
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={() => {
-            handleCloseDialog();
-            handleClose();
-          }}
-        >
-          Cancel
-        </Button>
-        <Button type="submit">Invite</Button>
-      </DialogActions>
-    </Dialog>
-  );
-
   useEffect(() => {
-    setTableData(admins);
-  }, [admins]);
+    setTableData(creators);
+  }, [creators]);
 
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs
-          heading="List Admins"
+          heading="List Creators"
           links={[
             { name: 'Dashboard', href: paths.dashboard.root },
-            { name: 'Admin' },
+            { name: 'Creators' },
             { name: 'List' },
           ]}
-          action={
-            <>
-              <IconButton
-                sx={{
-                  bgcolor: 'whitesmoke',
-                }}
-                onClick={handleClick}
-              >
-                <Iconify icon="mingcute:add-line" />
-              </IconButton>
-              <Menu
-                id="basic-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                MenuListProps={{
-                  'aria-labelledby': 'basic-button',
-                }}
-                anchorOrigin={{
-                  vertical: 'center',
-                  horizontal: 'left',
-                }}
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-              >
-                <MenuItem
-                  onClick={() => {
-                    handleClickOpenDialog();
-                  }}
-                >
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Iconify icon="mdi:invite" />
-                    <Typography variant="button">Invite admin</Typography>
-                  </Stack>
-                </MenuItem>
-                <MenuItem onClick={handleClickOpenCreateDialog}>
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Iconify icon="material-symbols:add" />
-                    <Typography variant="button">Create admin</Typography>
-                  </Stack>
-                </MenuItem>
-              </Menu>
-            </>
-          }
+          action={<></>}
           sx={{
             mb: { xs: 3, md: 5 },
           }}
         />
 
-        {inviteAdminDialog}
+        {/* {inviteAdminDialog}
 
-        <AdminCreateManager open={openCreateDialog} onClose={handleCloseCreateDialog} />
-        
+<AdminCreateManager open={openCreateDialog} onClose={handleCloseCreateDialog} /> */}
         <Card>
           <Tabs
             value={filters.status}
@@ -355,10 +244,10 @@ export default function UserListView() {
             ))}
           </Tabs>
 
-          <UserTableToolbar filters={filters} onFilters={handleFilters} roleOptions={_roles} />
+          <CreatorTableToolbar filters={filters} onFilters={handleFilters} roleOptions={_roles} />
 
           {canReset && (
-            <UserTableFiltersResult
+            <CreatorTableFilter
               filters={filters}
               onFilters={handleFilters}
               //
@@ -413,7 +302,7 @@ export default function UserListView() {
                       table.page * table.rowsPerPage + table.rowsPerPage
                     )
                     .map((row) => (
-                      <UserTableRow
+                      <CreatorTableRow
                         key={row.id}
                         row={row}
                         selected={table.selected.includes(row.id)}
@@ -440,7 +329,6 @@ export default function UserListView() {
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
             onRowsPerPageChange={table.onChangeRowsPerPage}
-            //
             dense={table.dense}
             onChangeDense={table.onChangeDense}
           />
@@ -474,7 +362,7 @@ export default function UserListView() {
   );
 }
 
-// ----------------------------------------------------------------------
+export default CreatorTableView;
 
 function applyFilter({ inputData, comparator, filters }) {
   const { name, status, role } = filters;

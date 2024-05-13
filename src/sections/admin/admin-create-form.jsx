@@ -1,7 +1,6 @@
 import * as Yup from 'yup';
 import { useMemo } from 'react';
 import PropTypes from 'prop-types';
-import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -21,11 +20,15 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { countries } from 'src/assets/data';
 import { USER_STATUS_OPTIONS } from 'src/_mock';
 
+import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import toast from 'react-hot-toast';
 
 // ----------------------------------------------------------------------
 
-export default function UserQuickEditForm({ currentUser, open, onClose }) {
+export default function AdminCreateManager({ currentUser, open, onClose }) {
+  const { enqueueSnackbar } = useSnackbar();
+
   const { getAdmins } = useGetAdmins();
 
   const NewUserSchema = Yup.object().shape({
@@ -35,24 +38,16 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
     country: Yup.string().required('Country is required'),
     designation: Yup.string().required('Designation is required'),
     adminRole: Yup.string().required('Role is required'),
-    mode: Yup.string().required('Mode is required'),
   });
+  const defaultValues = {
+    name: '',
+    email: '',
+    phoneNumber: '',
+    country: '',
+    adminRole: '',
+    designation: '',
+  };
 
-  const defaultValues = useMemo(
-    () => ({
-      name: currentUser?.name || '',
-      email: currentUser?.email || '',
-      phoneNumber: currentUser?.phoneNumber || '',
-      country: currentUser?.country || '',
-      status: currentUser?.status,
-      adminRole: currentUser?.admin?.adminRole || '',
-      designation: currentUser?.admin?.designation || '',
-      mode: currentUser?.admin?.mode || '',
-    }),
-    [currentUser]
-  );
-
-  console.log(currentUser?.admin);
   const methods = useForm({
     resolver: yupResolver(NewUserSchema),
     defaultValues,
@@ -66,17 +61,13 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await axiosInstance.patch(endpoints.auth.updateProfileAdmin, {
-        ...data,
-        userId: currentUser?.id,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      reset();
-      onClose();
-      toast.success('Success');
-      getAdmins();
+      const response = await axiosInstance.post(endpoints.users.createAdmin, data);
+      if (response.status === 200) {
+        enqueueSnackbar('Admin created successfully', { variant: 'success' });
+        onClose();
+      }
     } catch (error) {
-      console.error(error);
+      console.log(error);
     }
   });
 
@@ -91,7 +82,7 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
       }}
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>Quick Update</DialogTitle>
+        <DialogTitle>Create Admin</DialogTitle>
 
         <DialogContent>
           <Box
@@ -104,14 +95,13 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
               sm: 'repeat(2, 1fr)',
             }}
           >
-            <RHFSelect name="status" label="Status">
+            {/* <RHFSelect name="status" label="Status">
               {USER_STATUS_OPTIONS.map((status) => (
                 <MenuItem key={status.value} value={status.value}>
                   {status.label}
                 </MenuItem>
               ))}
-            </RHFSelect>
-
+            </RHFSelect> */}
 
             <RHFTextField name="name" label="Full Name" />
             <RHFTextField name="email" label="Email Address" />
@@ -127,21 +117,14 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
               getOptionLabel={(option) => option}
             />
 
-          
-
-            <RHFTextField name="designation" label="Designation" />
-
             <RHFSelect name="adminRole" label="Role">
-              <MenuItem value="admin">Admin</MenuItem>
+              <MenuItem value="admin">CSM</MenuItem>
               <MenuItem value="finance admin">Finance Admin</MenuItem>
               <MenuItem value="bd">BD</MenuItem>
               <MenuItem value="growth">Growth</MenuItem>
             </RHFSelect>
 
-            <RHFSelect name="mode" label="Mode">
-              <MenuItem value="normal">Normal</MenuItem>
-              <MenuItem value="god">God</MenuItem>
-            </RHFSelect>
+            <RHFTextField name="designation" label="Designation" />
           </Box>
         </DialogContent>
 
@@ -159,7 +142,8 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
   );
 }
 
-UserQuickEditForm.propTypes = {
+// props valudation
+AdminCreateManager.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   currentUser: PropTypes.object,
