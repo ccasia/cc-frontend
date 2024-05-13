@@ -33,7 +33,6 @@ export default function CreatorView() {
       console.log(response);
       setCreator(response.data?.creator);
       const openFormModal = response?.data?.creator?.user?.status === 'Pending';
-      // const isDataEmpty = Object.values(response.data?.creator).some((value) => !value);
       setDialogOpen(openFormModal);
     }
   };

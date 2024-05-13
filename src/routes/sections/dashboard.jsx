@@ -6,13 +6,13 @@ import { AuthGuard, RoleBasedGuard } from 'src/auth/guard';
 
 import { LoadingScreen } from 'src/components/loading-screen';
 
-import CreatorList from 'src/sections/creator/creator-list';
-
 // ----------------------------------------------------------------------
 
 const IndexPage = lazy(() => import('src/pages/dashboard/one'));
 const ProfilePage = lazy(() => import('src/pages/dashboard/profile'));
-const ManagersPage = lazy(() => import('src/pages/dashboard/managers'));
+const ManagersPage = lazy(() => import('src/pages/dashboard/admin'));
+const CreatorList = lazy(() => import('src/pages/dashboard/creator/list'));
+const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'));
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -51,6 +51,10 @@ export const dashboardRoutes = [
             <CreatorList />
           </RoleBasedGuard>
         ),
+      },
+      {
+        path: 'mediakit',
+        element: <CreatorMediaKit />,
       },
     ],
   },

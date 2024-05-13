@@ -28,6 +28,7 @@ export const paths = {
     },
     creator: {
       root: `${ROOTS.DASHBOARD}/creator`,
+      mediaKit: `${ROOTS.DASHBOARD}/mediakit`,
     },
   },
 };

@@ -84,7 +84,14 @@ export function useNavData() {
   } else {
     items = [
       {
-        items: [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }],
+        items: [
+          { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
+          {
+            title: 'Media Kit',
+            path: paths.dashboard.creator.mediaKit,
+            icon: <Iconify icon="flowbite:profile-card-outline" />,
+          },
+        ],
       },
     ];
   }
