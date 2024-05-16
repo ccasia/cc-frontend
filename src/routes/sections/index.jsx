@@ -35,5 +35,6 @@ export default function Router() {
     // No match 404
     { path: '*', element: <Navigate to="/404" replace /> },
     { path: '/adminInvite', element: <Navigate to="/404" replace /> },
+    // { path: '/calendar', element: <Calendar /> },
   ]);
 }

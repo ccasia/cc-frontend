@@ -6,6 +6,8 @@ import { AuthGuard, RoleBasedGuard } from 'src/auth/guard';
 
 import { LoadingScreen } from 'src/components/loading-screen';
 
+import { CalendarView } from 'src/sections/calendar/view';
+
 // ----------------------------------------------------------------------
 
 const IndexPage = lazy(() => import('src/pages/dashboard/one'));
@@ -58,7 +60,11 @@ export const dashboardRoutes = [
       },
       {
         path: 'mediakit',
-        element: <CreatorMediaKit />,
+        element: (
+          <RoleBasedGuard roles={['creator', 'god']} hasContent>
+            <CreatorMediaKit />,
+          </RoleBasedGuard>
+        ),
       },
       {
         path: 'landing',
@@ -72,6 +78,10 @@ export const dashboardRoutes = [
             element: <BrandLists />,
           },
         ],
+      },
+      {
+        path: 'calendar',
+        element: <CalendarView />,
       },
     ],
   },

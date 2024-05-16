@@ -42,6 +42,7 @@ const ICONS = {
   ecommerce: icon('ic_ecommerce'),
   analytics: icon('ic_analytics'),
   dashboard: icon('ic_dashboard'),
+  // calendar: icon('lets-icons:calendar-duotone'),
 };
 
 // ----------------------------------------------------------------------
@@ -137,6 +138,16 @@ export function useNavData() {
       },
 
       ...navigations,
+      {
+        subheader: 'Management',
+        items: [
+          {
+            title: 'Calendar',
+            path: paths.dashboard.creator.mediaKit,
+            icon: ICONS.calendar,
+          },
+        ],
+      },
     ],
     [navigations]
   );
