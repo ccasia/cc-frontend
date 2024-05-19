@@ -15,6 +15,10 @@ const ProfilePage = lazy(() => import('src/pages/dashboard/profile'));
 const ManagersPage = lazy(() => import('src/pages/dashboard/admin'));
 const CreatorList = lazy(() => import('src/pages/dashboard/creator/list'));
 const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'));
+const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
+const CreateCampaign = lazy(() => import('src/pages/dashboard/campaign/createCampaign'));
+const ViewCampaign = lazy(() => import('src/pages/dashboard/campaign/discovery'));
+
 
 // Landing Page temporary
 const CreatorLists = lazy(() => import('src/pages/dashboard/landing/creator'));
@@ -80,9 +84,27 @@ export const dashboardRoutes = [
         ],
       },
       {
+        path:'campaign',
+        children:[
+          {
+            path: 'manage',
+            element: <ManageCampaign />,
+          },
+          {
+            path: 'create',
+            element: <CreateCampaign />,
+          },
+          {
+            path: 'discover',
+            element: <ViewCampaign />,
+          },
+        ]
+      },
+      {
         path: 'calendar',
         element: <CalendarView />,
       },
+      
     ],
   },
 ];

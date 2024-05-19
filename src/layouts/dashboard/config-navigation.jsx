@@ -6,6 +6,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
+import { sub } from 'date-fns';
 
 // ----------------------------------------------------------------------
 
@@ -89,6 +90,27 @@ export function useNavData() {
               },
             ],
           },
+          {
+            subheader: 'campaign',
+            items: [
+              {
+                title: 'Manage Campaign',
+                path: paths.dashboard.campaign.manage,
+                icon: <Iconify icon="fluent:people-team-28-regular" />,
+              },
+              {
+                title: 'Create Campaign',
+                path: paths.dashboard.campaign.create,
+                icon: <Iconify icon="fluent:people-team-28-regular" />,
+              },
+              {
+                title: 'Discover Campaign',
+                path: paths.dashboard.campaign.view,
+                icon: <Iconify icon="fluent:people-team-28-regular" />,
+              },
+            ],
+            // items: [{ title: 'Calendar', path: paths.dashboard.creator.mediaKit, icon: ICONS.calendar }],
+          }
         ];
         break;
       case 'normal':
