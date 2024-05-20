@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import isEqual from 'lodash/isEqual';
-import toast, { Toaster } from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 import { useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
@@ -109,8 +109,6 @@ function CreatorTableView() {
 
   const confirm = useBoolean();
 
-  
-
   const [tableData, setTableData] = useState(creators);
 
   const [filters, setFilters] = useState(defaultFilters);
@@ -165,10 +163,11 @@ function CreatorTableView() {
       try {
         await axiosInstance.delete(`${endpoints.creators.deleteCreator}/${id}`);
         confirm.onFalse();
-        toast.success('Successfully deleted Creator');
+        enqueueSnackbar('Successfully deleted Creator');
+        // toast.success('Successfully deleted Creator');
       } catch (error) {
-        console.log(error);
-        toast.error('Error delete Creator');
+        enqueueSnackbar('Error delete Creator', { variant: 'error' });
+        // toast.error('Error delete Creator');
       }
     },
 

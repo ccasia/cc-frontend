@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
-import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -47,10 +47,11 @@ const AccountSecurity = () => {
     try {
       const res = await axiosInstance.patch(endpoints.auth.changePass, data);
       setLoading(false);
-      toast.success(res?.data?.message);
+      enqueueSnackbar(res?.data?.message);
+      // toast.success(res?.data?.message);
       methods.reset(defaultValues);
     } catch (error) {
-      alert(error.message);
+      enqueueSnackbar(error.message, { variant: 'error' });
     } finally {
       setLoading(false);
     }

@@ -34,5 +34,8 @@ export const paths = {
       creator: `${ROOTS.DASHBOARD}/landing/creator`,
       brand: `${ROOTS.DASHBOARD}/landing/brand`,
     },
+    calendar: {
+      root: `${ROOTS.DASHBOARD}/calendar`,
+    },
   },
 };

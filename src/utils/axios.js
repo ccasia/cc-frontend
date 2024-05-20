@@ -8,7 +8,7 @@ const axiosInstance = axios.create({ baseURL: HOST_API });
 axiosInstance.defaults.withCredentials = true;
 
 axiosInstance.interceptors.request.use((request) => {
-  request.headers.lol = 'Cult Creative App';
+  request.headers.app = 'Cult Creative App';
   return request;
 });
 
@@ -50,7 +50,7 @@ export const endpoints = {
     updateCreator: '/api/auth/updateCreator',
     verifyCreator: '/api/auth/verifyCreator',
   },
-  creators:{
+  creators: {
     getCreators: '/api/creator/getAll',
     deleteCreator: '/api/creator/delete',
   },
@@ -58,7 +58,7 @@ export const endpoints = {
     newAdmin: '/api/user/newAdmin',
     admins: '/api/user/admins',
     updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
-    createAdmin: '/api/user/createAdmin', 
+    createAdmin: '/api/user/createAdmin',
   },
   mail: {
     list: '/api/mail/list',
@@ -79,5 +79,11 @@ export const endpoints = {
   },
   admin: {
     delete: '/api/admin',
+  },
+  event: {
+    list: '/api/event/',
+    create: '/api/event/createEvent',
+    delete: '/api/event/deleteEvent',
+    update: '/api/event/updateEvent',
   },
 };

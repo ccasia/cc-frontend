@@ -1,8 +1,8 @@
 import * as Yup from 'yup';
 import { useMemo } from 'react';
 import PropTypes from 'prop-types';
-import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
@@ -73,7 +73,13 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       onClose();
-      toast.success('Success');
+      enqueueSnackbar('Success', {
+        anchorOrigin: {
+          horizontal: 'center',
+          vertical: 'top',
+        },
+      });
+      // toast.success('Success');
       getAdmins();
     } catch (error) {
       console.error(error);
@@ -112,7 +118,6 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
               ))}
             </RHFSelect>
 
-
             <RHFTextField name="name" label="Full Name" />
             <RHFTextField name="email" label="Email Address" />
             <RHFTextField name="phoneNumber" label="Phone Number" />
@@ -126,8 +131,6 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
               options={countries.map((option) => option.label)}
               getOptionLabel={(option) => option}
             />
-
-          
 
             <RHFTextField name="designation" label="Designation" />
 

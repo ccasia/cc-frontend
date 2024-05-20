@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
 
-import { fetcher, endpoints } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-const URL = endpoints.calendar;
+const URL = endpoints.event.list;
 
 const options = {
   revalidateIfStale: false,
@@ -21,6 +21,8 @@ export function useGetEvents() {
       ...event,
       textColor: event.color,
     }));
+
+    console.log(events);
 
     return {
       events: events || [],
@@ -40,9 +42,8 @@ export async function createEvent(eventData) {
   /**
    * Work on server
    */
-  // const data = { eventData };
-  // await axios.post(URL, data);
-
+  const data = { eventData };
+  await axiosInstance.post(endpoints.event.create, data);
   /**
    * Work in local
    */
@@ -50,7 +51,6 @@ export async function createEvent(eventData) {
     URL,
     (currentData) => {
       const events = [...currentData.events, eventData];
-
       return {
         ...currentData,
         events,
@@ -66,8 +66,9 @@ export async function updateEvent(eventData) {
   /**
    * Work on server
    */
-  // const data = { eventData };
-  // await axios.put(endpoints.calendar, data);
+
+  const data = { eventData };
+  await axiosInstance.put(endpoints.event.update, data);
 
   /**
    * Work in local
@@ -94,8 +95,8 @@ export async function deleteEvent(eventId) {
   /**
    * Work on server
    */
-  // const data = { eventId };
-  // await axios.patch(endpoints.calendar, data);
+  const data = { eventId };
+  await axiosInstance.patch(endpoints.event.delete, data);
 
   /**
    * Work in local

@@ -143,7 +143,7 @@ export function useNavData() {
         items: [
           {
             title: 'Calendar',
-            path: paths.dashboard.creator.mediaKit,
+            path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,
           },
         ],

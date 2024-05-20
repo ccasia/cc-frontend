@@ -1,8 +1,9 @@
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
+import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
-import toast, { Toaster } from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 import React, { useState, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
@@ -48,6 +49,7 @@ import AccountNotifications from '../creator/profile/notification';
 dayjs.extend(localizedFormat);
 
 const Profile = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const settings = useSettingsContext();
   const theme = useTheme();
   const { user } = useAuthContext();
@@ -98,10 +100,12 @@ const Profile = () => {
           },
         }
       );
-      toast.success('Successfully updated profile.');
+      enqueueSnackbar('Successfully updated profile.');
+
+      // toast.success('Successfully updated profile.');
     } catch (error) {
-      console.log(error);
-      toast.error('Error in updating profile');
+      enqueueSnackbar('Error in updating profile', { variant: 'error' });
+      // toast.error('Error in updating profile');
     }
   });
 
