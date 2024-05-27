@@ -1,3 +1,5 @@
+import { useLocales as getLocales } from 'src/locales';
+
 export function fData(inputValue) {
   if (!inputValue) return '';
 
@@ -16,4 +18,47 @@ export function fData(inputValue) {
   const fm = `${parseFloat((number / baseValue ** index).toFixed(decimal))} ${units[index]}`;
 
   return fm;
+}
+
+function getLocaleCode() {
+  const {
+    currentLang: {
+      numberFormat: { code, currency },
+    },
+  } = getLocales();
+
+  return {
+    code: code ?? 'en-US',
+    currency: currency ?? 'USD',
+  };
+}
+
+export function fNumber(inputValue) {
+  const { code } = getLocaleCode();
+
+  if (!inputValue) return '';
+
+  const number = Number(inputValue);
+
+  const fm = new Intl.NumberFormat(code, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(number);
+
+  return fm;
+}
+
+export function fShortenNumber(inputValue) {
+  const { code } = getLocaleCode();
+
+  if (!inputValue) return '';
+
+  const number = Number(inputValue);
+
+  const fm = new Intl.NumberFormat(code, {
+    notation: 'compact',
+    maximumFractionDigits: 2,
+  }).format(number);
+
+  return fm.replace(/[A-Z]/g, (match) => match.toLowerCase());
 }

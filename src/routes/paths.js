@@ -27,8 +27,10 @@ export const paths = {
       profile: `${ROOTS.DASHBOARD}/user/profile`,
     },
     creator: {
-      root: `${ROOTS.DASHBOARD}/creator`,
-      mediaKit: `${ROOTS.DASHBOARD}/mediakit`,
+      root: `${ROOTS.DASHBOARD}/creator/lists`,
+      mediaKit: (id) => `${ROOTS.DASHBOARD}/creator/media-kits/${id}`,
+      mediaKitCreator: `${ROOTS.DASHBOARD}/mediakit`,
+      mediaKitLists: `${ROOTS.DASHBOARD}/creator/media-kits`,
     },
     landing: {
       creator: `${ROOTS.DASHBOARD}/landing/creator`,

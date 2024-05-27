@@ -54,7 +54,7 @@ export function useNavData() {
   let navigations;
 
   // Differentiate the list of sidebar for different user role
-  if (user.admin) {
+  if (user?.role === 'admin') {
     switch (user?.admin?.mode) {
       case 'god':
         navigations = [
@@ -70,6 +70,11 @@ export function useNavData() {
               {
                 title: 'Creator',
                 path: paths.dashboard.creator.root,
+                icon: <Iconify icon="solar:users-group-rounded-bold" />,
+              },
+              {
+                title: 'Media Kits',
+                path: paths.dashboard.creator.mediaKitLists,
                 icon: <Iconify icon="solar:users-group-rounded-bold" />,
               },
             ],
@@ -123,7 +128,7 @@ export function useNavData() {
           { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
           {
             title: 'Media Kit',
-            path: paths.dashboard.creator.mediaKit,
+            path: paths.dashboard.creator.mediaKitCreator,
             icon: <Iconify icon="flowbite:profile-card-outline" />,
           },
         ],
@@ -136,7 +141,6 @@ export function useNavData() {
       {
         subheader: 'Cult Creative',
       },
-
       ...navigations,
       {
         subheader: 'Management',
@@ -149,6 +153,7 @@ export function useNavData() {
         ],
       },
     ],
+
     [navigations]
   );
 

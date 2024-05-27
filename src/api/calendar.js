@@ -22,8 +22,6 @@ export function useGetEvents() {
       textColor: event.color,
     }));
 
-    console.log(events);
-
     return {
       events: events || [],
       eventsLoading: isLoading,

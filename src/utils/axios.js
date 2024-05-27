@@ -52,6 +52,7 @@ export const endpoints = {
   },
   creators: {
     getCreators: '/api/creator/getAll',
+    getCreatorById: '/api/creator/getCreatorByID',
     deleteCreator: '/api/creator/delete',
   },
   users: {
