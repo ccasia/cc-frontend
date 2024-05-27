@@ -15,10 +15,16 @@ const ProfilePage = lazy(() => import('src/pages/dashboard/profile'));
 const ManagersPage = lazy(() => import('src/pages/dashboard/admin'));
 const CreatorList = lazy(() => import('src/pages/dashboard/creator/list'));
 const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'));
+
+// Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
 const CreateCampaign = lazy(() => import('src/pages/dashboard/campaign/createCampaign'));
 const ViewCampaign = lazy(() => import('src/pages/dashboard/campaign/discovery'));
 
+// Brand
+const BrandManage = lazy(() => import('src/pages/dashboard/brand/manageBrand'));
+const BrandCreate = lazy(() => import('src/pages/dashboard/brand/createBrand'));
+const BrandDiscover = lazy(() => import('src/pages/dashboard/brand/discoverBrand'));
 
 // Landing Page temporary
 const CreatorLists = lazy(() => import('src/pages/dashboard/landing/creator'));
@@ -84,8 +90,25 @@ export const dashboardRoutes = [
         ],
       },
       {
-        path:'campaign',
-        children:[
+        path: 'brand',
+        children: [
+          {
+            path: 'manage',
+            element: <BrandManage />,
+          },
+          {
+            path: 'create',
+            element: <BrandCreate />,
+          },
+          {
+            path: 'discover',
+            element: <BrandDiscover />,
+          },
+        ],
+      },
+      {
+        path: 'campaign',
+        children: [
           {
             path: 'manage',
             element: <ManageCampaign />,
@@ -98,13 +121,12 @@ export const dashboardRoutes = [
             path: 'discover',
             element: <ViewCampaign />,
           },
-        ]
+        ],
       },
       {
         path: 'calendar',
         element: <CalendarView />,
       },
-      
     ],
   },
 ];

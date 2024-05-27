@@ -80,4 +80,9 @@ export const endpoints = {
   admin: {
     delete: '/api/admin',
   },
+  company:{
+    create: '/api/company/createCompany',
+    getAll : 'api/company/getCompanies',
+    createBrand: '/api/company/createBrand',
+  }
 };
