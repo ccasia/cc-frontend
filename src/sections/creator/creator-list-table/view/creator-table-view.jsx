@@ -162,9 +162,10 @@ function CreatorTableView() {
     async (id) => {
       try {
         await axiosInstance.delete(`${endpoints.creators.deleteCreator}/${id}`);
+        const deleteRows = tableData.filter((row) => row.id !== id);
         confirm.onFalse();
+        setTableData(deleteRows);
         enqueueSnackbar('Successfully deleted Creator');
-        // toast.success('Successfully deleted Creator');
       } catch (error) {
         enqueueSnackbar('Error delete Creator', { variant: 'error' });
         // toast.error('Error delete Creator');

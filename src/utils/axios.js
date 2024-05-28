@@ -54,6 +54,7 @@ export const endpoints = {
     getCreators: '/api/creator/getAll',
     getCreatorById: '/api/creator/getCreatorByID',
     deleteCreator: '/api/creator/delete',
+    updateCreator: '/api/creator/update-creator',
   },
   users: {
     newAdmin: '/api/user/newAdmin',
@@ -81,9 +82,9 @@ export const endpoints = {
   admin: {
     delete: '/api/admin',
   },
-  company:{
+  company: {
     create: '/api/company/createCompany',
-    getAll : 'api/company/getCompanies',
+    getAll: 'api/company/getCompanies',
     createBrand: '/api/company/createBrand',
   },
   event: {
@@ -92,5 +93,4 @@ export const endpoints = {
     delete: '/api/event/deleteEvent',
     update: '/api/event/updateEvent',
   },
-
 };

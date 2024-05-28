@@ -4,6 +4,7 @@ import * as Yup from 'yup';
 import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
@@ -14,6 +15,8 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 import { USER_STATUS_OPTIONS } from 'src/_mock';
@@ -53,21 +56,17 @@ export default function CeatorQuickForm({ currentUser, open, onClose }) {
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
-
-    // try {
-    //   await axiosInstance.patch(endpoints.auth.updateProfileAdmin, {
-    //     ...data,
-    //     userId: currentUser?.id,
-    //   });
-    //   await new Promise((resolve) => setTimeout(resolve, 500));
-    //   reset();
-    //   onClose();
-    //   toast.success('Success');
-    //   getAdmins();
-    // } catch (error) {
-    //   console.error(error);
-    // }
+    try {
+      await axiosInstance.patch(endpoints.creators.updateCreator, {
+        ...data,
+        id: currentUser?.id,
+      });
+      onClose();
+      enqueueSnackbar('Creator info has been updated.');
+    } catch (error) {
+      console.log(error);
+      enqueueSnackbar('Error');
+    }
   });
 
   return (

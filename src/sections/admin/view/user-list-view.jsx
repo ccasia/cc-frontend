@@ -163,14 +163,14 @@ export default function UserListView() {
     async (id) => {
       try {
         await axiosInstance.delete(`${endpoints.admin.delete}/${id}`);
+        const deleteRows = tableData.filter((row) => row.id !== id);
+        setTableData(deleteRows);
         enqueueSnackbar('Successfully deleted admin');
-        // toast.success('Successfully deleted admin');
       } catch (error) {
         enqueueSnackbar('Error delete admin', { variant: 'error' });
-        // toast.error('Error delete admin');
       }
     },
-    [enqueueSnackbar]
+    [enqueueSnackbar, tableData]
   );
 
   const handleDeleteRows = useCallback(() => {
