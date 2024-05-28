@@ -61,78 +61,148 @@ export function useNavData() {
           {
             items: [
               { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
-              { title: 'Admin', path: paths.dashboard.admins, icon: ICONS.user },
+              {
+                title: 'Admin',
+                path: paths.dashboard.admins,
+                icon: ICONS.user,
+                children: [
+                  {
+                    title: 'Lists',
+                    path: paths.dashboard.admins,
+                  },
+                ],
+              },
             ],
           },
           {
-            subheader: 'Creator',
             items: [
               {
                 title: 'Creator',
                 path: paths.dashboard.creator.root,
                 icon: <Iconify icon="solar:users-group-rounded-bold" />,
-              },
-              {
-                title: 'Media Kits',
-                path: paths.dashboard.creator.mediaKitLists,
-                icon: <Iconify icon="solar:users-group-rounded-bold" />,
+                children: [
+                  {
+                    title: 'Creator',
+                    path: paths.dashboard.creator.root,
+                    // icon: <Iconify icon="solar:users-group-rounded-bold" />,
+                  },
+                  {
+                    title: 'Media Kits',
+                    path: paths.dashboard.creator.mediaKitLists,
+                    // icon: <Iconify icon="solar:users-group-rounded-bold" />,
+                  },
+                ],
               },
             ],
           },
           {
-            subheader: 'Landing pages',
             items: [
               {
-                title: 'Creator list',
+                title: 'Landing pages',
                 path: paths.dashboard.landing.creator,
                 icon: <Iconify icon="fluent:people-team-28-regular" />,
-              },
-              {
-                title: 'Brands list',
-                path: paths.dashboard.landing.brand,
-                icon: <Iconify icon="material-symbols:corporate-fare" />,
+                children: [
+                  {
+                    title: 'Creator list',
+                    path: paths.dashboard.landing.creator,
+                    // icon: <Iconify icon="fluent:people-team-28-regular" />,
+                  },
+                  {
+                    title: 'Brands list',
+                    path: paths.dashboard.landing.brand,
+                    // icon: <Iconify icon="material-symbols:corporate-fare" />,
+                  },
+                ],
               },
             ],
           },
           {
-            subheader: 'Brand',
             items: [
               {
-                title: 'Discover Brand',
+                title: 'Brands',
                 path: paths.dashboard.brand.discover,
                 icon: <Iconify icon="fluent:people-team-28-regular" />,
-              },
-              {
-                title: 'Create Brand',
-                path: paths.dashboard.brand.create,
-                icon: <Iconify icon="gridicons:create" />,
-              },
-              {
-                title: 'Manage Brand',
-                path: paths.dashboard.brand.manage,
-                icon: <Iconify icon="mingcute:settings-3-fill" />,
+                children: [
+                  {
+                    title: 'Discover Brand',
+                    path: paths.dashboard.brand.discover,
+                    // icon: <Iconify icon="fluent:people-team-28-regular" />,
+                  },
+                  {
+                    title: 'Create Brand',
+                    path: paths.dashboard.brand.create,
+                    // icon: <Iconify icon="gridicons:create" />,
+                  },
+                  {
+                    title: 'Manage Brand',
+                    path: paths.dashboard.brand.manage,
+                    // icon: <Iconify icon="mingcute:settings-3-fill" />,
+                  },
+                ],
               },
             ],
+
+            // items: [
+            //   {
+            //     title: 'Discover Brand',
+            //     path: paths.dashboard.brand.discover,
+            //     icon: <Iconify icon="fluent:people-team-28-regular" />,
+            //   },
+            //   {
+            //     title: 'Create Brand',
+            //     path: paths.dashboard.brand.create,
+            //     icon: <Iconify icon="gridicons:create" />,
+            //   },
+            //   {
+            //     title: 'Manage Brand',
+            //     path: paths.dashboard.brand.manage,
+            //     icon: <Iconify icon="mingcute:settings-3-fill" />,
+            //   },
+            // ],
           },
           {
-            subheader: 'campaign',
             items: [
               {
-                title: 'Discover Campaign',
+                title: 'Campaign',
                 path: paths.dashboard.campaign.view,
                 icon: <Iconify icon="material-symbols:explore-outline" />,
-              },
-              {
-                title: 'Create Campaign',
-                path: paths.dashboard.campaign.create,
-                icon: <Iconify icon="gridicons:create" />,
-              },
-              {
-                title: 'Manage Campaign',
-                path: paths.dashboard.campaign.manage,
-                icon: <Iconify icon="mingcute:settings-3-fill" />,
+                children: [
+                  {
+                    title: 'Discover Campaign',
+                    path: paths.dashboard.campaign.view,
+                    // icon: <Iconify icon="material-symbols:explore-outline" />,
+                  },
+                  {
+                    title: 'Create Campaign',
+                    path: paths.dashboard.campaign.create,
+                    // icon: <Iconify icon="gridicons:create" />,
+                  },
+                  {
+                    title: 'Manage Campaign',
+                    path: paths.dashboard.campaign.manage,
+                    // icon: <Iconify icon="mingcute:settings-3-fill" />,
+                  },
+                ],
               },
             ],
+
+            // items: [
+            //   {
+            //     title: 'Discover Campaign',
+            //     path: paths.dashboard.campaign.view,
+            //     icon: <Iconify icon="material-symbols:explore-outline" />,
+            //   },
+            //   {
+            //     title: 'Create Campaign',
+            //     path: paths.dashboard.campaign.create,
+            //     icon: <Iconify icon="gridicons:create" />,
+            //   },
+            //   {
+            //     title: 'Manage Campaign',
+            //     path: paths.dashboard.campaign.manage,
+            //     icon: <Iconify icon="mingcute:settings-3-fill" />,
+            //   },
+            // ],
           },
         ];
         break;

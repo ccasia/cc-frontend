@@ -2,11 +2,11 @@
 import { useState } from 'react';
 
 import Box from '@mui/material/Box';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
-import CompanyBrandBasic from './FirstForms/companyBrandBasic';
 import BrandWithCompany from './FirstForms/brandWithCompany';
+import CompanyBrandBasic from './FirstForms/companyBrandBasic';
 
 function CompanyBrandForm() {
   const [role, setRole] = useState('admin');

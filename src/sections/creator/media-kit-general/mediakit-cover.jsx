@@ -16,7 +16,9 @@ const MediaKitCover = ({ user }) => {
       }}
     >
       <Stack direction="column" alignItems="center" gap={2}>
-        <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }}>N</Avatar>
+        <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }}>
+          {user?.name?.charAt(0).toUpperCase()}
+        </Avatar>
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
           {user?.name}
         </Typography>
