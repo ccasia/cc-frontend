@@ -22,6 +22,16 @@ export const paths = {
   dashboard: {
     root: ROOTS.DASHBOARD,
     admins: `${ROOTS.DASHBOARD}/admins`,
+    brand:{
+      manage: `${ROOTS.DASHBOARD}/brand/manage`,
+      create: `${ROOTS.DASHBOARD}/brand/create`,
+      discover: `${ROOTS.DASHBOARD}/brand/discover`,
+    },
+    campaign :{
+      manage: `${ROOTS.DASHBOARD}/campaign/manage`,
+      create: `${ROOTS.DASHBOARD}/campaign/create`,
+      view: `${ROOTS.DASHBOARD}/campaign/discover`,
+    },
     user: {
       root: `${ROOTS.DASHBOARD}/user`,
       profile: `${ROOTS.DASHBOARD}/user/profile`,

@@ -81,10 +81,16 @@ export const endpoints = {
   admin: {
     delete: '/api/admin',
   },
+  company:{
+    create: '/api/company/createCompany',
+    getAll : 'api/company/getCompanies',
+    createBrand: '/api/company/createBrand',
+  },
   event: {
     list: '/api/event/',
     create: '/api/event/createEvent',
     delete: '/api/event/deleteEvent',
     update: '/api/event/updateEvent',
   },
+
 };

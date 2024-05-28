@@ -94,6 +94,46 @@ export function useNavData() {
               },
             ],
           },
+          {
+            subheader: 'Brand',
+            items: [
+              {
+                title: 'Discover Brand',
+                path: paths.dashboard.brand.discover,
+                icon: <Iconify icon="fluent:people-team-28-regular" />,
+              },
+              {
+                title: 'Create Brand',
+                path: paths.dashboard.brand.create,
+                icon: <Iconify icon="gridicons:create" />,
+              },
+              {
+                title: 'Manage Brand',
+                path: paths.dashboard.brand.manage,
+                icon: <Iconify icon="mingcute:settings-3-fill" />,
+              },
+            ],
+          },
+          {
+            subheader: 'campaign',
+            items: [
+              {
+                title: 'Discover Campaign',
+                path: paths.dashboard.campaign.view,
+                icon: <Iconify icon="material-symbols:explore-outline" />,
+              },
+              {
+                title: 'Create Campaign',
+                path: paths.dashboard.campaign.create,
+                icon: <Iconify icon="gridicons:create" />,
+              },
+              {
+                title: 'Manage Campaign',
+                path: paths.dashboard.campaign.manage,
+                icon: <Iconify icon="mingcute:settings-3-fill" />,
+              },
+            ],
+          },
         ];
         break;
       case 'normal':

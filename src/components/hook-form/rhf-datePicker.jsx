@@ -11,12 +11,14 @@ export default function RHFDatePicker({ name, helperText, type, ...other }) {
 
   return (
     <Controller
+    
       name={name}
       control={control}
       render={({ field, fieldState: { error } }) => (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DemoContainer components={['DatePicker']}>
             <DatePicker
+            
               {...field}
               slotProps={{
                 textField: {
