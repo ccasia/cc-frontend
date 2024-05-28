@@ -125,8 +125,8 @@ export default function useCalendar() {
     updateEvent({
       id: event.id,
       allDay: event.allDay,
-      start: fTimestamp(event.start),
-      end: fTimestamp(event.end),
+      start: event.start,
+      end: event.end,
     });
   }, []);
 

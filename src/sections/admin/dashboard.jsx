@@ -19,7 +19,7 @@ const DashboardAdmin = () => {
       {user?.admin?.designation === 'Finance' && <DashboardFinance />}
       {user?.admin?.designation === 'CSM' && (
         <Grid container columnSpacing={5}>
-          {JSON.stringify(user)}
+          {/* {JSON.stringify(user)} */}
           <Grid item xs={12} md={8}>
             <Box
               sx={{

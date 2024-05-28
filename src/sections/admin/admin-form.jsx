@@ -1,7 +1,8 @@
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
+import { Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router';
-import toast, { Toaster } from 'react-hot-toast';
+import { enqueueSnackbar } from 'notistack';
 import React, { useState, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -72,10 +73,15 @@ const AdminForm = () => {
   const onSubmit = handleSubmit(async (data) => {
     try {
       await axiosInstance.put(endpoints.users.updateProfileNewAdmin, { data, userId: user.id });
-      toast.success('You are now verified to use the system!');
       navigate('/auth/jwt/admin/login');
+      enqueueSnackbar('You are now verified to use the system!', {
+        variant: 'success',
+      });
+      // toast.success('You are now verified to use the system!');
     } catch (error) {
-      alert(error);
+      enqueueSnackbar('Please contact our admin', {
+        variant: 'error',
+      });
       reset();
       setErrorMsg(typeof error === 'string' ? error : error.message);
     }

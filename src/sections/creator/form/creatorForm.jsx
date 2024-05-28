@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { useMemo, useState } from 'react';
-import { SnackbarProvider } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { enqueueSnackbar, SnackbarProvider } from 'notistack';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -39,29 +39,28 @@ const steps = [
   'Rate your Interests and Industries',
 ];
 
+export const langList = ['English', 'Malay', 'Mandarin', 'Hindi', 'All of the above', 'Others'];
+export const intersList = [
+  'Art',
+  'Beauty',
+  'Business',
+  'Fashion',
+  'Fitness',
+  'Food',
+  'Gaming',
+  'Health',
+  'Lifestyle',
+  'Music',
+  'Sports',
+  'Technology',
+  'Travel',
+];
+
 export default function CreatorForm({ creator, open, onClose }) {
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
   const [ratingIndustries, setRatingIndustries] = useState([]);
-
-  const langList = ['English', 'Malay', 'Mandarin', 'Hindi', 'All of the above', 'Others'];
-
-  const intersList = [
-    'Art',
-    'Beauty',
-    'Business',
-    'Fashion',
-    'Fitness',
-    'Food',
-    'Gaming',
-    'Health',
-    'Lifestyle',
-    'Music',
-    'Sports',
-    'Technology',
-    'Travel',
-  ];
 
   // First step schema
   const firstSchema = Yup.object().shape({
@@ -175,17 +174,14 @@ export default function CreatorForm({ creator, open, onClose }) {
 
     try {
       await axiosInstance.put(endpoints.auth.updateCreator, newData);
-      toast.success('Data updated successfully');
+      enqueueSnackbar('Data updated successfully');
+
       onClose();
     } catch (error) {
-      toast.error('Something went wrong');
+      enqueueSnackbar('Something went wrong', {
+        variant: 'error',
+      });
     }
-
-    // if (Object.keys(errors).length > 0) {
-    //   toast.error('Please fill all the required fields');
-    //   setActiveStep((prevActiveStep) => prevActiveStep - 2);
-    // } else {
-    // }
   });
 
   function getStepContent(step) {

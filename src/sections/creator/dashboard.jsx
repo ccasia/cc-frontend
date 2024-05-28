@@ -32,7 +32,7 @@ export default function CreatorView() {
       // check if role is creator
       if (role === 'creator') {
         const response = await axios.get(endpoints.auth.checkCreator);
-        console.log(response);
+
         setCreator(response.data?.creator);
         const openFormModal = response?.data?.creator?.user?.status === 'pending';
         setDialogOpen(openFormModal);

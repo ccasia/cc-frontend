@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 
-import { Tab, Card, Tabs, Container } from '@mui/material';
+import { Tab, Box, Card, Tabs, Container } from '@mui/material';
 
-import { useAuthContext } from 'src/auth/hooks';
+import { useGetCreatorByID } from 'src/hooks/use-get-creators';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -10,21 +10,59 @@ import { useSettingsContext } from 'src/components/settings';
 import MediaKitCover from './mediakit-cover';
 import MediaKitSocial from './media-kit-social/view';
 
-const MediaKit = () => {
+// eslint-disable-next-line react/prop-types
+const MediaKit = ({ id }) => {
   const settings = useSettingsContext();
-  const { user } = useAuthContext();
+  const { creator } = useGetCreatorByID(id);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const [currentTab, setCurrentTab] = useState('instagram');
 
+  const toggle = () => {
+    setIsFullScreen(!isFullScreen);
+  };
+
+  const styleFullScreen = {
+    minWidth: '100vw',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 10000,
+    bgcolor: (theme) => theme.palette.grey[900],
+  };
+
   return (
     <Container
-      maxWidth={settings.themeStretch ? false : 'xl'}
-      sx={{
-        border: (theme) => `dashed 1px ${theme.palette.divider}`,
-        borderRadius: 2,
-      }}
+      maxWidth={settings.themeStretch ? false : 'lg'}
+      sx={
+        isFullScreen
+          ? {
+              ...styleFullScreen,
+            }
+          : {
+              border: (theme) => `dashed 1px ${theme.palette.divider}`,
+              borderRadius: 2,
+              position: 'relative',
+            }
+      }
     >
-      {/* {JSON.stringify(user)} */}
+      <Box
+        component="div"
+        sx={{
+          position: 'absolute',
+          top: 20,
+          right: 20,
+          cursor: 'pointer',
+          zIndex: 1000,
+        }}
+        onClick={toggle}
+      >
+        {isFullScreen ? (
+          <Iconify icon="akar-icons:reduce" />
+        ) : (
+          <Iconify icon="akar-icons:enlarge" />
+        )}
+      </Box>
       <Card
         sx={{
           mb: 3,
@@ -33,7 +71,7 @@ const MediaKit = () => {
           bgcolor: 'transparent',
         }}
       >
-        <MediaKitCover user={user} />
+        <MediaKitCover user={creator} />
 
         <Tabs
           value={currentTab}

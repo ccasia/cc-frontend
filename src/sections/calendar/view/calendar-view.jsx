@@ -20,7 +20,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import { isAfter, isBetween } from 'src/utils/format-time';
 
-import { useGetEvents } from 'src/api/calendar';
+import { updateEvent, useGetEvents } from 'src/api/calendar';
 import { CALENDAR_COLOR_OPTIONS } from 'src/_mock/_calendar';
 
 import Iconify from 'src/components/iconify';
@@ -176,12 +176,13 @@ export default function CalendarView() {
               select={onSelectRange}
               eventClick={onClickEvent}
               height={smUp ? 720 : 'auto'}
-              // eventDrop={(arg) => {
-              //   onDropEvent(arg, updateEvent);
-              // }}
-              // eventResize={(arg) => {
-              //   onResizeEvent(arg, updateEvent);
-              // }}
+              eventDrop={(arg) => {
+                // alert(JSON.stringify(arg));
+                onDropEvent(arg, updateEvent);
+              }}
+              eventResize={(arg) => {
+                onResizeEvent(arg, updateEvent);
+              }}
               plugins={[
                 listPlugin,
                 dayGridPlugin,

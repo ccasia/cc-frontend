@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import toast, { Toaster } from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 import { useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
@@ -159,14 +159,19 @@ export default function UserListView() {
     setFilters(defaultFilters);
   }, []);
 
-  const handleDeleteRow = useCallback(async (id) => {
-    try {
-      await axiosInstance.delete(`${endpoints.admin.delete}/${id}`);
-      toast.success('Successfully deleted admin');
-    } catch (error) {
-      toast.error('Error delete admin');
-    }
-  }, []);
+  const handleDeleteRow = useCallback(
+    async (id) => {
+      try {
+        await axiosInstance.delete(`${endpoints.admin.delete}/${id}`);
+        enqueueSnackbar('Successfully deleted admin');
+        // toast.success('Successfully deleted admin');
+      } catch (error) {
+        enqueueSnackbar('Error delete admin', { variant: 'error' });
+        // toast.error('Error delete admin');
+      }
+    },
+    [enqueueSnackbar]
+  );
 
   const handleDeleteRows = useCallback(() => {
     const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
@@ -198,9 +203,11 @@ export default function UserListView() {
   const handleSubmit = async (email) => {
     try {
       await axiosInstance.post(endpoints.users.newAdmin, { email });
-      toast.success('Link has been sent to admin!');
+      enqueueSnackbar('Link has been sent to admin!');
+      // toast.success('Link has been sent to admin!');
     } catch (error) {
-      toast.error(error.message);
+      enqueueSnackbar(error.message, { variant: 'error' });
+      // toast.error(error.message);
     }
   };
 
@@ -318,7 +325,7 @@ export default function UserListView() {
         {inviteAdminDialog}
 
         <AdminCreateManager open={openCreateDialog} onClose={handleCloseCreateDialog} />
-        
+
         <Card>
           <Tabs
             value={filters.status}
