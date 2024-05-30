@@ -2,8 +2,9 @@ import PropTypes from 'prop-types';
 import { memo, useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
-import Collapse from '@mui/material/Collapse';
-import ListSubheader from '@mui/material/ListSubheader';
+import { Collapse, ListSubheader } from '@mui/material';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import NavList from './nav-list';
 
@@ -18,6 +19,7 @@ function NavSectionVertical({ data, slotProps, ...other }) {
           subheader={group.subheader}
           items={group.items}
           slotProps={slotProps}
+          whoCanSee={group.roles}
         />
       ))}
     </Stack>
@@ -33,16 +35,24 @@ export default memo(NavSectionVertical);
 
 // ----------------------------------------------------------------------
 
-function Group({ subheader, items, slotProps }) {
+function Group({ subheader, items, slotProps, whoCanSee }) {
   const [open, setOpen] = useState(true);
+  const { user } = useAuthContext();
 
   const handleToggle = useCallback(() => {
     setOpen((prev) => !prev);
   }, []);
 
-  const renderContent = items?.map((list) => (
-    <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />
-  ));
+  // const renderContent = items?.map((list) => (
+  //   <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />
+  // ));
+
+  const renderContent =
+    whoCanSee &&
+    (Array.from(whoCanSee).includes(user?.role) ||
+      Array.from(whoCanSee).includes(user?.admin?.designation) ||
+      Array.from(whoCanSee).includes(user?.admin?.mode)) &&
+    items?.map((list) => <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />);
 
   return (
     <Stack sx={{ px: 2 }}>
@@ -86,4 +96,5 @@ Group.propTypes = {
   items: PropTypes.array,
   subheader: PropTypes.string,
   slotProps: PropTypes.object,
+  whoCanSee: PropTypes.array,
 };

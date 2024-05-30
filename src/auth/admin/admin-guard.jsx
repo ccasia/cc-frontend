@@ -1,6 +1,7 @@
 /* eslint-disable consistent-return */
 import PropTypes from 'prop-types';
 import { useParams } from 'react-router';
+import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback, createContext } from 'react';
 
 import { paths } from 'src/routes/paths';
@@ -30,7 +31,10 @@ const AdminGuardProvider = ({ children }) => {
       });
       setUser(res.data.user);
     } catch (error) {
-      router.push(paths.auth.jwt.login);
+      enqueueSnackbar(error?.error, {
+        variant: 'error',
+      });
+      router.push(`${paths.auth.jwt.adminLogin}/?token=${inviteToken}`);
     }
   }, [inviteToken, router]);
 

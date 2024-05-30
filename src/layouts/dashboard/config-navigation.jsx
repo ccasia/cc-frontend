@@ -2,8 +2,6 @@ import { useMemo } from 'react';
 
 import { paths } from 'src/routes/paths';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
 
@@ -48,194 +46,131 @@ const ICONS = {
 // ----------------------------------------------------------------------
 
 export function useNavData() {
-  const { user } = useAuthContext();
-
   // let items;
-  let navigations;
-
-  // Differentiate the list of sidebar for different user role
-  if (user?.role === 'admin') {
-    switch (user?.admin?.mode) {
-      case 'god':
-        navigations = [
+  const navigations = useMemo(
+    () => [
+      // roles => "god" , "normal", "designation", "admin", "creator"
+      {
+        roles: ['god', 'normal', 'creator'],
+        items: [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }],
+      },
+      {
+        roles: ['god'],
+        items: [
           {
-            items: [
-              { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
+            title: 'Admin',
+            path: paths.dashboard.admins,
+            icon: ICONS.user,
+            children: [
               {
-                title: 'Admin',
+                title: 'Lists',
                 path: paths.dashboard.admins,
-                icon: ICONS.user,
-                children: [
-                  {
-                    title: 'Lists',
-                    path: paths.dashboard.admins,
-                  },
-                ],
               },
             ],
           },
+        ],
+      },
+      {
+        roles: ['god', 'normal'],
+        items: [
           {
-            items: [
+            title: 'Creator',
+            path: paths.dashboard.creator.root,
+            icon: <Iconify icon="solar:users-group-rounded-bold" />,
+            children: [
               {
                 title: 'Creator',
                 path: paths.dashboard.creator.root,
-                icon: <Iconify icon="solar:users-group-rounded-bold" />,
-                children: [
-                  {
-                    title: 'Creator',
-                    path: paths.dashboard.creator.root,
-                    // icon: <Iconify icon="solar:users-group-rounded-bold" />,
-                  },
-                  {
-                    title: 'Media Kits',
-                    path: paths.dashboard.creator.mediaKitLists,
-                    // icon: <Iconify icon="solar:users-group-rounded-bold" />,
-                  },
-                ],
+                // icon: <Iconify icon="solar:users-group-rounded-bold" />,
               },
-            ],
-          },
-          {
-            items: [
               {
-                title: 'Landing pages',
-                path: paths.dashboard.landing.creator,
-                icon: <Iconify icon="fluent:people-team-28-regular" />,
-                children: [
-                  {
-                    title: 'Creator list',
-                    path: paths.dashboard.landing.creator,
-                    // icon: <Iconify icon="fluent:people-team-28-regular" />,
-                  },
-                  {
-                    title: 'Brands list',
-                    path: paths.dashboard.landing.brand,
-                    // icon: <Iconify icon="material-symbols:corporate-fare" />,
-                  },
-                ],
+                title: 'Media Kits',
+                path: paths.dashboard.creator.mediaKitLists,
+                // icon: <Iconify icon="solar:users-group-rounded-bold" />,
               },
             ],
           },
+        ],
+      },
+      {
+        roles: ['god', 'normal'],
+        items: [
           {
-            items: [
-              {
-                title: 'Brands',
-                path: paths.dashboard.brand.discover,
-                icon: <Iconify icon="fluent:people-team-28-regular" />,
-                children: [
-                  {
-                    title: 'Discover Brand',
-                    path: paths.dashboard.brand.discover,
-                    // icon: <Iconify icon="fluent:people-team-28-regular" />,
-                  },
-                  {
-                    title: 'Create Brand',
-                    path: paths.dashboard.brand.create,
-                    // icon: <Iconify icon="gridicons:create" />,
-                  },
-                  {
-                    title: 'Manage Brand',
-                    path: paths.dashboard.brand.manage,
-                    // icon: <Iconify icon="mingcute:settings-3-fill" />,
-                  },
-                ],
-              },
-            ],
-
-            // items: [
-            //   {
-            //     title: 'Discover Brand',
-            //     path: paths.dashboard.brand.discover,
-            //     icon: <Iconify icon="fluent:people-team-28-regular" />,
-            //   },
-            //   {
-            //     title: 'Create Brand',
-            //     path: paths.dashboard.brand.create,
-            //     icon: <Iconify icon="gridicons:create" />,
-            //   },
-            //   {
-            //     title: 'Manage Brand',
-            //     path: paths.dashboard.brand.manage,
-            //     icon: <Iconify icon="mingcute:settings-3-fill" />,
-            //   },
-            // ],
-          },
-          {
-            items: [
-              {
-                title: 'Campaign',
-                path: paths.dashboard.campaign.view,
-                icon: <Iconify icon="material-symbols:explore-outline" />,
-                children: [
-                  {
-                    title: 'Discover Campaign',
-                    path: paths.dashboard.campaign.view,
-                    // icon: <Iconify icon="material-symbols:explore-outline" />,
-                  },
-                  {
-                    title: 'Create Campaign',
-                    path: paths.dashboard.campaign.create,
-                    // icon: <Iconify icon="gridicons:create" />,
-                  },
-                  {
-                    title: 'Manage Campaign',
-                    path: paths.dashboard.campaign.manage,
-                    // icon: <Iconify icon="mingcute:settings-3-fill" />,
-                  },
-                ],
-              },
-            ],
-
-            // items: [
-            //   {
-            //     title: 'Discover Campaign',
-            //     path: paths.dashboard.campaign.view,
-            //     icon: <Iconify icon="material-symbols:explore-outline" />,
-            //   },
-            //   {
-            //     title: 'Create Campaign',
-            //     path: paths.dashboard.campaign.create,
-            //     icon: <Iconify icon="gridicons:create" />,
-            //   },
-            //   {
-            //     title: 'Manage Campaign',
-            //     path: paths.dashboard.campaign.manage,
-            //     icon: <Iconify icon="mingcute:settings-3-fill" />,
-            //   },
-            // ],
-          },
-        ];
-        break;
-      case 'normal':
-        navigations = [
-          {
-            items: [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }],
-          },
-          {
-            subheader: 'Landing pages',
-            items: [
+            title: 'Landing pages',
+            path: paths.dashboard.landing.creator,
+            icon: <Iconify icon="fluent:people-team-28-regular" />,
+            children: [
               {
                 title: 'Creator list',
                 path: paths.dashboard.landing.creator,
-                icon: <Iconify icon="fluent:people-team-28-regular" />,
+                // icon: <Iconify icon="fluent:people-team-28-regular" />,
               },
               {
                 title: 'Brands list',
                 path: paths.dashboard.landing.brand,
-                icon: <Iconify icon="material-symbols:corporate-fare" />,
+                // icon: <Iconify icon="material-symbols:corporate-fare" />,
               },
             ],
           },
-        ];
-        break;
-      default:
-        break;
-    }
-  } else {
-    navigations = [
+        ],
+      },
       {
+        roles: ['god', 'BD', 'CSM', 'Growth'],
         items: [
-          { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
+          {
+            title: 'Brands',
+            path: paths.dashboard.brand.discover,
+            icon: <Iconify icon="fluent:people-team-28-regular" />,
+            children: [
+              {
+                title: 'Discover Brand',
+                path: paths.dashboard.brand.discover,
+                // icon: <Iconify icon="fluent:people-team-28-regular" />,
+              },
+              {
+                title: 'Create Brand',
+                path: paths.dashboard.brand.create,
+                // icon: <Iconify icon="gridicons:create" />,
+              },
+              {
+                title: 'Manage Brand',
+                path: paths.dashboard.brand.manage,
+                // icon: <Iconify icon="mingcute:settings-3-fill" />,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        roles: ['god', 'BD', 'CSM', 'Growth'],
+        items: [
+          {
+            title: 'Campaign',
+            path: paths.dashboard.campaign.view,
+            icon: <Iconify icon="material-symbols:explore-outline" />,
+            children: [
+              {
+                title: 'Discover Campaign',
+                path: paths.dashboard.campaign.view,
+                // icon: <Iconify icon="material-symbols:explore-outline" />,
+              },
+              {
+                title: 'Create Campaign',
+                path: paths.dashboard.campaign.create,
+                // icon: <Iconify icon="gridicons:create" />,
+              },
+              {
+                title: 'Manage Campaign',
+                path: paths.dashboard.campaign.manage,
+                // icon: <Iconify icon="mingcute:settings-3-fill" />,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        roles: ['creator'],
+        items: [
           {
             title: 'Media Kit',
             path: paths.dashboard.creator.mediaKitCreator,
@@ -243,8 +178,9 @@ export function useNavData() {
           },
         ],
       },
-    ];
-  }
+    ],
+    []
+  );
 
   const data = useMemo(
     () => [
@@ -254,6 +190,7 @@ export function useNavData() {
       ...navigations,
       {
         subheader: 'Management',
+        roles: ['admin', 'creator'],
         items: [
           {
             title: 'Calendar',
