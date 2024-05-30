@@ -1,19 +1,17 @@
+/* eslint-disable no-unused-vars */
 import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Container from '@mui/material/Container';
 
+import { paths } from 'src/routes/paths';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import {
-  _jobs,
-  _roles,
-} from 'src/_mock';
-
+import { _jobs } from 'src/_mock';
 
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
-import { paths } from 'src/routes/paths';
 
 import BrandList from './brandList';
 

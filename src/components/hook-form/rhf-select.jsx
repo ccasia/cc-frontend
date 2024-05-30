@@ -29,15 +29,13 @@ export function RHFSelect({
     <Controller
       name={name}
       control={control}
-      
       render={({ field, fieldState: { error } }) => (
         <TextField
           {...field}
           label={name}
           select
           fullWidth
-          
-          value={ multiple ? field.value || [''] : field.value || ''}
+          value={multiple ? field.value || [''] : field.value || ''}
           SelectProps={{
             native,
             multiple,

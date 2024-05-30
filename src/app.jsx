@@ -15,6 +15,7 @@ import { SettingsDrawer, SettingsProvider } from 'src/components/settings';
 
 import { AuthProvider } from 'src/auth/context/jwt';
 import { LocalizationProvider } from './locales';
+import { SnackbarProvider } from './components/snackbar';
 
 // ----------------------------------------------------------------------
 
@@ -47,11 +48,13 @@ export default function App() {
           }}
         >
           <ThemeProvider>
-            <MotionLazy>
-              <SettingsDrawer />
-              <ProgressBar />
-              <Router />
-            </MotionLazy>
+            <SnackbarProvider>
+              <MotionLazy>
+                <SettingsDrawer />
+                <ProgressBar />
+                <Router />
+              </MotionLazy>
+            </SnackbarProvider>
           </ThemeProvider>
         </SettingsProvider>
       </LocalizationProvider>

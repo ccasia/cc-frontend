@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { deepOrange } from '@mui/material/colors';
-import { Box, Chip, Stack, Avatar, useTheme, Typography } from '@mui/material';
+import { Box, Stack, Avatar, useTheme, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
@@ -16,11 +16,13 @@ const MediaKitCover = ({ user }) => {
       }}
     >
       <Stack direction="column" alignItems="center" gap={2}>
-        <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }}>N</Avatar>
+        <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }}>
+          {user?.name?.charAt(0).toUpperCase()}
+        </Avatar>
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
-          {user.name}
+          {user?.name}
         </Typography>
-        <Stack direction="row" gap={2}>
+        {/* <Stack direction="row" gap={2}>
           {user?.creator?.interests.map((elem) => (
             <Chip
               label={elem?.name}
@@ -30,7 +32,7 @@ const MediaKitCover = ({ user }) => {
               }}
             />
           ))}
-        </Stack>
+        </Stack> */}
         <Stack gap={2}>
           <Typography
             gutterBottom

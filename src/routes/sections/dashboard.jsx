@@ -15,6 +15,7 @@ const ProfilePage = lazy(() => import('src/pages/dashboard/profile'));
 const ManagersPage = lazy(() => import('src/pages/dashboard/admin'));
 const CreatorList = lazy(() => import('src/pages/dashboard/creator/list'));
 const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'));
+const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCards'));
 
 // Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
@@ -60,19 +61,47 @@ export const dashboardRoutes = [
           { path: 'profile', element: <ProfilePage /> },
         ],
       },
+      // For admin/superadmin
       {
         path: 'creator',
-        element: (
-          <RoleBasedGuard roles={['god']} hasContent>
-            <CreatorList />
-          </RoleBasedGuard>
-        ),
+        children: [
+          {
+            path: 'lists',
+            element: (
+              <RoleBasedGuard roles={['god']} hasContent>
+                <CreatorList />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: 'media-kits',
+            children: [
+              {
+                element: (
+                  <RoleBasedGuard roles={['god']} hasContent>
+                    <MeditKitsCards />
+                  </RoleBasedGuard>
+                ),
+                index: true,
+              },
+              {
+                path: ':id',
+                element: (
+                  <RoleBasedGuard roles={['god']} hasContent>
+                    <CreatorMediaKit />
+                  </RoleBasedGuard>
+                ),
+              },
+            ],
+          },
+        ],
       },
+      // For Creator
       {
         path: 'mediakit',
         element: (
-          <RoleBasedGuard roles={['creator', 'god']} hasContent>
-            <CreatorMediaKit />,
+          <RoleBasedGuard roles={['creator']} hasContent>
+            <CreatorMediaKit />
           </RoleBasedGuard>
         ),
       },

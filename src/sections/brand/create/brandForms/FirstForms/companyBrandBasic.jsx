@@ -1,27 +1,29 @@
 /* eslint-disable no-unused-vars */
-import * as Yup from 'yup';
 import dayjs from 'dayjs';
+import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
-import { useState, useCallback } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import { useState, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Step from '@mui/material/Step';
 import Paper from '@mui/material/Paper';
+import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
 import StepLabel from '@mui/material/StepLabel';
-import Typography from '@mui/material/Typography';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 import TextField from '@mui/material/TextField';
-import UploadPhoto from 'src/sections/profile/dropzone';
-import localizedFormat from 'dayjs/plugin/localizedFormat';
+import Typography from '@mui/material/Typography';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+
+import UploadPhoto from 'src/sections/profile/dropzone';
 
 const intersList = [
   'Art',
@@ -338,8 +340,7 @@ function CompanyBrandBasic() {
   }
 
   return (
-    <>
-      <Box
+    <Box
         sx={{
           borderRadius: '20px',
           mt: 3,
@@ -451,7 +452,6 @@ function CompanyBrandBasic() {
           </Box>
         )}
       </Box>
-    </>
   );
 }
 

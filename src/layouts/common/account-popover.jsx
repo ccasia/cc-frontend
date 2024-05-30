@@ -85,7 +85,7 @@ export default function AccountPopover() {
             border: (theme) => `solid 2px ${theme.palette.background.default}`,
           }}
         >
-          ADWAD
+          {user?.name.charAt(0).toUpperCase()}
         </Avatar>
       </IconButton>
 

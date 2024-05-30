@@ -23,8 +23,6 @@ import UserQuickEditForm from './user-quick-edit-form';
 export default function UserTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
   const { name, admin, country, phoneNumber, status, photoURL } = row;
 
-  console.log(row);
-
   const confirm = useBoolean();
 
   const quickEdit = useBoolean();
@@ -133,7 +131,14 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
         title="Delete"
         content={`Are you sure want to delete ${name}?`}
         action={
-          <Button variant="contained" color="error" onClick={onDeleteRow}>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              onDeleteRow();
+              confirm.onFalse();
+            }}
+          >
             Delete
           </Button>
         }

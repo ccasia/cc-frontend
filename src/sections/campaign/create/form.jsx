@@ -1,30 +1,24 @@
 /* eslint-disable no-unused-vars */
 import * as Yup from 'yup';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import {  useState } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 import Chip from '@mui/material/Chip';
 import Step from '@mui/material/Step';
+import { Stack } from '@mui/material';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
-
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
-import { Stack, Slider } from '@mui/material';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
-import axiosInstance, { endpoints } from 'src/utils/axios';
-import Iconify from 'src/components/iconify';
 
-import FormProvider, {
-  RHFSelect,
-  RHFTextField,
-  RHFAutocomplete,
-} from 'src/components/hook-form';
+import Iconify from 'src/components/iconify';
+import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import CreateCompany from './companyDialog';
 
@@ -123,173 +117,332 @@ function CreateCampaignForm() {
   };
   console.log(getValues());
 
-  function FormFirstStep() {
-    return (
-     
-        <Box
-          rowGap={2}
-          columnGap={3}
-          display="grid"
-          mt={4}
-          gridTemplateColumns={{
-            xs: 'repeat(1, 1fr)',
-            sm: 'repeat(2, 1fr)',
-          }}
-        >
-          <RHFTextField name="campaignName" label="Campaign Name" />
-          {/* <Box sx={{ flexGrow: 1 }} /> */}
-          <Box
+  const formFirstStep = (
+    <Box
+      rowGap={2}
+      columnGap={3}
+      display="grid"
+      mt={4}
+      gridTemplateColumns={{
+        xs: 'repeat(1, 1fr)',
+        sm: 'repeat(2, 1fr)',
+      }}
+    >
+      <RHFTextField name="campaignName" label="Campaign Name" />
+      {/* <Box sx={{ flexGrow: 1 }} /> */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignContent: 'center',
+        }}
+      >
+        {' '}
+        <RHFSelect name="campaignCompany" label="Company">
+          {companies.map((option) => (
+            <MenuItem key={option[0]} value={option[0]}>
+              {option[1]}
+            </MenuItem>
+          ))}
+        </RHFSelect>{' '}
+        <Box>
+          <Button
+            variant="contained"
             sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignContent: 'center',
+              width: '100%',
+              height: '95%',
+              mx: 1,
+            }}
+            onClick={handleClick}
+          >
+            Create Company
+          </Button>
+          <Menu
+            id="basic-menu"
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleClose}
+            sx={{
+              my: 1,
+            }}
+            MenuListProps={{
+              'aria-labelledby': 'basic-button',
+            }}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'bottom',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'left',
             }}
           >
-            {' '}
-            <RHFSelect name="campaignCompany" label="Company">
-              {companies.map((option) => (
-                <MenuItem key={option[0]} value={option[0]}>
-                  {option[1]}
-                </MenuItem>
-              ))}
-            </RHFSelect>{' '}
-            <Box>
-              <Button
-                variant="contained"
-                sx={{
-                  width: '100%',
-                  height: '95%',
-                  mx: 1,
-                }}
-                onClick={handleClick}
-              >
-                Create Company
-              </Button>
-              <Menu
-                id="basic-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                sx={{
-                  my: 1,
-                }}
-                MenuListProps={{
-                  'aria-labelledby': 'basic-button',
-                }}
-                anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'bottom',
-                }}
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'left',
-                }}
-              >
-                <MenuItem
-                  onClick={() => {
-                    handleOpenCompanyDialog();
-                  }}
-                >
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Iconify icon="mdi:invite" />
-                    <Typography variant="button">Create Company</Typography>
-                  </Stack>
-                </MenuItem>
-                <MenuItem>
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Iconify icon="material-symbols:add" />
-                    <Typography variant="button">Create Brand</Typography>
-                  </Stack>
-                </MenuItem>
-                <MenuItem>
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Iconify icon="material-symbols:add" />
-                    <Typography variant="button">Create sup-Brand</Typography>
-                  </Stack>
-                </MenuItem>
-                <MenuItem>
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Iconify icon="material-symbols:add" />
-                    <Typography variant="button">Create sup-sup-Brand</Typography>
-                  </Stack>
-                </MenuItem>
-              </Menu>
-            </Box>
-          </Box>
-
-          {/* <RHFTextField name="campaignCompany" label="Company" /> */}
-          {/* <RHFTextField name="campaignBrand" label="Brand" /> */}
-          <RHFSelect name="campaignBrand" label="Brand">
-            {companies.map((option) => (
-              <MenuItem key={option[0]} value={option[0]}>
-                {option[1]}
-              </MenuItem>
-            ))}
-          </RHFSelect>
-          <RHFAutocomplete
-            name="campaignInterests"
-            placeholder="+ Interests"
-            multiple
-            freeSolo="true"
-            disableCloseOnSelect
-            options={intersList.map((option) => option)}
-            getOptionLabel={(option) => option}
-            renderOption={(props, option) => (
-              <li {...props} key={option}>
-                {option}
-              </li>
-            )}
-            renderTags={(selected, getTagProps) =>
-              selected.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option}
-                  label={option}
-                  size="small"
-                  color="info"
-                  variant="soft"
-                />
-              ))
-            }
-          />
-          <RHFAutocomplete
-            name="campaignIndustries"
-            placeholder="+ Industries"
-            multiple
-            freeSolo="true"
-            disableCloseOnSelect
-            options={intersList.map((option) => option)}
-            getOptionLabel={(option) => option}
-            renderOption={(props, option) => (
-              <li {...props} key={option}>
-                {option}
-              </li>
-            )}
-            renderTags={(selected, getTagProps) =>
-              selected.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option}
-                  label={option}
-                  size="small"
-                  color="info"
-                  variant="soft"
-                />
-              ))
-            }
-          />
-
-          {/* <RHFDatePicker name="campaignStartDate"  />
-          <RHFDatePicker name="campaignEndDate" /> */}
+            <MenuItem
+              onClick={() => {
+                handleOpenCompanyDialog();
+              }}
+            >
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Iconify icon="mdi:invite" />
+                <Typography variant="button">Create Company</Typography>
+              </Stack>
+            </MenuItem>
+            <MenuItem>
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Iconify icon="material-symbols:add" />
+                <Typography variant="button">Create Brand</Typography>
+              </Stack>
+            </MenuItem>
+            <MenuItem>
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Iconify icon="material-symbols:add" />
+                <Typography variant="button">Create sup-Brand</Typography>
+              </Stack>
+            </MenuItem>
+            <MenuItem>
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Iconify icon="material-symbols:add" />
+                <Typography variant="button">Create sup-sup-Brand</Typography>
+              </Stack>
+            </MenuItem>
+          </Menu>
         </Box>
-    );
-  }
+      </Box>
+
+      {/* <RHFTextField name="campaignCompany" label="Company" /> */}
+      {/* <RHFTextField name="campaignBrand" label="Brand" /> */}
+      <RHFSelect name="campaignBrand" label="Brand">
+        {companies.map((option) => (
+          <MenuItem key={option[0]} value={option[0]}>
+            {option[1]}
+          </MenuItem>
+        ))}
+      </RHFSelect>
+      <RHFAutocomplete
+        name="campaignInterests"
+        placeholder="+ Interests"
+        multiple
+        freeSolo="true"
+        disableCloseOnSelect
+        options={intersList.map((option) => option)}
+        getOptionLabel={(option) => option}
+        renderOption={(props, option) => (
+          <li {...props} key={option}>
+            {option}
+          </li>
+        )}
+        renderTags={(selected, getTagProps) =>
+          selected.map((option, index) => (
+            <Chip
+              {...getTagProps({ index })}
+              key={option}
+              label={option}
+              size="small"
+              color="info"
+              variant="soft"
+            />
+          ))
+        }
+      />
+      <RHFAutocomplete
+        name="campaignIndustries"
+        placeholder="+ Industries"
+        multiple
+        freeSolo="true"
+        disableCloseOnSelect
+        options={intersList.map((option) => option)}
+        getOptionLabel={(option) => option}
+        renderOption={(props, option) => (
+          <li {...props} key={option}>
+            {option}
+          </li>
+        )}
+        renderTags={(selected, getTagProps) =>
+          selected.map((option, index) => (
+            <Chip
+              {...getTagProps({ index })}
+              key={option}
+              label={option}
+              size="small"
+              color="info"
+              variant="soft"
+            />
+          ))
+        }
+      />
+
+      {/* <RHFDatePicker name="campaignStartDate"  />
+          <RHFDatePicker name="campaignEndDate" /> */}
+    </Box>
+  );
+
+  // function FormFirstStep() {
+  //   return (
+  //     <Box
+  //       rowGap={2}
+  //       columnGap={3}
+  //       display="grid"
+  //       mt={4}
+  //       gridTemplateColumns={{
+  //         xs: 'repeat(1, 1fr)',
+  //         sm: 'repeat(2, 1fr)',
+  //       }}
+  //     >
+  //       <RHFTextField name="campaignName" label="Campaign Name" />
+  //       {/* <Box sx={{ flexGrow: 1 }} /> */}
+  //       <Box
+  //         sx={{
+  //           display: 'flex',
+  //           flexDirection: 'row',
+  //           justifyContent: 'space-between',
+  //           alignContent: 'center',
+  //         }}
+  //       >
+  //         {' '}
+  //         <RHFSelect name="campaignCompany" label="Company">
+  //           {companies.map((option) => (
+  //             <MenuItem key={option[0]} value={option[0]}>
+  //               {option[1]}
+  //             </MenuItem>
+  //           ))}
+  //         </RHFSelect>{' '}
+  //         <Box>
+  //           <Button
+  //             variant="contained"
+  //             sx={{
+  //               width: '100%',
+  //               height: '95%',
+  //               mx: 1,
+  //             }}
+  //             onClick={handleClick}
+  //           >
+  //             Create Company
+  //           </Button>
+  //           <Menu
+  //             id="basic-menu"
+  //             anchorEl={anchorEl}
+  //             open={open}
+  //             onClose={handleClose}
+  //             sx={{
+  //               my: 1,
+  //             }}
+  //             MenuListProps={{
+  //               'aria-labelledby': 'basic-button',
+  //             }}
+  //             anchorOrigin={{
+  //               vertical: 'bottom',
+  //               horizontal: 'bottom',
+  //             }}
+  //             transformOrigin={{
+  //               vertical: 'top',
+  //               horizontal: 'left',
+  //             }}
+  //           >
+  //             <MenuItem
+  //               onClick={() => {
+  //                 handleOpenCompanyDialog();
+  //               }}
+  //             >
+  //               <Stack direction="row" alignItems="center" gap={1}>
+  //                 <Iconify icon="mdi:invite" />
+  //                 <Typography variant="button">Create Company</Typography>
+  //               </Stack>
+  //             </MenuItem>
+  //             <MenuItem>
+  //               <Stack direction="row" alignItems="center" gap={1}>
+  //                 <Iconify icon="material-symbols:add" />
+  //                 <Typography variant="button">Create Brand</Typography>
+  //               </Stack>
+  //             </MenuItem>
+  //             <MenuItem>
+  //               <Stack direction="row" alignItems="center" gap={1}>
+  //                 <Iconify icon="material-symbols:add" />
+  //                 <Typography variant="button">Create sup-Brand</Typography>
+  //               </Stack>
+  //             </MenuItem>
+  //             <MenuItem>
+  //               <Stack direction="row" alignItems="center" gap={1}>
+  //                 <Iconify icon="material-symbols:add" />
+  //                 <Typography variant="button">Create sup-sup-Brand</Typography>
+  //               </Stack>
+  //             </MenuItem>
+  //           </Menu>
+  //         </Box>
+  //       </Box>
+
+  //       {/* <RHFTextField name="campaignCompany" label="Company" /> */}
+  //       {/* <RHFTextField name="campaignBrand" label="Brand" /> */}
+  //       <RHFSelect name="campaignBrand" label="Brand">
+  //         {companies.map((option) => (
+  //           <MenuItem key={option[0]} value={option[0]}>
+  //             {option[1]}
+  //           </MenuItem>
+  //         ))}
+  //       </RHFSelect>
+  //       <RHFAutocomplete
+  //         name="campaignInterests"
+  //         placeholder="+ Interests"
+  //         multiple
+  //         freeSolo="true"
+  //         disableCloseOnSelect
+  //         options={intersList.map((option) => option)}
+  //         getOptionLabel={(option) => option}
+  //         renderOption={(props, option) => (
+  //           <li {...props} key={option}>
+  //             {option}
+  //           </li>
+  //         )}
+  //         renderTags={(selected, getTagProps) =>
+  //           selected.map((option, index) => (
+  //             <Chip
+  //               {...getTagProps({ index })}
+  //               key={option}
+  //               label={option}
+  //               size="small"
+  //               color="info"
+  //               variant="soft"
+  //             />
+  //           ))
+  //         }
+  //       />
+  //       <RHFAutocomplete
+  //         name="campaignIndustries"
+  //         placeholder="+ Industries"
+  //         multiple
+  //         freeSolo="true"
+  //         disableCloseOnSelect
+  //         options={intersList.map((option) => option)}
+  //         getOptionLabel={(option) => option}
+  //         renderOption={(props, option) => (
+  //           <li {...props} key={option}>
+  //             {option}
+  //           </li>
+  //         )}
+  //         renderTags={(selected, getTagProps) =>
+  //           selected.map((option, index) => (
+  //             <Chip
+  //               {...getTagProps({ index })}
+  //               key={option}
+  //               label={option}
+  //               size="small"
+  //               color="info"
+  //               variant="soft"
+  //             />
+  //           ))
+  //         }
+  //       />
+
+  //       {/* <RHFDatePicker name="campaignStartDate"  />
+  //         <RHFDatePicker name="campaignEndDate" /> */}
+  //     </Box>
+  //   );
+  // }
 
   function getStepContent(step) {
     switch (step) {
       case 0:
-        return FormFirstStep();
+        return formFirstStep;
       case 1:
         return <h3>step 2</h3>;
       case 2:

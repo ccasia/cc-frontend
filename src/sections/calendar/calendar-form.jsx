@@ -15,6 +15,8 @@ import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 
 import { isAfter, fTimestamp } from 'src/utils/format-time';
 
+import { createEvent, deleteEvent, updateEvent } from 'src/api/calendar';
+
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import { ColorPicker } from 'src/components/color-utils';
@@ -53,23 +55,24 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
   const dateError = isAfter(values.start, values.end);
 
   const onSubmit = handleSubmit(async (data) => {
-    // const eventData = {
-    //   id: currentEvent?.id ? currentEvent?.id : uuidv4(),
-    //   color: data?.color,
-    //   title: data?.title,
-    //   allDay: data?.allDay,
-    //   description: data?.description,
-    //   end: data?.end,
-    //   start: data?.start,
-    // };
+    const eventData = {
+      id: currentEvent?.id,
+      color: data?.color,
+      title: data?.title,
+      allDay: data?.allDay,
+      description: data?.description,
+      end: data?.end,
+      start: data?.start,
+    };
 
     try {
       if (!dateError) {
         if (currentEvent?.id) {
-          // await updateEvent(eventData);
+          await updateEvent(eventData);
           enqueueSnackbar('Update success!');
         } else {
           // await createEvent(eventData);
+          await createEvent(eventData);
           enqueueSnackbar('Create success!');
         }
         onClose();
@@ -82,13 +85,13 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
 
   const onDelete = useCallback(async () => {
     try {
-      // await deleteEvent(`${currentEvent?.id}`);
+      await deleteEvent(`${currentEvent?.id}`);
       enqueueSnackbar('Delete success!');
       onClose();
     } catch (error) {
       console.error(error);
     }
-  }, [enqueueSnackbar, onClose]);
+  }, [enqueueSnackbar, onClose, currentEvent]);
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>

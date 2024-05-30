@@ -8,7 +8,7 @@ const axiosInstance = axios.create({ baseURL: HOST_API });
 axiosInstance.defaults.withCredentials = true;
 
 axiosInstance.interceptors.request.use((request) => {
-  request.headers.lol = 'Cult Creative App';
+  request.headers.app = 'Cult Creative App';
   return request;
 });
 
@@ -50,15 +50,17 @@ export const endpoints = {
     updateCreator: '/api/auth/updateCreator',
     verifyCreator: '/api/auth/verifyCreator',
   },
-  creators:{
+  creators: {
     getCreators: '/api/creator/getAll',
+    getCreatorById: '/api/creator/getCreatorByID',
     deleteCreator: '/api/creator/delete',
+    updateCreator: '/api/creator/update-creator',
   },
   users: {
     newAdmin: '/api/user/newAdmin',
     admins: '/api/user/admins',
     updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
-    createAdmin: '/api/user/createAdmin', 
+    createAdmin: '/api/user/createAdmin',
   },
   mail: {
     list: '/api/mail/list',
@@ -80,9 +82,15 @@ export const endpoints = {
   admin: {
     delete: '/api/admin',
   },
-  company:{
+  company: {
     create: '/api/company/createCompany',
-    getAll : 'api/company/getCompanies',
+    getAll: 'api/company/getCompanies',
     createBrand: '/api/company/createBrand',
-  }
+  },
+  event: {
+    list: '/api/event/',
+    create: '/api/event/createEvent',
+    delete: '/api/event/deleteEvent',
+    update: '/api/event/updateEvent',
+  },
 };
