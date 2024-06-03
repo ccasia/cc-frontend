@@ -49,7 +49,7 @@ export const dashboardRoutes = [
       {
         path: 'admins',
         element: (
-          <RoleBasedGuard roles={['god']} hasContent>
+          <RoleBasedGuard roles={['superadmin']} hasContent>
             <ManagersPage />
           </RoleBasedGuard>
         ),
@@ -68,7 +68,7 @@ export const dashboardRoutes = [
           {
             path: 'lists',
             element: (
-              <RoleBasedGuard roles={['god']} hasContent>
+              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
                 <CreatorList />
               </RoleBasedGuard>
             ),
@@ -78,7 +78,7 @@ export const dashboardRoutes = [
             children: [
               {
                 element: (
-                  <RoleBasedGuard roles={['god']} hasContent>
+                  <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
                     <MeditKitsCards />
                   </RoleBasedGuard>
                 ),
@@ -87,7 +87,7 @@ export const dashboardRoutes = [
               {
                 path: ':id',
                 element: (
-                  <RoleBasedGuard roles={['god']} hasContent>
+                  <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
                     <CreatorMediaKit />
                   </RoleBasedGuard>
                 ),
@@ -123,11 +123,19 @@ export const dashboardRoutes = [
         children: [
           {
             path: 'manage',
-            element: <BrandManage />,
+            element: (
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+                <BrandManage />
+              </RoleBasedGuard>
+            ),
           },
           {
             path: 'create',
-            element: <BrandCreate />,
+            element: (
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+                <BrandCreate />
+              </RoleBasedGuard>
+            ),
           },
           {
             path: 'discover',
@@ -148,7 +156,11 @@ export const dashboardRoutes = [
           },
           {
             path: 'discover',
-            element: <ViewCampaign />,
+            element: (
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+                <ViewCampaign />
+              </RoleBasedGuard>
+            ),
           },
         ],
       },

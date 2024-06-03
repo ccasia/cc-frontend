@@ -11,6 +11,8 @@ import { paths } from 'src/routes/paths';
 
 import useGetCompany from 'src/hooks/use-get-company';
 
+import withPermission from 'src/auth/guard/withPermissions';
+
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
@@ -81,4 +83,5 @@ function CreateBrand() {
   );
 }
 
-export default CreateBrand;
+export default withPermission(['create', 'read'], 'brand', CreateBrand);
+// export default CreateBrand;

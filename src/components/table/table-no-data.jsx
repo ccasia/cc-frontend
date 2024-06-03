@@ -17,6 +17,7 @@ export default function TableNoData({ notFound, sx }) {
             title="No Data"
             sx={{
               py: 10,
+
               ...sx,
             }}
           />

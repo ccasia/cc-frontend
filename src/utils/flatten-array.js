@@ -12,3 +12,16 @@ export function flattenArray(list, key = 'children') {
 
   return flatten?.concat(children.length ? flattenArray(children, key) : children);
 }
+
+export const flattenData = (array, key) => {
+  const flattenedData = array?.flat();
+  const ha = flattenedData?.reduce((acc, item) => {
+    if (!acc[item.module.name]) {
+      acc[item.module.name] = { module: item.module.name, permissions: [] };
+    }
+    acc[item.module.name].permissions.push(item.permission.name);
+    return acc;
+  }, []);
+
+  return ha;
+};

@@ -9,6 +9,7 @@ import { paths } from 'src/routes/paths';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { _jobs } from 'src/_mock';
+import withPermission from 'src/auth/guard/withPermissions';
 
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
@@ -83,4 +84,5 @@ function DiscoverBrand() {
   );
 }
 
-export default DiscoverBrand;
+// export default DiscoverBrand;
+export default withPermission('read', 'brand', DiscoverBrand);
