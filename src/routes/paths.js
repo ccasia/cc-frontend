@@ -32,6 +32,7 @@ export const paths = {
       manage: `${ROOTS.DASHBOARD}/campaign/manage`,
       create: `${ROOTS.DASHBOARD}/campaign/create`,
       view: `${ROOTS.DASHBOARD}/campaign/discover`,
+      settings: `${ROOTS.DASHBOARD}/campaign/settings`,
     },
     user: {
       root: `${ROOTS.DASHBOARD}/user`,

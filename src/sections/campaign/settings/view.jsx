@@ -1,0 +1,78 @@
+import React, { useState } from 'react';
+import { useTheme } from '@emotion/react';
+
+import { Box, Tab, Tabs, Container, useMediaQuery } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+
+import { useGetTimeline } from 'src/hooks/use-get-timeline';
+
+import { useSettingsContext } from 'src/components/settings';
+import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
+
+import Timeline from './timeline';
+
+const CampaignSetting = () => {
+  // eslint-disable-next-line no-unused-vars
+  const [tab, setTabs] = useState('timeline');
+  const settings = useSettingsContext();
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { defaultTimeline } = useGetTimeline();
+
+  const handleChange = (event, newValue) => {
+    setTabs(newValue);
+  };
+
+  return (
+    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
+      <CustomBreadcrumbs
+        heading="Campaign Settings"
+        links={[
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'Campaign', href: paths.dashboard.campaign.view },
+          { name: 'Settings' },
+        ]}
+      />
+
+      <Box
+        sx={{
+          border: `solid 2px ${theme.palette.background.paper}`,
+          borderRadius: 2,
+          mt: 3,
+          p: 3,
+        }}
+      >
+        {/* Left Sections */}
+        <Box display="flex" flexDirection={isSmallScreen ? 'column' : 'row'} minHeight={300}>
+          <Tabs
+            value={tab}
+            orientation={isSmallScreen ? 'horizontal' : 'vertical'}
+            sx={{
+              borderRight: {
+                md: 1,
+              },
+              borderColor: {
+                md: 'divider',
+              },
+              '& .MuiTab-root': {
+                pr: 2,
+                width: '100%',
+              },
+            }}
+            onChange={handleChange}
+          >
+            <Tab value="timeline" label="Default timeline" />
+            <Tab value="other" label="Other setting..." />
+          </Tabs>
+
+          <Box sx={{ padding: 3, width: '100%' }}>
+            {tab === 'timeline' && <Timeline defaultTimeline={defaultTimeline} isSmallScreen={isSmallScreen} />}
+          </Box>
+        </Box>
+      </Box>
+    </Container>
+  );
+};
+
+export default CampaignSetting;

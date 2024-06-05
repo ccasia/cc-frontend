@@ -21,6 +21,7 @@ const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCa
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
 const CreateCampaign = lazy(() => import('src/pages/dashboard/campaign/createCampaign'));
 const ViewCampaign = lazy(() => import('src/pages/dashboard/campaign/discovery'));
+const CampaignSetting = lazy(() => import('src/pages/dashboard/campaign/setting'));
 
 // Brand
 const BrandManage = lazy(() => import('src/pages/dashboard/brand/manageBrand'));
@@ -159,6 +160,14 @@ export const dashboardRoutes = [
             element: (
               <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
                 <ViewCampaign />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: 'settings',
+            element: (
+              <RoleBasedGuard hasContent roles={['superadmin']}>
+                <CampaignSetting />
               </RoleBasedGuard>
             ),
           },

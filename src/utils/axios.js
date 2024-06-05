@@ -95,4 +95,7 @@ export const endpoints = {
     delete: '/api/event/deleteEvent',
     update: '/api/event/updateEvent',
   },
+  campaign: {
+    updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
+  },
 };
