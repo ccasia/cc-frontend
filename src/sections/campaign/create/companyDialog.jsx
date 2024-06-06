@@ -11,24 +11,34 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
-import FormProvider, {  RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import useGetCompany from 'src/hooks/use-get-company';
 
 export default function CreateCompany({ currentUser, open, onClose }) {
   // const { enqueueSnackbar } = useSnackbar();
 
   // const { getAdmins } = useGetAdmins();
 
+  // import setCompany and add the latest company
+
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
-    brand: Yup.string().required('Brand is required'),
-    supBrand: Yup.string().required('supBrand  is required'),
-    location: Yup.string().required('Location is required'),
+    email: Yup.string().email('Must be a valid email').required('Email is required'),
+    phone: Yup.string().required('Phone is required'),
+    website: Yup.string().required('Website is required'),
+    registration_number: Yup.string().required('Registration Number is required'),
+    address: Yup.string().required('Address is required'),
   });
   const defaultValues = {
     name: '',
-    brand: '',
-    supBrand: '',
-    location: '',
+    email: '',
+    phone: '',
+    registration_number: '',
+    address: '',
+    website: '',
   };
 
   const methods = useForm({
@@ -37,13 +47,21 @@ export default function CreateCompany({ currentUser, open, onClose }) {
   });
 
   const {
-    // reset,
+    reset,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
+    try {
+      const res = await axiosInstance.post(endpoints.company.createOneCompany, data);
+      reset();
+      onClose();
+      useGetCompany();
+      console.log(res.data);
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   return (
@@ -69,17 +87,11 @@ export default function CreateCompany({ currentUser, open, onClose }) {
             }}
           >
             <RHFTextField name="name" label="Name" fullWidth />
-            <RHFTextField name="brand" label="Brand" fullWidth />
-            <RHFTextField name="supBrand" label="Sup Brand" />
-            <RHFTextField name="location" label="Location" />
-            {/* <RHFAutocomplete
-                name="country"
-                label="Country"
-                options={countries}
-                getOptionLabel={(option) => option.label}
-                getOptionSelected={(option, value) => option.label === value.label}
-                fullWidth
-              /> */}
+            <RHFTextField name="email" label="Email" fullWidth />
+            <RHFTextField name="phone" label="Phone" />
+            <RHFTextField name="registration_number" label="Registration Number" fullWidth />
+            <RHFTextField name="address" label="Address" />
+            <RHFTextField name="website" label="Website" fullWidth />
           </Box>
           <DialogActions>
             <Button onClick={onClose}>Cancel</Button>
@@ -98,7 +110,6 @@ export default function CreateCompany({ currentUser, open, onClose }) {
     </Dialog>
   );
 }
-
 
 CreateCompany.propTypes = {
   currentUser: PropTypes.object,
