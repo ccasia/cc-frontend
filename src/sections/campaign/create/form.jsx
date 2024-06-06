@@ -1,8 +1,7 @@
-/* eslint-disable no-unused-vars */
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
-import { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -17,9 +16,8 @@ import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import { useCompany } from 'src/hooks/zustands/useCompany';
 import { useBrand } from 'src/hooks/zustands/useBrand';
-
+import { useGetTimeline } from 'src/hooks/use-get-timeline';
 
 import FormProvider, {
   RHFSelect,
@@ -31,12 +29,6 @@ import FormProvider, {
 import UploadPhoto from 'src/sections/profile/dropzone';
 
 import CreateBrand from './brandDialog';
-import { useGetTimeline } from 'src/hooks/use-get-timeline';
-
-import Iconify from 'src/components/iconify';
-import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
-
-import CreateCompany from './companyDialog';
 import SelectTimeline from './steps/select-timeline';
 
 const steps = [
@@ -70,12 +62,13 @@ function CreateCampaignForm() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [image, setImage] = useState(null);
   const { brand } = useBrand();
+  const [brandState, setBrandState] = useState('');
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   // const open = Boolean(anchorEl);
   const { defaultTimeline, loading, error } = useGetTimeline();
 
-  const open = Boolean(anchorEl);
+  // const open = Boolean(anchorEl);
 
   // const handleClick = (event) => {
   //   setAnchorEl(event.currentTarget);
@@ -94,13 +87,6 @@ function CreateCampaignForm() {
     handleClose();
   };
 
-  const companies = [
-    ['nexea', 'Nexea'],
-    ['myeg', 'MyEG'],
-    ['mymdec', 'MDEC'],
-    ['pg', 'P&G'],
-  ];
-
   const campaignSchema = Yup.object().shape({
     campaignName: Yup.string().required('Campaign name is required'),
     campaignInterests: Yup.array().min(3, 'Choose at least three option'),
@@ -113,6 +99,12 @@ function CreateCampaignForm() {
     campaginObjectives: Yup.string().required('Campaign objectives is required'),
     campaginCoverImage: Yup.string().required('Campaign cover image is required'),
     campaignSuccessMetrics: Yup.string().required('Campaign success metrics is required'),
+    audienceAge: Yup.string().required('Audience age is required'),
+    audienceGender: Yup.string().required('Audience Gender is required'),
+    audienceLocation: Yup.string().required('Audience location is required'),
+    audienceLanguage: Yup.string().required('Audience language is required'),
+    audienceCreatorPersona: Yup.string().required('Audience creator persona is required'),
+    audienceUserPersona: Yup.string().required('Audience influencer persona is required'),
     campaignDo: Yup.array()
       .min(2, 'insert at least three option')
       .required('Campaign do is required '),
@@ -159,6 +151,12 @@ function CreateCampaignForm() {
     campaignDont: [],
     defaultTimeline: {},
     customTimeline: {},
+    audienceAge: '',
+    audienceGender: '',
+    audienceLocation: '',
+    audienceLanguage: '',
+    audienceCreatorPersona: '',
+    audienceUserPersona: '',
   };
 
   const methods = useForm({
@@ -177,6 +175,13 @@ function CreateCampaignForm() {
   useEffect(() => {
     setValue('defaultTimeline', defaultTimeline);
   }, [defaultTimeline, setValue]);
+
+  useEffect(() => {
+    if (brandState !== '') {
+      setValue('campaignBrand', brandState);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandState]);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -246,11 +251,15 @@ function CreateCampaignForm() {
       >
         {' '}
         <RHFSelect name="campaignBrand" label="Brand">
-          {brand?.map((option) => (
-            <MenuItem key={option.name} value={option.name}>
-              {option.name}
-            </MenuItem>
-          ))}
+          {brandState ? (
+            <MenuItem value={brandState}>{brandState}</MenuItem>
+          ) : (
+            brand?.map((option) => (
+              <MenuItem key={option.name} value={option.name}>
+                {option.name}
+              </MenuItem>
+            ))
+          )}
         </RHFSelect>{' '}
         <Box>
           <Button
@@ -377,13 +386,74 @@ function CreateCampaignForm() {
       />
 
       <RHFSelect name="campaginObjectives" label="Campagin Objectives">
-        <MenuItem value="1">Im launching a new product</MenuItem>
-        <MenuItem value="2">Im launching a new service</MenuItem>
-        <MenuItem value="3">I want to drive brand awareness</MenuItem>
-        <MenuItem value="4">Want to drive product awareness</MenuItem>
+        <MenuItem value="newProduct">Im launching a new product</MenuItem>
+        <MenuItem value="newService">Im launching a new service</MenuItem>
+        <MenuItem value="brandAwareness">I want to drive brand awareness</MenuItem>
+        <MenuItem value="productAwareness">Want to drive product awareness</MenuItem>
       </RHFSelect>
 
       <Box flexGrow={1} />
+      <Typography variant="h4">Audience Requirements</Typography>
+      <Box flexGrow={1} />
+      <RHFSelect name="audienceGender" label="Audience Gender">
+        <MenuItem value="female">Female</MenuItem>
+        <MenuItem value="male">Male </MenuItem>
+        <MenuItem value="nonbinary">Non-Binary</MenuItem>
+      </RHFSelect>
+
+      <RHFSelect name="audienceAge" label="Audience Age">
+        <MenuItem value="18-25">18-25</MenuItem>
+        <MenuItem value="26-34">26-34</MenuItem>
+        <MenuItem value="35-40">35-40</MenuItem>
+        <MenuItem value=">40"> &gt; 40</MenuItem>
+      </RHFSelect>
+
+      <RHFSelect
+        name="audienceLocation"
+        label="Audience Geo Location"
+        helperText=" if others please specify "
+      >
+        <MenuItem value="KlangValley">Klang Valley </MenuItem>
+        <MenuItem value="Selangor">Selangor</MenuItem>
+        <MenuItem value="KualaLumpur">Kuala Lumpur</MenuItem>
+        <MenuItem value="MainCities">Main cities in Malaysia</MenuItem>
+        <MenuItem value="EastMalaysia">East Malaysia</MenuItem>
+        <MenuItem value="Others">Others</MenuItem>
+      </RHFSelect>
+
+      <RHFSelect name="audienceLanguage" label="Audience Language">
+        <MenuItem value="Malay">Malay</MenuItem>
+        <MenuItem value="English">English</MenuItem>
+        <MenuItem value="Chinese">Chinese</MenuItem>
+        <MenuItem value="Tamil">Tamil</MenuItem>
+        <MenuItem value="Korean">Korean</MenuItem>
+        <MenuItem value="MalayEnglish">Malay + English</MenuItem>
+        <MenuItem value="EnglishChinese">English + Chinese </MenuItem>
+      </RHFSelect>
+
+      <RHFSelect name="audienceCreatorPersona" label="Audience Creator Persona">
+        <MenuItem value="lifeStyle">LifeStyle</MenuItem>
+        <MenuItem value="Foodie">Foodie</MenuItem>
+        <MenuItem value="fashion">Fashion</MenuItem>
+        <MenuItem value="beauty">Beauty</MenuItem>
+        <MenuItem value="tech">Tech</MenuItem>
+        <MenuItem value="sports">Sports & Fitness</MenuItem>
+        <MenuItem value="health">Health & wellness</MenuItem>
+        <MenuItem value="family">Family & motherhood</MenuItem>
+        <MenuItem value="finance">Finance</MenuItem>
+        <MenuItem value="education">Education</MenuItem>
+        <MenuItem value="music">Music</MenuItem>
+        <MenuItem value="gamer">Gamer</MenuItem>
+        <MenuItem value="entertainment">Entertainment</MenuItem>
+        <MenuItem value="travel">Travel</MenuItem>
+      </RHFSelect>
+
+      <RHFTextField
+        name="audienceUserPersona"
+        label="User Persona"
+        placeholder=" let us know who you want your campaign to reach!"
+      />
+
       <Box
         sx={{
           display: 'flex',
@@ -566,7 +636,11 @@ function CreateCampaignForm() {
         </>
       )}
       {/* <CreateCompany open={openCompanyDialog} onClose={handleCloseCompanyDialog} /> */}
-      <CreateBrand open={openCompanyDialog} onClose={handleCloseCompanyDialog} />
+      <CreateBrand
+        open={openCompanyDialog}
+        onClose={handleCloseCompanyDialog}
+        setBrand={setBrandState}
+      />
     </Box>
   );
 }

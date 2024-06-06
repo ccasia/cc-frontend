@@ -1,6 +1,7 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
@@ -11,18 +12,14 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import useGetCompany from 'src/hooks/use-get-company';
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
-export default function CreateCompany({ currentUser, open, onClose }) {
-  // const { enqueueSnackbar } = useSnackbar();
 
-  // const { getAdmins } = useGetAdmins();
 
-  // import setCompany and add the latest company
+export default function CreateCompany({ setCompany,currentUser, open, onClose }) {
+
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -57,7 +54,8 @@ export default function CreateCompany({ currentUser, open, onClose }) {
       const res = await axiosInstance.post(endpoints.company.createOneCompany, data);
       reset();
       onClose();
-      useGetCompany();
+      setCompany(data.name);
+      enqueueSnackbar('Company created successfully', { variant: 'success' });
       console.log(res.data);
     } catch (error) {
       console.log(error);
@@ -115,4 +113,5 @@ CreateCompany.propTypes = {
   currentUser: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
+  setCompany: PropTypes.func,
 };

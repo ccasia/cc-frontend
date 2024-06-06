@@ -1,25 +1,27 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
+import { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import MenuItem from '@mui/material/MenuItem';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import MenuItem from '@mui/material/MenuItem';
-import Chip from '@mui/material/Chip';
-import FormProvider, { RHFTextField, RHFSelect, RHFAutocomplete } from 'src/components/hook-form';
 
 import { useCompany } from 'src/hooks/zustands/useCompany';
 
-import CreateCompany from './companyDialog';
-import { useState } from 'react';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+
+import CreateCompany from './companyDialog';
 
 const intersList = [
   'Art',
@@ -36,9 +38,9 @@ const intersList = [
   'Technology',
   'Travel',
 ];
-export default function CreateBrand({ currentUser, open, onClose }) {
+export default function CreateBrand({ setBrand, open, onClose }) {
   const [openCompany, setOpenCompany] = useState(false);
-
+  const [companyState, setCompanyState] = useState('');
   const { company } = useCompany();
 
   const NewUserSchema = Yup.object().shape({
@@ -47,7 +49,7 @@ export default function CreateBrand({ currentUser, open, onClose }) {
     phone: Yup.string().required('Phone is required'),
     registration_number: Yup.string().required('Registration Number is required'),
     address: Yup.string().required('Address is required'),
-    company: Yup.string().required('Company is required'),
+    companyChoice: Yup.string().required('Company is required'),
     brandInstagram: Yup.string().required('Brand Instagram is required'),
     brandTiktok: Yup.string().required('Brand Tiktok is required'),
     brandFacebook: Yup.string().required('Brand Facebook is required'),
@@ -60,7 +62,7 @@ export default function CreateBrand({ currentUser, open, onClose }) {
     phone: '',
     registration_number: '',
     address: '',
-    company: '',
+    companyChoice: '',
     brandInstagram: '',
     brandTiktok: '',
     brandFacebook: '',
@@ -85,9 +87,21 @@ export default function CreateBrand({ currentUser, open, onClose }) {
       const res = await axiosInstance.post(endpoints.company.createOneBrand, data);
       reset();
       onClose();
-      window.location.reload();
-    } catch (error) {}
+      setBrand(data.name);
+      enqueueSnackbar('Brand created successfully', { variant: 'success' });
+      console.log(res.status)
+    } catch (error) {
+      console.log(error);
+    }
   });
+
+  console.log(companyState);
+  useEffect(() => {
+    if (companyState !== '') {
+      setValue('companyChoice', companyState);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyState]);
 
   return (
     <Dialog
@@ -121,12 +135,16 @@ export default function CreateBrand({ currentUser, open, onClose }) {
               }}
             >
               {' '}
-              <RHFSelect name="company" label="Company">
-                {company?.map((option) => (
-                  <MenuItem key={option.name} value={option.name}>
-                    {option.name}
-                  </MenuItem>
-                ))}
+              <RHFSelect name="companyChoice" label="Company">
+                {companyState ? (
+                  <MenuItem value={companyState}>{companyState}</MenuItem>
+                ) : (
+                  company?.map((option) => (
+                    <MenuItem key={option.name} value={option.name}>
+                      {option.name}
+                    </MenuItem>
+                  ))
+                )}
               </RHFSelect>{' '}
               <Box>
                 <Button
@@ -225,13 +243,14 @@ export default function CreateBrand({ currentUser, open, onClose }) {
         onClose={() => {
           setOpenCompany(false);
         }}
+        setCompany={setCompanyState}
       />
     </Dialog>
   );
 }
 
 CreateBrand.propTypes = {
-  currentUser: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
+  setBrand: PropTypes.func,
 };

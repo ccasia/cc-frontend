@@ -1,14 +1,17 @@
+import {  SnackbarProvider } from 'notistack';
+
 import Container from '@mui/material/Container';
 
 import { paths } from 'src/routes/paths';
 
-import useGetCompany from 'src/hooks/use-get-company';
 import useGetBrand from 'src/hooks/use-get-brand';
+import useGetCompany from 'src/hooks/use-get-company';
 
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import CreateCampaignForm from './form';
+
 
 
 function CreateCampaign() {
@@ -27,6 +30,7 @@ function CreateCampaign() {
       />
 
       <CreateCampaignForm />
+      <SnackbarProvider />
     </Container>
   );
 }
