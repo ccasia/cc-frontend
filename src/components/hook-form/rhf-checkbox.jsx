@@ -20,7 +20,6 @@ export function RHFCheckbox({ name, helperText, ...other }) {
       render={({ field, fieldState: { error } }) => (
         <div>
           <FormControlLabel control={<Checkbox {...field} checked={field.value} />} {...other} />
-
           {(!!error || helperText) && (
             <FormHelperText error={!!error}>{error ? error?.message : helperText}</FormHelperText>
           )}
@@ -110,4 +109,45 @@ RHFMultiCheckbox.propTypes = {
   row: PropTypes.bool,
   spacing: PropTypes.number,
   sx: PropTypes.object,
+};
+
+export function PermissionCheckBox({ name, helperText, label, value, resources, ...other }) {
+  const { control } = useFormContext();
+
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState: { error } }) => {
+        const currentActions = field?.value || [];
+
+        return (
+          <FormControlLabel
+            control={
+              <Checkbox
+                value={value}
+                checked={currentActions.includes(value)}
+                onChange={(e) => {
+                  const newActions = e.target.checked
+                    ? [...currentActions, value]
+                    : currentActions.filter((a) => a !== value);
+
+                  field.onChange(newActions);
+                }}
+              />
+            }
+            label={label}
+          />
+        );
+      }}
+    />
+  );
+}
+
+PermissionCheckBox.propTypes = {
+  helperText: PropTypes.string,
+  name: PropTypes.string,
+  label: PropTypes.string,
+  value: PropTypes.string,
+  resources: PropTypes.string,
 };

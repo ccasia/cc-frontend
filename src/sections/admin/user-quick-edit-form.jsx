@@ -1,9 +1,9 @@
 import * as Yup from 'yup';
-import { useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useMemo, useState, useCallback } from 'react';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -13,9 +13,11 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import { Tab, Tabs, Select, InputLabel, FormControl } from '@mui/material';
 
 import useGetAdmins from 'src/hooks/use-get-admins';
 
+import { flattenData } from 'src/utils/flatten-array';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
@@ -23,10 +25,23 @@ import { USER_STATUS_OPTIONS } from 'src/_mock';
 
 import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
+// eslint-disable-next-line import/no-cycle
+import { MODULE_ITEMS } from './view/user-list-view';
+
 // ----------------------------------------------------------------------
 
-export default function UserQuickEditForm({ currentUser, open, onClose }) {
+function UserQuickEditForm({ currentUser, open, onClose }) {
   const { getAdmins } = useGetAdmins();
+
+  const {
+    admin: { AdminPermissionModule },
+  } = currentUser;
+
+  const permissionAdmin = Object.values(flattenData(AdminPermissionModule));
+
+  console.log(permissionAdmin);
+
+  const [currentTab, setCurrentTab] = useState('profile');
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -34,34 +49,39 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
     designation: Yup.string().required('Designation is required'),
-    adminRole: Yup.string().required('Role is required'),
     mode: Yup.string().required('Mode is required'),
   });
 
-  const defaultValues = useMemo(
+  const defaultValuesProfile = useMemo(
     () => ({
       name: currentUser?.name || '',
       email: currentUser?.email || '',
       phoneNumber: currentUser?.phoneNumber || '',
       country: currentUser?.country || '',
       status: currentUser?.status,
-      adminRole: currentUser?.admin?.adminRole || '',
       designation: currentUser?.admin?.designation || '',
       mode: currentUser?.admin?.mode || '',
+      permission: Object.values(flattenData(AdminPermissionModule)) || [
+        // })) //   permission: [...item.permission.name], //   module: item?.module?.name, // AdminPermissionModule?.map((item) => ({
+        {
+          module: '',
+          permissions: [],
+        },
+      ],
     }),
-    [currentUser]
+    [currentUser, AdminPermissionModule]
   );
 
-  console.log(currentUser?.admin);
   const methods = useForm({
     resolver: yupResolver(NewUserSchema),
-    defaultValues,
+    defaultValues: defaultValuesProfile,
   });
 
   const {
     reset,
     handleSubmit,
-    formState: { isSubmitting },
+    control,
+    formState: { isSubmitting, errors },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
@@ -79,12 +99,21 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
           vertical: 'top',
         },
       });
-      // toast.success('Success');
+
       getAdmins();
     } catch (error) {
       console.error(error);
     }
   });
+
+  const { fields, append } = useFieldArray({
+    control,
+    name: 'permission',
+  });
+
+  const handleChangeTab = useCallback((event, newValue) => {
+    setCurrentTab(newValue);
+  }, []);
 
   return (
     <Dialog
@@ -100,52 +129,148 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
         <DialogTitle>Quick Update</DialogTitle>
 
         <DialogContent>
-          <Box
-            rowGap={3}
-            columnGap={2}
-            display="grid"
-            mt={2}
-            gridTemplateColumns={{
-              xs: 'repeat(1, 1fr)',
-              sm: 'repeat(2, 1fr)',
+          <Tabs
+            value={currentTab}
+            onChange={handleChangeTab}
+            sx={{
+              mb: 3,
             }}
           >
-            <RHFSelect name="status" label="Status">
-              {USER_STATUS_OPTIONS.map((status) => (
-                <MenuItem key={status.value} value={status.value}>
-                  {status.label}
-                </MenuItem>
+            <Tab value="profile" label="Profile" />
+            <Tab value="permission" label="Permissions" />
+          </Tabs>
+          {currentTab === 'profile' && (
+            <Box
+              rowGap={3}
+              columnGap={2}
+              display="grid"
+              mt={2}
+              gridTemplateColumns={{
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+              }}
+            >
+              <RHFSelect name="status" label="Status">
+                {USER_STATUS_OPTIONS.map((status) => (
+                  <MenuItem key={status.value} value={status.value}>
+                    {status.label}
+                  </MenuItem>
+                ))}
+              </RHFSelect>
+
+              <RHFTextField name="name" label="Full Name" />
+              <RHFTextField name="email" label="Email Address" />
+              <RHFTextField name="phoneNumber" label="Phone Number" />
+
+              <RHFAutocomplete
+                name="country"
+                type="country"
+                label="Country"
+                placeholder="Choose a country"
+                fullWidth
+                options={countries.map((option) => option.label)}
+                getOptionLabel={(option) => option}
+              />
+
+              <RHFSelect name="designation" label="Designation">
+                <MenuItem value="Finance">Finance</MenuItem>
+                <MenuItem value="CSM">CSM</MenuItem>
+                <MenuItem value="BD">BD</MenuItem>
+                <MenuItem value="Growth">Growth</MenuItem>
+              </RHFSelect>
+
+              <RHFSelect name="mode" label="Mode">
+                <MenuItem value="normal">Normal</MenuItem>
+                <MenuItem value="god">God</MenuItem>
+              </RHFSelect>
+            </Box>
+          )}
+
+          {currentTab === 'permission' && (
+            <Box
+              display="grid"
+              rowGap={2}
+              gridTemplateAreas={{
+                xs: 'repeat(1, 1fr)',
+              }}
+            >
+              {fields.map((elem, index) => (
+                <Box display="flex" gap={2} my={2} alignItems="center">
+                  <Controller
+                    name={`permission.${index}.module`}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <FormControl
+                        fullWidth
+                        error={
+                          errors.permission &&
+                          errors.permission[index] &&
+                          errors.permission[index].module
+                        }
+                      >
+                        <InputLabel id="module">Module</InputLabel>
+                        <Select labelId="module" label="Module" {...field}>
+                          {MODULE_ITEMS.map((item, a) => (
+                            <MenuItem value={item.value} key={a}>
+                              {item.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name={`permission.${index}.permissions`}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <FormControl
+                        fullWidth
+                        error={
+                          errors.permission &&
+                          errors.permission[index] &&
+                          errors.permission[index].permission
+                        }
+                      >
+                        <InputLabel id="permissions">Permission</InputLabel>
+                        <Select
+                          labelId="permissions"
+                          label="Permission"
+                          multiple
+                          {...field}
+                          required
+                        >
+                          <MenuItem value="create">Create</MenuItem>
+                          <MenuItem value="read">Read</MenuItem>
+                          <MenuItem value="update">Update</MenuItem>
+                          <MenuItem value="delete">Delete</MenuItem>
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+                  {/* <IconButton color="error" onClick={() => remove(index)}>
+                    <Iconify icon="mdi:trash" />
+                  </IconButton> */}
+                </Box>
               ))}
-            </RHFSelect>
 
-            <RHFTextField name="name" label="Full Name" />
-            <RHFTextField name="email" label="Email Address" />
-            <RHFTextField name="phoneNumber" label="Phone Number" />
-
-            <RHFAutocomplete
-              name="country"
-              type="country"
-              label="Country"
-              placeholder="Choose a country"
-              fullWidth
-              options={countries.map((option) => option.label)}
-              getOptionLabel={(option) => option}
-            />
-
-            <RHFTextField name="designation" label="Designation" />
-
-            <RHFSelect name="adminRole" label="Role">
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="finance admin">Finance Admin</MenuItem>
-              <MenuItem value="bd">BD</MenuItem>
-              <MenuItem value="growth">Growth</MenuItem>
-            </RHFSelect>
-
-            <RHFSelect name="mode" label="Mode">
-              <MenuItem value="normal">Normal</MenuItem>
-              <MenuItem value="god">God</MenuItem>
-            </RHFSelect>
-          </Box>
+              {fields.length < 5 && (
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  // onClick={() => permissionLength < 5 && setPermissionLength((prev) => prev + 1)}
+                  onClick={() => append({ module: '', permissions: [] })}
+                  sx={{
+                    my: 2,
+                  }}
+                >
+                  +
+                </Button>
+              )}
+            </Box>
+          )}
         </DialogContent>
 
         <DialogActions>
@@ -161,6 +286,8 @@ export default function UserQuickEditForm({ currentUser, open, onClose }) {
     </Dialog>
   );
 }
+
+export default UserQuickEditForm;
 
 UserQuickEditForm.propTypes = {
   open: PropTypes.bool,

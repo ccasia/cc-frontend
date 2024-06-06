@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useMemo, useEffect, useReducer, useCallback } from 'react';
 
 import axios, { endpoints } from 'src/utils/axios';
+import { flattenData } from 'src/utils/flatten-array';
 
 import { AuthContext } from './auth-context';
 import { setSession, isValidToken } from './utils';
@@ -181,12 +182,15 @@ export function AuthProvider({ children }) {
 
   const checkAuthenticated = state.user ? 'authenticated' : 'unauthenticated';
 
+  const permission = flattenData(state.user?.admin?.AdminPermissionModule);
+
   const status = state.loading ? 'loading' : checkAuthenticated;
 
   const memoizedValue = useMemo(
     () => ({
       user: state.user,
       method: 'jwt',
+      permission,
       loading: status === 'loading',
       authenticated: status === 'authenticated',
       unauthenticated: status === 'unauthenticated',
@@ -196,7 +200,7 @@ export function AuthProvider({ children }) {
       verify,
       logout,
     }),
-    [login, logout, register, verify, state.user, status]
+    [login, logout, register, verify, state.user, status, permission]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;

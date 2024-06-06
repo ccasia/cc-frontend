@@ -6,7 +6,6 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import MenuItem from '@mui/material/MenuItem';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
@@ -17,14 +16,12 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { countries } from 'src/assets/data';
 
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
 export default function AdminCreateManager({ currentUser, open, onClose }) {
   const { enqueueSnackbar } = useSnackbar();
-
-  // const { getAdmins } = useGetAdmins();
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -32,7 +29,6 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
     designation: Yup.string().required('Designation is required'),
-    adminRole: Yup.string().required('Role is required'),
   });
 
   const defaultValues = {
@@ -40,7 +36,6 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
     email: '',
     phoneNumber: '',
     country: '',
-    adminRole: '',
     designation: '',
   };
 
@@ -112,13 +107,6 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
               options={countries.map((option) => option.label)}
               getOptionLabel={(option) => option}
             />
-
-            <RHFSelect name="adminRole" label="Role">
-              <MenuItem value="admin">CSM</MenuItem>
-              <MenuItem value="finance admin">Finance Admin</MenuItem>
-              <MenuItem value="bd">BD</MenuItem>
-              <MenuItem value="growth">Growth</MenuItem>
-            </RHFSelect>
 
             <RHFTextField name="designation" label="Designation" />
           </Box>

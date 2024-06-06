@@ -303,8 +303,8 @@ const Profile = () => {
         }}
       />
 
-      {['admin'].includes(user?.role) ? Admintabs : CreatorTabs}
-      {['admin'].includes(user?.role) ? adminContents : creatorContents}
+      {['admin', 'superadmin'].includes(user?.role) ? Admintabs : CreatorTabs}
+      {['admin', 'superadmin'].includes(user?.role) ? adminContents : creatorContents}
 
       <Toaster />
     </Container>

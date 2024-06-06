@@ -1,6 +1,9 @@
+import * as yup from 'yup';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { useState, useEffect, useCallback } from 'react';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -14,16 +17,23 @@ import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
 import {
+  Box,
   Menu,
+  Step,
   Stack,
   Dialog,
+  Select,
+  Stepper,
   MenuItem,
   TextField,
+  StepLabel,
   Typography,
+  InputLabel,
   DialogTitle,
+  StepContent,
+  FormControl,
   DialogContent,
   DialogActions,
-  DialogContentText,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -55,6 +65,7 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
+// eslint-disable-next-line import/no-cycle
 import UserTableRow from '../user-table-row';
 import UserTableToolbar from '../user-table-toolbar';
 import AdminCreateManager from '../admin-create-form';
@@ -72,6 +83,29 @@ const TABLE_HEAD = [
   { id: 'mode', label: 'Mode', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
   { id: '', width: 88 },
+];
+
+export const MODULE_ITEMS = [
+  {
+    name: 'Manage Creator',
+    value: 'creator',
+  },
+  {
+    name: 'Manage Campaign',
+    value: 'campaign',
+  },
+  {
+    name: 'Manage Brand',
+    value: 'brand',
+  },
+  {
+    name: 'Manage Metric',
+    value: 'metric',
+  },
+  {
+    name: 'Manage Invoice',
+    value: 'invoice',
+  },
 ];
 
 const defaultFilters = {
@@ -200,14 +234,60 @@ export default function UserListView() {
     [handleFilters]
   );
 
-  const handleSubmit = async (email) => {
+  const [activeStep, setActiveStep] = useState(0);
+
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  // const handleReset = () => {
+  //   setActiveStep(0);
+  // };
+
+  const schema = yup.object().shape({
+    email: yup.string().email().required(),
+    permission: yup.array().of(
+      yup.object().shape({
+        module: yup.string().required(),
+        permissions: yup.array().required(),
+      })
+    ),
+  });
+
+  const {
+    control,
+    handleSubmit,
+
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      permission: [
+        {
+          module: '',
+          permissions: [],
+        },
+      ],
+    },
+    resolver: yupResolver(schema),
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'permission',
+  });
+
+  const onSubmit = async (data) => {
     try {
-      await axiosInstance.post(endpoints.users.newAdmin, { email });
+      await axiosInstance.post(endpoints.users.newAdmin, data);
       enqueueSnackbar('Link has been sent to admin!');
-      // toast.success('Link has been sent to admin!');
+      handleCloseDialog();
+      handleClose();
     } catch (error) {
       enqueueSnackbar(error.message, { variant: 'error' });
-      // toast.error(error.message);
     }
   };
 
@@ -215,33 +295,137 @@ export default function UserListView() {
     <Dialog
       open={openDialog}
       onClose={handleCloseDialog}
+      fullWidth
       PaperProps={{
         component: 'form',
-        onSubmit: async (event) => {
-          event.preventDefault();
-          const formData = new FormData(event.currentTarget);
-          const formJson = Object.fromEntries(formData.entries());
-          const { email } = formJson;
-          await handleSubmit(email);
-          handleCloseDialog();
-          handleClose();
-        },
+        onSubmit: handleSubmit(onSubmit),
       }}
     >
       <DialogTitle>Invite Admin</DialogTitle>
+
       <DialogContent>
-        <DialogContentText>Please enter the email you wish to use the system.</DialogContentText>
-        <TextField
-          autoFocus
-          required
-          margin="dense"
-          id="name"
-          name="email"
-          label="Email Address"
-          type="email"
-          fullWidth
-          variant="standard"
-        />
+        {/* <DialogContentText>Please enter the email you wish to use the system.</DialogContentText> */}
+        <Stepper activeStep={activeStep} orientation="vertical">
+          <Step>
+            <StepLabel>Permission</StepLabel>
+            <StepContent>
+              {fields.map((elem, index) => (
+                <Box display="flex" gap={2} my={2} alignItems="center">
+                  <Controller
+                    name={`permission.${index}.module`}
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl
+                        fullWidth
+                        error={
+                          errors.permission &&
+                          errors.permission[index] &&
+                          errors.permission[index].module
+                        }
+                      >
+                        <InputLabel id="module">Module</InputLabel>
+                        <Select labelId="module" label="Module" {...field}>
+                          {MODULE_ITEMS.map((item, a) => (
+                            <MenuItem value={item.value} key={a}>
+                              {item.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name={`permission.${index}.permissions`}
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl
+                        fullWidth
+                        error={
+                          errors.permission &&
+                          errors.permission[index] &&
+                          errors.permission[index].permissions
+                        }
+                      >
+                        <InputLabel id="permission">Permission</InputLabel>
+                        <Select
+                          labelId="permission"
+                          label="Permission"
+                          {...field}
+                          required
+                          multiple
+                        >
+                          <MenuItem value="create">Create</MenuItem>
+                          <MenuItem value="read">Read</MenuItem>
+                          <MenuItem value="update">Update</MenuItem>
+                          <MenuItem value="delete">Delete</MenuItem>
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+                  <IconButton color="error" onClick={() => remove(index)}>
+                    <Iconify icon="mdi:trash" />
+                  </IconButton>
+                </Box>
+              ))}
+
+              {fields.length < 5 && (
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  // onClick={() => permissionLength < 5 && setPermissionLength((prev) => prev + 1)}
+                  onClick={() => append({ module: '', permissions: [] })}
+                  sx={{
+                    my: 2,
+                  }}
+                >
+                  +
+                </Button>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                // onClick={() => permissionLength < 5 && setPermissionLength((prev) => prev + 1)}
+                onClick={handleNext}
+                sx={{
+                  my: 2,
+                }}
+              >
+                Next
+              </Button>
+            </StepContent>
+          </Step>
+          <Step>
+            <StepLabel>Email</StepLabel>
+            <StepContent>
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    margin="dense"
+                    label="Email Address"
+                    type="email"
+                    fullWidth
+                    variant="outlined"
+                    error={errors.email}
+                  />
+                )}
+              />
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={handleBack}
+                sx={{
+                  my: 2,
+                }}
+              >
+                Back
+              </Button>
+            </StepContent>
+          </Step>
+        </Stepper>
       </DialogContent>
       <DialogActions>
         <Button

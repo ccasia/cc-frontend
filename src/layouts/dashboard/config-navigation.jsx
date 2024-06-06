@@ -164,6 +164,11 @@ export function useNavData() {
                 path: paths.dashboard.campaign.manage,
                 // icon: <Iconify icon="mingcute:settings-3-fill" />,
               },
+              {
+                title: 'Settings',
+                path: paths.dashboard.campaign.settings,
+                // icon: <Iconify icon="mingcute:settings-3-fill" />,
+              },
             ],
           },
         ],

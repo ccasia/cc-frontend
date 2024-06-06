@@ -9,7 +9,9 @@ import DashboardCreator from 'src/sections/creator/dashboard';
 // ----------------------------------------------------------------------
 
 export default function Page() {
-  const { user } = useAuthContext();
+  const { user, permission } = useAuthContext();
+
+  console.log(permission);
 
   return (
     <>
