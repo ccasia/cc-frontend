@@ -43,10 +43,6 @@ function Group({ subheader, items, slotProps, whoCanSee }) {
     setOpen((prev) => !prev);
   }, []);
 
-  // const renderContent = items?.map((list) => (
-  //   <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />
-  // ));
-
   const renderContent =
     whoCanSee &&
     (Array.from(whoCanSee).includes(user?.role) ||

@@ -289,6 +289,7 @@ function BrandWithCompany() {
       </Box>
     );
   }
+  
   function companyObjectives() {
     return (
       <Box

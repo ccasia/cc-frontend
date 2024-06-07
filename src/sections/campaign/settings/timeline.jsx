@@ -12,15 +12,42 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 // eslint-disable-next-line react/prop-types
 const Timeline = ({ defaultTimeline, isSmallScreen }) => {
   const schema = Yup.object().shape({
-    openForPitch: Yup.number('Must be a number').required('Required'),
-    filterPitch: Yup.number().required(),
-    shortlistCreator: Yup.number().required(),
-    agreementSign: Yup.number().required(),
-    firstDraft: Yup.number().required(),
-    feedBackFirstDraft: Yup.number().required(),
-    finalDraft: Yup.number().required(),
-    qc: Yup.number().required(),
-    feedBackFinalDraft: Yup.number().required(),
+    openForPitch: Yup.number('Must be a number')
+      .min(14, 'Minumum is 14 days')
+      .max(30, 'Maximum is 30 days')
+      .required('Open for pitch timeline is required'),
+    filterPitch: Yup.number('Must be a number')
+      .min(2, 'Minumum is 2 days')
+      .max(3, 'Maximum is 3 days')
+      .required('Filtering timeline is required'),
+    shortlistCreator: Yup.number('Must be a number')
+      .min(1, 'Minumum is 1 days')
+      .max(2, 'Maximum is 2 days')
+      .required('Shortlist creator timeline is required'),
+    agreementSign: Yup.number('Must be a number')
+      .min(1, 'Minumum is 1 days')
+      .max(2, 'Maximum is 2 days')
+      .required('Sign of agreement timeline is required'),
+    firstDraft: Yup.number('Must be a number')
+      .min(3, 'Minumum is 3 days')
+      .max(5, 'Maximum is 5 days')
+      .required('First draft timeline is required'),
+    feedBackFirstDraft: Yup.number('Must be a number')
+      .min(2, 'Minumum is 2 days')
+      .max(3, 'Maximum is 3 days')
+      .required('Feedback first draft timeline is required'),
+    finalDraft: Yup.number('Must be a number')
+      .min(2, 'Minumum is 2 days')
+      .max(4, 'Maximum is 4 days')
+      .required('Final draft timeline is required'),
+    feedBackFinalDraft: Yup.number('Must be a number')
+      .min(1, 'Minumum is 1 days')
+      .max(2, 'Maximum is 2 days')
+      .required('Feedback final draft timeline is required'),
+    posting: Yup.number('Must be a number')
+      .max(2, 'Maximum is 2 days')
+      .required('Posting social media timeline is required'),
+    qc: Yup.number('Must be a number').required('QC timeline is required'),
   });
 
   const defaultValues = {
@@ -33,6 +60,7 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
     finalDraft: '',
     qc: '',
     feedBackFinalDraft: '',
+    posting: '',
   };
 
   const methods = useForm({
@@ -106,6 +134,8 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
                 InputProps={{
                   endAdornment: <InputAdornment position="start">days</InputAdornment>,
                 }}
+                error={errors?.filterPitch}
+                helperText={errors?.filterPitch && errors?.filterPitch?.message}
               />
             )}
           />
@@ -120,6 +150,8 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
                 InputProps={{
                   endAdornment: <InputAdornment position="start">days</InputAdornment>,
                 }}
+                error={errors?.shortlistCreator}
+                helperText={errors?.shortlistCreator && errors?.shortlistCreator?.message}
               />
             )}
           />
@@ -134,6 +166,8 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
                 InputProps={{
                   endAdornment: <InputAdornment position="start">days</InputAdornment>,
                 }}
+                error={errors?.agreementSign}
+                helperText={errors?.agreementSign && errors?.agreementSign?.message}
               />
             )}
           />
@@ -148,6 +182,8 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
                 InputProps={{
                   endAdornment: <InputAdornment position="start">days</InputAdornment>,
                 }}
+                error={errors?.firstDraft}
+                helperText={errors?.firstDraft && errors?.firstDraft?.message}
               />
             )}
           />
@@ -162,6 +198,8 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
                 InputProps={{
                   endAdornment: <InputAdornment position="start">days</InputAdornment>,
                 }}
+                error={errors?.feedBackFirstDraft}
+                helperText={errors?.feedBackFirstDraft && errors?.feedBackFirstDraft?.message}
               />
             )}
           />
@@ -176,6 +214,8 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
                 InputProps={{
                   endAdornment: <InputAdornment position="start">days</InputAdornment>,
                 }}
+                error={errors?.finalDraft}
+                helperText={errors?.finalDraft && errors?.finalDraft?.message}
               />
             )}
           />
@@ -190,6 +230,8 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
                 InputProps={{
                   endAdornment: <InputAdornment position="start">days</InputAdornment>,
                 }}
+                error={errors?.qc}
+                helperText={errors?.qc && errors?.qc?.message}
               />
             )}
           />
@@ -204,6 +246,24 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
                 InputProps={{
                   endAdornment: <InputAdornment position="start">days</InputAdornment>,
                 }}
+                error={errors?.feedBackFinalDraft}
+                helperText={errors?.feedBackFinalDraft && errors?.feedBackFinalDraft?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name="posting"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Posting in social media"
+                InputProps={{
+                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
+                }}
+                error={errors?.posting}
+                helperText={errors?.posting && errors?.posting?.message}
               />
             )}
           />

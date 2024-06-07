@@ -88,6 +88,8 @@ export const endpoints = {
     create: '/api/company/createCompany',
     getAll: 'api/company/getCompanies',
     createBrand: '/api/company/createBrand',
+    getCompany: '/api/company/getCompany',
+    delete: '/api/company/deleteCompany',
   },
   event: {
     list: '/api/event/',

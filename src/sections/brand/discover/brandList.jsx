@@ -1,22 +1,25 @@
 import PropTypes from 'prop-types';
-import { useCallback } from 'react';
+import { enqueueSnackbar } from 'notistack';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Pagination, { paginationClasses } from '@mui/material/Pagination';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import BrandItem from './brandItem';
 
 // ----------------------------------------------------------------------
 
-export default function BrandList({ jobs }) {
+export default function BrandList({ companies }) {
   const router = useRouter();
-console.log(jobs);
+  const [filterData, setFilterData] = useState();
+
   const handleView = useCallback(
     (id) => {
-      router.push(paths.dashboard.job.details(id));
+      router.push(paths.dashboard.brand.details(id));
     },
     [router]
   );
@@ -28,9 +31,23 @@ console.log(jobs);
     [router]
   );
 
-  const handleDelete = useCallback((id) => {
-    console.info('DELETE', id);
+  const handleDelete = useCallback(async (id) => {
+    try {
+      const res = await axiosInstance.delete(`${endpoints.company.delete}/${id}`);
+      enqueueSnackbar(res?.data?.message, {
+        variant: 'success',
+      });
+      setFilterData((prev) => prev.filter((elem) => elem.id !== id));
+    } catch (error) {
+      enqueueSnackbar('Failed to delete', {
+        variant: 'error',
+      });
+    }
   }, []);
+
+  useEffect(() => {
+    setFilterData([...companies]);
+  }, [companies]);
 
   return (
     <>
@@ -43,18 +60,17 @@ console.log(jobs);
           md: 'repeat(3, 1fr)',
         }}
       >
-        {jobs.map((job) => (
+        {filterData?.map((company) => (
           <BrandItem
-            key={job.id}
-            job={job}
-            onView={() => handleView(job.id)}
-            onEdit={() => handleEdit(job.id)}
-            onDelete={() => handleDelete(job.id)}
+            key={company.id}
+            company={company}
+            onView={() => handleView(company.id)}
+            onEdit={() => handleEdit(company.id)}
+            onDelete={() => handleDelete(company.id)}
           />
         ))}
       </Box>
-
-      {jobs.length > 8 && (
+      {/* {jobs.length > 8 && (
         <Pagination
           count={8}
           sx={{
@@ -64,11 +80,11 @@ console.log(jobs);
             },
           }}
         />
-      )}
+      )} */}
     </>
   );
 }
 
 BrandList.propTypes = {
-  jobs: PropTypes.array,
+  companies: PropTypes.array,
 };

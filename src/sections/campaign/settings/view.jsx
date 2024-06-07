@@ -58,6 +58,7 @@ const CampaignSetting = () => {
               '& .MuiTab-root': {
                 pr: 2,
                 width: '100%',
+                borderRadius: 1.5,
               },
             }}
             onChange={handleChange}
@@ -67,7 +68,9 @@ const CampaignSetting = () => {
           </Tabs>
 
           <Box sx={{ padding: 3, width: '100%' }}>
-            {tab === 'timeline' && <Timeline defaultTimeline={defaultTimeline} isSmallScreen={isSmallScreen} />}
+            {tab === 'timeline' && (
+              <Timeline defaultTimeline={defaultTimeline} isSmallScreen={isSmallScreen} />
+            )}
           </Box>
         </Box>
       </Box>

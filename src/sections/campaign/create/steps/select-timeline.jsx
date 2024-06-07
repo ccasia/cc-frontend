@@ -152,6 +152,20 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
           />
         )}
       />
+
+      <Controller
+        name="defaultTimeline.posting"
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Posting in social media"
+            disabled
+            InputProps={{
+              endAdornment: <InputAdornment position="start">days</InputAdornment>,
+            }}
+          />
+        )}
+      />
     </Box>
   );
 
@@ -190,6 +204,10 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
+            error={errors?.customTimeline?.filterPitch}
+            helperText={
+              errors?.customTimeline?.filterPitch && errors?.customTimeline?.filterPitch?.message
+            }
           />
         )}
       />
@@ -203,6 +221,11 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
+            error={errors?.customTimeline?.shortlistCreator}
+            helperText={
+              errors?.customTimeline?.shortlistCreator &&
+              errors?.customTimeline?.shortlistCreator?.message
+            }
           />
         )}
       />
@@ -216,6 +239,11 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
+            error={errors?.customTimeline?.agreementSign}
+            helperText={
+              errors?.customTimeline?.agreementSign &&
+              errors?.customTimeline?.agreementSign?.message
+            }
           />
         )}
       />
@@ -229,6 +257,10 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
+            error={errors?.customTimeline?.firstDraft}
+            helperText={
+              errors?.customTimeline?.firstDraft && errors?.customTimeline?.firstDraft?.message
+            }
           />
         )}
       />
@@ -242,6 +274,11 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
+            error={errors?.customTimeline?.feedBackFirstDraft}
+            helperText={
+              errors?.customTimeline?.feedBackFirstDraft &&
+              errors?.customTimeline?.feedBackFirstDraft?.message
+            }
           />
         )}
       />
@@ -255,6 +292,10 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
+            error={errors?.customTimeline?.finalDraft}
+            helperText={
+              errors?.customTimeline?.finalDraft && errors?.customTimeline?.finalDraft?.message
+            }
           />
         )}
       />
@@ -268,6 +309,8 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
+            error={errors?.customTimeline?.qc}
+            helperText={errors?.customTimeline?.qc && errors?.customTimeline?.qc?.message}
           />
         )}
       />
@@ -281,6 +324,27 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
+            error={errors?.customTimeline?.feedBackFinalDraft}
+            helperText={
+              errors?.customTimeline?.feedBackFinalDraft &&
+              errors?.customTimeline?.feedBackFinalDraft?.message
+            }
+          />
+        )}
+      />
+
+      <Controller
+        name="customTimeline.posting"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label="Posting in social media"
+            InputProps={{
+              endAdornment: <InputAdornment position="start">days</InputAdornment>,
+            }}
+            error={errors?.customTimeline?.posting}
+            helperText={errors?.customTimeline?.posting && errors?.customTimeline?.posting?.message}
           />
         )}
       />

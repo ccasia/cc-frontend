@@ -98,17 +98,45 @@ function CreateCampaignForm() {
       firstDraft: Yup.number('Must be a number').min(1),
       qc: Yup.number('Must be a number').min(1),
       shortlistCreator: Yup.number('Must be a number').min(1),
+      posting: Yup.number('Must be a number').min(1),
     }),
     customTimeline: Yup.object().shape({
-      openForPitch: Yup.number('Must be a number').min(1),
-      agreementSign: Yup.number('Must be a number').min(1),
-      feedBackFinalDraft: Yup.number('Must be a number').min(1),
-      feedBackFirstDraft: Yup.number('Must be a number').min(1),
-      filterPitch: Yup.number('Must be a number').min(1),
-      finalDraft: Yup.number('Must be a number').min(1),
-      firstDraft: Yup.number('Must be a number').min(1),
-      qc: Yup.number('Must be a number').min(1),
-      shortlistCreator: Yup.number('Must be a number').min(1),
+      openForPitch: Yup.number('Must be a number')
+        .min(14, 'Minumum is 14 days')
+        .max(30, 'Maximum is 30 days')
+        .required('Open for pitch timeline is required'),
+      filterPitch: Yup.number('Must be a number')
+        .min(2, 'Minumum is 2 days')
+        .max(3, 'Maximum is 3 days')
+        .required('Filtering timeline is required'),
+      shortlistCreator: Yup.number('Must be a number')
+        .min(1, 'Minumum is 1 days')
+        .max(2, 'Maximum is 2 days')
+        .required('Shortlist creator timeline is required'),
+      agreementSign: Yup.number('Must be a number')
+        .min(1, 'Minumum is 1 days')
+        .max(2, 'Maximum is 2 days')
+        .required('Sign of agreement timeline is required'),
+      firstDraft: Yup.number('Must be a number')
+        .min(3, 'Minumum is 3 days')
+        .max(5, 'Maximum is 5 days')
+        .required('First draft timeline is required'),
+      feedBackFirstDraft: Yup.number('Must be a number')
+        .min(2, 'Minumum is 2 days')
+        .max(3, 'Maximum is 3 days')
+        .required('Feedback first draft timeline is required'),
+      finalDraft: Yup.number('Must be a number')
+        .min(2, 'Minumum is 2 days')
+        .max(4, 'Maximum is 4 days')
+        .required('Final draft timeline is required'),
+      feedBackFinalDraft: Yup.number('Must be a number')
+        .min(1, 'Minumum is 1 days')
+        .max(2, 'Maximum is 2 days')
+        .required('Feedback final draft timeline is required'),
+      posting: Yup.number('Must be a number')
+        .max(2, 'Maximum is 2 days')
+        .required('Posting social media timeline is required'),
+      qc: Yup.number('Must be a number').required('QC timeline is required'),
     }),
   });
 

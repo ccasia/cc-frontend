@@ -27,6 +27,7 @@ export const paths = {
       manage: `${ROOTS.DASHBOARD}/brand/manage`,
       create: `${ROOTS.DASHBOARD}/brand/create`,
       discover: `${ROOTS.DASHBOARD}/brand/discover`,
+      details: (id) => `${ROOTS.DASHBOARD}/brand/details/${id}`,
     },
     campaign: {
       manage: `${ROOTS.DASHBOARD}/campaign/manage`,
