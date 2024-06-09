@@ -3,8 +3,8 @@ import * as Yup from 'yup';
 import { useState, useEffect } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, useFieldArray } from 'react-hook-form';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -16,7 +16,7 @@ import { alpha } from '@mui/material/styles';
 import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Stack, Tooltip, IconButton, Autocomplete } from '@mui/material';
+import { Stack, Tooltip, IconButton } from '@mui/material';
 
 import useGetCompany from 'src/hooks/use-get-company';
 
@@ -73,7 +73,8 @@ function CompanyBrandBasic() {
     brandFacebook: Yup.string().required('Brand Facebook is required'),
     brandIntersts: Yup.array().min(3, 'Brand Interests is required'),
     brandIndustries: Yup.array().min(3, 'Brand Industries is required'),
-    companyId: Yup.string().required('Company is required'),
+    companyId: Yup.object().required('Company is required'),
+    // companyId: Yup.string().required('Company is required'),
   });
 
   const defaultValuesOne = {
@@ -81,7 +82,7 @@ function CompanyBrandBasic() {
     brandEmail: '',
     brandWebsite: '',
     brandAbout: '',
-    companyId: '',
+    companyId: { name: '', value: '' },
     brandObjectives: [
       {
         value: '',
@@ -115,8 +116,14 @@ function CompanyBrandBasic() {
   });
 
   const onSubmit = handleSubmit(async (data) => {
+    const { companyId } = data;
+    const updatedData = {
+      ...data,
+      companyId: companyId.value,
+    };
+
     try {
-      await axiosInstance.post(endpoints.company.createBrand, data);
+      await axiosInstance.post(endpoints.company.createBrand, updatedData);
       enqueueSnackbar('Brand created !! 😀 ', { variant: 'success' });
       setActiveStep((prevActiveStep) => prevActiveStep - 2);
       reset();
@@ -137,10 +144,6 @@ function CompanyBrandBasic() {
     console.log('final', data);
   };
 
-  const onSelectCompany = (item) => {
-    setValue('companyId', item?.id);
-  };
-
   function companyInfo() {
     const selectCompany = (
       <Stack gap={2}>
@@ -158,30 +161,20 @@ function CompanyBrandBasic() {
         >
           Create a new company
         </Button>
-        <Controller
+
+        <RHFAutocomplete
+          key="companyId"
           name="companyId"
-          control={control}
-          render={(item) => (
-            <Autocomplete
-              {...item.fields}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Select a company"
-                  error={errors?.companyId}
-                  helperText={errors?.companyId && errors.companyId?.message}
-                />
-              )}
-              options={companies && companies}
-              getOptionLabel={(option) => option?.name}
-              onChange={(e, val) => onSelectCompany(val)}
-              renderOption={(field, option) => (
-                <Stack direction="row" alignItems="center" {...field} gap={2}>
-                  {/* <img loading="lazy" width="20" src={option?.logo_url} alt="" /> */}
-                  <Typography>{option?.name}</Typography>
-                </Stack>
-              )}
-            />
+          placeholder="Select a company"
+          freeSolo="true"
+          // disableCloseOnSelect
+          options={companies && companies.map((item) => ({ name: item?.name, value: item?.id }))}
+          getOptionLabel={(option) => option?.name}
+          renderOption={(field, option) => (
+            <Stack direction="row" alignItems="center" {...field} gap={2}>
+              {/* <img loading="lazy" width="20" src={option?.logo_url} alt="" /> */}
+              <Typography>{option?.name}</Typography>
+            </Stack>
           )}
         />
       </Stack>
