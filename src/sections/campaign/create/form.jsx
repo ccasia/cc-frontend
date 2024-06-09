@@ -20,10 +20,12 @@ import Typography from '@mui/material/Typography';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
 
 import Iconify from 'src/components/iconify';
-import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import FormProvider from 'src/components/hook-form/form-provider';
+import { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import CreateCompany from './companyDialog';
 import SelectTimeline from './steps/select-timeline';
+import NotificationReminder from './steps/notification-reminder';
 
 const steps = [
   'Fill in campaign information',
@@ -55,6 +57,7 @@ function CreateCampaignForm() {
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const { defaultTimeline, loading, error } = useGetTimeline();
+  const [timeline, setTimeline] = useState('defaultTimeline');
 
   const open = Boolean(anchorEl);
 
@@ -88,19 +91,20 @@ function CreateCampaignForm() {
     campaignIndustries: Yup.array().min(3, 'Choose at least three option'),
     campaignCompany: Yup.string().required('Company name is required'),
     campaignBrand: Yup.string().required('Brand name is required'),
-    defaultTimeline: Yup.object().shape({
-      openForPitch: Yup.number('Must be a number').min(1),
-      agreementSign: Yup.number('Must be a number').min(1),
-      feedBackFinalDraft: Yup.number('Must be a number').min(1),
-      feedBackFirstDraft: Yup.number('Must be a number').min(1),
-      filterPitch: Yup.number('Must be a number').min(1),
-      finalDraft: Yup.number('Must be a number').min(1),
-      firstDraft: Yup.number('Must be a number').min(1),
-      qc: Yup.number('Must be a number').min(1),
-      shortlistCreator: Yup.number('Must be a number').min(1),
-      posting: Yup.number('Must be a number').min(1),
-    }),
-    customTimeline: Yup.object().shape({
+    // defaultTimeline: Yup.object().shape({
+    //   openForPitch: Yup.number('Must be a number').min(1),
+    //   agreementSign: Yup.number('Must be a number').min(1),
+    //   feedBackFinalDraft: Yup.number('Must be a number').min(1),
+    //   feedBackFirstDraft: Yup.number('Must be a number').min(1),
+    //   filterPitch: Yup.number('Must be a number').min(1),
+    //   finalDraft: Yup.number('Must be a number').min(1),
+    //   firstDraft: Yup.number('Must be a number').min(1),
+    //   qc: Yup.number('Must be a number').min(1),
+    //   shortlistCreator: Yup.number('Must be a number').min(1),
+    //   posting: Yup.number('Must be a number').min(1),
+    // }),
+
+    timeline: Yup.object().shape({
       openForPitch: Yup.number('Must be a number')
         .min(14, 'Minumum is 14 days')
         .max(30, 'Maximum is 30 days')
@@ -146,13 +150,14 @@ function CreateCampaignForm() {
     campaignIndustries: [],
     campaignCompany: '',
     campaignBrand: '',
-    defaultTimeline: {},
-    customTimeline: {},
+    timeline: {},
   };
 
   const methods = useForm({
     resolver: yupResolver(campaignSchema),
     defaultValues,
+    reValidateMode: 'onChange',
+    mode: 'onChange',
   });
 
   const {
@@ -160,12 +165,15 @@ function CreateCampaignForm() {
     getValues,
     control,
     setValue,
-    formState: { errors },
+    register,
+    formState: { errors, isDirty },
   } = methods;
 
   useEffect(() => {
-    setValue('defaultTimeline', defaultTimeline);
-  }, [defaultTimeline, setValue]);
+    if (timeline === 'defaultTimeline') {
+      setValue('timeline', defaultTimeline);
+    }
+  }, [defaultTimeline, setValue, timeline]);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -195,7 +203,6 @@ function CreateCampaignForm() {
       }}
     >
       <RHFTextField name="campaignName" label="Campaign Name" />
-      {/* <Box sx={{ flexGrow: 1 }} /> */}
       <Box
         sx={{
           display: 'flex',
@@ -276,8 +283,6 @@ function CreateCampaignForm() {
         </Box>
       </Box>
 
-      {/* <RHFTextField name="campaignCompany" label="Company" /> */}
-      {/* <RHFTextField name="campaignBrand" label="Brand" /> */}
       <RHFSelect name="campaignBrand" label="Brand">
         {companies.map((option) => (
           <MenuItem key={option[0]} value={option[0]}>
@@ -337,9 +342,6 @@ function CreateCampaignForm() {
           ))
         }
       />
-
-      {/* <RHFDatePicker name="campaignStartDate"  />
-          <RHFDatePicker name="campaignEndDate" /> */}
     </Box>
   );
 
@@ -357,10 +359,12 @@ function CreateCampaignForm() {
             getValues={getValues}
             setValue={setValue}
             errors={errors}
+            timeline={timeline}
+            setTimeline={setTimeline}
           />
         );
       case 3:
-        return <h3>step 4</h3>;
+        return <NotificationReminder />;
       case 4:
         return <h3>step 5</h3>;
       case 5:

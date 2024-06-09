@@ -63,14 +63,15 @@ const CampaignSetting = () => {
             }}
             onChange={handleChange}
           >
-            <Tab value="timeline" label="Default timeline" />
-            <Tab value="other" label="Other setting..." />
+            <Tab value="timeline" label="Default Timeline" />
+            <Tab value="reminder" label="Default Reminder" />
           </Tabs>
 
           <Box sx={{ padding: 3, width: '100%' }}>
             {tab === 'timeline' && (
               <Timeline defaultTimeline={defaultTimeline} isSmallScreen={isSmallScreen} />
             )}
+            {tab === 'reminder' && <h1>Reminder</h1>}
           </Box>
         </Box>
       </Box>

@@ -60,7 +60,8 @@
 
 // console.log(JSON.stringify(a, null, 2));
 
-const originalObject = { a: 1, b: 2 };
-const copyObject = { ...originalObject, a: 'adw' };
+const company = {
+  Error: 'ADWADwa',
+};
 
-console.log(copyObject);
+console.log(Object.values(company)[0].includes('A'));

@@ -31,7 +31,7 @@ import UploadPhoto from 'src/sections/profile/dropzone';
 const COMPANY_STEPS = ['Company Information', 'Company objectives'];
 
 // eslint-disable-next-line react/prop-types
-const CreateCompany = ({ setOpenCreate, openCreate }) => {
+const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
   const [image, setImage] = useState(null);
   const [activeStep, setActiveStep] = useState(0);
 
@@ -94,13 +94,17 @@ const CreateCompany = ({ setOpenCreate, openCreate }) => {
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.post(endpoints.company.create, data);
+      set('companyId', res.data?.company.id);
       setOpenCreate(false);
       reset();
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
       });
     } catch (error) {
-      console.log(error);
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+      // console.log(error);
     } finally {
       setOpenCreate(false);
     }

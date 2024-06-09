@@ -1,20 +1,25 @@
 /* eslint-disable react/prop-types */
 import PropTypes from 'prop-types';
+import React, { useEffect } from 'react';
 import { Controller } from 'react-hook-form';
-import React, { useState, useEffect } from 'react';
 
 import { Box, TextField, ToggleButton, InputAdornment, ToggleButtonGroup } from '@mui/material';
 
 // eslint-disable-next-line react/prop-types
-const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors }) => {
+const SelectTimeline = ({
+  control,
+  defaultTimeline,
+  getValues,
+  setValue,
+  errors,
+  timeline,
+  setTimeline,
+}) => {
   // eslint-disable-next-line no-unused-vars
-  const [timeline, setTimeline] = useState('defaultTimeline');
 
   useEffect(() => {
     if (timeline === 'defaultTimeline') {
-      setValue('defaultTimeline', defaultTimeline);
-    } else {
-      setValue('defaultTimeline', {});
+      setValue('timeline', defaultTimeline);
     }
   }, [setValue, timeline, defaultTimeline]);
 
@@ -29,7 +34,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       }}
     >
       <Controller
-        name="defaultTimeline.openForPitch"
+        name="timeline.openForPitch"
         render={({ field }) => (
           <TextField
             {...field}
@@ -42,7 +47,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
         )}
       />
       <Controller
-        name="defaultTimeline.filterPitch"
+        name="timeline.filterPitch"
         render={({ field }) => (
           <TextField
             {...field}
@@ -56,7 +61,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       />
 
       <Controller
-        name="defaultTimeline.shortlistCreator"
+        name="timeline.shortlistCreator"
         render={({ field }) => (
           <TextField
             {...field}
@@ -70,7 +75,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       />
 
       <Controller
-        name="defaultTimeline.agreementSign"
+        name="timeline.agreementSign"
         render={({ field }) => (
           <TextField
             {...field}
@@ -84,7 +89,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       />
 
       <Controller
-        name="defaultTimeline.firstDraft"
+        name="timeline.firstDraft"
         render={({ field }) => (
           <TextField
             {...field}
@@ -98,7 +103,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       />
 
       <Controller
-        name="defaultTimeline.feedBackFirstDraft"
+        name="timeline.feedBackFirstDraft"
         render={({ field }) => (
           <TextField
             {...field}
@@ -112,7 +117,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       />
 
       <Controller
-        name="defaultTimeline.finalDraft"
+        name="timeline.finalDraft"
         render={({ field }) => (
           <TextField
             {...field}
@@ -126,7 +131,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       />
 
       <Controller
-        name="defaultTimeline.qc"
+        name="timeline.qc"
         render={({ field }) => (
           <TextField
             {...field}
@@ -140,7 +145,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       />
 
       <Controller
-        name="defaultTimeline.feedBackFinalDraft"
+        name="timeline.feedBackFinalDraft"
         render={({ field }) => (
           <TextField
             {...field}
@@ -154,7 +159,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       />
 
       <Controller
-        name="defaultTimeline.posting"
+        name="timeline.posting"
         render={({ field }) => (
           <TextField
             {...field}
@@ -180,7 +185,7 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
       }}
     >
       <Controller
-        name="customTimeline.openForPitch"
+        name="timeline.openForPitch"
         render={({ field }) => (
           <TextField
             {...field}
@@ -188,15 +193,13 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors.customTimeline?.openForPitch && errors.customTimeline.openForPitch}
-            helperText={
-              errors.customTimeline?.openForPitch && errors.customTimeline.openForPitch.message
-            }
+            error={errors.timeline?.openForPitch && errors.timeline.openForPitch}
+            helperText={errors.timeline?.openForPitch && errors.timeline.openForPitch.message}
           />
         )}
       />
       <Controller
-        name="customTimeline.filterPitch"
+        name="timeline.filterPitch"
         render={({ field }) => (
           <TextField
             {...field}
@@ -204,16 +207,14 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors?.customTimeline?.filterPitch}
-            helperText={
-              errors?.customTimeline?.filterPitch && errors?.customTimeline?.filterPitch?.message
-            }
+            error={errors?.timeline?.filterPitch}
+            helperText={errors?.timeline?.filterPitch && errors?.timeline?.filterPitch?.message}
           />
         )}
       />
 
       <Controller
-        name="customTimeline.shortlistCreator"
+        name="timeline.shortlistCreator"
         render={({ field }) => (
           <TextField
             {...field}
@@ -221,17 +222,16 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors?.customTimeline?.shortlistCreator}
+            error={errors?.timeline?.shortlistCreator}
             helperText={
-              errors?.customTimeline?.shortlistCreator &&
-              errors?.customTimeline?.shortlistCreator?.message
+              errors?.timeline?.shortlistCreator && errors?.timeline?.shortlistCreator?.message
             }
           />
         )}
       />
 
       <Controller
-        name="customTimeline.agreementSign"
+        name="timeline.agreementSign"
         render={({ field }) => (
           <TextField
             {...field}
@@ -239,17 +239,14 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors?.customTimeline?.agreementSign}
-            helperText={
-              errors?.customTimeline?.agreementSign &&
-              errors?.customTimeline?.agreementSign?.message
-            }
+            error={errors?.timeline?.agreementSign}
+            helperText={errors?.timeline?.agreementSign && errors?.timeline?.agreementSign?.message}
           />
         )}
       />
 
       <Controller
-        name="customTimeline.firstDraft"
+        name="timeline.firstDraft"
         render={({ field }) => (
           <TextField
             {...field}
@@ -257,16 +254,14 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors?.customTimeline?.firstDraft}
-            helperText={
-              errors?.customTimeline?.firstDraft && errors?.customTimeline?.firstDraft?.message
-            }
+            error={errors?.timeline?.firstDraft}
+            helperText={errors?.timeline?.firstDraft && errors?.timeline?.firstDraft?.message}
           />
         )}
       />
 
       <Controller
-        name="customTimeline.feedBackFirstDraft"
+        name="timeline.feedBackFirstDraft"
         render={({ field }) => (
           <TextField
             {...field}
@@ -274,17 +269,16 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors?.customTimeline?.feedBackFirstDraft}
+            error={errors?.timeline?.feedBackFirstDraft}
             helperText={
-              errors?.customTimeline?.feedBackFirstDraft &&
-              errors?.customTimeline?.feedBackFirstDraft?.message
+              errors?.timeline?.feedBackFirstDraft && errors?.timeline?.feedBackFirstDraft?.message
             }
           />
         )}
       />
 
       <Controller
-        name="customTimeline.finalDraft"
+        name="timeline.finalDraft"
         render={({ field }) => (
           <TextField
             {...field}
@@ -292,16 +286,14 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors?.customTimeline?.finalDraft}
-            helperText={
-              errors?.customTimeline?.finalDraft && errors?.customTimeline?.finalDraft?.message
-            }
+            error={errors?.timeline?.finalDraft}
+            helperText={errors?.timeline?.finalDraft && errors?.timeline?.finalDraft?.message}
           />
         )}
       />
 
       <Controller
-        name="customTimeline.qc"
+        name="timeline.qc"
         render={({ field }) => (
           <TextField
             {...field}
@@ -309,14 +301,14 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors?.customTimeline?.qc}
-            helperText={errors?.customTimeline?.qc && errors?.customTimeline?.qc?.message}
+            error={errors?.timeline?.qc}
+            helperText={errors?.timeline?.qc && errors?.timeline?.qc?.message}
           />
         )}
       />
 
       <Controller
-        name="customTimeline.feedBackFinalDraft"
+        name="timeline.feedBackFinalDraft"
         render={({ field }) => (
           <TextField
             {...field}
@@ -324,17 +316,16 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors?.customTimeline?.feedBackFinalDraft}
+            error={errors?.timeline?.feedBackFinalDraft}
             helperText={
-              errors?.customTimeline?.feedBackFinalDraft &&
-              errors?.customTimeline?.feedBackFinalDraft?.message
+              errors?.timeline?.feedBackFinalDraft && errors?.timeline?.feedBackFinalDraft?.message
             }
           />
         )}
       />
 
       <Controller
-        name="customTimeline.posting"
+        name="timeline.posting"
         control={control}
         render={({ field }) => (
           <TextField
@@ -343,8 +334,8 @@ const SelectTimeline = ({ control, defaultTimeline, getValues, setValue, errors 
             InputProps={{
               endAdornment: <InputAdornment position="start">days</InputAdornment>,
             }}
-            error={errors?.customTimeline?.posting}
-            helperText={errors?.customTimeline?.posting && errors?.customTimeline?.posting?.message}
+            error={errors?.timeline?.posting}
+            helperText={errors?.timeline?.posting && errors?.timeline?.posting?.message}
           />
         )}
       />

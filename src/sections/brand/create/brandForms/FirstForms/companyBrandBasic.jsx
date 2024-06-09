@@ -501,7 +501,7 @@ function CompanyBrandBasic() {
               <FormProvider methods={methods} onSubmit={onSubmit}>
                 {getStepContent(activeStep)}
               </FormProvider>
-              <CreateCompany setOpenCreate={setOpenCreate} openCreate={openCreate} />
+              <CreateCompany setOpenCreate={setOpenCreate} openCreate={openCreate} set={setValue} />
             </Box>
           </Paper>
           <Box sx={{ display: 'flex', m: 2 }}>
