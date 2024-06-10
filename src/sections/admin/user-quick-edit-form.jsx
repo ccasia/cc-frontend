@@ -55,8 +55,8 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
       status: currentUser?.status,
       designation: currentUser?.admin?.designation || '',
       mode: currentUser?.admin?.mode || '',
-      permission: Object.values(flattenData(admin?.AdminPermissionModule)) || [
-        // })) //   permission: [...item.permission.name], //   module: item?.module?.name, // AdminPermissionModule?.map((item) => ({
+      permission: (admin?.AdminPermissionModule &&
+        Object.values(flattenData(admin?.AdminPermissionModule))) || [
         {
           module: '',
           permissions: [],
