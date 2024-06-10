@@ -6,7 +6,6 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -15,10 +14,10 @@ import { fData } from 'src/utils/format-number';
 
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
+import { regions } from 'src/assets/data/regions';
 
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, {
-  RHFSwitch,
   RHFTextField,
   RHFUploadAvatar,
   RHFAutocomplete,
@@ -34,16 +33,13 @@ export default function AccountGeneral() {
   const UpdateUserSchema = Yup.object().shape({
     displayName: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
-    photoURL: Yup.mixed().nullable().required('Avatar is required'),
+    photoURL: Yup.mixed().nullable(),
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
     address: Yup.string().required('Address is required'),
     state: Yup.string().required('State is required'),
-    city: Yup.string().required('City is required'),
-    zipCode: Yup.string().required('Zip code is required'),
     about: Yup.string().required('About is required'),
     // not required
-    isPublic: Yup.boolean(),
   });
 
   const defaultValues = {
@@ -53,7 +49,7 @@ export default function AccountGeneral() {
     phoneNumber: user?.phoneNumber || '',
     country: user?.Nationality || '',
     address: user?.location || '',
-    isPublic: user?.isPublic || false,
+    state: user?.state || '',
   };
 
   const methods = useForm({
@@ -64,6 +60,7 @@ export default function AccountGeneral() {
   const {
     setValue,
     handleSubmit,
+    watch,
     formState: { isSubmitting },
   } = methods;
 
@@ -92,6 +89,8 @@ export default function AccountGeneral() {
     [setValue]
   );
 
+  const country = watch('country');
+
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Grid container spacing={3}>
@@ -117,17 +116,6 @@ export default function AccountGeneral() {
                 </Typography>
               }
             />
-
-            <RHFSwitch
-              name="isPublic"
-              labelPlacement="start"
-              label="Public Profile"
-              sx={{ mt: 5 }}
-            />
-
-            <Button variant="soft" color="error" sx={{ mt: 3 }}>
-              Delete User
-            </Button>
           </Card>
         </Grid>
 
@@ -156,9 +144,22 @@ export default function AccountGeneral() {
                 getOptionLabel={(option) => option}
               />
 
-              <RHFTextField name="state" label="State/Region" />
-              <RHFTextField name="city" label="City" />
-              <RHFTextField name="zipCode" label="Zip/Code" />
+              <RHFAutocomplete
+                name="state"
+                type="state"
+                label="State/Region"
+                placeholder="Choose a state/region"
+                options={regions
+                  .filter((elem) => elem.countryName === country)
+                  .map((a) => a.regions)
+                  .flatMap((b) => b)
+                  .map((c) => c.name)}
+                getOptionLabel={(option) => option}
+              />
+
+              {/* <RHFTextField name="state" label="State/Region" /> */}
+              {/* <RHFTextField name="city" label="City" /> */}
+              {/* <RHFTextField name="zipCode" label="Zip/Code" /> */}
             </Box>
 
             <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>

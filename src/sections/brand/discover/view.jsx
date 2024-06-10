@@ -66,7 +66,7 @@ function DiscoverBrand() {
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           {
-            name: 'Job',
+            name: 'Brand',
             href: paths.dashboard.root,
           },
           { name: 'List' },

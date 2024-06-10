@@ -14,8 +14,6 @@ import ListItemText from '@mui/material/ListItemText';
 
 import { RouterLink } from 'src/routes/components';
 
-import { fDate } from 'src/utils/format-time';
-
 import { bgGradient } from 'src/theme/css';
 
 import Iconify from 'src/components/iconify';
@@ -23,10 +21,10 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export default function JobItem({ job, onView, onEdit, onDelete }) {
+export default function JobItem({ campaign, onView, onEdit, onDelete }) {
   const popover = usePopover();
 
-  const { title, company, createdAt } = job;
+  const { title, company } = campaign;
 
   const interestsChips = (
     <Stack direction="row" spacing={1} mt={1}>
@@ -71,27 +69,10 @@ export default function JobItem({ job, onView, onEdit, onDelete }) {
                 {title}
               </Link>
             }
-            secondary={`Posted date: ${fDate(createdAt)}`}
             primaryTypographyProps={{
               typography: 'subtitle1',
             }}
-            secondaryTypographyProps={{
-              mt: 1,
-              component: 'span',
-              typography: 'caption',
-              color: 'text.disabled',
-            }}
           />
-
-          {/* <Stack
-            spacing={0.5}
-            direction="row"
-            alignItems="center"
-            sx={{ color: 'primary.main', typography: 'caption' }}
-          >
-            <Iconify width={16} icon="solar:users-group-rounded-bold" />
-            {candidates.length} Candidates
-          </Stack> */}
 
           {interestsChips}
         </Stack>
@@ -211,7 +192,7 @@ export default function JobItem({ job, onView, onEdit, onDelete }) {
 }
 
 JobItem.propTypes = {
-  job: PropTypes.object,
+  campaign: PropTypes.object,
   onDelete: PropTypes.func,
   onEdit: PropTypes.func,
   onView: PropTypes.func,

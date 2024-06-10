@@ -26,9 +26,9 @@ import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
-import JobList from './job-list';
 import JobSort from './job-sort';
 import JobSearch from './job-search';
+import JobList from './campaign-list';
 import JobFilters from './job-filters';
 import JobFiltersResult from './job-filters-result';
 
@@ -161,7 +161,7 @@ export default function JobListView() {
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           {
-            name: 'Job',
+            name: 'Campaign',
           },
           { name: 'List' },
         ]}
@@ -170,8 +170,9 @@ export default function JobListView() {
             component={RouterLink}
             variant="contained"
             startIcon={<Iconify icon="mingcute:add-line" />}
+            href={paths.dashboard.campaign.create}
           >
-            New Job
+            New Campaign
           </Button>
         }
         sx={{
@@ -192,7 +193,7 @@ export default function JobListView() {
 
       {notFound && <EmptyContent filled title="No Data" sx={{ py: 10 }} />}
 
-      <JobList jobs={dataFiltered} />
+      <JobList campaigns={dataFiltered} />
     </Container>
   );
 }

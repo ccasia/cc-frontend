@@ -30,9 +30,9 @@ export default function JobDetailsCandidates({ brands }) {
               <Iconify icon="eva:more-vertical-fill" />
             </IconButton>
 
-            <Avatar alt={brand.name} src={brand.avatarUrl} sx={{ width: 48, height: 48 }} />
+            <Avatar alt={brand.name} src={brand.name} sx={{ width: 48, height: 48 }} />
 
-            <Stack spacing={2}>
+            <Stack spacing={1}>
               <ListItemText
                 primary={brand.name}
                 secondary={brand.email}

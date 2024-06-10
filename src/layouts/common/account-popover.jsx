@@ -100,7 +100,7 @@ export default function AccountPopover() {
           </Typography>
         </Box>
 
-        <Divider sx={{ borderStyle: 'dashed' }} />
+        <Divider sx={{ borderStyle: 'dashed', border: '3px' }} />
 
         <Stack sx={{ p: 1 }}>
           {OPTIONS.map((option) => (

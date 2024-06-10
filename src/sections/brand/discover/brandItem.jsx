@@ -96,6 +96,33 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         {/* <Box rowGap={1.5} display="grid" gridTemplateColumns="repeat(2, 1fr)" sx={{ p: 3 }}>
+          <Stack
+            spacing={0.5}
+            flexShrink={0}
+            direction="row"
+            alignItems="center"
+            sx={{ color: 'text.disabled', minWidth: 0 }}
+          >
+            <Iconify icon="mdi:instagram" />
+            <Typography variant="caption" noWrap>
+              nexea
+            </Typography>
+          </Stack>
+          <Stack
+            spacing={0.5}
+            flexShrink={0}
+            direction="row"
+            alignItems="center"
+            sx={{ color: 'text.disabled', minWidth: 0 }}
+          >
+            <Iconify icon="ic:baseline-tiktok" />
+            <Typography variant="caption" noWrap>
+              nexea
+            </Typography>
+          </Stack>
+        </Box> */}
+
+        {/* <Box rowGap={1.5} display="grid" gridTemplateColumns="repeat(2, 1fr)" sx={{ p: 3 }}>
           {[
             {
               label: experience,

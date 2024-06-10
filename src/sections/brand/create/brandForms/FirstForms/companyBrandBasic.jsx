@@ -16,7 +16,7 @@ import { alpha } from '@mui/material/styles';
 import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Stack, Tooltip, IconButton } from '@mui/material';
+import { Stack, Tooltip, IconButton, InputAdornment } from '@mui/material';
 
 import useGetCompany from 'src/hooks/use-get-company';
 
@@ -70,7 +70,6 @@ function CompanyBrandBasic() {
     brandRegistrationNumber: Yup.string().required('RegistrationNumber is required'),
     brandInstagram: Yup.string().required('Brand Instagram is required'),
     brandTiktok: Yup.string().required('Brand Tiktok is required'),
-    brandFacebook: Yup.string().required('Brand Facebook is required'),
     brandIntersts: Yup.array().min(3, 'Brand Interests is required'),
     brandIndustries: Yup.array().min(3, 'Brand Industries is required'),
     companyId: Yup.object().required('Company is required'),
@@ -90,7 +89,6 @@ function CompanyBrandBasic() {
     ],
     brandInstagram: '',
     brandTiktok: '',
-    brandFacebook: '',
     brandIntersts: [],
     brandIndustries: [],
     brandRegistrationNumber: '',
@@ -346,10 +344,42 @@ function CompanyBrandBasic() {
               },
             }}
           >
-            <RHFTextField key="brandInstagram" name="brandInstagram" label="Instagram" />
-            <RHFTextField key="brandTiktok" name="brandTiktok" label="Tiktok" />
-            <RHFTextField key="brandFacebook" name="brandFacebook" label="Facebook" />
-            <RHFTextField key="brandWebsite" name="brandWebsite" label=" Website" />
+            <RHFTextField
+              key="brandInstagram"
+              name="brandInstagram"
+              label="Instagram"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="ant-design:instagram-filled" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <RHFTextField
+              key="brandTiktok"
+              name="brandTiktok"
+              label="Tiktok"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="ic:baseline-tiktok" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <RHFTextField
+              key="brandWebsite"
+              name="brandWebsite"
+              label="Website"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="fluent-mdl2:website" />
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Stack>
         </Stack>
 

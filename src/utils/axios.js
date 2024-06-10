@@ -57,6 +57,7 @@ export const endpoints = {
     getCreatorById: '/api/creator/getCreatorByID',
     deleteCreator: '/api/creator/delete',
     updateCreator: '/api/creator/update-creator',
+    updateMediaKit: '/api/creator/update-media-kit',
   },
   users: {
     newAdmin: '/api/user/newAdmin',

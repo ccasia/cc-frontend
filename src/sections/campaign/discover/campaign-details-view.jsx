@@ -18,7 +18,7 @@ import JobDetailsCandidates from './job-details-candidates';
 
 // ----------------------------------------------------------------------
 
-export default function JobDetailsView({ id }) {
+export default function CampaignDetailsView({ id }) {
   const settings = useSettingsContext();
 
   const currentJob = _jobs.filter((job) => job.id === id)[0];
@@ -64,8 +64,8 @@ export default function JobDetailsView({ id }) {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <JobDetailsToolbar
-        backLink={paths.dashboard.job.root}
-        editLink={paths.dashboard.job.edit(`${currentJob?.id}`)}
+        backLink={paths.dashboard.campaign.view}
+        // editLink={paths.dashboard.job.edit(`${currentJob?.id}`)}
         liveLink="#"
         publish={publish || ''}
         onChangePublish={handleChangePublish}
@@ -78,6 +78,6 @@ export default function JobDetailsView({ id }) {
   );
 }
 
-JobDetailsView.propTypes = {
+CampaignDetailsView.propTypes = {
   id: PropTypes.string,
 };

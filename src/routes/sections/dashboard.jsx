@@ -22,6 +22,7 @@ const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCam
 const CreateCampaign = lazy(() => import('src/pages/dashboard/campaign/createCampaign'));
 const ViewCampaign = lazy(() => import('src/pages/dashboard/campaign/discovery'));
 const CampaignSetting = lazy(() => import('src/pages/dashboard/campaign/setting'));
+const CampaignDetails = lazy(() => import('src/pages/dashboard/campaign/details'));
 
 // Brand
 const BrandManage = lazy(() => import('src/pages/dashboard/brand/manageBrand'));
@@ -173,6 +174,14 @@ export const dashboardRoutes = [
             element: (
               <RoleBasedGuard hasContent roles={['superadmin']}>
                 <CampaignSetting />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: 'details/:id',
+            element: (
+              <RoleBasedGuard hasContent roles={['superadmin']}>
+                <CampaignDetails />
               </RoleBasedGuard>
             ),
           },

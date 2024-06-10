@@ -11,7 +11,6 @@ import MediaKitCover from './mediakit-cover';
 import MediaKitSetting from './media-kit-setting';
 import MediaKitSocial from './media-kit-social/view';
 
-// eslint-disable-next-line react/prop-types
 const MediaKitCreator = () => {
   const settings = useSettingsContext();
 
@@ -20,6 +19,7 @@ const MediaKitCreator = () => {
 
   const [currentTab, setCurrentTab] = useState('instagram');
   const [openSetting, setOpenSetting] = useState(false);
+  
   const handleClose = () => {
     setOpenSetting(!openSetting);
   };

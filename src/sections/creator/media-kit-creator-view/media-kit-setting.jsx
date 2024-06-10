@@ -1,8 +1,13 @@
 import React from 'react';
+import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import { Box, Chip, Modal, Stack, Button, Typography } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
@@ -22,14 +27,47 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
     borderRadius: 2,
   };
 
+  const schema = Yup.object().shape({
+    name: Yup.string(),
+    about: Yup.string().max(150, 'You have reach the maximum length'),
+    interests: Yup.array().min(3, 'Minimum of 3 interest are required'),
+  });
+
   const defaultValues = {
-    name: user?.name || '',
-    about: '',
-    interests: user?.interests || [],
+    name: user?.creator?.MediaKit?.name || user?.name || '',
+    about: user?.creator?.MediaKit?.about || user?.about || '',
+    interests:
+      user?.creator?.MediaKit?.interests.map((elem) => elem) ||
+      user?.creator?.interests.map((elem) => elem.name) ||
+      [],
   };
 
   const methods = useForm({
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+    resolver: yupResolver(schema),
     defaultValues,
+  });
+
+  const { watch, handleSubmit } = methods;
+
+  const watchedInput = watch('about', '');
+
+  const onSubmit = handleSubmit(async (data) => {
+    try {
+      const res = await axiosInstance.patch(endpoints.creators.updateMediaKit, {
+        ...data,
+        creatorId: user?.creator?.id,
+      });
+      enqueueSnackbar(res?.data?.message, {
+        variant: 'success',
+      });
+      handleClose();
+    } catch (error) {
+      enqueueSnackbar('error', {
+        variant: 'error',
+      });
+    }
   });
 
   return (
@@ -47,12 +85,10 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
           }}
         >
           Settings
-          {/* {JSON.stringify(user)} */}
         </Typography>
-        <FormProvider methods={methods} onSubmit={(data) => alert(JSON.stringify(data))}>
+        <FormProvider methods={methods} onSubmit={onSubmit}>
           <Stack direction="row" gap={4} flexWrap="wrap">
             <RHFTextField name="name" label="Full Name" />
-            <RHFTextField name="name" label="Preferred pronouns" />
             <RHFAutocomplete
               name="interests"
               multiple
@@ -79,7 +115,12 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
                 ))
               }
             />
-            <RHFTextField name="about" label="About" />
+            <RHFTextField
+              name="about"
+              label="Tell us more about you"
+              helperText={`${watchedInput.length}/150`}
+              multiline
+            />
           </Stack>
           <Stack direction="row" gap={2} justifyContent="end">
             <Button

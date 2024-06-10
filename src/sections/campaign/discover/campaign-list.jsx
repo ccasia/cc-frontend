@@ -11,12 +11,12 @@ import JobItem from './job-item';
 
 // ----------------------------------------------------------------------
 
-export default function JobList({ jobs }) {
+export default function CampaignList({ campaigns }) {
   const router = useRouter();
 
   const handleView = useCallback(
     (id) => {
-      router.push(paths.dashboard.job.details(id));
+      router.push(paths.dashboard.campaign.details(id));
     },
     [router]
   );
@@ -43,18 +43,18 @@ export default function JobList({ jobs }) {
           md: 'repeat(3, 1fr)',
         }}
       >
-        {jobs.map((job) => (
+        {campaigns.map((campaign) => (
           <JobItem
-            key={job.id}
-            job={job}
-            onView={() => handleView(job.id)}
-            onEdit={() => handleEdit(job.id)}
-            onDelete={() => handleDelete(job.id)}
+            key={campaign.id}
+            campaign={campaign}
+            onView={() => handleView(campaign.id)}
+            onEdit={() => handleEdit(campaign.id)}
+            onDelete={() => handleDelete(campaign.id)}
           />
         ))}
       </Box>
 
-      {jobs.length > 8 && (
+      {campaigns.length > 8 && (
         <Pagination
           count={8}
           sx={{
@@ -69,6 +69,6 @@ export default function JobList({ jobs }) {
   );
 }
 
-JobList.propTypes = {
-  jobs: PropTypes.array,
+CampaignList.propTypes = {
+  campaigns: PropTypes.array,
 };
