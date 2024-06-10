@@ -48,7 +48,7 @@ function Group({ subheader, items, slotProps, whoCanSee }) {
     (Array.from(whoCanSee).includes(user?.role) ||
       Array.from(whoCanSee).includes(user?.admin?.designation) ||
       Array.from(whoCanSee).includes(user?.admin?.mode)) &&
-    items?.map((list) => <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />);
+    items?.map((list) => <NavList key={list.title} data={list} depth={1} />);
 
   return (
     <Stack sx={{ px: 2 }}>
