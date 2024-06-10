@@ -33,9 +33,7 @@ import { MODULE_ITEMS } from './view/user-list-view';
 function UserQuickEditForm({ currentUser, open, onClose }) {
   const { getAdmins } = useGetAdmins();
 
-  const {
-    admin: { AdminPermissionModule },
-  } = currentUser;
+  const { admin } = currentUser;
 
   const [currentTab, setCurrentTab] = useState('profile');
 
@@ -57,7 +55,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
       status: currentUser?.status,
       designation: currentUser?.admin?.designation || '',
       mode: currentUser?.admin?.mode || '',
-      permission: Object.values(flattenData(AdminPermissionModule)) || [
+      permission: Object.values(flattenData(admin?.AdminPermissionModule)) || [
         // })) //   permission: [...item.permission.name], //   module: item?.module?.name, // AdminPermissionModule?.map((item) => ({
         {
           module: '',
@@ -65,7 +63,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
         },
       ],
     }),
-    [currentUser, AdminPermissionModule]
+    [currentUser, admin]
   );
 
   const methods = useForm({
