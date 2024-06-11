@@ -91,7 +91,6 @@ function DiscoverBrand() {
           Search
         </TextField>
       </Stack>
-      {companies && JSON.stringify(companies)}
       <Stack
         spacing={2.5}
         sx={{
