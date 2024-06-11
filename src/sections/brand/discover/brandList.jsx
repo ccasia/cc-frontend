@@ -51,7 +51,6 @@ export default function BrandList({ companies }) {
 
   return (
     <>
-      {JSON.stringify(companies)}
       <Box
         gap={3}
         display="grid"
