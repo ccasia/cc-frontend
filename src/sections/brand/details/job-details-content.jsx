@@ -12,6 +12,8 @@ import ListItemText from '@mui/material/ListItemText';
 import { fDate } from 'src/utils/format-time';
 // import { fCurrency } from 'src/utils/format-number';
 
+import { formatText } from 'src/utils/format-test';
+
 import Iconify from 'src/components/iconify';
 // import Markdown from 'src/components/markdown';
 
@@ -35,7 +37,7 @@ export default function JobDetailsContent({ company }) {
 
   const renderContent = (
     <Stack component={Card} spacing={3} sx={{ p: 3 }}>
-      <Typography variant="h4">{name}</Typography>
+      <Typography variant="h4">{formatText(name)}</Typography>
 
       {/* <Markdown children={content} /> */}
 
