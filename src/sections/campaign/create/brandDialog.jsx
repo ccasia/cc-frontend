@@ -8,12 +8,17 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import Dialog from '@mui/material/Dialog';
+import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import { Stack } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import Iconify from 'src/components/iconify/iconify';
 
 import { useCompany } from 'src/hooks/zustands/useCompany';
 
@@ -41,7 +46,17 @@ const intersList = [
 export default function CreateBrand({ setBrand, open, onClose }) {
   const [openCompany, setOpenCompany] = useState(false);
   const [companyState, setCompanyState] = useState('');
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openMenu = Boolean(anchorEl);
   const { company } = useCompany();
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -89,7 +104,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
       onClose();
       setBrand(data.name);
       enqueueSnackbar('Brand created successfully', { variant: 'success' });
-      console.log(res.status)
+      console.log(res.status);
     } catch (error) {
       console.log(error);
     }
@@ -135,7 +150,15 @@ export default function CreateBrand({ setBrand, open, onClose }) {
               }}
             >
               {' '}
-              <RHFSelect name="companyChoice" label="Company">
+
+              <RHFAutocomplete
+              fullWidth
+                key="companyChoice"
+                name="companyChoice"
+                placeholder="Company"
+                options={companyState ? [companyState] : company?.map((option) => option.name)}
+              />
+              {/* <RHFSelect name="companyChoice" label="Company">
                 {companyState ? (
                   <MenuItem value={companyState}>{companyState}</MenuItem>
                 ) : (
@@ -145,9 +168,52 @@ export default function CreateBrand({ setBrand, open, onClose }) {
                     </MenuItem>
                   ))
                 )}
-              </RHFSelect>{' '}
-              <Box>
-                <Button
+              </RHFSelect> */}
+              {/* <Box> */}
+              <Box
+                sx={{
+                  alignContent: 'center',
+                }}
+              >
+                <IconButton
+                  sx={{
+                    mx: 1,
+                    bgcolor: 'whitesmoke',
+                  }}
+                  onClick={handleClick}
+                >
+                  <Iconify icon="mingcute:add-line" />
+                </IconButton>
+                <Menu
+                  id="basic-menu"
+                  anchorEl={anchorEl}
+                  open={openMenu}
+                  onClose={handleClose}
+                  MenuListProps={{
+                    'aria-labelledby': 'basic-button',
+                  }}
+                  anchorOrigin={{
+                    vertical: 'center',
+                    horizontal: 'left',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                >
+                  <MenuItem
+                    onClick={() => {
+                      setOpenCompany(true);
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      <Iconify icon="mdi:invite" />
+                      <Typography variant="button">Create Company</Typography>
+                    </Stack>
+                  </MenuItem>
+                </Menu>
+              </Box>
+              {/* <Button
                   variant="contained"
                   sx={{
                     width: '90%',
@@ -159,8 +225,8 @@ export default function CreateBrand({ setBrand, open, onClose }) {
                   }}
                 >
                   Create Company
-                </Button>
-              </Box>
+                </Button> */}
+              {/* </Box> */}
             </Box>
             <RHFTextField name="email" label="Email" fullWidth />
             <RHFTextField name="phone" label="Phone" />

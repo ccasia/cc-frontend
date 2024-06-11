@@ -5,6 +5,7 @@ import Container from '@mui/material/Container';
 import { paths } from 'src/routes/paths';
 
 import useGetBrand from 'src/hooks/use-get-brand';
+import useGetAdmins from 'src/hooks/use-get-admins';
 import useGetCompany from 'src/hooks/use-get-company';
 
 import { useSettingsContext } from 'src/components/settings';
@@ -15,6 +16,7 @@ import CreateCampaignForm from './form';
 
 
 function CreateCampaign() {
+  useGetAdmins();
   useGetCompany();
   useGetBrand();
   const settings = useSettingsContext();

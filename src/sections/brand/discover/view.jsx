@@ -7,6 +7,7 @@ import Container from '@mui/material/Container';
 import { paths } from 'src/routes/paths';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import useGetCompany from 'src/hooks/use-get-company';
 
 import { _jobs } from 'src/_mock';
 import withPermission from 'src/auth/guard/withPermissions';
@@ -26,6 +27,8 @@ const defaultFilters = {
 
 function DiscoverBrand() {
   const settings = useSettingsContext();
+
+  const { companies } = useGetCompany();
 
   const openFilters = useBoolean();
 
@@ -78,7 +81,7 @@ function DiscoverBrand() {
           mb: { xs: 3, md: 5 },
         }}
       >
-        <BrandList jobs={_jobs} />
+        {companies && <BrandList companies={companies} />}
       </Stack>
     </Container>
   );

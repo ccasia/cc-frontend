@@ -37,9 +37,6 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
     admin: { AdminPermissionModule },
   } = currentUser;
 
-  const permissionAdmin = Object.values(flattenData(AdminPermissionModule));
-
-  console.log(permissionAdmin);
 
   const [currentTab, setCurrentTab] = useState('profile');
 

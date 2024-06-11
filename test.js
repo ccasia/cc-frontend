@@ -1,29 +1,67 @@
-// const data = [
+// const navigations = [
 //   {
-//     module: 'creator',
-//     permission: 'read',
+//     roles: ['admin'],
+//     items: [
+//       {
+//         title: 'Campaign',
+//         children: [
+//           {
+//             title: 'Discover Campaign',
+//             // icon: <Iconify icon="material-symbols:explore-outline" />,
+//           },
+//           {
+//             title: 'Create Campaign',
+//             // icon: <Iconify icon="gridicons:create" />,
+//           },
+//           {
+//             title: 'Manage Campaign',
+//             // icon: <Iconify icon="mingcute:settings-3-fill" />,
+//           },
+//           {
+//             roles: ['BDD'],
+//             title: 'Settings',
+//             // icon: <Iconify icon="mingcute:settings-3-fill" />,
+//           },
+//         ],
+//       },
+//     ],
 //   },
-//   [
-//     {
-//       module: 'creator',
-//       permission: 'update',
-//     },
-//   ],
+//   {
+//     roles: ['admin'],
+//     items: [
+//       {
+//         title: 'Brand',
+//         children: [
+//           {
+//             title: 'Create Brands',
+//           },
+//         ],
+//       },
+//     ],
+//   },
 // ];
 
-// const flattenedData = data.flat(); // Flatten the nested array
-// console.log(flattenedData);
-// const reducedData = flattenedData.reduce((acc, item) => {
-//   if (!acc[item.module]) {
-//     acc[item.module] = { module: item.module, permissions: [] };
-//   }
-//   acc[item.module].permissions.push(item.permission);
-//   return acc;
-// }, {});
+// const role = 'admin';
+// const subroles = 'BD';
 
-// const result = Object.values(reducedData);
-// console.log(result);
+// const a = navigations
+//   .filter((nav) => nav.roles.some((r) => ['admin'].includes(r)))
+//   .map((nav) => ({
+//     ...nav,
+//     items: nav.items.map((item) => ({
+//       ...item,
+//       children: item.children
+//         ? item.children.filter(
+//             (child) => !child.roles || child.roles.some((r) => ['a'].includes(r))
+//           )
+//         : item.children,
+//     })),
+//   }));
 
-const test = 'DAwdad';
+// console.log(JSON.stringify(a, null, 2));
 
-console.log(test.includes('D'));
+const company = {
+  Error: 'ADWADwa',
+};
+
+console.log(Object.values(company)[0].includes('A'));

@@ -41,7 +41,7 @@ function CreateBrand() {
 
   return (
     <>
-      <Container maxWidth="lg" sx={{ justifyContent: 'center' }}>
+      <Container maxWidth="lg">
         <CustomBreadcrumbs
           heading="Create Company & Brand"
           links={[
@@ -52,7 +52,14 @@ function CreateBrand() {
         />
 
         <Box
-          sx={{ my: 2, p: 3, boxShadow: (theme) => theme.customShadows.z24, borderRadius: '10px' }}
+          sx={{
+            my: 2,
+            p: {
+              md: 3,
+            },
+            boxShadow: (theme) => theme.customShadows.z24,
+            borderRadius: '10px',
+          }}
         >
           <Stack spacing={2} sx={{ width: 1 }}>
             <Tabs value={currentTab} onChange={handleChangeTab}>

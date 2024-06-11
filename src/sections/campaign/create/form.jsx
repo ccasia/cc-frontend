@@ -11,13 +11,18 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
+import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { Stack } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import Iconify from 'src/components/iconify/iconify';
 
 import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
+import { useAdmins } from 'src/hooks/zustands/useAdmins';
 
 import FormProvider, {
   RHFSelect,
@@ -27,15 +32,16 @@ import FormProvider, {
 } from 'src/components/hook-form';
 
 import UploadPhoto from 'src/sections/profile/dropzone';
+import { Upload } from 'src/components/upload';
 
 import CreateBrand from './brandDialog';
 import SelectTimeline from './steps/select-timeline';
+// import NotificationReminder from './steps/notification-reminder';
 
 const steps = [
   'Fill in campaign information',
   'Fill in campaign brief form',
   'Select timeline',
-  'Select notification reminders dates',
   'Select Admin Manager',
   'Fill in  agreement form',
 ];
@@ -60,19 +66,20 @@ function CreateCampaignForm() {
   const [activeStep, setActiveStep] = useState(0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
   const [image, setImage] = useState(null);
   const { brand } = useBrand();
   const [brandState, setBrandState] = useState('');
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
-  // const open = Boolean(anchorEl);
   const { defaultTimeline, loading, error } = useGetTimeline();
+  const [timeline, setTimeline] = useState('defaultTimeline');
+  const { admins } = useAdmins();
 
-  // const open = Boolean(anchorEl);
 
-  // const handleClick = (event) => {
-  //   setAnchorEl(event.currentTarget);
-  // };
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
   const handleClose = () => {
     setAnchorEl(null);
@@ -111,6 +118,9 @@ function CreateCampaignForm() {
     campaignDont: Yup.array()
       .min(2, 'insert at least three option')
       .required('Campaign dont is required '),
+
+    adminManager: Yup.string().required('Admin Manager is required'),
+
     defaultTimeline: Yup.object().shape({
       openForPitch: Yup.number('Must be a number').min(1),
       agreementSign: Yup.number('Must be a number').min(1),
@@ -132,6 +142,57 @@ function CreateCampaignForm() {
       firstDraft: Yup.number('Must be a number').min(1),
       qc: Yup.number('Must be a number').min(1),
       shortlistCreator: Yup.number('Must be a number').min(1),
+      // defaultTimeline: Yup.object().shape({
+      //   openForPitch: Yup.number('Must be a number').min(1),
+      //   agreementSign: Yup.number('Must be a number').min(1),
+      //   feedBackFinalDraft: Yup.number('Must be a number').min(1),
+      //   feedBackFirstDraft: Yup.number('Must be a number').min(1),
+      //   filterPitch: Yup.number('Must be a number').min(1),
+      //   finalDraft: Yup.number('Must be a number').min(1),
+      //   firstDraft: Yup.number('Must be a number').min(1),
+      //   qc: Yup.number('Must be a number').min(1),
+      //   shortlistCreator: Yup.number('Must be a number').min(1),
+      //   posting: Yup.number('Must be a number').min(1),
+      // }),
+
+      timeline: Yup.object().shape({
+        openForPitch: Yup.number('Must be a number')
+          .min(14, 'Minumum is 14 days')
+          .max(30, 'Maximum is 30 days')
+          .required('Open for pitch timeline is required'),
+        filterPitch: Yup.number('Must be a number')
+          .min(2, 'Minumum is 2 days')
+          .max(3, 'Maximum is 3 days')
+          .required('Filtering timeline is required'),
+        shortlistCreator: Yup.number('Must be a number')
+          .min(1, 'Minumum is 1 days')
+          .max(2, 'Maximum is 2 days')
+          .required('Shortlist creator timeline is required'),
+        agreementSign: Yup.number('Must be a number')
+          .min(1, 'Minumum is 1 days')
+          .max(2, 'Maximum is 2 days')
+          .required('Sign of agreement timeline is required'),
+        firstDraft: Yup.number('Must be a number')
+          .min(3, 'Minumum is 3 days')
+          .max(5, 'Maximum is 5 days')
+          .required('First draft timeline is required'),
+        feedBackFirstDraft: Yup.number('Must be a number')
+          .min(2, 'Minumum is 2 days')
+          .max(3, 'Maximum is 3 days')
+          .required('Feedback first draft timeline is required'),
+        finalDraft: Yup.number('Must be a number')
+          .min(2, 'Minumum is 2 days')
+          .max(4, 'Maximum is 4 days')
+          .required('Final draft timeline is required'),
+        feedBackFinalDraft: Yup.number('Must be a number')
+          .min(1, 'Minumum is 1 days')
+          .max(2, 'Maximum is 2 days')
+          .required('Feedback final draft timeline is required'),
+        posting: Yup.number('Must be a number')
+          .max(2, 'Maximum is 2 days')
+          .required('Posting social media timeline is required'),
+        qc: Yup.number('Must be a number').required('QC timeline is required'),
+      }),
     }),
   });
 
@@ -157,11 +218,15 @@ function CreateCampaignForm() {
     audienceLanguage: '',
     audienceCreatorPersona: '',
     audienceUserPersona: '',
+    timeline: {},
+    adminManager: '',
   };
 
   const methods = useForm({
     resolver: yupResolver(campaignSchema),
     defaultValues,
+    reValidateMode: 'onChange',
+    mode: 'onChange',
   });
 
   const {
@@ -169,12 +234,15 @@ function CreateCampaignForm() {
     getValues,
     control,
     setValue,
-    formState: { errors },
+    register,
+    formState: { errors, isDirty },
   } = methods;
 
   useEffect(() => {
-    setValue('defaultTimeline', defaultTimeline);
-  }, [defaultTimeline, setValue]);
+    if (timeline === 'defaultTimeline') {
+      setValue('timeline', defaultTimeline);
+    }
+  }, [defaultTimeline, setValue, timeline]);
 
   useEffect(() => {
     if (brandState !== '') {
@@ -241,6 +309,7 @@ function CreateCampaignForm() {
     >
       <RHFTextField name="campaignName" label="Campaign Title" />
 
+      <RHFTextField name="campaignName" label="Campaign Name" />
       <Box
         sx={{
           display: 'flex',
@@ -250,35 +319,63 @@ function CreateCampaignForm() {
         }}
       >
         {' '}
-        <RHFSelect name="campaignBrand" label="Brand">
-          {brandState ? (
-            <MenuItem value={brandState}>{brandState}</MenuItem>
-          ) : (
-            brand?.map((option) => (
-              <MenuItem key={option.name} value={option.name}>
-                {option.name}
-              </MenuItem>
-            ))
-          )}
-        </RHFSelect>{' '}
-        <Box>
-          <Button
-            variant="contained"
+        <RHFAutocomplete
+          fullWidth
+          name="campaignBrand"
+          placeholder="Brand"
+          options={brandState ? [brandState] : brand.map((option) => option.name)}
+          freeSolo
+        />
+        <Box
+          sx={{
+            alignContent: 'center',
+          }}
+        >
+          <IconButton
             sx={{
-              width: '90%',
-              height: '90%',
               mx: 1,
+              mb: 1,
+              bgcolor: 'whitesmoke',
             }}
-            onClick={handleOpenCompanyDialog}
+            onClick={handleClick}
           >
-            Create Brand
-          </Button>
+            <Iconify icon="mingcute:add-line" />
+          </IconButton>
+          <Menu
+            id="basic-menu"
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleClose}
+            MenuListProps={{
+              'aria-labelledby': 'basic-button',
+            }}
+            anchorOrigin={{
+              vertical: 'center',
+              horizontal: 'left',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem
+              onClick={() => {
+                handleOpenCompanyDialog();
+              }}
+            >
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Iconify icon="mdi:invite" />
+                <Typography variant="button">Create Brand</Typography>
+              </Stack>
+            </MenuItem>
+          </Menu>
         </Box>
       </Box>
 
       {/* <RHFTextField name="campaignCompany" label="Company" /> */}
       {/* <RHFTextField name="campaignBrand" label="Brand" /> */}
       {/* <RHFSelect name="campaignBrand" label="Brand">
+      <RHFSelect name="campaignBrand" label="Brand">
         {companies.map((option) => (
           <MenuItem key={option[0]} value={option[0]}>
             {option[1]}
@@ -503,6 +600,44 @@ function CreateCampaignForm() {
     </Box>
   );
 
+  const formSelectAdminManager = (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignContent: 'center',
+        gap: 2,
+        p: 3,
+      }}
+    >
+      <Typography variant="h4">Select Admin Manager</Typography>
+      {/* <RHFSelect name="adminManager" label="Admin Manager" defaultValue="default" /> */}
+      <RHFAutocomplete
+        name="adminManager"
+        placeholder="Admin Manager"
+        options={admins ? admins.map((option) => option.name) : 'No admin found'}
+        freeSolo
+      />
+    </Box>
+  );
+
+  const formUpload = (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignContent: 'center',
+        gap: 3,
+        p: 3,
+      }}
+    >
+      <Typography variant="h4">Upload Agreement</Typography>
+      <Upload />
+    </Box>
+  );
+
   function getStepContent(step) {
     switch (step) {
       case 0:
@@ -517,14 +652,16 @@ function CreateCampaignForm() {
             getValues={getValues}
             setValue={setValue}
             errors={errors}
+            timeline={timeline}
+            setTimeline={setTimeline}
           />
         );
+      // case 3:
+      //   return <NotificationReminder />;
       case 3:
-        return <h3>step 4</h3>;
+        return formSelectAdminManager;
       case 4:
-        return <h3>step 5</h3>;
-      case 5:
-        return <h3>step 6</h3>;
+        return formUpload;
       default:
         return 'Unknown step';
     }

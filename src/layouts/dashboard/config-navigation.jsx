@@ -142,7 +142,7 @@ export function useNavData() {
         ],
       },
       {
-        roles: ['god', 'BD', 'CSM', 'Growth'],
+        roles: ['god', 'admin'],
         items: [
           {
             title: 'Campaign',
@@ -165,6 +165,7 @@ export function useNavData() {
                 // icon: <Iconify icon="mingcute:settings-3-fill" />,
               },
               {
+                roles: ['god'],
                 title: 'Settings',
                 path: paths.dashboard.campaign.settings,
                 // icon: <Iconify icon="mingcute:settings-3-fill" />,
@@ -198,6 +199,7 @@ export function useNavData() {
         roles: ['admin', 'creator'],
         items: [
           {
+            roles: ['adw'],
             title: 'Calendar',
             path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,

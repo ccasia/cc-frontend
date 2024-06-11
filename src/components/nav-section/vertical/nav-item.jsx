@@ -9,6 +9,8 @@ import ListItemButton from '@mui/material/ListItemButton';
 
 import { RouterLink } from 'src/routes/components';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from '../../iconify';
 
 // ----------------------------------------------------------------------
@@ -29,12 +31,14 @@ const NavItem = forwardRef(
       active,
       hasChild,
       externalLink,
-      currentRole = 'admin',
+      currentRole = 'god',
       ...other
     },
     ref
   ) => {
     const subItem = depth !== 1;
+
+    const { user } = useAuthContext();
 
     const renderContent = (
       <StyledNavItem
@@ -93,7 +97,7 @@ const NavItem = forwardRef(
     );
 
     // Hidden item by role
-    if (roles && !roles.includes(`${currentRole}`)) {
+    if (roles && !roles.includes(user?.admin?.mode)) {
       return null;
     }
 

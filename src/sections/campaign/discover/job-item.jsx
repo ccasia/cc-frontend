@@ -1,57 +1,53 @@
-/* eslint-disable no-unused-vars */
-import dayjs from 'dayjs';
-import { useState } from 'react';
 import PropTypes from 'prop-types';
 
+import { Box } from '@mui/material';
+import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
+import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
-import {
-  Button,
-  Dialog,
-  MenuItem,
-  Typography,
-  DialogTitle,
-  DialogActions,
-  DialogContent,
-} from '@mui/material';
 
-import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
-import { useAuthContext } from 'src/auth/hooks';
+import { fDate } from 'src/utils/format-time';
+
+import { bgGradient } from 'src/theme/css';
 
 import Iconify from 'src/components/iconify';
-import { usePopover } from 'src/components/custom-popover';
-import CustomPopover from 'src/components/custom-popover/custom-popover';
+import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export default function BrandItem({ company, onView, onEdit, onDelete }) {
+export default function JobItem({ job, onView, onEdit, onDelete }) {
   const popover = usePopover();
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const { user } = useAuthContext();
 
-  // const { title, company, createdAt, candidates, experience, employmentTypes, salary, role } =
-  //   company;
-  const {
-    about,
-    address,
-    email,
-    id,
-    phone,
-    objectives,
-    registration_number,
-    website,
-    brand,
-    logo,
-    name,
-    createdAt,
-  } = company;
+  const { title, company, createdAt } = job;
+
+  const interestsChips = (
+    <Stack direction="row" spacing={1} mt={1}>
+      <Chip
+        label="Technology"
+        size="small"
+        color="primary"
+        sx={{
+          borderRadius: 2,
+        }}
+      />
+      <Chip
+        label="Game"
+        size="small"
+        color="primary"
+        sx={{
+          borderRadius: 2,
+        }}
+      />
+    </Stack>
+  );
 
   return (
     <>
@@ -61,16 +57,21 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
         </IconButton>
 
         <Stack sx={{ p: 3, pb: 2 }}>
-          <Avatar alt={name} src={logo} variant="rounded" sx={{ width: 48, height: 48, mb: 2 }} />
+          <Avatar
+            alt={company.name}
+            src={company.logo}
+            variant="rounded"
+            sx={{ width: 48, height: 48, mb: 2 }}
+          />
 
           <ListItemText
             sx={{ mb: 1 }}
             primary={
-              <Link component={RouterLink} href={paths.dashboard.root} color="inherit">
-                {name}
+              <Link component={RouterLink} color="inherit">
+                {title}
               </Link>
             }
-            secondary={`Created At: ${dayjs(createdAt).format('LL')}`}
+            secondary={`Posted date: ${fDate(createdAt)}`}
             primaryTypographyProps={{
               typography: 'subtitle1',
             }}
@@ -82,18 +83,55 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
             }}
           />
 
-          <Stack
+          {/* <Stack
             spacing={0.5}
             direction="row"
             alignItems="center"
             sx={{ color: 'primary.main', typography: 'caption' }}
           >
             <Iconify width={16} icon="solar:users-group-rounded-bold" />
-            {brand.length} Brands
-          </Stack>
+            {candidates.length} Candidates
+          </Stack> */}
+
+          {interestsChips}
         </Stack>
 
         <Divider sx={{ borderStyle: 'dashed' }} />
+
+        <Stack
+          direction="row"
+          justifyContent="space-around"
+          p={3}
+          alignItems="center"
+          sx={{
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <Stack spacing={0.5} alignItems="center">
+            <Typography variant="caption">Start</Typography>
+            <Typography variant="caption">June 16, 2024</Typography>
+          </Stack>
+
+          <Box
+            sx={{
+              minWidth: 70,
+              bgcolor: (theme) => ({
+                ...bgGradient({
+                  startColor: theme.palette.success.light,
+                  endColor: theme.palette.error.light,
+                  direction: 'to right',
+                }),
+              }),
+              height: 2,
+              borderRadius: 10,
+            }}
+          />
+
+          <Stack spacing={0.5} alignItems="center">
+            <Typography variant="caption">End</Typography>
+            <Typography variant="caption">June 16, 2024</Typography>
+          </Stack>
+        </Stack>
 
         {/* <Box rowGap={1.5} display="grid" gridTemplateColumns="repeat(2, 1fr)" sx={{ p: 3 }}>
           {[
@@ -106,7 +144,7 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
               icon: <Iconify width={16} icon="solar:clock-circle-bold" sx={{ flexShrink: 0 }} />,
             },
             {
-              label: salary.negotiable ? 'Negotiable' : fData(salary.price),
+              label: salary.negotiable ? 'Negotiable' : salary.price,
               icon: <Iconify width={16} icon="solar:wad-of-money-bold" sx={{ flexShrink: 0 }} />,
             },
             {
@@ -156,50 +194,24 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
           <Iconify icon="solar:pen-bold" />
           Edit
         </MenuItem>
-        {user?.role === 'superadmin' && (
-          <MenuItem
-            onClick={() => {
-              popover.onClose();
-              setOpenDeleteModal(true);
-            }}
-            sx={{ color: 'error.main' }}
-          >
-            <Iconify icon="solar:trash-bin-trash-bold" />
-            Delete
-          </MenuItem>
-        )}
-      </CustomPopover>
 
-      <Dialog open={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
-        <DialogTitle>Delete {name}</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete this company? This action will remove all brands under
-            this company.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button variant="outlined" color="error" onClick={() => setOpenDeleteModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => {
-              onDelete();
-              setOpenDeleteModal(false);
-            }}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <MenuItem
+          onClick={() => {
+            popover.onClose();
+            onDelete();
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          <Iconify icon="solar:trash-bin-trash-bold" />
+          Delete
+        </MenuItem>
+      </CustomPopover>
     </>
   );
 }
 
-BrandItem.propTypes = {
-  company: PropTypes.object,
+JobItem.propTypes = {
+  job: PropTypes.object,
   onDelete: PropTypes.func,
   onEdit: PropTypes.func,
   onView: PropTypes.func,
