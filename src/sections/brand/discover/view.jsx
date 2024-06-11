@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Container from '@mui/material/Container';
+import { TextField, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
@@ -12,6 +13,7 @@ import useGetCompany from 'src/hooks/use-get-company';
 import { _jobs } from 'src/_mock';
 import withPermission from 'src/auth/guard/withPermissions';
 
+import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
@@ -75,13 +77,27 @@ function DiscoverBrand() {
           mb: { xs: 3, md: 5 },
         }}
       />{' '}
+      <Stack mb={3}>
+        <TextField
+          placeholder="Search..."
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify icon="material-symbols:search" />
+              </InputAdornment>
+            ),
+          }}
+        >
+          Search
+        </TextField>
+      </Stack>
       <Stack
         spacing={2.5}
         sx={{
           mb: { xs: 3, md: 5 },
         }}
       >
-        {companies && <BrandList companies={companies} />}
+        {companies.length > 0 && <BrandList companies={companies} />}
       </Stack>
     </Container>
   );
