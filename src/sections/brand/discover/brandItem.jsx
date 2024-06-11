@@ -89,7 +89,7 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
             sx={{ color: 'primary.main', typography: 'caption' }}
           >
             <Iconify width={16} icon="solar:users-group-rounded-bold" />
-            {brand.length} Brands
+            {brand?.length} Brands
           </Stack>
         </Stack>
 
