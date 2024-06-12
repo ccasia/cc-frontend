@@ -64,7 +64,7 @@ function DiscoverBrand() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Brand List"
+        heading="Client List"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           {

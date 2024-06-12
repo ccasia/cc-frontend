@@ -29,6 +29,7 @@ const BrandManage = lazy(() => import('src/pages/dashboard/brand/manageBrand'));
 const BrandCreate = lazy(() => import('src/pages/dashboard/brand/createBrand'));
 const BrandDiscover = lazy(() => import('src/pages/dashboard/brand/discoverBrand'));
 const BrandDetails = lazy(() => import('src/pages/dashboard/brand/brand-details'));
+const CompanyEdit = lazy(() => import('src/pages/dashboard/brand/company-edit'));
 
 // Landing Page temporary
 const CreatorLists = lazy(() => import('src/pages/dashboard/landing/creator'));
@@ -137,6 +138,14 @@ export const dashboardRoutes = [
             element: (
               <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
                 <BrandCreate />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: 'company/edit/:id',
+            element: (
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+                <CompanyEdit />
               </RoleBasedGuard>
             ),
           },

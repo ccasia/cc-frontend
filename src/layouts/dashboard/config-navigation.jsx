@@ -106,7 +106,7 @@ export function useNavData() {
                 // icon: <Iconify icon="fluent:people-team-28-regular" />,
               },
               {
-                title: 'Brands list',
+                title: 'Client list',
                 path: paths.dashboard.landing.brand,
                 // icon: <Iconify icon="material-symbols:corporate-fare" />,
               },
@@ -118,12 +118,12 @@ export function useNavData() {
         roles: ['god', 'BD', 'CSM', 'Growth'],
         items: [
           {
-            title: 'Brands',
+            title: 'Clients',
             path: paths.dashboard.brand.discover,
             icon: <Iconify icon="fluent:people-team-28-regular" />,
             children: [
               {
-                title: 'Discover Brand',
+                title: 'Discover clients',
                 path: paths.dashboard.brand.discover,
                 // icon: <Iconify icon="fluent:people-team-28-regular" />,
               },
@@ -132,11 +132,11 @@ export function useNavData() {
                 path: paths.dashboard.brand.create,
                 // icon: <Iconify icon="gridicons:create" />,
               },
-              {
-                title: 'Manage Brand',
-                path: paths.dashboard.brand.manage,
-                // icon: <Iconify icon="mingcute:settings-3-fill" />,
-              },
+              // {
+              //   title: 'Manage Brand',
+              //   path: paths.dashboard.brand.manage,
+              //   // icon: <Iconify icon="mingcute:settings-3-fill" />,
+              // },
             ],
           },
         ],

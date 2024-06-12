@@ -67,10 +67,8 @@ function CompanyBrandBasic() {
         value: Yup.string().required('Value is required'),
       })
     ),
-    brandRegistrationNumber: Yup.string().required('RegistrationNumber is required'),
     brandInstagram: Yup.string().required('Brand Instagram is required'),
     brandTiktok: Yup.string().required('Brand Tiktok is required'),
-    brandIntersts: Yup.array().min(3, 'Brand Interests is required'),
     brandIndustries: Yup.array().min(3, 'Brand Industries is required'),
     companyId: Yup.object().required('Company is required'),
     // companyId: Yup.string().required('Company is required'),
@@ -89,9 +87,7 @@ function CompanyBrandBasic() {
     ],
     brandInstagram: '',
     brandTiktok: '',
-    brandIntersts: [],
     brandIndustries: [],
-    brandRegistrationNumber: '',
   };
 
   const methods = useForm({
@@ -270,38 +266,6 @@ function CompanyBrandBasic() {
           <RHFTextField key="brandPhone" name="brandPhone" label="Brand  Phone" />
           <RHFTextField key="brandAbout" name="brandAbout" label="Brand  About" />
 
-          <RHFTextField
-            key="brandRegistrationNumber"
-            name="brandRegistrationNumber"
-            label="Brand  Registration Number"
-          />
-          <RHFAutocomplete
-            key="brandIntersts"
-            name="brandIntersts"
-            placeholder="+ Brand Interests"
-            multiple
-            freeSolo="true"
-            disableCloseOnSelect
-            options={intersList.map((option) => option)}
-            getOptionLabel={(option) => option}
-            renderOption={(props, option) => (
-              <li {...props} key={option}>
-                {option}
-              </li>
-            )}
-            renderTags={(selected, getTagProps) =>
-              selected.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option}
-                  label={option}
-                  size="small"
-                  color="info"
-                  variant="soft"
-                />
-              ))
-            }
-          />
           <RHFAutocomplete
             key="brandIndustries"
             name="brandIndustries"

@@ -26,7 +26,7 @@ export default function BrandList({ companies }) {
 
   const handleEdit = useCallback(
     (id) => {
-      router.push(paths.dashboard.job.edit(id));
+      router.push(paths.dashboard.brand.companyEdit(id));
     },
     [router]
   );

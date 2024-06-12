@@ -9,6 +9,7 @@ import ListItemText from '@mui/material/ListItemText';
 import { Divider, useTheme, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
+import CustomChip from 'src/components/custom-chip/custom-chip';
 
 // ----------------------------------------------------------------------
 
@@ -26,9 +27,17 @@ export default function JobDetailsCandidates({ brands }) {
       {brands.map((brand) => (
         <Stack direction="column" component={Card}>
           <Stack direction="row" spacing={2} key={brand.id} sx={{ p: 3 }}>
-            <IconButton sx={{ position: 'absolute', top: 8, right: 8 }}>
-              <Iconify icon="eva:more-vertical-fill" />
-            </IconButton>
+            <Stack
+              alignItems="center"
+              direction="row"
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+              spacing={1}
+            >
+              <CustomChip label="Brand" color={theme.palette.secondary.main} />
+              <IconButton>
+                <Iconify icon="eva:more-vertical-fill" />
+              </IconButton>
+            </Stack>
 
             <Avatar alt={brand.name} src={brand.name} sx={{ width: 48, height: 48 }} />
 

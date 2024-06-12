@@ -19,7 +19,7 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function JobDetailsContent({ company }) {
+export default function ClientDetailsContent({ company }) {
   const {
     about,
     address,
@@ -119,10 +119,24 @@ export default function JobDetailsContent({ company }) {
     </Stack>
   );
 
+  const renderBilling = (
+    <Stack
+      component={Paper}
+      variant="outlined"
+      spacing={2}
+      direction="row"
+      sx={{ p: 3, borderRadius: 2, mt: 3 }}
+    >
+      <Typography variant="h5">Billing information</Typography>
+    </Stack>
+  );
+
   return (
     <Grid container spacing={3}>
       <Grid xs={12} md={8}>
         {renderContent}
+
+        {renderBilling}
       </Grid>
 
       <Grid xs={12} md={4}>
@@ -134,6 +148,6 @@ export default function JobDetailsContent({ company }) {
   );
 }
 
-JobDetailsContent.propTypes = {
+ClientDetailsContent.propTypes = {
   company: PropTypes.object,
 };

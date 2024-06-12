@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <>
       <Helmet>
-        <title>Brand Lists</title>
+        <title>Client Lists</title>
       </Helmet>
 
       <BrandList />

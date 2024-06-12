@@ -7,7 +7,6 @@ import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
-import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import {
@@ -27,6 +26,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
+import CustomChip from 'src/components/custom-chip/custom-chip';
 import CustomPopover from 'src/components/custom-popover/custom-popover';
 
 // ----------------------------------------------------------------------
@@ -56,9 +56,17 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
   return (
     <>
       <Card>
-        <IconButton onClick={popover.onOpen} sx={{ position: 'absolute', top: 8, right: 8 }}>
-          <Iconify icon="eva:more-vertical-fill" />
-        </IconButton>
+        <Stack
+          alignItems="center"
+          direction="row"
+          sx={{ position: 'absolute', top: 8, right: 8 }}
+          spacing={1}
+        >
+          <CustomChip label="Client" />
+          <IconButton onClick={popover.onOpen}>
+            <Iconify icon="eva:more-vertical-fill" />
+          </IconButton>
+        </Stack>
 
         <Stack sx={{ p: 3, pb: 2 }}>
           <Avatar alt={name} src={logo} variant="rounded" sx={{ width: 48, height: 48, mb: 2 }} />
@@ -92,8 +100,6 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
             {brand?.length} Brands
           </Stack>
         </Stack>
-
-        <Divider sx={{ borderStyle: 'dashed' }} />
 
         {/* <Box rowGap={1.5} display="grid" gridTemplateColumns="repeat(2, 1fr)" sx={{ p: 3 }}>
           <Stack

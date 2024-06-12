@@ -14,7 +14,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
-import JobDetailsContent from './job-details-content';
+import JobDetailsContent from './client-details-content';
 import JobDetailsCandidates from './job-details-candidates';
 
 // ----------------------------------------------------------------------
@@ -68,7 +68,8 @@ export default function JobDetailsView({ id }) {
     >
       {[
         { label: 'Details', value: 'details' },
-        { label: 'Brands', value: 'brands' },
+        { label: 'Brands', value: 'brand' },
+        { label: 'Campaigns', value: 'campaign' },
       ].map((elem, index) => (
         <Tab
           key={index}
@@ -76,7 +77,7 @@ export default function JobDetailsView({ id }) {
           label={elem.label}
           iconPosition="end"
           icon={
-            elem.value === 'brands'
+            elem.value === 'brand'
               ? currentCompany?.brand?.length > 0 && (
                   <Label variant="filled">{currentCompany?.brand?.length}</Label>
                 )
@@ -89,28 +90,17 @@ export default function JobDetailsView({ id }) {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      {/* {JSON.stringify(currentCompany)} */}
-      {/* <JobDetailsToolbar
-        backLink={paths.dashboard.job.root}
-        editLink={paths.dashboard.job.edit(`${currentJob?.id}`)}
-        liveLink="#"
-        publish={publish || ''}
-        onChangePublish={handleChangePublish}
-        publishOptions={JOB_PUBLISH_OPTIONS}
-      /> */}
       <Button
-        startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} />}
+        startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} sx={{ ml: 1 }} />}
         onClick={() => router.push(paths.dashboard.brand.discover)}
       >
         Back
       </Button>
       {renderTabs}
       {currentTab === 'details' && currentCompany && <JobDetailsContent company={currentCompany} />}
-      {currentTab === 'brands' && currentCompany && (
+      {currentTab === 'brand' && currentCompany && (
         <JobDetailsCandidates brands={currentCompany?.brand} />
       )}
-
-      {/* {currentTab === 'candidates' && <JobDetailsCandidates candidates={currentJob?.candidates} />} */}
     </Container>
   );
 }
