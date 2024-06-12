@@ -35,6 +35,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
 
   const { admin } = currentUser;
 
+
   const [currentTab, setCurrentTab] = useState('profile');
 
   const NewUserSchema = Yup.object().shape({

@@ -6,7 +6,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-export default function RHFDatePicker({ name, helperText, type, ...other }) {
+export default function RHFDatePicker({ name, helperText, type,label, ...other }) {
   const { control } = useFormContext();
 
   return (
@@ -18,7 +18,7 @@ export default function RHFDatePicker({ name, helperText, type, ...other }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DemoContainer components={['DatePicker']}>
             <DatePicker
-            
+            label={label}
               {...field}
               slotProps={{
                 textField: {
@@ -39,4 +39,5 @@ RHFDatePicker.propTypes = {
   name: PropTypes.string,
   helperText: PropTypes.string,
   type: PropTypes.string,
+  label: PropTypes.string,  
 };

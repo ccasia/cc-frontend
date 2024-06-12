@@ -1,6 +1,7 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
@@ -11,24 +12,30 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
-import FormProvider, {  RHFTextField } from 'src/components/hook-form';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
-export default function CreateCompany({ currentUser, open, onClose }) {
-  // const { enqueueSnackbar } = useSnackbar();
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
-  // const { getAdmins } = useGetAdmins();
+
+
+export default function CreateCompany({ setCompany,currentUser, open, onClose }) {
+
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
-    brand: Yup.string().required('Brand is required'),
-    supBrand: Yup.string().required('supBrand  is required'),
-    location: Yup.string().required('Location is required'),
+    email: Yup.string().email('Must be a valid email').required('Email is required'),
+    phone: Yup.string().required('Phone is required'),
+    website: Yup.string().required('Website is required'),
+    registration_number: Yup.string().required('Registration Number is required'),
+    address: Yup.string().required('Address is required'),
   });
   const defaultValues = {
     name: '',
-    brand: '',
-    supBrand: '',
-    location: '',
+    email: '',
+    phone: '',
+    registration_number: '',
+    address: '',
+    website: '',
   };
 
   const methods = useForm({
@@ -37,13 +44,22 @@ export default function CreateCompany({ currentUser, open, onClose }) {
   });
 
   const {
-    // reset,
+    reset,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
+    try {
+      const res = await axiosInstance.post(endpoints.company.createOneCompany, data);
+      reset();
+      onClose();
+      setCompany(data.name);
+      enqueueSnackbar('Company created successfully', { variant: 'success' });
+      console.log(res.data);
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   return (
@@ -69,17 +85,11 @@ export default function CreateCompany({ currentUser, open, onClose }) {
             }}
           >
             <RHFTextField name="name" label="Name" fullWidth />
-            <RHFTextField name="brand" label="Brand" fullWidth />
-            <RHFTextField name="supBrand" label="Sup Brand" />
-            <RHFTextField name="location" label="Location" />
-            {/* <RHFAutocomplete
-                name="country"
-                label="Country"
-                options={countries}
-                getOptionLabel={(option) => option.label}
-                getOptionSelected={(option, value) => option.label === value.label}
-                fullWidth
-              /> */}
+            <RHFTextField name="email" label="Email" fullWidth />
+            <RHFTextField name="phone" label="Phone" />
+            <RHFTextField name="registration_number" label="Registration Number" fullWidth />
+            <RHFTextField name="address" label="Address" />
+            <RHFTextField name="website" label="Website" fullWidth />
           </Box>
           <DialogActions>
             <Button onClick={onClose}>Cancel</Button>
@@ -99,9 +109,9 @@ export default function CreateCompany({ currentUser, open, onClose }) {
   );
 }
 
-
 CreateCompany.propTypes = {
   currentUser: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
+  setCompany: PropTypes.func,
 };
