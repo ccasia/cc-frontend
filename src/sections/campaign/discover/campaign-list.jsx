@@ -7,23 +7,23 @@ import Pagination, { paginationClasses } from '@mui/material/Pagination';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import JobItem from './job-item';
+import TourItem from './campaign-item';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignList({ campaigns }) {
+export default function TourList({ tours }) {
   const router = useRouter();
 
   const handleView = useCallback(
     (id) => {
-      router.push(paths.dashboard.campaign.details(id));
+      router.push(paths.dashboard.tour.details(id));
     },
     [router]
   );
 
   const handleEdit = useCallback(
     (id) => {
-      router.push(paths.dashboard.job.edit(id));
+      router.push(paths.dashboard.tour.edit(id));
     },
     [router]
   );
@@ -43,18 +43,18 @@ export default function CampaignList({ campaigns }) {
           md: 'repeat(3, 1fr)',
         }}
       >
-        {campaigns.map((campaign) => (
-          <JobItem
-            key={campaign.id}
-            campaign={campaign}
-            onView={() => handleView(campaign.id)}
-            onEdit={() => handleEdit(campaign.id)}
-            onDelete={() => handleDelete(campaign.id)}
+        {tours.map((tour) => (
+          <TourItem
+            key={tour.id}
+            tour={tour}
+            onView={() => handleView(tour.id)}
+            onEdit={() => handleEdit(tour.id)}
+            onDelete={() => handleDelete(tour.id)}
           />
         ))}
       </Box>
 
-      {campaigns.length > 8 && (
+      {tours.length > 8 && (
         <Pagination
           count={8}
           sx={{
@@ -69,6 +69,6 @@ export default function CampaignList({ campaigns }) {
   );
 }
 
-CampaignList.propTypes = {
-  campaigns: PropTypes.array,
+TourList.propTypes = {
+  tours: PropTypes.array,
 };

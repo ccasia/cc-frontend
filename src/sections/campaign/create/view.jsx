@@ -1,4 +1,4 @@
-import {  SnackbarProvider } from 'notistack';
+import { SnackbarProvider } from 'notistack';
 
 import Container from '@mui/material/Container';
 
@@ -13,8 +13,6 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import CreateCampaignForm from './form';
 
-
-
 function CreateCampaign() {
   useGetAdmins();
   useGetCompany();
@@ -26,7 +24,7 @@ function CreateCampaign() {
         heading="Create Campaign"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Campaign' },
+          { name: 'Campaign', href: paths.dashboard.campaign.root },
           { name: 'Create' },
         ]}
       />

@@ -69,7 +69,7 @@ const BrandDetails = ({ id }) => {
               </Stack>
             </Stack>
             <Stack direction="row" spacing={1}>
-              {brand?.indystries.map((item) => (
+              {brand?.industries.map((item) => (
                 <CustomChip label={item} />
               ))}
             </Stack>

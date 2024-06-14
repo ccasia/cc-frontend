@@ -1,12 +1,10 @@
 import { Helmet } from 'react-helmet-async';
 
-import { useParams } from 'src/routes/hooks';
-
-import CampaignDetailsView from 'src/sections/campaign/discover/campaign-details-view';
+// import CampaignDetailsView from 'src/sections/campaign/discover/campaign-details-view';
 // ----------------------------------------------------------------------
 
 export default function Page() {
-  const { id } = useParams();
+  // const { id } = useParams();
 
   return (
     <>
@@ -14,7 +12,7 @@ export default function Page() {
         <title>Create Campaign</title>
       </Helmet>
 
-      <CampaignDetailsView id={id} />
+      {/* <CampaignDetailsView id={id} /> */}
     </>
   );
 }
