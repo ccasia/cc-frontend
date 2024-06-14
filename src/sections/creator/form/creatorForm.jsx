@@ -40,6 +40,7 @@ const steps = [
 ];
 
 export const langList = ['English', 'Malay', 'Mandarin', 'Hindi', 'All of the above', 'Others'];
+
 export const intersList = [
   'Art',
   'Beauty',

@@ -32,6 +32,7 @@ export const paths = {
       companyEdit: (id) => `${ROOTS.DASHBOARD}/company/edit/${id}`,
       brand: {
         details: (id) => `${ROOTS.DASHBOARD}/company/brand/${id}`,
+        edit: (id) => `${ROOTS.DASHBOARD}/company/brand/edit/${id}`,
       },
     },
     campaign: {

@@ -31,6 +31,7 @@ const BrandDiscover = lazy(() => import('src/pages/dashboard/brand/discoverBrand
 const CompanyDetails = lazy(() => import('src/pages/dashboard/brand/company-details'));
 const CompanyEdit = lazy(() => import('src/pages/dashboard/brand/company-edit'));
 const BrandDetails = lazy(() => import('src/pages/dashboard/brand/brand-details'));
+const BrandEdit = lazy(() => import('src/pages/dashboard/brand/brand-edit'));
 
 // Landing Page temporary
 const CreatorLists = lazy(() => import('src/pages/dashboard/landing/creator'));
@@ -174,8 +175,16 @@ export const dashboardRoutes = [
             path: 'brand',
             children: [
               {
+                index: true,
+                element: <BrandDetails />,
+              },
+              {
                 path: ':id',
                 element: <BrandDetails />,
+              },
+              {
+                path: 'edit/:id',
+                element: <BrandEdit />,
               },
             ],
           },

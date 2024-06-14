@@ -52,9 +52,12 @@ export default function BrandsList({ brands, onView, onEdit, onDelete }) {
     [router]
   );
 
-  const handleEdit = useCallback((id) => {
-    console.log(id);
-  }, []);
+  const handleEdit = useCallback(
+    (id) => {
+      router.push(paths.dashboard.company.brand.edit(id));
+    },
+    [router]
+  );
 
   const handleDelete = useCallback((id) => {
     console.log(id);

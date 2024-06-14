@@ -2,17 +2,17 @@ import { Helmet } from 'react-helmet-async';
 
 import { useParams } from 'src/routes/hooks';
 
-import CompanyEditView from 'src/sections/brand/edit/client/view';
+import BrandEditView from 'src/sections/brand/edit/brand/view';
 
 export default function Page() {
   const { id } = useParams();
   return (
     <>
       <Helmet>
-        <title>Edit Company</title>
+        <title>Edit Brand</title>
       </Helmet>
 
-      <CompanyEditView id={id} />
+      <BrandEditView id={id} />
     </>
   );
 }
