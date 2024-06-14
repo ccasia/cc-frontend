@@ -16,6 +16,7 @@ import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 
+// eslint-disable-next-line import/no-cycle
 import UserQuickEditForm from './user-quick-edit-form';
 
 // ----------------------------------------------------------------------

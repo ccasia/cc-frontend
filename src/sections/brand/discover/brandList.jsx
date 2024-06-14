@@ -19,14 +19,14 @@ export default function BrandList({ companies }) {
 
   const handleView = useCallback(
     (id) => {
-      router.push(paths.dashboard.brand.details(id));
+      router.push(paths.dashboard.company.details(id));
     },
     [router]
   );
 
   const handleEdit = useCallback(
     (id) => {
-      router.push(paths.dashboard.brand.companyEdit(id));
+      router.push(paths.dashboard.company.companyEdit(id));
     },
     [router]
   );

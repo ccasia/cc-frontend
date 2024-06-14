@@ -4,8 +4,6 @@ import { memo, useState, useCallback } from 'react';
 import Stack from '@mui/material/Stack';
 import { Collapse, ListSubheader } from '@mui/material';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import NavList from './nav-list';
 
 // ----------------------------------------------------------------------
@@ -13,15 +11,18 @@ import NavList from './nav-list';
 function NavSectionVertical({ data, slotProps, ...other }) {
   return (
     <Stack component="nav" id="nav-section-vertical" {...other}>
-      {data.map((group, index) => (
-        <Group
-          key={group.subheader || index}
-          subheader={group.subheader}
-          items={group.items}
-          slotProps={slotProps}
-          whoCanSee={group.roles}
-        />
-      ))}
+      {data.map((group, index) => {
+        console.log(group);
+        return (
+          <Group
+            key={group.subheader || index}
+            subheader={group.subheader}
+            items={group.items}
+            slotProps={slotProps}
+            whoCanSee={group?.roles}
+          />
+        );
+      })}
     </Stack>
   );
 }
@@ -37,18 +38,18 @@ export default memo(NavSectionVertical);
 
 function Group({ subheader, items, slotProps, whoCanSee }) {
   const [open, setOpen] = useState(true);
-  const { user } = useAuthContext();
+  // const { user } = useAuthContext();
 
   const handleToggle = useCallback(() => {
     setOpen((prev) => !prev);
   }, []);
 
   const renderContent =
-    whoCanSee &&
-    (Array.from(whoCanSee).includes(user?.role) ||
-      Array.from(whoCanSee).includes(user?.admin?.designation) ||
-      Array.from(whoCanSee).includes(user?.admin?.mode)) &&
-    items?.map((list) => <NavList key={list.title} data={list} depth={1} />);
+    // whoCanSee &&
+    // (Array.from(whoCanSee).includes(user?.role) ||
+    //   Array.from(whoCanSee).includes(user?.admin?.designation) ||
+    //   Array.from(whoCanSee).includes(user?.admin?.mode)) &&
+    items?.map((list) => <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />);
 
   return (
     <Stack sx={{ px: 2 }}>

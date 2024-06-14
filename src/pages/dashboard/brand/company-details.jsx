@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 
-import BrandDetails from 'src/sections/brand/details/brand/brand-details';
+import CompanyDetails from 'src/sections/brand/details/view';
 
 export default function Page() {
   const { id } = useParams();
@@ -9,10 +9,10 @@ export default function Page() {
   return (
     <>
       <Helmet>
-        <title>Brand details</title>
+        <title>Create Brand</title>
       </Helmet>
 
-      <BrandDetails id={id} />
+      <CompanyDetails id={id} />
     </>
   );
 }

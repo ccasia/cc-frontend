@@ -55,9 +55,10 @@ export function useNavData() {
         items: [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }],
       },
       {
-        roles: ['god'],
+        subheader: 'Management',
         items: [
           {
+            roles: ['superadmin'],
             title: 'Admin',
             path: paths.dashboard.admins,
             icon: ICONS.user,
@@ -68,34 +69,24 @@ export function useNavData() {
               },
             ],
           },
-        ],
-      },
-      {
-        roles: ['god', 'normal'],
-        items: [
           {
+            roles: ['superadmin', 'normal'],
             title: 'Creator',
             path: paths.dashboard.creator.root,
             icon: <Iconify icon="solar:users-group-rounded-bold" />,
             children: [
               {
-                title: 'Creator',
-                path: paths.dashboard.creator.root,
-                // icon: <Iconify icon="solar:users-group-rounded-bold" />,
+                title: 'List',
+                path: paths.dashboard.creator.list,
               },
               {
                 title: 'Media Kits',
                 path: paths.dashboard.creator.mediaKitLists,
-                // icon: <Iconify icon="solar:users-group-rounded-bold" />,
               },
             ],
           },
-        ],
-      },
-      {
-        roles: ['god', 'normal'],
-        items: [
           {
+            roles: ['superadmin', 'admin'],
             title: 'Landing pages',
             path: paths.dashboard.landing.creator,
             icon: <Iconify icon="fluent:people-team-28-regular" />,
@@ -103,50 +94,40 @@ export function useNavData() {
               {
                 title: 'Creator list',
                 path: paths.dashboard.landing.creator,
-                // icon: <Iconify icon="fluent:people-team-28-regular" />,
               },
               {
                 title: 'Client list',
                 path: paths.dashboard.landing.brand,
-                // icon: <Iconify icon="material-symbols:corporate-fare" />,
               },
             ],
           },
-        ],
-      },
-      {
-        roles: ['god', 'BD', 'CSM', 'Growth'],
-        items: [
           {
+            roles: ['superadmin', 'admin'],
             title: 'Clients',
-            path: paths.dashboard.brand.discover,
+            path: paths.dashboard.company.root,
             icon: <Iconify icon="fluent:people-team-28-regular" />,
             children: [
               {
                 title: 'Discover clients',
-                path: paths.dashboard.brand.discover,
+                path: paths.dashboard.company.discover,
                 // icon: <Iconify icon="fluent:people-team-28-regular" />,
               },
               {
                 title: 'Create Brand',
-                path: paths.dashboard.brand.create,
+                path: paths.dashboard.company.create,
                 // icon: <Iconify icon="gridicons:create" />,
               },
               // {
               //   title: 'Manage Brand',
-              //   path: paths.dashboard.brand.manage,
+              //   path: paths.dashboard.company.manage,
               //   // icon: <Iconify icon="mingcute:settings-3-fill" />,
               // },
             ],
           },
-        ],
-      },
-      {
-        roles: ['god', 'admin'],
-        items: [
           {
+            roles: ['superadmin', 'admin'],
             title: 'Campaign',
-            path: paths.dashboard.campaign.view,
+            path: paths.dashboard.campaign.root,
             icon: <Iconify icon="material-symbols:explore-outline" />,
             children: [
               {
@@ -172,12 +153,8 @@ export function useNavData() {
               },
             ],
           },
-        ],
-      },
-      {
-        roles: ['creator'],
-        items: [
           {
+            roles: ['creator'],
             title: 'Media Kit',
             path: paths.dashboard.creator.mediaKitCreator,
             icon: <Iconify icon="flowbite:profile-card-outline" />,
@@ -195,11 +172,10 @@ export function useNavData() {
       },
       ...navigations,
       {
-        subheader: 'Management',
-        roles: ['admin', 'creator'],
+        roles: ['admin', 'creator', 'superadmin'],
         items: [
           {
-            roles: ['adw'],
+            // roles: ['superadmin'],
             title: 'Calendar',
             path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,

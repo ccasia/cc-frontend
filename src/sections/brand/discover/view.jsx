@@ -7,10 +7,8 @@ import { TextField, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompany from 'src/hooks/use-get-company';
 
-import { _jobs } from 'src/_mock';
 import withPermission from 'src/auth/guard/withPermissions';
 
 import Iconify from 'src/components/iconify';
@@ -32,35 +30,18 @@ function DiscoverBrand() {
 
   const { companies } = useGetCompany();
 
-  const openFilters = useBoolean();
-
   const [sortBy, setSortBy] = useState('latest');
 
-  const [search, setSearch] = useState({
-    query: '',
-    results: [],
-  });
+  const [search, setSearch] = useState('');
 
-  const handleSearch = useCallback(
-    (inputValue) => {
-      setSearch((prevState) => ({
-        ...prevState,
-        query: inputValue,
-      }));
+  const handleSearch = useCallback((event) => {
+    setSearch(event.target.value);
+  }, []);
 
-      if (inputValue) {
-        const results = _jobs.filter(
-          (job) => job.title.toLowerCase().indexOf(search.query.toLowerCase()) !== -1
-        );
+  const filteredData =
+    companies &&
+    companies.filter((company) => company.name.toLowerCase().indexOf(search.toLowerCase()) !== -1);
 
-        setSearch((prevState) => ({
-          ...prevState,
-          results,
-        }));
-      }
-    },
-    [search.query]
-  );
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -80,6 +61,7 @@ function DiscoverBrand() {
       <Stack mb={3}>
         <TextField
           placeholder="Search..."
+          onChange={handleSearch}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -97,7 +79,7 @@ function DiscoverBrand() {
           mb: { xs: 3, md: 5 },
         }}
       >
-        {companies.length > 0 && <BrandList companies={companies} />}
+        {companies.length > 0 && <BrandList companies={filteredData} />}
       </Stack>
     </Container>
   );

@@ -110,7 +110,10 @@ const CompanyEditView = ({ id }) => {
 
   return (
     <Container maxWidth="lg">
-      <Button startIcon={<Iconify icon="ion:chevron-back" />} href={paths.dashboard.brand.discover}>
+      <Button
+        startIcon={<Iconify icon="ion:chevron-back" />}
+        href={paths.dashboard.company.discover}
+      >
         Back
       </Button>
       {loading ? (

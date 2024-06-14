@@ -60,7 +60,6 @@ export default function NavList({ data, depth, slotProps }) {
           ...(depth === 1 ? slotProps?.rootItem : slotProps?.subItem),
         }}
       />
-
       {!!data.children && (
         <Collapse in={openMenu} unmountOnExit>
           <NavSubList data={data.children} depth={depth} slotProps={slotProps} />

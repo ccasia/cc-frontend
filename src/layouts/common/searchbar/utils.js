@@ -22,7 +22,7 @@ export function getAllItems({ data }) {
 
 export function applyFilter({ inputData, query }) {
   if (query) {
-    inputData = inputData.filter(
+    inputData = inputData?.filter(
       (item) =>
         item.title.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
         item.path.toLowerCase().indexOf(query.toLowerCase()) !== -1

@@ -46,7 +46,7 @@ function CreateBrand() {
           heading="Create Company & Brand"
           links={[
             { name: 'Dashboard', href: paths.dashboard.root },
-            { name: 'Brand', href: paths.dashboard.brand.discover },
+            { name: 'Brand', href: paths.dashboard.company.discover },
             { name: 'Create' },
           ]}
         />

@@ -23,14 +23,19 @@ export const paths = {
   dashboard: {
     root: ROOTS.DASHBOARD,
     admins: `${ROOTS.DASHBOARD}/admins`,
-    brand: {
-      manage: `${ROOTS.DASHBOARD}/brand/manage`,
-      create: `${ROOTS.DASHBOARD}/brand/create`,
-      discover: `${ROOTS.DASHBOARD}/brand/discover`,
-      details: (id) => `${ROOTS.DASHBOARD}/brand/details/${id}`,
-      companyEdit: (id) => `${ROOTS.DASHBOARD}/brand/company/edit/${id}`,
+    company: {
+      root: `${ROOTS.DASHBOARD}/company`,
+      manage: `${ROOTS.DASHBOARD}/company/manage`,
+      create: `${ROOTS.DASHBOARD}/company/create`,
+      discover: `${ROOTS.DASHBOARD}/company/discover`,
+      details: (id) => `${ROOTS.DASHBOARD}/company/details/${id}`,
+      companyEdit: (id) => `${ROOTS.DASHBOARD}/company/edit/${id}`,
+      brand: {
+        details: (id) => `${ROOTS.DASHBOARD}/company/brand/${id}`,
+      },
     },
     campaign: {
+      root: `${ROOTS.DASHBOARD}/campaign`,
       manage: `${ROOTS.DASHBOARD}/campaign/manage`,
       create: `${ROOTS.DASHBOARD}/campaign/create`,
       view: `${ROOTS.DASHBOARD}/campaign/discover`,
@@ -42,7 +47,8 @@ export const paths = {
       profile: `${ROOTS.DASHBOARD}/user/profile`,
     },
     creator: {
-      root: `${ROOTS.DASHBOARD}/creator/lists`,
+      root: `${ROOTS.DASHBOARD}/creator`,
+      list: `${ROOTS.DASHBOARD}/creator/lists`,
       mediaKit: (id) => `${ROOTS.DASHBOARD}/creator/media-kits/${id}`,
       mediaKitCreator: `${ROOTS.DASHBOARD}/mediakit`,
       mediaKitLists: `${ROOTS.DASHBOARD}/creator/media-kits`,

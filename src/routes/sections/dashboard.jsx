@@ -24,12 +24,13 @@ const ViewCampaign = lazy(() => import('src/pages/dashboard/campaign/discovery')
 const CampaignSetting = lazy(() => import('src/pages/dashboard/campaign/setting'));
 const CampaignDetails = lazy(() => import('src/pages/dashboard/campaign/details'));
 
-// Brand
+// Brand & Company
 const BrandManage = lazy(() => import('src/pages/dashboard/brand/manageBrand'));
 const BrandCreate = lazy(() => import('src/pages/dashboard/brand/createBrand'));
 const BrandDiscover = lazy(() => import('src/pages/dashboard/brand/discoverBrand'));
-const BrandDetails = lazy(() => import('src/pages/dashboard/brand/brand-details'));
+const CompanyDetails = lazy(() => import('src/pages/dashboard/brand/company-details'));
 const CompanyEdit = lazy(() => import('src/pages/dashboard/brand/company-edit'));
+const BrandDetails = lazy(() => import('src/pages/dashboard/brand/brand-details'));
 
 // Landing Page temporary
 const CreatorLists = lazy(() => import('src/pages/dashboard/landing/creator'));
@@ -69,6 +70,14 @@ export const dashboardRoutes = [
       {
         path: 'creator',
         children: [
+          {
+            element: (
+              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+                <CreatorList />
+              </RoleBasedGuard>
+            ),
+            index: true,
+          },
           {
             path: 'lists',
             element: (
@@ -123,15 +132,15 @@ export const dashboardRoutes = [
         ],
       },
       {
-        path: 'brand',
+        path: 'company',
         children: [
           {
-            path: 'manage',
-            element: (
-              <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
-                <BrandManage />
-              </RoleBasedGuard>
-            ),
+            element: <BrandDiscover />,
+            index: true,
+          },
+          {
+            path: 'discover',
+            element: <BrandDiscover />,
           },
           {
             path: 'create',
@@ -142,7 +151,15 @@ export const dashboardRoutes = [
             ),
           },
           {
-            path: 'company/edit/:id',
+            path: 'manage',
+            element: (
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+                <BrandManage />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: 'edit/:id',
             element: (
               <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
                 <CompanyEdit />
@@ -150,18 +167,31 @@ export const dashboardRoutes = [
             ),
           },
           {
-            path: 'discover',
-            element: <BrandDiscover />,
+            path: 'details/:id',
+            element: <CompanyDetails />,
           },
           {
-            path: 'details/:id',
-            element: <BrandDetails />,
+            path: 'brand',
+            children: [
+              {
+                path: ':id',
+                element: <BrandDetails />,
+              },
+            ],
           },
         ],
       },
       {
         path: 'campaign',
         children: [
+          {
+            index: true,
+            element: (
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+                <ViewCampaign />
+              </RoleBasedGuard>
+            ),
+          },
           {
             path: 'manage',
             element: <ManageCampaign />,

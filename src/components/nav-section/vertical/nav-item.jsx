@@ -31,7 +31,7 @@ const NavItem = forwardRef(
       active,
       hasChild,
       externalLink,
-      currentRole = 'god',
+      currentRole = 'superadmin',
       ...other
     },
     ref
@@ -97,7 +97,7 @@ const NavItem = forwardRef(
     );
 
     // Hidden item by role
-    if (roles && !roles.includes(user?.admin?.mode)) {
+    if (roles && !roles.includes(user?.role)) {
       return null;
     }
 

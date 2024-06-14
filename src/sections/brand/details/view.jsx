@@ -14,12 +14,12 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
-import JobDetailsContent from './client-details-content';
-import JobDetailsCandidates from './job-details-candidates';
+import BrandsList from './brand/brand-general';
+import JobDetailsContent from './client/client-details-content';
 
 // ----------------------------------------------------------------------
 
-export default function JobDetailsView({ id }) {
+export default function CompanyDetails({ id }) {
   const settings = useSettingsContext();
   const { companies } = useGetCompany();
   const router = useRouter();
@@ -31,32 +31,6 @@ export default function JobDetailsView({ id }) {
   const handleChangeTab = useCallback((event, newValue) => {
     setCurrentTab(newValue);
   }, []);
-
-  // const renderTabs = (
-  //   <Tabs
-  //     value={currentTab}
-  //     onChange={handleChangeTab}
-  //     sx={{
-  //       mb: { xs: 3, md: 5 },
-  //     }}
-  //   >
-  //     {JOB_DETAILS_TABS.map((tab) => (
-  //       <Tab
-  //         key={tab.value}
-  //         iconPosition="end"
-  //         value={tab.value}
-  //         label={tab.label}
-  //         icon={
-  //           tab.value === 'candidates' ? (
-  //             <Label variant="filled">{currentJob?.candidates.length}</Label>
-  //           ) : (
-  //             ''
-  //           )
-  //         }
-  //       />
-  //     ))}
-  //   </Tabs>
-  // );
 
   const renderTabs = (
     <Tabs
@@ -92,19 +66,17 @@ export default function JobDetailsView({ id }) {
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <Button
         startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} sx={{ ml: 1 }} />}
-        onClick={() => router.push(paths.dashboard.brand.discover)}
+        onClick={() => router.push(paths.dashboard.company.discover)}
       >
         Back
       </Button>
       {renderTabs}
       {currentTab === 'details' && currentCompany && <JobDetailsContent company={currentCompany} />}
-      {currentTab === 'brand' && currentCompany && (
-        <JobDetailsCandidates brands={currentCompany?.brand} />
-      )}
+      {currentTab === 'brand' && currentCompany && <BrandsList brands={currentCompany?.brand} />}
     </Container>
   );
 }
 
-JobDetailsView.propTypes = {
+CompanyDetails.propTypes = {
   id: PropTypes.string,
 };

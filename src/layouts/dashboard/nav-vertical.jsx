@@ -23,7 +23,6 @@ import NavToggleButton from '../common/nav-toggle-button';
 
 export default function NavVertical({ openNav, onCloseNav }) {
   const { user } = useAuthContext();
-  // const { user } = useMockedUser();
 
   const pathname = usePathname();
 

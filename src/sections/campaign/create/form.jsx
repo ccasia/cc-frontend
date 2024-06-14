@@ -6,24 +6,25 @@ import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Step from '@mui/material/Step';
+import Menu from '@mui/material/Menu';
+import { Stack } from '@mui/material';
 import Paper from '@mui/material/Paper';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
-import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Stack } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
-import Iconify from 'src/components/iconify/iconify';
 
 import { useBrand } from 'src/hooks/zustands/useBrand';
-import { useGetTimeline } from 'src/hooks/use-get-timeline';
 import { useAdmins } from 'src/hooks/zustands/useAdmins';
+import { useGetTimeline } from 'src/hooks/use-get-timeline';
 
+import { Upload } from 'src/components/upload';
+import Iconify from 'src/components/iconify/iconify';
 import FormProvider, {
   RHFSelect,
   RHFTextField,
@@ -32,7 +33,6 @@ import FormProvider, {
 } from 'src/components/hook-form';
 
 import UploadPhoto from 'src/sections/profile/dropzone';
-import { Upload } from 'src/components/upload';
 
 import CreateBrand from './brandDialog';
 import SelectTimeline from './steps/select-timeline';
@@ -72,10 +72,9 @@ function CreateCampaignForm() {
   const [brandState, setBrandState] = useState('');
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
-  const { defaultTimeline, loading, error } = useGetTimeline();
+  const { defaultTimeline } = useGetTimeline();
   const [timeline, setTimeline] = useState('defaultTimeline');
   const { admins } = useAdmins();
-
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -234,8 +233,7 @@ function CreateCampaignForm() {
     getValues,
     control,
     setValue,
-    register,
-    formState: { errors, isDirty },
+    formState: { errors },
   } = methods;
 
   useEffect(() => {

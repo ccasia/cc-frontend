@@ -121,22 +121,22 @@ export function useNavData() {
             items: [
               {
                 title: 'Brands',
-                path: paths.dashboard.brand.discover,
+                path: paths.dashboard.company.discover,
                 icon: <Iconify icon="fluent:people-team-28-regular" />,
                 children: [
                   {
                     title: 'Discover Brand',
-                    path: paths.dashboard.brand.discover,
+                    path: paths.dashboard.company.discover,
                     // icon: <Iconify icon="fluent:people-team-28-regular" />,
                   },
                   {
                     title: 'Create Brand',
-                    path: paths.dashboard.brand.create,
+                    path: paths.dashboard.company.create,
                     // icon: <Iconify icon="gridicons:create" />,
                   },
                   {
                     title: 'Manage Brand',
-                    path: paths.dashboard.brand.manage,
+                    path: paths.dashboard.company.manage,
                     // icon: <Iconify icon="mingcute:settings-3-fill" />,
                   },
                 ],
@@ -146,17 +146,17 @@ export function useNavData() {
             // items: [
             //   {
             //     title: 'Discover Brand',
-            //     path: paths.dashboard.brand.discover,
+            //     path: paths.dashboard.company.discover,
             //     icon: <Iconify icon="fluent:people-team-28-regular" />,
             //   },
             //   {
             //     title: 'Create Brand',
-            //     path: paths.dashboard.brand.create,
+            //     path: paths.dashboard.company.create,
             //     icon: <Iconify icon="gridicons:create" />,
             //   },
             //   {
             //     title: 'Manage Brand',
-            //     path: paths.dashboard.brand.manage,
+            //     path: paths.dashboard.company.manage,
             //     icon: <Iconify icon="mingcute:settings-3-fill" />,
             //   },
             // ],
