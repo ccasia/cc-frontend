@@ -59,14 +59,19 @@ const MediaKitCover = ({ user }) => {
           >
             {user?.creator?.MediaKit?.about}
           </Typography>
-          <Stack direction={{ sm: 'row' }} justifyContent="space-evenly" alignItems="center">
-            <Stack direction="row" gap={2}>
+          <Stack
+            direction={{ sm: 'row' }}
+            justifyContent="space-evenly"
+            alignItems="center"
+            spacing={2}
+          >
+            <Stack direction="row" spacing={1}>
               <Iconify icon="mingcute:location-fill" />
               <Typography variant="subtitle2" gutterBottom fontWeight={800}>
                 Live at {user?.country}
               </Typography>
             </Stack>
-            <Stack direction="row" gap={2}>
+            <Stack direction="row" spacing={1}>
               <Iconify icon="mdi:email" />
               <Typography variant="subtitle2" gutterBottom fontWeight={800}>
                 {user?.email}

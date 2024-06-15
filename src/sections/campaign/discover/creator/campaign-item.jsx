@@ -2,9 +2,8 @@ import PropTypes from 'prop-types';
 
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
+import { Button } from '@mui/material';
 import Stack from '@mui/material/Stack';
-import MenuItem from '@mui/material/MenuItem';
-import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 
 import { RouterLink } from 'src/routes/components';
@@ -13,13 +12,10 @@ import { fDateTime } from 'src/utils/format-time';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export default function TourItem({ tour, onView, onEdit, onDelete }) {
-  const popover = usePopover();
-
+export default function CampaignItem({ tour, onView, onEdit, onDelete }) {
   const { images, createdAt } = tour;
 
   const renderImages = (
@@ -73,9 +69,17 @@ export default function TourItem({ tour, onView, onEdit, onDelete }) {
         p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
       }}
     >
-      <IconButton onClick={popover.onOpen} sx={{ position: 'absolute', bottom: 20, right: 8 }}>
+      {/* <IconButton onClick={popover.onOpen} sx={{ position: 'absolute', bottom: 20, right: 8 }}>
         <Iconify icon="eva:more-vertical-fill" />
-      </IconButton>
+      </IconButton> */}
+
+      <Button
+        sx={{ position: 'absolute', bottom: 20, right: 20 }}
+        variant="contained"
+        startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+      >
+        Pitch
+      </Button>
 
       {[
         {
@@ -111,7 +115,7 @@ export default function TourItem({ tour, onView, onEdit, onDelete }) {
         {renderInfo}
       </Card>
 
-      <CustomPopover
+      {/* <CustomPopover
         open={popover.open}
         onClose={popover.onClose}
         arrow="right-top"
@@ -147,12 +151,12 @@ export default function TourItem({ tour, onView, onEdit, onDelete }) {
           <Iconify icon="solar:trash-bin-trash-bold" />
           Delete
         </MenuItem>
-      </CustomPopover>
+      </CustomPopover> */}
     </>
   );
 }
 
-TourItem.propTypes = {
+CampaignItem.propTypes = {
   onDelete: PropTypes.func,
   onEdit: PropTypes.func,
   onView: PropTypes.func,

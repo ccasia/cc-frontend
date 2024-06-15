@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 
 import { paths } from 'src/routes/paths';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
 
@@ -47,12 +49,18 @@ const ICONS = {
 
 export function useNavData() {
   // let items;
-  const navigations = useMemo(
+  const { user } = useAuthContext();
+
+  const adminNavigations = useMemo(
     () => [
-      // roles => "god" , "normal", "designation", "admin", "creator"
       {
-        roles: ['god', 'normal', 'creator'],
-        items: [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }],
+        items: [
+          {
+            title: 'Dashboard',
+            path: paths.dashboard.root,
+            icon: ICONS.dashboard,
+          },
+        ],
       },
       {
         subheader: 'Management',
@@ -105,17 +113,15 @@ export function useNavData() {
             roles: ['superadmin', 'admin'],
             title: 'Clients',
             path: paths.dashboard.company.root,
-            icon: <Iconify icon="fluent:people-team-28-regular" />,
+            icon: <Iconify icon="mdi:company" />,
             children: [
               {
-                title: 'Discover clients',
+                title: 'List',
                 path: paths.dashboard.company.discover,
-                // icon: <Iconify icon="fluent:people-team-28-regular" />,
               },
               {
-                title: 'Create Brand',
+                title: 'Create',
                 path: paths.dashboard.company.create,
-                // icon: <Iconify icon="gridicons:create" />,
               },
               // {
               //   title: 'Manage Brand',
@@ -131,25 +137,21 @@ export function useNavData() {
             icon: <Iconify icon="material-symbols:explore-outline" />,
             children: [
               {
-                title: 'Discover Campaign',
+                title: 'List',
                 path: paths.dashboard.campaign.view,
-                // icon: <Iconify icon="material-symbols:explore-outline" />,
               },
               {
-                title: 'Create Campaign',
+                title: 'Create',
                 path: paths.dashboard.campaign.create,
-                // icon: <Iconify icon="gridicons:create" />,
               },
               {
-                title: 'Manage Campaign',
+                title: 'Manage',
                 path: paths.dashboard.campaign.manage,
-                // icon: <Iconify icon="mingcute:settings-3-fill" />,
               },
               {
-                roles: ['god'],
+                roles: ['superadmin'],
                 title: 'Settings',
                 path: paths.dashboard.campaign.settings,
-                // icon: <Iconify icon="mingcute:settings-3-fill" />,
               },
             ],
           },
@@ -163,6 +165,34 @@ export function useNavData() {
       },
     ],
     []
+  );
+
+  const creatorNavigations = useMemo(
+    () => [
+      {
+        items: [
+          {
+            title: 'Discover',
+            path: paths.dashboard.campaign.view,
+            icon: <Iconify icon="iconamoon:discover" />,
+          },
+          {
+            title: 'Media Kit',
+            path: paths.dashboard.creator.mediaKitCreator,
+            icon: <Iconify icon="flowbite:profile-card-outline" />,
+          },
+        ],
+      },
+    ],
+    []
+  );
+
+  const navigations = useMemo(
+    () =>
+      // roles => "god" , "normal", "designation", "admin", "creator"
+      user?.role === 'creator' ? creatorNavigations : adminNavigations,
+
+    [adminNavigations, creatorNavigations, user]
   );
 
   const data = useMemo(

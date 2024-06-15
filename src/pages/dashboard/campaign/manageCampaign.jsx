@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 
-import ManageCampaign from 'src/sections/campaign/manage/view';
+import CampaignListView from 'src/sections/campaign/manage/admin/view/campaign-admin-list-view';
+
 // ----------------------------------------------------------------------
 
 export default function Page() {
@@ -10,7 +11,7 @@ export default function Page() {
         <title>Manage Campaign</title>
       </Helmet>
 
-      <ManageCampaign />
+      <CampaignListView />
     </>
   );
 }

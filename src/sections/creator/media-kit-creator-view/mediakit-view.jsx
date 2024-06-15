@@ -19,7 +19,7 @@ const MediaKitCreator = () => {
 
   const [currentTab, setCurrentTab] = useState('instagram');
   const [openSetting, setOpenSetting] = useState(false);
-  
+
   const handleClose = () => {
     setOpenSetting(!openSetting);
   };
@@ -34,7 +34,7 @@ const MediaKitCreator = () => {
     top: 0,
     left: 0,
     zIndex: 10000,
-    bgcolor: (theme) => theme.palette.grey[900],
+    bgcolor: (theme) => theme.palette.background.paper,
   };
 
   return (

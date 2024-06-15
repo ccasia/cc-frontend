@@ -1,18 +1,13 @@
 import { useState, useCallback } from 'react';
 
-import Button from '@mui/material/Button';
+import { Typography } from '@mui/material';
 import Container from '@mui/material/Container';
-
-import { paths } from 'src/routes/paths';
-import { RouterLink } from 'src/routes/components';
 
 import { _tours } from 'src/_mock';
 
-import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
-import TourList from '../campaign-list';
+import CampaignLists from '../campaign-list';
 import CampaignSearch from '../campaign-search';
 
 // ----------------------------------------------------------------------
@@ -50,30 +45,14 @@ export default function CampaignListView() {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <CustomBreadcrumbs
-        heading="List"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.root },
-          {
-            name: 'Campaign',
-            href: paths.dashboard.campaign.root,
-          },
-          { name: 'List' },
-        ]}
-        action={
-          <Button
-            component={RouterLink}
-            href={paths.dashboard.campaign.create}
-            variant="contained"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-          >
-            New Campaign
-          </Button>
-        }
+      <Typography
+        variant="h3"
         sx={{
-          mb: { xs: 3, md: 5 },
+          mb: 3,
         }}
-      />
+      >
+        Discover
+      </Typography>
 
       <CampaignSearch
         query={search.query}
@@ -82,7 +61,7 @@ export default function CampaignListView() {
         // hrefItem={(id) => paths.dashboard.tour.details(id)}
       />
 
-      <TourList tours={_tours} />
+      <CampaignLists tours={_tours} />
     </Container>
   );
 }
