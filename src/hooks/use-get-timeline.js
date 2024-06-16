@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'; // Make sure to import axios
-import axiosInstance from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 export const useGetTimeline = () => {
   const [defaultTimeline, setDefaultTimeline] = useState({});
@@ -10,7 +10,7 @@ export const useGetTimeline = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axiosInstance.get('http://localhost/api/campaign/defaultTimeline');
+      const res = await axiosInstance.get(endpoints.campaign.getDefaultTimeline);
       setDefaultTimeline(res.data);
     } catch (err) {
       setError(err);

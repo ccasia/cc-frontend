@@ -106,6 +106,8 @@ export const endpoints = {
     update: '/api/event/updateEvent',
   },
   campaign: {
+    CreateCampaign: '/api/campaign/createCampaign',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
+    getDefaultTimeline: '/api/campaign/defaultTimeline',
   },
 };

@@ -22,10 +22,13 @@ import IconButton from '@mui/material/IconButton';
 import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useAdmins } from 'src/hooks/zustands/useAdmins';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { Upload } from 'src/components/upload';
 import Iconify from 'src/components/iconify/iconify';
 import FormProvider, {
+  RHFUpload,
+  RHFUploadBox,
   RHFSelect,
   RHFTextField,
   RHFDatePicker,
@@ -39,11 +42,12 @@ import SelectTimeline from './steps/select-timeline';
 // import NotificationReminder from './steps/notification-reminder';
 
 const steps = [
-  'Fill in campaign information',
-  'Fill in campaign brief form',
-  'Select timeline',
+  'Fill in Campaign Information',
+  'Fill in Campaign brief form',
+  'upload Campaign Images',
+  'Select Timeline',
   'Select Admin Manager',
-  'Fill in  agreement form',
+  'Fill in  Agreement Form',
 ];
 
 const intersList = [
@@ -73,7 +77,7 @@ function CreateCampaignForm() {
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   const { defaultTimeline } = useGetTimeline();
-  const [timeline, setTimeline] = useState('defaultTimeline');
+  const [timeline, setTimeline] = useState(defaultTimeline);
   const { admins } = useAdmins();
 
   const handleClick = (event) => {
@@ -94,17 +98,18 @@ function CreateCampaignForm() {
   };
 
   const campaignSchema = Yup.object().shape({
-    campaignName: Yup.string().required('Campaign name is required'),
+    // campaignName: Yup.string().required('Campaign name is required'),
     campaignInterests: Yup.array().min(3, 'Choose at least three option'),
     campaignIndustries: Yup.array().min(3, 'Choose at least three option'),
-    campaignCompany: Yup.string().required('Company name is required'),
+    // campaignCompany: Yup.string().required('Company name is required'),
     campaignBrand: Yup.string().required('Brand name is required'),
     campaignStartDate: Yup.mixed().nullable().required('birthDate date is required'),
     campaignEndDate: Yup.mixed().nullable().required('birthDate date is required'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaginObjectives: Yup.string().required('Campaign objectives is required'),
-    campaginCoverImage: Yup.string().required('Campaign cover image is required'),
-    campaignSuccessMetrics: Yup.string().required('Campaign success metrics is required'),
+    // campaginCoverImage: Yup.string().required('Campaign cover image is required'),
+    campaignStage: Yup.string().required('Campaign Stage  is required'),
+    // campaignSuccessMetrics: Yup.string().required('Campaign success metrics is required'),
     audienceAge: Yup.string().required('Audience age is required'),
     audienceGender: Yup.string().required('Audience Gender is required'),
     audienceLocation: Yup.string().required('Audience location is required'),
@@ -112,13 +117,15 @@ function CreateCampaignForm() {
     audienceCreatorPersona: Yup.string().required('Audience creator persona is required'),
     audienceUserPersona: Yup.string().required('Audience influencer persona is required'),
     campaignDo: Yup.array()
-      .min(2, 'insert at least three option')
+      .min(1, 'insert at least one option')
       .required('Campaign do is required '),
     campaignDont: Yup.array()
-      .min(2, 'insert at least three option')
+      .min(1, 'insert at least one option')
       .required('Campaign dont is required '),
 
     adminManager: Yup.string().required('Admin Manager is required'),
+    campaignImages: Yup.array().min(1, 'Must have at least 2 items'),
+    agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
 
     defaultTimeline: Yup.object().shape({
       openForPitch: Yup.number('Must be a number').min(1),
@@ -196,17 +203,17 @@ function CreateCampaignForm() {
   });
 
   const defaultValues = {
-    campaignName: '',
+    // campaignName: '',
     campaignInterests: [],
     campaignIndustries: [],
-    campaignCompany: '',
+    // campaignCompany: '',
     campaignBrand: '',
     campaignStartDate: null,
     campaignEndDate: null,
     campaignTitle: '',
     campaginObjectives: '',
-    campaginCoverImage: '',
-    campaignSuccessMetrics: '',
+    // campaginCoverImage: '',
+    // campaignSuccessMetrics: '',
     campaignDo: [],
     campaignDont: [],
     defaultTimeline: {},
@@ -219,6 +226,9 @@ function CreateCampaignForm() {
     audienceUserPersona: '',
     timeline: {},
     adminManager: '',
+    campaignStage: '',
+    campaignImages: [],
+    agreementFrom: null,
   };
 
   const methods = useForm({
@@ -233,12 +243,36 @@ function CreateCampaignForm() {
     getValues,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = methods;
 
+  const values = watch();
+
+  const audienceGeoLocation = watch('audienceLocation');
+
+  const handleDropMultiFile = useCallback(
+    (acceptedFiles) => {
+      const files = values.campaignImages || [];
+
+      const newFiles = acceptedFiles.map((file) =>
+        Object.assign(file, {
+          preview: URL.createObjectURL(file),
+        })
+      );
+
+      setValue('campaignImages', [...files, ...newFiles], {
+        shouldValidate: true,
+      });
+    },
+    [setValue, values.campaignImages]
+  );
+
   useEffect(() => {
     if (timeline === 'defaultTimeline') {
-      setValue('timeline', defaultTimeline);
+      setValue('timeline', defaultTimeline[0]);
+      setValue('defaultTimeline', defaultTimeline[0]);
+      setValue('customTimeline', defaultTimeline[0]);
     }
   }, [defaultTimeline, setValue, timeline]);
 
@@ -286,9 +320,32 @@ function CreateCampaignForm() {
     setValue('campaignDo', newObjectives);
   };
 
-  const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
-  });
+  function hasEmptyValue(obj) {
+    for (const key in obj) {
+      if (obj[key] === null || obj[key] === '') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const onSubmit = async (data) => {
+
+    console.log(values);
+    if (hasEmptyValue(values)) {
+      console.log('is empty');
+    }
+    if (!hasEmptyValue(values)) {
+      console.log(errors);
+      console.log(values);
+      try {
+        const res = await axiosInstance.post(endpoints.campaign.CreateCampaign, values);
+        console.log(res);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  };
 
   const finalSubmit = async () => {
     console.log('first');
@@ -305,9 +362,9 @@ function CreateCampaignForm() {
         sm: 'repeat(2, 1fr)',
       }}
     >
-      <RHFTextField name="campaignName" label="Campaign Title" />
+      <RHFTextField name="campaignTitle" label="Campaign Title" />
 
-      <RHFTextField name="campaignName" label="Campaign Name" />
+      {/* <RHFTextField name="campaignName" label="Campaign Name" /> */}
       <Box
         sx={{
           display: 'flex',
@@ -449,7 +506,7 @@ function CreateCampaignForm() {
         sm: 'repeat(2, 1fr)',
       }}
     >
-      <Box
+      {/* <Box
         sx={{
           display: 'flex',
           justifyContent: 'center',
@@ -470,24 +527,28 @@ function CreateCampaignForm() {
           />
         </UploadPhoto>
         <Typography variant="h6">Campaign Logo</Typography>
-      </Box>
-      <Box sx={{ flexGrow: 1 }} />
+      </Box> */}
+      {/* <Box sx={{ flexGrow: 1 }} /> */}
 
-      <RHFTextField name="campaignTitle" label="Campaign Title" />
+      {/* <RHFTextField name="campaignTitle" label="Campaign Title" /> */}
 
-      <RHFTextField
+      {/* <RHFTextField
         name="campaignSuccessMetrics"
         label="What does campaign success look like to you?"
-      />
+      /> */}
 
       <RHFSelect name="campaginObjectives" label="Campagin Objectives">
-        <MenuItem value="newProduct">Im launching a new product</MenuItem>
-        <MenuItem value="newService">Im launching a new service</MenuItem>
+        <MenuItem value="newProduct">I&apos;m launching a new product</MenuItem>
+        <MenuItem value="newService">I&apos;m launching a new service</MenuItem>
         <MenuItem value="brandAwareness">I want to drive brand awareness</MenuItem>
         <MenuItem value="productAwareness">Want to drive product awareness</MenuItem>
       </RHFSelect>
 
-      <Box flexGrow={1} />
+      <RHFSelect name="campaignStage" label="Campaign Stage">
+        <MenuItem value="draft">Draft</MenuItem>
+        <MenuItem value="publish">Publish</MenuItem>
+      </RHFSelect>
+
       <Typography variant="h4">Audience Requirements</Typography>
       <Box flexGrow={1} />
       <RHFSelect name="audienceGender" label="Audience Gender">
@@ -515,6 +576,10 @@ function CreateCampaignForm() {
         <MenuItem value="EastMalaysia">East Malaysia</MenuItem>
         <MenuItem value="Others">Others</MenuItem>
       </RHFSelect>
+
+      {audienceGeoLocation === 'Others' && (
+        <TextField name="audienceLocation" label="Specify Other Location" variant="outlined" />
+      )}
 
       <RHFSelect name="audienceLanguage" label="Audience Language">
         <MenuItem value="Malay">Malay</MenuItem>
@@ -549,6 +614,7 @@ function CreateCampaignForm() {
         placeholder=" let us know who you want your campaign to reach!"
       />
 
+      {audienceGeoLocation === 'Others' && <Box flexGrow={1} />}
       <Box
         sx={{
           display: 'flex',
@@ -620,6 +686,51 @@ function CreateCampaignForm() {
     </Box>
   );
 
+  const imageUpload = (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignContent: 'center',
+        gap: 3,
+        p: 3,
+      }}
+    >
+      <Typography variant="h4">Upload Campaign Images</Typography>
+      <RHFUpload
+        multiple
+        thumbnail
+        name="campaignImages"
+        maxSize={3145728}
+        onDrop={handleDropMultiFile}
+        onRemove={(inputFile) =>
+          setValue(
+            'campaignImages',
+            values.campaignImages && values.campaignImages?.filter((file) => file !== inputFile),
+            { shouldValidate: true }
+          )
+        }
+        onRemoveAll={() => setValue('campaignImages', [], { shouldValidate: true })}
+        onUpload={() => console.info('ON UPLOAD')}
+      />
+    </Box>
+  );
+
+  const handleDropSingleFile = useCallback(
+    (acceptedFiles) => {
+      const file = acceptedFiles[0];
+
+      const newFile = Object.assign(file, {
+        preview: URL.createObjectURL(file),
+      });
+
+      if (newFile) {
+        setValue('agreementFrom', newFile, { shouldValidate: true });
+      }
+    },
+    [setValue]
+  );
   const formUpload = (
     <Box
       sx={{
@@ -632,7 +743,12 @@ function CreateCampaignForm() {
       }}
     >
       <Typography variant="h4">Upload Agreement</Typography>
-      <Upload />
+      <RHFUpload
+        type="file"
+        name="agreementFrom"
+        onDrop={handleDropSingleFile}
+        onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
+      />
     </Box>
   );
 
@@ -643,6 +759,8 @@ function CreateCampaignForm() {
       case 1:
         return formSecondStep;
       case 2:
+        return imageUpload;
+      case 3:
         return (
           <SelectTimeline
             control={control}
@@ -656,9 +774,9 @@ function CreateCampaignForm() {
         );
       // case 3:
       //   return <NotificationReminder />;
-      case 3:
-        return formSelectAdminManager;
       case 4:
+        return formSelectAdminManager;
+      case 5:
         return formUpload;
       default:
         return 'Unknown step';
