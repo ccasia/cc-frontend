@@ -51,11 +51,15 @@ const MediaKitCover = ({ user }) => {
           <Typography
             gutterBottom
             variant="body1"
-            maxWidth={600}
+            maxWidth={500}
             textAlign="center"
             lineHeight={1.2}
             fontWeight={600}
             color={theme.palette.grey[600]}
+            sx={{
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+            }}
           >
             {user?.creator?.MediaKit?.about}
           </Typography>

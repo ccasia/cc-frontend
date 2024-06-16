@@ -23,6 +23,9 @@ const CreateCampaign = lazy(() => import('src/pages/dashboard/campaign/createCam
 const CampaignSetting = lazy(() => import('src/pages/dashboard/campaign/setting'));
 const CampaignDetails = lazy(() => import('src/pages/dashboard/campaign/details'));
 const ViewCampaign = lazy(() => import('src/pages/dashboard/campaign/campaign-view'));
+const AdminCampaignDetail = lazy(
+  () => import('src/pages/dashboard/campaign/admin/campaign-details')
+);
 
 // Brand & Company
 const BrandManage = lazy(() => import('src/pages/dashboard/brand/manageBrand'));
@@ -211,11 +214,32 @@ export const dashboardRoutes = [
           },
           {
             path: 'discover',
-            element: (
-              <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator']}>
-                <ViewCampaign />
-              </RoleBasedGuard>
-            ),
+            children: [
+              {
+                index: true,
+                element: (
+                  <RoleBasedGuard hasContent roles={['admin', 'superadmin', 'creator']}>
+                    <ViewCampaign />
+                  </RoleBasedGuard>
+                ),
+              },
+              {
+                path: 'detail/:id',
+                element: (
+                  <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+                    <AdminCampaignDetail />
+                  </RoleBasedGuard>
+                ),
+              },
+              {
+                path: 'test',
+                element: (
+                  <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+                    <h1>DWADWAD</h1>
+                  </RoleBasedGuard>
+                ),
+              },
+            ],
           },
           {
             path: 'settings',

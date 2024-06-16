@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 
 import { fData } from 'src/utils/format-number';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
@@ -31,7 +32,7 @@ export default function AccountGeneral() {
   const { user } = useAuthContext();
 
   const UpdateUserSchema = Yup.object().shape({
-    displayName: Yup.string().required('Name is required'),
+    name: Yup.string().required('Name is required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     photoURL: Yup.mixed().nullable(),
     phoneNumber: Yup.string().required('Phone number is required'),
@@ -39,11 +40,10 @@ export default function AccountGeneral() {
     address: Yup.string().required('Address is required'),
     state: Yup.string().required('State is required'),
     about: Yup.string().required('About is required'),
-    // not required
   });
 
   const defaultValues = {
-    displayName: user?.name || '',
+    name: user?.name || '',
     email: user?.email || '',
     photoURL: user?.photoURL || null,
     phoneNumber: user?.phoneNumber || '',
@@ -67,10 +67,17 @@ export default function AccountGeneral() {
   const onSubmit = handleSubmit(async (data) => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      enqueueSnackbar('Update success!');
-      console.info('DATA', data);
+      const res = await axiosInstance.patch(endpoints.auth.updateProfileCreator, {
+        ...data,
+        id: user?.id,
+      });
+      enqueueSnackbar(res?.data.message);
+      // console.info('DATA', data);
     } catch (error) {
-      console.error(error);
+      enqueueSnackbar('Error', {
+        variant: 'error',
+      });
+      // console.error(error);
     }
   });
 
@@ -130,7 +137,7 @@ export default function AccountGeneral() {
                 sm: 'repeat(2, 1fr)',
               }}
             >
-              <RHFTextField name="displayName" label="Name" />
+              <RHFTextField name="name" label="Name" />
               <RHFTextField name="email" label="Email Address" />
               <RHFTextField name="phoneNumber" label="Phone Number" />
               <RHFTextField name="address" label="Address" />

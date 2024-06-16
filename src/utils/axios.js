@@ -48,6 +48,7 @@ export const endpoints = {
     getCurrentUser: '/api/auth/currentUser',
     checkCreator: '/api/auth/checkCreator',
     updateCreator: '/api/auth/updateCreator',
+    updateProfileCreator: '/api/auth/updateProfileCreator',
     verifyCreator: '/api/auth/verifyCreator',
     resendToken: '/api/auth/resendVerifyToken',
     checkTokenValidity: '/api/auth/checkTokenValidity',
