@@ -110,7 +110,6 @@ export default function CreateBrand({ setBrand, open, onClose }) {
     }
   });
 
-  console.log(companyState);
   useEffect(() => {
     if (companyState !== '') {
       setValue('companyChoice', companyState);
@@ -150,9 +149,8 @@ export default function CreateBrand({ setBrand, open, onClose }) {
               }}
             >
               {' '}
-
               <RHFAutocomplete
-              fullWidth
+                fullWidth
                 key="companyChoice"
                 name="companyChoice"
                 placeholder="Company"

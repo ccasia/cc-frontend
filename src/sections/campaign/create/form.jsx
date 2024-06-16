@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -9,7 +10,6 @@ import Step from '@mui/material/Step';
 import Menu from '@mui/material/Menu';
 import { Stack } from '@mui/material';
 import Paper from '@mui/material/Paper';
-import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
@@ -22,20 +22,15 @@ import IconButton from '@mui/material/IconButton';
 import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useAdmins } from 'src/hooks/zustands/useAdmins';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { Upload } from 'src/components/upload';
 import Iconify from 'src/components/iconify/iconify';
 import FormProvider, {
   RHFUpload,
-  RHFUploadBox,
   RHFSelect,
   RHFTextField,
   RHFDatePicker,
   RHFAutocomplete,
 } from 'src/components/hook-form';
-
-import UploadPhoto from 'src/sections/profile/dropzone';
 
 import CreateBrand from './brandDialog';
 import SelectTimeline from './steps/select-timeline';
@@ -71,13 +66,14 @@ function CreateCampaignForm() {
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  // eslint-disable-next-line no-unused-vars
   const [image, setImage] = useState(null);
   const { brand } = useBrand();
   const [brandState, setBrandState] = useState('');
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   const { defaultTimeline } = useGetTimeline();
-  const [timeline, setTimeline] = useState(defaultTimeline);
+  const [timeline, setTimeline] = useState('defaultTimeline');
   const { admins } = useAdmins();
 
   const handleClick = (event) => {
@@ -126,109 +122,67 @@ function CreateCampaignForm() {
     adminManager: Yup.string().required('Admin Manager is required'),
     campaignImages: Yup.array().min(1, 'Must have at least 2 items'),
     agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
-
-    defaultTimeline: Yup.object().shape({
-      openForPitch: Yup.number('Must be a number').min(1),
-      agreementSign: Yup.number('Must be a number').min(1),
-      feedBackFinalDraft: Yup.number('Must be a number').min(1),
-      feedBackFirstDraft: Yup.number('Must be a number').min(1),
-      filterPitch: Yup.number('Must be a number').min(1),
-      finalDraft: Yup.number('Must be a number').min(1),
-      firstDraft: Yup.number('Must be a number').min(1),
-      qc: Yup.number('Must be a number').min(1),
-      shortlistCreator: Yup.number('Must be a number').min(1),
-    }),
-    customTimeline: Yup.object().shape({
-      openForPitch: Yup.number('Must be a number').min(1),
-      agreementSign: Yup.number('Must be a number').min(1),
-      feedBackFinalDraft: Yup.number('Must be a number').min(1),
-      feedBackFirstDraft: Yup.number('Must be a number').min(1),
-      filterPitch: Yup.number('Must be a number').min(1),
-      finalDraft: Yup.number('Must be a number').min(1),
-      firstDraft: Yup.number('Must be a number').min(1),
-      qc: Yup.number('Must be a number').min(1),
-      shortlistCreator: Yup.number('Must be a number').min(1),
-      // defaultTimeline: Yup.object().shape({
-      //   openForPitch: Yup.number('Must be a number').min(1),
-      //   agreementSign: Yup.number('Must be a number').min(1),
-      //   feedBackFinalDraft: Yup.number('Must be a number').min(1),
-      //   feedBackFirstDraft: Yup.number('Must be a number').min(1),
-      //   filterPitch: Yup.number('Must be a number').min(1),
-      //   finalDraft: Yup.number('Must be a number').min(1),
-      //   firstDraft: Yup.number('Must be a number').min(1),
-      //   qc: Yup.number('Must be a number').min(1),
-      //   shortlistCreator: Yup.number('Must be a number').min(1),
-      //   posting: Yup.number('Must be a number').min(1),
-      // }),
-
-      timeline: Yup.object().shape({
-        openForPitch: Yup.number('Must be a number')
-          .min(14, 'Minumum is 14 days')
-          .max(30, 'Maximum is 30 days')
-          .required('Open for pitch timeline is required'),
-        filterPitch: Yup.number('Must be a number')
-          .min(2, 'Minumum is 2 days')
-          .max(3, 'Maximum is 3 days')
-          .required('Filtering timeline is required'),
-        shortlistCreator: Yup.number('Must be a number')
-          .min(1, 'Minumum is 1 days')
-          .max(2, 'Maximum is 2 days')
-          .required('Shortlist creator timeline is required'),
-        agreementSign: Yup.number('Must be a number')
-          .min(1, 'Minumum is 1 days')
-          .max(2, 'Maximum is 2 days')
-          .required('Sign of agreement timeline is required'),
-        firstDraft: Yup.number('Must be a number')
-          .min(3, 'Minumum is 3 days')
-          .max(5, 'Maximum is 5 days')
-          .required('First draft timeline is required'),
-        feedBackFirstDraft: Yup.number('Must be a number')
-          .min(2, 'Minumum is 2 days')
-          .max(3, 'Maximum is 3 days')
-          .required('Feedback first draft timeline is required'),
-        finalDraft: Yup.number('Must be a number')
-          .min(2, 'Minumum is 2 days')
-          .max(4, 'Maximum is 4 days')
-          .required('Final draft timeline is required'),
-        feedBackFinalDraft: Yup.number('Must be a number')
-          .min(1, 'Minumum is 1 days')
-          .max(2, 'Maximum is 2 days')
-          .required('Feedback final draft timeline is required'),
-        posting: Yup.number('Must be a number')
-          .max(2, 'Maximum is 2 days')
-          .required('Posting social media timeline is required'),
-        qc: Yup.number('Must be a number').required('QC timeline is required'),
-      }),
+    timeline: Yup.object().shape({
+      openForPitch: Yup.number('Must be a number')
+        .min(14, 'Minumum is 14 days')
+        .max(30, 'Maximum is 30 days')
+        .required('Open for pitch timeline is required'),
+      filterPitch: Yup.number('Must be a number')
+        .min(2, 'Minumum is 2 days')
+        .max(3, 'Maximum is 3 days')
+        .required('Filtering timeline is required'),
+      shortlistCreator: Yup.number('Must be a number')
+        .min(1, 'Minumum is 1 days')
+        .max(2, 'Maximum is 2 days')
+        .required('Shortlist creator timeline is required'),
+      agreementSign: Yup.number('Must be a number')
+        .min(1, 'Minumum is 1 days')
+        .max(2, 'Maximum is 2 days')
+        .required('Sign of agreement timeline is required'),
+      firstDraft: Yup.number('Must be a number')
+        .min(3, 'Minumum is 3 days')
+        .max(5, 'Maximum is 5 days')
+        .required('First draft timeline is required'),
+      feedBackFirstDraft: Yup.number('Must be a number')
+        .min(2, 'Minumum is 2 days')
+        .max(3, 'Maximum is 3 days')
+        .required('Feedback first draft timeline is required'),
+      finalDraft: Yup.number('Must be a number')
+        .min(2, 'Minumum is 2 days')
+        .max(4, 'Maximum is 4 days')
+        .required('Final draft timeline is required'),
+      feedBackFinalDraft: Yup.number('Must be a number')
+        .min(1, 'Minumum is 1 days')
+        .max(2, 'Maximum is 2 days')
+        .required('Feedback final draft timeline is required'),
+      posting: Yup.number('Must be a number')
+        .max(2, 'Maximum is 2 days')
+        .required('Posting social media timeline is required'),
+      qc: Yup.number('Must be a number').required('QC timeline is required'),
     }),
   });
 
   const defaultValues = {
-    // campaignName: '',
-    campaignInterests: [],
-    campaignIndustries: [],
-    // campaignCompany: '',
+    campaignTitle: '',
     campaignBrand: '',
     campaignStartDate: null,
     campaignEndDate: null,
-    campaignTitle: '',
+    campaignInterests: [],
+    campaignIndustries: [],
     campaginObjectives: '',
-    // campaginCoverImage: '',
-    // campaignSuccessMetrics: '',
-    campaignDo: [],
-    campaignDont: [],
-    defaultTimeline: {},
-    customTimeline: {},
-    audienceAge: '',
+    campaignStage: '',
     audienceGender: '',
+    audienceAge: '',
     audienceLocation: '',
     audienceLanguage: '',
     audienceCreatorPersona: '',
     audienceUserPersona: '',
-    timeline: {},
-    adminManager: '',
-    campaignStage: '',
+    campaignDo: [],
+    campaignDont: [],
     campaignImages: [],
+    adminManager: '',
     agreementFrom: null,
+    timeline: {},
   };
 
   const methods = useForm({
@@ -239,6 +193,7 @@ function CreateCampaignForm() {
   });
 
   const {
+    // eslint-disable-next-line no-unused-vars
     handleSubmit,
     getValues,
     control,
@@ -248,6 +203,10 @@ function CreateCampaignForm() {
   } = methods;
 
   const values = watch();
+
+  useEffect(() => {
+    console.log(errors);
+  }, [errors]);
 
   const audienceGeoLocation = watch('audienceLocation');
 
@@ -269,19 +228,10 @@ function CreateCampaignForm() {
   );
 
   useEffect(() => {
-    if (timeline === 'defaultTimeline') {
-      setValue('timeline', defaultTimeline[0]);
-      setValue('defaultTimeline', defaultTimeline[0]);
-      setValue('customTimeline', defaultTimeline[0]);
-    }
-  }, [defaultTimeline, setValue, timeline]);
-
-  useEffect(() => {
     if (brandState !== '') {
       setValue('campaignBrand', brandState);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brandState]);
+  }, [brandState, setValue]);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -290,6 +240,7 @@ function CreateCampaignForm() {
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
+
   const onDrop = useCallback(
     (e) => {
       const preview = URL.createObjectURL(e[0]);
@@ -321,6 +272,7 @@ function CreateCampaignForm() {
   };
 
   function hasEmptyValue(obj) {
+    // eslint-disable-next-line no-restricted-syntax
     for (const key in obj) {
       if (obj[key] === null || obj[key] === '') {
         return true;
@@ -329,23 +281,21 @@ function CreateCampaignForm() {
     return false;
   }
 
-  const onSubmit = async (data) => {
+  const onSubmit = handleSubmit(async (data) => {
+    console.log(data);
+  });
 
-    console.log(values);
-    if (hasEmptyValue(values)) {
-      console.log('is empty');
-    }
-    if (!hasEmptyValue(values)) {
-      console.log(errors);
-      console.log(values);
-      try {
-        const res = await axiosInstance.post(endpoints.campaign.CreateCampaign, values);
-        console.log(res);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  };
+  // const onSubmit = async (data) => {
+
+  // if (!hasEmptyValue(values)) {
+  //   try {
+  //     const res = await axiosInstance.post(endpoints.campaign.CreateCampaign, values);
+  //     console.log(res);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
+  // };
 
   const finalSubmit = async () => {
     console.log('first');
@@ -363,8 +313,6 @@ function CreateCampaignForm() {
       }}
     >
       <RHFTextField name="campaignTitle" label="Campaign Title" />
-
-      {/* <RHFTextField name="campaignName" label="Campaign Name" /> */}
       <Box
         sx={{
           display: 'flex',
@@ -731,6 +679,7 @@ function CreateCampaignForm() {
     },
     [setValue]
   );
+
   const formUpload = (
     <Box
       sx={{
@@ -844,49 +793,51 @@ function CreateCampaignForm() {
           </Box>
         </>
       ) : (
-        <>
-          <Box
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Paper
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
+              p: 0.5,
+              my: 0.5,
+              mx: 1,
+              width: '100%',
+              // bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
+              // width: '80%',
             }}
           >
-            <Paper
-              sx={{
-                p: 0.5,
-                my: 0.5,
-                mx: 1,
-                width: '100%',
-                // bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-                // width: '80%',
-              }}
-            >
-              <Box sx={{ my: 1 }}>
-                <FormProvider methods={methods} onSubmit={onSubmit}>
-                  {getStepContent(activeStep)}
-                </FormProvider>
-              </Box>
-            </Paper>
-          </Box>
-
-          <Box sx={{ display: 'flex', m: 2 }}>
-            <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
-              Back
-            </Button>
-            <Box sx={{ flexGrow: 1 }} />
-            {activeStep === steps.length - 1 ? (
-              <Button variant="contained" onClick={onSubmit}>
-                Submit
-              </Button>
-            ) : (
-              <Button variant="contained" onClick={handleNext}>
-                Next
-              </Button>
-            )}
-          </Box>
-        </>
+            <Box sx={{ my: 1 }}>
+              <FormProvider methods={methods} onSubmit={onSubmit}>
+                {getStepContent(activeStep)}
+                <Box sx={{ display: 'flex', m: 2 }}>
+                  <Button
+                    color="inherit"
+                    disabled={activeStep === 0}
+                    onClick={handleBack}
+                    sx={{ mr: 1 }}
+                  >
+                    Back
+                  </Button>
+                  <Box sx={{ flexGrow: 1 }} />
+                  {activeStep === steps.length - 1 ? (
+                    <Button variant="contained" type="submit">
+                      Submit
+                    </Button>
+                  ) : (
+                    <Button variant="contained" onClick={handleNext}>
+                      Next
+                    </Button>
+                  )}
+                </Box>
+              </FormProvider>
+            </Box>
+          </Paper>
+        </Box>
       )}
       {/* <CreateCompany open={openCompanyDialog} onClose={handleCloseCompanyDialog} /> */}
       <CreateBrand

@@ -11,6 +11,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 // eslint-disable-next-line react/prop-types
 const Timeline = ({ defaultTimeline, isSmallScreen }) => {
+  console.log(defaultTimeline);
   const schema = Yup.object().shape({
     openForPitch: Yup.number('Must be a number')
       .min(14, 'Minumum is 14 days')
@@ -51,21 +52,23 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
   });
 
   const defaultValues = {
-    openForPitch: '',
-    filterPitch: '',
-    shortlistCreator: '',
-    agreementSign: '',
-    firstDraft: '',
-    feedBackFirstDraft: '',
-    finalDraft: '',
-    qc: '',
-    feedBackFinalDraft: '',
-    posting: '',
+    openForPitch: 0,
+    filterPitch: 0,
+    shortlistCreator: 0,
+    agreementSign: 0,
+    firstDraft: 0,
+    feedBackFirstDraft: 0,
+    finalDraft: 0,
+    qc: 0,
+    feedBackFinalDraft: 0,
+    posting: 0,
   };
 
   const methods = useForm({
-    defaultValues,
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     resolver: yupResolver(schema),
+    defaultValues,
   });
 
   const {
@@ -76,12 +79,13 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
   } = methods;
 
   useEffect(() => {
-    if (defaultTimeline) {
-      reset(defaultTimeline);
+    if (defaultTimeline.length > 0) {
+      reset(defaultTimeline[0]);
     }
   }, [defaultTimeline, reset]);
 
-  const onSubmit = async (data) => {
+  const onSubmit = handleSubmit(async (data) => {
+    console.log(data);
     try {
       const res = await axiosInstance.post(endpoints.campaign.updateDefaultTimeline, data);
       enqueueSnackbar(res.data.message, {
@@ -92,14 +96,14 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
         variant: 'error',
       });
     }
-  };
+  });
 
   return (
     <>
       <Typography variant="h5" mb={3}>
         Default Timeline
       </Typography>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={onSubmit}>
         <Box
           display="grid"
           columnGap={2}

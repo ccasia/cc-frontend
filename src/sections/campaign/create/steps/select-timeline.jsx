@@ -19,7 +19,7 @@ const SelectTimeline = ({
 
   useEffect(() => {
     if (timeline === 'defaultTimeline') {
-      setValue('timeline', defaultTimeline);
+      setValue('timeline', defaultTimeline[0]);
     }
   }, [setValue, timeline, defaultTimeline]);
 
