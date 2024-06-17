@@ -65,7 +65,7 @@ export function RHFSelect({
 RHFSelect.propTypes = {
   PaperPropsSx: PropTypes.object,
   children: PropTypes.node,
-  helperText: PropTypes.object,
+  helperText: PropTypes.object || PropTypes.string,
   maxHeight: PropTypes.number,
   name: PropTypes.string,
   native: PropTypes.bool,

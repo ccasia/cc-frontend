@@ -11,7 +11,6 @@ const useGetCompany = () => {
   const getCompany = useCallback(async () => {
     try {
       const res = await axiosInstance.get(endpoints.company.getAll);
-
       setCompanies(res?.data);
       setCompany(res?.data);
     } catch (error) {

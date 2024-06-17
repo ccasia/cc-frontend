@@ -98,6 +98,7 @@ export const endpoints = {
     edit: '/api/company/editCompany',
     brandDetail: (id) => `/api/company/getBrand/${id}`,
     editBrand: '/api/company/editBrand',
+    getOptions: '/api/company/getOptions',
   },
   event: {
     list: '/api/event/',
@@ -106,7 +107,7 @@ export const endpoints = {
     update: '/api/event/updateEvent',
   },
   campaign: {
-    CreateCampaign: '/api/campaign/createCampaign',
+    createCampaign: '/api/campaign/createCampaign',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
     getDefaultTimeline: '/api/campaign/defaultTimeline',
   },

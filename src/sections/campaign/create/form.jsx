@@ -8,7 +8,6 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Step from '@mui/material/Step';
 import Menu from '@mui/material/Menu';
-import { Stack } from '@mui/material';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
@@ -18,10 +17,14 @@ import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import { Stack, ListItemText } from '@mui/material';
 
 import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useAdmins } from 'src/hooks/zustands/useAdmins';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
+import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify/iconify';
@@ -63,6 +66,7 @@ const intersList = [
 ];
 
 function CreateCampaignForm() {
+  const { options } = useGetCampaignBrandOption();
   const [activeStep, setActiveStep] = useState(0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -205,10 +209,6 @@ function CreateCampaignForm() {
 
   const values = watch();
 
-  useEffect(() => {
-    console.log(errors);
-  }, [errors]);
-
   const audienceGeoLocation = watch('audienceLocation');
 
   const handleDropMultiFile = useCallback(
@@ -283,20 +283,13 @@ function CreateCampaignForm() {
   }
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
+    try {
+      const res = await axiosInstance.post(endpoints.campaign.createCampaign, data);
+      console.log(res);
+    } catch (error) {
+      console.log(error);
+    }
   });
-
-  // const onSubmit = async (data) => {
-
-  // if (!hasEmptyValue(values)) {
-  //   try {
-  //     const res = await axiosInstance.post(endpoints.campaign.CreateCampaign, values);
-  //     console.log(res);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
-  // };
 
   const finalSubmit = async () => {
     console.log('first');
@@ -325,7 +318,7 @@ function CreateCampaignForm() {
           fullWidth
           name="campaignBrand"
           placeholder="Brand"
-          options={brandState ? [brandState] : brand.map((option) => option.name)}
+          options={brandState ? [brandState] : options && options?.map((elem) => elem.name)}
           freeSolo
           renderOption={(props, option) => (
             <Stack direction="row" spacing={1} p={1} {...props}>
@@ -338,7 +331,7 @@ function CreateCampaignForm() {
                   borderRadius: 5,
                 }}
               />
-              {option}
+              <ListItemText primary={option} />
             </Stack>
           )}
         />
@@ -382,7 +375,6 @@ function CreateCampaignForm() {
           </Menu>
         </Box>
       </Box>
-
       {/* <RHFTextField name="campaignCompany" label="Company" /> */}
       {/* <RHFTextField name="campaignBrand" label="Brand" /> */}
       {/* <RHFSelect name="campaignBrand" label="Brand">
@@ -393,14 +385,13 @@ function CreateCampaignForm() {
           </MenuItem>
         ))}
       </RHFSelect> */}
-
       <RHFDatePicker name="campaignStartDate" label="Start Date" placeholder="start" />
       <RHFDatePicker name="campaignEndDate" label="End Date" />
       <RHFAutocomplete
         name="campaignInterests"
         placeholder="+ Interests"
         multiple
-        freeSolo="true"
+        freeSolo
         disableCloseOnSelect
         options={intersList.map((option) => option)}
         getOptionLabel={(option) => option}
@@ -426,7 +417,7 @@ function CreateCampaignForm() {
         name="campaignIndustries"
         placeholder="+ Industries"
         multiple
-        freeSolo="true"
+        freeSolo
         disableCloseOnSelect
         options={intersList.map((option) => option)}
         getOptionLabel={(option) => option}
@@ -523,7 +514,7 @@ function CreateCampaignForm() {
       <RHFSelect
         name="audienceLocation"
         label="Audience Geo Location"
-        helperText=" if others please specify "
+        helperText="if others please specify"
       >
         <MenuItem value="KlangValley">Klang Valley </MenuItem>
         <MenuItem value="Selangor">Selangor</MenuItem>
