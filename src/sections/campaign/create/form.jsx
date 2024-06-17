@@ -23,6 +23,7 @@ import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useAdmins } from 'src/hooks/zustands/useAdmins';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify/iconify';
 import FormProvider, {
   RHFUpload,
@@ -303,8 +304,7 @@ function CreateCampaignForm() {
 
   const formFirstStep = (
     <Box
-      rowGap={2}
-      columnGap={3}
+      gap={2}
       display="grid"
       mt={4}
       gridTemplateColumns={{
@@ -318,26 +318,34 @@ function CreateCampaignForm() {
           display: 'flex',
           flexDirection: 'row',
           justifyContent: 'space-between',
-          alignContent: 'center',
+          alignItems: 'center',
         }}
       >
-        {' '}
         <RHFAutocomplete
           fullWidth
           name="campaignBrand"
           placeholder="Brand"
           options={brandState ? [brandState] : brand.map((option) => option.name)}
           freeSolo
+          renderOption={(props, option) => (
+            <Stack direction="row" spacing={1} p={1} {...props}>
+              <Image
+                loading="lazy"
+                width={30}
+                src="/images.png"
+                alt=""
+                sx={{
+                  borderRadius: 5,
+                }}
+              />
+              {option}
+            </Stack>
+          )}
         />
-        <Box
-          sx={{
-            alignContent: 'center',
-          }}
-        >
+        <Box>
           <IconButton
             sx={{
               mx: 1,
-              mb: 1,
               bgcolor: 'whitesmoke',
             }}
             onClick={handleClick}
