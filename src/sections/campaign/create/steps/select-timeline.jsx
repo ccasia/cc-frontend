@@ -20,6 +20,19 @@ const SelectTimeline = ({
   useEffect(() => {
     if (timeline === 'defaultTimeline') {
       setValue('timeline', defaultTimeline[0]);
+    } else {
+      setValue('timeline', {
+        openForPitch: '',
+        filterPitch: '',
+        shortlistCreator: '',
+        agreementSign: '',
+        firstDraft: '',
+        feedBackFirstDraft: '',
+        finalDraft: '',
+        qc: '',
+        feedBackFinalDraft: '',
+        posting: '',
+      });
     }
   }, [setValue, timeline, defaultTimeline]);
 

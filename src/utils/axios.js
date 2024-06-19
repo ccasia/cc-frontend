@@ -65,6 +65,7 @@ export const endpoints = {
     admins: '/api/user/admins',
     updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
     createAdmin: '/api/user/createAdmin',
+    getAdmins: '/api/user/getAdmins',
   },
   mail: {
     list: '/api/mail/list',
@@ -110,5 +111,6 @@ export const endpoints = {
     createCampaign: '/api/campaign/createCampaign',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
     getDefaultTimeline: '/api/campaign/defaultTimeline',
+    getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
   },
 };

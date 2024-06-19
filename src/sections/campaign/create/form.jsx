@@ -1,13 +1,13 @@
 /* eslint-disable no-unused-vars */
 import * as Yup from 'yup';
-import { useForm } from 'react-hook-form';
+import { useSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Step from '@mui/material/Step';
-import Menu from '@mui/material/Menu';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
@@ -16,18 +16,18 @@ import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import { Stack, ListItemText } from '@mui/material';
+import { Menu, Grid, Stack, Divider, Tooltip, IconButton, ListItemText } from '@mui/material';
 
 import { useBrand } from 'src/hooks/zustands/useBrand';
-import { useAdmins } from 'src/hooks/zustands/useAdmins';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
 import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Image from 'src/components/image';
-import Iconify from 'src/components/iconify/iconify';
+import Iconify from 'src/components/iconify';
 import FormProvider, {
   RHFUpload,
   RHFSelect,
@@ -37,16 +37,17 @@ import FormProvider, {
 } from 'src/components/hook-form';
 
 import CreateBrand from './brandDialog';
+import { useGetAdmins } from './hooks/get-am';
 import SelectTimeline from './steps/select-timeline';
 // import NotificationReminder from './steps/notification-reminder';
 
 const steps = [
-  'Fill in Campaign Information',
-  'Fill in Campaign brief form',
-  'upload Campaign Images',
-  'Select Timeline',
-  'Select Admin Manager',
-  'Fill in  Agreement Form',
+  'Campaign Information',
+  'Campaign brief form',
+  'Campaign Images',
+  'Timeline',
+  'Admin Manager',
+  'Agreement Form',
 ];
 
 const intersList = [
@@ -66,6 +67,7 @@ const intersList = [
 ];
 
 function CreateCampaignForm() {
+  const { enqueueSnackbar } = useSnackbar();
   const { options } = useGetCampaignBrandOption();
   const [activeStep, setActiveStep] = useState(0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
@@ -79,7 +81,9 @@ function CreateCampaignForm() {
   const [campaignDont, setcampaignDont] = useState(['']);
   const { defaultTimeline } = useGetTimeline();
   const [timeline, setTimeline] = useState('defaultTimeline');
-  const { admins } = useAdmins();
+  // const { admins } = useAdmins();
+  const { admins } = useGetAdmins();
+  const { user } = useAuthContext();
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -102,14 +106,14 @@ function CreateCampaignForm() {
     // campaignName: Yup.string().required('Campaign name is required'),
     campaignInterests: Yup.array().min(3, 'Choose at least three option'),
     campaignIndustries: Yup.array().min(3, 'Choose at least three option'),
+    campaignDescription: Yup.string().required('Campaign Description is required.'),
     // campaignCompany: Yup.string().required('Company name is required'),
-    campaignBrand: Yup.string().required('Brand name is required'),
+    campaignBrand: Yup.object().required('Brand name is required'),
     campaignStartDate: Yup.mixed().nullable().required('birthDate date is required'),
     campaignEndDate: Yup.mixed().nullable().required('birthDate date is required'),
     campaignTitle: Yup.string().required('Campaign title is required'),
-    campaginObjectives: Yup.string().required('Campaign objectives is required'),
+    campaignObjectives: Yup.string().required('Campaign objectives is required'),
     // campaginCoverImage: Yup.string().required('Campaign cover image is required'),
-    campaignStage: Yup.string().required('Campaign Stage  is required'),
     // campaignSuccessMetrics: Yup.string().required('Campaign success metrics is required'),
     audienceAge: Yup.string().required('Audience age is required'),
     audienceGender: Yup.string().required('Audience Gender is required'),
@@ -124,7 +128,7 @@ function CreateCampaignForm() {
       .min(1, 'insert at least one option')
       .required('Campaign dont is required '),
 
-    adminManager: Yup.string().required('Admin Manager is required'),
+    adminManager: Yup.object().required('Admin Manager is required'),
     campaignImages: Yup.array().min(1, 'Must have at least 2 items'),
     agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
     timeline: Yup.object().shape({
@@ -169,23 +173,31 @@ function CreateCampaignForm() {
 
   const defaultValues = {
     campaignTitle: '',
-    campaignBrand: '',
+    campaignBrand: null,
     campaignStartDate: null,
     campaignEndDate: null,
     campaignInterests: [],
     campaignIndustries: [],
-    campaginObjectives: '',
-    campaignStage: '',
+    campaignObjectives: '',
+    campaignDescription: '',
     audienceGender: '',
     audienceAge: '',
     audienceLocation: '',
     audienceLanguage: '',
     audienceCreatorPersona: '',
     audienceUserPersona: '',
-    campaignDo: [],
-    campaignDont: [],
+    campaignDo: [
+      {
+        value: '',
+      },
+    ],
+    campaignDont: [
+      {
+        value: '',
+      },
+    ],
     campaignImages: [],
-    adminManager: '',
+    adminManager: null,
     agreementFrom: null,
     timeline: {},
   };
@@ -207,7 +219,29 @@ function CreateCampaignForm() {
     formState: { errors },
   } = methods;
 
+  useEffect(() => {
+    console.log(errors);
+  }, [errors]);
+
   const values = watch();
+
+  const {
+    append: doAppend,
+    fields: doFields,
+    remove: doRemove,
+  } = useFieldArray({
+    name: 'campaignDo',
+    control,
+  });
+
+  const {
+    append: dontAppend,
+    fields: dontFields,
+    remove: dontRemove,
+  } = useFieldArray({
+    name: 'campaignDont',
+    control,
+  });
 
   const audienceGeoLocation = watch('audienceLocation');
 
@@ -254,6 +288,7 @@ function CreateCampaignForm() {
   const handleCampaginDontAdd = () => {
     setcampaignDont([...campaignDont, '']);
   };
+
   const handleCampaginDontChange = (index, event) => {
     const newDont = [...campaignDont];
     newDont[index] = event.target.value;
@@ -282,18 +317,25 @@ function CreateCampaignForm() {
     return false;
   }
 
-  const onSubmit = handleSubmit(async (data) => {
+  const onSubmit = handleSubmit(async (data, status) => {
     try {
-      const res = await axiosInstance.post(endpoints.campaign.createCampaign, data);
-      console.log(res);
+      const res = await axiosInstance.post(endpoints.campaign.createCampaign, {
+        ...data,
+        campaignStage: status,
+      });
+      enqueueSnackbar(res?.data?.message, {
+        variant: 'success',
+      });
     } catch (error) {
-      console.log(error);
+      enqueueSnackbar('Error creating campaign. Contact our admin', {
+        variant: 'error',
+      });
     }
   });
 
-  const finalSubmit = async () => {
-    console.log('first');
-  };
+  // const finalSubmit = async () => {
+  //   console.log('first');
+  // };
 
   const formFirstStep = (
     <Box
@@ -306,6 +348,8 @@ function CreateCampaignForm() {
       }}
     >
       <RHFTextField name="campaignTitle" label="Campaign Title" />
+      <RHFTextField name="campaignDescription" label="Campaign Description" multiline />
+
       <Box
         sx={{
           display: 'flex',
@@ -318,8 +362,9 @@ function CreateCampaignForm() {
           fullWidth
           name="campaignBrand"
           placeholder="Brand"
-          options={brandState ? [brandState] : options && options?.map((elem) => elem.name)}
+          options={brandState ? [brandState] : options}
           freeSolo
+          getOptionLabel={(option) => option.name}
           renderOption={(props, option) => (
             <Stack direction="row" spacing={1} p={1} {...props}>
               <Image
@@ -331,20 +376,24 @@ function CreateCampaignForm() {
                   borderRadius: 5,
                 }}
               />
-              <ListItemText primary={option} />
+              <ListItemText primary={option.name} />
             </Stack>
           )}
         />
         <Box>
-          <IconButton
-            sx={{
-              mx: 1,
-              bgcolor: 'whitesmoke',
-            }}
-            onClick={handleClick}
-          >
-            <Iconify icon="mingcute:add-line" />
-          </IconButton>
+          <Tooltip title="Create brand">
+            <IconButton
+              sx={{
+                mx: 1,
+                bgcolor: 'whitesmoke',
+              }}
+              onClick={handleClick}
+              size="small"
+            >
+              <Iconify icon="mingcute:add-line" width={15} />
+            </IconButton>
+          </Tooltip>
+
           <Menu
             id="basic-menu"
             anchorEl={anchorEl}
@@ -375,18 +424,17 @@ function CreateCampaignForm() {
           </Menu>
         </Box>
       </Box>
-      {/* <RHFTextField name="campaignCompany" label="Company" /> */}
-      {/* <RHFTextField name="campaignBrand" label="Brand" /> */}
-      {/* <RHFSelect name="campaignBrand" label="Brand">
-      <RHFSelect name="campaignBrand" label="Brand">
-        {companies.map((option) => (
-          <MenuItem key={option[0]} value={option[0]}>
-            {option[1]}
-          </MenuItem>
-        ))}
-      </RHFSelect> */}
-      <RHFDatePicker name="campaignStartDate" label="Start Date" placeholder="start" />
+
+      <RHFSelect name="campaignObjectives" label="Campagin Objectives">
+        <MenuItem value="newProduct">I&apos;m launching a new product</MenuItem>
+        <MenuItem value="newService">I&apos;m launching a new service</MenuItem>
+        <MenuItem value="brandAwareness">I want to drive brand awareness</MenuItem>
+        <MenuItem value="productAwareness">Want to drive product awareness</MenuItem>
+      </RHFSelect>
+
+      <RHFDatePicker name="campaignStartDate" label="Start Date" />
       <RHFDatePicker name="campaignEndDate" label="End Date" />
+
       <RHFAutocomplete
         name="campaignInterests"
         placeholder="+ Interests"
@@ -413,6 +461,7 @@ function CreateCampaignForm() {
           ))
         }
       />
+
       <RHFAutocomplete
         name="campaignIndustries"
         placeholder="+ Industries"
@@ -443,17 +492,18 @@ function CreateCampaignForm() {
   );
 
   const formSecondStep = (
-    <Box
-      rowGap={2}
-      columnGap={3}
-      display="grid"
-      mt={4}
-      gridTemplateColumns={{
-        xs: 'repeat(1, 1fr)',
-        sm: 'repeat(2, 1fr)',
-      }}
-    >
-      {/* <Box
+    <Stack spacing={3}>
+      <Box
+        rowGap={2}
+        columnGap={3}
+        display="grid"
+        mt={4}
+        gridTemplateColumns={{
+          xs: 'repeat(1, 1fr)',
+          sm: 'repeat(2, 1fr)',
+        }}
+      >
+        {/* <Box
         sx={{
           display: 'flex',
           justifyContent: 'center',
@@ -475,140 +525,127 @@ function CreateCampaignForm() {
         </UploadPhoto>
         <Typography variant="h6">Campaign Logo</Typography>
       </Box> */}
-      {/* <Box sx={{ flexGrow: 1 }} /> */}
+        {/* <Box sx={{ flexGrow: 1 }} /> */}
 
-      {/* <RHFTextField name="campaignTitle" label="Campaign Title" /> */}
+        {/* <RHFTextField name="campaignTitle" label="Campaign Title" /> */}
 
-      {/* <RHFTextField
+        {/* <RHFTextField
         name="campaignSuccessMetrics"
         label="What does campaign success look like to you?"
       /> */}
 
-      <RHFSelect name="campaginObjectives" label="Campagin Objectives">
-        <MenuItem value="newProduct">I&apos;m launching a new product</MenuItem>
-        <MenuItem value="newService">I&apos;m launching a new service</MenuItem>
-        <MenuItem value="brandAwareness">I want to drive brand awareness</MenuItem>
-        <MenuItem value="productAwareness">Want to drive product awareness</MenuItem>
-      </RHFSelect>
-
-      <RHFSelect name="campaignStage" label="Campaign Stage">
+        {/* <RHFSelect name="campaignStage" label="Campaign Stage">
         <MenuItem value="draft">Draft</MenuItem>
         <MenuItem value="publish">Publish</MenuItem>
-      </RHFSelect>
+      </RHFSelect> */}
 
-      <Typography variant="h4">Audience Requirements</Typography>
-      <Box flexGrow={1} />
-      <RHFSelect name="audienceGender" label="Audience Gender">
-        <MenuItem value="female">Female</MenuItem>
-        <MenuItem value="male">Male </MenuItem>
-        <MenuItem value="nonbinary">Non-Binary</MenuItem>
-      </RHFSelect>
+        <Typography variant="h4">Audience Requirements</Typography>
+        <Box flexGrow={1} />
+        <RHFSelect name="audienceGender" label="Audience Gender">
+          <MenuItem value="female">Female</MenuItem>
+          <MenuItem value="male">Male </MenuItem>
+          <MenuItem value="nonbinary">Non-Binary</MenuItem>
+        </RHFSelect>
 
-      <RHFSelect name="audienceAge" label="Audience Age">
-        <MenuItem value="18-25">18-25</MenuItem>
-        <MenuItem value="26-34">26-34</MenuItem>
-        <MenuItem value="35-40">35-40</MenuItem>
-        <MenuItem value=">40"> &gt; 40</MenuItem>
-      </RHFSelect>
+        <RHFSelect name="audienceAge" label="Audience Age">
+          <MenuItem value="18-25">18-25</MenuItem>
+          <MenuItem value="26-34">26-34</MenuItem>
+          <MenuItem value="35-40">35-40</MenuItem>
+          <MenuItem value=">40"> &gt; 40</MenuItem>
+        </RHFSelect>
 
-      <RHFSelect
-        name="audienceLocation"
-        label="Audience Geo Location"
-        helperText="if others please specify"
-      >
-        <MenuItem value="KlangValley">Klang Valley </MenuItem>
-        <MenuItem value="Selangor">Selangor</MenuItem>
-        <MenuItem value="KualaLumpur">Kuala Lumpur</MenuItem>
-        <MenuItem value="MainCities">Main cities in Malaysia</MenuItem>
-        <MenuItem value="EastMalaysia">East Malaysia</MenuItem>
-        <MenuItem value="Others">Others</MenuItem>
-      </RHFSelect>
+        <RHFSelect
+          name="audienceLocation"
+          label="Audience Geo Location"
+          helperText="if others please specify"
+        >
+          <MenuItem value="KlangValley">Klang Valley </MenuItem>
+          <MenuItem value="Selangor">Selangor</MenuItem>
+          <MenuItem value="KualaLumpur">Kuala Lumpur</MenuItem>
+          <MenuItem value="MainCities">Main cities in Malaysia</MenuItem>
+          <MenuItem value="EastMalaysia">East Malaysia</MenuItem>
+          <MenuItem value="Others">Others</MenuItem>
+        </RHFSelect>
 
-      {audienceGeoLocation === 'Others' && (
-        <TextField name="audienceLocation" label="Specify Other Location" variant="outlined" />
-      )}
+        {audienceGeoLocation === 'Others' && (
+          <TextField name="audienceLocation" label="Specify Other Location" variant="outlined" />
+        )}
 
-      <RHFSelect name="audienceLanguage" label="Audience Language">
-        <MenuItem value="Malay">Malay</MenuItem>
-        <MenuItem value="English">English</MenuItem>
-        <MenuItem value="Chinese">Chinese</MenuItem>
-        <MenuItem value="Tamil">Tamil</MenuItem>
-        <MenuItem value="Korean">Korean</MenuItem>
-        <MenuItem value="MalayEnglish">Malay + English</MenuItem>
-        <MenuItem value="EnglishChinese">English + Chinese </MenuItem>
-      </RHFSelect>
+        <RHFSelect name="audienceLanguage" label="Audience Language">
+          <MenuItem value="Malay">Malay</MenuItem>
+          <MenuItem value="English">English</MenuItem>
+          <MenuItem value="Chinese">Chinese</MenuItem>
+          <MenuItem value="Tamil">Tamil</MenuItem>
+          <MenuItem value="Korean">Korean</MenuItem>
+          <MenuItem value="MalayEnglish">Malay + English</MenuItem>
+          <MenuItem value="EnglishChinese">English + Chinese </MenuItem>
+        </RHFSelect>
 
-      <RHFSelect name="audienceCreatorPersona" label="Audience Creator Persona">
-        <MenuItem value="lifeStyle">LifeStyle</MenuItem>
-        <MenuItem value="Foodie">Foodie</MenuItem>
-        <MenuItem value="fashion">Fashion</MenuItem>
-        <MenuItem value="beauty">Beauty</MenuItem>
-        <MenuItem value="tech">Tech</MenuItem>
-        <MenuItem value="sports">Sports & Fitness</MenuItem>
-        <MenuItem value="health">Health & wellness</MenuItem>
-        <MenuItem value="family">Family & motherhood</MenuItem>
-        <MenuItem value="finance">Finance</MenuItem>
-        <MenuItem value="education">Education</MenuItem>
-        <MenuItem value="music">Music</MenuItem>
-        <MenuItem value="gamer">Gamer</MenuItem>
-        <MenuItem value="entertainment">Entertainment</MenuItem>
-        <MenuItem value="travel">Travel</MenuItem>
-      </RHFSelect>
+        <RHFSelect name="audienceCreatorPersona" label="Audience Creator Persona">
+          <MenuItem value="lifeStyle">LifeStyle</MenuItem>
+          <MenuItem value="Foodie">Foodie</MenuItem>
+          <MenuItem value="fashion">Fashion</MenuItem>
+          <MenuItem value="beauty">Beauty</MenuItem>
+          <MenuItem value="tech">Tech</MenuItem>
+          <MenuItem value="sports">Sports & Fitness</MenuItem>
+          <MenuItem value="health">Health & wellness</MenuItem>
+          <MenuItem value="family">Family & motherhood</MenuItem>
+          <MenuItem value="finance">Finance</MenuItem>
+          <MenuItem value="education">Education</MenuItem>
+          <MenuItem value="music">Music</MenuItem>
+          <MenuItem value="gamer">Gamer</MenuItem>
+          <MenuItem value="entertainment">Entertainment</MenuItem>
+          <MenuItem value="travel">Travel</MenuItem>
+        </RHFSelect>
 
-      <RHFTextField
-        name="audienceUserPersona"
-        label="User Persona"
-        placeholder=" let us know who you want your campaign to reach!"
+        <RHFTextField
+          name="audienceUserPersona"
+          label="User Persona"
+          placeholder=" let us know who you want your campaign to reach!"
+        />
+
+        {audienceGeoLocation === 'Others' && <Box flexGrow={1} />}
+      </Box>
+
+      <Divider
+        sx={{
+          borderStyle: 'dashed',
+        }}
       />
 
-      {audienceGeoLocation === 'Others' && <Box flexGrow={1} />}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignContent: 'center',
-          gap: 0.8,
-        }}
-      >
-        {campaignDont.map((objective, index) => (
-          <TextField
-            key={index}
-            name={`companyDon't[${index}]`}
-            label={`campaignDon't ${index + 1}`}
-            value={objective}
-            onChange={(event) => handleCampaginDontChange(index, event)}
-          />
-        ))}
+      <Typography variant="h5">Do&apos;s and Dont&apos;s</Typography>
 
-        <Button variant="contained" onClick={handleCampaginDontAdd}>
-          Add Dont
-        </Button>
-      </Box>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignContent: 'center',
-          gap: 0.8,
-        }}
-      >
-        {campaignDo.map((objective, index) => (
-          <TextField
-            key={index}
-            name={`companyDo[${index}]`}
-            label={`campaignDo ${index + 1}`}
-            value={objective}
-            onChange={(event) => handleObjectiveChange(index, event)}
-          />
-        ))}
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <Stack direction="column" spacing={2}>
+            {doFields.map((item, index) => (
+              <RHFTextField
+                name={`campaignDo[${index}].value`}
+                label={`Campaign Do's ${index + 1}`}
+              />
+            ))}
 
-        <Button variant="contained" onClick={handleAddObjective}>
-          Add Do
-        </Button>
-      </Box>
-    </Box>
+            <Button variant="contained" onClick={() => doAppend({ value: '' })}>
+              Add Do
+            </Button>
+          </Stack>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Stack direction="column" spacing={2}>
+            {dontFields.map((item, index) => (
+              <RHFTextField
+                name={`campaignDont[${index}].value`}
+                label={`Campaign Dont's ${index + 1}`}
+              />
+            ))}
+
+            <Button variant="contained" onClick={() => dontAppend({ value: '' })}>
+              Add Dont
+            </Button>
+          </Stack>
+        </Grid>
+      </Grid>
+    </Stack>
   );
 
   const formSelectAdminManager = (
@@ -622,13 +659,21 @@ function CreateCampaignForm() {
         p: 3,
       }}
     >
-      <Typography variant="h4">Select Admin Manager</Typography>
-      {/* <RHFSelect name="adminManager" label="Admin Manager" defaultValue="default" /> */}
+      <Typography variant="h5">Select Admin Manager</Typography>
+
       <RHFAutocomplete
         name="adminManager"
         placeholder="Admin Manager"
-        options={admins ? admins.map((option) => option.name) : 'No admin found'}
+        options={admins ? admins.map((elem) => elem) : 'No admin found'}
+        // options={
+        //   admins
+        //     ? admins
+        //         .filter((e) => e?.status === 'active')
+        //         .map((option) => (option?.id === user?.id ? 'Me' : option?.name))
+        //     : 'No admin found'
+        // }
         freeSolo
+        getOptionLabel={(option) => option?.name}
       />
     </Box>
   );
@@ -786,9 +831,7 @@ function CreateCampaignForm() {
             >
               Reset
             </Button>
-            <Button onClick={finalSubmit} color="inherit">
-              Submit
-            </Button>
+            <Button color="inherit">Submit</Button>
           </Box>
         </>
       ) : (
@@ -824,9 +867,23 @@ function CreateCampaignForm() {
                   </Button>
                   <Box sx={{ flexGrow: 1 }} />
                   {activeStep === steps.length - 1 ? (
-                    <Button variant="contained" onClick={onSubmit}>
-                      Submit
-                    </Button>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        variant="outlined"
+                        onClick={() => onSubmit('draft')}
+                        startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
+                      >
+                        Draft
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => onSubmit('publish')}
+                        startIcon={<Iconify icon="material-symbols:publish" width={16} />}
+                      >
+                        Publish
+                      </Button>
+                    </Stack>
                   ) : (
                     <Button variant="contained" onClick={handleNext}>
                       Next

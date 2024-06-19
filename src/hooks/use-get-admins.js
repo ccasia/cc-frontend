@@ -10,6 +10,7 @@ const useGetAdmins = () => {
   const getAdmins = useCallback(async () => {
     try {
       const res = await axiosInstance.get(endpoints.users.admins);
+
       setAdmin(res?.data);
     } catch (error) {
       alert(JSON.stringify(error));

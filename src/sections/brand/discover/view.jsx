@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Container from '@mui/material/Container';
-import { TextField, InputAdornment } from '@mui/material';
+import { Box, TextField, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
@@ -14,6 +14,7 @@ import withPermission from 'src/auth/guard/withPermissions';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
 import BrandList from './brandList';
 
@@ -73,14 +74,26 @@ function DiscoverBrand() {
           Search
         </TextField>
       </Stack>
-      <Stack
-        spacing={2.5}
-        sx={{
-          mb: { xs: 3, md: 5 },
-        }}
-      >
-        {companies.length > 0 && <BrandList companies={filteredData} />}
-      </Stack>
+      {companies.length < 1 ? (
+        <Box mt={2}>
+          <EmptyContent
+            filled
+            title="No Data"
+            sx={{
+              py: 10,
+            }}
+          />
+        </Box>
+      ) : (
+        <Stack
+          spacing={2.5}
+          sx={{
+            mb: { xs: 3, md: 5 },
+          }}
+        >
+          <BrandList companies={filteredData} />
+        </Stack>
+      )}
     </Container>
   );
 }

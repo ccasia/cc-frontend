@@ -1,0 +1,65 @@
+{
+  "campaignTitle": "awdawdawd",
+  "campaignBrand": {
+    "id": "clxickvax000i7uaiid1wjgv7",
+    "name": "Colgate"
+  },
+  "campaignStartDate": "2024-06-17T16:00:00.000Z",
+  "campaignEndDate": "2024-06-25T16:00:00.000Z",
+  "campaignInterests": ["Food", "Fitness", "Fashion"],
+  "campaignIndustries": ["Food", "Fitness", "Business", "Fashion"],
+  "campaignObjectives": "newProduct",
+  "audienceGender": "female",
+  "audienceAge": "18-25",
+  "audienceLocation": "KlangValley",
+  "audienceLanguage": "Malay",
+  "audienceCreatorPersona": "lifeStyle",
+  "audienceUserPersona": "awdawdawd",
+  "campaignDo": [
+    {
+      "value": "awdawd"
+    },
+    {
+      "value": "awdawd"
+    }
+  ],
+  "campaignDont": [
+    {
+      "value": "awdawd"
+    },
+    {
+      "value": "awdawdwd"
+    }
+  ],
+  "campaignImages": [
+    {
+      "path": "WhatsApp Image 2024-06-10 at 11.52.50 AM.jpeg",
+      "preview": "blob:http://localhost/6a89d0f4-6f30-4922-8cc7-dcd2a9d9a327"
+    },
+    {
+      "path": "WhatsApp Image 2024-06-10 at 12.36.17 PM.jpeg",
+      "preview": "blob:http://localhost/ac4017c3-96f1-45fc-a6d1-b5faec8c356b"
+    }
+  ],
+  "adminManager": {
+    "id": "354be3e1-31fb-46b4-9ca5-abcf32175664",
+    "name": "Afiq"
+  },
+  "agreementFrom": {
+    "path": "WhatsApp Image 2024-06-10 at 12.36.17 PM.jpeg",
+    "preview": "blob:http://localhost/b7fb1594-0930-44f3-885d-2b83130ab0ab"
+  },
+  "timeline": {
+    "id": "clxj5x4me0000vn3gqpva5n80",
+    "openForPitch": 14,
+    "shortlistCreator": 1,
+    "firstDraft": 3,
+    "finalDraft": 2,
+    "feedBackFirstDraft": 3,
+    "feedBackFinalDraft": 1,
+    "filterPitch": 2,
+    "agreementSign": 2,
+    "qc": 3,
+    "posting": 1
+  }
+}
