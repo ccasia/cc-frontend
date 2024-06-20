@@ -50,7 +50,7 @@ const steps = [
   'Agreement Form',
 ];
 
-const intersList = [
+const interestsLists = [
   'Art',
   'Beauty',
   'Business',
@@ -441,7 +441,7 @@ function CreateCampaignForm() {
         multiple
         freeSolo
         disableCloseOnSelect
-        options={intersList.map((option) => option)}
+        options={interestsLists.map((option) => option)}
         getOptionLabel={(option) => option}
         renderOption={(props, option) => (
           <li {...props} key={option}>
@@ -468,7 +468,7 @@ function CreateCampaignForm() {
         multiple
         freeSolo
         disableCloseOnSelect
-        options={intersList.map((option) => option)}
+        options={interestsLists.map((option) => option)}
         getOptionLabel={(option) => option}
         renderOption={(props, option) => (
           <li {...props} key={option}>

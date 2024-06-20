@@ -112,5 +112,6 @@ export const endpoints = {
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
     getDefaultTimeline: '/api/campaign/defaultTimeline',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
+    getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
   },
 };

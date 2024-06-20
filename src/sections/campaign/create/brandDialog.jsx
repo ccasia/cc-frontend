@@ -28,7 +28,7 @@ import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook
 
 import CreateCompany from './companyDialog';
 
-const intersList = [
+const interestsLists = [
   'Art',
   'Beauty',
   'Business',
@@ -240,7 +240,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
               multiple
               freeSolo="true"
               disableCloseOnSelect
-              options={intersList.map((option) => option)}
+              options={interestsLists.map((option) => option)}
               getOptionLabel={(option) => option}
               renderOption={(props, option) => (
                 <li {...props} key={option}>
@@ -267,7 +267,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
               multiple
               freeSolo="true"
               disableCloseOnSelect
-              options={intersList.map((option) => option)}
+              options={interestsLists.map((option) => option)}
               getOptionLabel={(option) => option}
               renderOption={(props, option) => (
                 <li {...props} key={option}>

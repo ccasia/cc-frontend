@@ -14,7 +14,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-import { intersList } from 'src/sections/creator/form/creatorForm';
+import { interestsList } from 'src/sections/creator/form/creatorForm';
 
 import BrandEditForm from './edit-from';
 
@@ -93,7 +93,7 @@ const BrandEditView = ({ id }) => {
       brandTiktok: brand?.tiktok,
       brandWebsite: brand?.website,
       brandAbout: brand?.description,
-      brandIndustries: intersList.filter((elem) => brand?.industries.includes(elem)),
+      brandIndustries: interestsList.filter((elem) => brand?.industries.includes(elem)),
       brandObjectives: brand?.objectives,
     });
   }, [brand, reset]);

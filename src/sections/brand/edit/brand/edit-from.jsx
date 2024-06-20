@@ -16,7 +16,7 @@ import {
 import Iconify from 'src/components/iconify';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
-import { intersList } from 'src/sections/creator/form/creatorForm';
+import { interestsList } from 'src/sections/creator/form/creatorForm';
 
 const BrandEditForm = ({ fieldsArray, methods }) => {
   const { fields, append, remove } = fieldsArray;
@@ -49,7 +49,7 @@ const BrandEditForm = ({ fieldsArray, methods }) => {
           multiple
           freeSolo="true"
           disableCloseOnSelect
-          options={intersList.map((option) => option)}
+          options={interestsList.map((option) => option)}
           getOptionLabel={(option) => option}
           renderOption={(props, option) => (
             <li {...props} key={option}>

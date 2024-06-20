@@ -26,6 +26,12 @@ const ViewCampaign = lazy(() => import('src/pages/dashboard/campaign/campaign-vi
 const AdminCampaignDetail = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-details')
 );
+const AdminCamapaignView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/campaign-detail-manage')
+);
+const AdminEditCampaignView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
+);
 
 // Brand & Company
 const BrandManage = lazy(() => import('src/pages/dashboard/brand/manageBrand'));
@@ -206,7 +212,20 @@ export const dashboardRoutes = [
           },
           {
             path: 'manage',
-            element: <ManageCampaign />,
+            children: [
+              {
+                index: true,
+                element: <ManageCampaign />,
+              },
+              {
+                path: ':id',
+                element: <AdminCamapaignView />,
+              },
+              {
+                path: 'edit/:id',
+                element: <AdminEditCampaignView />,
+              },
+            ],
           },
           {
             path: 'create',
@@ -228,14 +247,6 @@ export const dashboardRoutes = [
                 element: (
                   <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
                     <AdminCampaignDetail />
-                  </RoleBasedGuard>
-                ),
-              },
-              {
-                path: 'test',
-                element: (
-                  <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
-                    <h1>DWADWAD</h1>
                   </RoleBasedGuard>
                 ),
               },

@@ -1,10 +1,11 @@
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import Chip from '@mui/material/Chip';
 import { Box, Menu, Stack, alpha, Button, MenuItem, Container, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -20,7 +21,7 @@ import CampaignList from '../campaign-admin-list';
 
 const CampaignListView = () => {
   const settings = useSettingsContext();
-  // const [query, setQuery] = useState('');
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -34,6 +35,24 @@ const CampaignListView = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const onView = useCallback(
+    (id) => {
+      router.push(paths.dashboard.campaign.adminCampaignManageDetail(id));
+    },
+    [router]
+  );
+
+  const onEdit = useCallback(
+    (id) => {
+      router.push(paths.dashboard.campaign.adminCampaignEdit(id));
+    },
+    [router]
+  );
+
+  const onDelete = useCallback((id) => {
+    console.log('Delete', id);
+  }, []);
 
   useEffect(() => {
     const getAllCampaigns = async () => {
@@ -189,7 +208,12 @@ const CampaignListView = () => {
           }}
         >
           {filteredData.map((campaign) => (
-            <CampaignList campaign={campaign} />
+            <CampaignList
+              campaign={campaign}
+              onView={() => onView(campaign?.id)}
+              onEdit={() => onEdit(campaign?.id)}
+              onDelete={() => onDelete(campaign?.id)}
+            />
           ))}
         </Box>
       )}

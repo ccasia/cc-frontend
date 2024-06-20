@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-import CampaignListView from 'src/sections/campaign/manage/admin/view/campaign-admin-list-view';
+import CampaignListView from 'src/sections/campaign/manage/list/view/campaign-admin-list-view';
 
 // ----------------------------------------------------------------------
 

@@ -43,6 +43,8 @@ export const paths = {
       settings: `${ROOTS.DASHBOARD}/campaign/settings`,
       details: (id) => `${ROOTS.DASHBOARD}/campaign/details/${id}`,
       adminCampaignDetail: (id) => `${ROOTS.DASHBOARD}/campaign/discover/detail/${id}`,
+      adminCampaignManageDetail: (id) => `${ROOTS.DASHBOARD}/campaign/manage/${id}`,
+      adminCampaignEdit: (id) => `${ROOTS.DASHBOARD}/campaign/manage/edit/${id}`,
     },
     user: {
       root: `${ROOTS.DASHBOARD}/user`,

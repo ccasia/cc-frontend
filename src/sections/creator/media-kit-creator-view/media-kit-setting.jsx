@@ -12,7 +12,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
-import { intersList } from '../form/creatorForm';
+import { interestsList } from '../form/creatorForm';
 
 const MediaKitSetting = ({ open, handleClose, user }) => {
   const style = {
@@ -95,7 +95,7 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
               fullWidth
               freeSolo={false}
               disableCloseOnSelect
-              options={intersList.map((option) => option)}
+              options={interestsList.map((option) => option)}
               getOptionLabel={(option) => option}
               renderOption={(props, option) => (
                 <li {...props} key={option}>

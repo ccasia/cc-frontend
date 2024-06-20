@@ -41,7 +41,7 @@ const steps = [
 
 export const langList = ['English', 'Malay', 'Mandarin', 'Hindi', 'All of the above', 'Others'];
 
-export const intersList = [
+export const interestsList = [
   'Art',
   'Beauty',
   'Business',
@@ -279,7 +279,7 @@ export default function CreatorForm({ creator, open, onClose }) {
             multiple
             freeSolo="true"
             disableCloseOnSelect
-            options={intersList.map((option) => option)}
+            options={interestsList.map((option) => option)}
             getOptionLabel={(option) => option}
             renderOption={(props, option) => (
               <li {...props} key={option}>
@@ -306,7 +306,7 @@ export default function CreatorForm({ creator, open, onClose }) {
             multiple
             freeSolo="true"
             disableCloseOnSelect
-            options={intersList.map((option) => option)}
+            options={interestsList.map((option) => option)}
             getOptionLabel={(option) => option}
             renderOption={(props, option) => (
               <li {...props} key={option}>

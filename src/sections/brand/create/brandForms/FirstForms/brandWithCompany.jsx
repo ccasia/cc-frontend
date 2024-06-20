@@ -28,7 +28,7 @@ import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/comp
 
 import UploadPhoto from 'src/sections/profile/dropzone';
 
-const intersList = [
+const interestsLists = [
   'Art',
   'Beauty',
   'Business',
@@ -43,6 +43,7 @@ const intersList = [
   'Technology',
   'Travel',
 ];
+
 const steps = [
   'choose company',
   'Fill in Brand Basic Information',
@@ -239,7 +240,7 @@ function BrandWithCompany() {
           multiple
           freeSolo="true"
           disableCloseOnSelect
-          options={intersList.map((option) => option)}
+          options={interestsLists.map((option) => option)}
           getOptionLabel={(option) => option}
           renderOption={(props, option) => (
             <li {...props} key={option}>
@@ -266,7 +267,7 @@ function BrandWithCompany() {
           multiple
           freeSolo="true"
           disableCloseOnSelect
-          options={intersList.map((option) => option)}
+          options={interestsLists.map((option) => option)}
           getOptionLabel={(option) => option}
           renderOption={(props, option) => (
             <li {...props} key={option}>
@@ -289,7 +290,7 @@ function BrandWithCompany() {
       </Box>
     );
   }
-  
+
   function companyObjectives() {
     return (
       <Box
@@ -375,117 +376,107 @@ function BrandWithCompany() {
 
   return (
     <Box
+      sx={{
+        borderRadius: '20px',
+        mt: 3,
+        bgcolor: 'background.paper',
+      }}
+    >
+      <Stepper
         sx={{
-          borderRadius: '20px',
-          mt: 3,
-          bgcolor: 'background.paper',
+          pt: 2,
+          m: 1,
         }}
+        activeStep={activeStep}
+        alternativeLabel
       >
-        <Stepper
-          sx={{
-            pt: 2,
-            m: 1,
-          }}
-          activeStep={activeStep}
-          alternativeLabel
-        >
-          {steps.map((label, index) => {
-            const stepProps = {};
-            const labelProps = {};
-            // labelProps.error = stepError.includes(index) && true;
-            return (
-              <Step key={index} {...stepProps}>
-                <StepLabel {...labelProps}>{label}</StepLabel>
-              </Step>
-            );
-          })}
-        </Stepper>
+        {steps.map((label, index) => {
+          const stepProps = {};
+          const labelProps = {};
+          // labelProps.error = stepError.includes(index) && true;
+          return (
+            <Step key={index} {...stepProps}>
+              <StepLabel {...labelProps}>{label}</StepLabel>
+            </Step>
+          );
+        })}
+      </Stepper>
 
-        {activeStep === steps.length ? (
-          <>
-            <Paper
-              sx={{
-                p: 3,
-                my: 3,
-                minHeight: 120,
-                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-              }}
-            >
-              <Typography sx={{ my: 1 }}>All steps completed - you&apos;re finished</Typography>
-            </Paper>
-
-            <Box sx={{ display: 'flex', m: 2 }}>
-              <Button
-                color="inherit"
-                disabled={activeStep === 0}
-                onClick={handleBack}
-                sx={{ mr: 1 }}
-              >
-                Back
-              </Button>
-
-              <Box sx={{ flexGrow: 1 }} />
-              <Button
-                onClick={() => {
-                  //   reset();
-                  setActiveStep((prevActiveStep) => prevActiveStep - 2);
-                }}
-              >
-                Reset
-              </Button>
-              <Button onClick={onSubmit} color="inherit">
-                Submit
-              </Button>
-            </Box>
-          </>
-        ) : (
-          <Box
+      {activeStep === steps.length ? (
+        <>
+          <Paper
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
+              p: 3,
+              my: 3,
+              minHeight: 120,
+              bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
             }}
           >
-            <Paper
-              sx={{
-                p: 0.5,
-                my: 0.5,
-                mx: 1,
-                // bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
+            <Typography sx={{ my: 1 }}>All steps completed - you&apos;re finished</Typography>
+          </Paper>
 
-                width: '80%',
+          <Box sx={{ display: 'flex', m: 2 }}>
+            <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
+              Back
+            </Button>
+
+            <Box sx={{ flexGrow: 1 }} />
+            <Button
+              onClick={() => {
+                //   reset();
+                setActiveStep((prevActiveStep) => prevActiveStep - 2);
               }}
             >
-              <Box sx={{ my: 1 }}>
-                <FormProvider methods={methods} onSubmit={onSubmit}>
-                  {getStepContent(activeStep)}
-                </FormProvider>
-              </Box>
-            </Paper>
-            <Box sx={{ display: 'flex', m: 2 }}>
-              <Button
-                color="inherit"
-                disabled={activeStep === 0}
-                onClick={handleBack}
-                sx={{ mr: 1 }}
-              >
-                Back
-              </Button>
-              <Box sx={{ flexGrow: 1 }} />
-              {activeStep === steps.length - 1 ? (
-                <Button variant="contained" onClick={onSubmit}>
-                  Submit
-                </Button>
-              ) : (
-                <Button variant="contained" onClick={handleNext}>
-                  Next
-                </Button>
-              )}
-            </Box>
+              Reset
+            </Button>
+            <Button onClick={onSubmit} color="inherit">
+              Submit
+            </Button>
           </Box>
-        )}
-      </Box>
+        </>
+      ) : (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Paper
+            sx={{
+              p: 0.5,
+              my: 0.5,
+              mx: 1,
+              // bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
+
+              width: '80%',
+            }}
+          >
+            <Box sx={{ my: 1 }}>
+              <FormProvider methods={methods} onSubmit={onSubmit}>
+                {getStepContent(activeStep)}
+              </FormProvider>
+            </Box>
+          </Paper>
+          <Box sx={{ display: 'flex', m: 2 }}>
+            <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
+              Back
+            </Button>
+            <Box sx={{ flexGrow: 1 }} />
+            {activeStep === steps.length - 1 ? (
+              <Button variant="contained" onClick={onSubmit}>
+                Submit
+              </Button>
+            ) : (
+              <Button variant="contained" onClick={handleNext}>
+                Next
+              </Button>
+            )}
+          </Box>
+        </Box>
+      )}
+    </Box>
   );
 }
 
