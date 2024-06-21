@@ -4,7 +4,7 @@ import { Menu, Stack, Button, MenuItem, Container, TextField, InputAdornment } f
 
 import { paths } from 'src/routes/paths';
 
-import { _tours } from 'src/_mock';
+import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -14,6 +14,7 @@ import CampaignLists from '../campaign-list';
 
 const CampaignView = () => {
   const settings = useSettingsContext();
+  const { campaigns } = useGetCampaigns();
 
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -54,7 +55,7 @@ const CampaignView = () => {
             ),
           }}
         />
-        <Button onClick={handleClick} endIcon={<Iconify icon="ep:arrow-down-bold" width={16} />}>
+        <Button onClick={handleClick} endIcon={<Iconify icon="ep:arrow-down-bold" width={14} />}>
           Filter
         </Button>
 
@@ -72,7 +73,7 @@ const CampaignView = () => {
         </Menu>
       </Stack>
 
-      <CampaignLists tours={_tours} />
+      {campaigns && <CampaignLists campaigns={campaigns} />}
     </Container>
   );
 };

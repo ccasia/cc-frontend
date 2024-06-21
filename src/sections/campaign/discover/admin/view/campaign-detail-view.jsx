@@ -6,14 +6,20 @@ import { Tab, Tabs, Button, Container } from '@mui/material';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import useGetCampaigns from 'src/hooks/use-get-campaigns';
+
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
+import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignDetailContent from '../campaign-detail-content';
 
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
+  const { campaigns } = useGetCampaigns();
+
+  const currentCampaign = campaigns && campaigns.filter((campaign) => campaign.id === id)[0];
 
   //   const currentTour = _tours.filter((tour) => tour.id === id)[0];
 
@@ -63,7 +69,13 @@ const CampaignDetailView = ({ id }) => {
 
       {renderTabs}
 
-      <CampaignDetailContent />
+      {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
+      {currentTab === 'creator' && <CampaignDetailContent campaign={currentCampaign} />}
+      {currentTab === 'brand' && (
+        <CampaignDetailBrand brand={currentCampaign?.brand ?? currentCampaign?.company} />
+      )}
+      {currentTab === 'shortlisted' && <CampaignDetailContent campaign={currentCampaign} />}
+      {currentTab === 'Pitch' && <CampaignDetailContent campaign={currentCampaign} />}
     </Container>
   );
 };

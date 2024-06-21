@@ -1,9 +1,10 @@
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
-import { Box, Card } from '@mui/material';
 import ListItemText from '@mui/material/ListItemText';
+import { Box, Card, Chip, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -17,8 +18,7 @@ import { useSettingsContext } from 'src/components/settings';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ tour, onView, onEdit, onDelete }) {
-  const { images, createdAt } = tour;
+export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
   const settings = useSettingsContext();
   const router = useRouter();
 
@@ -31,11 +31,11 @@ export default function CampaignItem({ tour, onView, onEdit, onDelete }) {
       }}
     >
       <Stack flexGrow={1} sx={{ position: 'relative' }}>
-        <Image alt={images[0]} src={images[0]} sx={{ borderRadius: 1, height: 164, width: 1 }} />
+        <Image alt="/test.jpeg" src="/test.jpeg" sx={{ borderRadius: 1, height: 164, width: 1 }} />
       </Stack>
       <Stack spacing={0.5}>
-        <Image alt={images[1]} src={images[1]} ratio="1/1" sx={{ borderRadius: 1, width: 80 }} />
-        <Image alt={images[2]} src={images[2]} ratio="1/1" sx={{ borderRadius: 1, width: 80 }} />
+        <Image alt="/test.jpeg" src="/test.jpeg" ratio="1/1" sx={{ borderRadius: 1, width: 80 }} />
+        <Image alt="/test.jpeg" src="/test.jpeg" ratio="1/1" sx={{ borderRadius: 1, width: 80 }} />
       </Stack>
     </Stack>
   );
@@ -45,10 +45,10 @@ export default function CampaignItem({ tour, onView, onEdit, onDelete }) {
       sx={{
         p: (theme) => theme.spacing(2.5, 2.5, 2, 2.5),
       }}
-      primary={`Created date: ${fDateTime(createdAt)}`}
+      primary={`Created date: ${fDateTime(campaign?.createdAt)}`}
       secondary={
         <Link component={RouterLink} color="inherit">
-          Campaign title
+          {campaign?.name}
         </Link>
       }
       primaryTypographyProps={{
@@ -75,11 +75,18 @@ export default function CampaignItem({ tour, onView, onEdit, onDelete }) {
     >
       {[
         {
-          label: 'Industries',
-          icon: <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />,
+          label: campaign?.campaignBrief?.industries.map((e) => (
+            <Chip size="small" variant="outlined" label={e} color="primary" />
+          )),
+          icon: <Iconify icon="mdi:company" sx={{ color: 'error.main' }} />,
         },
         {
-          label: 'Start date - End date',
+          label: (
+            <Typography variant="caption">
+              {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} -
+                ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
+            </Typography>
+          ),
           icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} />,
         },
       ].map((item) => (
@@ -101,7 +108,7 @@ export default function CampaignItem({ tour, onView, onEdit, onDelete }) {
     <Box
       component={Card}
       onClick={() => {
-        router.push(paths.dashboard.campaign.adminCampaignDetail(tour.id));
+        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
       }}
       sx={{
         cursor: 'pointer',
@@ -125,5 +132,5 @@ CampaignItem.propTypes = {
   onDelete: PropTypes.func,
   onEdit: PropTypes.func,
   onView: PropTypes.func,
-  tour: PropTypes.object,
+  campaign: PropTypes.object,
 };

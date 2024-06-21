@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -6,11 +6,13 @@ import { useAdmins } from './zustands/useAdmins';
 
 const useGetAdmins = () => {
   const { setAdmin } = useAdmins();
+  const [admins, setAdmins] = useState();
 
   const getAdmins = useCallback(async () => {
     try {
-      const res = await axiosInstance.get(endpoints.users.admins);
-
+      // const res = await axiosInstance.get(endpoints.users.admins);
+      const res = await axiosInstance.get(endpoints.users.getAdmins);
+      setAdmins(res?.data);
       setAdmin(res?.data);
     } catch (error) {
       alert(JSON.stringify(error));
@@ -21,7 +23,7 @@ const useGetAdmins = () => {
     getAdmins();
   }, [getAdmins]);
 
-  return { getAdmins };
+  return { getAdmins, admins };
 };
 
 export default useGetAdmins;

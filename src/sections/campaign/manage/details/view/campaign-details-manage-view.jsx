@@ -13,9 +13,11 @@ import {
   List,
   Stack,
   Divider,
+  Tooltip,
   ListItem,
   Container,
   Typography,
+  IconButton,
   ListItemText,
   ListItemIcon,
 } from '@mui/material';
@@ -32,12 +34,17 @@ import withPermission from 'src/auth/guard/withPermissions';
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
+import EditCampaignInformation from '../../edit/edit-campaign-information';
+
 const CampaignDetailManageView = ({ id }) => {
   const [campaign, setCampaign] = useState();
   const [loading, setLoading] = useState(true);
   //   const router = useRouter();
   const theme = useTheme();
   const smUp = useResponsive('down', 'sm');
+  const [open, setOpen] = useState({
+    campaignInfo: false,
+  });
 
   useEffect(() => {
     const getCampaign = async () => {
@@ -58,60 +65,96 @@ const CampaignDetailManageView = ({ id }) => {
     }, 1000);
   }, [id]);
 
+  const onClose = (data) => {
+    setOpen((prev) => ({
+      ...prev,
+      [data]: false,
+    }));
+  };
+
+  useEffect(() => {
+    console.log(open);
+  }, [open]);
+
   const renderCampaignInformation = (
-    <Box p={2} component={Card}>
-      <ListItemText
-        primary={campaign?.name}
-        secondary={campaign?.description}
-        primaryTypographyProps={{
-          component: 'span',
-          typography: 'h5',
-        }}
-        secondaryTypographyProps={{
-          typography: 'subtitle2',
-        }}
-      />
-      {!smUp && (
-        <Stack direction="row" spacing={1} position="absolute" top={10} right={10}>
-          <Chip label={campaign?.stage} size="small" />
-          <Chip label={campaign?.status} size="small" color="primary" />
+    <>
+      <Box p={2} component={Card} position="relative">
+        <ListItemText
+          primary={campaign?.name}
+          secondary={campaign?.description}
+          primaryTypographyProps={{
+            component: 'span',
+            typography: 'h5',
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+          }}
+        />
+
+        <Stack
+          direction="row"
+          spacing={1}
+          position="absolute"
+          top={10}
+          right={10}
+          alignItems="center"
+        >
+          {!smUp && (
+            <>
+              <Chip label={campaign?.stage} size="small" />
+              <Chip label={campaign?.status} size="small" color="primary" />
+            </>
+          )}
+          <Tooltip title="Edit Campaign Information" arrow>
+            <IconButton
+              onClick={() =>
+                setOpen((prev) => ({
+                  ...prev,
+                  campaignInfo: true,
+                }))
+              }
+            >
+              <Iconify icon="lucide:edit" />
+            </IconButton>
+          </Tooltip>
         </Stack>
-      )}
 
-      <Stack mt={2} color="text.disabled">
-        <Typography variant="caption">
-          Start date: {dayjs(campaign?.campaignBrief?.startDate).format('LL')}
-        </Typography>
-        <Typography variant="caption">
-          End date: {dayjs(campaign?.campaignBrief?.endDate).format('LL')}
-        </Typography>
-      </Stack>
-
-      <Divider
-        sx={{
-          borderStyle: 'dashed',
-          my: 2,
-        }}
-      />
-
-      <Stack spacing={1}>
-        <Typography variant="subtitle1">Interests</Typography>
-        <Stack direction="row" spacing={1}>
-          {campaign?.campaignBrief?.interests.map((interest) => (
-            <Chip label={interest} size="small" color="secondary" />
-          ))}
+        <Stack mt={2} color="text.disabled">
+          <Typography variant="caption">
+            Start date: {dayjs(campaign?.campaignBrief?.startDate).format('LL')}
+          </Typography>
+          <Typography variant="caption">
+            End date: {dayjs(campaign?.campaignBrief?.endDate).format('LL')}
+          </Typography>
         </Stack>
-      </Stack>
 
-      <Stack spacing={1} mt={2}>
-        <Typography variant="subtitle1">Industries</Typography>
-        <Stack direction="row" spacing={1}>
-          {campaign?.campaignBrief?.industries.map((industry) => (
-            <Chip label={industry} size="small" color="secondary" />
-          ))}
+        <Divider
+          sx={{
+            borderStyle: 'dashed',
+            my: 2,
+          }}
+        />
+
+        <Stack spacing={1}>
+          <Typography variant="subtitle1">Interests</Typography>
+          <Stack direction="row" spacing={1}>
+            {campaign?.campaignBrief?.interests.map((interest) => (
+              <Chip label={interest} size="small" color="secondary" />
+            ))}
+          </Stack>
         </Stack>
-      </Stack>
-    </Box>
+
+        <Stack spacing={1} mt={2}>
+          <Typography variant="subtitle1">Industries</Typography>
+          <Stack direction="row" spacing={1}>
+            {campaign?.campaignBrief?.industries.map((industry) => (
+              <Chip label={industry} size="small" color="secondary" />
+            ))}
+          </Stack>
+        </Stack>
+      </Box>
+      <EditCampaignInformation open={open} campaign={campaign} onClose={onClose} />
+    </>
   );
 
   const renderDosAndDonts = (

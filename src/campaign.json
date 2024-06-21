@@ -96,5 +96,6 @@
     "createdAt": "2024-06-19T03:50:44.560Z",
     "updatedAt": "2024-06-19T03:50:44.560Z",
     "campaignId": "clxlapmj4000t122kn4iapgxl"
-  }
+  },
+  "admin": { "user": { "id": "cfb84246-a6ea-4179-a22b-c780db00eba3", "name": "Afiq" } }
 }

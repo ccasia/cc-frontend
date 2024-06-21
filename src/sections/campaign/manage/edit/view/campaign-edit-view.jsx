@@ -18,6 +18,8 @@ import {
 
 import { paths } from 'src/routes/paths';
 
+import useGetAdmins from 'src/hooks/use-get-admins';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import withPermission from 'src/auth/guard/withPermissions';
@@ -34,7 +36,9 @@ const CampaignEditView = ({ id }) => {
   const settings = useSettingsContext();
 
   const [campaign, setCampaign] = useState();
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
+  const { admins } = useGetAdmins();
 
   const methods = useForm({
     defaultValues: {
@@ -89,6 +93,7 @@ const CampaignEditView = ({ id }) => {
     setValue('endDate', dayjs(campaign?.campaignBrief?.endDate));
     setValue('campaignsDo', campaign?.campaignBrief?.campaigns_do);
     setValue('campaignsDont', campaign?.campaignBrief?.campaigns_dont);
+    setValue('admin', campaign?.admin?.user);
   }, [campaign, setValue]);
 
   const onSubmit = handleSubmit(async (data) => {
@@ -160,13 +165,39 @@ const CampaignEditView = ({ id }) => {
   );
 
   const renderCampaignDates = (
-    <Box component={Card} p={2}>
-      <Typography variant="h5">Dates</Typography>
-      <Stack spacing={2} mt={2}>
-        <RHFDatePicker name="startDate" label="Start Date" />
-        <RHFDatePicker name="endDate" label="End Date" />
-      </Stack>
-    </Box>
+    <Stack spacing={1}>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Dates</Typography>
+        <Stack spacing={2} mt={2}>
+          <RHFDatePicker name="startDate" label="Start Date" />
+          <RHFDatePicker name="endDate" label="End Date" />
+        </Stack>
+      </Box>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Admin</Typography>
+
+        <RHFAutocomplete
+          name="admin"
+          label="Admin"
+          freeSolo
+          multiple
+          options={admins}
+          getOptionLabel={(option) => option?.name}
+          renderTags={(selected, getTagProps) =>
+            selected.map((option, index) => (
+              <Chip
+                {...getTagProps({ index })}
+                key={option.id}
+                label={option.name}
+                size="small"
+                color="info"
+                variant="soft"
+              />
+            ))
+          }
+        />
+      </Box>
+    </Stack>
   );
 
   const renderCampaignDosAndDonts = (

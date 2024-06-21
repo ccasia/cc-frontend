@@ -7,7 +7,7 @@ import CampaignItem from './campaign-item';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignLists({ tours }) {
+export default function CampaignLists({ campaigns }) {
   return (
     <>
       <Box
@@ -19,12 +19,12 @@ export default function CampaignLists({ tours }) {
           md: 'repeat(3, 1fr)',
         }}
       >
-        {tours.map((tour) => (
-          <CampaignItem key={tour.id} tour={tour} />
+        {campaigns.map((campaign) => (
+          <CampaignItem key={campaign.id} campaign={campaign} />
         ))}
       </Box>
 
-      {tours.length > 8 && (
+      {campaigns.length > 8 && (
         <Pagination
           count={8}
           sx={{
@@ -40,5 +40,5 @@ export default function CampaignLists({ tours }) {
 }
 
 CampaignLists.propTypes = {
-  tours: PropTypes.array,
+  campaigns: PropTypes.array,
 };
