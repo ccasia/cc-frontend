@@ -1,67 +1,20 @@
-// const navigations = [
-//   {
-//     roles: ['admin'],
-//     items: [
-//       {
-//         title: 'Campaign',
-//         children: [
-//           {
-//             title: 'Discover Campaign',
-//             // icon: <Iconify icon="material-symbols:explore-outline" />,
-//           },
-//           {
-//             title: 'Create Campaign',
-//             // icon: <Iconify icon="gridicons:create" />,
-//           },
-//           {
-//             title: 'Manage Campaign',
-//             // icon: <Iconify icon="mingcute:settings-3-fill" />,
-//           },
-//           {
-//             roles: ['BDD'],
-//             title: 'Settings',
-//             // icon: <Iconify icon="mingcute:settings-3-fill" />,
-//           },
-//         ],
-//       },
-//     ],
-//   },
-//   {
-//     roles: ['admin'],
-//     items: [
-//       {
-//         title: 'Brand',
-//         children: [
-//           {
-//             title: 'Create Brands',
-//           },
-//         ],
-//       },
-//     ],
-//   },
-// ];
+function textToVector(text, vocabulary) {
+  const words = text.split(/\W+/);
+  console.log('Splitting words', words);
+  const vector = new Array(vocabulary.length).fill(0);
 
-// const role = 'admin';
-// const subroles = 'BD';
+  words.forEach((word) => {
+    const index = vocabulary.indexOf(word);
+    console.log(index);
+    if (index !== -1) {
+      vector[index] += 1;
+    }
+  });
 
-// const a = navigations
-//   .filter((nav) => nav.roles.some((r) => ['admin'].includes(r)))
-//   .map((nav) => ({
-//     ...nav,
-//     items: nav.items.map((item) => ({
-//       ...item,
-//       children: item.children
-//         ? item.children.filter(
-//             (child) => !child.roles || child.roles.some((r) => ['a'].includes(r))
-//           )
-//         : item.children,
-//     })),
-//   }));
+  return vector;
+}
 
-// console.log(JSON.stringify(a, null, 2));
-
-const company = {
-  Error: 'ADWADwa',
-};
-
-console.log(Object.values(company)[0].includes('A'));
+const vocabulary = ['hello', 'world', 'example', 'text'];
+const text = 'Hello, world! This is an example text.';
+const vector = textToVector(text.toLowerCase(), vocabulary);
+console.log(vector);

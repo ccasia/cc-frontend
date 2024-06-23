@@ -174,12 +174,12 @@ export function useNavData() {
           {
             title: 'Discover',
             path: paths.dashboard.campaign.view,
-            icon: <Iconify icon="iconamoon:discover" />,
+            icon: <Iconify icon="iconamoon:discover" width={25} />,
           },
           {
             title: 'Media Kit',
             path: paths.dashboard.creator.mediaKitCreator,
-            icon: <Iconify icon="flowbite:profile-card-outline" />,
+            icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
           },
         ],
       },

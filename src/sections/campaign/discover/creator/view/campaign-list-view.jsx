@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 
-import { Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import Container from '@mui/material/Container';
+
+import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { _tours } from 'src/_mock';
 
@@ -16,6 +18,7 @@ import CampaignSearch from '../campaign-search';
 
 export default function CampaignListView() {
   const settings = useSettingsContext();
+  const { campaigns } = useGetCampaigns('creator');
 
   const [search, setSearch] = useState({
     query: '',
@@ -61,7 +64,8 @@ export default function CampaignListView() {
         // hrefItem={(id) => paths.dashboard.tour.details(id)}
       />
 
-      <CampaignLists tours={_tours} />
+      <Box sx={{ my: 2 }} />
+      {campaigns && <CampaignLists campaigns={campaigns} />}
     </Container>
   );
 }

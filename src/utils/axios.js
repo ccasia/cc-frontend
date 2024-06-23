@@ -111,7 +111,9 @@ export const endpoints = {
     createCampaign: '/api/campaign/createCampaign',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
     getDefaultTimeline: '/api/campaign/defaultTimeline',
+    getAllActiveCampaign: '/api/campaign/getAllActiveCampaign',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
+    pitch: '/api/campaign/pitch',
   },
 };

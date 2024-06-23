@@ -3,13 +3,25 @@ import { useState, useEffect } from 'react';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-const useGetCampaigns = () => {
+const useGetCampaigns = (type) => {
   const [campaigns, setCampaigns] = useState();
+  const [endpoint, setEndPoint] = useState();
 
   useEffect(() => {
+    if (type.toLowerCase() === 'creator') {
+      setEndPoint(endpoints.campaign.getAllActiveCampaign);
+    } else {
+      setEndPoint(endpoints.campaign.getCampaignsByAdminId);
+    }
+  }, [type]);
+
+  useEffect(() => {
+    if (!endpoint) {
+      return;
+    }
     const getCampaigns = async () => {
       try {
-        const res = await axiosInstance.get(endpoints.campaign.getCampaignsByAdminId);
+        const res = await axiosInstance.get(endpoint);
         setCampaigns(res?.data);
       } catch (error) {
         enqueueSnackbar('Failed fetching campaign', {
@@ -18,7 +30,7 @@ const useGetCampaigns = () => {
       }
     };
     getCampaigns();
-  }, []);
+  }, [endpoint]);
 
   return {
     campaigns,
