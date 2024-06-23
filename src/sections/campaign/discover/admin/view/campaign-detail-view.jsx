@@ -8,10 +8,12 @@ import { useRouter } from 'src/routes/hooks';
 
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
 import CampaignDetailBrand from '../campaign-detail-brand';
+import CampaignDetailPitch from '../campaign-detail-pitch';
 import CampaignDetailContent from '../campaign-detail-content';
 
 const CampaignDetailView = ({ id }) => {
@@ -49,7 +51,13 @@ const CampaignDetailView = ({ id }) => {
           iconPosition="end"
           value={tab.value}
           label={tab.label}
-          //   icon={tab.value === 'bookers' ? <Label variant="filled">12</Label> : ''}
+          icon={
+            tab.value === 'pitch' ? (
+              <Label variant="filled">{currentCampaign?.Pitch.length}</Label>
+            ) : (
+              ''
+            )
+          }
         />
       ))}
     </Tabs>
@@ -75,7 +83,7 @@ const CampaignDetailView = ({ id }) => {
         <CampaignDetailBrand brand={currentCampaign?.brand ?? currentCampaign?.company} />
       )}
       {currentTab === 'shortlisted' && <CampaignDetailContent campaign={currentCampaign} />}
-      {currentTab === 'Pitch' && <CampaignDetailContent campaign={currentCampaign} />}
+      {currentTab === 'pitch' && <CampaignDetailPitch pitches={currentCampaign?.Pitch} />}
     </Container>
   );
 };

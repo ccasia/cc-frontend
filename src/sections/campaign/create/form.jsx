@@ -673,7 +673,7 @@ function CreateCampaignForm() {
         //     : 'No admin found'
         // }
         freeSolo
-        getOptionLabel={(option) => option?.name}
+        getOptionLabel={(option) => (option?.id === user?.id ? 'Me' : option?.name)}
       />
     </Box>
   );

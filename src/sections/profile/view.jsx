@@ -21,6 +21,7 @@ import {
   MenuItem,
   Container,
   Typography,
+  InputAdornment,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -76,7 +77,9 @@ const Profile = () => {
 
   const methods = useForm({ defaultValues, resolver: yupResolver(UpdateUserSchema) });
 
-  const { handleSubmit, setValue } = methods;
+  const { handleSubmit, setValue, watch } = methods;
+
+  const countryValue = watch('country');
 
   const onDrop = useCallback(
     (e) => {
@@ -149,7 +152,20 @@ const Profile = () => {
                 <RHFTextField name="email" label="Email" />
               </Grid>
               <Grid item xs={12} sm={12} md={12} lg={12}>
-                <RHFTextField name="phoneNumber" label="Phone Number" />
+                <RHFTextField
+                  name="phoneNumber"
+                  label="Phone Number"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        +
+                        {countries
+                          .filter((elem) => elem.label === countryValue)
+                          .map((e) => e.phone)}
+                      </InputAdornment>
+                    ),
+                  }}
+                />
               </Grid>
               {/* Change later Add more data */}
 

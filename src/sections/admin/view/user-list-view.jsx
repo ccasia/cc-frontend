@@ -119,6 +119,7 @@ const defaultFilters = {
 export default function UserListView() {
   useGetAdmins();
   const { admins } = useAdmins();
+
   const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);

@@ -8,7 +8,7 @@ const useGetCampaigns = (type) => {
   const [endpoint, setEndPoint] = useState();
 
   useEffect(() => {
-    if (type.toLowerCase() === 'creator') {
+    if (type && type.toLowerCase() === 'creator') {
       setEndPoint(endpoints.campaign.getAllActiveCampaign);
     } else {
       setEndPoint(endpoints.campaign.getCampaignsByAdminId);

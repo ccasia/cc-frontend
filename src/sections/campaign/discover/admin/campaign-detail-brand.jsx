@@ -22,24 +22,23 @@ const CampaignDetailBrand = ({ brand }) => (
           <Typography variant="h6">{brand?.name}</Typography>
           <Stack>
             <Typography variant="h6">About</Typography>
-            <Typography variant="subtitle2">{brand?.description}</Typography>
+            <Typography variant="subtitle2">{brand?.description || brand?.about}</Typography>
           </Stack>
           <Stack>
             <Typography variant="h6">Objectives</Typography>
             <Stack direction="row" alignItems="center">
               <ul>
-                {brand?.objectives?.map((elem) => (
-                  <li>
-                    <Typography variant="inherit">{elem.value}</Typography>
-                  </li>
-                ))}
+                {brand?.objectives &&
+                  brand?.objectives?.map((elem) => (
+                    <li>
+                      <Typography variant="inherit">{elem.value}</Typography>
+                    </li>
+                  ))}
               </ul>
             </Stack>
           </Stack>
           <Stack direction="row" spacing={1}>
-            {brand?.industries.map((item) => (
-              <CustomChip label={item} />
-            ))}
+            {brand?.industries && brand?.industries.map((item) => <CustomChip label={item} />)}
           </Stack>
         </Stack>
       </Box>
