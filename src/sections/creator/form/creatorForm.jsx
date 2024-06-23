@@ -2,8 +2,8 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
-import { useForm } from 'react-hook-form';
 import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { enqueueSnackbar, SnackbarProvider } from 'notistack';
 
@@ -15,11 +15,11 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
-import { Stack, Slider } from '@mui/material';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
 import DialogContent from '@mui/material/DialogContent';
+import { Stack, Slider, InputAdornment } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -143,6 +143,8 @@ export default function CreatorForm({ creator, open, onClose }) {
     formState: { errors },
   } = methods;
 
+  const nationality = watch('Nationality');
+
   const handleNext = () => {
     // if (activeStep === 0 && !isValid) {
     //   setStepError([...stepError, activeStep]);
@@ -235,7 +237,19 @@ export default function CreatorForm({ creator, open, onClose }) {
             <MenuItem value="unemployed">Unemployed</MenuItem>
             <MenuItem value="others ">Others </MenuItem>
           </RHFSelect>
-          <RHFTextField name="phone" label="Phone Number" />
+
+          <RHFTextField
+            name="phone"
+            label="Phone Number"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  +
+                  {countries.filter((country) => country.label === nationality).map((e) => e.phone)}
+                </InputAdornment>
+              ),
+            }}
+          />
 
           <RHFSelect name="pronounce" label="Pronounce" multiple={false}>
             <MenuItem value="he/him">He/Him</MenuItem>

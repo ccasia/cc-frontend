@@ -66,7 +66,10 @@ export function AuthProvider({ children }) {
       // const accessToken = sessionStorage.getItem(STORAGE_KEY);
       const response = await axios.get(endpoints.auth.me);
 
-      if (response.status === 200 && isValidToken(response?.data?.accessToken)) {
+      if (
+        response.status === 200 ||
+        (response.status === 202 && isValidToken(response?.data?.accessToken))
+      ) {
         // setSession(accessToken);
 
         const { user } = response.data;
