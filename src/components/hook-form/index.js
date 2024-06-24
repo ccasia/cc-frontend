@@ -6,7 +6,7 @@ export { default } from './form-provider';
 export { default as RHFCode } from './rhf-code';
 export { default as RHFSwitch } from './rhf-switch';
 export { default as RHFSlider } from './rhf-slider';
-// export { default as RHFEditor } from './rhf-editor';
+export { default as RHFEditor } from './rhf-editor';
 
 export { default as RHFTextField } from './rhf-text-field';
 export { default as RHFDatePicker } from './rhf-datePicker';

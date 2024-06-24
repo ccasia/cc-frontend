@@ -91,8 +91,8 @@ export default function CampaignItem({ campaign }) {
 
       {[
         {
-          label: campaign?.campaignBrief?.industries.map((e) => (
-            <Chip label={e} variant="filled" size="small" color="primary" />
+          label: campaign?.campaignBrief?.industries.map((e, index) => (
+            <Chip key={index} label={e} variant="filled" size="small" color="primary" />
           )),
           icon: <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />,
         },
@@ -104,9 +104,9 @@ export default function CampaignItem({ campaign }) {
           ),
           icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} />,
         },
-      ].map((item) => (
+      ].map((item, index) => (
         <Stack
-          key={item.label}
+          key={index}
           spacing={1}
           direction="row"
           alignItems="center"

@@ -229,7 +229,11 @@ export const dashboardRoutes = [
           },
           {
             path: 'create',
-            element: <CreateCampaign />,
+            element: (
+              <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
+                <CreateCampaign />
+              </RoleBasedGuard>
+            ),
           },
           {
             path: 'discover',
