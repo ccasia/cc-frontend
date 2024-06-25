@@ -114,6 +114,6 @@ export const endpoints = {
     getAllActiveCampaign: '/api/campaign/getAllActiveCampaign',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
-    pitch: '/api/campaign/pitch',
+    pitch: { root: '/api/campaign/pitch', approve: '/api/campaign/approvepitch' },
   },
 };

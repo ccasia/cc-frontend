@@ -81,7 +81,7 @@ export function useNavData() {
             roles: ['superadmin', 'normal'],
             title: 'Creator',
             path: paths.dashboard.creator.root,
-            icon: <Iconify icon="solar:users-group-rounded-bold" />,
+            icon: <Iconify icon="solar:users-group-rounded-bold" width={25} />,
             children: [
               {
                 title: 'List',
@@ -97,7 +97,7 @@ export function useNavData() {
             roles: ['superadmin', 'admin'],
             title: 'Landing pages',
             path: paths.dashboard.landing.creator,
-            icon: <Iconify icon="fluent:people-team-28-regular" />,
+            icon: <Iconify icon="fluent:people-team-28-regular" width={25} />,
             children: [
               {
                 title: 'Creator list',
@@ -113,7 +113,7 @@ export function useNavData() {
             roles: ['superadmin', 'admin'],
             title: 'Clients',
             path: paths.dashboard.company.root,
-            icon: <Iconify icon="mdi:company" />,
+            icon: <Iconify icon="mdi:company" width={25} />,
             children: [
               {
                 title: 'List',
@@ -134,7 +134,7 @@ export function useNavData() {
             roles: ['superadmin', 'admin'],
             title: 'Campaign',
             path: paths.dashboard.campaign.root,
-            icon: <Iconify icon="material-symbols:explore-outline" />,
+            icon: <Iconify icon="material-symbols:explore-outline" width={25} />,
             children: [
               {
                 title: 'List',
@@ -159,7 +159,7 @@ export function useNavData() {
             roles: ['creator'],
             title: 'Media Kit',
             path: paths.dashboard.creator.mediaKitCreator,
-            icon: <Iconify icon="flowbite:profile-card-outline" />,
+            icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
           },
         ],
       },

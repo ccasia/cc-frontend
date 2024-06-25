@@ -41,7 +41,7 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await axiosInstance.patch(endpoints.campaign.pitch, {
+      const res = await axiosInstance.patch(endpoints.campaign.pitch.root, {
         campaignId: campaign?.id,
         ...data,
       });
