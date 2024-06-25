@@ -65,7 +65,7 @@ export function RHFSelect({
 RHFSelect.propTypes = {
   PaperPropsSx: PropTypes.object,
   children: PropTypes.node,
-  helperText: PropTypes.object || PropTypes.string,
+  helperText: PropTypes.string,
   maxHeight: PropTypes.number,
   name: PropTypes.string,
   native: PropTypes.bool,
@@ -148,7 +148,7 @@ export function RHFMultiSelect({
 RHFMultiSelect.propTypes = {
   checkbox: PropTypes.bool,
   chip: PropTypes.bool,
-  helperText: PropTypes.object,
+  helperText: PropTypes.string,
   label: PropTypes.string,
   name: PropTypes.string,
   options: PropTypes.array,

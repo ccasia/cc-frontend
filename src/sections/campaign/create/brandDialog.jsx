@@ -238,7 +238,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
               name="brandIntersts"
               placeholder="+ Brand Interests"
               multiple
-              freeSolo="true"
+              freeSolo
               disableCloseOnSelect
               options={interestsLists.map((option) => option)}
               getOptionLabel={(option) => option}
@@ -265,7 +265,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
               name="brandIndustries"
               placeholder="+ Brand Industries"
               multiple
-              freeSolo="true"
+              freeSolo
               disableCloseOnSelect
               options={interestsLists.map((option) => option)}
               getOptionLabel={(option) => option}
@@ -295,6 +295,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
               variant="contained"
               loading={isSubmitting}
               loadingPosition="start"
+              startIcon
               color="primary"
             >
               Create

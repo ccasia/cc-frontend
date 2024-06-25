@@ -76,6 +76,8 @@ const CampaignDetailManageView = ({ id }) => {
     console.log(open);
   }, [open]);
 
+  const formatDays = (days) => (days === 1 ? 'day' : 'days');
+
   const renderCampaignInformation = (
     <>
       <Box p={2} component={Card} position="relative">
@@ -240,40 +242,107 @@ const CampaignDetailManageView = ({ id }) => {
       <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={1}>
         <ListItemText
           primary="Open For Pitch"
-          secondary={`${campaign?.customCampaignTimeline?.openForPitch} days`}
+          secondary={`${
+            campaign?.customCampaignTimeline?.openForPitch ??
+            campaign?.defaultCampaignTimeline?.openForPitch
+          }
+          ${formatDays(
+            campaign?.customCampaignTimeline?.openForPitch ??
+              campaign?.defaultCampaignTimeline?.openForPitch
+          )}`}
         />
         <ListItemText
           primary="Shortlist Creator"
-          secondary={`${campaign?.customCampaignTimeline?.shortlistCreator} days`}
+          secondary={`${
+            campaign?.customCampaignTimeline?.shortlistCreator ??
+            campaign?.defaultCampaignTimeline?.shortlistCreator
+          }
+          ${formatDays(
+            campaign?.customCampaignTimeline?.shortlistCreator ??
+              campaign?.defaultCampaignTimeline?.shortlistCreator
+          )}`}
         />
         <ListItemText
           primary="First Draft"
-          secondary={`${campaign?.customCampaignTimeline?.firstDraft} days`}
+          secondary={`${
+            campaign?.customCampaignTimeline?.firstDraft ??
+            campaign?.defaultCampaignTimeline?.firstDraft
+          }
+          ${formatDays(
+            campaign?.customCampaignTimeline?.firstDraft ??
+              campaign?.defaultCampaignTimeline?.firstDraft
+          )}`}
         />
         <ListItemText
           primary="Final Draft"
-          secondary={`${campaign?.customCampaignTimeline?.finalDraft} days`}
+          secondary={`${
+            campaign?.customCampaignTimeline?.finalDraft ??
+            campaign?.defaultCampaignTimeline?.finalDraft
+          }
+          ${formatDays(
+            campaign?.customCampaignTimeline?.finalDraft ??
+              campaign?.defaultCampaignTimeline?.finalDraft
+          )}`}
         />
         <ListItemText
           primary="Feedback First Draft"
-          secondary={`${campaign?.customCampaignTimeline?.feedBackFirstDraft} days`}
+          secondary={`${
+            campaign?.customCampaignTimeline?.feedBackFirstDraft ??
+            campaign?.defaultCampaignTimeline?.feedBackFirstDraft
+          }
+          ${formatDays(
+            campaign?.customCampaignTimeline?.feedBackFirstDraft ??
+              campaign?.defaultCampaignTimeline?.feedBackFirstDraft
+          )}`}
         />
         <ListItemText
           primary="Feedback Final Draft"
-          secondary={`${campaign?.customCampaignTimeline?.feedBackFinalDraft} days`}
+          secondary={`${
+            campaign?.customCampaignTimeline?.feedBackFinalDraft ??
+            campaign?.defaultCampaignTimeline?.feedBackFinalDraft
+          }
+          ${formatDays(
+            campaign?.customCampaignTimeline?.feedBackFinalDraft ??
+              campaign?.defaultCampaignTimeline?.feedBackFinalDraft
+          )}`}
         />
         <ListItemText
           primary="Filter Pitch"
-          secondary={`${campaign?.customCampaignTimeline?.filterPitch} days`}
+          secondary={`${
+            campaign?.customCampaignTimeline?.filterPitch ??
+            campaign?.defaultCampaignTimeline?.filterPitch
+          }
+          ${formatDays(
+            campaign?.customCampaignTimeline?.filterPitch ??
+              campaign?.defaultCampaignTimeline?.filterPitch
+          )}`}
         />
         <ListItemText
           primary="Agreement Sign"
-          secondary={`${campaign?.customCampaignTimeline?.agreementSign} days`}
+          secondary={`${
+            campaign?.customCampaignTimeline?.agreementSign ??
+            campaign?.defaultCampaignTimeline?.agreementSign
+          }
+          ${formatDays(
+            campaign?.customCampaignTimeline?.agreementSign ??
+              campaign?.defaultCampaignTimeline?.agreementSign
+          )}`}
         />
-        <ListItemText primary="QC" secondary={`${campaign?.customCampaignTimeline?.qc} days`} />
+        <ListItemText
+          primary="QC"
+          secondary={`${campaign?.customCampaignTimeline?.qc ?? campaign?.defaultCampaignTimeline?.qc}
+              ${formatDays(
+                campaign?.customCampaignTimeline?.qc ?? campaign?.defaultCampaignTimeline?.qc
+              )}`}
+        />
         <ListItemText
           primary="Posting"
-          secondary={`${campaign?.customCampaignTimeline?.posting} days`}
+          secondary={`${
+            campaign?.customCampaignTimeline?.posting ?? campaign?.defaultCampaignTimeline?.posting
+          }
+          ${formatDays(
+            campaign?.customCampaignTimeline?.posting ?? campaign?.defaultCampaignTimeline?.posting
+          )}`}
         />
       </Box>
     </Box>

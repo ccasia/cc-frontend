@@ -162,7 +162,9 @@ function CompanyBrandBasic() {
           placeholder="Select a company"
           freeSolo="true"
           // disableCloseOnSelect
-          options={companies && companies.map((item) => ({ name: item?.name, value: item?.id }))}
+          options={
+            companies ? companies.map((item) => ({ name: item?.name, value: item?.id })) : []
+          }
           getOptionLabel={(option) => option?.name}
           renderOption={(field, option) => (
             <Stack direction="row" alignItems="center" {...field} gap={2}>

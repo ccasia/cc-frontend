@@ -33,6 +33,7 @@ import FormProvider, {
   RHFSelect,
   RHFTextField,
   RHFDatePicker,
+  RHFMultiSelect,
   RHFAutocomplete,
 } from 'src/components/hook-form';
 
@@ -115,11 +116,11 @@ function CreateCampaignForm() {
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     // campaginCoverImage: Yup.string().required('Campaign cover image is required'),
     // campaignSuccessMetrics: Yup.string().required('Campaign success metrics is required'),
-    audienceAge: Yup.string().required('Audience age is required'),
-    audienceGender: Yup.string().required('Audience Gender is required'),
-    audienceLocation: Yup.string().required('Audience location is required'),
-    audienceLanguage: Yup.string().required('Audience language is required'),
-    audienceCreatorPersona: Yup.string().required('Audience creator persona is required'),
+    audienceAge: Yup.array().required('Audience age is required'),
+    audienceGender: Yup.array().required('Audience Gender is required'),
+    audienceLocation: Yup.array().required('Audience location is required'),
+    audienceLanguage: Yup.array().required('Audience language is required'),
+    audienceCreatorPersona: Yup.array().required('Audience creator persona is required'),
     audienceUserPersona: Yup.string().required('Audience influencer persona is required'),
     campaignDo: Yup.array()
       .min(1, 'insert at least one option')
@@ -128,7 +129,7 @@ function CreateCampaignForm() {
       .min(1, 'insert at least one option')
       .required('Campaign dont is required '),
 
-    adminManager: Yup.object().required('Admin Manager is required'),
+    adminManager: Yup.array().required('Admin Manager is required'),
     campaignImages: Yup.array().min(1, 'Must have at least 2 items'),
     agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
     timeline: Yup.object().shape({
@@ -180,11 +181,11 @@ function CreateCampaignForm() {
     campaignIndustries: [],
     campaignObjectives: '',
     campaignDescription: '',
-    audienceGender: '',
-    audienceAge: '',
-    audienceLocation: '',
-    audienceLanguage: '',
-    audienceCreatorPersona: '',
+    audienceGender: [],
+    audienceAge: [],
+    audienceLocation: [],
+    audienceLanguage: [],
+    audienceCreatorPersona: [],
     audienceUserPersona: '',
     campaignDo: [
       {
@@ -197,7 +198,7 @@ function CreateCampaignForm() {
       },
     ],
     campaignImages: [],
-    adminManager: null,
+    adminManager: [],
     agreementFrom: null,
     timeline: {},
   };
@@ -218,10 +219,6 @@ function CreateCampaignForm() {
     watch,
     formState: { errors },
   } = methods;
-
-  useEffect(() => {
-    console.log(errors);
-  }, [errors]);
 
   const values = watch();
 
@@ -333,9 +330,7 @@ function CreateCampaignForm() {
     }
   });
 
-  // const finalSubmit = async () => {
-  //   console.log('first');
-  // };
+  console.log(watch('adminManager'));
 
   const formFirstStep = (
     <Box
@@ -541,62 +536,85 @@ function CreateCampaignForm() {
 
         <Typography variant="h4">Audience Requirements</Typography>
         <Box flexGrow={1} />
-        <RHFSelect name="audienceGender" label="Audience Gender">
-          <MenuItem value="female">Female</MenuItem>
-          <MenuItem value="male">Male </MenuItem>
-          <MenuItem value="nonbinary">Non-Binary</MenuItem>
-        </RHFSelect>
+        <RHFMultiSelect
+          name="audienceGender"
+          checkbox
+          chip
+          options={[
+            { value: 'female', label: 'Female' },
+            { value: 'male', label: 'Male' },
+            { value: 'nonbinary', label: 'Non-Binary' },
+          ]}
+          label="Audience Gender"
+        />
 
-        <RHFSelect name="audienceAge" label="Audience Age">
-          <MenuItem value="18-25">18-25</MenuItem>
-          <MenuItem value="26-34">26-34</MenuItem>
-          <MenuItem value="35-40">35-40</MenuItem>
-          <MenuItem value=">40"> &gt; 40</MenuItem>
-        </RHFSelect>
+        <RHFMultiSelect
+          name="audienceAge"
+          checkbox
+          chip
+          options={[
+            { value: '18-25', label: '18-25' },
+            { value: '26-34', label: '26-34' },
+            { value: '35-40', label: '35-40' },
+            { value: '>40', label: '>40' },
+          ]}
+          label="Audience Age"
+        />
 
-        <RHFSelect
+        <RHFMultiSelect
           name="audienceLocation"
           label="Audience Geo Location"
-          helperText="if others please specify"
-        >
-          <MenuItem value="KlangValley">Klang Valley </MenuItem>
-          <MenuItem value="Selangor">Selangor</MenuItem>
-          <MenuItem value="KualaLumpur">Kuala Lumpur</MenuItem>
-          <MenuItem value="MainCities">Main cities in Malaysia</MenuItem>
-          <MenuItem value="EastMalaysia">East Malaysia</MenuItem>
-          <MenuItem value="Others">Others</MenuItem>
-        </RHFSelect>
+          checkbox
+          chip
+          options={[
+            { value: 'KlangValley', label: 'Klang Valley' },
+            { value: 'Selangor', label: 'Selangor' },
+            { value: 'KualaLumpur', label: 'Kuala Lumpur' },
+            { value: 'MainCities', label: 'Main cities in Malaysia' },
+            { value: 'EastMalaysia', label: 'East Malaysia' },
+            { value: 'Others', label: 'Others' },
+          ]}
+        />
 
         {audienceGeoLocation === 'Others' && (
           <TextField name="audienceLocation" label="Specify Other Location" variant="outlined" />
         )}
 
-        <RHFSelect name="audienceLanguage" label="Audience Language">
-          <MenuItem value="Malay">Malay</MenuItem>
-          <MenuItem value="English">English</MenuItem>
-          <MenuItem value="Chinese">Chinese</MenuItem>
-          <MenuItem value="Tamil">Tamil</MenuItem>
-          <MenuItem value="Korean">Korean</MenuItem>
-          <MenuItem value="MalayEnglish">Malay + English</MenuItem>
-          <MenuItem value="EnglishChinese">English + Chinese </MenuItem>
-        </RHFSelect>
+        <RHFMultiSelect
+          name="audienceLanguage"
+          label="Audience Language"
+          checkbox
+          chip
+          options={[
+            { value: 'Malay', label: 'Malay' },
+            { value: 'English', label: 'English' },
+            { value: 'Chinese', label: 'Chinese' },
+            { value: 'Tamil', label: 'Tamil' },
+            { value: 'Korean', label: 'Korean' },
+          ]}
+        />
 
-        <RHFSelect name="audienceCreatorPersona" label="Audience Creator Persona">
-          <MenuItem value="lifeStyle">LifeStyle</MenuItem>
-          <MenuItem value="Foodie">Foodie</MenuItem>
-          <MenuItem value="fashion">Fashion</MenuItem>
-          <MenuItem value="beauty">Beauty</MenuItem>
-          <MenuItem value="tech">Tech</MenuItem>
-          <MenuItem value="sports">Sports & Fitness</MenuItem>
-          <MenuItem value="health">Health & wellness</MenuItem>
-          <MenuItem value="family">Family & motherhood</MenuItem>
-          <MenuItem value="finance">Finance</MenuItem>
-          <MenuItem value="education">Education</MenuItem>
-          <MenuItem value="music">Music</MenuItem>
-          <MenuItem value="gamer">Gamer</MenuItem>
-          <MenuItem value="entertainment">Entertainment</MenuItem>
-          <MenuItem value="travel">Travel</MenuItem>
-        </RHFSelect>
+        <RHFMultiSelect
+          name="audienceCreatorPersona"
+          label="Audience Creator Persona"
+          checkbox
+          chip
+          options={[
+            { value: 'lifestyle', label: 'LifeStyle' },
+            { value: 'fashion', label: 'Fashion' },
+            { value: 'beauty', label: 'Beauty' },
+            { value: 'tech', label: 'Tech' },
+            { value: 'sports', label: 'Sports & Fitness' },
+            { value: 'health', label: 'Health & wellness' },
+            { value: 'family', label: 'Family & motherhood' },
+            { value: 'finance', label: 'Finance' },
+            { value: 'education', label: 'Education' },
+            { value: 'music', label: 'Music' },
+            { value: 'gamer', label: 'Gamer' },
+            { value: 'entertainment', label: 'Entertainment' },
+            { value: 'travel', label: 'Travel' },
+          ]}
+        />
 
         <RHFTextField
           name="audienceUserPersona"
@@ -620,6 +638,7 @@ function CreateCampaignForm() {
           <Stack direction="column" spacing={2}>
             {doFields.map((item, index) => (
               <RHFTextField
+                key={item.id}
                 name={`campaignDo[${index}].value`}
                 label={`Campaign Do's ${index + 1}`}
               />
@@ -634,6 +653,7 @@ function CreateCampaignForm() {
           <Stack direction="column" spacing={2}>
             {dontFields.map((item, index) => (
               <RHFTextField
+                key={item.id}
                 name={`campaignDont[${index}].value`}
                 label={`Campaign Dont's ${index + 1}`}
               />
@@ -663,17 +683,24 @@ function CreateCampaignForm() {
 
       <RHFAutocomplete
         name="adminManager"
+        multiple
         placeholder="Admin Manager"
-        options={admins ? admins.map((elem) => elem) : 'No admin found'}
-        // options={
-        //   admins
-        //     ? admins
-        //         .filter((e) => e?.status === 'active')
-        //         .map((option) => (option?.id === user?.id ? 'Me' : option?.name))
-        //     : 'No admin found'
-        // }
+        options={(admins && admins.map((admin) => ({ id: admin?.id, name: admin?.name }))) || []}
         freeSolo
-        getOptionLabel={(option) => (option?.id === user?.id ? 'Me' : option?.name)}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        getOptionLabel={(option) => (option?.id === user?.id ? 'Me' : option?.name || '')}
+        renderTags={(selected, getTagProps) =>
+          selected.map((option, index) => (
+            <Chip
+              {...getTagProps({ index })}
+              key={option?.id}
+              label={option?.id === user?.id ? 'Me' : option?.name || ''}
+              size="small"
+              color="info"
+              variant="soft"
+            />
+          ))
+        }
       />
     </Box>
   );

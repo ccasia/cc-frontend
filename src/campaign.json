@@ -1,147 +1,135 @@
-[
-  {
-    "id": "clxlapmj4000t122kn4iapgxl",
-    "name": "Tech for Tomorrow",
-    "description": "To promote the new line of GadgetGuru SmartHome devices, increase brand awareness, and boost sales by 25% within the campaign period.",
-    "status": "active",
-    "stage": "publish",
-    "createdAt": "2024-06-19T03:50:44.560Z",
-    "updatedAt": "2024-06-19T03:50:44.560Z",
-    "brandId": "clxlalnoi000r122kgrxbeeuo",
-    "companyId": null,
-    "adminId": "clxl9ythl0002122kkck90wer",
-    "defaultTimelineCampaignId": null,
-    "customTimelineCampaignId": "clxlapmiw000s122kl0vhdelv",
-    "campaignBrief": {
-      "id": "clxlapmj4000u122k9n5b9z8q",
-      "title": "Tech for Tomorrow",
-      "objectives": null,
-      "images": ["IMG_8584.JPG", "WhatsApp Image 2024-06-10 at 11.52.50 AM.jpeg"],
-      "agreementFrom": "images.png",
-      "startDate": "2024-07-16T16:00:00.000Z",
-      "endDate": "2024-08-20T16:00:00.000Z",
-      "interests": ["Gaming", "Business", "Sports", "Technology"],
-      "industries": ["Food", "Gaming", "Lifestyle", "Music"],
-      "success": null,
-      "campaigns_do": [
-        {
-          "value": "Do respond to comments, questions, and feedback on social media and other platforms promptly."
-        },
-        {
-          "value": "Do ensure all marketing materials and communications reflect GadgetGuru’s brand identity, including logos, colors, and messaging."
-        },
-        {
-          "value": "Do create content that offers value to the audience, such as how-to guides, product benefits, and practical use cases for SmartHome devices."
-        }
-      ],
-      "campaigns_dont": [
-        {
-          "value": "Don’t ignore or delete negative comments or reviews. Address them professionally and try to resolve any issues."
-        },
-        {
-          "value": "Don’t make unrealistic claims about what the SmartHome devices can do. Ensure all product benefits and features are accurately represented."
-        }
-      ],
-      "updatedAt": "2024-06-19T03:50:44.560Z",
-      "createdAt": "2024-06-19T03:50:44.560Z",
-      "campaignId": "clxlapmj4000t122kn4iapgxl"
-    },
-    "campaignRequirement": {
-      "id": "clxlapmj5000v122kcadu7y8h",
-      "gender": "female",
-      "age": "18-25",
-      "geoLocation": "KlangValley",
-      "language": "Malay",
-      "creator_persona": "lifeStyle",
-      "user_persona": "awdawdawd",
-      "createdAt": "2024-06-19T03:50:44.560Z",
-      "updatedAt": "2024-06-19T03:50:44.560Z",
-      "campaignId": "clxlapmj4000t122kn4iapgxl"
-    },
-    "defaultCampaignTimeline": null,
-    "customCampaignTimeline": {
-      "id": "clxlapmiw000s122kl0vhdelv",
-      "openForPitch": 14,
-      "shortlistCreator": 2,
-      "firstDraft": 3,
-      "finalDraft": 2,
-      "feedBackFirstDraft": 2,
-      "feedBackFinalDraft": 1,
-      "filterPitch": 2,
-      "agreementSign": 2,
-      "qc": 1,
-      "posting": 2
-    }
+{
+  "id": "clxlawut4000x122ke7vmmnor",
+  "name": "Innovate Your Life",
+  "description": "To introduce and promote the new line of SmartWidgets, increase brand awareness, and drive a 30% increase in sales within the campaign period.",
+  "status": "active",
+  "stage": "publish",
+  "createdAt": "2024-06-19T03:56:21.881Z",
+  "updatedAt": "2024-06-19T03:56:21.881Z",
+  "brandId": null,
+  "companyId": "clxladccy000p122kjep112j3",
+  "adminId": "clxl9ythl0002122kkck90wer",
+  "defaultTimelineCampaignId": null,
+  "customTimelineCampaignId": "clxlawut0000w122kr5s88zpf",
+  "brand": null,
+  "company": {
+    "id": "clxladccy000p122kjep112j3",
+    "name": "Widget Wonders Inc.",
+    "email": "info@widgetwonders.com",
+    "phone": "(555) 123-4567",
+    "website": "www.colgate.com",
+    "address": " 789 Innovation Drive, Technoville, CA 94016, USA",
+    "logo": null,
+    "about": "Widget Wonders Inc. is a leading innovator in the tech and manufacturing sector, specializing in the development and production of high-quality widgets and gadgets.",
+    "objectives": [
+      {
+        "value": "Innovation: Constantly pushing the envelope to develop state-of-the-art products."
+      },
+      {
+        "value": "Quality: Ensuring every product we make meets the highest standards of excellence."
+      },
+      {
+        "value": "Customer Focus: Listening to our customers and making their needs our top priority"
+      },
+      { "value": "Integrity: Conducting business with honesty and transparency." }
+    ],
+    "registration_number": "AA819FKA",
+    "createdAt": "2024-06-19T03:41:11.507Z",
+    "updatedAt": "2024-06-19T03:41:11.507Z"
   },
-  {
-    "id": "clxlawut4000x122ke7vmmnor",
-    "name": "Innovate Your Life",
-    "description": "To introduce and promote the new line of SmartWidgets, increase brand awareness, and drive a 30% increase in sales within the campaign period.",
-    "status": "active",
-    "stage": "publish",
+  "customCampaignTimeline": {
+    "id": "clxlawut0000w122kr5s88zpf",
+    "openForPitch": 14,
+    "shortlistCreator": 2,
+    "firstDraft": 4,
+    "finalDraft": 2,
+    "feedBackFirstDraft": 3,
+    "feedBackFinalDraft": 2,
+    "filterPitch": 2,
+    "agreementSign": 2,
+    "qc": 3,
+    "posting": 2
+  },
+  "defaultCampaignTimeline": null,
+  "campaignBrief": {
+    "id": "clxlawut5000y122koaciqex6",
+    "title": "Innovate Your Life",
+    "objectives": null,
+    "images": ["images.png"],
+    "agreementFrom": "images.png",
+    "startDate": "2024-08-20T16:00:00.000Z",
+    "endDate": "2024-08-20T16:00:00.000Z",
+    "interests": ["Health", "Gaming", "Food"],
+    "industries": ["Health", "Gaming", "Food"],
+    "success": null,
+    "campaigns_do": [
+      {
+        "value": "Do actively respond to comments, questions, and feedback on social media and other platforms to foster community engagement."
+      },
+      {
+        "value": "Do encourage user-generated content and share positive testimonials from satisfied customers."
+      }
+    ],
+    "campaigns_dont": [
+      {
+        "value": "Don’t ignore or dismiss negative feedback. Address concerns openly and transparently, demonstrating a commitment to customer satisfaction."
+      },
+      {
+        "value": "Don’t delete or censor constructive criticism, as it provides valuable insights for improvement."
+      }
+    ],
+    "updatedAt": "2024-06-19T03:56:21.881Z",
+    "createdAt": "2024-06-19T03:56:21.881Z",
+    "campaignId": "clxlawut4000x122ke7vmmnor"
+  },
+  "campaignRequirement": {
+    "id": "clxlawut5000z122kyx5qzz24",
+    "gender": "female",
+    "age": "18-25",
+    "geoLocation": "Selangor",
+    "language": "English",
+    "creator_persona": "lifeStyle",
+    "user_persona": "awdawd",
     "createdAt": "2024-06-19T03:56:21.881Z",
     "updatedAt": "2024-06-19T03:56:21.881Z",
-    "brandId": null,
-    "companyId": "clxladccy000p122kjep112j3",
-    "adminId": "clxl9ythl0002122kkck90wer",
-    "defaultTimelineCampaignId": null,
-    "customTimelineCampaignId": "clxlawut0000w122kr5s88zpf",
-    "campaignBrief": {
-      "id": "clxlawut5000y122koaciqex6",
-      "title": "Innovate Your Life",
-      "objectives": null,
-      "images": ["images.png"],
-      "agreementFrom": "images.png",
-      "startDate": "2024-08-20T16:00:00.000Z",
-      "endDate": "2024-08-20T16:00:00.000Z",
-      "interests": ["Health", "Gaming", "Food"],
-      "industries": ["Health", "Gaming", "Food"],
-      "success": null,
-      "campaigns_do": [
-        {
-          "value": "Do actively respond to comments, questions, and feedback on social media and other platforms to foster community engagement."
-        },
-        {
-          "value": "Do encourage user-generated content and share positive testimonials from satisfied customers."
+    "campaignId": "clxlawut4000x122ke7vmmnor"
+  },
+  "Pitch": [
+    {
+      "id": "clxsoaphk0003yw8w4729700n",
+      "type": "text",
+      "campaignId": "clxlawut4000x122ke7vmmnor",
+      "userId": "3ed62a10-f3c3-4b51-b7a7-e28d4bbbec2b",
+      "status": "accept",
+      "content": "<p>asdadsadawdasd</p>",
+      "createdAt": "2024-06-24T07:45:26.408Z",
+      "user": {
+        "id": "3ed62a10-f3c3-4b51-b7a7-e28d4bbbec2b",
+        "email": "afiqnrzm@hotmail.com",
+        "password": "$2a$10$jY4d9cEBdur.ipVJYS86xOdBtJbkAblyS0g2Ig.sQvoPElAo.wQW6",
+        "createdAt": "2024-06-24T03:09:21.789Z",
+        "name": "Athirah",
+        "photoURL": null,
+        "country": "Malaysia",
+        "phoneNumber": "193493207",
+        "role": "creator",
+        "updatedAt": "2024-06-24T03:10:39.321Z",
+        "status": "active",
+        "eventId": null,
+        "creator": {
+          "id": "clxsefo5f0001t3l1l930lvm4",
+          "pronounce": "she/her",
+          "nationality": "Malaysia",
+          "location": "Subang",
+          "birthDate": "2024-06-24T16:00:00.000Z",
+          "instagram": "athirah",
+          "tiktok": "athirah",
+          "employment": "fulltime",
+          "languages": ["English", "Malay", "Mandarin"],
+          "userId": "3ed62a10-f3c3-4b51-b7a7-e28d4bbbec2b"
         }
-      ],
-      "campaigns_dont": [
-        {
-          "value": "Don’t ignore or dismiss negative feedback. Address concerns openly and transparently, demonstrating a commitment to customer satisfaction."
-        },
-        {
-          "value": "Don’t delete or censor constructive criticism, as it provides valuable insights for improvement."
-        }
-      ],
-      "updatedAt": "2024-06-19T03:56:21.881Z",
-      "createdAt": "2024-06-19T03:56:21.881Z",
-      "campaignId": "clxlawut4000x122ke7vmmnor"
-    },
-    "campaignRequirement": {
-      "id": "clxlawut5000z122kyx5qzz24",
-      "gender": "female",
-      "age": "18-25",
-      "geoLocation": "Selangor",
-      "language": "English",
-      "creator_persona": "lifeStyle",
-      "user_persona": "awdawd",
-      "createdAt": "2024-06-19T03:56:21.881Z",
-      "updatedAt": "2024-06-19T03:56:21.881Z",
-      "campaignId": "clxlawut4000x122ke7vmmnor"
-    },
-    "defaultCampaignTimeline": null,
-    "customCampaignTimeline": {
-      "id": "clxlawut0000w122kr5s88zpf",
-      "openForPitch": 14,
-      "shortlistCreator": 2,
-      "firstDraft": 4,
-      "finalDraft": 2,
-      "feedBackFirstDraft": 3,
-      "feedBackFinalDraft": 2,
-      "filterPitch": 2,
-      "agreementSign": 2,
-      "qc": 3,
-      "posting": 2
+      }
     }
-  }
-]
+  ],
+  "ShortListedCreator": [{ "creatorId": "3ed62a10-f3c3-4b51-b7a7-e28d4bbbec2b" }]
+}
