@@ -425,7 +425,7 @@ function CreateCampaignForm() {
         </Box>
       </Box>
 
-      <RHFSelect name="campaignObjectives" label="Campagin Objectives">
+      <RHFSelect name="campaignObjectives" label="Campaign Objectives">
         <MenuItem value="newProduct">I&apos;m launching a new product</MenuItem>
         <MenuItem value="newService">I&apos;m launching a new service</MenuItem>
         <MenuItem value="brandAwareness">I want to drive brand awareness</MenuItem>
@@ -613,7 +613,7 @@ function CreateCampaignForm() {
         }}
       />
 
-      <Typography variant="h5">Do&apos;s and Dont&apos;s</Typography>
+      <Typography variant="h5">Dos and Don&apos;ts</Typography>
 
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
@@ -640,7 +640,7 @@ function CreateCampaignForm() {
             ))}
 
             <Button variant="contained" onClick={() => dontAppend({ value: '' })}>
-              Add Dont
+              Add Don&apos;t
             </Button>
           </Stack>
         </Grid>

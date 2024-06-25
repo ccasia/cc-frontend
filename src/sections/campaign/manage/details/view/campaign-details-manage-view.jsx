@@ -34,7 +34,33 @@ import withPermission from 'src/auth/guard/withPermissions';
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
-import EditCampaignInformation from '../../edit/edit-campaign-information';
+import { EditBrand } from '../../edit/EditBrand';
+import { EditDosAndDonts } from '../../edit/EditDosAndDonts';
+import { EditCampaignInfo } from '../../edit/EditCampaignInfo';
+import { EditRequirements } from '../../edit/EditRequirements';
+import { EditTimeline } from '../../edit/EditTimeline';
+
+const EditButton = ({ tooltip, onClick }) => (
+  <Stack
+    direction="row"
+    spacing={1}
+    position="absolute"
+    top={10}
+    right={10}
+    alignItems="center"
+  >
+    <Tooltip title={tooltip} arrow>
+      <IconButton onClick={onClick}>
+        <Iconify icon="lucide:edit" />
+      </IconButton>
+    </Tooltip>
+  </Stack>
+);
+
+EditButton.propTypes = {
+  tooltip: PropTypes.string,
+  onClick: PropTypes.func,
+};
 
 const CampaignDetailManageView = ({ id }) => {
   const [campaign, setCampaign] = useState();
@@ -44,6 +70,11 @@ const CampaignDetailManageView = ({ id }) => {
   const smUp = useResponsive('down', 'sm');
   const [open, setOpen] = useState({
     campaignInfo: false,
+    campaignBrand: false,
+    campaignCompany: false,
+    dosAndDonts: false,
+    campaignRequirements: false,
+    timeline: false,
   });
 
   useEffect(() => {
@@ -153,175 +184,240 @@ const CampaignDetailManageView = ({ id }) => {
           </Stack>
         </Stack>
       </Box>
-      <EditCampaignInformation open={open} campaign={campaign} onClose={onClose} />
+      <EditCampaignInfo open={open} campaign={campaign} onClose={onClose} />
+    </>
+  );
+
+  const renderBrand = (
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Brand Information</Typography>
+        <EditButton
+          tooltip="Edit Brand"
+          onClick={() =>
+            setOpen((prev) => ({
+              ...prev,
+              campaignBrand: true,
+            }))
+          }
+        />
+        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
+          {campaign?.brand &&
+            Object.keys(campaign?.brand)
+              .filter(
+                (e) =>
+                  ![
+                    'id',
+                    'createdAt',
+                    'updatedAt',
+                    'companyId',
+                    'objectives',
+                    'logo',
+                    'service_name',
+                  ].includes(e)
+              )
+              .map(
+                (e) =>
+                  campaign?.brand[e] && (
+                    <ListItemText primary={formatText(e)} secondary={campaign?.brand[e]} />
+                  )
+              )}
+        </Box>
+      </Box>
+      <EditBrand open={open} campaign={campaign} onClose={onClose} />
+    </>
+  );
+
+  const renderCompany = (
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Brand Information</Typography>
+        <EditButton
+          tooltip="Edit Company"
+          onClick={() =>
+            setOpen((prev) => ({
+              ...prev,
+              // TODO TEMP: Just open the same menu as for brands for now
+              campaignBrand: true,
+            }))
+          }
+        />
+        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
+          {campaign?.company &&
+            Object.keys(campaign?.company)
+              .filter((e) => !['id', 'createdAt', 'updatedAt', 'objectives', 'logo'].includes(e))
+              .map(
+                (e) =>
+                  campaign?.company[e] && (
+                    <ListItemText primary={formatText(e)} secondary={campaign?.company[e]} />
+                  )
+              )}
+        </Box>
+      </Box>
+      {/* TODO TEMP: Just open the same menu as for brands for now */}
+      <EditBrand open={open} campaign={campaign} onClose={onClose} />
     </>
   );
 
   const renderDosAndDonts = (
-    <Box component={Card} p={2}>
-      <Typography variant="h5">Do&apos;s & Donts&apos;</Typography>
-      <Divider
-        sx={{
-          borderStyle: 'dashed',
-          my: 1,
-        }}
-      />
-      <Stack>
-        <Typography variant="subtitle1">Dos</Typography>
-        <List>
-          {campaign?.campaignBrief?.campaigns_do.map((elem) => (
-            <ListItem>
-              <ListItemIcon>
-                <Iconify
-                  icon="octicon:dot-24"
-                  sx={{
-                    color: theme.palette.primary.main,
-                  }}
-                />
-              </ListItemIcon>
-              <ListItemText primary={elem?.value} />
-            </ListItem>
-          ))}
-        </List>
-      </Stack>
-      <Stack mt={2}>
-        <Typography variant="subtitle1">Donts</Typography>
-        <List>
-          {campaign?.campaignBrief?.campaigns_dont.map((elem) => (
-            <ListItem>
-              <ListItemIcon>
-                <Iconify
-                  icon="octicon:dot-24"
-                  sx={{
-                    color: theme.palette.error.main,
-                  }}
-                />
-              </ListItemIcon>
-              <ListItemText primary={elem?.value} />
-            </ListItem>
-          ))}
-        </List>
-      </Stack>
-    </Box>
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Dos & Don&apos;ts</Typography>
+        <EditButton
+          tooltip="Edit Dos and Don'ts"
+          onClick={() =>
+            setOpen((prev) => ({
+              ...prev,
+              dosAndDonts: true,
+            }))
+          }
+        />
+        <Divider
+          sx={{
+            borderStyle: 'dashed',
+            my: 1,
+          }}
+        />
+        <Stack>
+          <Typography variant="subtitle1">Dos</Typography>
+          <List>
+            {campaign?.campaignBrief?.campaigns_do.map((elem) => (
+              <ListItem>
+                <ListItemIcon>
+                  <Iconify
+                    icon="octicon:dot-24"
+                    sx={{
+                      color: theme.palette.primary.main,
+                    }}
+                  />
+                </ListItemIcon>
+                <ListItemText primary={elem?.value} />
+              </ListItem>
+            ))}
+          </List>
+        </Stack>
+        <Stack mt={2}>
+          <Typography variant="subtitle1">Donts</Typography>
+          <List>
+            {campaign?.campaignBrief?.campaigns_dont.map((elem) => (
+              <ListItem>
+                <ListItemIcon>
+                  <Iconify
+                    icon="octicon:dot-24"
+                    sx={{
+                      color: theme.palette.error.main,
+                    }}
+                  />
+                </ListItemIcon>
+                <ListItemText primary={elem?.value} />
+              </ListItem>
+            ))}
+          </List>
+        </Stack>
+      </Box>
+      <EditDosAndDonts open={open} campaign={campaign} onClose={onClose} />
+    </>
   );
 
   const renderRequirement = (
-    <Box component={Card} p={2}>
-      <Typography variant="h5">Requirements</Typography>
-      <List>
-        <ListItemText
-          primary="Gender"
-          secondary={formatText(campaign?.campaignRequirement?.gender)}
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Requirements</Typography>
+        <EditButton
+          tooltip="Edit Requirements"
+          onClick={() =>
+            setOpen((prev) => ({
+              ...prev,
+              campaignRequirements: true,
+            }))
+          }
         />
-        <ListItemText primary="Age" secondary={formatText(campaign?.campaignRequirement?.age)} />
-        <ListItemText
-          primary="Geo Location"
-          secondary={formatText(campaign?.campaignRequirement?.geoLocation)}
-        />
-        <ListItemText
-          primary="Language"
-          secondary={formatText(campaign?.campaignRequirement?.language)}
-        />
-        <ListItemText
-          primary="Creator Persona"
-          secondary={formatText(campaign?.campaignRequirement?.creator_persona)}
-        />
-        <ListItemText
-          primary="User Persona"
-          secondary={formatText(campaign?.campaignRequirement?.user_persona)}
-        />
-      </List>
-    </Box>
+        <List>
+          <ListItemText
+            primary="Gender"
+            secondary={formatText(campaign?.campaignRequirement?.gender)}
+          />
+          <ListItemText
+            primary="Age"
+            secondary={formatText(campaign?.campaignRequirement?.age)}
+          />
+          <ListItemText
+            primary="Geo Location"
+            secondary={formatText(campaign?.campaignRequirement?.geoLocation)}
+          />
+          <ListItemText
+            primary="Language"
+            secondary={formatText(campaign?.campaignRequirement?.language)}
+          />
+          <ListItemText
+            primary="Creator Persona"
+            secondary={formatText(campaign?.campaignRequirement?.creator_persona)}
+          />
+          <ListItemText
+            primary="User Persona"
+            secondary={formatText(campaign?.campaignRequirement?.user_persona)}
+          />
+        </List>
+      </Box>
+      <EditRequirements open={open} campaign={campaign} onClose={onClose} />
+    </>
   );
 
   const renderTimeline = (
-    <Box component={Card} p={2}>
-      <Typography variant="h5">Timeline</Typography>
-      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={1}>
-        <ListItemText
-          primary="Open For Pitch"
-          secondary={`${campaign?.customCampaignTimeline?.openForPitch} days`}
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Timeline</Typography>
+        <EditButton
+          tooltip="Edit Timeline"
+          onClick={() =>
+            setOpen((prev) => ({
+              ...prev,
+              timeline: true,
+            }))
+          }
         />
-        <ListItemText
-          primary="Shortlist Creator"
-          secondary={`${campaign?.customCampaignTimeline?.shortlistCreator} days`}
-        />
-        <ListItemText
-          primary="First Draft"
-          secondary={`${campaign?.customCampaignTimeline?.firstDraft} days`}
-        />
-        <ListItemText
-          primary="Final Draft"
-          secondary={`${campaign?.customCampaignTimeline?.finalDraft} days`}
-        />
-        <ListItemText
-          primary="Feedback First Draft"
-          secondary={`${campaign?.customCampaignTimeline?.feedBackFirstDraft} days`}
-        />
-        <ListItemText
-          primary="Feedback Final Draft"
-          secondary={`${campaign?.customCampaignTimeline?.feedBackFinalDraft} days`}
-        />
-        <ListItemText
-          primary="Filter Pitch"
-          secondary={`${campaign?.customCampaignTimeline?.filterPitch} days`}
-        />
-        <ListItemText
-          primary="Agreement Sign"
-          secondary={`${campaign?.customCampaignTimeline?.agreementSign} days`}
-        />
-        <ListItemText primary="QC" secondary={`${campaign?.customCampaignTimeline?.qc} days`} />
-        <ListItemText
-          primary="Posting"
-          secondary={`${campaign?.customCampaignTimeline?.posting} days`}
-        />
+        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={1}>
+          <ListItemText
+            primary="Open For Pitch"
+            secondary={`${campaign?.customCampaignTimeline?.openForPitch} days`}
+          />
+          <ListItemText
+            primary="Shortlist Creator"
+            secondary={`${campaign?.customCampaignTimeline?.shortlistCreator} days`}
+          />
+          <ListItemText
+            primary="First Draft"
+            secondary={`${campaign?.customCampaignTimeline?.firstDraft} days`}
+          />
+          <ListItemText
+            primary="Final Draft"
+            secondary={`${campaign?.customCampaignTimeline?.finalDraft} days`}
+          />
+          <ListItemText
+            primary="Feedback First Draft"
+            secondary={`${campaign?.customCampaignTimeline?.feedBackFirstDraft} days`}
+          />
+          <ListItemText
+            primary="Feedback Final Draft"
+            secondary={`${campaign?.customCampaignTimeline?.feedBackFinalDraft} days`}
+          />
+          <ListItemText
+            primary="Filter Pitch"
+            secondary={`${campaign?.customCampaignTimeline?.filterPitch} days`}
+          />
+          <ListItemText
+            primary="Agreement Sign"
+            secondary={`${campaign?.customCampaignTimeline?.agreementSign} days`}
+          />
+          <ListItemText primary="QC" secondary={`${campaign?.customCampaignTimeline?.qc} days`} />
+          <ListItemText
+            primary="Posting"
+            secondary={`${campaign?.customCampaignTimeline?.posting} days`}
+          />
+        </Box>
       </Box>
-    </Box>
-  );
-
-  const renderBrand = (
-    <Box component={Card} p={2}>
-      <Typography variant="h5">Brand Information</Typography>
-      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
-        {campaign?.brand &&
-          Object.keys(campaign?.brand)
-            .filter(
-              (e) =>
-                ![
-                  'id',
-                  'createdAt',
-                  'updatedAt',
-                  'companyId',
-                  'objectives',
-                  'logo',
-                  'service_name',
-                ].includes(e)
-            )
-            .map(
-              (e) =>
-                campaign?.brand[e] && (
-                  <ListItemText primary={formatText(e)} secondary={campaign?.brand[e]} />
-                )
-            )}
-      </Box>
-    </Box>
-  );
-
-  const renderCompany = (
-    <Box component={Card} p={2}>
-      <Typography variant="h5">Brand Information</Typography>
-      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
-        {campaign?.company &&
-          Object.keys(campaign?.company)
-            .filter((e) => !['id', 'createdAt', 'updatedAt', 'objectives', 'logo'].includes(e))
-            .map(
-              (e) =>
-                campaign?.company[e] && (
-                  <ListItemText primary={formatText(e)} secondary={campaign?.company[e]} />
-                )
-            )}
-      </Box>
-    </Box>
+      <EditTimeline open={open} campaign={campaign} onClose={onClose} />
+    </>
   );
 
   return (
