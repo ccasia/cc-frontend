@@ -21,15 +21,12 @@ import { RHFAutocomplete } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 export const EditBrand = ({ open, campaign, onClose }) => {
-  const methods = useForm();
+  const methods = useForm({
+    defaultValues: {
+      campaignBrand: campaign?.brand ?? campaign?.company,
+    },
+  });
 
-  const { setValue } = methods;
-
-  useEffect(() => {
-    setValue('campaignBrand', campaign?.brand);
-  }, [setValue, campaign]);
-
-  const [brandState, setBrandState] = useState('');
   const { options } = useGetCampaignBrandOption();
 
   return (
@@ -49,7 +46,6 @@ export const EditBrand = ({ open, campaign, onClose }) => {
                 display: 'grid',
                 gridTemplateColumns: {
                   xs: 'repeat(1, 1fr)',
-                  md: 'repeat(2, 1fr)',
                 },
                 gap: 2,
               }}
@@ -58,8 +54,7 @@ export const EditBrand = ({ open, campaign, onClose }) => {
                 fullWidth
                 name="campaignBrand"
                 placeholder="Brand"
-                options={brandState ? [brandState] : options}
-                freeSolo
+                options={options}
                 getOptionLabel={(option) => option.name}
                 renderOption={(props, option) => (
                   <Stack direction="row" spacing={1} p={1} {...props}>
@@ -75,6 +70,7 @@ export const EditBrand = ({ open, campaign, onClose }) => {
                     <ListItemText primary={option.name} />
                   </Stack>
                 )}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
               />
             </Box>
           </FormProvider>

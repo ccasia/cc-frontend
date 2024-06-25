@@ -38,17 +38,9 @@ import { EditBrand } from '../../edit/EditBrand';
 import { EditDosAndDonts } from '../../edit/EditDosAndDonts';
 import { EditCampaignInfo } from '../../edit/EditCampaignInfo';
 import { EditRequirements } from '../../edit/EditRequirements';
-import { EditTimeline } from '../../edit/EditTimeline';
 
 const EditButton = ({ tooltip, onClick }) => (
-  <Stack
-    direction="row"
-    spacing={1}
-    position="absolute"
-    top={10}
-    right={10}
-    alignItems="center"
-  >
+  <Stack direction="row" spacing={1} position="absolute" top={10} right={10} alignItems="center">
     <Tooltip title={tooltip} arrow>
       <IconButton onClick={onClick}>
         <Iconify icon="lucide:edit" />
@@ -102,10 +94,6 @@ const CampaignDetailManageView = ({ id }) => {
       [data]: false,
     }));
   };
-
-  useEffect(() => {
-    console.log(open);
-  }, [open]);
 
   const formatDays = (days) => (days === 1 ? 'day' : 'days');
 
@@ -279,6 +267,7 @@ const CampaignDetailManageView = ({ id }) => {
             borderStyle: 'dashed',
             my: 1,
           }}
+        />
         <Stack>
           <Typography variant="subtitle1">Dos</Typography>
           <List>
@@ -333,32 +322,92 @@ const CampaignDetailManageView = ({ id }) => {
             }))
           }
         />
-        <List>
+        <Stack spacing={1} mt={1}>
           <ListItemText
             primary="Gender"
-            secondary={formatText(campaign?.campaignRequirement?.gender)}
+            secondary={
+              campaign?.campaignRequirement?.gender?.map((e, index) => (
+                <Chip
+                  key={index}
+                  label={formatText(e)}
+                  size="small"
+                  sx={{
+                    mr: 1,
+                  }}
+                  color="primary"
+                />
+              )) || null
+            }
           />
           <ListItemText
             primary="Age"
-            secondary={formatText(campaign?.campaignRequirement?.age)}
+            secondary={
+              campaign?.campaignRequirement?.age?.map((e, index) => (
+                <Chip
+                  key={index}
+                  label={formatText(e)}
+                  size="small"
+                  sx={{
+                    mr: 1,
+                  }}
+                  color="primary"
+                />
+              )) || null
+            }
           />
           <ListItemText
             primary="Geo Location"
-            secondary={formatText(campaign?.campaignRequirement?.geoLocation)}
+            secondary={
+              campaign?.campaignRequirement?.geoLocation?.map((e, index) => (
+                <Chip
+                  key={index}
+                  label={formatText(e)}
+                  size="small"
+                  sx={{
+                    mr: 1,
+                  }}
+                  color="primary"
+                />
+              )) || null
+            }
           />
           <ListItemText
             primary="Language"
-            secondary={formatText(campaign?.campaignRequirement?.language)}
+            secondary={
+              campaign?.campaignRequirement?.language?.map((e, index) => (
+                <Chip
+                  key={index}
+                  label={formatText(e)}
+                  size="small"
+                  sx={{
+                    mr: 1,
+                  }}
+                  color="primary"
+                />
+              )) || null
+            }
           />
           <ListItemText
             primary="Creator Persona"
-            secondary={formatText(campaign?.campaignRequirement?.creator_persona)}
+            secondary={
+              campaign?.campaignRequirement?.creator_persona?.map((e, index) => (
+                <Chip
+                  key={index}
+                  label={formatText(e)}
+                  size="small"
+                  sx={{
+                    mr: 1,
+                  }}
+                  color="primary"
+                />
+              )) || null
+            }
           />
           <ListItemText
             primary="User Persona"
             secondary={formatText(campaign?.campaignRequirement?.user_persona)}
           />
-        </List>
+        </Stack>
       </Box>
       <EditRequirements open={open} campaign={campaign} onClose={onClose} />
     </>
@@ -472,7 +521,9 @@ const CampaignDetailManageView = ({ id }) => {
             campaign?.customCampaignTimeline?.posting ?? campaign?.defaultCampaignTimeline?.posting
           )}`}
         />
-        </Box>
+      </Box>
+    </Box>
+  );
 
   return (
     <Container maxWidth="lg">

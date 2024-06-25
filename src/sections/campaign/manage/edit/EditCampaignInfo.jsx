@@ -15,6 +15,7 @@ import {
 
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
+import dayjs from 'dayjs';
 
 // TODO TEMP: Copied from `src/sections/campaign/create/form.jsx`, consider consolidating them sometime
 const interestsLists = [
@@ -34,19 +35,16 @@ const interestsLists = [
 ];
 
 export const EditCampaignInfo = ({ open, campaign, onClose }) => {
-  const methods = useForm();
-
-  const { setValue } = methods;
-
-  useEffect(() => {
-    setValue('name', campaign?.name);
-    setValue('description', campaign?.description);
-    // TODO BUG: Causes a white screen
-    // setValue('campaignStartDate', campaign?.campaignBrief?.startDate);
-    // setValue('campaignEndDate', campaign?.campaignBrief?.endDate);
-    setValue('campaignInterests', campaign?.campaignBrief?.interests);
-    setValue('campaignIndustries', campaign?.campaignBrief?.industries);
-  }, [setValue, campaign]);
+  const methods = useForm({
+    defaultValues: {
+      name: campaign?.name || '',
+      description: campaign?.name || '',
+      campaignStartDate: dayjs(campaign?.campaignBrief?.startDate) || '',
+      campaignEndDate: dayjs(campaign?.campaignBrief?.endDate),
+      campaignInterests: campaign?.campaignBrief?.interests || [],
+      campaignIndustries: campaign?.campaignBrief?.industries || [],
+    },
+  });
 
   return (
     <Dialog

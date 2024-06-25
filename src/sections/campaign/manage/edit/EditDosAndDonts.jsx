@@ -1,10 +1,9 @@
+import React from 'react';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 
 import {
   Box,
-  Grid,
   Stack,
   Button,
   Dialog,
@@ -18,34 +17,33 @@ import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 export const EditDosAndDonts = ({ open, campaign, onClose }) => {
-  const methods = useForm();
+  const methods = useForm({
+    defaultValues: {
+      campaignDo: campaign?.campaignBrief?.campaigns_do,
+      campaignDont: campaign?.campaignBrief?.campaigns_dont,
+    },
+  });
 
-  const { setValue } = methods;
-
-  useEffect(() => {
-    setValue('campaignDo', campaign?.campaignBrief?.campaigns_do);
-    setValue('campaignDont', campaign?.campaignBrief?.campaigns_dont);
-  }, [setValue, campaign]);
+  const { control } = methods;
 
   // TODO TEMP: Use a simpler placeholder for now, see below
-  // const {
-  //   append: doAppend,
-  //   fields: doFields,
-  //   remove: doRemove,
-  // } = useFieldArray({
-  //   name: 'campaignDo',
-  //   // TODO: What does this do? Comment this out to avoid an error
-  //   // control,
-  // });
+  const {
+    append: doAppend,
+    fields: doFields,
+    remove: doRemove,
+  } = useFieldArray({
+    control,
+    name: 'campaignDo',
+  });
 
-  // const {
-  //   append: dontAppend,
-  //   fields: dontFields,
-  //   remove: dontRemove,
-  // } = useFieldArray({
-  //   name: 'campaignDont',
-  //   // control,
-  // });
+  const {
+    append: dontAppend,
+    fields: dontFields,
+    remove: dontRemove,
+  } = useFieldArray({
+    control,
+    name: 'campaignDont',
+  });
 
   return (
     <Dialog
@@ -71,32 +69,25 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
             >
               <Stack direction="column" spacing={2}>
                 {/* TODO TEMP: Use a simpler placeholder for now */}
-                {/* {doFields.map((item, index) => (
+                {doFields.map((item, index) => (
                   <RHFTextField
                     name={`campaignDo[${index}].value`}
                     label={`Campaign Do's ${index + 1}`}
                   />
-                ))} */}
-                <RHFTextField
-                  name="Placeholder name"
-                  label="Campaign Do 1"
-                />
+                ))}
+                {/* <RHFTextField name="Placeholder name" label="Campaign Do 1" /> */}
                 <Button variant="contained" onClick={() => doAppend({ value: '' })}>
                   Add Do
                 </Button>
               </Stack>
 
               <Stack direction="column" spacing={2}>
-                {/* {dontFields.map((item, index) => (
+                {dontFields.map((item, index) => (
                   <RHFTextField
                     name={`campaignDont[${index}].value`}
                     label={`Campaign Dont's ${index + 1}`}
                   />
-                ))} */}
-                <RHFTextField
-                  name="Placeholder name"
-                  label="Campaign Don't 1"
-                />
+                ))}
                 <Button variant="contained" onClick={() => dontAppend({ value: '' })}>
                   Add Don&apos;t
                 </Button>

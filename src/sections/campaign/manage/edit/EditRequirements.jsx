@@ -11,24 +11,27 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
+  TextField,
 } from '@mui/material';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import { RHFMultiSelect, RHFSelect, RHFTextField } from 'src/components/hook-form';
 
 export const EditRequirements = ({ open, campaign, onClose }) => {
-  const methods = useForm();
+  const methods = useForm({
+    defaultValues: {
+      audienceGender: campaign?.campaignRequirement?.gender || [],
+      audienceAge: campaign?.campaignRequirement?.age || [],
+      audienceLocation: campaign?.campaignRequirement?.geoLocation || [],
+      audienceLanguage: campaign?.campaignRequirement?.language || [],
+      audienceCreatorPersona: campaign?.campaignRequirement?.creator_persona || [],
+      audienceUserPersona: campaign?.campaignRequirement?.user_persona || '',
+    },
+  });
 
-  const { setValue } = methods;
+  const { watch } = methods;
 
-  useEffect(() => {
-    setValue('audienceGender', campaign?.campaignRequirement?.gender);
-    setValue('audienceAge', campaign?.campaignRequirement?.age);
-    setValue('audienceLocation', campaign?.campaignRequirement?.geoLocation);
-    setValue('audienceLanguage', campaign?.campaignRequirement?.language);
-    setValue('audienceCreatorPersona', campaign?.campaignRequirement?.creator_persona);
-    setValue('audienceUserPersona', campaign?.campaignRequirement?.user_persona);
-  }, [setValue, campaign]);
+  const audienceLocation = watch('audienceLocation');
 
   return (
     <Dialog
@@ -52,72 +55,95 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                 gap: 2,
               }}
             >
-              <RHFSelect name="audienceGender" label="Audience Gender">
-                <MenuItem value="female">Female</MenuItem>
-                <MenuItem value="male">Male </MenuItem>
-                <MenuItem value="nonbinary">Non-Binary</MenuItem>
-              </RHFSelect>
+              <RHFMultiSelect
+                name="audienceGender"
+                checkbox
+                chip
+                options={[
+                  { value: 'female', label: 'Female' },
+                  { value: 'male', label: 'Male' },
+                  { value: 'nonbinary', label: 'Non-Binary' },
+                ]}
+                label="Audience Gender"
+              />
 
-              <RHFSelect name="audienceAge" label="Audience Age">
-                <MenuItem value="18-25">18-25</MenuItem>
-                <MenuItem value="26-34">26-34</MenuItem>
-                <MenuItem value="35-40">35-40</MenuItem>
-                <MenuItem value=">40"> &gt; 40</MenuItem>
-              </RHFSelect>
+              <RHFMultiSelect
+                name="audienceAge"
+                checkbox
+                chip
+                options={[
+                  { value: '18-25', label: '18-25' },
+                  { value: '26-34', label: '26-34' },
+                  { value: '35-40', label: '35-40' },
+                  { value: '>40', label: '>40' },
+                ]}
+                label="Audience Age"
+              />
 
-              <RHFSelect
+              <RHFMultiSelect
                 name="audienceLocation"
                 label="Audience Geo Location"
-                helperText="if others please specify"
-              >
-                <MenuItem value="KlangValley">Klang Valley </MenuItem>
-                <MenuItem value="Selangor">Selangor</MenuItem>
-                <MenuItem value="KualaLumpur">Kuala Lumpur</MenuItem>
-                <MenuItem value="MainCities">Main cities in Malaysia</MenuItem>
-                <MenuItem value="EastMalaysia">East Malaysia</MenuItem>
-                <MenuItem value="Others">Others</MenuItem>
-              </RHFSelect>
+                checkbox
+                chip
+                options={[
+                  { value: 'KlangValley', label: 'Klang Valley' },
+                  { value: 'Selangor', label: 'Selangor' },
+                  { value: 'KualaLumpur', label: 'Kuala Lumpur' },
+                  { value: 'MainCities', label: 'Main cities in Malaysia' },
+                  { value: 'EastMalaysia', label: 'East Malaysia' },
+                  { value: 'Others', label: 'Others' },
+                ]}
+              />
 
-              {/* TODO TEMP: Ignore this for now */}
-              {/* {audienceGeoLocation === 'Others' && (
-                <TextField name="audienceLocation" label="Specify Other Location" variant="outlined" />
-              )} */}
+              {audienceLocation === 'Others' && (
+                <TextField
+                  name="audienceLocation"
+                  label="Specify Other Location"
+                  variant="outlined"
+                />
+              )}
 
-              <RHFSelect name="audienceLanguage" label="Audience Language">
-                <MenuItem value="Malay">Malay</MenuItem>
-                <MenuItem value="English">English</MenuItem>
-                <MenuItem value="Chinese">Chinese</MenuItem>
-                <MenuItem value="Tamil">Tamil</MenuItem>
-                <MenuItem value="Korean">Korean</MenuItem>
-                <MenuItem value="MalayEnglish">Malay + English</MenuItem>
-                <MenuItem value="EnglishChinese">English + Chinese </MenuItem>
-              </RHFSelect>
+              <RHFMultiSelect
+                name="audienceLanguage"
+                label="Audience Language"
+                checkbox
+                chip
+                options={[
+                  { value: 'Malay', label: 'Malay' },
+                  { value: 'English', label: 'English' },
+                  { value: 'Chinese', label: 'Chinese' },
+                  { value: 'Tamil', label: 'Tamil' },
+                  { value: 'Korean', label: 'Korean' },
+                ]}
+              />
 
-              <RHFSelect name="audienceCreatorPersona" label="Audience Creator Persona">
-                <MenuItem value="lifeStyle">LifeStyle</MenuItem>
-                <MenuItem value="Foodie">Foodie</MenuItem>
-                <MenuItem value="fashion">Fashion</MenuItem>
-                <MenuItem value="beauty">Beauty</MenuItem>
-                <MenuItem value="tech">Tech</MenuItem>
-                <MenuItem value="sports">Sports & Fitness</MenuItem>
-                <MenuItem value="health">Health & wellness</MenuItem>
-                <MenuItem value="family">Family & motherhood</MenuItem>
-                <MenuItem value="finance">Finance</MenuItem>
-                <MenuItem value="education">Education</MenuItem>
-                <MenuItem value="music">Music</MenuItem>
-                <MenuItem value="gamer">Gamer</MenuItem>
-                <MenuItem value="entertainment">Entertainment</MenuItem>
-                <MenuItem value="travel">Travel</MenuItem>
-              </RHFSelect>
+              <RHFMultiSelect
+                name="audienceCreatorPersona"
+                label="Audience Creator Persona"
+                checkbox
+                chip
+                options={[
+                  { value: 'lifestyle', label: 'LifeStyle' },
+                  { value: 'fashion', label: 'Fashion' },
+                  { value: 'beauty', label: 'Beauty' },
+                  { value: 'tech', label: 'Tech' },
+                  { value: 'sports', label: 'Sports & Fitness' },
+                  { value: 'health', label: 'Health & wellness' },
+                  { value: 'family', label: 'Family & motherhood' },
+                  { value: 'finance', label: 'Finance' },
+                  { value: 'education', label: 'Education' },
+                  { value: 'music', label: 'Music' },
+                  { value: 'gamer', label: 'Gamer' },
+                  { value: 'entertainment', label: 'Entertainment' },
+                  { value: 'travel', label: 'Travel' },
+                ]}
+              />
 
               <RHFTextField
                 name="audienceUserPersona"
                 label="User Persona"
                 placeholder=" let us know who you want your campaign to reach!"
               />
-
-              {/* TODO TEMP: Ignore this for now */}
-              {/* {audienceGeoLocation === 'Others' && <Box flexGrow={1} />} */}
             </Box>
           </FormProvider>
         </DialogContentText>
