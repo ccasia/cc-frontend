@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet-async';
 import { useAuthContext } from 'src/auth/hooks';
 
 import { CampaignListView } from 'src/sections/campaign/discover/creator/view';
-
 import CampaignView from 'src/sections/campaign/discover/admin/view/campaign-view';
 
 // ----------------------------------------------------------------------
