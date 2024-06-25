@@ -1,5 +1,6 @@
+import dayjs from 'dayjs';
+import React from 'react';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
 import Chip from '@mui/material/Chip';
@@ -15,7 +16,6 @@ import {
 
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
-import dayjs from 'dayjs';
 
 // TODO TEMP: Copied from `src/sections/campaign/create/form.jsx`, consider consolidating them sometime
 const interestsLists = [

@@ -1,21 +1,20 @@
+import React from 'react';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
-import MenuItem from '@mui/material/MenuItem';
 import {
   Box,
   Button,
   Dialog,
+  TextField,
   DialogTitle,
   DialogActions,
   DialogContent,
   DialogContentText,
-  TextField,
 } from '@mui/material';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFMultiSelect, RHFSelect, RHFTextField } from 'src/components/hook-form';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 
 export const EditRequirements = ({ open, campaign, onClose }) => {
   const methods = useForm({
