@@ -30,7 +30,7 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
   const {
     append: doAppend,
     fields: doFields,
-    remove: doRemove,
+    // remove: doRemove,
   } = useFieldArray({
     control,
     name: 'campaignDo',
@@ -39,7 +39,7 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
   const {
     append: dontAppend,
     fields: dontFields,
-    remove: dontRemove,
+    // remove: dontRemove,
   } = useFieldArray({
     control,
     name: 'campaignDont',
