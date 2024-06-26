@@ -13,12 +13,11 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import { Tab, Tabs, Select, InputLabel, FormControl } from '@mui/material';
+import { Tab, Tabs, Select, InputLabel, FormControl, InputAdornment } from '@mui/material';
 
-import useGetAdmins from 'src/hooks/use-get-admins';
+import { editAdmin } from 'src/hooks/use-get-admins-for-superadmin';
 
 import { flattenData } from 'src/utils/flatten-array';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 import { USER_STATUS_OPTIONS } from 'src/_mock';
@@ -31,10 +30,7 @@ import { MODULE_ITEMS } from './view/user-list-view';
 // ----------------------------------------------------------------------
 
 function UserQuickEditForm({ currentUser, open, onClose }) {
-  const { getAdmins } = useGetAdmins();
-
   const { admin } = currentUser;
-
 
   const [currentTab, setCurrentTab] = useState('profile');
 
@@ -74,6 +70,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
 
   const {
     reset,
+    watch,
     handleSubmit,
     control,
     formState: { isSubmitting, errors },
@@ -81,10 +78,11 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await axiosInstance.patch(endpoints.auth.updateProfileAdmin, {
-        ...data,
-        userId: currentUser?.id,
-      });
+      // await axiosInstance.patch(endpoints.auth.updateProfileAdmin, {
+      //   ...data,
+      //   userId: currentUser?.id,
+      // });
+      editAdmin({ ...data, userId: currentUser?.id });
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       onClose();
@@ -94,10 +92,10 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
           vertical: 'top',
         },
       });
-
-      getAdmins();
     } catch (error) {
-      console.error(error);
+      enqueueSnackbar('Error updating admin', {
+        variant: 'error',
+      });
     }
   });
 
@@ -109,6 +107,8 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
   const handleChangeTab = useCallback((event, newValue) => {
     setCurrentTab(newValue);
   }, []);
+
+  const countryValue = watch('country');
 
   return (
     <Dialog
@@ -155,7 +155,17 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
 
               <RHFTextField name="name" label="Full Name" />
               <RHFTextField name="email" label="Email Address" />
-              <RHFTextField name="phoneNumber" label="Phone Number" />
+              <RHFTextField
+                name="phoneNumber"
+                label="Phone Number"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      +{countries.filter((elem) => elem.label === countryValue).map((e) => e.phone)}
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
               <RHFAutocomplete
                 name="country"

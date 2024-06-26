@@ -40,11 +40,13 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import useGetAdmins from 'src/hooks/use-get-admins';
-import { useAdmins } from 'src/hooks/zustands/useAdmins';
+// eslint-disable-next-line import/no-cycle
+
+import PropTypes from 'prop-types';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { _roles, USER_STATUS_OPTIONS } from 'src/_mock';
 
 import Label from 'src/components/label';
@@ -116,9 +118,8 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function UserListView() {
-  useGetAdmins();
-  const { admins } = useAdmins();
+export default function UserListView({ admins }) {
+  const { user } = useAuthContext();
 
   const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -168,7 +169,7 @@ export default function UserListView() {
     filters,
   });
 
-  const dataInPage = dataFiltered.slice(
+  const dataInPage = dataFiltered?.slice(
     table.page * table.rowsPerPage,
     table.page * table.rowsPerPage + table.rowsPerPage
   );
@@ -177,7 +178,7 @@ export default function UserListView() {
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!dataFiltered?.length && canReset) || !dataFiltered?.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -245,10 +246,6 @@ export default function UserListView() {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  // const handleReset = () => {
-  //   setActiveStep(0);
-  // };
-
   const schema = yup.object().shape({
     email: yup.string().email().required(),
     permission: yup.array().of(
@@ -311,7 +308,7 @@ export default function UserListView() {
             <StepLabel>Permission</StepLabel>
             <StepContent>
               {fields.map((elem, index) => (
-                <Box display="flex" gap={2} my={2} alignItems="center">
+                <Box key={index} display="flex" gap={2} my={2} alignItems="center">
                   <Controller
                     name={`permission.${index}.module`}
                     control={control}
@@ -443,8 +440,8 @@ export default function UserListView() {
   );
 
   useEffect(() => {
-    setTableData(admins);
-  }, [admins]);
+    setTableData(admins && admins.filter((admin) => admin?.id !== user?.id));
+  }, [admins, user]);
 
   return (
     <>
@@ -539,7 +536,7 @@ export default function UserListView() {
                     }
                   >
                     {['active', 'pending', 'banned', 'rejected'].includes(tab.value)
-                      ? tableData.filter((user) => user.status === tab.value).length
+                      ? tableData.filter((item) => item.status === tab.value).length
                       : tableData.length}
                   </Label>
                 }
@@ -600,7 +597,7 @@ export default function UserListView() {
 
                 <TableBody>
                   {dataFiltered
-                    .slice(
+                    ?.slice(
                       table.page * table.rowsPerPage,
                       table.page * table.rowsPerPage + table.rowsPerPage
                     )
@@ -665,6 +662,10 @@ export default function UserListView() {
     </>
   );
 }
+
+UserListView.propTypes = {
+  admins: PropTypes.array,
+};
 
 // ----------------------------------------------------------------------
 

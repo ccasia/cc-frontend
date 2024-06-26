@@ -31,11 +31,25 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
       }}
     >
       <Stack flexGrow={1} sx={{ position: 'relative' }}>
-        <Image alt="/test.jpeg" src="/test.jpeg" sx={{ borderRadius: 1, height: 164, width: 1 }} />
+        <Image
+          alt="/test.jpeg"
+          src={campaign?.campaignBrief?.images[0]}
+          sx={{ borderRadius: 1, height: 164, width: 1 }}
+        />
       </Stack>
       <Stack spacing={0.5}>
-        <Image alt="/test.jpeg" src="/test.jpeg" ratio="1/1" sx={{ borderRadius: 1, width: 80 }} />
-        <Image alt="/test.jpeg" src="/test.jpeg" ratio="1/1" sx={{ borderRadius: 1, width: 80 }} />
+        <Image
+          alt="/test.jpeg"
+          src={campaign?.campaignBrief?.images[1]}
+          ratio="1/1"
+          sx={{ borderRadius: 1, width: 80 }}
+        />
+        <Image
+          alt="/test.jpeg"
+          src={campaign?.campaignBrief?.images[2]}
+          ratio="1/1"
+          sx={{ borderRadius: 1, width: 80 }}
+        />
       </Stack>
     </Stack>
   );

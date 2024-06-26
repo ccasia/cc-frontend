@@ -6,6 +6,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import { InputAdornment } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
@@ -46,6 +47,7 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
 
   const {
     // reset,
+    watch,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
@@ -61,6 +63,8 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
       console.log(error);
     }
   });
+
+  const countryValue = watch('country');
 
   return (
     <Dialog
@@ -96,7 +100,17 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
 
             <RHFTextField name="name" label="Full Name" />
             <RHFTextField name="email" label="Email Address" />
-            <RHFTextField name="phoneNumber" label="Phone Number" />
+            <RHFTextField
+              name="phoneNumber"
+              label="Phone Number"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    +{countries.filter((elem) => elem.label === countryValue).map((e) => e.phone)}
+                  </InputAdornment>
+                ),
+              }}
+            />
 
             <RHFAutocomplete
               name="country"

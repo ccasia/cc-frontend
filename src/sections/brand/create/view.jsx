@@ -91,4 +91,3 @@ function CreateBrand() {
 }
 
 export default withPermission(['create', 'read'], 'brand', CreateBrand);
-// export default CreateBrand;

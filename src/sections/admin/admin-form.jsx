@@ -49,6 +49,7 @@ const AdminForm = () => {
   });
 
   const {
+    watch,
     setValue,
     reset,
     handleSubmit,
@@ -87,6 +88,8 @@ const AdminForm = () => {
     }
   });
 
+  const countryValue = watch('country');
+
   const renderForm = (
     <Box
       rowGap={3}
@@ -117,13 +120,23 @@ const AdminForm = () => {
         options={countries.map((option) => option.label)}
         getOptionLabel={(option) => option}
       />
-      <RHFTextField name="phoneNumber" label="Phone Number" type="text" />
+      <RHFTextField
+        name="phoneNumber"
+        label="Phone Number"
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              +{countries.filter((elem) => elem.label === countryValue).map((e) => e.phone)}
+            </InputAdornment>
+          ),
+        }}
+      />
       <RHFTextField
         name="password"
         label="Password"
         type={password.value ? 'text' : 'password'}
         InputProps={{
-          endAdornment: (
+          endAdornment: countryValue && (
             <InputAdornment position="end">
               <IconButton onClick={password.onToggle} edge="end">
                 <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />

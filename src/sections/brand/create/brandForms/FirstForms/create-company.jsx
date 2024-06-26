@@ -92,9 +92,18 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
   );
 
   const onSubmit = handleSubmit(async (data) => {
+    const formData = new FormData();
+
+    formData.append('data', JSON.stringify(data));
+    formData.append('companyLogo', data.image);
+
     try {
-      const res = await axiosInstance.post(endpoints.company.create, data);
-      set('companyId', res.data?.company.id);
+      const res = await axiosInstance.post(endpoints.company.create, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      set('companyId', { id: res.data?.company.id, name: res?.data?.company?.name });
       setOpenCreate(false);
       reset();
       enqueueSnackbar(res?.data?.message, {

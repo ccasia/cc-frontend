@@ -315,10 +315,21 @@ function CreateCampaignForm() {
   }
 
   const onSubmit = handleSubmit(async (data, status) => {
+    const formData = new FormData();
+
+    formData.append('data', JSON.stringify(data));
+
+    // eslint-disable-next-line guard-for-in, no-restricted-syntax
+    for (const i in data.campaignImages) {
+      formData.append('campaignImages', data.campaignImages[i]);
+    }
+    // formData.append('campaignImage', data.campaignImages[0]);
+
     try {
-      const res = await axiosInstance.post(endpoints.campaign.createCampaign, {
-        ...data,
-        campaignStage: status,
+      const res = await axiosInstance.post(endpoints.campaign.createCampaign, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
@@ -329,8 +340,6 @@ function CreateCampaignForm() {
       });
     }
   });
-
-  console.log(watch('adminManager'));
 
   const formFirstStep = (
     <Box
@@ -667,6 +676,8 @@ function CreateCampaignForm() {
       </Grid>
     </Stack>
   );
+
+  console.log(watch('adminManager'));
 
   const formSelectAdminManager = (
     <Box

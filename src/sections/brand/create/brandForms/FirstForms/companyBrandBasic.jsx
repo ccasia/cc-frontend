@@ -160,77 +160,34 @@ function CompanyBrandBasic() {
           key="companyId"
           name="companyId"
           placeholder="Select a company"
-          freeSolo="true"
-          // disableCloseOnSelect
+          freeSolo
           options={
-            companies ? companies.map((item) => ({ name: item?.name, value: item?.id })) : []
+            companies.length > 0
+              ? companies.map((item) => ({ name: item?.name, value: item?.id, logo: item?.logo }))
+              : []
           }
-          getOptionLabel={(option) => option?.name}
-          renderOption={(field, option) => (
-            <Stack direction="row" alignItems="center" {...field} gap={2}>
-              {/* <img loading="lazy" width="20" src={option?.logo_url} alt="" /> */}
-              <Typography>{option?.name}</Typography>
-            </Stack>
+          getOptionLabel={(option) => option?.name || ''}
+          renderOption={(props, option) => (
+            <li {...props}>
+              <Stack direction="row" alignItems="center" gap={2}>
+                <img
+                  loading="lazy"
+                  width="35"
+                  height="35"
+                  src={option?.logo || ''}
+                  srcSet={option?.logo || ''}
+                  alt={option?.name}
+                  style={{
+                    borderRadius: 50,
+                  }}
+                />
+                <Typography>{option?.name}</Typography>
+              </Stack>
+            </li>
           )}
         />
       </Stack>
     );
-
-    // const createCompany = (
-    //   <>
-    //     <Box
-    //       rowGap={2}
-    //       columnGap={3}
-    //       display="grid"
-    //       mt={1}
-    //       gridTemplateColumns={{
-    //         xs: 'repeat(1, 1fr)',
-    //         sm: 'repeat(2, 1fr)',
-    //       }}
-    //     >
-    //       <Box sx={{ flexGrow: 1 }} />
-    //       <Box
-    //         sx={{
-    //           display: 'flex',
-    //           justifyContent: 'center',
-    //           alignItems: 'center',
-    //           flexDirection: 'column',
-    //           gap: 2,
-    //           p: 1,
-    //           gridColumn: '1 / -1',
-    //         }}
-    //       >
-    //         <UploadPhoto onDrop={onDrop}>
-    //           <Avatar
-    //             sx={{
-    //               width: 1,
-    //               height: 1,
-    //               borderRadius: '50%',
-    //             }}
-    //             src={image || null}
-    //           />
-    //         </UploadPhoto>
-    //         <Typography variant="h6">Company Logo</Typography>
-    //       </Box>
-
-    //       <RHFTextField key="companyName" name="companyName" label="Company Name" />
-    //       <RHFTextField key="companyEmail" name="companyEmail" label="Company Email" />
-    //       <RHFTextField key="companyPhone" name="companyPhone" label="Company Phone" />
-    //       <RHFTextField key="companyAddress" name="companyAddress" label="Company Address" />
-    //       <RHFTextField key="companyWebsite" name="companyWebsite" label="Company Website" />
-    //       <RHFTextField key="companyAbout" name="companyAbout" label="Company About" />
-    //       <RHFTextField
-    //         key="companyRegistrationNumber"
-    //         name="companyRegistrationNumber"
-    //         label="Company Registration Number"
-    //       />
-    //     </Box>
-    //     <Stack direction="row" gap={2} justifyContent="end" p={2}>
-    //       <Button color="error">Cancel</Button>
-    //       <Button color="primary">Create</Button>
-    //     </Stack>
-    //   </>
-    // );
 
     return (
       <Stack direction="column" gap={5}>
