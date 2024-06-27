@@ -69,9 +69,7 @@ const BrandDetails = ({ id }) => {
               </Stack>
             </Stack>
             <Stack direction="row" spacing={1}>
-              {brand?.industries.map((item) => (
-                <CustomChip label={item} />
-              ))}
+              {brand?.industries && brand?.industries.map((item) => <CustomChip label={item} />)}
             </Stack>
           </Stack>
         </Box>
