@@ -11,18 +11,15 @@ import NavList from './nav-list';
 function NavSectionVertical({ data, slotProps, ...other }) {
   return (
     <Stack component="nav" id="nav-section-vertical" {...other}>
-      {data.map((group, index) => {
-        console.log(group);
-        return (
-          <Group
-            key={group.subheader || index}
-            subheader={group.subheader}
-            items={group.items}
-            slotProps={slotProps}
-            whoCanSee={group?.roles}
-          />
-        );
-      })}
+      {data.map((group, index) => (
+        <Group
+          key={group.subheader || index}
+          subheader={group.subheader}
+          items={group.items}
+          slotProps={slotProps}
+          whoCanSee={group?.roles}
+        />
+      ))}
     </Stack>
   );
 }

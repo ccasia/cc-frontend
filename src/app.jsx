@@ -22,11 +22,11 @@ import { SnackbarProvider } from './components/snackbar';
 export default function App() {
   const charAt = `
 
-  ░░░    ░░░
-  ▒▒▒▒  ▒▒▒▒
-  ▒▒ ▒▒▒▒ ▒▒
-  ▓▓  ▓▓  ▓▓
-  ██      ██
+  ██████████     ██████████        
+  ██             ██
+  ██             ██ 
+  ██             ██
+  ██████████     ██████████
 
   `;
 

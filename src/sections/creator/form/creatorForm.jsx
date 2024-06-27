@@ -95,23 +95,6 @@ export default function CreatorForm({ creator, open, onClose }) {
     instagram: Yup.string().required('Please enter your instagram username'),
   });
 
-  // const defaultValues = useMemo(
-  //   () => ({
-  //     phone: creator?.phone || '',
-  //     tiktok: creator?.tiktok || '',
-  //     pronounce: creator?.pronounce || '',
-  //     location: creator?.location || '',
-  //     Interests: creator?.Interests || [],
-  //     languages: creator?.languages || [],
-  //     instagram: creator?.instagram || '',
-  //     industries: creator?.industries || [],
-  //     employment: creator?.employment || '',
-  //     birthDate: creator?.birthDate || null,
-  //     Nationality: creator?.Nationality || '',
-  //   }),
-  //   [creator]
-  // );
-
   const defaultValues = useMemo(
     () => ({
       phone: '',
@@ -130,7 +113,6 @@ export default function CreatorForm({ creator, open, onClose }) {
   );
 
   const methods = useForm({
-    // resolver: yupResolver(activeStep === 0 ? firstSchema : activeStep === 1 && secondSchema),
     resolver: yupResolver(testSchema),
     defaultValues,
   });
@@ -146,15 +128,6 @@ export default function CreatorForm({ creator, open, onClose }) {
   const nationality = watch('Nationality');
 
   const handleNext = () => {
-    // if (activeStep === 0 && !isValid) {
-    //   setStepError([...stepError, activeStep]);
-    // } else if (activeStep === 1 && !isValid) {
-    //   setStepError([...stepError, activeStep]);
-    // } else {
-    //   stepError.splice(activeStep, 1);
-    //   setStepError(stepError);
-    // }
-
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 

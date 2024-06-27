@@ -210,6 +210,7 @@ const CampaignListView = () => {
         >
           {filteredData.map((campaign) => (
             <CampaignList
+              key={campaign?.id}
               campaign={campaign}
               onView={() => onView(campaign?.id)}
               onEdit={() => onEdit(campaign?.id)}

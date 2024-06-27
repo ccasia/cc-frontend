@@ -22,6 +22,10 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
   const settings = useSettingsContext();
   const router = useRouter();
 
+  // let timeline = campaign?.defaultCampaignTimeline || campaign?.customCampaignTimeline;
+
+  // timeline = filterTimelineAdmin(timeline);
+
   const renderImages = (
     <Stack
       spacing={0.5}
@@ -89,12 +93,14 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
     >
       {[
         {
-          label: campaign?.campaignBrief?.industries.map((e) => (
-            <Chip size="small" variant="outlined" label={e} color="primary" />
+          id: 1,
+          label: campaign?.campaignBrief?.industries.map((e, index) => (
+            <Chip key={index} size="small" variant="outlined" label={e} color="primary" />
           )),
           icon: <Iconify icon="mdi:company" sx={{ color: 'error.main' }} />,
         },
         {
+          id: 2,
           label: (
             <Typography variant="caption">
               {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} -
@@ -103,9 +109,9 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
           ),
           icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} />,
         },
-      ].map((item) => (
+      ].map((item, index) => (
         <Stack
-          key={item.label}
+          key={item.id}
           spacing={1}
           direction="row"
           alignItems="center"

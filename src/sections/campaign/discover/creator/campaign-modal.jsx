@@ -37,7 +37,9 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
     },
   });
 
-  const { handleSubmit } = methods;
+  const { handleSubmit, watch } = methods;
+
+  console.log(watch('content'));
 
   const onSubmit = handleSubmit(async (data) => {
     try {

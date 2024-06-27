@@ -61,6 +61,7 @@ const CampaignDetailManageView = ({ id }) => {
 
   const theme = useTheme();
   const smUp = useResponsive('down', 'sm');
+
   const [open, setOpen] = useState({
     campaignInfo: false,
     campaignBrand: false,
@@ -183,6 +184,7 @@ const CampaignDetailManageView = ({ id }) => {
     <>
       <Box component={Card} p={2}>
         <Typography variant="h5">Brand Information</Typography>
+
         <EditButton
           tooltip="Edit Brand"
           onClick={() =>
@@ -192,6 +194,7 @@ const CampaignDetailManageView = ({ id }) => {
             }))
           }
         />
+
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
           {campaign?.brand &&
             Object.keys(campaign?.brand)
@@ -524,10 +527,12 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="Posting"
             secondary={`${
-              campaign?.customCampaignTimeline?.posting ?? campaign?.defaultCampaignTimeline?.posting
+              campaign?.customCampaignTimeline?.posting ??
+              campaign?.defaultCampaignTimeline?.posting
             }
             ${formatDays(
-              campaign?.customCampaignTimeline?.posting ?? campaign?.defaultCampaignTimeline?.posting
+              campaign?.customCampaignTimeline?.posting ??
+                campaign?.defaultCampaignTimeline?.posting
             )}`}
           />
         </Box>
@@ -574,6 +579,7 @@ const CampaignDetailManageView = ({ id }) => {
               <Stack spacing={2}>
                 {renderCampaignInformation}
                 {campaign?.brand ? renderBrand : renderCompany}
+
                 {renderDosAndDonts}
               </Stack>
             </Grid>
@@ -595,7 +601,7 @@ const CampaignDetailManageView = ({ id }) => {
   );
 };
 
-export default withPermission(['view'], 'campaign', CampaignDetailManageView);
+export default withPermission(['read'], 'campaign', CampaignDetailManageView);
 
 CampaignDetailManageView.propTypes = {
   id: PropTypes.string,
