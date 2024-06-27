@@ -35,10 +35,10 @@ import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import { EditBrand } from '../../edit/EditBrand';
+import { EditTimeline } from '../../edit/EditTimeline';
 import { EditDosAndDonts } from '../../edit/EditDosAndDonts';
 import { EditCampaignInfo } from '../../edit/EditCampaignInfo';
 import { EditRequirements } from '../../edit/EditRequirements';
-import { EditTimeline } from '../../edit/EditTimeline';
 
 const EditButton = ({ tooltip, onClick }) => (
   <Stack direction="row" spacing={1} position="absolute" top={10} right={10} alignItems="center">
