@@ -180,10 +180,7 @@ export default function BrandsList({ brands, onView, onEdit, onDelete }) {
               <Dialog open={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
                 <DialogTitle>Delete {brand.name}</DialogTitle>
                 <DialogContent>
-                  <Typography>
-                    Are you sure you want to delete this company? This action will remove all brands
-                    under this company.
-                  </Typography>
+                  <Typography>Are you sure you want to delete this brand?</Typography>
                 </DialogContent>
                 <DialogActions>
                   <Button
@@ -207,7 +204,16 @@ export default function BrandsList({ brands, onView, onEdit, onDelete }) {
               </Dialog>
             </Box>
           ))}
-          {filteredData.length < 1 && <h1>No data found</h1>}
+          {filteredData.length < 1 && (
+            <Typography
+              variant="h4"
+              sx={{
+                textAlign: 'center',
+              }}
+            >
+              No Brand found
+            </Typography>
+          )}
         </Box>
       </Stack>
 
