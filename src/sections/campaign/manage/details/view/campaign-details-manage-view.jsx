@@ -57,7 +57,7 @@ EditButton.propTypes = {
 const CampaignDetailManageView = ({ id }) => {
   const [campaign, setCampaign] = useState();
   const [loading, setLoading] = useState(true);
-  //   const router = useRouter();
+
   const theme = useTheme();
   const smUp = useResponsive('down', 'sm');
   const [open, setOpen] = useState({
@@ -525,6 +525,19 @@ const CampaignDetailManageView = ({ id }) => {
     </Box>
   );
 
+  const renderAdminManager = (
+    <Box component={Card} p={2}>
+      <Typography variant="h5">Admin Manager</Typography>
+      <List>
+        {campaign?.CampaignAdmin?.map((item, index) => (
+          <ListItem>
+            <ListItemText primary={`${index + 1}. ${item?.admin?.user?.name}`} />
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -557,6 +570,7 @@ const CampaignDetailManageView = ({ id }) => {
               <Stack spacing={2}>
                 {renderRequirement}
                 {renderTimeline}
+                {renderAdminManager}
               </Stack>
             </Grid>
           </>
