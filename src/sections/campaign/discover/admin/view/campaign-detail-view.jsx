@@ -52,6 +52,15 @@ const CampaignDetailView = ({ id }) => {
 
   timeline = filterTimelineAdmin(timeline);
 
+  const isDue = (dueDate) => {
+    const startReminderDate = dayjs(dueDate).subtract(2, 'day');
+
+    if (startReminderDate <= dayjs() && dayjs() < dayjs(dueDate)) {
+      return true;
+    }
+    return false;
+  };
+
   const [currentTab, setCurrentTab] = useState('campaign-content');
 
   const handleChangeTab = useCallback((event, newValue) => {
@@ -98,48 +107,15 @@ const CampaignDetailView = ({ id }) => {
     });
   }, [open]);
 
-  const isDue = (dueDate) => {
-    const startReminderDate = dayjs(dueDate).subtract(2, 'day');
-
-    if (startReminderDate <= dayjs() && dayjs() < dayjs(dueDate)) {
-      return true;
-    }
-    return false;
-  };
-
-  return (
-    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <Button
-        startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} sx={{ ml: 1 }} />}
-        onClick={() => router.push(paths.dashboard.campaign.view)}
-        sx={{
-          mb: 3,
-        }}
-      >
-        Back
-      </Button>
-
-      {renderTabs}
-
-      {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
-      {currentTab === 'creator' && <CampaignDetailContent campaign={currentCampaign} />}
-      {currentTab === 'brand' && (
-        <CampaignDetailBrand brand={currentCampaign?.brand ?? currentCampaign?.company} />
-      )}
-      {currentTab === 'shortlisted' && <CampaignDetailContent campaign={currentCampaign} />}
-      {currentTab === 'pitch' && (
-        <CampaignDetailPitch
-          pitches={currentCampaign?.Pitch}
-          shortlisted={currentCampaign?.ShortListedCreator}
-        />
-      )}
-
+  const renderReminder = (
+    <>
       <IconButton
         sx={{
           position: 'fixed',
           bottom: 30,
           right: 30,
           border: (theme) => `1px solid ${theme.palette.background.paper}`,
+          bgcolor: (theme) => `${theme.palette.background.paper}`,
         }}
         onClick={(event) => {
           setAnchorEl(anchorEl ? null : event.currentTarget);
@@ -278,6 +254,36 @@ const CampaignDetailView = ({ id }) => {
           </List>
         </Box>
       </Popper>
+    </>
+  );
+
+  return (
+    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
+      <Button
+        startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} sx={{ ml: 1 }} />}
+        onClick={() => router.push(paths.dashboard.campaign.view)}
+        sx={{
+          mb: 3,
+        }}
+      >
+        Back
+      </Button>
+
+      {renderTabs}
+
+      {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
+      {currentTab === 'creator' && <CampaignDetailContent campaign={currentCampaign} />}
+      {currentTab === 'brand' && (
+        <CampaignDetailBrand brand={currentCampaign?.brand ?? currentCampaign?.company} />
+      )}
+      {currentTab === 'shortlisted' && <CampaignDetailContent campaign={currentCampaign} />}
+      {currentTab === 'pitch' && (
+        <CampaignDetailPitch
+          pitches={currentCampaign?.Pitch}
+          shortlisted={currentCampaign?.ShortListedCreator}
+        />
+      )}
+      {renderReminder}
     </Container>
   );
 };
