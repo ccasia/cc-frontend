@@ -93,7 +93,7 @@ const BrandEditView = ({ id }) => {
       brandTiktok: brand?.tiktok,
       brandWebsite: brand?.website,
       brandAbout: brand?.description,
-      brandIndustries: interestsList.filter((elem) => brand?.industries.includes(elem)),
+      brandIndustries: interestsList.filter((elem) => brand?.industries?.includes(elem)),
       brandObjectives: brand?.objectives,
     });
   }, [brand, reset]);
