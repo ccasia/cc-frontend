@@ -123,9 +123,9 @@ export default function BrandsList({ brands, onView, onEdit, onDelete }) {
                     />
 
                     <Typography variant="subtitle2" color={theme.palette.grey[400]}>
-                      {brand.description.length > 50
-                        ? brand.description.slice(0, 100).concat('...')
-                        : brand.description}
+                      {brand?.description.length > 50
+                        ? brand?.description.slice(0, 100).concat('...')
+                        : brand?.description}
                     </Typography>
                   </Stack>
                 </Stack>
