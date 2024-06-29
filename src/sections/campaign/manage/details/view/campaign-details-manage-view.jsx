@@ -1,10 +1,12 @@
 import dayjs from 'dayjs';
+import { mutate } from 'swr';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
 import { RiseLoader } from 'react-spinners';
 import { enqueueSnackbar } from 'notistack';
-import { useState, useEffect } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Card,
@@ -24,7 +26,9 @@ import {
 
 import { paths } from 'src/routes/paths';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import { formatText } from 'src/utils/format-test';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -56,8 +60,9 @@ EditButton.propTypes = {
 };
 
 const CampaignDetailManageView = ({ id }) => {
-  const [campaign, setCampaign] = useState();
-  const [loading, setLoading] = useState(true);
+  const { campaign, campaignLoading } = useGetCampaignById(id);
+
+  const loadingButton = useBoolean();
 
   const theme = useTheme();
   const smUp = useResponsive('down', 'sm');
@@ -71,25 +76,6 @@ const CampaignDetailManageView = ({ id }) => {
     timeline: false,
   });
 
-  useEffect(() => {
-    const getCampaign = async () => {
-      try {
-        const res = await axiosInstance.get(endpoints.campaign.getCampaignById(id));
-        setCampaign(res.data);
-      } catch (error) {
-        enqueueSnackbar('Error', {
-          variant: 'error',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    setTimeout(() => {
-      getCampaign();
-    }, 1000);
-  }, [id]);
-
   const onClose = (data) => {
     setOpen((prev) => ({
       ...prev,
@@ -98,6 +84,37 @@ const CampaignDetailManageView = ({ id }) => {
   };
 
   const formatDays = (days) => (days === 1 ? 'day' : 'days');
+
+  const handleChangeStage = async (stage) => {
+    try {
+      loadingButton.onTrue();
+      const res = await axiosInstance.patch(endpoints.campaign.changeStage(campaign?.id), {
+        stage,
+      });
+
+      if (stage === 'publish') {
+        enqueueSnackbar('Campaign is now live!');
+      } else {
+        enqueueSnackbar('Campaign is change to draft');
+      }
+      mutate(endpoints.campaign.getCampaignById(id), (currentData) => {
+        const newCampaign = {
+          ...currentData,
+          stage: res?.stage,
+        };
+        return {
+          ...currentData,
+          newCampaign,
+        };
+      });
+      loadingButton.onFalse();
+    } catch (error) {
+      enqueueSnackbar('Failed to change stage', {
+        variant: 'error',
+      });
+      loadingButton.onFalse();
+    }
+  };
 
   const renderCampaignInformation = (
     <>
@@ -218,7 +235,7 @@ const CampaignDetailManageView = ({ id }) => {
               )}
         </Box>
       </Box>
-      <EditBrand open={open} campaign={campaign} onClose={onClose} />
+      <EditBrand open={open.campaignBrand} campaign={campaign} onClose={onClose} />
     </>
   );
 
@@ -247,7 +264,7 @@ const CampaignDetailManageView = ({ id }) => {
               )}
         </Box>
       </Box>
-      <EditBrand open={open} campaign={campaign} onClose={onClose} />
+      <EditBrand open={open.campaignCompany} campaign={campaign} onClose={onClose} />
     </>
   );
 
@@ -307,7 +324,7 @@ const CampaignDetailManageView = ({ id }) => {
           </List>
         </Stack>
       </Box>
-      <EditDosAndDonts open={open} campaign={campaign} onClose={onClose} />
+      <EditDosAndDonts open={open.dosAndDonts} campaign={campaign} onClose={onClose} />
     </>
   );
 
@@ -411,7 +428,7 @@ const CampaignDetailManageView = ({ id }) => {
           />
         </Stack>
       </Box>
-      <EditRequirements open={open} campaign={campaign} onClose={onClose} />
+      <EditRequirements open={open.campaignRequirements} campaign={campaign} onClose={onClose} />
     </>
   );
 
@@ -537,7 +554,7 @@ const CampaignDetailManageView = ({ id }) => {
           />
         </Box>
       </Box>
-      <EditTimeline open={open} campaign={campaign} onClose={onClose} />
+      <EditTimeline open={open.timeline} campaign={campaign} onClose={onClose} />
     </>
   );
 
@@ -567,13 +584,38 @@ const CampaignDetailManageView = ({ id }) => {
           { name: 'Detail' },
           { name: id },
         ]}
+        action={
+          campaign && campaign?.stage === 'draft' ? (
+            <LoadingButton
+              variant="contained"
+              color="primary"
+              size="small"
+              endIcon={<Iconify icon="eva:cloud-upload-fill" />}
+              onClick={() => handleChangeStage('publish')}
+              loading={loadingButton.value}
+            >
+              Publish
+            </LoadingButton>
+          ) : (
+            <LoadingButton
+              variant="contained"
+              color="warning"
+              size="small"
+              endIcon={<Iconify icon="solar:file-text-bold" />}
+              onClick={() => handleChangeStage('draft')}
+              loading={loadingButton.value}
+            >
+              Draft
+            </LoadingButton>
+          )
+        }
         sx={{
           mb: { xs: 3, md: 5 },
         }}
       />
 
       <Grid container spacing={2}>
-        {!loading ? (
+        {!campaignLoading ? (
           <>
             <Grid item xs={12} md={8}>
               <Stack spacing={2}>

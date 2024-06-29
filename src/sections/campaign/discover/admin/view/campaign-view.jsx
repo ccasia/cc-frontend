@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import { Menu, Stack, Button, MenuItem, Container, TextField, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import Iconify from 'src/components/iconify';
@@ -11,21 +12,42 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CampaignLists from '../campaign-list';
+import CampaignFilter from '../campaign-filter';
+
+const defaultFilters = {
+  status: '',
+  brands: [],
+};
 
 const CampaignView = () => {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns();
 
   const [anchorEl, setAnchorEl] = useState(null);
+  const [filters, setFilters] = useState(defaultFilters);
 
   const open = Boolean(anchorEl);
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const openFilters = useBoolean();
+
+  const dataFiltered = applyFilter({
+    inputData: campaigns && campaigns.filter((campaign) => campaign?.stage === 'publish'),
+    filters,
+  });
+
+  const handleFilters = useCallback((name, value) => {
+    setFilters((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  }, []);
+
+  const handleResetFitlers = () => {
+    setFilters(defaultFilters);
   };
 
   return (
@@ -47,6 +69,9 @@ const CampaignView = () => {
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         <TextField
           placeholder="Search..."
+          sx={{
+            width: 250,
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -55,7 +80,7 @@ const CampaignView = () => {
             ),
           }}
         />
-        <Button onClick={handleClick} endIcon={<Iconify icon="ep:arrow-down-bold" width={14} />}>
+        <Button onClick={openFilters.onTrue} endIcon={<Iconify icon="ic:round-filter-list" />}>
           Filter
         </Button>
 
@@ -73,9 +98,36 @@ const CampaignView = () => {
         </Menu>
       </Stack>
 
-      {campaigns && <CampaignLists campaigns={campaigns} />}
+      {dataFiltered && <CampaignLists campaigns={dataFiltered} />}
+      <CampaignFilter
+        open={openFilters.value}
+        onOpen={openFilters.onTrue}
+        onClose={openFilters.onFalse}
+        //
+        filters={filters}
+        onFilters={handleFilters}
+        reset={handleResetFitlers}
+      />
     </Container>
   );
 };
 
 export default CampaignView;
+
+const applyFilter = ({ inputData, filters }) => {
+  const { status, brands } = filters;
+
+  const brandIds = brands.map((brand) => brand.id);
+
+  if (status) {
+    inputData = inputData.filter((campaign) => campaign?.status === status);
+  }
+
+  if (brands.length) {
+    inputData = inputData.filter((campaign) =>
+      brandIds.includes(campaign?.companyId || campaign?.brandId)
+    );
+  }
+
+  return inputData;
+};

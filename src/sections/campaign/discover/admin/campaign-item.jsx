@@ -10,8 +10,6 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
-import { fDateTime } from 'src/utils/format-time';
-
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -21,10 +19,6 @@ import { useSettingsContext } from 'src/components/settings';
 export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
   const settings = useSettingsContext();
   const router = useRouter();
-
-  // let timeline = campaign?.defaultCampaignTimeline || campaign?.customCampaignTimeline;
-
-  // timeline = filterTimelineAdmin(timeline);
 
   const renderImages = (
     <Stack
@@ -59,28 +53,31 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
   );
 
   const renderTexts = (
-    <ListItemText
+    <Stack
       sx={{
         p: (theme) => theme.spacing(2.5, 2.5, 2, 2.5),
       }}
-      primary={`Created date: ${fDateTime(campaign?.createdAt)}`}
-      secondary={
-        <Link component={RouterLink} color="inherit">
-          {campaign?.name}
-        </Link>
-      }
-      primaryTypographyProps={{
-        typography: 'caption',
-        color: 'text.disabled',
-      }}
-      secondaryTypographyProps={{
-        mt: 1,
-        noWrap: true,
-        component: 'span',
-        color: 'text.primary',
-        typography: 'subtitle1',
-      }}
-    />
+    >
+      <ListItemText
+        primary={
+          <Link component={RouterLink} color="inherit">
+            {campaign?.name}
+          </Link>
+        }
+        secondary={`by ${campaign?.brand?.name ?? campaign?.company?.name}`}
+        primaryTypographyProps={{
+          noWrap: true,
+          component: 'span',
+          color: 'text.primary',
+          typography: 'subtitle1',
+        }}
+        secondaryTypographyProps={{
+          noWrap: true,
+          color: 'text.disabled',
+          typography: 'caption',
+        }}
+      />
+    </Stack>
   );
 
   const renderInfo = (

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 import {
   Tab,
@@ -41,6 +41,7 @@ const CampaignDetailView = ({ id }) => {
   const router = useRouter();
   const { campaigns } = useGetCampaigns();
   const [anchorEl, setAnchorEl] = useState(null);
+  const reminderRef = useRef(null);
 
   const open = Boolean(anchorEl);
   const idd = open ? 'simple-popper' : undefined;
@@ -99,10 +100,18 @@ const CampaignDetailView = ({ id }) => {
     </Tabs>
   );
 
+  // useEffect(() => {
+  //   window.addEventListener('scroll', (e) => {
+  //     if (open) {
+  //       setAnchorEl(null);
+  //     }
+  //   });
+  // }, [open]);
+
   useEffect(() => {
-    window.addEventListener('scroll', (e) => {
-      if (open) {
-        setAnchorEl(null);
+    window.addEventListener('click', (event) => {
+      if (reminderRef.current && !reminderRef.current.contains(event.target)) {
+        setAnchorEl(false);
       }
     });
   }, [open]);
@@ -110,6 +119,8 @@ const CampaignDetailView = ({ id }) => {
   const renderReminder = (
     <>
       <IconButton
+        ref={reminderRef}
+        id="reminder"
         sx={{
           position: 'fixed',
           bottom: 30,
@@ -132,9 +143,18 @@ const CampaignDetailView = ({ id }) => {
             mr: 5,
             width: 450,
             border: (theme) => `1px solid ${theme.palette.primary.light}`,
+            position: 'relative',
           }}
           component={Card}
         >
+          <Iconify
+            icon="raphael:arrowdown"
+            sx={{
+              position: 'absolute',
+              bottom: -10,
+              zIndex: 1111111,
+            }}
+          />
           <Stack alignItems="center" direction="row" justifyContent="space-between">
             <Stack alignItems="center" spacing={1} direction="row">
               <Iconify icon="material-symbols:info-outline" />

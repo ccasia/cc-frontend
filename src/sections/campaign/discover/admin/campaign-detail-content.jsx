@@ -40,30 +40,9 @@ const CampaignDetailContent = ({ campaign }) => {
         sx={{ borderRadius: 2, cursor: 'pointer' }}
       />
       <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
-        <Image
-          src={campaign?.campaignBrief?.images[0]}
-          alt="test"
-          ratio="1/1"
-          sx={{ borderRadius: 2, cursor: 'pointer' }}
-        />
-        <Image
-          src={campaign?.campaignBrief?.images[1]}
-          alt="test"
-          ratio="1/1"
-          sx={{ borderRadius: 2, cursor: 'pointer' }}
-        />
-        <Image
-          src={campaign?.campaignBrief?.images[2]}
-          alt="test"
-          ratio="1/1"
-          sx={{ borderRadius: 2, cursor: 'pointer' }}
-        />
-        <Image
-          src={campaign?.campaignBrief?.images[3]}
-          alt="test"
-          ratio="1/1"
-          sx={{ borderRadius: 2, cursor: 'pointer' }}
-        />
+        {campaign?.campaignBrief?.images.map((elem) => (
+          <Image src={elem} alt="test" ratio="1/1" sx={{ borderRadius: 2, cursor: 'pointer' }} />
+        ))}
       </Box>
     </Box>
   );

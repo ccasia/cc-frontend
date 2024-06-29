@@ -19,6 +19,7 @@ const useGetCampaigns = (type) => {
     if (!endpoint) {
       return;
     }
+
     const getCampaigns = async () => {
       try {
         const res = await axiosInstance.get(endpoint);
