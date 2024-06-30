@@ -158,7 +158,7 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
 };
 
 EditRequirements.propTypes = {
-  open: PropTypes.bool,
+  open: PropTypes.object,
   campaign: PropTypes.object,
   onClose: PropTypes.func,
 };

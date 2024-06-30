@@ -107,7 +107,7 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
 };
 
 EditDosAndDonts.propTypes = {
-  open: PropTypes.bool,
+  open: PropTypes.object,
   campaign: PropTypes.object,
   onClose: PropTypes.func,
 };

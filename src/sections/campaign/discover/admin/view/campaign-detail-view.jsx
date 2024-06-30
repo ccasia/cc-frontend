@@ -100,14 +100,6 @@ const CampaignDetailView = ({ id }) => {
     </Tabs>
   );
 
-  // useEffect(() => {
-  //   window.addEventListener('scroll', (e) => {
-  //     if (open) {
-  //       setAnchorEl(null);
-  //     }
-  //   });
-  // }, [open]);
-
   useEffect(() => {
     window.addEventListener('click', (event) => {
       if (reminderRef.current && !reminderRef.current.contains(event.target)) {
@@ -134,27 +126,22 @@ const CampaignDetailView = ({ id }) => {
       >
         <Iconify icon="hugeicons:apple-reminder" width={30} />
       </IconButton>
-      <Popper id={idd} open={open} anchorEl={anchorEl}>
+      <Popper id={idd} open={open} anchorEl={anchorEl} placement="top-end">
         <Box
           sx={{
             p: 2,
             bgcolor: 'background.paper',
             mb: 1,
-            mr: 5,
-            width: 450,
+            // mr: 5,
+            width: {
+              xs: 250,
+              md: 450,
+            },
             border: (theme) => `1px solid ${theme.palette.primary.light}`,
             position: 'relative',
           }}
           component={Card}
         >
-          <Iconify
-            icon="raphael:arrowdown"
-            sx={{
-              position: 'absolute',
-              bottom: -10,
-              zIndex: 1111111,
-            }}
-          />
           <Stack alignItems="center" direction="row" justifyContent="space-between">
             <Stack alignItems="center" spacing={1} direction="row">
               <Iconify icon="material-symbols:info-outline" />
@@ -279,15 +266,34 @@ const CampaignDetailView = ({ id }) => {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <Button
-        startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} sx={{ ml: 1 }} />}
-        onClick={() => router.push(paths.dashboard.campaign.view)}
-        sx={{
-          mb: 3,
-        }}
-      >
-        Back
-      </Button>
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <Button
+          startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} sx={{ ml: 1 }} />}
+          onClick={() => router.push(paths.dashboard.campaign.view)}
+          sx={{
+            mb: 3,
+          }}
+        >
+          Back
+        </Button>
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={
+            <Iconify
+              icon="material-symbols-light:bookmark-manager-outline-rounded"
+              width={19}
+              sx={{ ml: 1 }}
+            />
+          }
+          onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
+          sx={{
+            mb: 3,
+          }}
+        >
+          Manage
+        </Button>
+      </Stack>
 
       {renderTabs}
 

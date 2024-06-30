@@ -8,6 +8,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 
 import {
   Box,
+  Chip,
   Dialog,
   Button,
   Typography,
@@ -18,14 +19,18 @@ import {
   DialogContentText,
 } from '@mui/material';
 
+import { useResponsive } from 'src/hooks/use-responsive';
+
 import { formatText } from 'src/utils/format-test';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { RHFEditor } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 const CampaignModal = ({ open, handleClose, campaign }) => {
+  const smUp = useResponsive('down', 'sm');
   const schema = Yup.object().shape({
     content: Yup.string().required('Pitch Script is required'),
   });
@@ -37,9 +42,7 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
     },
   });
 
-  const { handleSubmit, watch } = methods;
-
-  console.log(watch('content'));
+  const { handleSubmit } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -56,8 +59,30 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
     }
   });
 
+  const renderGallery = (
+    <Box
+      display="grid"
+      gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+      gap={1}
+      p={2}
+    >
+      <Image
+        src={campaign?.campaignBrief?.images[0]}
+        alt="test"
+        ratio="1/1"
+        sx={{ borderRadius: 2, cursor: 'pointer' }}
+      />
+      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
+        {campaign?.campaignBrief?.images.map((elem) => (
+          <Image src={elem} alt="test" ratio="1/1" sx={{ borderRadius: 2, cursor: 'pointer' }} />
+        ))}
+      </Box>
+    </Box>
+  );
+
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" fullScreen={smUp}>
+      {renderGallery}
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle>
           <ListItemText
@@ -79,30 +104,50 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
           <Box mt={2}>
             <Typography variant="h6">Campaign Requirements</Typography>
             {/* <List> */}
-            <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={1}>
+            <Box
+              display="grid"
+              gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
+              gap={2}
+              mt={1}
+            >
               <ListItemText
                 primary="Gender"
-                secondary={formatText(campaign?.campaignRequirement?.gender)}
+                secondary={campaign?.campaignRequirement?.gender.map((gender) => (
+                  <Chip label={formatText(gender)} size="small" sx={{ mr: 1 }} />
+                ))}
               />
               <ListItemText
                 primary="Age"
-                secondary={formatText(campaign?.campaignRequirement?.age)}
+                secondary={campaign?.campaignRequirement?.age.map((age) => (
+                  <Chip label={formatText(age)} size="small" sx={{ mr: 1 }} />
+                ))}
               />
               <ListItemText
                 primary="Geo Location"
-                secondary={formatText(campaign?.campaignRequirement?.geoLocation)}
+                secondary={campaign?.campaignRequirement?.geoLocation.map((location) => (
+                  <Chip label={formatText(location)} size="small" sx={{ mr: 1 }} />
+                ))}
               />
               <ListItemText
                 primary="Language"
-                secondary={formatText(campaign?.campaignRequirement?.language)}
+                secondary={campaign?.campaignRequirement?.language.map((language) => (
+                  <Chip label={formatText(language)} size="small" sx={{ mr: 1 }} />
+                ))}
               />
               <ListItemText
                 primary="Creator Persona"
-                secondary={formatText(campaign?.campaignRequirement?.creator_persona)}
+                secondary={campaign?.campaignRequirement?.creator_persona.map((creatorPersona) => (
+                  <Chip label={formatText(creatorPersona)} size="small" sx={{ mr: 1 }} />
+                ))}
               />
               <ListItemText
                 primary="User Persona"
-                secondary={formatText(campaign?.campaignRequirement?.user_persona)}
+                secondary={
+                  <Chip
+                    label={formatText(campaign?.campaignRequirement?.user_persona)}
+                    size="small"
+                  />
+                }
               />
             </Box>
             {/* </List> */}

@@ -228,7 +228,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
 };
 
 EditTimeline.propTypes = {
-  open: PropTypes.bool,
+  open: PropTypes.object,
   campaign: PropTypes.object,
   onClose: PropTypes.func,
 };

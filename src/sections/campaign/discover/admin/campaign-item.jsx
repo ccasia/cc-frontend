@@ -92,9 +92,9 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
         {
           id: 1,
           label: campaign?.campaignBrief?.industries.map((e, index) => (
-            <Chip key={index} size="small" variant="outlined" label={e} color="primary" />
+            <Chip key={index} size="small" variant="outlined" label={e} color="error" />
           )),
-          icon: <Iconify icon="mdi:company" sx={{ color: 'error.main' }} />,
+          icon: <Iconify icon="mdi:company" sx={{ color: 'error.main' }} width={21} />,
         },
         {
           id: 2,
@@ -104,7 +104,14 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
                 ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
             </Typography>
           ),
-          icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} />,
+          icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} width={21} />,
+        },
+        {
+          id: 3,
+          label: (
+            <Chip label={campaign?.status} size="small" color="secondary" variant="outlined" />
+          ),
+          icon: <Iconify icon="lets-icons:status" sx={{ color: 'secondary.main' }} width={21} />,
         },
       ].map((item, index) => (
         <Stack

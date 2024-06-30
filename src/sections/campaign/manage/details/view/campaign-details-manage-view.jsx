@@ -84,6 +84,7 @@ const CampaignDetailManageView = ({ id }) => {
   };
 
   const formatDays = (days) => (days === 1 ? 'day' : 'days');
+  const isEditable = campaign?.stage !== 'publish';
 
   const handleChangeStage = async (stage) => {
     try {
@@ -145,18 +146,20 @@ const CampaignDetailManageView = ({ id }) => {
               <Chip label={campaign?.status} size="small" color="primary" />
             </>
           )}
-          <Tooltip title="Edit Campaign Information" arrow>
-            <IconButton
-              onClick={() =>
-                setOpen((prev) => ({
-                  ...prev,
-                  campaignInfo: true,
-                }))
-              }
-            >
-              <Iconify icon="lucide:edit" />
-            </IconButton>
-          </Tooltip>
+          {isEditable && (
+            <Tooltip title="Edit Campaign Information" arrow>
+              <IconButton
+                onClick={() =>
+                  setOpen((prev) => ({
+                    ...prev,
+                    campaignInfo: true,
+                  }))
+                }
+              >
+                <Iconify icon="lucide:edit" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Stack>
 
         <Stack mt={2} color="text.disabled">
@@ -193,6 +196,7 @@ const CampaignDetailManageView = ({ id }) => {
           </Stack>
         </Stack>
       </Box>
+
       <EditCampaignInfo open={open} campaign={campaign} onClose={onClose} />
     </>
   );
@@ -202,15 +206,17 @@ const CampaignDetailManageView = ({ id }) => {
       <Box component={Card} p={2}>
         <Typography variant="h5">Brand Information</Typography>
 
-        <EditButton
-          tooltip="Edit Brand"
-          onClick={() =>
-            setOpen((prev) => ({
-              ...prev,
-              campaignBrand: true,
-            }))
-          }
-        />
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Brand"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignBrand: true,
+              }))
+            }
+          />
+        )}
 
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
           {campaign?.brand &&
@@ -235,7 +241,7 @@ const CampaignDetailManageView = ({ id }) => {
               )}
         </Box>
       </Box>
-      <EditBrand open={open.campaignBrand} campaign={campaign} onClose={onClose} />
+      <EditBrand open={open} campaign={campaign} onClose={onClose} />
     </>
   );
 
@@ -243,15 +249,17 @@ const CampaignDetailManageView = ({ id }) => {
     <>
       <Box component={Card} p={2}>
         <Typography variant="h5">Brand Information</Typography>
-        <EditButton
-          tooltip="Edit Company"
-          onClick={() =>
-            setOpen((prev) => ({
-              ...prev,
-              campaignBrand: true,
-            }))
-          }
-        />
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Company"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignBrand: true,
+              }))
+            }
+          />
+        )}
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
           {campaign?.company &&
             Object.keys(campaign?.company)
@@ -264,7 +272,8 @@ const CampaignDetailManageView = ({ id }) => {
               )}
         </Box>
       </Box>
-      <EditBrand open={open.campaignCompany} campaign={campaign} onClose={onClose} />
+
+      <EditBrand open={open} campaign={campaign} onClose={onClose} />
     </>
   );
 
@@ -272,15 +281,17 @@ const CampaignDetailManageView = ({ id }) => {
     <>
       <Box component={Card} p={2}>
         <Typography variant="h5">Dos & Don&apos;ts</Typography>
-        <EditButton
-          tooltip="Edit Dos and Don'ts"
-          onClick={() =>
-            setOpen((prev) => ({
-              ...prev,
-              dosAndDonts: true,
-            }))
-          }
-        />
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Dos and Don'ts"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                dosAndDonts: true,
+              }))
+            }
+          />
+        )}
         <Divider
           sx={{
             borderStyle: 'dashed',
@@ -324,7 +335,7 @@ const CampaignDetailManageView = ({ id }) => {
           </List>
         </Stack>
       </Box>
-      <EditDosAndDonts open={open.dosAndDonts} campaign={campaign} onClose={onClose} />
+      {isEditable && <EditDosAndDonts open={open} campaign={campaign} onClose={onClose} />}
     </>
   );
 
@@ -332,15 +343,17 @@ const CampaignDetailManageView = ({ id }) => {
     <>
       <Box component={Card} p={2}>
         <Typography variant="h5">Requirements</Typography>
-        <EditButton
-          tooltip="Edit Requirements"
-          onClick={() =>
-            setOpen((prev) => ({
-              ...prev,
-              campaignRequirements: true,
-            }))
-          }
-        />
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Requirements"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignRequirements: true,
+              }))
+            }
+          />
+        )}
         <Stack spacing={1} mt={1}>
           <ListItemText
             primary="Gender"
@@ -428,7 +441,7 @@ const CampaignDetailManageView = ({ id }) => {
           />
         </Stack>
       </Box>
-      <EditRequirements open={open.campaignRequirements} campaign={campaign} onClose={onClose} />
+      {isEditable && <EditRequirements open={open} campaign={campaign} onClose={onClose} />}
     </>
   );
 
@@ -436,15 +449,17 @@ const CampaignDetailManageView = ({ id }) => {
     <>
       <Box component={Card} p={2}>
         <Typography variant="h5">Timeline</Typography>
-        <EditButton
-          tooltip="Edit Timeline"
-          onClick={() =>
-            setOpen((prev) => ({
-              ...prev,
-              timeline: true,
-            }))
-          }
-        />
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Timeline"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                timeline: true,
+              }))
+            }
+          />
+        )}
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={1}>
           <ListItemText
             primary="Open For Pitch"
@@ -554,7 +569,7 @@ const CampaignDetailManageView = ({ id }) => {
           />
         </Box>
       </Box>
-      <EditTimeline open={open.timeline} campaign={campaign} onClose={onClose} />
+      {isEditable && <EditTimeline open={open} campaign={campaign} onClose={onClose} />}
     </>
   );
 
