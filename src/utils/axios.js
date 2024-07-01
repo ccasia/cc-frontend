@@ -117,6 +117,7 @@ export const endpoints = {
     pitch: {
       root: '/api/campaign/pitch',
       approve: '/api/campaign/approvepitch',
+      reject: '/api/campaign/rejectPitch',
       detail: (id) => `/api/campaign/pitch/${id}`,
     },
     changeStage: (id) => `/api/campaign/changeCampaignStage/${id}`,

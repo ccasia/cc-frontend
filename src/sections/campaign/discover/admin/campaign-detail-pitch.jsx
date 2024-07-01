@@ -6,6 +6,7 @@ import { enqueueSnackbar } from 'notistack';
 import {
   Box,
   Card,
+  Chip,
   Stack,
   alpha,
   Dialog,
@@ -54,10 +55,10 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
     }
   };
 
-  // const isShortlisted = (id) => {
-  //   const a = shortlisted.some((item) => item.creatorId.includes(id));
-  //   return a;
-  // };
+  const isShortlisted = (id) => {
+    const a = shortlisted.some((item) => item.creatorId.includes(id));
+    return a;
+  };
 
   const getFullPhoneNumber = (country, phoneNumber) => {
     const initial = countries.filter((elem) => elem.label.includes(country))[0].phone;
@@ -78,6 +79,30 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
               p: 1.5,
             }}
           >
+            {isShortlisted(pitch?.userId) ? (
+              <Chip
+                label="shortlisted"
+                size="small"
+                color="success"
+                sx={{
+                  position: 'absolute',
+                  bottom: 10,
+                  right: 10,
+                }}
+              />
+            ) : (
+              <Chip
+                label="Rejected"
+                size="small"
+                color="error"
+                sx={{
+                  position: 'absolute',
+                  bottom: 10,
+                  right: 10,
+                }}
+              />
+            )}
+
             <Tooltip title={`View ${pitch?.user?.name}`}>
               <IconButton
                 sx={{
@@ -85,10 +110,11 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
                   top: 0,
                   right: 0,
                 }}
-                onClick={() => {
-                  setOpen(true);
-                  setSelectedPitch(pitch);
-                }}
+                onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}
+                // onClick={() => {
+                //   setOpen(true);
+                //   setSelectedPitch(pitch);
+                // }}
               >
                 <Iconify icon="fluent:open-12-filled" width={16} />
               </IconButton>
@@ -146,9 +172,9 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
                   </Tooltip>
                   {/* <Typography variant="caption">Type</Typography>
                   <Chip label={pitch?.type} size="small" color="secondary" /> */}
-                  <Button onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}>
+                  {/* <Button onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}>
                     View
-                  </Button>
+                  </Button> */}
                 </Stack>
               </Stack>
             </Stack>
