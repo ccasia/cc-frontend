@@ -34,7 +34,7 @@ export default function BasicTable() {
   useEffect(() => {
     const getCreatorFromLandingPage = async () => {
       try {
-        const res = await axios.get(`http://34.124.202.216:4002/getCreators`);
+        const res = await axios.get(`http://34.1.203.152:4002/getCreators`);
         setCreators(res.data);
       } catch (error) {
         console.log(error);

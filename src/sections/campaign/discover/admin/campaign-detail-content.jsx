@@ -40,8 +40,14 @@ const CampaignDetailContent = ({ campaign }) => {
         sx={{ borderRadius: 2, cursor: 'pointer' }}
       />
       <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
-        {campaign?.campaignBrief?.images.map((elem) => (
-          <Image src={elem} alt="test" ratio="1/1" sx={{ borderRadius: 2, cursor: 'pointer' }} />
+        {campaign?.campaignBrief?.images.map((elem, index) => (
+          <Image
+            key={index}
+            src={elem}
+            alt="test"
+            ratio="1/1"
+            sx={{ borderRadius: 2, cursor: 'pointer' }}
+          />
         ))}
       </Box>
     </Box>
@@ -175,8 +181,8 @@ const CampaignDetailContent = ({ campaign }) => {
       <Stack direction="column">
         <Typography variant="h5">Campaign Do&apos;s</Typography>
         <List>
-          {campaign?.campaignBrief?.campaigns_do.map((item) => (
-            <ListItem>
+          {campaign?.campaignBrief?.campaigns_do.map((item, index) => (
+            <ListItem key={index}>
               <ListItemIcon>
                 <Iconify icon="octicon:dot-16" sx={{ color: 'success.main' }} />
               </ListItemIcon>
@@ -189,8 +195,8 @@ const CampaignDetailContent = ({ campaign }) => {
       <Stack direction="column">
         <Typography variant="h5">Campaign Dont&apos;s</Typography>
         <List>
-          {campaign?.campaignBrief?.campaigns_dont.map((item) => (
-            <ListItem>
+          {campaign?.campaignBrief?.campaigns_dont.map((item, index) => (
+            <ListItem key={index}>
               <ListItemIcon>
                 <Iconify icon="octicon:dot-16" sx={{ color: 'error.main' }} />
               </ListItemIcon>

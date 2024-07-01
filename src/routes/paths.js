@@ -45,6 +45,7 @@ export const paths = {
       adminCampaignDetail: (id) => `${ROOTS.DASHBOARD}/campaign/discover/detail/${id}`,
       adminCampaignManageDetail: (id) => `${ROOTS.DASHBOARD}/campaign/manage/${id}`,
       adminCampaignEdit: (id) => `${ROOTS.DASHBOARD}/campaign/manage/edit/${id}`,
+      pitch: (id) => `${ROOTS.DASHBOARD}/campaign/pitch/${id}`,
     },
     user: {
       root: `${ROOTS.DASHBOARD}/user`,

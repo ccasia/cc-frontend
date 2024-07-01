@@ -6,10 +6,11 @@ import { enqueueSnackbar } from 'notistack';
 import {
   Box,
   Card,
-  Chip,
   Stack,
+  alpha,
   Dialog,
   Button,
+  Tooltip,
   IconButton,
   DialogTitle,
   ListItemText,
@@ -17,7 +18,12 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { countries } from 'src/assets/data';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
@@ -26,6 +32,7 @@ import Markdown from 'src/components/markdown';
 const CampaignDetailPitch = ({ pitches, shortlisted }) => {
   const [open, setOpen] = useState(false);
   const [selectedPitch, setSelectedPitch] = useState(null);
+  const router = useRouter();
 
   const handleClose = () => {
     setOpen(false);
@@ -52,6 +59,11 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
   //   return a;
   // };
 
+  const getFullPhoneNumber = (country, phoneNumber) => {
+    const initial = countries.filter((elem) => elem.label.includes(country))[0].phone;
+    return `+${initial}-${phoneNumber}`;
+  };
+
   return (
     <Box
       display="grid"
@@ -66,21 +78,23 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
               p: 1.5,
             }}
           >
-            <IconButton
-              sx={{
-                position: ' absolute',
-                top: 0,
-                right: 0,
-              }}
-              onClick={() => {
-                setOpen(true);
-                setSelectedPitch(pitch);
-              }}
-            >
-              <Iconify icon="fluent:open-12-filled" width={16} />
-            </IconButton>
+            <Tooltip title={`View ${pitch?.user?.name}`}>
+              <IconButton
+                sx={{
+                  position: ' absolute',
+                  top: 0,
+                  right: 0,
+                }}
+                onClick={() => {
+                  setOpen(true);
+                  setSelectedPitch(pitch);
+                }}
+              >
+                <Iconify icon="fluent:open-12-filled" width={16} />
+              </IconButton>
+            </Tooltip>
+
             <Stack direction="row" spacing={2}>
-              {/* {isShortlisted(pitch?.userId) && <Chip label="shortlisted" />} */}
               <Image
                 src="/test.jpeg"
                 ratio="1/1"
@@ -97,11 +111,50 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
                     typography: 'subtitle1',
                   }}
                 />
-                <Chip label={pitch?.type} size="small" color="secondary" />
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Tooltip
+                    title={getFullPhoneNumber(pitch?.user?.country, pitch?.user?.phoneNumber)}
+                  >
+                    <IconButton
+                      size="small"
+                      color="success"
+                      sx={{
+                        borderRadius: 1,
+                        bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
+                        '&:hover': {
+                          bgcolor: (theme) => alpha(theme.palette.success.main, 0.16),
+                        },
+                      }}
+                    >
+                      <Iconify icon="material-symbols:call" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Media Kit">
+                    <IconButton
+                      size="small"
+                      color="info"
+                      sx={{
+                        borderRadius: 1,
+                        bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
+                        '&:hover': {
+                          bgcolor: (theme) => alpha(theme.palette.info.main, 0.16),
+                        },
+                      }}
+                    >
+                      <Iconify icon="flowbite:profile-card-outline" width={15} />
+                    </IconButton>
+                  </Tooltip>
+                  {/* <Typography variant="caption">Type</Typography>
+                  <Chip label={pitch?.type} size="small" color="secondary" /> */}
+                  <Button onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}>
+                    View
+                  </Button>
+                </Stack>
               </Stack>
             </Stack>
           </Card>
         ))}
+
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>Pitch Content</DialogTitle>
         <DialogContent>

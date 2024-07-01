@@ -114,7 +114,11 @@ export const endpoints = {
     getAllActiveCampaign: '/api/campaign/getAllActiveCampaign',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
-    pitch: { root: '/api/campaign/pitch', approve: '/api/campaign/approvepitch' },
+    pitch: {
+      root: '/api/campaign/pitch',
+      approve: '/api/campaign/approvepitch',
+      detail: (id) => `/api/campaign/pitch/${id}`,
+    },
     changeStage: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
   },

@@ -32,6 +32,9 @@ const AdminCamapaignView = lazy(
 const AdminEditCampaignView = lazy(
   () => import('src/pages/dashboard/campaign/admin/campaign-edit-view')
 );
+const CampaignPitchDetail = lazy(
+  () => import('src/pages/dashboard/campaign/admin/pitch/campaign-pitch-detail')
+);
 
 // Brand & Company
 const BrandManage = lazy(() => import('src/pages/dashboard/brand/manageBrand'));
@@ -269,6 +272,14 @@ export const dashboardRoutes = [
             element: (
               <RoleBasedGuard hasContent roles={['superadmin']}>
                 <CampaignDetails />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: 'pitch/:id',
+            element: (
+              <RoleBasedGuard hasContent roles={['superadmin']}>
+                <CampaignPitchDetail />
               </RoleBasedGuard>
             ),
           },
