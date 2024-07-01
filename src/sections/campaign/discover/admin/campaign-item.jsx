@@ -10,6 +10,8 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
+import { formatText } from 'src/utils/format-test';
+
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -106,13 +108,13 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
           ),
           icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} width={21} />,
         },
-        {
-          id: 3,
-          label: (
-            <Chip label={campaign?.status} size="small" color="secondary" variant="outlined" />
-          ),
-          icon: <Iconify icon="lets-icons:status" sx={{ color: 'secondary.main' }} width={21} />,
-        },
+        // {
+        //   id: 3,
+        //   label: (
+        //     <Chip label={campaign?.status} size="small" color="secondary" variant="outlined" />
+        //   ),
+        //   icon: <Iconify icon="lets-icons:status" sx={{ color: 'secondary.main' }} width={21} />,
+        // },
       ].map((item, index) => (
         <Stack
           key={item.id}
@@ -143,6 +145,18 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
         },
       }}
     >
+      <Chip
+        label={formatText(campaign?.status)}
+        color="primary"
+        size="small"
+        sx={{
+          position: 'absolute',
+          top: 15,
+          left: 15,
+          zIndex: 11,
+        }}
+      />
+
       {renderImages}
 
       {renderTexts}

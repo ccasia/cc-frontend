@@ -65,7 +65,30 @@ export default function CampaignListView() {
       />
 
       <Box sx={{ my: 2 }} />
-      {campaigns && <CampaignLists campaigns={campaigns} />}
+      {campaigns?.length > 0 ? (
+        <CampaignLists campaigns={campaigns} />
+      ) : (
+        <Box
+          sx={{
+            height: 300,
+            borderRadius: 2,
+            bgcolor: (theme) => theme.palette.background.paper,
+            position: 'relative',
+          }}
+        >
+          <Typography
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              color: (theme) => theme.palette.text.disabled,
+            }}
+          >
+            No campaign available.
+          </Typography>
+        </Box>
+      )}
     </Container>
   );
 }

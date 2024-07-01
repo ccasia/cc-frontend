@@ -117,6 +117,28 @@ const CampaignDetailManageView = ({ id }) => {
     }
   };
 
+  const closeCampaign = async () => {
+    try {
+      const res = await axiosInstance.patch(endpoints.campaign.closeCampaign(id));
+      enqueueSnackbar(res?.data?.message);
+
+      mutate(endpoints.campaign.getCampaignById(id), (currentData) => {
+        const newCampaign = {
+          ...currentData,
+          status: 'past',
+        };
+        return {
+          ...currentData,
+          newCampaign,
+        };
+      });
+    } catch (error) {
+      enqueueSnackbar('Error to close campaign', {
+        variant: 'error',
+      });
+    }
+  };
+
   const renderCampaignInformation = (
     <>
       <Box p={2} component={Card} position="relative">
@@ -654,6 +676,22 @@ const CampaignDetailManageView = ({ id }) => {
           </Grid>
         )}
       </Grid>
+
+      {campaign?.status === 'active' && campaign?.stage === 'publish' && (
+        <LoadingButton
+          sx={{
+            position: 'fixed',
+            bottom: 10,
+            right: 10,
+          }}
+          startIcon={<Iconify icon="ion:close" />}
+          variant="outlined"
+          color="error"
+          onClick={closeCampaign}
+        >
+          Close Campaign
+        </LoadingButton>
+      )}
     </Container>
   );
 };

@@ -116,5 +116,6 @@ export const endpoints = {
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
     pitch: { root: '/api/campaign/pitch', approve: '/api/campaign/approvepitch' },
     changeStage: (id) => `/api/campaign/changeCampaignStage/${id}`,
+    closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
   },
 };

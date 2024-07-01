@@ -2,9 +2,11 @@ import dayjs from 'dayjs';
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Card, Stack, Divider, MenuItem, IconButton, Typography } from '@mui/material';
+import { Box, Card, Chip, Stack, Divider, MenuItem, IconButton, Typography } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
+
+import { formatText } from 'src/utils/format-test';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -104,6 +106,17 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
             <Iconify icon="zondicons:dots-horizontal-triple" width={18} />
           </IconButton>
         </Box>
+
+        <Chip
+          label={formatText(campaign?.status)}
+          color="primary"
+          size="small"
+          sx={{
+            position: 'absolute',
+            top: 30,
+            left: 30,
+          }}
+        />
       </Card>
 
       <CustomPopover
@@ -113,6 +126,15 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
         sx={{ width: 140 }}
       >
         <MenuItem
+          onClick={() => {
+            popover.onClose();
+            onView();
+          }}
+        >
+          <Iconify icon="material-symbols:bookmark-manager" />
+          Manage
+        </MenuItem>
+        {/* <MenuItem
           onClick={() => {
             popover.onClose();
             onView();
@@ -130,7 +152,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
         >
           <Iconify icon="solar:pen-bold" />
           Edit
-        </MenuItem>
+        </MenuItem> */}
         {user?.role === 'superadmin' && (
           <MenuItem
             onClick={() => {
