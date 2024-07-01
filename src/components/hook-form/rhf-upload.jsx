@@ -80,7 +80,7 @@ export function RHFUpload({ name, multiple, type, helperText, ...other }) {
           />
         ) : (
           <Upload
-            accept={type === 'file' ? { 'image/*': [] } : { 'image/*': []}}
+            accept={type === 'file' ? { 'image/*': [] } : { 'video/*': [] }}
             file={field.value}
             error={!!error}
             helperText={

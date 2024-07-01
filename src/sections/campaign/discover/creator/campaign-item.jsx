@@ -11,7 +11,7 @@ import { Chip, Button, Typography } from '@mui/material';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
-import CampaignModal from './campaign-modal';
+import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 // ----------------------------------------------------------------------
 
@@ -180,7 +180,8 @@ export default function CampaignItem({ campaign }) {
           Delete
         </MenuItem>
       </CustomPopover> */}
-      <CampaignModal open={open} handleClose={handleClose} campaign={campaign} />
+      {/* <CampaignModal open={open} handleClose={handleClose} campaign={campaign} /> */}
+      <CampaignPitchOptionsModal open={open} handleClose={handleClose} campaign={campaign} />
     </>
   );
 }

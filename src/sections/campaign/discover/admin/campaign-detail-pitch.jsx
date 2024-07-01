@@ -79,7 +79,7 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
               p: 1.5,
             }}
           >
-            {isShortlisted(pitch?.userId) ? (
+            {isShortlisted(pitch?.userId) && pitch?.status === 'accept' && (
               <Chip
                 label="shortlisted"
                 size="small"
@@ -90,11 +90,40 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
                   right: 10,
                 }}
               />
+            )}
+
+            {pitch?.status ? (
+              <>
+                {pitch?.status === 'accept' && (
+                  <Chip
+                    label="approved"
+                    size="small"
+                    color="error"
+                    sx={{
+                      position: 'absolute',
+                      bottom: 10,
+                      right: 10,
+                    }}
+                  />
+                )}
+                {pitch?.status === 'reject' && (
+                  <Chip
+                    label="rejected"
+                    size="small"
+                    color="error"
+                    sx={{
+                      position: 'absolute',
+                      bottom: 10,
+                      right: 10,
+                    }}
+                  />
+                )}
+              </>
             ) : (
               <Chip
-                label="Rejected"
+                label="Pending"
                 size="small"
-                color="error"
+                color="warning"
                 sx={{
                   position: 'absolute',
                   bottom: 10,
@@ -119,7 +148,6 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
                 <Iconify icon="fluent:open-12-filled" width={16} />
               </IconButton>
             </Tooltip>
-
             <Stack direction="row" spacing={2}>
               <Image
                 src="/test.jpeg"

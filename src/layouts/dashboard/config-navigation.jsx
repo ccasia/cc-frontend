@@ -183,6 +183,16 @@ export function useNavData() {
           },
         ],
       },
+      {
+        subheader: 'Campaigns',
+        items: [
+          {
+            title: 'Manage Campaigns',
+            path: paths.dashboard.campaign.creator.manage,
+            icon: <Iconify icon="iconamoon:discover" width={25} />,
+          },
+        ],
+      },
     ],
     []
   );

@@ -55,7 +55,7 @@ export default function Editor({
         <ReactQuill
           modules={modules}
           formats={formats}
-          placeholder="Pitch you script here !"
+          placeholder="Pitch your text here !"
           {...other}
         />
       </StyledEditor>
