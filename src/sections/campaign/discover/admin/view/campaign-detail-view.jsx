@@ -35,6 +35,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignDetailPitch from '../campaign-detail-pitch';
 import CampaignDetailContent from '../campaign-detail-content';
+import CampaignDetailCreator from '../campaign-detail-creator';
 
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
@@ -59,6 +60,16 @@ const CampaignDetailView = ({ id }) => {
     if (startReminderDate <= dayjs() && dayjs() < dayjs(dueDate)) {
       return true;
     }
+    return false;
+  };
+
+  const isDone = (dueDate) => {
+    const today = dayjs();
+
+    if (today > dayjs(dueDate)) {
+      return true;
+    }
+
     return false;
   };
 
@@ -89,7 +100,7 @@ const CampaignDetailView = ({ id }) => {
           value={tab.value}
           label={tab.label}
           icon={
-            tab.value === 'pitch' ? (
+            tab.value === 'pitch' && currentCampaign?.Pitch.length > 0 ? (
               <Label variant="filled">{currentCampaign?.Pitch.length}</Label>
             ) : (
               ''
@@ -164,6 +175,13 @@ const CampaignDetailView = ({ id }) => {
                   <Iconify icon="clarity:warning-solid" color="warning.main" />
                 </ListItemIcon>
               )}
+              {isDone(
+                timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.filterPitch)
+              ) && (
+                <ListItemIcon>
+                  <Iconify icon="hugeicons:tick-04" color="success.main" />
+                </ListItemIcon>
+              )}
               <ListItemText
                 primary="Filter Pitch"
                 secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.filterPitch)}`}
@@ -184,6 +202,16 @@ const CampaignDetailView = ({ id }) => {
               ) && (
                 <ListItemIcon>
                   <Iconify icon="clarity:warning-solid" color="warning.main" />
+                </ListItemIcon>
+              )}
+              {isDone(
+                timelineHelper(
+                  currentCampaign?.campaignBrief?.startDate,
+                  timeline?.shortlistCreator
+                )
+              ) && (
+                <ListItemIcon>
+                  <Iconify icon="hugeicons:tick-04" color="success.main" />
                 </ListItemIcon>
               )}
               <ListItemText
@@ -208,6 +236,16 @@ const CampaignDetailView = ({ id }) => {
                   <Iconify icon="clarity:warning-solid" color="warning.main" />
                 </ListItemIcon>
               )}
+              {isDone(
+                timelineHelper(
+                  currentCampaign?.campaignBrief?.startDate,
+                  timeline?.feedBackFirstDraft
+                )
+              ) && (
+                <ListItemIcon>
+                  <Iconify icon="hugeicons:tick-04" color="success.main" />
+                </ListItemIcon>
+              )}
               <ListItemText
                 primary="Feedback First Draft"
                 secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.feedBackFirstDraft)}`}
@@ -230,6 +268,16 @@ const CampaignDetailView = ({ id }) => {
                   <Iconify icon="clarity:warning-solid" color="warning.main" />
                 </ListItemIcon>
               )}
+              {isDone(
+                timelineHelper(
+                  currentCampaign?.campaignBrief?.startDate,
+                  timeline?.feedBackFinalDraft
+                )
+              ) && (
+                <ListItemIcon>
+                  <Iconify icon="hugeicons:tick-04" color="success.main" />
+                </ListItemIcon>
+              )}
               <ListItemText
                 primary="Feedback First Draft"
                 secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.feedBackFinalDraft)}`}
@@ -245,6 +293,11 @@ const CampaignDetailView = ({ id }) => {
               {isDue(timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.qc)) && (
                 <ListItemIcon>
                   <Iconify icon="clarity:warning-solid" color="warning.main" />
+                </ListItemIcon>
+              )}
+              {isDone(timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.qc)) && (
+                <ListItemIcon>
+                  <Iconify icon="hugeicons:tick-04" color="success.main" />
                 </ListItemIcon>
               )}
               <ListItemText
@@ -298,7 +351,7 @@ const CampaignDetailView = ({ id }) => {
       {renderTabs}
 
       {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
-      {currentTab === 'creator' && <CampaignDetailContent campaign={currentCampaign} />}
+      {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
       {currentTab === 'brand' && (
         <CampaignDetailBrand brand={currentCampaign?.brand ?? currentCampaign?.company} />
       )}

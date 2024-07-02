@@ -8,9 +8,12 @@ import Stack from '@mui/material/Stack';
 import ListItemText from '@mui/material/ListItemText';
 import { Chip, Button, Typography } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
+import CampaignModal from './campaign-modal';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 // ----------------------------------------------------------------------
@@ -21,6 +24,8 @@ export default function CampaignItem({ campaign }) {
   const handleClose = () => {
     setOpen(false);
   };
+
+  const campaignInfo = useBoolean();
 
   const renderImages = (
     <Stack
@@ -63,7 +68,7 @@ export default function CampaignItem({ campaign }) {
         <Link
           component="a"
           color="inherit"
-          onClick={() => setOpen(true)}
+          onClick={() => campaignInfo.onTrue()}
           sx={{
             cursor: 'pointer',
           }}
@@ -180,7 +185,12 @@ export default function CampaignItem({ campaign }) {
           Delete
         </MenuItem>
       </CustomPopover> */}
-      {/* <CampaignModal open={open} handleClose={handleClose} campaign={campaign} /> */}
+      <CampaignModal
+        open={campaignInfo.value}
+        handleClose={campaignInfo.onFalse}
+        openForm={() => setOpen(true)}
+        campaign={campaign}
+      />
       <CampaignPitchOptionsModal open={open} handleClose={handleClose} campaign={campaign} />
     </>
   );

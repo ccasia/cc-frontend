@@ -49,6 +49,8 @@ export const paths = {
       creator: {
         manage: `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`,
       },
+      manageCreator: (campaignId, creatorId) =>
+        `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/creator/${creatorId}`,
     },
     user: {
       root: `${ROOTS.DASHBOARD}/user`,

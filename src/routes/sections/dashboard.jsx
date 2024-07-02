@@ -38,6 +38,9 @@ const CampaignPitchDetail = lazy(
 const CreatorManageCampaign = lazy(
   () => import('src/pages/dashboard/campaign/creator/manage-campaign')
 );
+const CampaignManageCreatorView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/creator/campaign-manage-creator')
+);
 
 // Brand & Company
 const BrandManage = lazy(() => import('src/pages/dashboard/brand/manageBrand'));
@@ -266,11 +269,24 @@ export const dashboardRoutes = [
               },
               {
                 path: 'detail/:id',
-                element: (
-                  <RoleBasedGuard hasContent roles={['admin', 'superadmin']}>
-                    <AdminCampaignDetail />
-                  </RoleBasedGuard>
-                ),
+                children: [
+                  {
+                    index: true,
+                    element: (
+                      <RoleBasedGuard hasContent roles={['superadmin']}>
+                        <AdminCampaignDetail />
+                      </RoleBasedGuard>
+                    ),
+                  },
+                  {
+                    path: 'creator/:id',
+                    element: (
+                      <RoleBasedGuard hasContent roles={['superadmin']}>
+                        <CampaignManageCreatorView />
+                      </RoleBasedGuard>
+                    ),
+                  },
+                ],
               },
             ],
           },
@@ -298,6 +314,7 @@ export const dashboardRoutes = [
               </RoleBasedGuard>
             ),
           },
+          // For creator path
           {
             path: 'VUquQR/HJUboKDBwJi71KQ==/manage',
             element: (

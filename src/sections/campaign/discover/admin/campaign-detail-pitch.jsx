@@ -61,10 +61,10 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
     }
   };
 
-  const isShortlisted = (id) => {
-    const a = shortlisted.some((item) => item.creatorId.includes(id));
-    return a;
-  };
+  // const isShortlisted = (id) => {
+  //   const a = shortlisted.some((item) => item.creatorId.includes(id));
+  //   return a;
+  // };
 
   const getFullPhoneNumber = (country, phoneNumber) => {
     const initial = countries.filter((elem) => elem.label.includes(country))[0].phone;
@@ -86,7 +86,7 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
                 p: 1.5,
               }}
             >
-              {isShortlisted(pitch?.userId) && pitch?.status === 'accept' && (
+              {/* {isShortlisted(pitch?.userId) && pitch?.status === 'accept' && (
                 <Chip
                   label="shortlisted"
                   size="small"
@@ -97,7 +97,7 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
                     right: 10,
                   }}
                 />
-              )}
+              )} */}
 
               {pitch?.status ? (
                 <>
@@ -105,7 +105,7 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
                     <Chip
                       label="approved"
                       size="small"
-                      color="error"
+                      color="success"
                       sx={{
                         position: 'absolute',
                         bottom: 10,
