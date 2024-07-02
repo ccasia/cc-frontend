@@ -11,7 +11,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 // eslint-disable-next-line react/prop-types
 const Timeline = ({ defaultTimeline, isSmallScreen }) => {
-  console.log(defaultTimeline);
   const schema = Yup.object().shape({
     openForPitch: Yup.number('Must be a number')
       .min(14, 'Minumum is 14 days')
@@ -85,7 +84,6 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
   }, [defaultTimeline, reset]);
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
     try {
       const res = await axiosInstance.post(endpoints.campaign.updateDefaultTimeline, data);
       enqueueSnackbar(res.data.message, {

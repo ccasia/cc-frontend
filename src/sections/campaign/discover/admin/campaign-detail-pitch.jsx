@@ -22,6 +22,8 @@ import {
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
@@ -30,10 +32,14 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
+import MediaKitModal from './media-kit-modal';
+
 const CampaignDetailPitch = ({ pitches, shortlisted }) => {
   const [open, setOpen] = useState(false);
   const [selectedPitch, setSelectedPitch] = useState(null);
   const router = useRouter();
+
+  const mediaKit = useBoolean();
 
   const handleClose = () => {
     setOpen(false);
@@ -73,140 +79,148 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
     >
       {pitches &&
         pitches.map((pitch) => (
-          <Card
-            key={pitch?.id}
-            sx={{
-              p: 1.5,
-            }}
-          >
-            {isShortlisted(pitch?.userId) && pitch?.status === 'accept' && (
-              <Chip
-                label="shortlisted"
-                size="small"
-                color="success"
-                sx={{
-                  position: 'absolute',
-                  bottom: 10,
-                  right: 10,
-                }}
-              />
-            )}
-
-            {pitch?.status ? (
-              <>
-                {pitch?.status === 'accept' && (
-                  <Chip
-                    label="approved"
-                    size="small"
-                    color="error"
-                    sx={{
-                      position: 'absolute',
-                      bottom: 10,
-                      right: 10,
-                    }}
-                  />
-                )}
-                {pitch?.status === 'reject' && (
-                  <Chip
-                    label="rejected"
-                    size="small"
-                    color="error"
-                    sx={{
-                      position: 'absolute',
-                      bottom: 10,
-                      right: 10,
-                    }}
-                  />
-                )}
-              </>
-            ) : (
-              <Chip
-                label="Pending"
-                size="small"
-                color="warning"
-                sx={{
-                  position: 'absolute',
-                  bottom: 10,
-                  right: 10,
-                }}
-              />
-            )}
-
-            <Tooltip title={`View ${pitch?.user?.name}`}>
-              <IconButton
-                sx={{
-                  position: ' absolute',
-                  top: 0,
-                  right: 0,
-                }}
-                onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}
-                // onClick={() => {
-                //   setOpen(true);
-                //   setSelectedPitch(pitch);
-                // }}
-              >
-                <Iconify icon="fluent:open-12-filled" width={16} />
-              </IconButton>
-            </Tooltip>
-            <Stack direction="row" spacing={2}>
-              <Image
-                src="/test.jpeg"
-                ratio="1/1"
-                sx={{
-                  borderRadius: 1,
-                  width: 70,
-                }}
-              />
-              <Stack spacing={1} alignItems="start">
-                <ListItemText
-                  primary={pitch?.user?.name}
-                  secondary={`Pitch at ${dayjs(pitch?.createdAt).format('LL')}`}
-                  primaryTypographyProps={{
-                    typography: 'subtitle1',
+          <>
+            <Card
+              key={pitch?.id}
+              sx={{
+                p: 1.5,
+              }}
+            >
+              {isShortlisted(pitch?.userId) && pitch?.status === 'accept' && (
+                <Chip
+                  label="shortlisted"
+                  size="small"
+                  color="success"
+                  sx={{
+                    position: 'absolute',
+                    bottom: 10,
+                    right: 10,
                   }}
                 />
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Tooltip
-                    title={getFullPhoneNumber(pitch?.user?.country, pitch?.user?.phoneNumber)}
-                  >
-                    <IconButton
+              )}
+
+              {pitch?.status ? (
+                <>
+                  {pitch?.status === 'accept' && (
+                    <Chip
+                      label="approved"
                       size="small"
-                      color="success"
+                      color="error"
                       sx={{
-                        borderRadius: 1,
-                        bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
-                        '&:hover': {
-                          bgcolor: (theme) => alpha(theme.palette.success.main, 0.16),
-                        },
+                        position: 'absolute',
+                        bottom: 10,
+                        right: 10,
                       }}
-                    >
-                      <Iconify icon="material-symbols:call" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Media Kit">
-                    <IconButton
+                    />
+                  )}
+                  {pitch?.status === 'reject' && (
+                    <Chip
+                      label="rejected"
                       size="small"
-                      color="info"
+                      color="error"
                       sx={{
-                        borderRadius: 1,
-                        bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                        '&:hover': {
-                          bgcolor: (theme) => alpha(theme.palette.info.main, 0.16),
-                        },
+                        position: 'absolute',
+                        bottom: 10,
+                        right: 10,
                       }}
+                    />
+                  )}
+                </>
+              ) : (
+                <Chip
+                  label="Pending"
+                  size="small"
+                  color="warning"
+                  sx={{
+                    position: 'absolute',
+                    bottom: 10,
+                    right: 10,
+                  }}
+                />
+              )}
+
+              <Tooltip title={`View ${pitch?.user?.name}`}>
+                <IconButton
+                  sx={{
+                    position: ' absolute',
+                    top: 0,
+                    right: 0,
+                  }}
+                  onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}
+                  // onClick={() => {
+                  //   setOpen(true);
+                  //   setSelectedPitch(pitch);
+                  // }}
+                >
+                  <Iconify icon="fluent:open-12-filled" width={16} />
+                </IconButton>
+              </Tooltip>
+              <Stack direction="row" spacing={2}>
+                <Image
+                  src="/test.jpeg"
+                  ratio="1/1"
+                  sx={{
+                    borderRadius: 1,
+                    width: 70,
+                  }}
+                />
+                <Stack spacing={1} alignItems="start">
+                  <ListItemText
+                    primary={pitch?.user?.name}
+                    secondary={`Pitch at ${dayjs(pitch?.createdAt).format('LL')}`}
+                    primaryTypographyProps={{
+                      typography: 'subtitle1',
+                    }}
+                  />
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Tooltip
+                      title={getFullPhoneNumber(pitch?.user?.country, pitch?.user?.phoneNumber)}
                     >
-                      <Iconify icon="flowbite:profile-card-outline" width={15} />
-                    </IconButton>
-                  </Tooltip>
-                  {/* <Typography variant="caption">Type</Typography>
+                      <IconButton
+                        size="small"
+                        color="success"
+                        sx={{
+                          borderRadius: 1,
+                          bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
+                          '&:hover': {
+                            bgcolor: (theme) => alpha(theme.palette.success.main, 0.16),
+                          },
+                        }}
+                      >
+                        <Iconify icon="material-symbols:call" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Media Kit">
+                      <IconButton
+                        size="small"
+                        color="info"
+                        sx={{
+                          borderRadius: 1,
+                          bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
+                          '&:hover': {
+                            bgcolor: (theme) => alpha(theme.palette.info.main, 0.16),
+                          },
+                        }}
+                        onClick={mediaKit.onTrue}
+                      >
+                        <Iconify icon="flowbite:profile-card-outline" width={15} />
+                      </IconButton>
+                    </Tooltip>
+                    {/* <Typography variant="caption">Type</Typography>
                   <Chip label={pitch?.type} size="small" color="secondary" /> */}
-                  {/* <Button onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}>
+                    {/* <Button onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}>
                     View
                   </Button> */}
+                  </Stack>
                 </Stack>
               </Stack>
-            </Stack>
-          </Card>
+            </Card>
+            <MediaKitModal
+              open={mediaKit.value}
+              handleClose={mediaKit.onFalse}
+              creatorId={pitch?.user?.creator?.id}
+            />
+          </>
         ))}
 
       <Dialog open={open} onClose={handleClose}>

@@ -11,7 +11,7 @@ import MediaKitCover from './mediakit-cover';
 import MediaKitSocial from './media-kit-social/view';
 
 // eslint-disable-next-line react/prop-types
-const MediaKit = ({ id }) => {
+const MediaKit = ({ id, noBigScreen }) => {
   const settings = useSettingsContext();
   const { creator } = useGetCreatorByID(id);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -46,23 +46,25 @@ const MediaKit = ({ id }) => {
             }
       }
     >
-      <Box
-        component="div"
-        sx={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-          cursor: 'pointer',
-          zIndex: 1000,
-        }}
-        onClick={toggle}
-      >
-        {isFullScreen ? (
-          <Iconify icon="akar-icons:reduce" />
-        ) : (
-          <Iconify icon="akar-icons:enlarge" />
-        )}
-      </Box>
+      {!noBigScreen && (
+        <Box
+          component="div"
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            cursor: 'pointer',
+            zIndex: 1000,
+          }}
+          onClick={toggle}
+        >
+          {isFullScreen ? (
+            <Iconify icon="akar-icons:reduce" />
+          ) : (
+            <Iconify icon="akar-icons:enlarge" />
+          )}
+        </Box>
+      )}
       <Card
         sx={{
           mb: 3,
@@ -82,7 +84,7 @@ const MediaKit = ({ id }) => {
             borderRadius: 2,
             p: 2,
             [`& .Mui-selected`]: {
-              bgcolor: (theme) => theme.palette.background.paper,
+              bgcolor: (theme) => theme.palette.grey[900],
               borderRadius: 1.5,
             },
           }}
