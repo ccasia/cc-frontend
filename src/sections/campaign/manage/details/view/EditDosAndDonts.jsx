@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { useForm, useFieldArray } from 'react-hook-form';
 
@@ -53,7 +52,7 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle id="alert-dialog-title">Dos and Don&apos;ts</DialogTitle>
+      <DialogTitle id="alert-dialog-title">Edit Dos and Don&apos;ts</DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description" p={1.5}>
           <FormProvider methods={methods}>

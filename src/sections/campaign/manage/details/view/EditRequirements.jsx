@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 
@@ -40,7 +39,7 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle id="alert-dialog-title">Requirements</DialogTitle>
+      <DialogTitle id="alert-dialog-title">Edit Requirements</DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description" p={1.5}>
           <FormProvider methods={methods}>

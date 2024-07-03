@@ -1,5 +1,5 @@
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 
 import {
@@ -42,7 +42,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle id="alert-dialog-title">Timeline</DialogTitle>
+      <DialogTitle id="alert-dialog-title">Edit Timeline</DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description" p={1.5}>
           <FormProvider methods={methods}>

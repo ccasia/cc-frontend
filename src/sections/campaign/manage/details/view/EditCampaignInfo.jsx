@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import React from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 
@@ -54,7 +53,7 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle id="alert-dialog-title">Campaign Information</DialogTitle>
+      <DialogTitle id="alert-dialog-title">Edit Campaign Information</DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description" p={1.5}>
           <FormProvider methods={methods}>
