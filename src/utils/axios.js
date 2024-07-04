@@ -114,4 +114,9 @@ export const endpoints = {
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
   },
+  notification:{
+    getNotification: '/api/notification',
+    // updateNotification: '/api/notification/updateNotification',
+    // deleteNotification: '/api/notification/deleteNotification',
+  }
 };

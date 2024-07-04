@@ -16,8 +16,11 @@ import Typography from '@mui/material/Typography';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetNotification from 'src/hooks/use-get-notification';
+import { useNotification } from 'src/hooks/zustands/useNotification';
 
 import { _notifications } from 'src/_mock';
+import { ASSETS_API } from 'src/config-global';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -27,6 +30,28 @@ import { varHover } from 'src/components/animate';
 import NotificationItem from './notification-item';
 
 // ----------------------------------------------------------------------
+
+const notificationOBj = [
+  {
+    id: 1,
+    avatarUrl: `${ASSETS_API}/assets/images/avatar/avatar_$2.jpg`,
+    type: 'order',
+    category: 'order',
+    isUnRead: false,
+    createdAt: new Date(),
+    title: 'new notification added',
+  },
+
+  {
+    id: 2,
+    avatarUrl: `${ASSETS_API}/assets/images/avatar/avatar_2.jpg`,
+    type: 'project',
+    category: 'project',
+    isUnRead: false,
+    createdAt: new Date(),
+    title: `<p><strong>New Campaign</strong> check it out <strong></strong></p>`,
+  },
+];
 
 const TABS = [
   {
@@ -49,11 +74,26 @@ const TABS = [
 // ----------------------------------------------------------------------
 
 export default function NotificationsPopover() {
+  useGetNotification();
   const drawer = useBoolean();
 
   const smUp = useResponsive('up', 'sm');
 
   const [currentTab, setCurrentTab] = useState('all');
+
+  const { notification } = useNotification();
+
+  const filteredNotifications = notification.map((item) => {
+    return {
+      id: item.id,
+      avatarUrl: `${ASSETS_API}/assets/images/avatar/avatar_2.jpg`,
+      type: item.type,
+      category: item.category,
+      isUnRead: false,
+      createdAt: new Date(item.createdAt),
+      title: item.title,
+    };
+  });
 
   const handleChangeTab = useCallback((event, newValue) => {
     setCurrentTab(newValue);
@@ -65,8 +105,8 @@ export default function NotificationsPopover() {
 
   const handleMarkAllAsRead = () => {
     setNotifications(
-      notifications.map((notification) => ({
-        ...notification,
+      notifications.map((notificationss) => ({
+        ...notificationss,
         isUnRead: false,
       }))
     );
@@ -127,9 +167,13 @@ export default function NotificationsPopover() {
   const renderList = (
     <Scrollbar>
       <List disablePadding>
-        {notifications.map((notification) => (
+        {/* {notifications.map((notification) => (
           <NotificationItem key={notification.id} notification={notification} />
+        ))} */}
+        {filteredNotifications.map((item) => (
+          <NotificationItem key={item.id} notification={item} />
         ))}
+        {/* <NotificationItem key={notificationOBj.id} notification={notificationOBj} /> */}
       </List>
     </Scrollbar>
   );

@@ -40,7 +40,7 @@ export default function NotificationItem({ notification }) {
               (notification.type === 'mail' && 'ic_mail') ||
               (notification.type === 'delivery' && 'ic_delivery')
             }.svg`}
-            sx={{ width: 24, height: 24 }}
+            sx={{ width: 24, height: 24, backgroundColor: 'red.300' }}
           />
         </Stack>
       )}
@@ -112,13 +112,13 @@ export default function NotificationItem({ notification }) {
         }}
       >
         {reader(
-          `<p><strong>@Jaydon Frankie</strong> feedback by asking questions or just leave a note of appreciation.</p>`
+          `<p><strong>@Campign Cult</strong> Check campaign page for managment</p>`
         )}
       </Box>
-
+{/* 
       <Button size="small" variant="contained">
         Reply
-      </Button>
+      </Button> */}
     </Stack>
   );
 
@@ -200,12 +200,15 @@ export default function NotificationItem({ notification }) {
     </Stack>
   );
 
+  //  backgroundColor: '#F5564D',
+
   return (
     <ListItemButton
       disableRipple
       sx={{
         p: 2.5,
         alignItems: 'flex-start',
+
         borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
       }}
     >
@@ -220,10 +223,14 @@ export default function NotificationItem({ notification }) {
         {notification.type === 'file' && fileAction}
         {notification.type === 'tags' && tagsAction}
         {notification.type === 'payment' && paymentAction}
+        {/* {notification.type === 'normal' && ''}
+        {notification.type === 'medium' && ''}
+        {notification.type === 'urgent' && ''} */}
       </Stack>
     </ListItemButton>
   );
 }
+
 
 NotificationItem.propTypes = {
   notification: PropTypes.object,
