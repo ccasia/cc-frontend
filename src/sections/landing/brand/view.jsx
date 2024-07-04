@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useState, useEffect } from 'react';
 
 import Table from '@mui/material/Table';
@@ -10,6 +9,8 @@ import TableHead from '@mui/material/TableHead';
 import TableContainer from '@mui/material/TableContainer';
 
 import { paths } from 'src/routes/paths';
+
+import axiosInstance from 'src/utils/axios';
 
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
@@ -33,7 +34,7 @@ export default function BasicTable() {
   useEffect(() => {
     const getCreatorFromLandingPage = async () => {
       try {
-        const res = await axios.get(`http://34.1.203.152:4002/getBrands`);
+        const res = await axiosInstance.get(`/landing/getBrands`);
         setBrands(res.data);
       } catch (error) {
         console.log(error);
