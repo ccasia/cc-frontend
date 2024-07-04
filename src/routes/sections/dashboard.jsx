@@ -273,7 +273,7 @@ export const dashboardRoutes = [
                   {
                     index: true,
                     element: (
-                      <RoleBasedGuard hasContent roles={['superadmin']}>
+                      <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                         <AdminCampaignDetail />
                       </RoleBasedGuard>
                     ),
@@ -281,7 +281,7 @@ export const dashboardRoutes = [
                   {
                     path: 'creator/:id',
                     element: (
-                      <RoleBasedGuard hasContent roles={['superadmin']}>
+                      <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                         <CampaignManageCreatorView />
                       </RoleBasedGuard>
                     ),
@@ -301,7 +301,7 @@ export const dashboardRoutes = [
           {
             path: 'details/:id',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                 <CampaignDetails />
               </RoleBasedGuard>
             ),
