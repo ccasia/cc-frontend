@@ -1,132 +1,48 @@
 {
-  "id": "cly1an05d000112y9kg76gdpx",
-  "name": "Test Creating a Campaign",
-  "description": "Test",
-  "status": "past",
-  "stage": "publish",
-  "createdAt": "2024-06-30T08:33:01.057Z",
-  "updatedAt": "2024-07-01T20:03:40.901Z",
-  "brandId": null,
-  "companyId": "clxvjh12y0000g2ueqv8gxudt",
-  "defaultTimelineCampaignId": null,
-  "customTimelineCampaignId": "cly1an057000012y9fpxfm2bw",
-  "brand": null,
-  "company": {
-    "id": "clxvjh12y0000g2ueqv8gxudt",
-    "name": "UNI QLO",
-    "email": "uniqlo@gmail.com",
-    "phone": "011882942",
-    "website": "www.uniqlo.com",
-    "address": "uniqlo 26, 27 street",
-    "logo": "https://storage.googleapis.com/app-test-cult-cretive/companyLogo/image (20).png",
-    "about": "adawdawdaw",
-    "objectives": [{ "value": "awdadawdawdawd" }, { "value": "Testt111111" }],
-    "registration_number": "awdawdawdawdawd",
-    "createdAt": "2024-06-26T07:53:41.819Z",
-    "updatedAt": "2024-06-30T11:43:03.035Z"
-  },
-  "customCampaignTimeline": {
-    "id": "cly1an057000012y9fpxfm2bw",
-    "openForPitch": 14,
-    "shortlistCreator": 1,
-    "firstDraft": 3,
-    "finalDraft": 2,
-    "feedBackFirstDraft": 2,
-    "feedBackFinalDraft": 2,
-    "filterPitch": 2,
-    "agreementSign": 1,
-    "qc": 2,
-    "posting": 2
-  },
-  "defaultCampaignTimeline": null,
-  "campaignBrief": {
-    "id": "cly1an05d000212y9fu4r2xps",
-    "title": "Test Creating a Campaign",
-    "objectives": null,
-    "images": [
-      "https://storage.googleapis.com/app-test-cult-cretive/campaigns/images.png",
-      "https://storage.googleapis.com/app-test-cult-cretive/campaigns/image (17).png",
-      "https://storage.googleapis.com/app-test-cult-cretive/campaigns/image (20).png",
-      "https://storage.googleapis.com/app-test-cult-cretive/campaigns/image (3).png"
-    ],
-    "agreementFrom": "cc_logo4 (1).png",
-    "startDate": "2024-06-29T16:00:00.000Z",
-    "endDate": "2024-07-01T16:00:00.000Z",
-    "interests": ["Gaming", "Food", "Fitness"],
-    "industries": ["Health", "Food", "Gaming"],
-    "success": null,
-    "campaigns_do": [{ "value": "Test" }],
-    "campaigns_dont": [{ "value": "Test" }],
-    "updatedAt": "2024-06-30T08:33:01.057Z",
-    "createdAt": "2024-06-30T08:33:01.057Z",
-    "campaignId": "cly1an05d000112y9kg76gdpx"
-  },
-  "campaignRequirement": {
-    "id": "cly1an05e000312y9sop5dio7",
-    "gender": ["female", "male"],
-    "age": ["18-25", "26-34"],
-    "geoLocation": ["KlangValley", "Selangor", "KualaLumpur"],
-    "language": ["Malay", "English", "Chinese"],
-    "creator_persona": ["sports", "tech", "beauty"],
-    "user_persona": "adwadwadwa",
-    "createdAt": "2024-06-30T08:33:01.057Z",
-    "updatedAt": "2024-06-30T08:33:01.057Z",
-    "campaignId": "cly1an05d000112y9kg76gdpx"
-  },
-  "Pitch": [
-    {
-      "id": "cly3ehq130005s248bvolxfmj",
-      "type": "text",
-      "campaignId": "cly1an05d000112y9kg76gdpx",
-      "userId": "62cf330b-2d98-44db-877c-a3153d86668f",
-      "status": "accept",
-      "content": "<p>Test</p>",
-      "createdAt": "2024-07-01T19:56:25.479Z",
-      "user": {
-        "id": "62cf330b-2d98-44db-877c-a3153d86668f",
-        "email": "afiqnrzm@hotmail.com",
-        "password": "$2a$10$NJTRxXvzNT7KsEMDWHBRKedAik1nAl0.kZaWSCiFJhEzEMJ5/q2qW",
-        "createdAt": "2024-06-27T05:46:57.790Z",
-        "name": "Afiq danial",
-        "photoURL": null,
-        "country": "Malaysia",
-        "phoneNumber": "174890307",
-        "role": "creator",
-        "updatedAt": "2024-06-27T05:49:15.404Z",
-        "status": "active",
-        "eventId": null,
-        "creator": {
-          "id": "clxwudwg3000213rbipmunr3a",
-          "pronounce": "he/him",
-          "nationality": "Malaysia",
-          "location": "Subang",
-          "birthDate": "2024-06-25T16:00:00.000Z",
-          "instagram": "afiq",
-          "tiktok": "afiq",
-          "employment": "fulltime",
-          "languages": ["English", "Malay", "Mandarin"],
-          "userId": "62cf330b-2d98-44db-877c-a3153d86668f"
-        }
-      }
-    }
-  ],
-  "ShortListedCreator": [
-    {
-      "creator": {
-        "id": "62cf330b-2d98-44db-877c-a3153d86668f",
-        "email": "afiqnrzm@hotmail.com",
-        "password": "$2a$10$NJTRxXvzNT7KsEMDWHBRKedAik1nAl0.kZaWSCiFJhEzEMJ5/q2qW",
-        "createdAt": "2024-06-27T05:46:57.790Z",
-        "name": "Afiq danial",
-        "photoURL": null,
-        "country": "Malaysia",
-        "phoneNumber": "174890307",
-        "role": "creator",
-        "updatedAt": "2024-06-27T05:49:15.404Z",
-        "status": "active",
-        "eventId": null
+  "creator": {
+    "id": "62cf330b-2d98-44db-877c-a3153d86668f",
+    "email": "afiqnrzm@hotmail.com",
+    "password": "$2a$10$NJTRxXvzNT7KsEMDWHBRKedAik1nAl0.kZaWSCiFJhEzEMJ5/q2qW",
+    "createdAt": "2024-06-27T05:46:57.790Z",
+    "name": "Afiq danial",
+    "photoURL": null,
+    "country": "Malaysia",
+    "phoneNumber": "174890307",
+    "role": "creator",
+    "updatedAt": "2024-06-27T05:49:15.404Z",
+    "status": "active",
+    "eventId": null,
+    "creator": {
+      "id": "clxwudwg3000213rbipmunr3a",
+      "pronounce": "he/him",
+      "nationality": "Malaysia",
+      "location": "Subang",
+      "birthDate": "2024-06-25T16:00:00.000Z",
+      "instagram": "afiq",
+      "tiktok": "afiq",
+      "employment": "fulltime",
+      "languages": ["English", "Malay", "Mandarin"],
+      "userId": "62cf330b-2d98-44db-877c-a3153d86668f"
+    },
+    "ShortListedCreator": [
+      {
+        "id": "clxwvj3if000c13rbskybf7gs",
+        "shortlisted_date": "2024-06-27T06:18:59.847Z",
+        "creatorId": "62cf330b-2d98-44db-877c-a3153d86668f",
+        "campaignId": "clxvjutib0001129x9nfp3u5s"
       },
-      "creatorId": "62cf330b-2d98-44db-877c-a3153d86668f"
-    }
-  ]
+      {
+        "id": "cly42e3pl0001alayyzyecy3b",
+        "shortlisted_date": "2024-07-02T07:05:27.369Z",
+        "creatorId": "62cf330b-2d98-44db-877c-a3153d86668f",
+        "campaignId": "cly1an05d000112y9kg76gdpx"
+      },
+      {
+        "id": "cly7gxia80009kbzvnj3kipze",
+        "shortlisted_date": "2024-07-04T16:15:45.872Z",
+        "creatorId": "62cf330b-2d98-44db-877c-a3153d86668f",
+        "campaignId": "clxx0ufrn000m13rb0b1jrk0s"
+      }
+    ]
+  }
 }
