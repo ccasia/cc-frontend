@@ -87,6 +87,12 @@ const CampaignDetailManageView = ({ id }) => {
   const isEditable = campaign?.stage !== 'publish';
 
   const handleChangeStage = async (stage) => {
+    if (stage === 'publish' && dayjs(campaign?.campaignBrief?.endDate) < dayjs()) {
+      enqueueSnackbar('You cannot publish a campaign that is already end.', {
+        variant: 'error',
+      });
+      return;
+    }
     try {
       loadingButton.onTrue();
       const res = await axiosInstance.patch(endpoints.campaign.changeStage(campaign?.id), {

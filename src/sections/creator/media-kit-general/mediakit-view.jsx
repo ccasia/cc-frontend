@@ -4,6 +4,8 @@ import { Tab, Box, Card, Tabs, Container } from '@mui/material';
 
 import { useGetCreatorByID } from 'src/hooks/use-get-creators';
 
+import withPermission from 'src/auth/guard/withPermissions';
+
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
@@ -132,4 +134,4 @@ const MediaKit = ({ id, noBigScreen }) => {
   );
 };
 
-export default MediaKit;
+export default withPermission(['read'], 'creator', MediaKit);

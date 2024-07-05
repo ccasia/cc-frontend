@@ -78,7 +78,7 @@ export function useNavData() {
             ],
           },
           {
-            roles: ['superadmin', 'normal'],
+            roles: ['superadmin', 'admin'],
             title: 'Creator',
             path: paths.dashboard.creator.root,
             icon: <Iconify icon="solar:users-group-rounded-bold" width={25} />,

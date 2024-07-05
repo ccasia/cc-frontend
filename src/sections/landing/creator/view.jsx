@@ -35,7 +35,7 @@ export default function BasicTable() {
   useEffect(() => {
     const getCreatorFromLandingPage = async () => {
       try {
-        const res = await axiosInstance.get(`/landing/getCreators`);
+        const res = await axiosInstance.get(`https://app.cultcreativeasia.com/landing/getCreators`);
         setCreators(res.data);
       } catch (error) {
         console.log(error);

@@ -25,6 +25,7 @@ import { useCreator } from 'src/hooks/zustands/useCreator';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { _roles, USER_STATUS_OPTIONS } from 'src/_mock';
+import withPermission from 'src/auth/guard/withPermissions';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -366,7 +367,9 @@ function CreatorTableView() {
   );
 }
 
-export default CreatorTableView;
+export default withPermission(['read', 'update', 'delete'], 'creator', CreatorTableView);
+
+// export default CreatorTableView;
 
 function applyFilter({ inputData, comparator, filters }) {
   const { name, status, role } = filters;

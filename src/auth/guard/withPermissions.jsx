@@ -14,6 +14,10 @@ const withPermission = (requiredPermission, module, WrappedComponent) => (props)
   const { permission } = useAuthContext();
   const { user } = useAuthContext();
 
+  const missingPermissions = requiredPermission.filter(
+    (elem) => !permission[module]?.permissions.includes(elem)
+  );
+
   if (user?.role === 'superadmin') {
     return <WrappedComponent {...props} />;
   }
@@ -40,6 +44,7 @@ const withPermission = (requiredPermission, module, WrappedComponent) => (props)
       <m.div variants={varBounce().in}>
         <Typography sx={{ color: 'text.secondary' }}>
           You do not have permission to access this page
+          {JSON.stringify(missingPermissions)}
         </Typography>
       </m.div>
 
