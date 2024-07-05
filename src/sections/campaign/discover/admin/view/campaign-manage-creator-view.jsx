@@ -6,6 +6,7 @@ import {
   Tab,
   Card,
   Tabs,
+  Chip,
   Stack,
   Button,
   Avatar,
@@ -21,15 +22,20 @@ import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { countries } from 'src/assets/data';
 
 import Iconify from 'src/components/iconify';
+import { LoadingScreen } from 'src/components/loading-screen';
 
 const CampaignManageCreatorView = ({ id }) => {
-  const { data } = useGetCreatorById(id);
+  const { data, isLoading } = useGetCreatorById(id);
   const [currentTab, setCurrentTab] = useState('overview');
   // const { user } = data;
   const router = useRouter();
 
   const phoneNumberHelper = (country, phoneNumber) => {
+    if (!phoneNumber) {
+      return;
+    }
     const prefix = countries.filter((item) => item.label === country)[0].phone;
+    // eslint-disable-next-line consistent-return
     return `+${prefix} ${phoneNumber}`;
   };
 
@@ -42,13 +48,16 @@ const CampaignManageCreatorView = ({ id }) => {
         gap={3}
         alignItems={{ xs: 'center', md: 'start' }}
       >
-        <Avatar
-          src={data?.user?.photoURL}
-          sx={{
-            width: 100,
-            height: 100,
-          }}
-        />
+        <Stack alignItems="center" gap={2}>
+          <Avatar
+            src={data?.user?.photoURL}
+            sx={{
+              width: 100,
+              height: 100,
+            }}
+          />
+          <Chip label={data?.user?.status} size="small" variant="outlined" color="success" />
+        </Stack>
         <Box display="grid" gridTemplateColumns="repeat(2,1fr)" gap={1.5}>
           <ListItemText primary="Name" secondary={data?.user?.name} />
           <ListItemText primary="Email" secondary={data?.user?.email} />
@@ -70,17 +79,36 @@ const CampaignManageCreatorView = ({ id }) => {
       value={currentTab}
       onChange={(a, val) => setCurrentTab(val)}
       sx={{
-        mt: 2,
+        my: 2,
       }}
     >
       <Tab value="overview" label="Overview" />
-
       <Tab value="draft" label="Draft" />
       <Tab value="agreement" label="Agreement" />
       <Tab value="logistics" label="Logistics" />
       <Tab value="timeline" label="Timeline" />
       <Tab value="reminder" label="Reminder" />
     </Tabs>
+  );
+
+  const renderOverview = (
+    <Box display="grid" gridTemplateColumns="repeat(3, 1fr)" gap={2}>
+      <Box
+        sx={{
+          height: 150,
+          p: 3,
+        }}
+        component={Card}
+      >
+        <Typography variant="h3">Draft</Typography>
+      </Box>
+      <Box
+        sx={{
+          height: 150,
+        }}
+        component={Card}
+      />
+    </Box>
   );
 
   return (
@@ -97,11 +125,13 @@ const CampaignManageCreatorView = ({ id }) => {
         </Button>
       </Stack>
 
+      {isLoading && <LoadingScreen />}
+
       <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2,1fr)' }}>
         {renderInformation}
-        {/* {renderInformation} */}
       </Box>
       {renderTabs}
+      {currentTab === 'overview' && renderOverview}
     </Container>
   );
 };
