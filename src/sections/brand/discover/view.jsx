@@ -99,4 +99,4 @@ function DiscoverBrand() {
 }
 
 // export default DiscoverBrand;
-export default withPermission('read', 'brand', DiscoverBrand);
+export default withPermission(['read'], 'brand', DiscoverBrand);
