@@ -38,11 +38,11 @@ import withPermission from 'src/auth/guard/withPermissions';
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
-import { EditBrand } from '../../edit/EditBrand';
-import { EditTimeline } from '../../edit/EditTimeline';
-import { EditDosAndDonts } from '../../edit/EditDosAndDonts';
-import { EditCampaignInfo } from '../../edit/EditCampaignInfo';
-import { EditRequirements } from '../../edit/EditRequirements';
+import { EditTimeline } from './EditTimeline';
+import { EditBrandOrCompany } from './EditBrandOrCompany';
+import { EditDosAndDonts } from './EditDosAndDonts';
+import { EditCampaignInfo } from './EditCampaignInfo';
+import { EditRequirements } from './EditRequirements';
 
 const EditButton = ({ tooltip, onClick }) => (
   <Stack direction="row" spacing={1} position="absolute" top={10} right={10} alignItems="center">
@@ -232,7 +232,7 @@ const CampaignDetailManageView = ({ id }) => {
   const renderBrand = (
     <>
       <Box component={Card} p={2}>
-        <Typography variant="h5">Brand Information</Typography>
+        <Typography variant="h5">Brand</Typography>
 
         {isEditable && (
           <EditButton
@@ -269,14 +269,14 @@ const CampaignDetailManageView = ({ id }) => {
               )}
         </Box>
       </Box>
-      <EditBrand open={open} campaign={campaign} onClose={onClose} />
+      <EditBrandOrCompany open={open} campaign={campaign} onClose={onClose} />
     </>
   );
 
   const renderCompany = (
     <>
       <Box component={Card} p={2}>
-        <Typography variant="h5">Brand Information</Typography>
+        <Typography variant="h5">Company</Typography>
         {isEditable && (
           <EditButton
             tooltip="Edit Company"
@@ -300,8 +300,7 @@ const CampaignDetailManageView = ({ id }) => {
               )}
         </Box>
       </Box>
-
-      <EditBrand open={open} campaign={campaign} onClose={onClose} />
+      <EditBrandOrCompany open={open} campaign={campaign} onClose={onClose} />
     </>
   );
 

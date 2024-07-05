@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 
@@ -17,14 +16,32 @@ import {
 import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import Image from 'src/components/image';
+import { enqueueSnackbar } from 'notistack';
 import { RHFAutocomplete } from 'src/components/hook-form';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-export const EditBrand = ({ open, campaign, onClose }) => {
+export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
   const methods = useForm({
     defaultValues: {
       campaignBrand: campaign?.brand ?? campaign?.company,
     },
+  });
+
+  const { handleSubmit } = methods;
+
+  const onSubmit = handleSubmit(async (data) => {
+    try {
+      const res = await axiosInstance.patch(endpoints.campaign.editCampaignBrandOrCompany, {
+        ...data,
+        id: campaign?.id,
+      });
+      enqueueSnackbar(res?.data.message);
+    } catch (error) {
+      enqueueSnackbar('Error has occured', {
+        variant: 'error',
+      });
+    }
   });
 
   const { options } = useGetCampaignBrandOption();
@@ -37,10 +54,12 @@ export const EditBrand = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle id="alert-dialog-title">Brand</DialogTitle>
-      <DialogContent>
-        <DialogContentText id="alert-dialog-description" p={1.5}>
-          <FormProvider methods={methods}>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <DialogTitle id="alert-dialog-title">
+          Edit Brand or Company
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description" p={1.5}>
             <Box
               sx={{
                 display: 'grid',
@@ -73,20 +92,20 @@ export const EditBrand = ({ open, campaign, onClose }) => {
                 isOptionEqualToValue={(option, value) => option.id === value.id}
               />
             </Box>
-          </FormProvider>
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => onClose('campaignBrand')}>Cancel</Button>
-        <Button autoFocus color="primary">
-          Save
-        </Button>
-      </DialogActions>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => onClose('campaignBrand')}>Cancel</Button>
+          <Button autoFocus color="primary" type="submit">
+            Save
+          </Button>
+        </DialogActions>
+      </FormProvider>
     </Dialog>
   );
 };
 
-EditBrand.propTypes = {
+EditBrandOrCompany.propTypes = {
   open: PropTypes.object,
   campaign: PropTypes.object,
   onClose: PropTypes.func,

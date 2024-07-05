@@ -123,5 +123,6 @@ export const endpoints = {
     },
     changeStage: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
+    editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',
   },
 };
