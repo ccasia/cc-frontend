@@ -214,8 +214,17 @@ const CampaignDetailContent = ({ campaign }) => {
 
       <Stack>
         <Typography variant="h5">Campaign timeline</Typography>
-
-        <Timeline position="alternate">
+        {/* <Timeline position="alternate">
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {dayjs(campaign?.campaignBrief?.startDate).format('LL')}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Start Date</TimelineContent>
+          </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
               {campaign?.customCampaignTimeline?.openForPitch ??
@@ -321,6 +330,175 @@ const CampaignDetailContent = ({ campaign }) => {
             </TimelineSeparator>
             <TimelineContent>Filter Pitch</TimelineContent>
           </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {campaign?.customCampaignTimeline?.agreementSign ??
+                campaign?.defaultCampaignTimeline?.agreementSign}{' '}
+              {formatDays(
+                campaign?.customCampaignTimeline?.agreementSign ??
+                  campaign?.defaultCampaignTimeline?.agreementSign
+              )}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Agreement Sign</TimelineContent>
+          </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {campaign?.customCampaignTimeline?.qc ?? campaign?.defaultCampaignTimeline?.qc}{' '}
+              {formatDays(
+                campaign?.customCampaignTimeline?.qc ?? campaign?.defaultCampaignTimeline?.qc
+              )}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>QC</TimelineContent>
+          </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {campaign?.customCampaignTimeline?.posting ??
+                campaign?.defaultCampaignTimeline?.posting}{' '}
+              {formatDays(
+                campaign?.customCampaignTimeline?.posting ??
+                  campaign?.defaultCampaignTimeline?.posting
+              )}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Posting</TimelineContent>
+          </TimelineItem>
+        </Timeline> */}
+        <Timeline position="alternate">
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {dayjs(campaign?.campaignBrief?.startDate).format('LL')}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Start Date</TimelineContent>
+          </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {dayjs(campaign?.campaignBrief?.startDate)
+                .add(
+                  campaign?.customCampaignTimeline?.openForPitch ??
+                    campaign?.defaultCampaignTimeline?.openForPitch,
+                  'day'
+                )
+                .format('LL')}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Open For Pitch</TimelineContent>
+          </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {dayjs(campaign?.campaignBrief?.startDate)
+                .add(
+                  campaign?.customCampaignTimeline?.openForPitch ??
+                    campaign?.defaultCampaignTimeline?.openForPitch,
+                  'day'
+                )
+                .add(
+                  campaign?.customCampaignTimeline?.filterPitch ??
+                    campaign?.defaultCampaignTimeline?.filterPitch,
+                  'day'
+                )
+                .format('LL')}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Filter Pitch</TimelineContent>
+          </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {dayjs(campaign?.campaignBrief?.startDate)
+                .add(
+                  campaign?.customCampaignTimeline?.shortListCreator ??
+                    campaign?.defaultCampaignTimeline?.filterPitch,
+                  'day'
+                )
+                .format('LL')}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Shortlist Creator</TimelineContent>
+          </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {campaign?.customCampaignTimeline?.firstDraft ??
+                campaign?.defaultCampaignTimeline?.firstDraft}{' '}
+              {formatDays(
+                campaign?.customCampaignTimeline?.firstDraft ??
+                  campaign?.defaultCampaignTimeline?.firstDraft
+              )}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>First Draft</TimelineContent>
+          </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {campaign?.customCampaignTimeline?.finalDraft ??
+                campaign?.defaultCampaignTimeline?.finalDraft}{' '}
+              {formatDays(
+                campaign?.customCampaignTimeline?.finalDraft ??
+                  campaign?.defaultCampaignTimeline?.finalDraft
+              )}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Final Draft</TimelineContent>
+          </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {campaign?.customCampaignTimeline?.feedBackFirstDraft ??
+                campaign?.defaultCampaignTimeline?.feedBackFirstDraft}{' '}
+              {formatDays(
+                campaign?.customCampaignTimeline?.feedBackFirstDraft ??
+                  campaign?.defaultCampaignTimeline?.feedBackFirstDraft
+              )}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Feedback First Draft</TimelineContent>
+          </TimelineItem>
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              {campaign?.customCampaignTimeline?.feedBackFinalDraft ??
+                campaign?.defaultCampaignTimeline?.feedBackFinalDraft}{' '}
+              {formatDays(
+                campaign?.customCampaignTimeline?.feedBackFinalDraft ??
+                  campaign?.defaultCampaignTimeline?.feedBackFinalDraft
+              )}
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>Feedback Final Draft</TimelineContent>
+          </TimelineItem>
+
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
               {campaign?.customCampaignTimeline?.agreementSign ??

@@ -157,6 +157,45 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
         }}
       />
 
+      {/* <Tooltip
+        title={
+          <>
+            <ListItemText
+              primary="Status"
+              secondary={campaign?.status}
+              primaryTypographyProps={{
+                variant: 'caption',
+              }}
+              secondaryTypographyProps={{
+                variant: 'caption',
+                color: 'text.disabled',
+              }}
+            />
+            <ListItemText
+              primary="Stage"
+              secondary={campaign?.stage}
+              primaryTypographyProps={{
+                variant: 'caption',
+              }}
+              secondaryTypographyProps={{
+                variant: 'caption',
+                color: 'text.disabled',
+              }}
+            />
+          </>
+        }
+      >
+        <Iconify
+          icon="material-symbols:info"
+          sx={{
+            position: 'absolute',
+            top: 15,
+            right: 15,
+            zIndex: 300,
+          }}
+        />
+      </Tooltip> */}
+
       {renderImages}
 
       {renderTexts}

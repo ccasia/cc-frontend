@@ -80,10 +80,10 @@ const CampaignView = () => {
           mb: { xs: 3, md: 5 },
         }}
       />
+
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         {campaigns && (
           <Autocomplete
-            // freeSolo
             options={campaigns.filter((campaign) => campaign?.stage === 'publish')}
             getOptionLabel={(option) => option?.name}
             renderOption={(props, option) => (
