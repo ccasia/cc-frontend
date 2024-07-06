@@ -1,8 +1,21 @@
 import React, { useState, useCallback } from 'react';
 
-import { Menu, Stack, Button, MenuItem, Container, TextField, InputAdornment } from '@mui/material';
+import Autocomplete from '@mui/material/Autocomplete';
+import {
+  Box,
+  Menu,
+  Stack,
+  Button,
+  Avatar,
+  MenuItem,
+  Container,
+  TextField,
+  ListItemText,
+  InputAdornment,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
@@ -22,6 +35,7 @@ const defaultFilters = {
 const CampaignView = () => {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns();
+  const router = useRouter();
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [filters, setFilters] = useState(defaultFilters);
@@ -67,19 +81,57 @@ const CampaignView = () => {
         }}
       />
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-        <TextField
-          placeholder="Search..."
-          sx={{
-            width: 250,
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="material-symbols:search" />
-              </InputAdornment>
-            ),
-          }}
-        />
+        {campaigns && (
+          <Autocomplete
+            // freeSolo
+            options={campaigns.filter((campaign) => campaign?.stage === 'publish')}
+            getOptionLabel={(option) => option?.name}
+            renderOption={(props, option) => (
+              <Box
+                {...props}
+                component="div"
+                onClick={() =>
+                  router.push(paths.dashboard.campaign.adminCampaignDetail(option?.id))
+                }
+              >
+                <Avatar
+                  alt="dawd"
+                  src={option?.campaignBrief?.images[0]}
+                  variant="rounded"
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    flexShrink: 0,
+                    mr: 1.5,
+                    borderRadius: 1,
+                  }}
+                />
+                <ListItemText
+                  primary={option?.name}
+                  secondary={option?.company?.name || option?.brand?.name}
+                />
+              </Box>
+            )}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Search"
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="material-symbols:search" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+            sx={{
+              width: 250,
+            }}
+          />
+        )}
+
         <Button onClick={openFilters.onTrue} endIcon={<Iconify icon="ic:round-filter-list" />}>
           Filter
         </Button>
