@@ -69,9 +69,9 @@ const interestsLists = [
 
 function CreateCampaignForm() {
   const { enqueueSnackbar } = useSnackbar();
-  const active = localStorage.getItem('activeStep');
+  // const active = localStorage.getItem('activeStep');
   const { options } = useGetCampaignBrandOption();
-  const [activeStep, setActiveStep] = useState(parseInt(active, 10));
+  const [activeStep, setActiveStep] = useState(0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
