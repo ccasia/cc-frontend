@@ -41,6 +41,19 @@ const CampaignPitchDetail = ({ pitch }) => {
     }
   };
 
+  const filter = async ({ pitchId }) => {
+    try {
+      const res = await axiosInstance.post(endpoints.campaign.pitch.filter, {
+        pitchId,
+      });
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    }
+  };
+
   const renderCreatorInformation = (
     <Box
       component={Card}
@@ -247,11 +260,12 @@ const CampaignPitchDetail = ({ pitch }) => {
     <Stack direction="row" alignItems="center" justifyContent="stretch" mt={2} gap={2}>
       <Button
         fullWidth
-        color="error"
+        // color="error"
         variant="outlined"
         onClick={() =>
           reject({ campaignId: pitch?.campaignId, creatorId: pitch?.userId, pitchId: pitch?.id })
         }
+        startIcon={<Iconify icon="oui:thumbs-down" />}
       >
         Reject
       </Button>
@@ -262,8 +276,17 @@ const CampaignPitchDetail = ({ pitch }) => {
         onClick={() =>
           approve({ campaignId: pitch?.campaignId, creatorId: pitch?.userId, pitchId: pitch?.id })
         }
+        startIcon={<Iconify icon="oui:thumbs-up" />}
       >
         Accept
+      </Button>
+      <Button
+        fullWidth
+        // color="success"
+        variant="contained"
+        onClick={() => filter({ pitchId: pitch?.id })}
+      >
+        Filter this pitch
       </Button>
     </Stack>
   );
@@ -273,6 +296,7 @@ const CampaignPitchDetail = ({ pitch }) => {
       {renderCreatorInformation}
       {/* {renderTabs} */}
       {pitch?.content ? renderPitchContentScript : renderPitchContentVideo}
+
       {renderButton}
     </>
   );

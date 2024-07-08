@@ -38,7 +38,7 @@ export default function CampaignSearch({ campaigns }) {
             <Box {...props}>
               <Avatar
                 alt="dawd"
-                src="/test.jpeg"
+                src={option?.campaignBrief?.images[0]}
                 variant="rounded"
                 sx={{
                   width: 48,

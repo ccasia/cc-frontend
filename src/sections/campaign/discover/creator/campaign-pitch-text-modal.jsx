@@ -6,8 +6,9 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { Box, Button, Dialog, DialogTitle, DialogActions } from '@mui/material';
+import { Box, Button, Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -18,19 +19,22 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
   const smUp = useResponsive('sm', 'down');
+  const modal = useBoolean();
 
   const schema = Yup.object().shape({
     content: Yup.string().required('Pitch Script is required'),
   });
 
   const methods = useForm({
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     resolver: yupResolver(schema),
     defaultValues: {
       content: '',
     },
   });
 
-  const { handleSubmit } = methods;
+  const { handleSubmit, reset } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -47,9 +51,33 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
     }
   });
 
+  const modalConfirmation = (
+    <Dialog open={modal.value} onClose={modal.onFalse}>
+      <DialogTitle>Confirm Submission</DialogTitle>
+      <DialogContent>Are you sure you want to submit your pitch?</DialogContent>
+      <DialogActions>
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() => {
+            modal.onFalse();
+            handleClose();
+            reset();
+          }}
+          size="small"
+        >
+          Cancel
+        </Button>
+        <Button variant="contained" color="primary" size="small" onClick={onSubmit}>
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" fullScreen={smUp}>
-      <FormProvider methods={methods} onSubmit={onSubmit}>
+      <FormProvider methods={methods}>
         <DialogTitle>Start Pitching Your Text !</DialogTitle>
         <Box p={2}>
           <RHFEditor simple name="content" />
@@ -60,11 +88,12 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
             autoFocus
             variant="contained"
             startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-            type="submit"
+            onClick={modal.onTrue}
           >
             Pitch
           </Button>
         </DialogActions>
+        {modalConfirmation}
       </FormProvider>
     </Dialog>
   );

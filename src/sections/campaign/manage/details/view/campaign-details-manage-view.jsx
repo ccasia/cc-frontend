@@ -14,14 +14,21 @@ import {
   Grid,
   List,
   Stack,
+  Avatar,
+  Dialog,
+  Button,
   Divider,
   Tooltip,
   ListItem,
   Container,
   Typography,
   IconButton,
+  DialogTitle,
   ListItemText,
   ListItemIcon,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -61,6 +68,7 @@ EditButton.propTypes = {
 
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading } = useGetCampaignById(id);
+  const modalConfirm = useBoolean();
 
   const loadingButton = useBoolean();
 
@@ -83,7 +91,7 @@ const CampaignDetailManageView = ({ id }) => {
     }));
   };
 
-  const formatDays = (days) => (days === 1 ? 'day' : 'days');
+  // const formatDays = (days) => (days === 1 ? 'day' : 'days');
   const isEditable = campaign?.stage !== 'publish';
 
   const handleChangeStage = async (stage) => {
@@ -138,6 +146,7 @@ const CampaignDetailManageView = ({ id }) => {
           newCampaign,
         };
       });
+      modalConfirm.onFalse();
     } catch (error) {
       enqueueSnackbar('Error to close campaign', {
         variant: 'error',
@@ -487,7 +496,7 @@ const CampaignDetailManageView = ({ id }) => {
             }
           />
         )}
-        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={1}>
+        {/* <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={1}>
           <ListItemText
             primary="Open For Pitch"
             secondary={`${
@@ -594,6 +603,23 @@ const CampaignDetailManageView = ({ id }) => {
                 campaign?.defaultCampaignTimeline?.posting
             )}`}
           />
+        </Box> */}
+        <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={2} mt={1}>
+          {campaign &&
+            campaign?.campaignTimeline.map((timeline, index) => (
+              <Box key={timeline?.id}>
+                <Stack direction="row" spacing={1} alignItems="start">
+                  <Avatar sx={{ width: 15, height: 15, fontSize: 10 }}>{index + 1}</Avatar>
+                  <ListItemText
+                    primary={timeline?.timeline_type}
+                    secondary={`${dayjs(timeline?.startDate).format('ddd LL')} - ${dayjs(timeline?.endDate).format('ddd LL')}`}
+                    secondaryTypographyProps={{
+                      variant: 'caption',
+                    }}
+                  />
+                </Stack>
+              </Box>
+            ))}
         </Box>
       </Box>
       {isEditable && <EditTimeline open={open} campaign={campaign} onClose={onClose} />}
@@ -613,6 +639,21 @@ const CampaignDetailManageView = ({ id }) => {
     </Box>
   );
 
+  const confirmationModal = (
+    <Dialog open={modalConfirm.value} onClose={modalConfirm.onFalse}>
+      <DialogTitle>Confirm end campaign</DialogTitle>
+      <DialogContent>
+        <DialogContentText>Are you sure you want to end the campaign?</DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={modalConfirm.onFalse}>Cancel</Button>
+        <Button onClick={closeCampaign} variant="contained">
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -627,29 +668,42 @@ const CampaignDetailManageView = ({ id }) => {
           { name: id },
         ]}
         action={
-          campaign && campaign?.stage === 'draft' ? (
-            <LoadingButton
-              variant="contained"
-              color="primary"
-              size="small"
-              endIcon={<Iconify icon="eva:cloud-upload-fill" />}
-              onClick={() => handleChangeStage('publish')}
-              loading={loadingButton.value}
-            >
-              Publish
-            </LoadingButton>
-          ) : (
-            <LoadingButton
-              variant="contained"
-              color="warning"
-              size="small"
-              endIcon={<Iconify icon="solar:file-text-bold" />}
-              onClick={() => handleChangeStage('draft')}
-              loading={loadingButton.value}
-            >
-              Draft
-            </LoadingButton>
-          )
+          <Stack direction="row" spacing={2}>
+            {campaign?.status === 'active' && campaign?.stage === 'publish' && (
+              <LoadingButton
+                startIcon={<Iconify icon="ion:close" />}
+                variant="outlined"
+                color="error"
+                onClick={modalConfirm.onTrue}
+                size="small"
+              >
+                End Campaign
+              </LoadingButton>
+            )}
+            {campaign && campaign?.stage === 'draft' ? (
+              <LoadingButton
+                variant="contained"
+                color="primary"
+                size="small"
+                endIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                onClick={() => handleChangeStage('publish')}
+                loading={loadingButton.value}
+              >
+                Publish
+              </LoadingButton>
+            ) : (
+              <LoadingButton
+                variant="contained"
+                color="warning"
+                size="small"
+                endIcon={<Iconify icon="solar:file-text-bold" />}
+                onClick={() => handleChangeStage('draft')}
+                loading={loadingButton.value}
+              >
+                Draft
+              </LoadingButton>
+            )}
+          </Stack>
         }
         sx={{
           mb: { xs: 3, md: 5 },
@@ -682,7 +736,7 @@ const CampaignDetailManageView = ({ id }) => {
         )}
       </Grid>
 
-      {campaign?.status === 'active' && campaign?.stage === 'publish' && (
+      {/* {campaign?.status === 'active' && campaign?.stage === 'publish' && (
         <LoadingButton
           sx={{
             position: 'fixed',
@@ -696,7 +750,8 @@ const CampaignDetailManageView = ({ id }) => {
         >
           Close Campaign
         </LoadingButton>
-      )}
+      )} */}
+      {confirmationModal}
     </Container>
   );
 };

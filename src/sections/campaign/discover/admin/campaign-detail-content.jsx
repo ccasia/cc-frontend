@@ -134,7 +134,7 @@ const CampaignDetailContent = ({ campaign }) => {
     </Box>
   );
 
-  const formatDays = (days) => (days === 1 ? 'day' : 'days');
+  // const formatDays = (days) => (days === 1 ? 'day' : 'days');
 
   const renderInformation = (
     <Stack spacing={5}>
@@ -374,8 +374,54 @@ const CampaignDetailContent = ({ campaign }) => {
             <TimelineContent>Posting</TimelineContent>
           </TimelineItem>
         </Timeline> */}
-        <Timeline position="alternate">
+        <Timeline>
           <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              <Typography variant="caption">
+                {dayjs(campaign?.campaignBrief?.startDate).format('ddd LL')}
+              </Typography>
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent>
+              <Typography variant="subtitle2">Campaign Start Date</Typography>
+            </TimelineContent>
+          </TimelineItem>
+          {campaign &&
+            campaign?.campaignTimeline.map((timeline) => (
+              <TimelineItem>
+                <TimelineOppositeContent color="text.secondary">
+                  <Typography variant="caption">
+                    {/* {dayjs(timeline.startDate).format('ddd LL')} -{' '} */}
+                    {dayjs(timeline.endDate).format('ddd LL')}
+                  </Typography>
+                </TimelineOppositeContent>
+                <TimelineSeparator>
+                  <TimelineDot />
+                  <TimelineConnector />
+                </TimelineSeparator>
+                <TimelineContent>
+                  <Typography variant="subtitle2">{timeline?.timeline_type}</Typography>
+                </TimelineContent>
+              </TimelineItem>
+            ))}
+          <TimelineItem>
+            <TimelineOppositeContent color="text.secondary">
+              <Typography variant="caption">
+                {dayjs(campaign?.campaignBrief?.endDate).format('ddd LL')}
+              </Typography>
+            </TimelineOppositeContent>
+            <TimelineSeparator>
+              <TimelineDot />
+              {/* <TimelineConnector /> */}
+            </TimelineSeparator>
+            <TimelineContent>
+              <Typography variant="subtitle2">Campaign End Date</Typography>
+            </TimelineContent>
+          </TimelineItem>
+          {/* <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
               {dayjs(campaign?.campaignBrief?.startDate).format('LL')}
             </TimelineOppositeContent>
@@ -498,7 +544,6 @@ const CampaignDetailContent = ({ campaign }) => {
             </TimelineSeparator>
             <TimelineContent>Feedback Final Draft</TimelineContent>
           </TimelineItem>
-
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
               {campaign?.customCampaignTimeline?.agreementSign ??
@@ -541,7 +586,7 @@ const CampaignDetailContent = ({ campaign }) => {
               <TimelineConnector />
             </TimelineSeparator>
             <TimelineContent>Posting</TimelineContent>
-          </TimelineItem>
+          </TimelineItem> */}
         </Timeline>
       </Stack>
     </Stack>

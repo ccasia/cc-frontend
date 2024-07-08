@@ -9,6 +9,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Step from '@mui/material/Step';
 import Paper from '@mui/material/Paper';
+import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
@@ -32,7 +33,6 @@ import FormProvider, {
   RHFUpload,
   RHFSelect,
   RHFTextField,
-  RHFDatePicker,
   RHFMultiSelect,
   RHFAutocomplete,
 } from 'src/components/hook-form';
@@ -69,10 +69,12 @@ const interestsLists = [
 
 function CreateCampaignForm() {
   const { enqueueSnackbar } = useSnackbar();
+  const active = localStorage.getItem('activeStep');
   const { options } = useGetCampaignBrandOption();
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(parseInt(active, 10));
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const open = Boolean(anchorEl);
   // eslint-disable-next-line no-unused-vars
   const [image, setImage] = useState(null);
@@ -132,44 +134,44 @@ function CreateCampaignForm() {
     adminManager: Yup.array().required('Admin Manager is required'),
     campaignImages: Yup.array().min(1, 'Must have at least 2 items'),
     agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
-    timeline: Yup.object().shape({
-      openForPitch: Yup.number('Must be a number')
-        .min(14, 'Minumum is 14 days')
-        .max(30, 'Maximum is 30 days')
-        .required('Open for pitch timeline is required'),
-      filterPitch: Yup.number('Must be a number')
-        .min(2, 'Minumum is 2 days')
-        .max(3, 'Maximum is 3 days')
-        .required('Filtering timeline is required'),
-      shortlistCreator: Yup.number('Must be a number')
-        .min(1, 'Minumum is 1 days')
-        .max(2, 'Maximum is 2 days')
-        .required('Shortlist creator timeline is required'),
-      agreementSign: Yup.number('Must be a number')
-        .min(1, 'Minumum is 1 days')
-        .max(2, 'Maximum is 2 days')
-        .required('Sign of agreement timeline is required'),
-      firstDraft: Yup.number('Must be a number')
-        .min(3, 'Minumum is 3 days')
-        .max(5, 'Maximum is 5 days')
-        .required('First draft timeline is required'),
-      feedBackFirstDraft: Yup.number('Must be a number')
-        .min(2, 'Minumum is 2 days')
-        .max(3, 'Maximum is 3 days')
-        .required('Feedback first draft timeline is required'),
-      finalDraft: Yup.number('Must be a number')
-        .min(2, 'Minumum is 2 days')
-        .max(4, 'Maximum is 4 days')
-        .required('Final draft timeline is required'),
-      feedBackFinalDraft: Yup.number('Must be a number')
-        .min(1, 'Minumum is 1 days')
-        .max(2, 'Maximum is 2 days')
-        .required('Feedback final draft timeline is required'),
-      posting: Yup.number('Must be a number')
-        .max(2, 'Maximum is 2 days')
-        .required('Posting social media timeline is required'),
-      qc: Yup.number('Must be a number').required('QC timeline is required'),
-    }),
+    // timeline: Yup.object().shape({
+    //   openForPitch: Yup.number('Must be a number')
+    //     .min(14, 'Minumum is 14 days')
+    //     .max(30, 'Maximum is 30 days')
+    //     .required('Open for pitch timeline is required'),
+    //   filterPitch: Yup.number('Must be a number')
+    //     .min(2, 'Minumum is 2 days')
+    //     .max(3, 'Maximum is 3 days')
+    //     .required('Filtering timeline is required'),
+    //   shortlistCreator: Yup.number('Must be a number')
+    //     .min(1, 'Minumum is 1 days')
+    //     .max(2, 'Maximum is 2 days')
+    //     .required('Shortlist creator timeline is required'),
+    //   agreementSign: Yup.number('Must be a number')
+    //     .min(1, 'Minumum is 1 days')
+    //     .max(2, 'Maximum is 2 days')
+    //     .required('Sign of agreement timeline is required'),
+    //   firstDraft: Yup.number('Must be a number')
+    //     .min(3, 'Minumum is 3 days')
+    //     .max(5, 'Maximum is 5 days')
+    //     .required('First draft timeline is required'),
+    //   feedBackFirstDraft: Yup.number('Must be a number')
+    //     .min(2, 'Minumum is 2 days')
+    //     .max(3, 'Maximum is 3 days')
+    //     .required('Feedback first draft timeline is required'),
+    //   finalDraft: Yup.number('Must be a number')
+    //     .min(2, 'Minumum is 2 days')
+    //     .max(4, 'Maximum is 4 days')
+    //     .required('Final draft timeline is required'),
+    //   feedBackFinalDraft: Yup.number('Must be a number')
+    //     .min(1, 'Minumum is 1 days')
+    //     .max(2, 'Maximum is 2 days')
+    //     .required('Feedback final draft timeline is required'),
+    //   posting: Yup.number('Must be a number')
+    //     .max(2, 'Maximum is 2 days')
+    //     .required('Posting social media timeline is required'),
+    //   qc: Yup.number('Must be a number').required('QC timeline is required'),
+    // }),
   });
 
   const defaultValues = {
@@ -200,7 +202,7 @@ function CreateCampaignForm() {
     campaignImages: [],
     adminManager: [],
     agreementFrom: null,
-    timeline: {},
+    timeline: [{ timeline_type: '', duration: undefined, startDate: '', endDate: '' }],
   };
 
   const methods = useForm({
@@ -222,6 +224,10 @@ function CreateCampaignForm() {
 
   const values = watch();
 
+  useEffect(() => {
+    console.log(errors);
+  }, [errors]);
+
   const {
     append: doAppend,
     fields: doFields,
@@ -237,6 +243,15 @@ function CreateCampaignForm() {
     remove: dontRemove,
   } = useFieldArray({
     name: 'campaignDont',
+    control,
+  });
+
+  const {
+    append: timelineAppend,
+    fields: timelineFields,
+    remove: timelineRemove,
+  } = useFieldArray({
+    name: 'timeline',
     control,
   });
 
@@ -266,10 +281,12 @@ function CreateCampaignForm() {
   }, [brandState, setValue]);
 
   const handleNext = () => {
+    localStorage.setItem('activeStep', activeStep + 1);
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
   const handleBack = () => {
+    localStorage.setItem('activeStep', activeStep - 1);
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
@@ -314,10 +331,13 @@ function CreateCampaignForm() {
     return false;
   }
 
-  const onSubmit = handleSubmit(async (data, status) => {
+  const onSubmit = handleSubmit(async (data, stage) => {
     const formData = new FormData();
 
-    formData.append('data', JSON.stringify(data));
+    const combinedData = { ...data, ...{ campaignStage: stage } };
+
+    formData.append('data', JSON.stringify(combinedData));
+    // formData.append('data', JSON.stringify({ campaignStage: stage }));
 
     // eslint-disable-next-line guard-for-in, no-restricted-syntax
     for (const i in data.campaignImages) {
@@ -326,11 +346,13 @@ function CreateCampaignForm() {
     // formData.append('campaignImage', data.campaignImages[0]);
 
     try {
+      setIsLoading(true);
       const res = await axiosInstance.post(endpoints.campaign.createCampaign, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      setIsLoading(false);
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
       });
@@ -338,6 +360,8 @@ function CreateCampaignForm() {
       enqueueSnackbar('Error creating campaign. Contact our admin', {
         variant: 'error',
       });
+    } finally {
+      setIsLoading(false);
     }
   });
 
@@ -436,8 +460,8 @@ function CreateCampaignForm() {
         <MenuItem value="productAwareness">Want to drive product awareness</MenuItem>
       </RHFSelect>
 
-      <RHFDatePicker name="campaignStartDate" label="Start Date" />
-      <RHFDatePicker name="campaignEndDate" label="End Date" />
+      {/* <RHFDatePicker name="campaignStartDate" label="Start Date" />
+      <RHFDatePicker name="campaignEndDate" label="End Date" /> */}
 
       <RHFAutocomplete
         name="campaignInterests"
@@ -677,8 +701,6 @@ function CreateCampaignForm() {
     </Stack>
   );
 
-  console.log(watch('adminManager'));
-
   const formSelectAdminManager = (
     <Box
       sx={{
@@ -801,6 +823,10 @@ function CreateCampaignForm() {
             errors={errors}
             timeline={timeline}
             setTimeline={setTimeline}
+            fields={timelineFields}
+            remove={timelineRemove}
+            watch={watch}
+            append={timelineAppend}
           />
         );
       // case 3:
@@ -906,21 +932,23 @@ function CreateCampaignForm() {
                   <Box sx={{ flexGrow: 1 }} />
                   {activeStep === steps.length - 1 ? (
                     <Stack direction="row" spacing={1}>
-                      <Button
+                      <LoadingButton
                         variant="outlined"
                         onClick={() => onSubmit('draft')}
                         startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
+                        loading={isLoading}
                       >
                         Draft
-                      </Button>
-                      <Button
+                      </LoadingButton>
+                      <LoadingButton
                         variant="contained"
                         color="primary"
                         onClick={() => onSubmit('publish')}
                         startIcon={<Iconify icon="material-symbols:publish" width={16} />}
+                        loading={isLoading}
                       >
                         Publish
-                      </Button>
+                      </LoadingButton>
                     </Stack>
                   ) : (
                     <Button variant="contained" onClick={handleNext}>

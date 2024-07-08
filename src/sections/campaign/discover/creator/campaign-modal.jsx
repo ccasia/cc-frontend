@@ -19,11 +19,16 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import { formatText } from 'src/utils/format-test';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
-const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
+const CampaignModal = ({ open, handleClose, campaign, openForm, existingCampaign }) => {
   const smUp = useResponsive('down', 'sm');
+  const { user } = useAuthContext();
+
+  const campaignIds = user?.Pitch.map((item) => item.campaignId);
 
   const renderGallery = (
     <Box
@@ -118,17 +123,29 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Close</Button>
-        <Button
-          autoFocus
-          variant="contained"
-          startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-          onClick={() => {
-            handleClose();
-            openForm();
-          }}
-        >
-          Pitch
-        </Button>
+        {campaignIds?.includes(campaign.id) ? (
+          <Button
+            autoFocus
+            variant="contained"
+            startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+            disabled
+            color="warning"
+          >
+            Pending Review
+          </Button>
+        ) : (
+          <Button
+            autoFocus
+            variant="contained"
+            startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+            onClick={() => {
+              handleClose();
+              openForm();
+            }}
+          >
+            Pitch
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
@@ -141,4 +158,5 @@ CampaignModal.propTypes = {
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
   openForm: PropTypes.func,
+  existingCampaign: PropTypes.array,
 };

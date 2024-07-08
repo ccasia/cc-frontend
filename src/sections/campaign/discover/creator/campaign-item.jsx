@@ -10,6 +10,8 @@ import { Chip, Button, Typography } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
@@ -20,6 +22,9 @@ import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 export default function CampaignItem({ campaign }) {
   const [open, setOpen] = useState(false);
+  const { user } = useAuthContext();
+
+  const campaignIds = user?.Pitch.map((item) => item.campaignId);
 
   const handleClose = () => {
     setOpen(false);
@@ -97,16 +102,25 @@ export default function CampaignItem({ campaign }) {
       {/* <IconButton onClick={popover.onOpen} sx={{ position: 'absolute', bottom: 20, right: 8 }}>
         <Iconify icon="eva:more-vertical-fill" />
       </IconButton> */}
-
-      <Button
-        sx={{ position: 'absolute', bottom: 10, right: 10 }}
-        variant="contained"
-        size="small"
-        startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-        onClick={() => setOpen(true)}
-      >
-        Pitch
-      </Button>
+      {campaignIds.includes(campaign.id) ? (
+        <Chip
+          sx={{ position: 'absolute', bottom: 10, right: 10 }}
+          variant="filled"
+          color="warning"
+          size="small"
+          label="Pending Review"
+        />
+      ) : (
+        <Button
+          sx={{ position: 'absolute', bottom: 10, right: 10 }}
+          variant="contained"
+          size="small"
+          startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+          onClick={() => setOpen(true)}
+        >
+          Pitch
+        </Button>
+      )}
 
       {[
         {
@@ -190,6 +204,7 @@ export default function CampaignItem({ campaign }) {
         handleClose={campaignInfo.onFalse}
         openForm={() => setOpen(true)}
         campaign={campaign}
+        existingPitch={campaignIds}
       />
       <CampaignPitchOptionsModal open={open} handleClose={handleClose} campaign={campaign} />
     </>

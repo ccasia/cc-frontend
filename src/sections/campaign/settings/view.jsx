@@ -5,7 +5,7 @@ import { Box, Tab, Tabs, Container, useMediaQuery } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
-import { useGetTimeline } from 'src/hooks/use-get-timeline';
+import { useGetTimelineType } from 'src/hooks/use-get-timelinetype';
 
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
@@ -18,7 +18,7 @@ const CampaignSetting = () => {
   const settings = useSettingsContext();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  const { defaultTimeline } = useGetTimeline();
+  const { timelineType } = useGetTimelineType();
 
   const handleChange = (event, newValue) => {
     setTabs(newValue);
@@ -41,6 +41,7 @@ const CampaignSetting = () => {
           borderRadius: 2,
           mt: 3,
           p: 3,
+          position: 'relative',
         }}
       >
         {/* Left Sections */}
@@ -69,7 +70,7 @@ const CampaignSetting = () => {
 
           <Box sx={{ padding: 3, width: '100%' }}>
             {tab === 'timeline' && (
-              <Timeline defaultTimeline={defaultTimeline} isSmallScreen={isSmallScreen} />
+              <Timeline timelineType={timelineType} isSmallScreen={isSmallScreen} />
             )}
             {/* {tab === 'reminder' && <h1>Reminder</h1>} */}
           </Box>

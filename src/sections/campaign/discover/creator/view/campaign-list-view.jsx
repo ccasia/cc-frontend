@@ -61,6 +61,7 @@ export default function CampaignListView() {
         query={search.query}
         results={search.results}
         onSearch={handleSearch}
+        campaigns={campaigns}
         // hrefItem={(id) => paths.dashboard.tour.details(id)}
       />
 

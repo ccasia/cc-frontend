@@ -119,6 +119,7 @@ const CampaignDetailView = ({ id }) => {
     });
   }, [open]);
 
+  // eslint-disable-next-line no-unused-vars
   const renderReminder = (
     <>
       <IconButton
@@ -362,7 +363,7 @@ const CampaignDetailView = ({ id }) => {
           shortlisted={currentCampaign?.ShortListedCreator}
         />
       )}
-      {renderReminder}
+      {/* {renderReminder} */}
     </Container>
   );
 };

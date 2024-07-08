@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 
@@ -14,7 +13,7 @@ import {
 } from '@mui/material';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
+import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 // TODO TEMP: Copied from `src/sections/campaign/create/form.jsx`, consider consolidating them sometime
 const interestsLists = [
@@ -38,8 +37,7 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
     defaultValues: {
       name: campaign?.name || '',
       description: campaign?.name || '',
-      campaignStartDate: dayjs(campaign?.campaignBrief?.startDate) || '',
-      campaignEndDate: dayjs(campaign?.campaignBrief?.endDate),
+
       campaignInterests: campaign?.campaignBrief?.interests || [],
       campaignIndustries: campaign?.campaignBrief?.industries || [],
     },
@@ -69,8 +67,6 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
             >
               <RHFTextField name="name" label="Campaign Name" fullWidth />
               <RHFTextField name="description" label="Campaign Description" multiline />
-              <RHFDatePicker name="campaignStartDate" label="Start Date" />
-              <RHFDatePicker name="campaignEndDate" label="End Date" />
               <RHFAutocomplete
                 name="campaignInterests"
                 placeholder="+ Interests"

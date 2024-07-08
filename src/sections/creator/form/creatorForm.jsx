@@ -231,7 +231,7 @@ export default function CreatorForm({ creator, open, onClose }) {
             <MenuItem value="others">Others</MenuItem>
           </RHFSelect>
 
-          <RHFDatePicker name="birthDate" />
+          <RHFDatePicker name="birthDate" label="Birth Date" />
 
           <RHFAutocomplete
             name="languages"

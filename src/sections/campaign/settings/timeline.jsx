@@ -2,95 +2,128 @@
 import * as Yup from 'yup';
 import React, { useEffect } from 'react';
 import { enqueueSnackbar } from 'notistack';
-import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, useFieldArray } from 'react-hook-form';
 
-import { Box, Button, TextField, Typography, InputAdornment } from '@mui/material';
+import { Box, Stack, Button, Divider, MenuItem, Typography, IconButton } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-// eslint-disable-next-line react/prop-types
-const Timeline = ({ defaultTimeline, isSmallScreen }) => {
-  const schema = Yup.object().shape({
-    openForPitch: Yup.number('Must be a number')
-      .min(14, 'Minumum is 14 days')
-      .max(30, 'Maximum is 30 days')
-      .required('Open for pitch timeline is required'),
-    filterPitch: Yup.number('Must be a number')
-      .min(2, 'Minumum is 2 days')
-      .max(3, 'Maximum is 3 days')
-      .required('Filtering timeline is required'),
-    shortlistCreator: Yup.number('Must be a number')
-      .min(1, 'Minumum is 1 days')
-      .max(2, 'Maximum is 2 days')
-      .required('Shortlist creator timeline is required'),
-    agreementSign: Yup.number('Must be a number')
-      .min(1, 'Minumum is 1 days')
-      .max(2, 'Maximum is 2 days')
-      .required('Sign of agreement timeline is required'),
-    firstDraft: Yup.number('Must be a number')
-      .min(3, 'Minumum is 3 days')
-      .max(5, 'Maximum is 5 days')
-      .required('First draft timeline is required'),
-    feedBackFirstDraft: Yup.number('Must be a number')
-      .min(2, 'Minumum is 2 days')
-      .max(3, 'Maximum is 3 days')
-      .required('Feedback first draft timeline is required'),
-    finalDraft: Yup.number('Must be a number')
-      .min(2, 'Minumum is 2 days')
-      .max(4, 'Maximum is 4 days')
-      .required('Final draft timeline is required'),
-    feedBackFinalDraft: Yup.number('Must be a number')
-      .min(1, 'Minumum is 1 days')
-      .max(2, 'Maximum is 2 days')
-      .required('Feedback final draft timeline is required'),
-    posting: Yup.number('Must be a number')
-      .max(2, 'Maximum is 2 days')
-      .required('Posting social media timeline is required'),
-    qc: Yup.number('Must be a number').required('QC timeline is required'),
-  });
+import Iconify from 'src/components/iconify';
+import FormProvider from 'src/components/hook-form/form-provider';
+import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
-  const defaultValues = {
-    openForPitch: 0,
-    filterPitch: 0,
-    shortlistCreator: 0,
-    agreementSign: 0,
-    firstDraft: 0,
-    feedBackFirstDraft: 0,
-    finalDraft: 0,
-    qc: 0,
-    feedBackFinalDraft: 0,
-    posting: 0,
-  };
+// eslint-disable-next-line react/prop-types
+const Timeline = ({ timelineType, isSmallScreen }) => {
+  // const schema = Yup.object().shape({
+  //   openForPitch: Yup.number('Must be a number')
+  //     .min(14, 'Minumum is 14 days')
+  //     .max(30, 'Maximum is 30 days')
+  //     .required('Open for pitch timeline is required'),
+  //   filterPitch: Yup.number('Must be a number')
+  //     .min(2, 'Minumum is 2 days')
+  //     .max(3, 'Maximum is 3 days')
+  //     .required('Filtering timeline is required'),
+  //   shortlistCreator: Yup.number('Must be a number')
+  //     .min(1, 'Minumum is 1 days')
+  //     .max(2, 'Maximum is 2 days')
+  //     .required('Shortlist creator timeline is required'),
+  //   agreementSign: Yup.number('Must be a number')
+  //     .min(1, 'Minumum is 1 days')
+  //     .max(2, 'Maximum is 2 days')
+  //     .required('Sign of agreement timeline is required'),
+  //   firstDraft: Yup.number('Must be a number')
+  //     .min(3, 'Minumum is 3 days')
+  //     .max(5, 'Maximum is 5 days')
+  //     .required('First draft timeline is required'),
+  //   feedBackFirstDraft: Yup.number('Must be a number')
+  //     .min(2, 'Minumum is 2 days')
+  //     .max(3, 'Maximum is 3 days')
+  //     .required('Feedback first draft timeline is required'),
+  //   finalDraft: Yup.number('Must be a number')
+  //     .min(2, 'Minumum is 2 days')
+  //     .max(4, 'Maximum is 4 days')
+  //     .required('Final draft timeline is required'),
+  //   feedBackFinalDraft: Yup.number('Must be a number')
+  //     .min(1, 'Minumum is 1 days')
+  //     .max(2, 'Maximum is 2 days')
+  //     .required('Feedback final draft timeline is required'),
+  //   posting: Yup.number('Must be a number')
+  //     .max(2, 'Maximum is 2 days')
+  //     .required('Posting social media timeline is required'),
+  //   qc: Yup.number('Must be a number').required('QC timeline is required'),
+  // });
+
+  // const defaultValues = {
+  //   openForPitch: 0,
+  //   filterPitch: 0,
+  //   shortlistCreator: 0,
+  //   agreementSign: 0,
+  //   firstDraft: 0,
+  //   feedBackFirstDraft: 0,
+  //   finalDraft: 0,
+  //   qc: 0,
+  //   feedBackFinalDraft: 0,
+  //   posting: 0,
+  // };
+
+  const schema = Yup.object().shape({
+    timeline: Yup.array().of(
+      Yup.object().shape({
+        timeline_type: Yup.string().required('Required'),
+        dependsOn: Yup.string().required('Required'),
+        for: Yup.string().required('Required'),
+      })
+    ),
+  });
 
   const methods = useForm({
     mode: 'onChange',
     reValidateMode: 'onChange',
     resolver: yupResolver(schema),
-    defaultValues,
+    defaultValues: {
+      timeline: [{ timeline_type: '', dependsOn: '', for: '' }],
+    },
   });
 
-  const {
-    handleSubmit,
+  const { handleSubmit, reset, control, watch } = methods;
+
+  const timeline = watch('timeline');
+
+  const { fields, append, remove } = useFieldArray({
     control,
-    reset,
-    formState: { errors },
-  } = methods;
+    name: 'timeline',
+  });
+
+  // useEffect(() => {
+  //   if (defaultTimeline.length > 0) {
+  //     reset(defaultTimeline[0]);
+  //   }
+  // }, [defaultTimeline, reset]);
 
   useEffect(() => {
-    if (defaultTimeline.length > 0) {
-      reset(defaultTimeline[0]);
+    if (timelineType.length) {
+      reset({
+        timeline: timelineType.map((elem) => ({
+          timeline_type: elem.name,
+          id: elem.id,
+          for: elem.for,
+          dependsOn: elem?.dependencies[0]?.dependsOnTimeline?.name || 'startDate',
+          dependsOnId: elem?.dependencies[0]?.dependsOnTimeline?.id,
+          dependenciesId: elem?.dependencies[0]?.id,
+        })),
+      });
     }
-  }, [defaultTimeline, reset]);
+  }, [timelineType, reset]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await axiosInstance.post(endpoints.campaign.updateDefaultTimeline, data);
-      enqueueSnackbar(res.data.message, {
+      const res = await axiosInstance.post(endpoints.campaign.updateTimelineType, data);
+      enqueueSnackbar(res?.data?.message, {
         variant: 'success',
       });
     } catch (error) {
-      enqueueSnackbar(error.message, {
+      enqueueSnackbar(error?.message, {
         variant: 'error',
       });
     }
@@ -101,8 +134,8 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
       <Typography variant="h5" mb={3}>
         Default Timeline
       </Typography>
-      <form onSubmit={onSubmit}>
-        <Box
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        {/* <Box
           display="grid"
           columnGap={2}
           rowGap={2}
@@ -269,18 +302,65 @@ const Timeline = ({ defaultTimeline, isSmallScreen }) => {
               />
             )}
           />
+        </Box> */}
+        <Box
+          display="grid"
+          columnGap={2}
+          rowGap={2}
+          gridTemplateColumns={{
+            sm: 'repeat(1, 1fr)',
+          }}
+          maxHeight={400}
+          overflow="scroll"
+          py={2}
+        >
+          {fields.map((item, index) => (
+            <Box key={item.id}>
+              <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
+                <RHFTextField
+                  name={`timeline[${index}].timeline_type`}
+                  label="Timeline Type"
+                  placeholder="Eg: Open For Pitch"
+                />
+                <RHFSelect name={`timeline[${index}].dependsOn`} label="Depends On">
+                  {timeline.map((elem) => (
+                    <MenuItem value={elem?.timeline_type}>{elem?.timeline_type}</MenuItem>
+                  ))}
+                  <MenuItem value="startDate">Campaign Start Date</MenuItem>
+                </RHFSelect>
+
+                <RHFSelect name={`timeline[${index}].for`} label="For">
+                  <MenuItem value="admin">Admin</MenuItem>
+                  <MenuItem value="creator">Creator</MenuItem>
+                </RHFSelect>
+
+                <IconButton color="error" onClick={() => remove(index)}>
+                  <Iconify icon="uil:trash" />
+                </IconButton>
+              </Stack>
+              <Divider sx={{ borderStyle: 'dashed', mt: 2 }} />
+            </Box>
+          ))}
         </Box>
+
+        <Button sx={{ mt: 1 }} onClick={() => append({ timeline_type: '' })}>
+          Add New Timeline
+        </Button>
+
         <Box
           sx={{
             mt: 2,
             textAlign: 'end',
+            position: 'absolute',
+            bottom: 20,
+            right: 30,
           }}
         >
           <Button variant="outlined" color="primary" type="submit" fullWidth={!!isSmallScreen}>
             Save
           </Button>
         </Box>
-      </form>
+      </FormProvider>
     </>
   );
 };
