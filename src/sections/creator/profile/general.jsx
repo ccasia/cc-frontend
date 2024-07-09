@@ -47,9 +47,10 @@ export default function AccountGeneral() {
     email: user?.email || '',
     photoURL: user?.photoURL || null,
     phoneNumber: user?.phoneNumber || '',
-    country: user?.Nationality || '',
-    address: user?.location || '',
-    state: user?.state || '',
+    country: user?.country || '',
+    address: user?.creator?.address || '',
+    state: user?.creator?.state || '',
+    about: user?.creator?.MediaKit?.about || '',
   };
 
   const methods = useForm({
@@ -65,19 +66,25 @@ export default function AccountGeneral() {
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
+    const formData = new FormData();
+
+    const newObj = { ...data, id: user?.id };
+
+    formData.append('image', data?.photoURL);
+    formData.append('data', JSON.stringify(newObj));
+
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      const res = await axiosInstance.patch(endpoints.auth.updateProfileCreator, {
-        ...data,
-        id: user?.id,
+      const res = await axiosInstance.patch(endpoints.auth.updateProfileCreator, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
       enqueueSnackbar(res?.data.message);
-      // console.info('DATA', data);
     } catch (error) {
       enqueueSnackbar('Error', {
         variant: 'error',
       });
-      // console.error(error);
     }
   });
 

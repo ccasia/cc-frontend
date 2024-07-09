@@ -17,6 +17,7 @@ import {
 
 import { useRouter } from 'src/routes/hooks';
 
+import useGetFirstDraft from 'src/hooks/use-get-first-draft';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
 import { countries } from 'src/assets/data';
@@ -24,10 +25,11 @@ import { countries } from 'src/assets/data';
 import Iconify from 'src/components/iconify';
 import { LoadingScreen } from 'src/components/loading-screen';
 
-const CampaignManageCreatorView = ({ id }) => {
+const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const [currentTab, setCurrentTab] = useState('overview');
-  // const { user } = data;
+  const { firstDraft } = useGetFirstDraft(id, campaignId);
+  console.log(firstDraft);
   const router = useRouter();
 
   const phoneNumberHelper = (country, phoneNumber) => {
@@ -111,6 +113,8 @@ const CampaignManageCreatorView = ({ id }) => {
     </Box>
   );
 
+  const renderDraft = <>{firstDraft.length < 1 && <Typography>No draft</Typography>}</>;
+
   return (
     <Container>
       <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -132,6 +136,7 @@ const CampaignManageCreatorView = ({ id }) => {
       </Box>
       {renderTabs}
       {currentTab === 'overview' && renderOverview}
+      {currentTab === 'draft' && renderDraft}
     </Container>
   );
 };
@@ -140,4 +145,5 @@ export default CampaignManageCreatorView;
 
 CampaignManageCreatorView.propTypes = {
   id: PropTypes.string,
+  campaignId: PropTypes.string,
 };

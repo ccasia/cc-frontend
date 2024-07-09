@@ -124,6 +124,9 @@ export const endpoints = {
       filter: '/api/campaign/filterPitch',
       detail: (id) => `/api/campaign/pitch/${id}`,
     },
+    draft: {
+      firstDraft: '/api/campaign/firstDraft',
+    },
     changeStage: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',

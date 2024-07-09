@@ -66,7 +66,7 @@ export default function CampaignListView() {
       />
 
       <Box sx={{ my: 2 }} />
-      {campaigns?.length > 0 ? (
+      {campaigns && campaigns?.length > 0 ? (
         <CampaignLists campaigns={campaigns} />
       ) : (
         <Box
