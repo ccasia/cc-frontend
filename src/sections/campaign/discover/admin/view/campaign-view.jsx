@@ -22,6 +22,7 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import EmptyContent from 'src/components/empty-content/empty-content';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CampaignLists from '../campaign-list';
@@ -150,7 +151,11 @@ const CampaignView = () => {
         </Menu>
       </Stack>
 
-      {dataFiltered && <CampaignLists campaigns={dataFiltered} />}
+      {dataFiltered && dataFiltered.length > 0 ? (
+        <CampaignLists campaigns={dataFiltered} />
+      ) : (
+        <EmptyContent title="No campaign available" />
+      )}
       <CampaignFilter
         open={openFilters.value}
         onOpen={openFilters.onTrue}
