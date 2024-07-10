@@ -32,8 +32,18 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
-  chat: '/api/chat',
-  kanban: '/api/kanban',
+  // chat: '/api/chat',
+  // kanban: '/api/kanban',
+  threads: {
+    getAll: '/api/thread/threads',
+    getById: (threadId) => `/api/thread/threads/${threadId}`,
+    create: '/api/thread/createthread',
+    addUser: '/api/thread/adduser',
+    sendMessage: '/api/thread/send',
+    getMessage: (threadId) => `/api/thread/getmessage/${threadId}`,
+    archive: (threadId) => `/api/thread/threads/${threadId}/archive`,
+    unarchive: (threadId) => `/api/thread/threads/${threadId}/unarchive`,
+  },
   calendar: '/api/calendar',
   auth: {
     me: '/api/auth/me',

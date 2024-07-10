@@ -70,5 +70,9 @@ export const paths = {
     calendar: {
       root: `${ROOTS.DASHBOARD}/calendar`,
     },
+    chat: { 
+      root: `${ROOTS.DASHBOARD}/chat`,
+      thread: (id) => `${ROOTS.DASHBOARD}/chat/thread/${id}`,
+    },
   },
 };
