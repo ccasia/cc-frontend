@@ -73,7 +73,7 @@ export const dashboardRoutes = [
       {
         path: 'admins',
         element: (
-          <RoleBasedGuard roles={['superadmin']} hasContent>
+          <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
             <ManagersPage />
           </RoleBasedGuard>
         ),

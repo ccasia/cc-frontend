@@ -66,7 +66,7 @@ export function useNavData() {
         subheader: 'Management',
         items: [
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'admin'],
             title: 'Admin',
             path: paths.dashboard.admins,
             icon: ICONS.user,
@@ -212,10 +212,8 @@ export function useNavData() {
       },
       ...navigations,
       {
-        roles: ['admin', 'creator', 'superadmin'],
         items: [
           {
-            // roles: ['superadmin'],
             title: 'Calendar',
             path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,

@@ -75,7 +75,7 @@ CustomBreadcrumbs.propTypes = {
   sx: PropTypes.object,
   action: PropTypes.node,
   links: PropTypes.array,
-  heading: PropTypes.oneOf([PropTypes.object, PropTypes.string]),
+  heading: PropTypes.string,
   moreLink: PropTypes.array,
   activeLast: PropTypes.bool,
 };

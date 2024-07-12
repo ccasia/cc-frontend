@@ -29,7 +29,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const [currentTab, setCurrentTab] = useState('overview');
   const { firstDraft } = useGetFirstDraft(id, campaignId);
-  console.log(firstDraft);
+  // const theme = useTheme();
   const router = useRouter();
 
   const phoneNumberHelper = (country, phoneNumber) => {
@@ -40,6 +40,46 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     // eslint-disable-next-line consistent-return
     return `+${prefix} ${phoneNumber}`;
   };
+
+  // const chartOptions = useChart({
+  //   chart: {
+  //     sparkline: {
+  //       enabled: true,
+  //     },
+  //   },
+  //   legend: {
+  //     show: false,
+  //   },
+  //   fill: {
+  //     type: 'gradient',
+  //     gradient: {
+  //       colorStops: [
+  //         { offset: 0, color: theme.palette.primary.light, opacity: 1 },
+  //         { offset: 100, color: theme.palette.primary.main, opacity: 1 },
+  //       ],
+  //     },
+  //   },
+  //   plotOptions: {
+  //     radialBar: {
+  //       hollow: {
+  //         size: '78%',
+  //       },
+  //       track: {
+  //         margin: 0,
+  //       },
+  //       dataLabels: {
+  //         name: {
+  //           show: false,
+  //         },
+  //         value: {
+  //           offsetY: 6,
+  //           color: theme.palette.common.white,
+  //           fontSize: theme.typography.subtitle2.fontSize,
+  //         },
+  //       },
+  //     },
+  //   },
+  // });
 
   const renderInformation = (
     <Box component={Card} p={3}>
@@ -103,6 +143,14 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         component={Card}
       >
         <Typography variant="h3">Draft</Typography>
+        {/* <Chart
+          dir="ltr"
+          type="radialBar"
+          series={[48]}
+          options={chartOptions}
+          width={86}
+          height={86}
+        /> */}
       </Box>
       <Box
         sx={{

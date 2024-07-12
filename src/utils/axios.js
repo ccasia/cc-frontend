@@ -111,12 +111,16 @@ export const endpoints = {
   campaign: {
     createCampaign: '/api/campaign/createCampaign',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
-    updateTimelineType: '/api/campaign/updateTimeLineType',
+    updateOrCreateDefaultTimeline: '/api/campaign/updateOrCreateDefaultTimeline',
     getDefaultTimeline: '/api/campaign/defaultTimeline',
     getTimelineType: '/api/campaign/timelineType',
     getAllActiveCampaign: '/api/campaign/getAllActiveCampaign',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
+    timeline: {
+      createNewTimeline: '/api/campaign/createNewTimeline',
+      defaultTimeline: '/api/campaign/defaultTimeline',
+    },
     pitch: {
       root: '/api/campaign/pitch',
       approve: '/api/campaign/approvepitch',

@@ -12,7 +12,6 @@ import Paper from '@mui/material/Paper';
 import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
-import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
@@ -777,6 +776,8 @@ function CreateCampaignForm() {
         preview: URL.createObjectURL(file),
       });
 
+      console.log(newFile);
+
       if (newFile) {
         setValue('agreementFrom', newFile, { shouldValidate: true });
       }
@@ -797,7 +798,7 @@ function CreateCampaignForm() {
     >
       <Typography variant="h4">Upload Agreement</Typography>
       <RHFUpload
-        type="file"
+        type="pdf"
         name="agreementFrom"
         onDrop={handleDropSingleFile}
         onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
@@ -869,7 +870,7 @@ function CreateCampaignForm() {
         })}
       </Stepper>
 
-      {activeStep === steps.length ? (
+      {/* {activeStep === steps.length ? (
         <>
           <Paper
             sx={{
@@ -934,6 +935,12 @@ function CreateCampaignForm() {
                     <Stack direction="row" spacing={1}>
                       <LoadingButton
                         variant="outlined"
+                        startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
+                      >
+                        Preview
+                      </LoadingButton>
+                      <LoadingButton
+                        variant="outlined"
                         onClick={() => onSubmit('draft')}
                         startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
                         loading={isLoading}
@@ -960,7 +967,74 @@ function CreateCampaignForm() {
             </Box>
           </Paper>
         </Box>
-      )}
+      )} */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Paper
+          sx={{
+            p: 0.5,
+            my: 0.5,
+            mx: 1,
+            width: '100%',
+            // bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
+            // width: '80%',
+          }}
+        >
+          <Box sx={{ my: 1 }}>
+            <FormProvider methods={methods} onSubmit={onSubmit}>
+              {getStepContent(activeStep)}
+              <Box sx={{ display: 'flex', m: 2 }}>
+                <Button
+                  color="inherit"
+                  disabled={activeStep === 0}
+                  onClick={handleBack}
+                  sx={{ mr: 1 }}
+                >
+                  Back
+                </Button>
+                <Box sx={{ flexGrow: 1 }} />
+                {activeStep === steps.length - 1 ? (
+                  <Stack direction="row" spacing={1}>
+                    <LoadingButton
+                      variant="outlined"
+                      startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
+                    >
+                      Preview
+                    </LoadingButton>
+                    <LoadingButton
+                      variant="outlined"
+                      onClick={() => onSubmit('draft')}
+                      startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
+                      loading={isLoading}
+                    >
+                      Draft
+                    </LoadingButton>
+                    <LoadingButton
+                      variant="contained"
+                      color="primary"
+                      onClick={() => onSubmit('publish')}
+                      startIcon={<Iconify icon="material-symbols:publish" width={16} />}
+                      loading={isLoading}
+                    >
+                      Publish
+                    </LoadingButton>
+                  </Stack>
+                ) : (
+                  <Button variant="contained" onClick={handleNext}>
+                    Next
+                  </Button>
+                )}
+              </Box>
+            </FormProvider>
+          </Box>
+        </Paper>
+      </Box>
       {/* <CreateCompany open={openCompanyDialog} onClose={handleCloseCompanyDialog} /> */}
       <CreateBrand
         open={openCompanyDialog}

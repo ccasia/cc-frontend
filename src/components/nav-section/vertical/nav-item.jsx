@@ -39,6 +39,7 @@ const NavItem = forwardRef(
     const subItem = depth !== 1;
 
     const { user } = useAuthContext();
+    console.log(user);
 
     const renderContent = (
       <StyledNavItem

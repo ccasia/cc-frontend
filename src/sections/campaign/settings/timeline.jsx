@@ -1,17 +1,33 @@
 /* eslint-disable react/prop-types */
 import * as Yup from 'yup';
+import { m } from 'framer-motion';
 import React, { useEffect } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 
-import { Box, Stack, Button, Divider, MenuItem, Typography, IconButton } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Button,
+  Divider,
+  MenuItem,
+  Typography,
+  IconButton,
+  InputAdornment,
+} from '@mui/material';
+
+import { useBoolean } from 'src/hooks/use-boolean';
+import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
+import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+
+import TimelineTypeModal from './timeline-type-modal';
 
 // eslint-disable-next-line react/prop-types
 const Timeline = ({ timelineType, isSmallScreen }) => {
@@ -67,12 +83,26 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
   //   posting: 0,
   // };
 
+  const { data: timelines, isLoading } = useGetAllTimelineType();
+  const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
+  const errorTimeline = useBoolean();
+  const timelineModal = useBoolean();
+
+  console.log(defaultTimelines);
+
   const schema = Yup.object().shape({
     timeline: Yup.array().of(
       Yup.object().shape({
-        timeline_type: Yup.string().required('Required'),
-        dependsOn: Yup.string().required('Required'),
-        for: Yup.string().required('Required'),
+        timeline_type: Yup.object()
+          .shape({
+            id: Yup.string().required('Field is required'),
+            name: Yup.string().required('Field is required'),
+          })
+          .required('Field is required'),
+
+        duration: Yup.number().required('Field is required').integer('Field must be an integer'),
+        dependsOn: Yup.string().required('Field is required'),
+        for: Yup.string().required('Field is required'),
       })
     ),
   });
@@ -82,43 +112,56 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
     reValidateMode: 'onChange',
     resolver: yupResolver(schema),
     defaultValues: {
-      timeline: [{ timeline_type: '', dependsOn: '', for: '' }],
+      timeline: [
+        { timeline_type: { id: '', name: '' }, dependsOn: '', duration: undefined, for: '' },
+      ],
     },
   });
 
-  const { handleSubmit, reset, control, watch } = methods;
+  const { handleSubmit, reset, control, watch, setValue } = methods;
 
-  const timeline = watch('timeline');
-
-  const { fields, append, remove } = useFieldArray({
+  const { fields, remove, append, insert } = useFieldArray({
     control,
     name: 'timeline',
   });
 
-  // useEffect(() => {
-  //   if (defaultTimeline.length > 0) {
-  //     reset(defaultTimeline[0]);
-  //   }
-  // }, [defaultTimeline, reset]);
-
   useEffect(() => {
-    if (timelineType.length) {
+    if (!defaultTimelineLoading && defaultTimelines.length > 0) {
+      // eslint-disable-next-line array-callback-return
       reset({
-        timeline: timelineType.map((elem) => ({
-          timeline_type: elem.name,
-          id: elem.id,
-          for: elem.for,
-          dependsOn: elem?.dependencies[0]?.dependsOnTimeline?.name || 'startDate',
-          dependsOnId: elem?.dependencies[0]?.dependsOnTimeline?.id,
-          dependenciesId: elem?.dependencies[0]?.id,
+        timeline: defaultTimelines.map((item) => ({
+          timeline_type: { id: item.timelineType.id, name: item.timelineType.name } || {
+            id: '',
+            name: '',
+          },
+          dependsOn:
+            item.dependsOn.length < 1
+              ? 'startDate'
+              : item?.dependsOn[0]?.dependsOnTimeline?.timelineTypeId || '',
+          duration: item.duration || undefined,
+          for: item.for || '',
         })),
       });
     }
-  }, [timelineType, reset]);
+  }, [reset, defaultTimelineLoading, defaultTimelines]);
+
+  // useEffect(() => {
+  //   if (!isLoading && timelines) {
+  //     reset({
+  //       timeline: timelines.map((elem) => ({
+  //         timeline_type: { id: elem.id, name: elem.name },
+  //         dependsOn: '',
+  //         duration: '',
+  //         for: '',
+  //       })),
+  //     });
+  //   }
+  // }, [reset, isLoading, timelines]);
+  const test = watch('timeline');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await axiosInstance.post(endpoints.campaign.updateTimelineType, data);
+      const res = await axiosInstance.post(endpoints.campaign.updateOrCreateDefaultTimeline, data);
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
       });
@@ -128,6 +171,30 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
       });
     }
   });
+
+  const handleChange = (val, index) => {
+    setValue(`timeline[${index}].timeline_type`, val);
+
+    if (index === 0) {
+      setValue(`timeline[0].dependsOn`, 'startDate');
+    }
+
+    if (index < fields.length - 1) {
+      setValue(`timeline[${index + 1}].dependsOn`, val.id);
+    }
+  };
+
+  const handleRemove = (index, item) => {
+    if (index < fields.length - 1) {
+      setValue(`timeline[${index + 1}]`, {
+        dependsOn: item.dependsOn,
+        timeline_type: test[index + 1].timeline_type,
+        duration: test[index + 1].duration,
+        for: test[index + 1].for,
+      });
+    }
+    remove(index);
+  };
 
   return (
     <>
@@ -314,45 +381,118 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
           overflow="scroll"
           py={2}
         >
-          {fields.map((item, index) => (
-            <Box key={item.id}>
-              <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
-                <RHFTextField
-                  name={`timeline[${index}].timeline_type`}
-                  label="Timeline Type"
-                  placeholder="Eg: Open For Pitch"
-                />
-                <RHFSelect name={`timeline[${index}].dependsOn`} label="Depends On">
-                  {timeline.map((elem) => (
-                    <MenuItem value={elem?.timeline_type}>{elem?.timeline_type}</MenuItem>
-                  ))}
-                  <MenuItem value="startDate">Campaign Start Date</MenuItem>
-                </RHFSelect>
+          {fields.map((item, index) => {
+            const existingIds = test.length && test.map((elem) => elem.timeline_type?.id);
+            // const ada = getValues(`timeline[${index}].timelineType`);
 
-                <RHFSelect name={`timeline[${index}].for`} label="For">
-                  <MenuItem value="admin">Admin</MenuItem>
-                  <MenuItem value="creator">Creator</MenuItem>
-                </RHFSelect>
+            const options =
+              !isLoading &&
+              timelines
+                .filter((timeline) => !existingIds?.includes(timeline?.id))
+                .map((elem) => ({ name: elem.name, id: elem.id }));
+            return (
+              <Box
+                key={item.id}
+                component={m.div}
+                initial={{ opacity: 0, top: 0.5 }}
+                animate={{ opacity: 1, top: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
+                  {!isLoading && (
+                    <RHFAutocomplete
+                      name={`timeline[${index}].timeline_type`}
+                      // disabled
+                      onChange={(event, newValue) => {
+                        handleChange(newValue, index);
+                      }}
+                      fullWidth
+                      options={options}
+                      // options={
+                      //   !isLoading && timelines.map((elem) => ({ name: elem.name, id: elem.id }))
+                      // }
+                      getOptionLabel={(option) => option.name}
+                      label="Timeline Type"
+                      renderOption={(props, option) => {
+                        const { key, ...optionProps } = props;
+                        return (
+                          <MenuItem key={key} {...optionProps}>
+                            {option.name}
+                          </MenuItem>
+                        );
+                      }}
+                      sx={{
+                        '& .MuiInputBase-root': {
+                          cursor: 'not-allowed', // Change cursor to indicate disabled state
+                        },
+                      }}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      helperText={
+                        errorTimeline.value && (
+                          <Typography variant="caption" color="error">
+                            Please select other timeline
+                          </Typography>
+                        )
+                      }
+                    />
+                  )}
 
-                <IconButton color="error" onClick={() => remove(index)}>
-                  <Iconify icon="uil:trash" />
-                </IconButton>
-              </Stack>
-              <Divider sx={{ borderStyle: 'dashed', mt: 2 }} />
-            </Box>
-          ))}
+                  <RHFSelect disabled name={`timeline[${index}].dependsOn`} label="Depends On">
+                    {!isLoading &&
+                      timelines.map((elem) => (
+                        // <MenuItem key={elem?.id} value={elem?.id}>
+                        <MenuItem key={elem?.id} value={elem?.id}>
+                          {elem?.name}
+                        </MenuItem>
+                      ))}
+                    <MenuItem value="startDate">Campaign Start Date</MenuItem>
+                  </RHFSelect>
+
+                  <RHFTextField
+                    name={`timeline[${index}].duration`}
+                    label="Duration"
+                    type="number"
+                    placeholder="Eg: 2"
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">days</InputAdornment>,
+                    }}
+                  />
+
+                  <RHFSelect name={`timeline[${index}].for`} label="For">
+                    <MenuItem value="admin">Admin</MenuItem>
+                    <MenuItem value="creator">Creator</MenuItem>
+                  </RHFSelect>
+
+                  <IconButton color="error" onClick={() => handleRemove(index, item)}>
+                    <Iconify icon="uil:trash" />
+                  </IconButton>
+                </Stack>
+                <Stack direction="row" alignItems="center" mt={2} gap={1}>
+                  <IconButton
+                    onClick={() => {
+                      insert(index + 1, {
+                        timeline_type: { id: '', name: '' },
+                        dependsOn: test[index]?.timeline_type?.id,
+                        duration: null,
+                        for: '',
+                      });
+                    }}
+                  >
+                    <Iconify icon="carbon:add-filled" />
+                  </IconButton>
+                  <Divider sx={{ borderStyle: 'dashed', flexGrow: 1 }} />
+                </Stack>
+              </Box>
+            );
+          })}
         </Box>
-
-        <Button sx={{ mt: 1 }} onClick={() => append({ timeline_type: '' })}>
-          Add New Timeline
-        </Button>
 
         <Box
           sx={{
             mt: 2,
             textAlign: 'end',
             position: 'absolute',
-            bottom: 20,
+            bottom: 10,
             right: 30,
           }}
         >
@@ -361,6 +501,25 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
           </Button>
         </Box>
       </FormProvider>
+
+      <Button
+        sx={{
+          position: 'absolute',
+          top: 20,
+          right: 20,
+        }}
+        onClick={timelineModal.onTrue}
+        variant="contained"
+        size="small"
+        startIcon={<Iconify icon="material-symbols-light:manage-history" />}
+      >
+        Manage Timeline Type
+      </Button>
+      <TimelineTypeModal
+        open={timelineModal.value}
+        handleClose={timelineModal.onFalse}
+        append={append}
+      />
     </>
   );
 };

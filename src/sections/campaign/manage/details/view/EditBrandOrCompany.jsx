@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
@@ -15,10 +16,10 @@ import {
 
 import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
-import Image from 'src/components/image';
-import { enqueueSnackbar } from 'notistack';
-import { RHFAutocomplete } from 'src/components/hook-form';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import Image from 'src/components/image';
+import { RHFAutocomplete } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
