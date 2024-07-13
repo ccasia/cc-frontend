@@ -1,7 +1,18 @@
-const a = { name: 'Afiq' };
+const test = [
+  {
+    name: 'ASD',
+    id: 2,
+  },
+  {
+    name: 'sasdad',
+    id: 3,
+  },
+  {
+    name: 'asdas',
+    id: 2,
+  },
+];
 
-const c = { ...a, ...{ campaign: 'Dsads' } };
-
-const convert = JSON.stringify(c);
-
-console.log(convert);
+test.forEach((item, index) => {
+  console.log(test[index + 1]);
+});

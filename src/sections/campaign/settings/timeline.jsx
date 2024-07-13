@@ -84,10 +84,10 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
   // };
 
   const { data: timelines, isLoading } = useGetAllTimelineType();
+
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const errorTimeline = useBoolean();
   const timelineModal = useBoolean();
-
   console.log(defaultTimelines);
 
   const schema = Yup.object().shape({
@@ -137,7 +137,7 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
           dependsOn:
             item.dependsOn.length < 1
               ? 'startDate'
-              : item?.dependsOn[0]?.dependsOnTimeline?.timelineTypeId || '',
+              : item?.dependsOn[0]?.dependsOnTimeline?.timelineTypeDefaultId || '',
           duration: item.duration || undefined,
           for: item.for || '',
         })),

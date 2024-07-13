@@ -20,6 +20,8 @@ import { Menu, Grid, Stack, Divider, Tooltip, IconButton, ListItemText } from '@
 
 import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
+import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
+import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -68,7 +70,7 @@ const interestsLists = [
 
 function CreateCampaignForm() {
   const { enqueueSnackbar } = useSnackbar();
-  // const active = localStorage.getItem('activeStep');
+  const active = localStorage.getItem('activeStep');
   const { options } = useGetCampaignBrandOption();
   const [activeStep, setActiveStep] = useState(0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
@@ -82,10 +84,12 @@ function CreateCampaignForm() {
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   const { defaultTimeline } = useGetTimeline();
+  const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const [timeline, setTimeline] = useState('defaultTimeline');
   // const { admins } = useAdmins();
   const { admins } = useGetAdmins();
   const { user } = useAuthContext();
+  const timelineType = useGetAllTimelineType();
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -223,10 +227,6 @@ function CreateCampaignForm() {
 
   const values = watch();
 
-  useEffect(() => {
-    console.log(errors);
-  }, [errors]);
-
   const {
     append: doAppend,
     fields: doFields,
@@ -249,6 +249,7 @@ function CreateCampaignForm() {
     append: timelineAppend,
     fields: timelineFields,
     remove: timelineRemove,
+    insert,
   } = useFieldArray({
     name: 'timeline',
     control,
@@ -336,7 +337,6 @@ function CreateCampaignForm() {
     const combinedData = { ...data, ...{ campaignStage: stage } };
 
     formData.append('data', JSON.stringify(combinedData));
-    // formData.append('data', JSON.stringify({ campaignStage: stage }));
 
     // eslint-disable-next-line guard-for-in, no-restricted-syntax
     for (const i in data.campaignImages) {
@@ -397,8 +397,8 @@ function CreateCampaignForm() {
               <Image
                 loading="lazy"
                 width={30}
-                src="/images.png"
-                alt=""
+                src={option?.logo}
+                alt="asda"
                 sx={{
                   borderRadius: 5,
                 }}
@@ -818,7 +818,7 @@ function CreateCampaignForm() {
         return (
           <SelectTimeline
             control={control}
-            defaultTimeline={defaultTimeline}
+            defaultTimelines={defaultTimelines}
             getValues={getValues}
             setValue={setValue}
             errors={errors}
@@ -828,6 +828,8 @@ function CreateCampaignForm() {
             remove={timelineRemove}
             watch={watch}
             append={timelineAppend}
+            insert={insert}
+            timelineType={timelineType}
           />
         );
       // case 3:
