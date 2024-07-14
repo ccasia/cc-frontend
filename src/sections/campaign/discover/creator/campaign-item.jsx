@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
@@ -24,7 +25,9 @@ export default function CampaignItem({ campaign }) {
   const [open, setOpen] = useState(false);
   const { user } = useAuthContext();
 
-  const campaignIds = user?.Pitch.map((item) => item.campaignId);
+  const isShortlisted = user && user?.ShortListedCreator.map((item) => item.campaignId);
+
+  const campaignIds = user && user?.Pitch.map((item) => item.campaignId);
 
   const handleClose = () => {
     setOpen(false);
@@ -103,13 +106,23 @@ export default function CampaignItem({ campaign }) {
         <Iconify icon="eva:more-vertical-fill" />
       </IconButton> */}
       {campaignIds.includes(campaign.id) ? (
-        <Chip
-          sx={{ position: 'absolute', bottom: 10, right: 10 }}
-          variant="filled"
-          color="warning"
-          size="small"
-          label="Pending Review"
-        />
+        !isShortlisted.includes(campaign.id) ? (
+          <Chip
+            sx={{ position: 'absolute', bottom: 10, right: 10 }}
+            variant="filled"
+            color="warning"
+            size="small"
+            label="Pending Review"
+          />
+        ) : (
+          <Chip
+            sx={{ position: 'absolute', bottom: 10, right: 10 }}
+            variant="filled"
+            color="success"
+            size="small"
+            label="Shortlisted"
+          />
+        )
       ) : (
         <Button
           sx={{ position: 'absolute', bottom: 10, right: 10 }}
