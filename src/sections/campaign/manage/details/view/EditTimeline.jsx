@@ -10,7 +10,9 @@ import {
   Stack,
   Button,
   Dialog,
+  Avatar,
   Divider,
+  Tooltip,
   MenuItem,
   IconButton,
   Typography,
@@ -21,8 +23,6 @@ import {
   DialogContentText,
 } from '@mui/material';
 
-import { useGetTimelineType } from 'src/hooks/use-get-timelinetype';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
@@ -30,9 +30,9 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
 
 export const EditTimeline = ({ open, campaign, onClose }) => {
-  const { campaignTimeline } = campaign;
+  const { CampaignTimeline } = campaign;
   const [isLoading, setIsLoading] = useState(false);
-  const { timelineType } = useGetTimelineType();
+  // const { timelineType } = useGetTimelineType();
   const [dateError] = useState(false);
 
   const methods = useForm({
@@ -45,44 +45,34 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
 
   const { setValue, control, reset, watch, handleSubmit } = methods;
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, remove, insert } = useFieldArray({
     name: 'timeline',
     control,
   });
 
   const existingTimeline = watch('timeline');
+
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
-  const timelineEndDate = dayjs(existingTimeline[fields.length - 1]?.endDate);
+  const timelineEndDate = existingTimeline[fields.length - 1]?.endDate;
 
   useEffect(() => {
     reset({
       timeline:
         campaign &&
-        campaignTimeline.map((item) => ({
+        CampaignTimeline.map((item) => ({
           ...item,
-          timeline_type: item.timeline_type,
+          timeline_type: { name: item?.name },
           duration: item.duration,
+          dependsOn:
+            item?.dependsOnCampaignTimeline[0]?.campaignTimeline?.name || 'Campaign Start Date',
           startDate: dayjs(item.startDate).format('ddd LL'),
           endDate: dayjs(item.endDate).format('ddd LL'),
         })),
     });
     setValue('campaignStartDate', dayjs(campaign?.campaignBrief?.startDate));
     setValue('campaignEndDate', dayjs(campaign?.campaignBrief?.endDate));
-  }, [campaign, campaignTimeline, reset, setValue]);
-
-  // useEffect(() => {
-  //   setValue('timeline.openForPitch', campaign?.customCampaignTimeline?.openForPitch);
-  //   setValue('timeline.filterPitch', campaign?.customCampaignTimeline?.filterPitch);
-  //   setValue('timeline.shortlistCreator', campaign?.customCampaignTimeline?.shortlistCreator);
-  //   setValue('timeline.agreementSign', campaign?.customCampaignTimeline?.agreementSign);
-  //   setValue('timeline.firstDraft', campaign?.customCampaignTimeline?.firstDraft);
-  //   setValue('timeline.feedBackFirstDraft', campaign?.customCampaignTimeline?.feedBackFirstDraft);
-  //   setValue('timeline.finalDraft', campaign?.customCampaignTimeline?.finalDraft);
-  //   setValue('timeline.qc', campaign?.customCampaignTimeline?.qc);
-  //   setValue('timeline.feedBackFinalDraft', campaign?.customCampaignTimeline?.feedBackFinalDraft);
-  //   setValue('timeline.posting', campaign?.customCampaignTimeline?.posting);
-  // }, [setValue, campaign]);
+  }, [campaign, CampaignTimeline, reset, setValue]);
 
   const updateTimelineDates = useCallback(() => {
     let currentStartDate = dayjs(startDate);
@@ -100,16 +90,17 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
 
   useEffect(() => {
     updateTimelineDates();
-  }, [existingTimeline.length, updateTimelineDates]);
+  }, [startDate, existingTimeline.length, updateTimelineDates]);
 
   const handleDurationChange = (index, value) => {
     setValue(`timeline[${index}].duration`, value);
+    setValue('campaignEndDate', dayjs(timelineEndDate));
     updateTimelineDates();
   };
 
   useEffect(() => {
     if (timelineEndDate) {
-      setValue('campaignEndDate', timelineEndDate);
+      setValue('campaignEndDate', dayjs(timelineEndDate));
     }
   }, [setValue, timelineEndDate]);
 
@@ -133,6 +124,32 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
     }
   });
 
+  const handleRemove = (index, item) => {
+    if (index < fields.length - 1) {
+      setValue(`timeline[${index + 1}]`, {
+        dependsOn: item.dependsOn,
+        timeline_type: existingTimeline[index + 1].timeline_type,
+        duration: existingTimeline[index + 1].duration,
+        for: existingTimeline[index + 1].for,
+      });
+    }
+    remove(index);
+  };
+
+  const handleAdd = (index) => {
+    insert(index + 1, {
+      timeline_type: { name: '' },
+      dependsOn: existingTimeline[index]?.name,
+      duration: null,
+      for: '',
+    });
+  };
+
+  const handleChange = (e, index) => {
+    setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
+    setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
+  };
+
   return (
     <Dialog
       open={open.timeline}
@@ -145,175 +162,6 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
         <DialogTitle id="alert-dialog-title">Edit Timeline</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description" p={1.5}>
-            {/* <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
-                  md: 'repeat(2, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
-              <Controller
-                name="timeline.openForPitch"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Open For Pitches"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // TODO TEMP: Ignore `errors` for now
-                    // error={errors.timeline?.openForPitch && errors.timeline.openForPitch}
-                    // helperText={errors.timeline?.openForPitch && errors.timeline.openForPitch.message}
-                  />
-                )}
-              />
-              <Controller
-                name="timeline.filterPitch"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Filtering of pitches by CC"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // error={errors?.timeline?.filterPitch}
-                    // helperText={errors?.timeline?.filterPitch && errors?.timeline?.filterPitch?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="timeline.shortlistCreator"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Shortlisting of creators by brand"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // error={errors?.timeline?.shortlistCreator}
-                    // helperText={
-                    //   errors?.timeline?.shortlistCreator && errors?.timeline?.shortlistCreator?.message
-                    // }
-                  />
-                )}
-              />
-
-              <Controller
-                name="timeline.agreementSign"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Signing of agreement"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // error={errors?.timeline?.agreementSign}
-                    // helperText={errors?.timeline?.agreementSign && errors?.timeline?.agreementSign?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="timeline.firstDraft"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="First draft from creators"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // error={errors?.timeline?.firstDraft}
-                    // helperText={errors?.timeline?.firstDraft && errors?.timeline?.firstDraft?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="timeline.feedBackFirstDraft"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Feedback on first draft by brand"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // error={errors?.timeline?.feedBackFirstDraft}
-                    // helperText={
-                    //   errors?.timeline?.feedBackFirstDraft && errors?.timeline?.feedBackFirstDraft?.message
-                    // }
-                  />
-                )}
-              />
-
-              <Controller
-                name="timeline.finalDraft"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Final draft from creators"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // error={errors?.timeline?.finalDraft}
-                    // helperText={errors?.timeline?.finalDraft && errors?.timeline?.finalDraft?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="timeline.qc"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="QC of drafts by CC"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // error={errors?.timeline?.qc}
-                    // helperText={errors?.timeline?.qc && errors?.timeline?.qc?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="timeline.feedBackFinalDraft"
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Feedback on final draft by brand"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // error={errors?.timeline?.feedBackFinalDraft}
-                    // helperText={
-                    //   errors?.timeline?.feedBackFinalDraft && errors?.timeline?.feedBackFinalDraft?.message
-                    // }
-                  />
-                )}
-              />
-
-              <Controller
-                name="timeline.posting"
-                // TODO TEMP: Ignore `control` for now, we don't know where it comes from
-                // control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Posting in social media"
-                    InputProps={{
-                      endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                    }}
-                    // error={errors?.timeline?.posting}
-                    // helperText={errors?.timeline?.posting && errors?.timeline?.posting?.message}
-                  />
-                )}
-              />
-            </Box> */}
-
             <Stack gap={1}>
               <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
                 <RHFDatePicker name="campaignStartDate" label="Campaign Start Date" />
@@ -327,7 +175,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
                     },
                   }}
                 />
-                <RHFDatePicker name="campaignEndDate" label="Campaign End Date" />
+                <RHFDatePicker name="campaignEndDate" label="Campaign End Date" disabled />
               </Stack>
               {dateError && (
                 <Typography variant="caption" color="red">
@@ -358,54 +206,72 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
               </Stack>
               {fields.map((item, index) => (
                 <Box key={item.id}>
-                  <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
-                    {fields.length <= timelineType.length ? (
-                      <RHFSelect name={`timeline[${index}].timeline_type`} label="Timeline Type">
-                        {timelineType.map((elem) => (
-                          <MenuItem key={elem.id} value={elem.name}>
-                            {elem.name}
-                          </MenuItem>
-                        ))}
-                      </RHFSelect>
-                    ) : (
+                  <Stack direction="row" alignItems="center" gap={1}>
+                    <Avatar
+                      sx={{
+                        width: 14,
+                        height: 14,
+                        fontSize: 10,
+                        bgcolor: (theme) => theme.palette.success.main,
+                      }}
+                    >
+                      {index + 1}
+                    </Avatar>
+                    <Stack
+                      direction={{ xs: 'column', md: 'row' }}
+                      gap={1}
+                      alignItems="center"
+                      flexGrow={1}
+                    >
                       <RHFTextField
-                        name={`timeline[${index}].timeline_type`}
+                        name={`timeline[${index}].timeline_type.name`}
+                        onChange={(e, val) => handleChange(e, index)}
                         label="Timeline Type"
                         placeholder="Eg: Open For Pitch"
                       />
-                    )}
-                    <RHFTextField
-                      name={`timeline[${index}].duration`}
-                      type="number"
-                      label="Duration"
-                      placeholder="Eg: 2"
-                      InputProps={{
-                        endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                      }}
-                      onChange={(e) => handleDurationChange(index, e.target.value)}
-                    />
-                    <RHFTextField
-                      name={`timeline[${index}].startDate`}
-                      label="Start Date"
-                      disabled
-                    />
-                    <RHFTextField name={`timeline[${index}].endDate`} label="End Date" disabled />
-                    <IconButton color="error" onClick={() => remove(index)}>
-                      <Iconify icon="uil:trash" />
-                    </IconButton>
+                      <RHFTextField
+                        disabled
+                        name={`timeline[${index}].dependsOn`}
+                        label="Depends On"
+                      />
+
+                      <RHFSelect name={`timeline[${index}].for`} label="For">
+                        <MenuItem value="admin">Admin</MenuItem>
+                        <MenuItem value="creator">Creator</MenuItem>
+                      </RHFSelect>
+                      <RHFTextField
+                        name={`timeline[${index}].duration`}
+                        type="number"
+                        label="Duration"
+                        placeholder="Eg: 2"
+                        InputProps={{
+                          endAdornment: <InputAdornment position="start">days</InputAdornment>,
+                        }}
+                        onChange={(e) => handleDurationChange(index, e.target.value)}
+                      />
+
+                      <RHFTextField name={`timeline[${index}].endDate`} label="End Date" disabled />
+                      <IconButton color="error" onClick={() => handleRemove(index, item)}>
+                        <Iconify icon="uil:trash" />
+                      </IconButton>
+                    </Stack>
                   </Stack>
-                  <Divider sx={{ borderStyle: 'dashed', my: 2 }} />
+                  <Stack direction="row" alignItems="center" mt={2} gap={1}>
+                    <Tooltip
+                      title={`Add a new row under ${existingTimeline[index]?.timeline_type?.name}`}
+                    >
+                      <IconButton
+                        onClick={() => {
+                          handleAdd(index);
+                        }}
+                      >
+                        <Iconify icon="carbon:add-filled" />
+                      </IconButton>
+                    </Tooltip>
+                    <Divider sx={{ borderStyle: 'dashed', flexGrow: 1 }} />
+                  </Stack>
                 </Box>
               ))}
-
-              <Button
-                sx={{ mt: 1 }}
-                onClick={() =>
-                  append({ timeline_type: '', duration: undefined, for: '', dependency: '' })
-                }
-              >
-                Add New Timeline
-              </Button>
             </Box>
           </DialogContentText>
         </DialogContent>

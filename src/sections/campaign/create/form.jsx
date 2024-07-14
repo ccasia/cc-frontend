@@ -245,15 +245,20 @@ function CreateCampaignForm() {
     control,
   });
 
-  const {
-    append: timelineAppend,
-    fields: timelineFields,
-    remove: timelineRemove,
-    insert,
-  } = useFieldArray({
+  const timelineMethods = useFieldArray({
     name: 'timeline',
     control,
   });
+
+  // const {
+  //   append: timelineAppend,
+  //   fields: timelineFields,
+  //   remove: timelineRemove,
+  //   insert,
+  // } = useFieldArray({
+  //   name: 'timeline',
+  //   control,
+  // });
 
   const audienceGeoLocation = watch('audienceLocation');
 
@@ -824,11 +829,12 @@ function CreateCampaignForm() {
             errors={errors}
             timeline={timeline}
             setTimeline={setTimeline}
-            fields={timelineFields}
-            remove={timelineRemove}
+            timelineMethods={timelineMethods}
+            // fields={timelineFields}
+            // remove={timelineRemove}
             watch={watch}
-            append={timelineAppend}
-            insert={insert}
+            // append={timelineAppend}
+            // insert={insert}
             timelineType={timelineType}
           />
         );

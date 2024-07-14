@@ -5,7 +5,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-export default function RHFDatePicker({ name, helperText, type, label, ...other }) {
+export default function RHFDatePicker({ name, helperText, type, label, disabled, ...other }) {
   const { control } = useFormContext();
 
   return (
@@ -17,6 +17,7 @@ export default function RHFDatePicker({ name, helperText, type, label, ...other 
           {/* <DemoContainer components={['DatePicker']}> */}
           <DatePicker
             label={label}
+            disabled={disabled}
             {...field}
             slotProps={{
               textField: {
@@ -38,4 +39,5 @@ RHFDatePicker.propTypes = {
   helperText: PropTypes.string,
   type: PropTypes.string,
   label: PropTypes.string,
+  disabled: PropTypes.bool,
 };

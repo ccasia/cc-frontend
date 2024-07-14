@@ -68,6 +68,7 @@ EditButton.propTypes = {
 
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading } = useGetCampaignById(id);
+  console.log(campaign);
   const modalConfirm = useBoolean();
 
   const loadingButton = useBoolean();
@@ -606,12 +607,12 @@ const CampaignDetailManageView = ({ id }) => {
         </Box> */}
         <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={2} mt={1}>
           {campaign &&
-            campaign?.campaignTimeline.map((timeline, index) => (
+            campaign?.CampaignTimeline.map((timeline, index) => (
               <Box key={timeline?.id}>
                 <Stack direction="row" spacing={1} alignItems="start">
                   <Avatar sx={{ width: 15, height: 15, fontSize: 10 }}>{index + 1}</Avatar>
                   <ListItemText
-                    primary={timeline?.timeline_type}
+                    primary={timeline?.name}
                     secondary={`${dayjs(timeline?.startDate).format('ddd LL')} - ${dayjs(timeline?.endDate).format('ddd LL')}`}
                     secondaryTypographyProps={{
                       variant: 'caption',
