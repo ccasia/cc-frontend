@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import React from 'react';
 import PropTypes from 'prop-types';
+import React, { useRef } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
 import { Box, Card, Chip, Stack, Button, Typography, ListItemText } from '@mui/material';
@@ -11,6 +11,9 @@ import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown/markdown';
 
 const CampaignPitchDetail = ({ pitch }) => {
+  const a = useRef(null);
+  const b = useRef(null);
+
   const approve = async ({ campaignId, creatorId, pitchId }) => {
     try {
       const res = await axiosInstance.post(endpoints.campaign.pitch.approve, {
@@ -20,7 +23,9 @@ const CampaignPitchDetail = ({ pitch }) => {
       });
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar(error?.message, {
+      console.log(error);
+
+      enqueueSnackbar(error?.message || 'Creator has been shortlisted', {
         variant: 'error',
       });
     }
@@ -201,51 +206,21 @@ const CampaignPitchDetail = ({ pitch }) => {
     </Box>
   );
 
-  //   const renderTabs = (
-  //     <Tabs
-  //       value={currentTab}
-  //       onChange={(e, val) => setCurrentTab(val)}
-  //       variant="fullWidth"
-  //       sx={{
-  //         border: (theme) => `dashed 1px ${theme.palette.divider}`,
-  //         borderRadius: 2,
-  //         p: 2,
-  //         [`& .Mui-selected`]: {
-  //           bgcolor: (theme) => theme.palette.background.paper,
-  //           borderRadius: 1.5,
-  //         },
-  //         mt: 2,
-  //       }}
-  //       TabIndicatorProps={{
-  //         sx: {
-  //           display: 'none',
-  //         },
-  //       }}
-  //     >
-  //       {pitch?.content ? (
-  //         <Tab
-  //           value="script"
-  //           label="Pitch Script"
-  //           icon={<Iconify icon="streamline:script-2-solid" />}
-  //         />
-  //       ) : (
-  //         <Tab value="video" label="Pitch Video" icon={<Iconify icon="ph:video-fill" />} />
-  //       )}
-  //     </Tabs>
-  //   );
-
   const renderPitchContentScript = (
     <Box
       p={2}
       sx={{ border: (theme) => `dashed 1px ${theme.palette.divider}`, borderRadius: 2, mt: 2 }}
     >
-      <Box component={Card} p={2} mb={2}>
+      <Box component={Card} p={2} mb={2} ref={a}>
         <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
           <Iconify icon="streamline:script-2-solid" />
           <Typography>Pitch Script</Typography>
         </Stack>
       </Box>
-      <Markdown children={pitch?.content} />
+
+      <Box component={Card} ref={b} p={2}>
+        <Markdown children={pitch?.content} />
+      </Box>
     </Box>
   );
 
@@ -257,7 +232,21 @@ const CampaignPitchDetail = ({ pitch }) => {
   );
 
   const renderButton = (
-    <Stack direction="row" alignItems="center" justifyContent="stretch" mt={2} gap={2}>
+    <Stack
+      direction={{ xs: 'column', sm: 'row' }}
+      alignItems="center"
+      justifyContent="stretch"
+      mt={2}
+      gap={2}
+    >
+      <Button
+        fullWidth
+        // color="success"
+        variant="contained"
+        onClick={() => filter({ pitchId: pitch?.id })}
+      >
+        Filter this pitch
+      </Button>
       <Button
         fullWidth
         // color="error"
@@ -279,14 +268,6 @@ const CampaignPitchDetail = ({ pitch }) => {
         startIcon={<Iconify icon="oui:thumbs-up" />}
       >
         Accept
-      </Button>
-      <Button
-        fullWidth
-        // color="success"
-        variant="contained"
-        onClick={() => filter({ pitchId: pitch?.id })}
-      >
-        Filter this pitch
       </Button>
     </Stack>
   );

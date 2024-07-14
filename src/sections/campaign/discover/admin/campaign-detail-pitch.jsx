@@ -90,7 +90,7 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
     </Drawer>
   );
 
-  return pitches.length > 0 ? (
+  return pitches?.length > 0 ? (
     <>
       <Box
         sx={{

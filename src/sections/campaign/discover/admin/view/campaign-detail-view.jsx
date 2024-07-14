@@ -35,7 +35,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignDetailPitch from '../campaign-detail-pitch';
 import CampaignDetailContent from '../campaign-detail-content';
-import CampaignDetailCreator from '../campaign-detail-creator';
+import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
@@ -73,9 +73,12 @@ const CampaignDetailView = ({ id }) => {
     return false;
   };
 
-  const [currentTab, setCurrentTab] = useState('campaign-content');
+  const [currentTab, setCurrentTab] = useState(
+    localStorage.getItem('campaigndetail') || 'campaign-content'
+  );
 
   const handleChangeTab = useCallback((event, newValue) => {
+    localStorage.setItem('campaigndetail', newValue);
     setCurrentTab(newValue);
   }, []);
 

@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import React from 'react';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
@@ -28,6 +29,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, existingCampaign
   const smUp = useResponsive('down', 'sm');
   const { user } = useAuthContext();
 
+  const isShortlisted = user && user?.ShortListedCreator.map((item) => item.campaignId);
   const campaignIds = user?.Pitch.map((item) => item.campaignId);
 
   const renderGallery = (
@@ -130,15 +132,27 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, existingCampaign
       <DialogActions>
         <Button onClick={handleClose}>Close</Button>
         {campaignIds?.includes(campaign.id) ? (
-          <Button
-            autoFocus
-            variant="contained"
-            startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-            disabled
-            color="warning"
-          >
-            Pending Review
-          </Button>
+          isShortlisted.includes(campaign.id) ? (
+            <Button
+              autoFocus
+              variant="contained"
+              startIcon={<Iconify icon="charm:circle-tick" width={20} />}
+              disabled
+              color="success"
+            >
+              Shortlisted
+            </Button>
+          ) : (
+            <Button
+              autoFocus
+              variant="contained"
+              startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+              disabled
+              color="warning"
+            >
+              Pending Review
+            </Button>
+          )
         ) : (
           <Button
             autoFocus

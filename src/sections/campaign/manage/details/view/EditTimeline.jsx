@@ -45,7 +45,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
 
   const { setValue, control, reset, watch, handleSubmit } = methods;
 
-  const { fields, remove, insert } = useFieldArray({
+  const { fields, remove, insert, append } = useFieldArray({
     name: 'timeline',
     control,
   });
@@ -137,17 +137,32 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
   };
 
   const handleAdd = (index) => {
-    insert(index + 1, {
-      timeline_type: { name: '' },
-      dependsOn: existingTimeline[index]?.name,
-      duration: null,
-      for: '',
-    });
+    if (index === fields.length - 1) {
+      append({
+        timeline_type: { name: '' },
+        dependsOn: existingTimeline[index]?.name,
+        duration: null,
+        for: '',
+      });
+    } else {
+      insert(index + 1, {
+        timeline_type: { name: '' },
+        dependsOn: existingTimeline[index]?.name,
+        duration: null,
+        for: '',
+      });
+    }
   };
 
   const handleChange = (e, index) => {
-    setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
-    setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
+    console.log(existingTimeline);
+    if (index === fields.length - 1) {
+      setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
+      setValue(`timeline[${index}].dependsOn`, existingTimeline[index - 1].timeline_type?.name);
+    } else {
+      setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
+      setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
+    }
   };
 
   return (

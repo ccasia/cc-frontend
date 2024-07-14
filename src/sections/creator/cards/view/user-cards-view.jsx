@@ -25,18 +25,8 @@ export default function UserCardsView() {
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Creator', href: paths.dashboard.creator.root },
-          { name: 'Cards' },
+          { name: 'Media Kits' },
         ]}
-        // action={
-        //   <Button
-        //     component={RouterLink}
-        //     href={paths.dashboard.user.new}
-        //     variant="contained"
-        //     startIcon={<Iconify icon="mingcute:add-line" />}
-        //   >
-        //     New User
-        //   </Button>
-        // }
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
