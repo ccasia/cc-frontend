@@ -44,6 +44,8 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
     name: 'campaignDont',
   });
 
+  const closeDialog = () => onClose('dosAndDonts');
+
   return (
     <Dialog
       open={open.dosAndDonts}
@@ -96,8 +98,13 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose('dosAndDonts')}>Cancel</Button>
-        <Button autoFocus color="primary">
+        <Button onClick={closeDialog}>Cancel</Button>
+        <Button
+          type="submit"
+          onClick={closeDialog}
+          autoFocus
+          color="primary"
+        >
           Save
         </Button>
       </DialogActions>

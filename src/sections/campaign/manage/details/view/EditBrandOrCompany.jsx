@@ -47,6 +47,8 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
 
   const { options } = useGetCampaignBrandOption();
 
+  const closeDialog = () => onClose('campaignBrand');
+
   return (
     <Dialog
       open={open.campaignBrand}
@@ -96,8 +98,13 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose('campaignBrand')}>Cancel</Button>
-          <Button autoFocus color="primary" type="submit">
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button
+            type="submit"
+            onClick={closeDialog}
+            autoFocus
+            color="primary"
+          >
             Save
           </Button>
         </DialogActions>

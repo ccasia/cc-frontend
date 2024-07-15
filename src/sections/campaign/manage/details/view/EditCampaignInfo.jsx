@@ -43,6 +43,8 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
     },
   });
 
+  const closeDialog = () => onClose('campaignInfo');
+
   return (
     <Dialog
       open={open.campaignInfo}
@@ -124,8 +126,13 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose('campaignInfo')}>Cancel</Button>
-        <Button autoFocus color="primary">
+        <Button onClick={closeDialog}>Cancel</Button>
+        <Button
+          type="submit"
+          onClick={closeDialog}
+          autoFocus
+          color="primary"
+        >
           Save
         </Button>
       </DialogActions>

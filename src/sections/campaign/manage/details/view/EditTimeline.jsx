@@ -165,6 +165,8 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
     }
   };
 
+  const closeDialog = () => onClose('timeline');
+
   return (
     <Dialog
       open={open.timeline}
@@ -291,8 +293,14 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose('timeline')}>Cancel</Button>
-          <LoadingButton autoFocus color="primary" type="submit" loading={isLoading}>
+          <Button onClick={closeDialog}>Cancel</Button>
+          <LoadingButton
+            type="submit"
+            onClick={closeDialog}
+            loading={isLoading}
+            autoFocus
+            color="primary"
+          >
             Save
           </LoadingButton>
         </DialogActions>

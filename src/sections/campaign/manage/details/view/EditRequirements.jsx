@@ -31,6 +31,8 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
 
   const audienceLocation = watch('audienceLocation');
 
+  const closeDialog = () => onClose('campaignRequirements');
+
   return (
     <Dialog
       open={open.campaignRequirements}
@@ -147,8 +149,13 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose('campaignRequirements')}>Cancel</Button>
-        <Button autoFocus color="primary">
+        <Button onClick={closeDialog}>Cancel</Button>
+        <Button
+          type="submit"
+          onClick={closeDialog}
+          autoFocus
+          color="primary"
+        >
           Save
         </Button>
       </DialogActions>
