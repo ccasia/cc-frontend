@@ -80,7 +80,14 @@ export function RHFUpload({ name, multiple, type, helperText, ...other }) {
           />
         ) : (
           <Upload
-            accept={type === 'file' ? { 'image/*': [] } : { 'application/pdf': [] }}
+            accept={
+              // eslint-disable-next-line no-nested-ternary
+              type === 'file'
+                ? { 'image/*': [] }
+                : type === 'video'
+                  ? { 'video/*': [] }
+                  : { 'application/pdf': [] }
+            }
             file={field.value}
             error={!!error}
             helperText={
