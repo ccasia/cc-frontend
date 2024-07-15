@@ -25,8 +25,7 @@ export default function ModernRegisterView() {
   useEffect(() => {
     const verify = async () => {
       try {
-        const respone = await axios.put(endpoints.auth.verfiyAdmin, { token });
-        console.log(respone);
+        await axios.put(endpoints.auth.verfiyAdmin, { token });
         setStatus(true);
       } catch (error) {
         console.log(error);

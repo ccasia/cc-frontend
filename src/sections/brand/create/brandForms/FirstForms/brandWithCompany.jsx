@@ -143,9 +143,6 @@ function BrandWithCompany() {
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
-  const finalSubmit = async () => {
-    console.log('first');
-  };
 
   function companyInfo() {
     return (
