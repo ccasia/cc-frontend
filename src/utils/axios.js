@@ -127,6 +127,7 @@ export const endpoints = {
       reject: '/api/campaign/rejectPitch',
       filter: '/api/campaign/filterPitch',
       detail: (id) => `/api/campaign/pitch/${id}`,
+      changeStatus: '/api/campaign/changePitchStatus',
     },
     draft: {
       firstDraft: '/api/campaign/firstDraft',
