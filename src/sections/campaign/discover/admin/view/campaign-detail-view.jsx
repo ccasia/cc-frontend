@@ -33,8 +33,8 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
 import CampaignDetailBrand from '../campaign-detail-brand';
-import CampaignDetailPitch from '../campaign-detail-pitch';
 import CampaignDetailContent from '../campaign-detail-content';
+import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 
 const CampaignDetailView = ({ id }) => {

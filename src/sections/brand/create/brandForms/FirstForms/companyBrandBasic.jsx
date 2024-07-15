@@ -134,10 +134,6 @@ function CompanyBrandBasic() {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const finalSubmit = async (data) => {
-    console.log('final', data);
-  };
-
   function companyInfo() {
     const selectCompany = (
       <Stack gap={2}>
@@ -419,9 +415,9 @@ function CompanyBrandBasic() {
             >
               Reset
             </Button>
-            <Button onClick={finalSubmit} color="inherit">
+            {/* <Button onClick={finalSubmit} color="inherit">
               Submit
-            </Button>
+            </Button> */}
           </Box>
         </>
       ) : (

@@ -539,7 +539,10 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
 
   const handleChange = (e, index) => {
     setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
-    setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
+    // eslint-disable-next-line no-unsafe-optional-chaining
+    if (index !== fields?.length - 1) {
+      setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
+    }
   };
 
   // const renderTimelineForm = (
