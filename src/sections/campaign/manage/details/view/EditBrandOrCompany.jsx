@@ -39,7 +39,7 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
       });
       enqueueSnackbar(res?.data.message);
     } catch (error) {
-      enqueueSnackbar('Error has occured', {
+      enqueueSnackbar('Failed to update brand or company', {
         variant: 'error',
       });
     }
@@ -57,12 +57,18 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <FormProvider methods={methods} onSubmit={onSubmit}>
+      <FormProvider
+        methods={methods}
+        onSubmit={onSubmit}
+      >
         <DialogTitle id="alert-dialog-title">
           Edit Brand or Company
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-description" p={1.5}>
+          <DialogContentText
+            id="alert-dialog-description"
+            p={1.5}
+          >
             <Box
               sx={{
                 display: 'grid',
@@ -98,7 +104,9 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDialog}>Cancel</Button>
+          <Button onClick={closeDialog}>
+            Cancel
+          </Button>
           <Button
             type="submit"
             onClick={closeDialog}
