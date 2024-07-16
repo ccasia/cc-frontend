@@ -181,18 +181,23 @@ export function useNavData() {
             path: paths.dashboard.creator.mediaKitCreator,
             icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
           },
-        ],
-      },
-      {
-        subheader: 'Campaigns',
-        items: [
           {
-            title: 'Manage Campaigns',
+            title: 'My Campaigns',
             path: paths.dashboard.campaign.creator.manage,
             icon: <Iconify icon="iconamoon:discover" width={25} />,
           },
         ],
       },
+      // {
+      //   // subheader: 'Campaigns',
+      //   items: [
+      //     {
+      //       title: 'My Campaigns',
+      //       path: paths.dashboard.campaign.creator.manage,
+      //       icon: <Iconify icon="iconamoon:discover" width={25} />,
+      //     },
+      //   ],
+      // },
     ],
     []
   );

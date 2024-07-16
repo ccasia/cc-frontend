@@ -136,5 +136,9 @@ export const endpoints = {
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',
     updateCampaignTimeline: (id) => `/api/campaign/updateCampaignTimeline/${id}`,
+    creator: {
+      shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
+      getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`
+    },
   },
 };
