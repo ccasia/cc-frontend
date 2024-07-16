@@ -29,8 +29,8 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, existingCampaign
   const smUp = useResponsive('down', 'sm');
   const { user } = useAuthContext();
 
-  const isShortlisted = user && user?.ShortListedCreator.map((item) => item.campaignId);
-  const campaignIds = user?.Pitch.map((item) => item.campaignId);
+  const isShortlisted = user?.ShortListedCreator && user?.ShortListedCreator.map((item) => item.campaignId);
+  const campaignIds = user?.Pitch && user?.Pitch.map((item) => item.campaignId);
 
   const renderGallery = (
     <Box

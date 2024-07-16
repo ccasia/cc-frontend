@@ -3,11 +3,15 @@ import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Pagination, { paginationClasses } from '@mui/material/Pagination';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import CampaignItem from './campaign-item';
 
 // ----------------------------------------------------------------------
 
 export default function CampaignLists({ campaigns }) {
+  const { user } = useAuthContext();
+
   return (
     <>
       <Box
@@ -20,7 +24,7 @@ export default function CampaignLists({ campaigns }) {
         }}
       >
         {campaigns.map((campaign) => (
-          <CampaignItem key={campaign.id} campaign={campaign} />
+          <CampaignItem key={campaign.id} campaign={campaign} user={user} />
         ))}
       </Box>
 

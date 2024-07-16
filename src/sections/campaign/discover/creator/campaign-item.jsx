@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
-import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
@@ -11,8 +11,6 @@ import { Chip, Button, Typography } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
@@ -21,13 +19,16 @@ import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ campaign }) {
+export default function CampaignItem({ campaign, user }) {
   const [open, setOpen] = useState(false);
-  const { user } = useAuthContext();
+  // const { user } = useAuthContext();
 
-  const isShortlisted = user && user?.ShortListedCreator.map((item) => item.campaignId);
+  const isShortlisted = useMemo(
+    () => user?.ShortListedCreator?.map((item) => item?.campaignId) || [],
+    [user]
+  );
 
-  const campaignIds = user && user?.Pitch.map((item) => item.campaignId);
+  const campaignIds = useMemo(() => user?.Pitch?.map((item) => item.campaignId), [user]) || [];
 
   const handleClose = () => {
     setOpen(false);
@@ -105,7 +106,7 @@ export default function CampaignItem({ campaign }) {
       {/* <IconButton onClick={popover.onOpen} sx={{ position: 'absolute', bottom: 20, right: 8 }}>
         <Iconify icon="eva:more-vertical-fill" />
       </IconButton> */}
-      {campaignIds.includes(campaign.id) ? (
+      {campaignIds?.includes(campaign.id) ? (
         !isShortlisted.includes(campaign.id) ? (
           <Chip
             sx={{ position: 'absolute', bottom: 10, right: 10 }}
@@ -118,9 +119,10 @@ export default function CampaignItem({ campaign }) {
           <Chip
             sx={{ position: 'absolute', bottom: 10, right: 10 }}
             variant="filled"
+            icon={<Iconify icon="mdi:tick-circle-outline" />}
             color="success"
             size="small"
-            label="Shortlisted"
+            label="Approved"
           />
         )
       ) : (
@@ -226,4 +228,5 @@ export default function CampaignItem({ campaign }) {
 
 CampaignItem.propTypes = {
   campaign: PropTypes.object,
+  user: PropTypes.object,
 };

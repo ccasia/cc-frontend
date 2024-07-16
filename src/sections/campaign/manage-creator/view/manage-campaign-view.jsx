@@ -1,22 +1,31 @@
 import React, { useMemo, useState } from 'react';
 
-import { Tab, Box, Tabs, Container } from '@mui/material';
+import { Tab, Box, Tabs, Container, TextField, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useGetCampaignByCreatorId } from 'src/hooks/use-get-campaign-based-on-creator-id';
 
+import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
 import CampaignItem from '../campaign-item';
 
 const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
+  const [query, setQuery] = useState('');
   const router = useRouter();
   const { data, isLoading } = useGetCampaignByCreatorId();
 
-  const filteredData = useMemo(() => data?.campaigns, [data]);
+  const filteredData = useMemo(
+    () =>
+      query
+        ? data?.campaigns?.filter((elem) => elem.name.toLowerCase()?.includes(query.toLowerCase()))
+        : data?.campaigns,
+    [data, query]
+  );
 
   const renderTabs = (
     <Tabs
@@ -44,29 +53,53 @@ const ManageCampaignView = () => {
             name: 'Dashboard',
             href: paths.dashboard.root,
           },
+          { name: 'Campaign', href: paths.dashboard.campaign.creator.manage },
           { name: 'Lists' },
         ]}
       />
       {renderTabs}
-      <Box
-        gap={3}
-        display="grid"
-        mt={2}
-        gridTemplateColumns={{
-          xs: 'repeat(1, 1fr)',
-          sm: 'repeat(2, 1fr)',
-          md: 'repeat(3, 1fr)',
-        }}
-      >
-        {!isLoading &&
-          filteredData.map((campaign) => (
-            <CampaignItem
-              key={campaign?.id}
-              campaign={campaign}
-              onClick={() => handleClick(campaign?.id)}
-            />
-          ))}
-      </Box>
+
+      {currentTab === 'myCampaign' && (
+        <Box mt={2}>
+          <TextField
+            value={query}
+            placeholder="Search By Campaign Name"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify icon="hugeicons:search-02" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: 250,
+            }}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {!isLoading && filteredData.length ? (
+            <Box
+              gap={3}
+              display="grid"
+              mt={2}
+              gridTemplateColumns={{
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
+              }}
+            >
+              {filteredData.map((campaign) => (
+                <CampaignItem
+                  key={campaign?.id}
+                  campaign={campaign}
+                  onClick={() => handleClick(campaign?.id)}
+                />
+              ))}
+            </Box>
+          ) : (
+            <EmptyContent title={`No campaign ${query} found.`} />
+          )}
+        </Box>
+      )}
     </Container>
   );
 };

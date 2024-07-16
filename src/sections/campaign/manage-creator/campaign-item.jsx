@@ -1,9 +1,9 @@
 import React from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 
-import { Box, Card, Chip, Stack, Typography, ListItemText } from '@mui/material';
+import { Box, Card, Chip, Link, Stack, Typography, ListItemText } from '@mui/material';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
@@ -51,7 +51,7 @@ const CampaignItem = ({ campaign, onClick }) => {
       primary={
         <Link
           component="a"
-          // color="inherit"
+          color="inherit"
           //   onClick={() => campaignInfo.onTrue()}
           sx={{
             cursor: 'pointer',
@@ -63,7 +63,7 @@ const CampaignItem = ({ campaign, onClick }) => {
       primaryTypographyProps={{
         noWrap: true,
         component: 'a',
-        color: 'text.disable',
+        color: 'text.primary',
         typography: 'subtitle1',
       }}
     />
@@ -108,7 +108,13 @@ const CampaignItem = ({ campaign, onClick }) => {
   );
 
   return (
-    <Box component={Card} onClick={onClick}>
+    <Box
+      component={Card}
+      onClick={onClick}
+      sx={{
+        cursor: 'pointer',
+      }}
+    >
       {renderImages}
       {renderText}
       {renderInfo}
