@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import { m } from 'framer-motion';
 import { useState, useCallback } from 'react';
@@ -64,12 +65,26 @@ export default function NotificationsPopover() {
 
   // const [notifications, setNotifications] = useState(_notifications);
 
-  const totalUnRead = data?.notifications?.filter((item) => item.read === false).length;
+  const totalUnRead = data?.notifications?.filter((item) => !item.read).length;
+  const totalArchive = data?.notifications?.filter((item) => !item.archive).length;
 
   const handleMarkAllAsRead = async () => {
     try {
       await axiosInstance.patch(endpoints.notification.read);
       const newData = data.notifications.map((notification) => ({ ...notification, read: true }));
+      mutate(endpoints.notification.root, { notifications: newData }, false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const archiveAll = async () => {
+    try {
+      await axiosInstance.patch(endpoints.notification.archive);
+      const newData = data.notifications.map((notification) => ({
+        ...notification,
+        archive: true,
+      }));
       mutate(endpoints.notification.root, { notifications: newData }, false);
     } catch (error) {
       console.log(error);
@@ -86,6 +101,14 @@ export default function NotificationsPopover() {
         <Tooltip title="Mark all as read">
           <IconButton color="primary" onClick={handleMarkAllAsRead}>
             <Iconify icon="eva:done-all-fill" />
+          </IconButton>
+        </Tooltip>
+      )}
+
+      {!!totalArchive && (
+        <Tooltip title="Archive all">
+          <IconButton color="primary" onClick={archiveAll}>
+            <Iconify icon="material-symbols:archive" />
           </IconButton>
         </Tooltip>
       )}
@@ -115,9 +138,11 @@ export default function NotificationsPopover() {
                 'default'
               }
             >
-              {tab.value === 'all' && data?.notifications?.length}
+              {tab.value === 'all' && data?.notifications?.filter((item) => !item.archive)?.length}
               {tab.value === 'unread' &&
                 data?.notifications.filter((notification) => !notification.read).length}
+              {tab.value === 'archived' &&
+                data?.notifications.filter((notification) => notification.archive).length}
             </Label>
           }
           sx={{
@@ -134,7 +159,16 @@ export default function NotificationsPopover() {
     <Scrollbar>
       <List disablePadding>
         {data?.notifications
-          ?.filter((item) => (currentTab === 'unread' ? !item.read : item))
+          ?.filter((item) => {
+            if (currentTab === 'unread') {
+              return !item.archive && item.read;
+            }
+            if (currentTab === 'archived') {
+              return item.archive;
+            }
+            return !item.archive;
+          })
+          .sort((a, b) => dayjs(b.notification.createdAt).diff(dayjs(a.notification.createdAt)))
           .map((notification) => (
             <NotificationItem key={notification.id} notification={notification} />
           ))}

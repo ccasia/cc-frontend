@@ -218,7 +218,8 @@ export default function NotificationItem({ notification }) {
       {renderUnReadBadge}
       <Stack sx={{ flexGrow: 1 }}>
         {renderText}
-        {notification?.notification.entity === 'Campaign' && friendAction}
+        {['Campaign', 'Pitch'].includes(notification?.notification.entity) && friendAction}
+        {/* {notification?.notification.entity === 'Campaign' && friendAction} */}
       </Stack>
 
       {/* {renderUnReadBadge}

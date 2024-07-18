@@ -144,5 +144,6 @@ export const endpoints = {
   notification: {
     root: '/api/notification',
     read: '/api/notification/markRead',
+    archive: '/api/notification/archiveAll',
   },
 };
