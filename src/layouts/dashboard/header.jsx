@@ -24,7 +24,7 @@ import NotificationsPopover from '../common/notifications-popover';
 
 // ----------------------------------------------------------------------
 
-export default function Header({ onOpenNav }) {
+export default function Header({ onOpenNav, isOnline }) {
   const theme = useTheme();
 
   const settings = useSettingsContext();
@@ -66,7 +66,7 @@ export default function Header({ onOpenNav }) {
 
         <SettingsButton />
 
-        <AccountPopover />
+        <AccountPopover isOnline={isOnline} />
       </Stack>
     </>
   );
@@ -115,4 +115,5 @@ export default function Header({ onOpenNav }) {
 
 Header.propTypes = {
   onOpenNav: PropTypes.func,
+  isOnline: PropTypes.bool,
 };

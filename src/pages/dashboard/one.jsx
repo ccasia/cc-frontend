@@ -4,7 +4,6 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import DashboardAdmin from 'src/sections/admin/dashboard';
 import DashboardCreator from 'src/sections/creator/dashboard';
-// import CreatorView from 'src/sections/creator/form/view';
 
 // ----------------------------------------------------------------------
 
@@ -17,7 +16,7 @@ export default function Page() {
         <title>Dashboard</title>
       </Helmet>
 
-      {user?.role === 'admin' && <DashboardAdmin />}
+      {user?.role?.includes('admin') && <DashboardAdmin />}
       {user?.role === 'creator' && <DashboardCreator />}
 
       {/* <CreatorView /> */}

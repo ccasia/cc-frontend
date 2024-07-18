@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
+import { mutate } from 'swr';
 import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
@@ -105,6 +106,7 @@ const Profile = () => {
           },
         }
       );
+      mutate(endpoints.notification.root);
       enqueueSnackbar('Successfully updated profile.');
 
       // toast.success('Successfully updated profile.');
