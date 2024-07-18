@@ -161,7 +161,7 @@ export default function NotificationsPopover() {
         {data?.notifications
           ?.filter((item) => {
             if (currentTab === 'unread') {
-              return !item.archive && item.read;
+              return !item.read && !item.archive;
             }
             if (currentTab === 'archived') {
               return item.archive;
