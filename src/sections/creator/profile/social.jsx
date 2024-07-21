@@ -72,7 +72,14 @@ export default function AccountSocialLinks({ socialLinks }) {
             <Typography variant="caption" color="GrayText">
               optional
             </Typography>
-            <Button variant="contained" color="info" size="medium">
+            <Button
+              variant="contained"
+              color="info"
+              size="medium"
+              LinkComponent="a"
+              target="__blank"
+              href="http://localhost/api/outh"
+            >
               Connect
             </Button>
           </Stack>

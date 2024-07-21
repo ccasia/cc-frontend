@@ -264,7 +264,7 @@ export default function CreatorForm({ creator, open, onClose }) {
             name="interests"
             placeholder="+ Interests"
             multiple
-            freeSolo="true"
+            freeSolo
             disableCloseOnSelect
             options={interestsList.map((option) => option)}
             getOptionLabel={(option) => option}
@@ -291,7 +291,7 @@ export default function CreatorForm({ creator, open, onClose }) {
             name="industries"
             placeholder="+ Industries"
             multiple
-            freeSolo="true"
+            freeSolo
             disableCloseOnSelect
             options={interestsList.map((option) => option)}
             getOptionLabel={(option) => option}

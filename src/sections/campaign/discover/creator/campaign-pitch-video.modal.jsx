@@ -36,6 +36,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const { handleSubmit, setValue } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
+    console.log(data);
     const formData = new FormData();
     formData.append('campaignId', campaign?.id);
     formData.append('pitchVideo', data.pitchVideo);
@@ -48,7 +49,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
       // });
       const res = await axiosInstance.patch(endpoints.campaign.pitch.root, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
       enqueueSnackbar(res?.data?.message);

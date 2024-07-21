@@ -1,4 +1,6 @@
 import PropTypes from 'prop-types';
+import { io } from 'socket.io-client';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 
@@ -17,6 +19,22 @@ import NavHorizontal from './nav-horizontal';
 
 export default function DashboardLayout({ children }) {
   const settings = useSettingsContext();
+  const [isOnline, setIsOnline] = useState(false);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const socket = io();
+    socket.on('connect', () => {
+      console.log(`Connected to the server`);
+      setIsOnline(true);
+    });
+
+    return () => {
+      socket.close();
+      setIsOnline(false);
+    };
+  }, []);
 
   const lgUp = useResponsive('up', 'lg');
 
@@ -35,7 +53,7 @@ export default function DashboardLayout({ children }) {
   if (isHorizontal) {
     return (
       <>
-        <Header onOpenNav={nav.onTrue} />
+        <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
         {lgUp ? renderHorizontal : renderNavVertical}
 
@@ -47,7 +65,7 @@ export default function DashboardLayout({ children }) {
   if (isMini) {
     return (
       <>
-        <Header onOpenNav={nav.onTrue} />
+        <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
         <Box
           sx={{
@@ -66,7 +84,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <>
-      <Header onOpenNav={nav.onTrue} />
+      <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
       <Box
         sx={{

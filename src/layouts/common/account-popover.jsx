@@ -1,6 +1,8 @@
 import { m } from 'framer-motion';
+import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
+import { Badge } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
@@ -36,7 +38,7 @@ const OPTIONS = [
 
 // ----------------------------------------------------------------------
 
-export default function AccountPopover() {
+export default function AccountPopover({ isOnline }) {
   const router = useRouter();
 
   const { logout, user } = useAuthContext();
@@ -76,17 +78,19 @@ export default function AccountPopover() {
           }),
         }}
       >
-        <Avatar
-          src={user?.photoURL}
-          alt={user?.name}
-          sx={{
-            width: 36,
-            height: 36,
-            border: (theme) => `solid 2px ${theme.palette.background.default}`,
-          }}
-        >
-          {user?.name.charAt(0).toUpperCase()}
-        </Avatar>
+        <Badge color={isOnline ? 'success' : 'error'} variant="dot">
+          <Avatar
+            src={user?.photoURL}
+            alt={user?.name}
+            sx={{
+              width: 36,
+              height: 36,
+              border: (theme) => `solid 2px ${theme.palette.background.default}`,
+            }}
+          >
+            {user?.name.charAt(0).toUpperCase()}
+          </Avatar>
+        </Badge>
       </IconButton>
 
       <CustomPopover open={popover.open} onClose={popover.onClose} sx={{ width: 200, p: 0 }}>
@@ -122,3 +126,7 @@ export default function AccountPopover() {
     </>
   );
 }
+
+AccountPopover.propTypes = {
+  isOnline: PropTypes.bool,
+};

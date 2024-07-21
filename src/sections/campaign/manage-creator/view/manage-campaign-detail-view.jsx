@@ -25,7 +25,7 @@ const ManageCampaignDetailView = ({ id }) => {
         heading="Campaign Detail"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Campaign' },
+          { name: 'Campaign', href: paths.dashboard.campaign.creator.manage },
           { name: id },
         ]}
       />

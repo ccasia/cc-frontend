@@ -1,3 +1,4 @@
+import io from 'socket.io-client';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -17,6 +18,15 @@ export default function CreatorView() {
   const settings = useSettingsContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creator, setCreator] = useState({});
+  const [data, setData] = useState();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const socket = io();
+    socket.on('message', (a) => {
+      setData(a);
+    });
+  }, []);
 
   // Get user role if creator send request to backend to check if the data is complete
 
@@ -56,6 +66,7 @@ export default function CreatorView() {
           border: (theme) => `dashed 1px ${theme.palette.divider}`,
         }}
       />
+      {data && <Typography>{data}</Typography>}
       <CreatorForm open={dialogOpen} onClose={() => setDialogOpen(false)} creator={creator} />
     </Container>
   );

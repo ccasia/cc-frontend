@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+import { mutate } from 'swr';
 import { m } from 'framer-motion';
 import { useState, useCallback } from 'react';
 
@@ -16,8 +18,9 @@ import Typography from '@mui/material/Typography';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetNotificationById from 'src/hooks/use-get-notification-by-id';
 
-import { _notifications } from 'src/_mock';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -50,6 +53,7 @@ const TABS = [
 
 export default function NotificationsPopover() {
   const drawer = useBoolean();
+  const { data, isLoading } = useGetNotificationById();
 
   const smUp = useResponsive('up', 'sm');
 
@@ -59,17 +63,32 @@ export default function NotificationsPopover() {
     setCurrentTab(newValue);
   }, []);
 
-  const [notifications, setNotifications] = useState(_notifications);
+  // const [notifications, setNotifications] = useState(_notifications);
 
-  const totalUnRead = notifications.filter((item) => item.isUnRead === true).length;
+  const totalUnRead = data?.notifications?.filter((item) => !item.read).length;
+  const totalArchive = data?.notifications?.filter((item) => !item.archive).length;
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(
-      notifications.map((notification) => ({
+  const handleMarkAllAsRead = async () => {
+    try {
+      await axiosInstance.patch(endpoints.notification.read);
+      const newData = data.notifications.map((notification) => ({ ...notification, read: true }));
+      mutate(endpoints.notification.root, { notifications: newData }, false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const archiveAll = async () => {
+    try {
+      await axiosInstance.patch(endpoints.notification.archive);
+      const newData = data.notifications.map((notification) => ({
         ...notification,
-        isUnRead: false,
-      }))
-    );
+        archive: true,
+      }));
+      mutate(endpoints.notification.root, { notifications: newData }, false);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const renderHead = (
@@ -82,6 +101,14 @@ export default function NotificationsPopover() {
         <Tooltip title="Mark all as read">
           <IconButton color="primary" onClick={handleMarkAllAsRead}>
             <Iconify icon="eva:done-all-fill" />
+          </IconButton>
+        </Tooltip>
+      )}
+
+      {!!totalArchive && (
+        <Tooltip title="Archive all">
+          <IconButton color="primary" onClick={archiveAll}>
+            <Iconify icon="material-symbols:archive" />
           </IconButton>
         </Tooltip>
       )}
@@ -111,7 +138,11 @@ export default function NotificationsPopover() {
                 'default'
               }
             >
-              {tab.count}
+              {tab.value === 'all' && data?.notifications?.filter((item) => !item.archive)?.length}
+              {tab.value === 'unread' &&
+                data?.notifications.filter((notification) => !notification.read).length}
+              {tab.value === 'archived' &&
+                data?.notifications.filter((notification) => notification.archive).length}
             </Label>
           }
           sx={{
@@ -124,12 +155,23 @@ export default function NotificationsPopover() {
     </Tabs>
   );
 
-  const renderList = (
+  const renderList = !isLoading && (
     <Scrollbar>
       <List disablePadding>
-        {notifications.map((notification) => (
-          <NotificationItem key={notification.id} notification={notification} />
-        ))}
+        {data?.notifications
+          ?.filter((item) => {
+            if (currentTab === 'unread') {
+              return !item.read && !item.archive;
+            }
+            if (currentTab === 'archived') {
+              return item.archive;
+            }
+            return !item.archive;
+          })
+          .sort((a, b) => dayjs(b.notification.createdAt).diff(dayjs(a.notification.createdAt)))
+          .map((notification) => (
+            <NotificationItem key={notification.id} notification={notification} />
+          ))}
       </List>
     </Scrollbar>
   );

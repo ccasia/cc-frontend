@@ -139,7 +139,12 @@ export const endpoints = {
     updateCampaignTimeline: (id) => `/api/campaign/updateCampaignTimeline/${id}`,
     creator: {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
-      getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`
+      getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,
     },
+  },
+  notification: {
+    root: '/api/notification',
+    read: '/api/notification/markRead',
+    archive: '/api/notification/archiveAll',
   },
 };

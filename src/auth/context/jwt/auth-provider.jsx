@@ -60,6 +60,7 @@ const reducer = (state, action) => {
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const initialize = useCallback(async () => {
     try {
