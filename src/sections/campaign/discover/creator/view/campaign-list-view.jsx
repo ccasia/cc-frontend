@@ -19,7 +19,6 @@ import CampaignSearch from '../campaign-search';
 export default function CampaignListView() {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns('creator');
-  
 
   const [search, setSearch] = useState({
     query: '',

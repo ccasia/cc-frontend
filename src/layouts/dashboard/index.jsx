@@ -1,3 +1,4 @@
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { io } from 'socket.io-client';
 import { useState, useEffect } from 'react';
@@ -6,6 +7,8 @@ import Box from '@mui/material/Box';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+
+import { endpoints } from 'src/utils/axios';
 
 import { useSettingsContext } from 'src/components/settings';
 
@@ -29,6 +32,16 @@ export default function DashboardLayout({ children }) {
       console.log(`Connected to the server`);
       setIsOnline(true);
     });
+
+    socket.on(
+      'notification',
+      (data) =>
+        mutate(endpoints.notification.root, (currentData) => ({
+          ...currentData,
+          data,
+        }))
+      // console.log(data);
+    );
 
     return () => {
       socket.close();
