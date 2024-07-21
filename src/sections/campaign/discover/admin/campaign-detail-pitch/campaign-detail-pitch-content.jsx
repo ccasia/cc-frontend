@@ -218,6 +218,7 @@ const CampaignDetailPitchContent = ({ data }) => {
       </Box>
       <Box display="flex" flexDirection="column">
         <Typography variant="h6">Pitch</Typography>
+
         <Box
           // display="grid"
           // gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }}
@@ -228,7 +229,12 @@ const CampaignDetailPitchContent = ({ data }) => {
             <Markdown children={data?.content} />
           ) : (
             // eslint-disable-next-line jsx-a11y/media-has-caption
-            <video autoPlay style={{ width: '100%', borderRadius: 10, margin: 'auto' }} controls>
+            <video
+              autoPlay
+              style={{ width: '100%', borderRadius: 10, margin: 'auto' }}
+              key={data?.content}
+              controls
+            >
               <source src={data?.content} />
             </video>
           )}
