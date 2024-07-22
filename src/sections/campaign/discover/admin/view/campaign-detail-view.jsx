@@ -33,6 +33,7 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
+import CampaignOverview from '../campaign-overview';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
@@ -105,6 +106,7 @@ const CampaignDetailView = ({ id }) => {
       }}
     >
       {[
+        { label: 'Overview', value: 'overview' },
         { label: 'Campaign Content', value: 'campaign-content' },
         { label: 'Brand', value: 'brand' },
         { label: 'Creator', value: 'creator' },
@@ -390,6 +392,7 @@ const CampaignDetailView = ({ id }) => {
 
       {renderTabs}
 
+      {currentTab === 'overview' && <CampaignOverview campaign={currentCampaign} />}
       {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
       {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
       {currentTab === 'brand' && (
@@ -399,6 +402,9 @@ const CampaignDetailView = ({ id }) => {
       {currentTab === 'pitch' && (
         <CampaignDetailPitch
           pitches={currentCampaign?.Pitch}
+          timeline={
+            currentCampaign?.CampaignTimeline.filter((elem) => elem.name === 'Open For Pitch')[0]
+          }
           shortlisted={currentCampaign?.ShortListedCreator}
         />
       )}
