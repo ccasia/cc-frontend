@@ -20,7 +20,7 @@ export default function CampaignLists({ campaigns }) {
         }}
       >
         {campaigns.map((campaign) => (
-          <CampaignItem key={campaign.id} campaign={campaign} />
+          <CampaignItem key={campaign.id} campaign={campaign} status={campaign?.status} />
         ))}
       </Box>
 

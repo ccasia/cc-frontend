@@ -27,7 +27,7 @@ import UserCard from './user-card';
 import MediaKitModal from '../media-kit-modal';
 import CampaignDetailPitchContent from './campaign-detail-pitch-content';
 
-const CampaignDetailPitch = ({ pitches, shortlisted }) => {
+const CampaignDetailPitch = ({ pitches, shortlisted, timeline }) => {
   const smUp = useResponsive('up', 'sm');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [search, setSearch] = useState();
@@ -36,6 +36,7 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
   const router = useRouter();
   const theme = useTheme();
   const drawer = useBoolean();
+  // const [currentTab, setCurrentTab] = useState(null);
 
   const filteredPitches = useMemo(
     () =>
@@ -51,16 +52,6 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
   };
 
   const notfound = search && filteredPitches.length < 1;
-
-  // const isShortlisted = (id) => {
-  //   const a = shortlisted.some((item) => item.creatorId.includes(id));
-  //   return a;
-  // };
-
-  // const getFullPhoneNumber = (country, phoneNumber) => {
-  //   const initial = countries.filter((elem) => elem.label.includes(country))[0].phone;
-  //   return `+${initial}-${phoneNumber}`;
-  // };
 
   const renderFilterDrawer = (
     <Drawer
@@ -78,15 +69,95 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
     </Drawer>
   );
 
+  // const renderOverview = (
+  //   <Tabs
+  //     variant="fullWidth"
+  //     value={currentTab}
+  //     onChange={(e, val) => setCurrentTab(val)}
+  //     sx={{ mb: 2 }}
+  //   >
+  //     <Tab
+  //       value="undecided"
+  //       label="Undecided"
+  //       iconPosition="end"
+  //       icon={
+  //         <Label variant="filled">
+  //           {pitches?.filter((item) => item.status === 'undecided').length}
+  //         </Label>
+  //       }
+  //     />
+  //     <Tab
+  //       value="approved"
+  //       label="Approved"
+  //       iconPosition="end"
+  //       icon={
+  //         <Label variant="filled">
+  //           {pitches?.filter((item) => item.status === 'approved').length}
+  //         </Label>
+  //       }
+  //     />
+  //     <Tab
+  //       value="filtered"
+  //       label="Filtered"
+  //       iconPosition="end"
+  //       icon={
+  //         <Label variant="filled">
+  //           {pitches?.filter((item) => item.status === 'filtered').length}
+  //         </Label>
+  //       }
+  //     />
+  //     <Tab
+  //       value="rejected"
+  //       label="Rejected"
+  //       iconPosition="end"
+  //       icon={
+  //         <Label variant="filled">
+  //           {pitches?.filter((item) => item.status === 'rejected').length}
+  //         </Label>
+  //       }
+  //     />
+  //   </Tabs>
+  // );
+
   return pitches?.length > 0 ? (
     <>
+      {/* <Box
+        sx={{
+          bgcolor: alpha(theme.palette.warning.light, 0.8),
+          borderRadius: 1,
+          p: 1,
+          color: theme.palette.text.primary,
+          mb: 2,
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Iconify icon="fluent:warning-24-filled" />
+          <Stack direction="row" gap={2} alignItems="center">
+            <Typography variant="caption" fontWeight={700}>
+              Submission Timelime
+            </Typography>
+            <Stack direction="row" alignItems="center" gap={1}>
+              <Iconify icon="mdi:calendar" />
+              <Typography variant="caption" fontWeight={700}>
+                {dayjs(timeline.startDate).format('ddd LL')}
+              </Typography>
+            </Stack>
+            <Stack direction="row" alignItems="center" gap={1}>
+              <Iconify icon="mdi:calendar" />
+              <Typography variant="caption" fontWeight={700}>
+                {dayjs(timeline.endDate).format('ddd LL')}
+              </Typography>
+            </Stack>
+          </Stack>
+        </Stack>
+      </Box> */}
       <Box
         sx={{
           // textAlign: 'end',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          mb: 4,
+          mb: 2,
         }}
       >
         <TextField
@@ -106,7 +177,7 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
         />
         <Button onClick={filterBar.onTrue}>Filter</Button>
       </Box>
-
+      {/* {renderOverview} */}
       <Grid spacing={2} container>
         {smUp && (
           <Grid
@@ -114,7 +185,7 @@ const CampaignDetailPitch = ({ pitches, shortlisted }) => {
             xs={12}
             sm={4}
             sx={{
-              maxHeight: 450,
+              maxHeight: 490,
               overflow: 'scroll',
             }}
           >
@@ -239,6 +310,7 @@ export default CampaignDetailPitch;
 CampaignDetailPitch.propTypes = {
   pitches: PropTypes.array,
   shortlisted: PropTypes.array,
+  timeline: PropTypes.array,
 };
 
 // {/* <Card
