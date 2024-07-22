@@ -128,11 +128,12 @@ export const endpoints = {
       filter: '/api/campaign/filterPitch',
       detail: (id) => `/api/campaign/pitch/${id}`,
       changeStatus: '/api/campaign/changePitchStatus',
+      getCampaign: `/api/campaign/getCampaignPitch`,
     },
     draft: {
       firstDraft: '/api/campaign/firstDraft',
     },
-    changeStage: (id) => `/api/campaign/changeCampaignStage/${id}`,
+    changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',

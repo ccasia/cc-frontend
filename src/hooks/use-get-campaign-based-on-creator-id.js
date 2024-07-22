@@ -10,8 +10,6 @@ export const useGetCampaignByCreatorId = () => {
     revalidateOnMount: true,
   });
 
-  console.log(data);
-
   const memoizedValue = useMemo(() => ({ data, isLoading }), [data, isLoading]);
 
   return memoizedValue;

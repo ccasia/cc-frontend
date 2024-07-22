@@ -114,7 +114,7 @@ export default function CampaignItem({ campaign, user }) {
             variant="filled"
             color="warning"
             size="small"
-            label="Pending Review"
+            label="In Review"
           />
         ) : (
           <Chip

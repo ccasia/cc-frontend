@@ -93,10 +93,10 @@ const CampaignDetailManageView = ({ id }) => {
   };
 
   // const formatDays = (days) => (days === 1 ? 'day' : 'days');
-  const isEditable = campaign?.stage !== 'publish';
+  const isEditable = campaign?.status !== 'active';
 
-  const handleChangeStage = async (stage) => {
-    if (stage === 'publish' && dayjs(campaign?.campaignBrief?.endDate) < dayjs()) {
+  const handleChangeStatus = async (status) => {
+    if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate) < dayjs()) {
       enqueueSnackbar('You cannot publish a campaign that is already end.', {
         variant: 'error',
       });
@@ -104,19 +104,19 @@ const CampaignDetailManageView = ({ id }) => {
     }
     try {
       loadingButton.onTrue();
-      const res = await axiosInstance.patch(endpoints.campaign.changeStage(campaign?.id), {
-        stage,
+      const res = await axiosInstance.patch(endpoints.campaign.changeStatus(campaign?.id), {
+        status,
       });
 
-      if (stage === 'publish') {
+      if (status === 'active') {
         enqueueSnackbar('Campaign is now live!');
       } else {
-        enqueueSnackbar('Campaign is change to draft');
+        enqueueSnackbar('Campaign is paused');
       }
       mutate(endpoints.campaign.getCampaignById(id), (currentData) => {
         const newCampaign = {
           ...currentData,
-          stage: res?.stage,
+          status: res?.status,
         };
         return {
           ...currentData,
@@ -125,7 +125,7 @@ const CampaignDetailManageView = ({ id }) => {
       });
       loadingButton.onFalse();
     } catch (error) {
-      enqueueSnackbar('Failed to change stage', {
+      enqueueSnackbar('Failed to change status', {
         variant: 'error',
       });
       loadingButton.onFalse();
@@ -178,12 +178,7 @@ const CampaignDetailManageView = ({ id }) => {
           right={10}
           alignItems="center"
         >
-          {!smUp && (
-            <>
-              <Chip label={campaign?.stage} size="small" />
-              <Chip label={campaign?.status} size="small" color="primary" />
-            </>
-          )}
+          {!smUp && <Chip label={campaign?.status} size="small" color="primary" />}
           {isEditable && (
             <Tooltip title="Edit Campaign Information" arrow>
               <IconButton
@@ -670,7 +665,7 @@ const CampaignDetailManageView = ({ id }) => {
         ]}
         action={
           <Stack direction="row" spacing={2}>
-            {campaign?.status === 'active' && campaign?.stage === 'publish' && (
+            {campaign?.status === 'active' && (
               <LoadingButton
                 startIcon={<Iconify icon="ion:close" />}
                 variant="outlined"
@@ -681,13 +676,13 @@ const CampaignDetailManageView = ({ id }) => {
                 End Campaign
               </LoadingButton>
             )}
-            {campaign && campaign?.stage === 'draft' ? (
+            {campaign && campaign?.status === 'paused' ? (
               <LoadingButton
                 variant="contained"
                 color="primary"
                 size="small"
                 endIcon={<Iconify icon="eva:cloud-upload-fill" />}
-                onClick={() => handleChangeStage('publish')}
+                onClick={() => handleChangeStatus('active')}
                 loading={loadingButton.value}
               >
                 Publish
@@ -698,10 +693,10 @@ const CampaignDetailManageView = ({ id }) => {
                 color="warning"
                 size="small"
                 endIcon={<Iconify icon="solar:file-text-bold" />}
-                onClick={() => handleChangeStage('draft')}
+                onClick={() => handleChangeStatus('paused')}
                 loading={loadingButton.value}
               >
-                Draft
+                Pause
               </LoadingButton>
             )}
           </Stack>

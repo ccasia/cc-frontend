@@ -1,17 +1,16 @@
 import React, { useMemo, useState } from 'react';
 
-import { Tab, Box, Tabs, Container, TextField, InputAdornment } from '@mui/material';
+import { Tab, Tabs, Container } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useGetCampaignByCreatorId } from 'src/hooks/use-get-campaign-based-on-creator-id';
 
-import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
-import EmptyContent from 'src/components/empty-content/empty-content';
 
-import CampaignItem from '../campaign-item';
+import MyCampaignView from '../my-campaign';
+import AppliedCampaignView from '../applied-campaign-view';
 
 const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
@@ -59,47 +58,54 @@ const ManageCampaignView = () => {
       />
       {renderTabs}
 
-      {currentTab === 'myCampaign' && (
-        <Box mt={2}>
-          <TextField
-            value={query}
-            placeholder="Search By Campaign Name"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Iconify icon="hugeicons:search-02" />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              width: 250,
-            }}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {!isLoading && filteredData.length ? (
-            <Box
-              gap={3}
-              display="grid"
-              mt={2}
-              gridTemplateColumns={{
-                xs: 'repeat(1, 1fr)',
-                sm: 'repeat(2, 1fr)',
-                md: 'repeat(3, 1fr)',
-              }}
-            >
-              {filteredData.map((campaign) => (
-                <CampaignItem
-                  key={campaign?.id}
-                  campaign={campaign}
-                  onClick={() => handleClick(campaign?.id)}
-                />
-              ))}
-            </Box>
-          ) : (
-            <EmptyContent title={`No campaign ${query} found.`} />
-          )}
-        </Box>
+      {currentTab === 'myCampaign' && !isLoading && (
+        <MyCampaignView
+          query={query}
+          setQuery={setQuery}
+          filteredData={filteredData}
+          onClick={handleClick}
+        />
+        // <Box mt={2}>
+        //   <TextField
+        //     value={query}
+        //     placeholder="Search By Campaign Name"
+        //     InputProps={{
+        //       startAdornment: (
+        //         <InputAdornment position="start">
+        //           <Iconify icon="hugeicons:search-02" />
+        //         </InputAdornment>
+        //       ),
+        //     }}
+        //     sx={{
+        //       width: 250,
+        //     }}
+        //     onChange={(e) => setQuery(e.target.value)}
+        //   />
+        //   {!isLoading && filteredData.length ? (
+        //     <Box
+        //       gap={3}
+        //       display="grid"
+        //       mt={2}
+        //       gridTemplateColumns={{
+        //         xs: 'repeat(1, 1fr)',
+        //         sm: 'repeat(2, 1fr)',
+        //         md: 'repeat(3, 1fr)',
+        //       }}
+        //     >
+        //       {filteredData.map((campaign) => (
+        //         <CampaignItem
+        //           key={campaign?.id}
+        //           campaign={campaign}
+        //           onClick={() => handleClick(campaign?.id)}
+        //         />
+        //       ))}
+        //     </Box>
+        //   ) : (
+        //     <EmptyContent title={`No campaign ${query} found.`} />
+        //   )}
+        // </Box>
       )}
+      {currentTab === 'applied' && <AppliedCampaignView />}
     </Container>
   );
 };
