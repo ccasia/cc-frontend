@@ -9,8 +9,8 @@ import {
   List,
   Card,
   Stack,
-  Button,
   Popper,
+  Button,
   Divider,
   ListItem,
   Container,
@@ -31,6 +31,7 @@ import { filterTimelineAdmin } from 'src/utils/filterTimeline';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignDetailContent from '../campaign-detail-content';
@@ -100,6 +101,7 @@ const CampaignDetailView = ({ id }) => {
       onChange={handleChangeTab}
       sx={{
         mb: { xs: 1, md: 3 },
+        mt: 3,
       }}
     >
       {[
@@ -107,7 +109,8 @@ const CampaignDetailView = ({ id }) => {
         { label: 'Brand', value: 'brand' },
         { label: 'Creator', value: 'creator' },
         // { label: 'Shortlisted', value: 'shortlist' },
-        { label: 'Pitch', value: 'pitch' },
+        { label: 'Pitch Submission', value: 'pitch' },
+        { label: 'Draft submission', value: 'submission' },
       ].map((tab) => (
         <Tab
           key={tab.value}
@@ -329,7 +332,34 @@ const CampaignDetailView = ({ id }) => {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
+      <CustomBreadcrumbs
+        heading="Campaign"
+        links={[
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'Campaign', href: paths.dashboard.campaign.root },
+          { name: currentCampaign?.name },
+        ]}
+        action={
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={
+              <Iconify
+                icon="material-symbols-light:bookmark-manager-outline-rounded"
+                width={19}
+                sx={{ ml: 1 }}
+              />
+            }
+            onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
+            sx={{
+              mb: 3,
+            }}
+          >
+            Manage
+          </Button>
+        }
+      />
+      {/* <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Button
           startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} sx={{ ml: 1 }} />}
           onClick={() => router.push(paths.dashboard.campaign.view)}
@@ -356,7 +386,7 @@ const CampaignDetailView = ({ id }) => {
         >
           Manage
         </Button>
-      </Stack>
+      </Stack> */}
 
       {renderTabs}
 

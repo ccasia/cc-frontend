@@ -1,7 +1,16 @@
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
-import { Box, Tab, Tabs, Stack } from '@mui/material';
+import { Box, Tab, Tabs, Stack, ListItemText } from '@mui/material';
+import {
+  Timeline,
+  TimelineDot,
+  TimelineItem,
+  TimelineContent,
+  TimelineConnector,
+  TimelineSeparator,
+} from '@mui/lab';
 
 import Image from 'src/components/image';
 
@@ -49,6 +58,26 @@ const CampaignDetailItem = ({ campaign }) => {
     <Stack overflow="scroll" gap={2}>
       {renderGallery}
       {renderTabs}
+      {currentTab === 'tasks' && (
+        <Timeline>
+          {campaign?.campaignTimelineTask
+            .sort((a, b) => dayjs(a.endDate).diff(dayjs(b.endDate)))
+            .map((timeline) => (
+              <TimelineItem>
+                <TimelineSeparator>
+                  <TimelineDot color={timeline.status === 'NOT_STARTED' && 'error'} />
+                  <TimelineConnector />
+                </TimelineSeparator>
+                <TimelineContent>
+                  <ListItemText
+                    primary={timeline.task}
+                    secondary={dayjs(timeline.endDate).format('ddd LL')}
+                  />
+                </TimelineContent>
+              </TimelineItem>
+            ))}
+        </Timeline>
+      )}
     </Stack>
   );
 };

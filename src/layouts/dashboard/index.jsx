@@ -33,18 +33,17 @@ export default function DashboardLayout({ children }) {
       setIsOnline(true);
     });
 
-    socket.on(
-      'notification',
-      (data) =>
-        mutate(endpoints.notification.root, (currentData) => ({
-          ...currentData,
-          data,
-        }))
-      // console.log(data);
+    socket.on('notification', (data) =>
+      mutate(endpoints.notification.root, (currentData) => ({
+        ...currentData,
+        data,
+      }))
     );
 
     return () => {
       socket.close();
+      socket.off('notification');
+      socket.off('campaignChange');
       setIsOnline(false);
     };
   }, []);
