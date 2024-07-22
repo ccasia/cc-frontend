@@ -68,7 +68,7 @@ EditButton.propTypes = {
 
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading } = useGetCampaignById(id);
-  console.log(campaign);
+
   const modalConfirm = useBoolean();
 
   const loadingButton = useBoolean();
