@@ -132,7 +132,7 @@ export const endpoints = {
     draft: {
       firstDraft: '/api/campaign/firstDraft',
     },
-    changeStage: (id) => `/api/campaign/changeCampaignStage/${id}`,
+    changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',
     updateCampaignTimeline: (id) => `/api/campaign/updateCampaignTimeline/${id}`,

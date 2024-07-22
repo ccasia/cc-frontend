@@ -50,7 +50,7 @@ const CampaignView = () => {
   const openFilters = useBoolean();
 
   const dataFiltered = applyFilter({
-    inputData: campaigns && campaigns.filter((campaign) => campaign?.stage === 'publish'),
+    inputData: campaigns && campaigns.filter((campaign) => campaign?.status === 'active'),
     filters,
   });
 
@@ -85,7 +85,7 @@ const CampaignView = () => {
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         {campaigns && (
           <Autocomplete
-            options={campaigns.filter((campaign) => campaign?.stage === 'publish')}
+            options={campaigns.filter((campaign) => campaign?.status === 'active')}
             getOptionLabel={(option) => option?.name}
             renderOption={(props, option) => (
               <Box
