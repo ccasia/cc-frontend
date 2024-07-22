@@ -82,6 +82,18 @@ const CampaignDetailView = ({ id }) => {
     setCurrentTab(newValue);
   }, []);
 
+  const icons = (tab) => {
+    if (tab.value === 'pitch' && currentCampaign?.Pitch.length > 0) {
+      return <Label variant="filled">{currentCampaign?.Pitch.length}</Label>;
+    }
+
+    if (tab.value === 'creator' && currentCampaign?.ShortListedCreator.length > 0) {
+      return <Label variant="filled">{currentCampaign?.ShortListedCreator.length}</Label>;
+    }
+
+    return '';
+  };
+
   const renderTabs = (
     <Tabs
       value={currentTab}
@@ -102,13 +114,7 @@ const CampaignDetailView = ({ id }) => {
           iconPosition="end"
           value={tab.value}
           label={tab.label}
-          icon={
-            tab.value === 'pitch' && currentCampaign?.Pitch.length > 0 ? (
-              <Label variant="filled">{currentCampaign?.Pitch.length}</Label>
-            ) : (
-              ''
-            )
-          }
+          icon={icons(tab)}
         />
       ))}
     </Tabs>

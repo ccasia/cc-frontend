@@ -128,6 +128,7 @@ export const endpoints = {
       filter: '/api/campaign/filterPitch',
       detail: (id) => `/api/campaign/pitch/${id}`,
       changeStatus: '/api/campaign/changePitchStatus',
+      getCampaign: `/api/campaign/getCampaignPitch`,
     },
     draft: {
       firstDraft: '/api/campaign/firstDraft',

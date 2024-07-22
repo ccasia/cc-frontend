@@ -228,15 +228,21 @@ const CampaignDetailPitchContent = ({ data }) => {
           {data?.type === 'text' ? (
             <Markdown children={data?.content} />
           ) : (
-            // eslint-disable-next-line jsx-a11y/media-has-caption
-            <video
-              autoPlay
-              style={{ width: '100%', borderRadius: 10, margin: 'auto' }}
-              key={data?.content}
-              controls
-            >
-              <source src={data?.content} />
-            </video>
+            <>
+              {data.status === 'pending' ? (
+                <Typography>Video is uploading...</Typography>
+              ) : (
+                // eslint-disable-next-line jsx-a11y/media-has-caption
+                <video
+                  autoPlay
+                  style={{ width: '100%', borderRadius: 10, margin: 'auto' }}
+                  key={data?.content}
+                  controls
+                >
+                  <source src={data?.content} />
+                </video>
+              )}
+            </>
           )}
         </Box>
       </Box>

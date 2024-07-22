@@ -18,7 +18,7 @@ import { useSettingsContext } from 'src/components/settings';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
+export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
   const settings = useSettingsContext();
   const router = useRouter();
 
@@ -147,17 +147,33 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete }) {
         },
       }}
     >
-      <Chip
-        label={formatText(campaign?.status)}
-        color="primary"
-        size="small"
-        sx={{
-          position: 'absolute',
-          top: 15,
-          left: 15,
-          zIndex: 11,
-        }}
-      />
+      {status && (
+        <Chip
+          label={formatText(campaign?.status)}
+          color="primary"
+          size="small"
+          sx={{
+            position: 'absolute',
+            top: 15,
+            left: 15,
+            zIndex: 11,
+          }}
+        />
+      )}
+
+      {pitchStatus && (
+        <Chip
+          label={formatText(pitchStatus !== 'approved' && 'In review')}
+          color="primary"
+          size="small"
+          sx={{
+            position: 'absolute',
+            bottom: 15,
+            right: 15,
+            zIndex: 11,
+          }}
+        />
+      )}
 
       {/* <Tooltip
         title={
@@ -212,4 +228,6 @@ CampaignItem.propTypes = {
   onEdit: PropTypes.func,
   onView: PropTypes.func,
   campaign: PropTypes.object,
+  status: PropTypes.bool,
+  pitchStatus: PropTypes.string,
 };
