@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
@@ -11,6 +12,8 @@ import {
   DialogContent,
   DialogContentText,
 } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
@@ -27,9 +30,23 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
     },
   });
 
-  const { watch } = methods;
+  const { watch, handleSubmit } = methods;
 
   const audienceLocation = watch('audienceLocation');
+
+  const onSubmit = handleSubmit(async (data) => {
+    try {
+      const res = await axiosInstance.patch(endpoints.campaign.editCampaignRequirements, {
+        ...data,
+        id: campaign?.id,
+      });
+      enqueueSnackbar(res?.data.message);
+    } catch (error) {
+      enqueueSnackbar('Failed to update requirements', {
+        variant: 'error',
+      });
+    }
+  });
 
   const closeDialog = () => onClose('campaignRequirements');
 
@@ -41,20 +58,23 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle id="alert-dialog-title">Edit Requirements</DialogTitle>
-      <DialogContent>
-        <DialogContentText id="alert-dialog-description" p={1.5}>
-          <FormProvider methods={methods}>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
-                  md: 'repeat(2, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
+      <FormProvider
+        methods={methods}
+        onSubmit={onSubmit}
+      >
+        <DialogTitle id="alert-dialog-title">
+          Edit Requirements
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description" p={1.5}>
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                md: 'repeat(2, 1fr)',
+              },
+              gap: 2,
+            }}>
               <RHFMultiSelect
                 name="audienceGender"
                 checkbox
@@ -94,7 +114,6 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                   { value: 'Others', label: 'Others' },
                 ]}
               />
-
               {audienceLocation === 'Others' && (
                 <TextField
                   name="audienceLocation"
@@ -142,23 +161,25 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
               <RHFTextField
                 name="audienceUserPersona"
                 label="User Persona"
-                placeholder=" let us know who you want your campaign to reach!"
+                placeholder="let us know who you want your campaign to reach!"
               />
             </Box>
-          </FormProvider>
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={closeDialog}>Cancel</Button>
-        <Button
-          type="submit"
-          onClick={closeDialog}
-          autoFocus
-          color="primary"
-        >
-          Save
-        </Button>
-      </DialogActions>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            onClick={closeDialog}
+            autoFocus
+            color="primary"
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </FormProvider>
     </Dialog>
   );
 };

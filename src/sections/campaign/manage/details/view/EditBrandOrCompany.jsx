@@ -69,15 +69,13 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
             id="alert-dialog-description"
             p={1.5}
           >
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+              },
+              gap: 2,
+            }}>
               <RHFAutocomplete
                 fullWidth
                 name="campaignBrand"

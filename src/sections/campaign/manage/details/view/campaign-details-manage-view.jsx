@@ -349,7 +349,7 @@ const CampaignDetailManageView = ({ id }) => {
           </List>
         </Stack>
         <Stack mt={2}>
-          <Typography variant="subtitle1">Donts</Typography>
+          <Typography variant="subtitle1">Don&apos;ts</Typography>
           <List>
             {campaign?.campaignBrief?.campaigns_dont.map((elem) => (
               <ListItem>

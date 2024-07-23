@@ -83,26 +83,26 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
             id="alert-dialog-description"
             p={1.5}
           >
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
-                  md: 'repeat(2, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                md: 'repeat(2, 1fr)',
+              },
+              gap: 2,
+            }}>
               <RHFTextField
                 name="name"
                 label="Campaign Name"
                 fullWidth
               />
+
               <RHFTextField
                 name="description"
                 label="Campaign Description"
                 multiline
               />
+
               <RHFAutocomplete
                 name="campaignInterests"
                 placeholder="+ Interests"
@@ -129,6 +129,7 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
                   ))
                 }
               />
+
               <RHFAutocomplete
                 name="campaignIndustries"
                 placeholder="+ Industries"
