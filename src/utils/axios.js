@@ -135,6 +135,7 @@ export const endpoints = {
     },
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
+    editCampaignInfo: '/api/campaign/editCampaignInfo',
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',
     updateCampaignTimeline: (id) => `/api/campaign/updateCampaignTimeline/${id}`,
     creator: {

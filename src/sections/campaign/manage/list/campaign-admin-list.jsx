@@ -36,7 +36,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
             }}
           >
             <img
-              src="/public/test.jpeg"
+              src="/test.jpeg"
               alt="test"
               width="100%"
               height="100%"
