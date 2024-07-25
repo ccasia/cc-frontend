@@ -17,7 +17,6 @@ import {
 
 import { useRouter } from 'src/routes/hooks';
 
-import useGetFirstDraft from 'src/hooks/use-get-first-draft';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
 import { countries } from 'src/assets/data';
@@ -28,7 +27,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const [currentTab, setCurrentTab] = useState('overview');
-  const { firstDraft } = useGetFirstDraft(id, campaignId);
+  // const { data: firstDraft } = useGetFirstDraft(id, campaignId);
   // const theme = useTheme();
   const router = useRouter();
 
@@ -161,7 +160,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     </Box>
   );
 
-  const renderDraft = <>{firstDraft.length < 1 && <Typography>No draft</Typography>}</>;
+  // const renderDraft = <>{firstDraft.length < 1 && <Typography>No draft</Typography>}</>;
 
   return (
     <Container>
@@ -184,7 +183,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
       </Box>
       {renderTabs}
       {currentTab === 'overview' && renderOverview}
-      {currentTab === 'draft' && renderDraft}
+      {/* {currentTab === 'draft' && renderDraft} */}
     </Container>
   );
 };

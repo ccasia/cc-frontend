@@ -6,26 +6,28 @@ import {
   Box,
   List,
   Stack,
+  Paper,
+  Table,
+  Button,
   Divider,
   ListItem,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableBody,
   Typography,
   ListItemIcon,
   ListItemText,
+  TableContainer,
 } from '@mui/material';
-import {
-  Timeline,
-  TimelineDot,
-  TimelineItem,
-  TimelineContent,
-  TimelineConnector,
-  TimelineSeparator,
-  TimelineOppositeContent,
-} from '@mui/lab';
+
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
 const CampaignDetailContent = ({ campaign }) => {
+  const pdf = useBoolean();
   const renderGallery = (
     <Box
       display="grid"
@@ -154,22 +156,9 @@ const CampaignDetailContent = ({ campaign }) => {
         }}
       />
 
-      <Stack direction="column">
+      <Stack gap={1.5}>
         <Typography variant="h5">Objectives</Typography>
-        <List>
-          <ListItem>
-            <ListItemIcon>
-              <Iconify icon="octicon:dot-16" />
-            </ListItemIcon>
-            <ListItemText primary="Single-line item" />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon>
-              <Iconify icon="octicon:dot-16" />
-            </ListItemIcon>
-            <ListItemText primary="Single-line item" />
-          </ListItem>
-        </List>
+        <Typography variant="subtitle2">{campaign?.campaignBrief.objectives}</Typography>
       </Stack>
 
       <Divider
@@ -214,6 +203,37 @@ const CampaignDetailContent = ({ campaign }) => {
 
       <Stack>
         <Typography variant="h5">Campaign timeline</Typography>
+        <TableContainer component={Paper} sx={{ mt: 3 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Timeline Name</TableCell>
+                <TableCell>Start Date</TableCell>
+                <TableCell>End Date</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <TableRow>
+                <TableCell>Campaign Start Date</TableCell>
+                <TableCell>{dayjs(campaign?.campaignBrief?.startDate).format('ddd LL')}</TableCell>
+                <TableCell>-</TableCell>
+              </TableRow>
+              {campaign &&
+                campaign?.CampaignTimeline.map((timeline) => (
+                  <TableRow>
+                    <TableCell>{timeline?.name}</TableCell>
+                    <TableCell>{dayjs(timeline.startDate).format('ddd LL')}</TableCell>
+                    <TableCell>{dayjs(timeline.endDate).format('ddd LL')}</TableCell>
+                  </TableRow>
+                ))}
+              <TableRow>
+                <TableCell>Campaign End Date</TableCell>
+                <TableCell>-</TableCell>
+                <TableCell>{dayjs(campaign?.campaignBrief?.endDate).format('ddd LL')}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TableContainer>
         {/* <Timeline position="alternate">
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
@@ -374,7 +394,7 @@ const CampaignDetailContent = ({ campaign }) => {
             <TimelineContent>Posting</TimelineContent>
           </TimelineItem>
         </Timeline> */}
-        <Timeline>
+        {/* <Timeline>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
               <Typography variant="caption">
@@ -394,7 +414,7 @@ const CampaignDetailContent = ({ campaign }) => {
               <TimelineItem>
                 <TimelineOppositeContent color="text.secondary">
                   <Typography variant="caption">
-                    {/* {dayjs(timeline.startDate).format('ddd LL')} -{' '} */}
+                    {dayjs(timeline.startDate).format('ddd LL')} -{' '}
                     {dayjs(timeline.endDate).format('ddd LL')}
                   </Typography>
                 </TimelineOppositeContent>
@@ -415,13 +435,13 @@ const CampaignDetailContent = ({ campaign }) => {
             </TimelineOppositeContent>
             <TimelineSeparator>
               <TimelineDot />
-              {/* <TimelineConnector /> */}
+              <TimelineConnector />
             </TimelineSeparator>
             <TimelineContent>
               <Typography variant="subtitle2">Campaign End Date</Typography>
             </TimelineContent>
           </TimelineItem>
-        </Timeline>
+        </Timeline> */}
       </Stack>
     </Stack>
   );
@@ -432,6 +452,31 @@ const CampaignDetailContent = ({ campaign }) => {
 
       <Stack maxWidth={720} mx="auto" spacing={2}>
         {renderInformation}
+
+        <Divider
+          sx={{
+            borderStyle: 'dashed',
+            my: 2,
+          }}
+        />
+
+        <Stack gap={1.5}>
+          <Typography variant="h5">Agreement Form</Typography>
+          <Button variant="contained" onClick={pdf.onToggle}>
+            {pdf.value ? 'Collapse' : 'View'}
+          </Button>
+          {pdf.value && (
+            <iframe
+              src="https://storage.googleapis.com/app-test-cult-cretive/agreementForm/github-NxTech4021-receipt-2024-07-20.pdf"
+              style={{
+                borderRadius: 10,
+                width: '100%',
+                height: 900,
+              }}
+              title="PDF Viewer"
+            />
+          )}
+        </Stack>
       </Stack>
     </>
   );

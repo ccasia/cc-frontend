@@ -20,6 +20,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
 
   const { user } = useAuthContext();
   const popover = usePopover();
+  console.log(campaign?.campaignBrief.images[0]);
 
   return (
     <>
@@ -36,7 +37,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
             }}
           >
             <img
-              src="/test.jpeg"
+              src={campaign?.campaignBrief?.images[0]}
               alt="test"
               width="100%"
               height="100%"

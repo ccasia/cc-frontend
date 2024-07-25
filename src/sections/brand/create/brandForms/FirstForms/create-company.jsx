@@ -5,6 +5,7 @@ import React, { useState, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Step,
@@ -34,6 +35,7 @@ const COMPANY_STEPS = ['Company Information', 'Company objectives'];
 const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
   const [image, setImage] = useState(null);
   const [activeStep, setActiveStep] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const companySchema = Yup.object().shape({
     companyName: Yup.string().required('Name is required'),
@@ -98,6 +100,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     formData.append('companyLogo', data.image);
 
     try {
+      setLoading(true);
       const res = await axiosInstance.post(endpoints.company.create, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -115,6 +118,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
       });
       // console.log(error);
     } finally {
+      setLoading(false);
       setOpenCreate(false);
     }
   });
@@ -236,9 +240,9 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
               Back
             </Button>
             {activeStep === COMPANY_STEPS.length - 1 ? (
-              <Button color="primary" onClick={onSubmit}>
+              <LoadingButton loading={loading} color="primary" onClick={onSubmit}>
                 Create
-              </Button>
+              </LoadingButton>
             ) : (
               <Button onClick={() => setActiveStep(activeStep + 1)}>Next</Button>
             )}

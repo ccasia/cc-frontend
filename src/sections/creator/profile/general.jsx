@@ -66,6 +66,7 @@ export default function AccountGeneral() {
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
+    console.log(data);
     const formData = new FormData();
 
     const newObj = { ...data, id: user?.id };

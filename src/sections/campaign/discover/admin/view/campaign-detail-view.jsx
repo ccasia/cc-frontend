@@ -36,6 +36,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 import CampaignOverview from '../campaign-overview';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignDetailContent from '../campaign-detail-content';
+import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 
@@ -389,9 +390,7 @@ const CampaignDetailView = ({ id }) => {
           Manage
         </Button>
       </Stack> */}
-
       {renderTabs}
-
       {currentTab === 'overview' && <CampaignOverview campaign={currentCampaign} />}
       {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
       {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
@@ -408,7 +407,7 @@ const CampaignDetailView = ({ id }) => {
           shortlisted={currentCampaign?.ShortListedCreator}
         />
       )}
-      {/* {renderReminder} */}
+      {currentTab === 'submission' && <CampaignDraftSubmissions campaign={currentCampaign} />}
     </Container>
   );
 };

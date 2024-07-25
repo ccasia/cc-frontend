@@ -7,6 +7,7 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { _tours } from 'src/_mock';
 
+import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
 import CampaignLists from '../campaign-list';
@@ -69,26 +70,7 @@ export default function CampaignListView() {
       {campaigns && campaigns?.length > 0 ? (
         <CampaignLists campaigns={campaigns} />
       ) : (
-        <Box
-          sx={{
-            height: 300,
-            borderRadius: 2,
-            bgcolor: (theme) => theme.palette.background.paper,
-            position: 'relative',
-          }}
-        >
-          <Typography
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              color: (theme) => theme.palette.text.disabled,
-            }}
-          >
-            No campaign available.
-          </Typography>
-        </Box>
+        <EmptyContent title="No campaign available" />
       )}
     </Container>
   );

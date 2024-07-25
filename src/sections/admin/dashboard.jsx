@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-import io from 'socket.io-client';
 import React, { lazy } from 'react';
 
 import { Box, Grid, alpha, Container } from '@mui/material';
@@ -14,11 +13,12 @@ const DashboardAdmin = () => {
   const settings = useSettingsContext();
 
   const { user } = useAuthContext();
-  const socket = io();
+  // const { socket } = useSocketContext();
 
-  const onChange = (e) => {
-    socket.emit('chat', e.target.value);
-  };
+  // const onChange = (e) => {
+  //   console.log(e.target.value);
+  //   socket.emit('chat', e.target.value);
+  // };
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -50,6 +50,7 @@ const DashboardAdmin = () => {
               }}
             />
           </Grid>
+          {/* <TextField placeholder="Type anything" onChange={onChange} /> */}
         </Grid>
       )}
     </Container>
