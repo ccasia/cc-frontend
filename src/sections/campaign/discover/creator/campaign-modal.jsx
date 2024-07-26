@@ -47,7 +47,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, existingCampaign
         sx={{ borderRadius: 2, cursor: 'pointer' }}
       />
       <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
-        {campaign?.campaignBrief?.images.map((elem, index) => (
+        {campaign?.campaignBrief?.images?.map((elem, index) => (
           <Image
             key={index}
             src={elem}

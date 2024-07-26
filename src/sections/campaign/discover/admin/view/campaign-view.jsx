@@ -36,6 +36,7 @@ const defaultFilters = {
 const CampaignView = () => {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns();
+  console.log(campaigns);
   const router = useRouter();
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -50,7 +51,7 @@ const CampaignView = () => {
   const openFilters = useBoolean();
 
   const dataFiltered = applyFilter({
-    inputData: campaigns && campaigns.filter((campaign) => campaign?.status === 'active'),
+    inputData: campaigns && campaigns.filter((campaign) => campaign?.status === 'ACTIVE'),
     filters,
   });
 

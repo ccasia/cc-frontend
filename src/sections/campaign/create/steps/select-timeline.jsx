@@ -26,7 +26,7 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
 
   const [dateError, setDateError] = useState(false);
   // const { timelineType } = useGetTimelineType();
-  const { data } = timelineType;
+  // const { data } = timelineType;
   const { fields, insert, remove } = timelineMethods;
 
   const startDate = watch('campaignStartDate');
@@ -43,37 +43,25 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
   useEffect(() => {
     // Sorted based on dependencies
     const sortedTimeline = topologicalSort(defaultTimelines);
-
-    // setValue(
-    //   'timeline',
-    //   sortedTimeline.map((elem) => ({
-    //     timeline_type: { name: elem?.timelineType?.name, id: elem?.timelineType?.id },
-    //     id: elem?.id,
-    //     duration: elem.duration,
-    //     for: elem?.for,
-    //     dependsOn:
-    //       elem.dependsOn.length < 1
-    //         ? 'startDate'
-    //         : elem?.dependsOn[0]?.dependsOnTimeline?.timelineTypeDefaultId || '',
-    //     startDate: '',
-    //     endDate: '',
-    //   }))
-    // );
-    setValue(
-      'timeline',
-      sortedTimeline.map((elem) => ({
-        timeline_type: { name: elem?.timelineType?.name },
-        id: elem?.id,
-        duration: elem.duration,
-        for: elem?.for,
-        dependsOn:
-          elem.dependsOn.length < 1
-            ? 'Campaign Start Date'
-            : elem?.dependsOn[0]?.dependsOnTimeline?.timelineType?.name || '',
-        startDate: '',
-        endDate: '',
-      }))
-    );
+    if (sortedTimeline.length) {
+      setValue(
+        'timeline',
+        sortedTimeline.map((elem) => ({
+          timeline_type: { name: elem?.timelineType?.name },
+          id: elem?.id,
+          duration: elem.duration,
+          for: elem?.for,
+          dependsOn:
+            elem.dependsOn.length < 1
+              ? 'Campaign Start Date'
+              : elem?.dependsOn[0]?.dependsOnTimeline?.timelineType?.name || '',
+          startDate: '',
+          endDate: '',
+        }))
+      );
+    } else {
+      setValue('timeline[0].dependsOn', 'Campaign Start Date');
+    }
   }, [setValue, defaultTimelines]);
 
   const timelines = watch('timeline');
@@ -493,18 +481,6 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
     updateTimelineDates();
   };
 
-  // const handleChange = (val, index) => {
-  //   setValue(`timeline[${index}].timeline_type`, val);
-
-  //   if (index === 0) {
-  //     setValue(`timeline[0].dependsOn`, 'startDate');
-  //   }
-
-  //   if (index < fields.length - 1) {
-  //     setValue(`timeline[${index + 1}].dependsOn`, val.id);
-  //   }
-  // };
-
   const handleRemove = (index, item) => {
     if (index < fields.length - 1) {
       setValue(`timeline[${index + 1}]`, {
@@ -518,23 +494,33 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
   };
 
   const handleAdd = (index) => {
-    const existingIds = timelines.length && timelines.map((elem) => elem.timeline_type?.id);
-    const options = data && data.filter((a) => !existingIds?.includes(a?.id));
-    if (options.length > 0) {
-      insert(index + 1, {
-        timeline_type: { id: '', name: '' },
-        dependsOn: timelines[index]?.timeline_type?.name,
-        duration: null,
-        for: '',
-      });
-    } else {
-      insert(index + 1, {
-        timeline_type: { id: '1', name: 'dawdsadsdasd' },
-        dependsOn: timelines[index]?.timeline_type?.id,
-        duration: null,
-        for: '',
-      });
-    }
+    insert(index + 1, {
+      timeline_type: { id: '1', name: '' },
+      dependsOn: timelines[index]?.timeline_type?.name || '',
+      duration: null,
+      for: '',
+    });
+    // if (timelines.length) {
+    //   const existingIds = timelines.length && timelines.map((elem) => elem.timeline_type?.id);
+    //   const options = data && data.filter((a) => !existingIds?.includes(a?.id));
+    //   if (options.length > 0) {
+    //     insert(index + 1, {
+    //       timeline_type: { id: '', name: '' },
+    //       dependsOn: timelines[index]?.timeline_type?.name,
+    //       duration: null,
+    //       for: '',
+    //     });
+    //   } else {
+    //     insert(index + 1, {
+    //       timeline_type: { id: '1', name: 'dawdsadsdasd' },
+    //       dependsOn: timelines[index]?.timeline_type?.id,
+    //       duration: null,
+    //       for: '',
+    //     });
+    //   }
+    // } else {
+    //   console.log('asdas');
+    // }
   };
 
   const handleChange = (e, index) => {
@@ -687,38 +673,9 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
                 label="Timeline Type"
                 placeholder="Eg: Open For Pitch"
               />
-              {/* <RHFAutocomplete
-                  name={`timeline[${index}].timeline_type`}
-                  fullWidth
-                  options={options}
-                  onChange={(e, val) => handleChange(val, index)}
-                  getOptionLabel={(option) => option.name}
-                  label="Timeline Type"
-                  renderOption={(props, option) => {
-                    const { key, ...optionProps } = props;
-                    return (
-                      <MenuItem key={key} {...optionProps}>
-                        {option.name}
-                      </MenuItem>
-                    );
-                  }}
-                  sx={{
-                    '& .MuiInputBase-root': {
-                      cursor: 'not-allowed', // Change cursor to indicate disabled state
-                    },
-                  }}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                /> */}
+
               <RHFTextField disabled name={`timeline[${index}].dependsOn`} />
-              {/* <RHFSelect disabled name={`timeline[${index}].dependsOn`} label="Depends On">
-                  {!isLoading &&
-                    data.map((elem) => (
-                      <MenuItem key={elem?.id} value={elem?.id}>
-                        {elem?.name}
-                      </MenuItem>
-                    ))}
-                  <MenuItem value="startDate">Campaign Start Date</MenuItem>
-                </RHFSelect> */}
+
               <RHFSelect name={`timeline[${index}].for`} label="For">
                 <MenuItem value="admin">Admin</MenuItem>
                 <MenuItem value="creator">Creator</MenuItem>
@@ -733,12 +690,7 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
                 }}
                 onChange={(e) => handleDurationChange(index, e.target.value)}
               />
-              {/* <RHFTextField
-                  name={`timeline[${index}].startDate`}
-                  label="Start Date"
-                  // value={item.startDate}
-                  disabled
-                /> */}
+
               <RHFTextField name={`timeline[${index}].endDate`} label="End Date" disabled />
               <IconButton color="error" onClick={() => handleRemove(index, item)}>
                 <Iconify icon="uil:trash" />

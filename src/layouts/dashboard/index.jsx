@@ -1,7 +1,6 @@
 import { mutate } from 'swr';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { io } from 'socket.io-client';
-import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 
@@ -9,6 +8,9 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import { useSettingsContext } from 'src/components/settings';
 
@@ -22,18 +24,14 @@ import NavHorizontal from './nav-horizontal';
 
 export default function DashboardLayout({ children }) {
   const settings = useSettingsContext();
-  const [isOnline, setIsOnline] = useState(false);
+
+  const { user } = useAuthContext();
+  const { socket, isOnline } = useSocketContext();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const socket = io();
-    socket.on('connect', () => {
-      console.log(`Connected to the server`);
-      setIsOnline(true);
-    });
-
-    socket.on('notification', (data) =>
+    socket?.on('notification', (data) =>
       mutate(endpoints.notification.root, (currentData) => ({
         ...currentData,
         data,
@@ -41,12 +39,9 @@ export default function DashboardLayout({ children }) {
     );
 
     return () => {
-      socket.close();
-      socket.off('notification');
-      socket.off('campaignChange');
-      setIsOnline(false);
+      socket?.off('notification');
     };
-  }, []);
+  }, [user, socket]);
 
   const lgUp = useResponsive('up', 'lg');
 

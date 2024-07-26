@@ -10,6 +10,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Step from '@mui/material/Step';
 import Paper from '@mui/material/Paper';
+import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
@@ -50,6 +51,7 @@ function CompanyBrandBasic() {
   const [activeStep, setActiveStep] = useState(0);
   const { companies, getCompany } = useGetCompany();
   const [openCreate, setOpenCreate] = useState();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     getCompany();
@@ -117,12 +119,15 @@ function CompanyBrandBasic() {
     };
 
     try {
+      setLoading(true);
       await axiosInstance.post(endpoints.company.createBrand, updatedData);
       enqueueSnackbar('Brand created !! 😀 ', { variant: 'success' });
-      setActiveStep((prevActiveStep) => prevActiveStep - 2);
+      setActiveStep((prevActiveStep) => prevActiveStep - 1);
       reset();
     } catch (error) {
       enqueueSnackbar('Failed to create brand', { variant: 'error' });
+    } finally {
+      setLoading(false);
     }
   });
 
@@ -452,9 +457,9 @@ function CompanyBrandBasic() {
             </Button>
             <Box sx={{ flexGrow: 1 }} />
             {activeStep === steps.length - 1 ? (
-              <Button variant="contained" onClick={onSubmit}>
+              <LoadingButton loading={loading} variant="contained" onClick={onSubmit}>
                 Submit
-              </Button>
+              </LoadingButton>
             ) : (
               <Button variant="contained" onClick={handleNext}>
                 Next

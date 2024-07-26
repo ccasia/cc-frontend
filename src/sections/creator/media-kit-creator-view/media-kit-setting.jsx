@@ -59,6 +59,7 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
         ...data,
         creatorId: user?.creator?.id,
       });
+
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
       });

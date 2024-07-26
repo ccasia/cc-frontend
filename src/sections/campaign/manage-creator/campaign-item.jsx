@@ -3,9 +3,10 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 // import { Link } from 'react-router-dom';
 
-import { Box, Card, Chip, Link, Stack, Typography, ListItemText } from '@mui/material';
+import { Box, Card, Link, Stack, Typography, ListItemText } from '@mui/material';
 
 import Image from 'src/components/image';
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const CampaignItem = ({ campaign, onClick }) => {
@@ -80,7 +81,9 @@ const CampaignItem = ({ campaign, onClick }) => {
       {[
         {
           label: campaign?.campaignBrief?.industries.map((e, index) => (
-            <Chip key={index} label={e} variant="filled" size="small" color="primary" />
+            <Label key={index} variant="filled" size="small" color="primary">
+              {e}
+            </Label>
           )),
           icon: <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />,
         },

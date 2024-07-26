@@ -40,19 +40,27 @@ const CampaignDetailCreator = ({ campaign }) => {
         onChange={(e) => setQuery(e.target.value)}
       />
       {campaign?.ShortListedCreator.length > 0 ? (
-        <Box
-          display="grid"
-          gridTemplateColumns={{ xs: 'repear(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }}
-          gap={2}
-        >
-          {filteredData.map((elem, index) => (
-            <UserCard key={elem.id} creator={elem?.creator} campaignId={campaign?.id} />
-          ))}
-        </Box>
+        <>
+          <Box
+            display="grid"
+            gridTemplateColumns={{
+              xs: 'repear(1, 1fr)',
+              sm: 'repeat(2, 1fr)',
+              md: 'repeat(3, 1fr)',
+            }}
+            gap={2}
+          >
+            {filteredData.map((elem, index) => (
+              <UserCard key={elem.id} creator={elem?.creator} campaignId={campaign?.id} />
+            ))}
+          </Box>
+          {filteredData?.length < 1 && (
+            <EmptyContent title={`No Creator with name ${query} Found`} />
+          )}
+        </>
       ) : (
-        <EmptyContent title="No Creator Found" filled />
+        <EmptyContent title="No Shortlisted Creator." />
       )}
-      {filteredData?.length < 1 && <EmptyContent title={`No Creator with name ${query} Found`} />}
     </Stack>
   );
 };

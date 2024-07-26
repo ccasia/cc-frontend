@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -16,7 +17,16 @@ import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Menu, Grid, Stack, Divider, Tooltip, IconButton, ListItemText } from '@mui/material';
+import {
+  Menu,
+  Grid,
+  Stack,
+  Avatar,
+  Divider,
+  Tooltip,
+  IconButton,
+  ListItemText,
+} from '@mui/material';
 
 import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
@@ -28,7 +38,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider, {
   RHFUpload,
@@ -222,6 +231,7 @@ function CreateCampaignForm() {
     control,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = methods;
 
@@ -249,16 +259,6 @@ function CreateCampaignForm() {
     name: 'timeline',
     control,
   });
-
-  // const {
-  //   append: timelineAppend,
-  //   fields: timelineFields,
-  //   remove: timelineRemove,
-  //   insert,
-  // } = useFieldArray({
-  //   name: 'timeline',
-  //   control,
-  // });
 
   const audienceGeoLocation = watch('audienceLocation');
 
@@ -342,6 +342,7 @@ function CreateCampaignForm() {
     const combinedData = { ...data, ...{ campaignStage: stage } };
 
     formData.append('data', JSON.stringify(combinedData));
+    formData.append('agreementForm', data.agreementFrom);
 
     // eslint-disable-next-line guard-for-in, no-restricted-syntax
     for (const i in data.campaignImages) {
@@ -360,6 +361,8 @@ function CreateCampaignForm() {
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
       });
+      reset();
+      setActiveStep(0);
     } catch (error) {
       enqueueSnackbar('Error creating campaign. Contact our admin', {
         variant: 'error',
@@ -399,15 +402,7 @@ function CreateCampaignForm() {
           getOptionLabel={(option) => option.name}
           renderOption={(props, option) => (
             <Stack direction="row" spacing={1} p={1} {...props}>
-              <Image
-                loading="lazy"
-                width={30}
-                src={option?.logo}
-                alt="asda"
-                sx={{
-                  borderRadius: 5,
-                }}
-              />
+              <Avatar src={option?.logo} />
               <ListItemText primary={option.name} />
             </Stack>
           )}
@@ -458,10 +453,10 @@ function CreateCampaignForm() {
       </Box>
 
       <RHFSelect name="campaignObjectives" label="Campaign Objectives">
-        <MenuItem value="newProduct">I&apos;m launching a new product</MenuItem>
-        <MenuItem value="newService">I&apos;m launching a new service</MenuItem>
-        <MenuItem value="brandAwareness">I want to drive brand awareness</MenuItem>
-        <MenuItem value="productAwareness">Want to drive product awareness</MenuItem>
+        <MenuItem value="I'm launching a new product">I&apos;m launching a new product</MenuItem>
+        <MenuItem value="I'm launching a new service">I&apos;m launching a new service</MenuItem>
+        <MenuItem value="I want to drive brand awareness">I want to drive brand awareness</MenuItem>
+        <MenuItem value="Want to drive product awareness">Want to drive product awareness</MenuItem>
       </RHFSelect>
 
       {/* <RHFDatePicker name="campaignStartDate" label="Start Date" />
@@ -849,6 +844,8 @@ function CreateCampaignForm() {
     }
   }
 
+  const startDate = getValues('campaignStartDate');
+
   return (
     <Box
       sx={{
@@ -1017,7 +1014,7 @@ function CreateCampaignForm() {
                     </LoadingButton>
                     <LoadingButton
                       variant="outlined"
-                      onClick={() => onSubmit('draft')}
+                      onClick={() => onSubmit('DRAFT')}
                       startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
                       loading={isLoading}
                     >
@@ -1026,11 +1023,11 @@ function CreateCampaignForm() {
                     <LoadingButton
                       variant="contained"
                       color="primary"
-                      onClick={() => onSubmit('publish')}
+                      onClick={() => onSubmit('SCHEDULED')}
                       startIcon={<Iconify icon="material-symbols:publish" width={16} />}
                       loading={isLoading}
                     >
-                      Publish
+                      Schedule on {dayjs(startDate).format('ddd LL')}
                     </LoadingButton>
                   </Stack>
                 ) : (

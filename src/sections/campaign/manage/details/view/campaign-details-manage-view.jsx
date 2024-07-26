@@ -676,7 +676,7 @@ const CampaignDetailManageView = ({ id }) => {
                 End Campaign
               </LoadingButton>
             )}
-            {campaign && campaign?.status === 'paused' ? (
+            {campaign && campaign?.status === 'paused' && (
               <LoadingButton
                 variant="contained"
                 color="primary"
@@ -687,7 +687,8 @@ const CampaignDetailManageView = ({ id }) => {
               >
                 Publish
               </LoadingButton>
-            ) : (
+            )}
+            {campaign && campaign?.status === 'active' && (
               <LoadingButton
                 variant="contained"
                 color="warning"

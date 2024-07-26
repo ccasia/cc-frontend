@@ -1,8 +1,7 @@
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import Chip from '@mui/material/Chip';
-import { Box, Menu, Stack, alpha, Button, MenuItem, Container, Typography } from '@mui/material';
+import { Box, Stack, Button, Container, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -10,6 +9,7 @@ import { RouterLink } from 'src/routes/components';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -24,17 +24,29 @@ const CampaignListView = () => {
   const router = useRouter();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  // const [anchorEl, setAnchorEl] = React.useState(null);
   const [filter, setFilter] = useState('');
-  const open = Boolean(anchorEl);
+  // const open = Boolean(anchorEl);
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+  const filtered = useMemo(
+    () => ({
+      all: campaigns?.length,
+      active: campaigns?.filter((item) => item.status === 'ACTIVE').length,
+      draft: campaigns?.filter((item) => item.status === 'DRAFT').length,
+      completed: campaigns?.filter((item) => item.status === 'COMPLETED').length,
+      paused: campaigns?.filter((item) => item.status === 'PAUSED').length,
+      scheduled: campaigns?.filter((item) => item.status === 'SCHEDULED').length,
+    }),
+    [campaigns]
+  );
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  // const handleClick = (event) => {
+  //   setAnchorEl(event.currentTarget);
+  // };
+
+  // const handleClose = () => {
+  //   setAnchorEl(null);
+  // };
 
   const onView = useCallback(
     (id) => {
@@ -72,81 +84,81 @@ const CampaignListView = () => {
     getAllCampaigns();
   }, []);
 
-  const filteredData = !filter ? campaigns : campaigns.filter((elem) => elem?.stage === filter);
+  const filteredData = !filter ? campaigns : campaigns.filter((elem) => elem?.status === filter);
 
-  const renderFilter = (
-    <>
-      <Button
-        id="basic-button"
-        aria-controls={open ? 'basic-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        onClick={handleClick}
-        startIcon={
-          <Iconify
-            icon="ep:arrow-down-bold"
-            width={12}
-            sx={{
-              ml: 1,
-            }}
-          />
-        }
-      >
-        Filter
-      </Button>
+  // const renderFilter = (
+  //   <>
+  //     <Button
+  //       id="basic-button"
+  //       aria-controls={open ? 'basic-menu' : undefined}
+  //       aria-haspopup="true"
+  //       aria-expanded={open ? 'true' : undefined}
+  //       onClick={handleClick}
+  //       startIcon={
+  //         <Iconify
+  //           icon="ep:arrow-down-bold"
+  //           width={12}
+  //           sx={{
+  //             ml: 1,
+  //           }}
+  //         />
+  //       }
+  //     >
+  //       Filter
+  //     </Button>
 
-      <Menu
-        id="basic-menu"
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        MenuListProps={{
-          'aria-labelledby': 'basic-button',
-        }}
-        onChange={(e, val) => console.log(val)}
-      >
-        <MenuItem
-          onClick={() => {
-            setFilter('publish');
-            handleClose();
-          }}
-        >
-          Publish
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setFilter('draft');
-            handleClose();
-          }}
-        >
-          Draft
-        </MenuItem>
-      </Menu>
-    </>
-  );
+  //     <Menu
+  //       id="basic-menu"
+  //       anchorEl={anchorEl}
+  //       open={open}
+  //       onClose={handleClose}
+  //       MenuListProps={{
+  //         'aria-labelledby': 'basic-button',
+  //       }}
+  //       onChange={(e, val) => console.log(val)}
+  //     >
+  //       <MenuItem
+  //         onClick={() => {
+  //           setFilter('publish');
+  //           handleClose();
+  //         }}
+  //       >
+  //         Publish
+  //       </MenuItem>
+  //       <MenuItem
+  //         onClick={() => {
+  //           setFilter('draft');
+  //           handleClose();
+  //         }}
+  //       >
+  //         Draft
+  //       </MenuItem>
+  //     </Menu>
+  //   </>
+  // );
 
-  const renderResultFilter = filter && (
-    <Box
-      sx={{
-        border: (theme) => `solid 1px ${alpha(theme.palette.grey[500], 0.16)}`,
-        borderStyle: 'dashed',
-        borderRadius: 1,
-        p: 1,
-      }}
-    >
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <Typography variant="body2">Stage: </Typography>
+  // const renderResultFilter = filter && (
+  //   <Box
+  //     sx={{
+  //       border: (theme) => `solid 1px ${alpha(theme.palette.grey[500], 0.16)}`,
+  //       borderStyle: 'dashed',
+  //       borderRadius: 1,
+  //       p: 1,
+  //     }}
+  //   >
+  //     <Stack direction="row" alignItems="center" spacing={1}>
+  //       <Typography variant="body2">Stage: </Typography>
 
-        <Chip
-          size="small"
-          label={filter}
-          onDelete={() => {
-            setFilter();
-          }}
-        />
-      </Stack>
-    </Box>
-  );
+  //       <Chip
+  //         size="small"
+  //         label={filter}
+  //         onDelete={() => {
+  //           setFilter();
+  //         }}
+  //       />
+  //     </Stack>
+  //   </Box>
+  // );
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -177,12 +189,87 @@ const CampaignListView = () => {
 
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <CampaignSearch campaigns={campaigns} />
-        {renderFilter}
+        {/* {renderFilter} */}
       </Stack>
 
-      <Box display="inline-flex" mt={1}>
+      <Stack direction="row" alignItems="center" gap={1} mt={2}>
+        <Button
+          size="medium"
+          variant={filter ? 'outlined' : 'contained'}
+          onClick={() => setFilter('')}
+          endIcon={
+            <Label>
+              <Typography variant="caption">{filtered?.all}</Typography>
+            </Label>
+          }
+        >
+          All
+        </Button>
+        <Button
+          size="medium"
+          variant={filter === 'ACTIVE' ? 'contained' : 'outlined'}
+          onClick={() => setFilter('ACTIVE')}
+          endIcon={
+            <Label>
+              <Typography variant="caption">{filtered?.active}</Typography>
+            </Label>
+          }
+        >
+          Active
+        </Button>
+        <Button
+          size="medium"
+          variant={filter === 'DRAFT' ? 'contained' : 'outlined'}
+          onClick={() => setFilter('DRAFT')}
+          endIcon={
+            <Label>
+              <Typography variant="caption">{filtered?.draft}</Typography>
+            </Label>
+          }
+        >
+          Draft
+        </Button>
+        <Button
+          size="medium"
+          variant={filter === 'SCHEDULED' ? 'contained' : 'outlined'}
+          onClick={() => setFilter('SCHEDULED')}
+          endIcon={
+            <Label>
+              <Typography variant="caption">{filtered?.scheduled}</Typography>
+            </Label>
+          }
+        >
+          Scheduled
+        </Button>
+        <Button
+          size="medium"
+          variant={filter === 'COMPLETED' ? 'contained' : 'outlined'}
+          onClick={() => setFilter('COMPLETED')}
+          endIcon={
+            <Label>
+              <Typography variant="caption">{filtered?.completed}</Typography>
+            </Label>
+          }
+        >
+          Completed
+        </Button>
+        <Button
+          size="medium"
+          variant={filter === 'PAUSED' ? 'contained' : 'outlined'}
+          onClick={() => setFilter('PAUSED')}
+          endIcon={
+            <Label>
+              <Typography variant="caption">{filtered?.paused}</Typography>
+            </Label>
+          }
+        >
+          Paused
+        </Button>
+      </Stack>
+
+      {/* <Box display="inline-flex" mt={1}>
         {renderResultFilter}
-      </Box>
+      </Box> */}
 
       {loading && <Iconify icon="eos-icons:bubble-loading" />}
 

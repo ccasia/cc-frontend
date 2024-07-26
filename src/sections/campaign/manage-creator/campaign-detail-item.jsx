@@ -1,18 +1,14 @@
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
-import { Box, Tab, Tabs, Stack, ListItemText } from '@mui/material';
-import {
-  Timeline,
-  TimelineDot,
-  TimelineItem,
-  TimelineContent,
-  TimelineConnector,
-  TimelineSeparator,
-} from '@mui/lab';
+import { Box, Tab, Tabs, Stack } from '@mui/material';
 
 import Image from 'src/components/image';
+
+import CampaignInfo from './campaign-info';
+import CampaignAdmin from './campaign-admin';
+import CampaignMyTasks from './campaign-myTask';
+import CampaignRequirement from './campaign-requirement';
 
 const CampaignDetailItem = ({ campaign }) => {
   const [currentTab, setCurrentTab] = useState('info');
@@ -46,11 +42,11 @@ const CampaignDetailItem = ({ campaign }) => {
 
   const renderTabs = (
     <Tabs value={currentTab} onChange={(e, val) => setCurrentTab(val)} variant="scrollable">
+      <Tab value="tasks" label="My Tasks" />
       <Tab value="info" label="Campaign Info" />
-      <Tab value="brief" label="Campaign Brief" />
+      {/* <Tab value="brief" label="Campaign Brief" /> */}
       <Tab value="admin" label="Campaign Admin" />
       <Tab value="requirement" label="Campaign Requirement" />
-      <Tab value="tasks" label="My Tasks" />
     </Tabs>
   );
 
@@ -58,26 +54,12 @@ const CampaignDetailItem = ({ campaign }) => {
     <Stack overflow="scroll" gap={2}>
       {renderGallery}
       {renderTabs}
-      {currentTab === 'tasks' && (
-        <Timeline>
-          {campaign?.campaignTimelineTask
-            .sort((a, b) => dayjs(a.endDate).diff(dayjs(b.endDate)))
-            .map((timeline) => (
-              <TimelineItem>
-                <TimelineSeparator>
-                  <TimelineDot color={timeline.status === 'NOT_STARTED' && 'error'} />
-                  <TimelineConnector />
-                </TimelineSeparator>
-                <TimelineContent>
-                  <ListItemText
-                    primary={timeline.task}
-                    secondary={dayjs(timeline.endDate).format('ddd LL')}
-                  />
-                </TimelineContent>
-              </TimelineItem>
-            ))}
-        </Timeline>
-      )}
+      <Box mt={3}>
+        {currentTab === 'tasks' && <CampaignMyTasks campaign={campaign} />}
+        {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
+        {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />}
+        {currentTab === 'requirement' && <CampaignRequirement campaign={campaign} />}
+      </Box>
     </Stack>
   );
 };

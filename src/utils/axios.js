@@ -131,7 +131,9 @@ export const endpoints = {
       getCampaign: `/api/campaign/getCampaignPitch`,
     },
     draft: {
-      firstDraft: '/api/campaign/firstDraft',
+      getAllDraftInfo: (id) => `/api/draft/getAllDraftInfo/${id}`,
+      submitFirstDraft: '/api/draft/firstDraft',
+      getFirstDraftForCreator: (id) => `/api/draft/firstDraft/${id}`,
     },
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,

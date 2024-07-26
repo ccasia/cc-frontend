@@ -28,26 +28,28 @@ const MediaKitCover = ({ user }) => {
             justifyContent: 'center',
           }}
         >
-          {user?.creator?.MediaKit?.interests.map((elem, index) => (
-            <Chip
-              key={index}
-              label={elem}
-              sx={{
-                borderRadius: 10,
-                fontWeight: 800,
-              }}
-            />
-          )) ||
-            user?.creator?.interests.map((elem, index) => (
+          {(user &&
+            user?.creator?.MediaKit?.interests.map((elem, index) => (
               <Chip
                 key={index}
-                label={elem?.name}
+                label={elem}
                 sx={{
                   borderRadius: 10,
                   fontWeight: 800,
                 }}
               />
-            ))}
+            ))) ||
+            (user &&
+              user?.creator?.interests.map((elem, index) => (
+                <Chip
+                  key={index}
+                  label={elem?.name}
+                  sx={{
+                    borderRadius: 10,
+                    fontWeight: 800,
+                  }}
+                />
+              )))}
         </Stack>
         <Stack gap={2}>
           <Typography
