@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import {
   Box,
   List,
+  Card,
   Stack,
   Divider,
   ListItem,
@@ -17,6 +18,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const CampaignInfo = ({ campaign }) => {
+  const requirement = campaign?.campaignRequirement;
   const renderOverview = (
     <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
       <Stack direction="row" spacing={1} alignItems="start">
@@ -190,9 +192,142 @@ const CampaignInfo = ({ campaign }) => {
       </Stack>
     </Stack>
   );
+
+  const renderRequirements = (
+    <Stack gap={1.5}>
+      <Typography variant="h5">Campaign Requirement</Typography>
+      <Box
+        maxWidth={800}
+        display="grid"
+        gridTemplateColumns="repeat(3, 1fr)"
+        component={Card}
+        p={4}
+        mx="auto"
+        gap={2}
+      >
+        <ListItemText
+          primary="Age"
+          secondary={
+            <Stack direction="row" spacing={1}>
+              {requirement.age.map((value) => (
+                <Label>{value}</Label>
+              ))}
+            </Stack>
+          }
+          primaryTypographyProps={{
+            typography: 'body2',
+            color: 'text.secondary',
+            mb: 0.5,
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+            color: 'text.primary',
+            component: 'span',
+          }}
+        />
+        <ListItemText
+          primary="Gender"
+          secondary={
+            <Stack direction="row" spacing={1}>
+              {requirement.gender.map((value) => (
+                <Label>{value}</Label>
+              ))}
+            </Stack>
+          }
+          primaryTypographyProps={{
+            typography: 'body2',
+            color: 'text.secondary',
+            mb: 0.5,
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+            color: 'text.primary',
+            component: 'span',
+          }}
+        />
+        <ListItemText
+          primary="Geo Location"
+          secondary={
+            <Stack direction="row" spacing={1}>
+              {requirement.geoLocation.map((value) => (
+                <Label>{value}</Label>
+              ))}
+            </Stack>
+          }
+          primaryTypographyProps={{
+            typography: 'body2',
+            color: 'text.secondary',
+            mb: 0.5,
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+            color: 'text.primary',
+            component: 'span',
+          }}
+        />
+        <ListItemText
+          primary="Languages"
+          secondary={
+            <Stack direction="row" spacing={1}>
+              {requirement.language.map((value) => (
+                <Label>{value}</Label>
+              ))}
+            </Stack>
+          }
+          primaryTypographyProps={{
+            typography: 'body2',
+            color: 'text.secondary',
+            mb: 0.5,
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+            color: 'text.primary',
+            component: 'span',
+          }}
+        />
+        <ListItemText
+          primary="Creator Persona"
+          secondary={
+            <Stack direction="row" spacing={1}>
+              {requirement.creator_persona.map((value) => (
+                <Label>{value}</Label>
+              ))}
+            </Stack>
+          }
+          primaryTypographyProps={{
+            typography: 'body2',
+            color: 'text.secondary',
+            mb: 0.5,
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+            color: 'text.primary',
+            component: 'span',
+          }}
+        />
+        <ListItemText
+          primary="Gender"
+          secondary={requirement.user_persona}
+          primaryTypographyProps={{
+            typography: 'body2',
+            color: 'text.secondary',
+            mb: 0.5,
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+            color: 'text.primary',
+            component: 'span',
+          }}
+        />
+      </Box>
+    </Stack>
+  );
+
   return (
     <Stack spacing={2} maxWidth={800} mx="auto">
       {renderInformation}
+      <Divider sx={{ borderStyle: 'dashed' }} />
+      {renderRequirements}
     </Stack>
   );
 };

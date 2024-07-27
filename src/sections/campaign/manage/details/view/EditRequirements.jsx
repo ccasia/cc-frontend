@@ -1,5 +1,7 @@
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
@@ -11,6 +13,8 @@ import {
   DialogContent,
   DialogContentText,
 } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
@@ -27,11 +31,27 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
     },
   });
 
-  const { watch } = methods;
+  const { watch, handleSubmit } = methods;
 
   const audienceLocation = watch('audienceLocation');
 
   const closeDialog = () => onClose('campaignRequirements');
+
+  const onSubmit = handleSubmit(async (data) => {
+   
+    try {
+      const res = await axiosInstance.patch(endpoints.campaign.editRequirement, {
+        ...data,
+        campaignId: campaign.id,
+      });
+      mutate(endpoints.campaign.getCampaignById(campaign.id));
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Update Failed', {
+        variant: 'error',
+      });
+    }
+  });
 
   return (
     <Dialog
@@ -41,10 +61,10 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle id="alert-dialog-title">Edit Requirements</DialogTitle>
-      <DialogContent>
-        <DialogContentText id="alert-dialog-description" p={1.5}>
-          <FormProvider methods={methods}>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <DialogTitle id="alert-dialog-title">Edit Requirements</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description" p={1.5}>
             <Box
               sx={{
                 display: 'grid',
@@ -145,20 +165,15 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                 placeholder=" let us know who you want your campaign to reach!"
               />
             </Box>
-          </FormProvider>
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={closeDialog}>Cancel</Button>
-        <Button
-          type="submit"
-          onClick={closeDialog}
-          autoFocus
-          color="primary"
-        >
-          Save
-        </Button>
-      </DialogActions>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button type="submit" autoFocus color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </FormProvider>
     </Dialog>
   );
 };

@@ -189,10 +189,9 @@ const CampaignListView = () => {
 
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <CampaignSearch campaigns={campaigns} />
-        {/* {renderFilter} */}
       </Stack>
 
-      <Stack direction="row" alignItems="center" gap={1} mt={2}>
+      <Box display="flex" gap={1} mt={2}>
         <Button
           size="medium"
           variant={filter ? 'outlined' : 'contained'}
@@ -265,7 +264,7 @@ const CampaignListView = () => {
         >
           Paused
         </Button>
-      </Stack>
+      </Box>
 
       {/* <Box display="inline-flex" mt={1}>
         {renderResultFilter}

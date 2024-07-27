@@ -31,64 +31,11 @@ import TimelineTypeModal from './timeline-type-modal';
 
 // eslint-disable-next-line react/prop-types
 const Timeline = ({ timelineType, isSmallScreen }) => {
-  // const schema = Yup.object().shape({
-  //   openForPitch: Yup.number('Must be a number')
-  //     .min(14, 'Minumum is 14 days')
-  //     .max(30, 'Maximum is 30 days')
-  //     .required('Open for pitch timeline is required'),
-  //   filterPitch: Yup.number('Must be a number')
-  //     .min(2, 'Minumum is 2 days')
-  //     .max(3, 'Maximum is 3 days')
-  //     .required('Filtering timeline is required'),
-  //   shortlistCreator: Yup.number('Must be a number')
-  //     .min(1, 'Minumum is 1 days')
-  //     .max(2, 'Maximum is 2 days')
-  //     .required('Shortlist creator timeline is required'),
-  //   agreementSign: Yup.number('Must be a number')
-  //     .min(1, 'Minumum is 1 days')
-  //     .max(2, 'Maximum is 2 days')
-  //     .required('Sign of agreement timeline is required'),
-  //   firstDraft: Yup.number('Must be a number')
-  //     .min(3, 'Minumum is 3 days')
-  //     .max(5, 'Maximum is 5 days')
-  //     .required('First draft timeline is required'),
-  //   feedBackFirstDraft: Yup.number('Must be a number')
-  //     .min(2, 'Minumum is 2 days')
-  //     .max(3, 'Maximum is 3 days')
-  //     .required('Feedback first draft timeline is required'),
-  //   finalDraft: Yup.number('Must be a number')
-  //     .min(2, 'Minumum is 2 days')
-  //     .max(4, 'Maximum is 4 days')
-  //     .required('Final draft timeline is required'),
-  //   feedBackFinalDraft: Yup.number('Must be a number')
-  //     .min(1, 'Minumum is 1 days')
-  //     .max(2, 'Maximum is 2 days')
-  //     .required('Feedback final draft timeline is required'),
-  //   posting: Yup.number('Must be a number')
-  //     .max(2, 'Maximum is 2 days')
-  //     .required('Posting social media timeline is required'),
-  //   qc: Yup.number('Must be a number').required('QC timeline is required'),
-  // });
-
-  // const defaultValues = {
-  //   openForPitch: 0,
-  //   filterPitch: 0,
-  //   shortlistCreator: 0,
-  //   agreementSign: 0,
-  //   firstDraft: 0,
-  //   feedBackFirstDraft: 0,
-  //   finalDraft: 0,
-  //   qc: 0,
-  //   feedBackFinalDraft: 0,
-  //   posting: 0,
-  // };
-
   const { data: timelines, isLoading } = useGetAllTimelineType();
 
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const errorTimeline = useBoolean();
   const timelineModal = useBoolean();
-  console.log(defaultTimelines);
 
   const schema = Yup.object().shape({
     timeline: Yup.array().of(
@@ -101,7 +48,6 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
           .required('Field is required'),
 
         duration: Yup.number().required('Field is required').integer('Field must be an integer'),
-        dependsOn: Yup.string().required('Field is required'),
         for: Yup.string().required('Field is required'),
       })
     ),
@@ -112,9 +58,7 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
     reValidateMode: 'onChange',
     resolver: yupResolver(schema),
     defaultValues: {
-      timeline: [
-        { timeline_type: { id: '', name: '' }, dependsOn: '', duration: undefined, for: '' },
-      ],
+      timeline: [{ timeline_type: { id: '', name: '' }, duration: undefined, for: '' }],
     },
   });
 
@@ -127,17 +71,12 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
 
   useEffect(() => {
     if (!defaultTimelineLoading && defaultTimelines.length > 0) {
-      // eslint-disable-next-line array-callback-return
       reset({
         timeline: defaultTimelines.map((item) => ({
           timeline_type: { id: item.timelineType.id, name: item.timelineType.name } || {
             id: '',
             name: '',
           },
-          dependsOn:
-            item.dependsOn.length < 1
-              ? 'startDate'
-              : item?.dependsOn[0]?.dependsOnTimeline?.timelineTypeDefaultId || '',
           duration: item.duration || undefined,
           for: item.for || '',
         })),
@@ -145,18 +84,6 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
     }
   }, [reset, defaultTimelineLoading, defaultTimelines]);
 
-  // useEffect(() => {
-  //   if (!isLoading && timelines) {
-  //     reset({
-  //       timeline: timelines.map((elem) => ({
-  //         timeline_type: { id: elem.id, name: elem.name },
-  //         dependsOn: '',
-  //         duration: '',
-  //         for: '',
-  //       })),
-  //     });
-  //   }
-  // }, [reset, isLoading, timelines]);
   const test = watch('timeline');
 
   const onSubmit = handleSubmit(async (data) => {
@@ -174,20 +101,11 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
 
   const handleChange = (val, index) => {
     setValue(`timeline[${index}].timeline_type`, val);
-
-    if (index === 0) {
-      setValue(`timeline[0].dependsOn`, 'startDate');
-    }
-
-    if (index < fields.length - 1) {
-      setValue(`timeline[${index + 1}].dependsOn`, val.id);
-    }
   };
 
   const handleRemove = (index, item) => {
     if (index < fields.length - 1) {
       setValue(`timeline[${index + 1}]`, {
-        dependsOn: item.dependsOn,
         timeline_type: test[index + 1].timeline_type,
         duration: test[index + 1].duration,
         for: test[index + 1].for,
@@ -402,15 +320,11 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
                   {!isLoading && (
                     <RHFAutocomplete
                       name={`timeline[${index}].timeline_type`}
-                      // disabled
                       onChange={(event, newValue) => {
                         handleChange(newValue, index);
                       }}
                       fullWidth
                       options={options}
-                      // options={
-                      //   !isLoading && timelines.map((elem) => ({ name: elem.name, id: elem.id }))
-                      // }
                       getOptionLabel={(option) => option.name}
                       label="Timeline Type"
                       renderOption={(props, option) => {
@@ -436,7 +350,7 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
                       }
                     />
                   )}
-
+                  {/* 
                   <RHFSelect disabled name={`timeline[${index}].dependsOn`} label="Depends On">
                     {!isLoading &&
                       timelines.map((elem) => (
@@ -446,7 +360,7 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
                         </MenuItem>
                       ))}
                     <MenuItem value="startDate">Campaign Start Date</MenuItem>
-                  </RHFSelect>
+                  </RHFSelect> */}
 
                   <RHFTextField
                     name={`timeline[${index}].duration`}
@@ -472,7 +386,6 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
                     onClick={() => {
                       insert(index + 1, {
                         timeline_type: { id: '', name: '' },
-                        dependsOn: test[index]?.timeline_type?.id,
                         duration: null,
                         for: '',
                       });

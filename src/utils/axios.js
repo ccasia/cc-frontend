@@ -120,6 +120,7 @@ export const endpoints = {
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
+      delete: (id) => `/api/campaign/timelineType/${id}`,
     },
     pitch: {
       root: '/api/campaign/pitch',
@@ -139,7 +140,9 @@ export const endpoints = {
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',
-    updateCampaignTimeline: (id) => `/api/campaign/updateCampaignTimeline/${id}`,
+    editRequirement: '/api/campaign/editRequirement',
+    editDosAndDonts: '/api/campaign/editDosandDonts',
+    updatecampaignTimeline: (id) => `/api/campaign/updatecampaignTimeline/${id}`,
     creator: {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
       getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,

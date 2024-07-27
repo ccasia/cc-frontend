@@ -1,3 +1,4 @@
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -37,6 +38,7 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
         ...data,
         id: campaign?.id,
       });
+      mutate(endpoints.campaign.getCampaignById(campaign.id));
       enqueueSnackbar(res?.data.message);
     } catch (error) {
       enqueueSnackbar('Failed to update brand or company', {
@@ -57,18 +59,10 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <FormProvider
-        methods={methods}
-        onSubmit={onSubmit}
-      >
-        <DialogTitle id="alert-dialog-title">
-          Edit Brand or Company
-        </DialogTitle>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <DialogTitle id="alert-dialog-title">Edit Brand or Company</DialogTitle>
         <DialogContent>
-          <DialogContentText
-            id="alert-dialog-description"
-            p={1.5}
-          >
+          <DialogContentText id="alert-dialog-description" p={1.5}>
             <Box
               sx={{
                 display: 'grid',
@@ -104,15 +98,8 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDialog}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            onClick={closeDialog}
-            autoFocus
-            color="primary"
-          >
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button type="submit" onClick={closeDialog} autoFocus color="primary">
             Save
           </Button>
         </DialogActions>

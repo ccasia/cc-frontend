@@ -39,7 +39,7 @@ const CampaignDetailCreator = ({ campaign }) => {
         }}
         onChange={(e) => setQuery(e.target.value)}
       />
-      {campaign?.ShortListedCreator.length > 0 ? (
+      {campaign?.shortListedCreator?.length > 0 ? (
         <>
           <Box
             display="grid"

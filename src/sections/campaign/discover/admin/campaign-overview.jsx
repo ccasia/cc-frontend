@@ -24,7 +24,7 @@ const CampaignOverview = ({ campaign }) => {
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <Stack gap={1}>
               <Typography variant="subtitle2">Applied Creator</Typography>
-              <Typography variant="h4">{campaign?.Pitch.length}</Typography>
+              <Typography variant="h4">{campaign?.pitch.length}</Typography>
             </Stack>
             <Box>
               <SparkLineChart
@@ -42,7 +42,7 @@ const CampaignOverview = ({ campaign }) => {
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <Stack gap={1}>
               <Typography variant="subtitle2">Shortlisted Creator</Typography>
-              <Typography variant="h4">{campaign?.ShortListedCreator.length}</Typography>
+              <Typography variant="h4">{campaign?.shortListedCreator?.length}</Typography>
             </Stack>
             <Box>
               <SparkLineChart
@@ -61,7 +61,7 @@ const CampaignOverview = ({ campaign }) => {
             <Stack gap={1}>
               <Typography variant="subtitle2">Filtered Creator</Typography>
               <Typography variant="h4">
-                {campaign?.Pitch.filter((i) => i.status === 'filtered').length}
+                {campaign?.pitch.filter((i) => i.status === 'filtered').length}
               </Typography>
             </Stack>
             <Box>
@@ -81,7 +81,7 @@ const CampaignOverview = ({ campaign }) => {
             <Stack gap={1}>
               <Typography variant="subtitle2">Rejected Creator</Typography>
               <Typography variant="h4">
-                {campaign?.Pitch.filter((i) => i.status === 'rejected').length}
+                {campaign?.pitch.filter((i) => i.status === 'rejected').length}
               </Typography>
             </Stack>
 
@@ -100,8 +100,8 @@ const CampaignOverview = ({ campaign }) => {
         <Box component={Card} p={3}>
           <Stack gap={2}>
             <Typography variant="subtitle2">Shortlisted Creators</Typography>
-            {campaign?.ShortListedCreator.length ? (
-              campaign?.ShortListedCreator.map((item, index) => (
+            {campaign?.shortListedCreator?.length ? (
+              campaign?.shortListedCreator.map((item, index) => (
                 <Stack key={item.id} direction="row" alignItems="center" spacing={2}>
                   <Label>{index + 1}</Label>
                   <Avatar src={item.creator.photoURL} />

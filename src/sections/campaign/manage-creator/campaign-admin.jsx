@@ -9,7 +9,7 @@ const CampaignAdmin = ({ campaign }) => {
   console.log(campaign);
   return (
     <Box display="flex" gap={2}>
-      {campaign?.CampaignAdmin.map((elem) => (
+      {campaign?.campaignAdmin.map((elem) => (
         <Box key={elem.id} component={Card} p={2} width={260}>
           <Stack direction="row" alignItems="start" gap={2}>
             <Avatar src={elem.admin.user.photoURL} />

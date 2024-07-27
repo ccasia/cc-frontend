@@ -53,7 +53,7 @@ const CampaignDetailView = ({ id }) => {
   const currentCampaign = campaigns && campaigns.filter((campaign) => campaign.id === id)[0];
 
   let timeline =
-    currentCampaign?.defaultCampaignTimeline || currentCampaign?.customCampaignTimeline;
+    currentCampaign?.defaultcampaignTimeline || currentCampaign?.customcampaignTimeline;
 
   timeline = filterTimelineAdmin(timeline);
 
@@ -86,12 +86,12 @@ const CampaignDetailView = ({ id }) => {
   }, []);
 
   const icons = (tab) => {
-    if (tab.value === 'pitch' && currentCampaign?.Pitch.length > 0) {
-      return <Label variant="filled">{currentCampaign?.Pitch.length}</Label>;
+    if (tab.value === 'pitch' && currentCampaign?.pitch.length > 0) {
+      return <Label variant="filled">{currentCampaign?.pitch.length}</Label>;
     }
 
-    if (tab.value === 'creator' && currentCampaign?.ShortListedCreator.length > 0) {
-      return <Label variant="filled">{currentCampaign?.ShortListedCreator.length}</Label>;
+    if (tab.value === 'creator' && currentCampaign?.shortListedCreator?.length) {
+      return <Label variant="filled">{currentCampaign?.shortListedCreator?.length}</Label>;
     }
 
     return '';
@@ -400,11 +400,12 @@ const CampaignDetailView = ({ id }) => {
       {/* {currentTab === 'shortlisted' && <CampaignDetailContent campaign={currentCampaign} />} */}
       {currentTab === 'pitch' && (
         <CampaignDetailPitch
-          pitches={currentCampaign?.Pitch}
+          pitches={currentCampaign?.pitch}
           timeline={
-            currentCampaign?.CampaignTimeline.filter((elem) => elem.name === 'Open For Pitch')[0]
+            currentCampaign?.campaignTimeline.filter((elem) => elem.name === 'Open For Pitch')[0]
           }
-          shortlisted={currentCampaign?.ShortListedCreator}
+          timelines={currentCampaign?.campaignTimeline.filter((elem) => elem.for === 'creator')}
+          shortlisted={currentCampaign?.shortListedCreator}
         />
       )}
       {currentTab === 'submission' && <CampaignDraftSubmissions campaign={currentCampaign} />}

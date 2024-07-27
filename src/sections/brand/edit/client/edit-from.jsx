@@ -1,15 +1,33 @@
-import React from 'react';
 import PropTypes from 'prop-types';
+import React, { useCallback } from 'react';
 
 import { Box, Stack, Button, Typography } from '@mui/material';
 
-import { RHFTextField } from 'src/components/hook-form';
+import { RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
 
-const CompanyEditForm = ({ company, fieldsArray }) => {
+const CompanyEditForm = ({ company, fieldsArray, methods }) => {
   const { fields, append } = fieldsArray;
 
+  const { setValue } = methods;
+
+  const handleDrop = useCallback(
+    (acceptedFiles) => {
+      const file = acceptedFiles[0];
+
+      const newFile = Object.assign(file, {
+        preview: URL.createObjectURL(file),
+      });
+
+      if (file) {
+        setValue('companyLogo', newFile, { shouldValidate: true });
+      }
+    },
+    [setValue]
+  );
+
   return (
-    <Stack spacing={5}>
+    <Stack spacing={5} mt={2}>
+      <RHFUploadAvatar name="companyLogo" onDrop={handleDrop} />
       <Box
         sx={{
           display: 'grid',
@@ -17,7 +35,7 @@ const CompanyEditForm = ({ company, fieldsArray }) => {
             xs: 'repeat(1, 1fr)',
             sm: 'repeat(2, 1fr)',
           },
-          mt: 4,
+          // mt: 2,
           gap: 4,
         }}
       >
@@ -61,4 +79,5 @@ export default CompanyEditForm;
 CompanyEditForm.propTypes = {
   company: PropTypes.object,
   fieldsArray: PropTypes.object,
+  methods: PropTypes.func,
 };

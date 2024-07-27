@@ -20,7 +20,6 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
 
   const { user } = useAuthContext();
   const popover = usePopover();
-  console.log(campaign?.campaignBrief.images[0]);
 
   return (
     <>
@@ -62,7 +61,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
               <Label color="warning">{campaign?.stage}</Label>
             )}
             <Typography variant="caption" color="text.disabled">
-              {dayjs(campaign?.createdAt).format('LL')}
+              Created on {dayjs(campaign?.createdAt).format('LL')}
             </Typography>
           </Stack>
 

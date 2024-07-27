@@ -1,3 +1,4 @@
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -39,9 +40,8 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
   const methods = useForm({
     defaultValues: {
       name: campaign?.name || '',
-      description: campaign?.name || '',
+      description: campaign?.description || '',
       campaignInterests: campaign?.campaignBrief?.interests || [],
-      campaignIndustries: campaign?.campaignBrief?.industries || [],
     },
   });
 
@@ -53,6 +53,7 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
         ...data,
         id: campaign?.id,
       });
+      mutate(endpoints.campaign.getCampaignById(campaign.id));
       enqueueSnackbar(res?.data.message);
     } catch (error) {
       enqueueSnackbar('Failed to update campaign info', {
@@ -71,18 +72,10 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <FormProvider
-        methods={methods}
-        onSubmit={onSubmit}
-      >
-        <DialogTitle id="alert-dialog-title">
-          Edit Campaign Info
-        </DialogTitle>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <DialogTitle id="alert-dialog-title">Edit Campaign Info</DialogTitle>
         <DialogContent>
-          <DialogContentText
-            id="alert-dialog-description"
-            p={1.5}
-          >
+          <DialogContentText id="alert-dialog-description" p={1.5}>
             <Box
               sx={{
                 display: 'grid',
@@ -93,16 +86,8 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
                 gap: 2,
               }}
             >
-              <RHFTextField
-                name="name"
-                label="Campaign Name"
-                fullWidth
-              />
-              <RHFTextField
-                name="description"
-                label="Campaign Description"
-                multiline
-              />
+              <RHFTextField name="name" label="Campaign Name" fullWidth />
+              <RHFTextField name="description" label="Campaign Description" multiline />
               <RHFAutocomplete
                 name="campaignInterests"
                 placeholder="+ Interests"
@@ -129,7 +114,7 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
                   ))
                 }
               />
-              <RHFAutocomplete
+              {/* <RHFAutocomplete
                 name="campaignIndustries"
                 placeholder="+ Industries"
                 multiple
@@ -154,20 +139,13 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
                     />
                   ))
                 }
-              />
+              /> */}
             </Box>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDialog}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            onClick={closeDialog}
-            autoFocus
-            color="primary"
-          >
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button type="submit" onClick={closeDialog} autoFocus color="primary">
             Save
           </Button>
         </DialogActions>

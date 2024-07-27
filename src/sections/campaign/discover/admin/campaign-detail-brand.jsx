@@ -29,8 +29,8 @@ const CampaignDetailBrand = ({ brand }) => (
             <Stack direction="row" alignItems="center">
               <ul>
                 {brand?.objectives &&
-                  brand?.objectives?.map((elem) => (
-                    <li>
+                  brand?.objectives?.map((elem, index) => (
+                    <li key={index}>
                       <Typography variant="inherit">{elem.value}</Typography>
                     </li>
                   ))}
@@ -38,7 +38,8 @@ const CampaignDetailBrand = ({ brand }) => (
             </Stack>
           </Stack>
           <Stack direction="row" spacing={1}>
-            {brand?.industries && brand?.industries.map((item) => <CustomChip label={item} />)}
+            {brand?.industries &&
+              brand?.industries.map((item, index) => <CustomChip key={index} label={item} />)}
           </Stack>
         </Stack>
       </Box>

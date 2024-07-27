@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 
+import { LoadingButton } from '@mui/lab';
 import { Box, Button, Skeleton, Container, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -50,11 +51,11 @@ const CompanyEditView = ({ id }) => {
         value: Yup.string().required('Value is required'),
       })
     ),
-
     companyRegistrationNumber: Yup.string().required('RegistrationNumber is required'),
   });
 
   const defaultValues = {
+    companyLogo: {},
     companyName: '',
     companyEmail: '',
     companyPhone: '',
@@ -83,6 +84,7 @@ const CompanyEditView = ({ id }) => {
 
   useEffect(() => {
     reset({
+      companyLogo: company?.logo,
       companyName: company?.name,
       companyEmail: company?.email,
       companyPhone: company?.phone,
@@ -95,16 +97,24 @@ const CompanyEditView = ({ id }) => {
   }, [company, reset]);
 
   const onSubmit = handleSubmit(async (data) => {
+    const formData = new FormData();
+    const newData = { ...data, companyId: company?.id };
+    formData.append('data', JSON.stringify(newData));
+    formData.append('companyLogo', data.companyLogo);
     try {
-      const res = await axiosInstance.patch(endpoints.company.edit, {
-        ...data,
-        companyId: company?.id,
+      setLoading(true);
+      const res = await axiosInstance.patch(endpoints.company.edit, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
       enqueueSnackbar(res?.data.message);
     } catch (error) {
       enqueueSnackbar('Error has occured', {
         variant: 'error',
       });
+    } finally {
+      setLoading(false);
     }
   });
 
@@ -133,18 +143,20 @@ const CompanyEditView = ({ id }) => {
         >
           <Typography variant="h5">Company Information</Typography>
           <FormProvider methods={methods} onSubmit={onSubmit}>
-            <CompanyEditForm company={company} fieldsArray={fieldsArray} />
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{
-                width: 50,
-                mx: 'auto',
-              }}
-            >
-              Save
-            </Button>
+            <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
+            <Box textAlign="end">
+              <LoadingButton
+                loading={loading}
+                type="submit"
+                variant="outlined"
+                color="primary"
+                sx={{
+                  width: 100,
+                }}
+              >
+                Save
+              </LoadingButton>
+            </Box>
           </FormProvider>
         </Box>
       )}

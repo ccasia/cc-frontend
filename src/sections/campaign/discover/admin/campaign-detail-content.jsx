@@ -219,8 +219,8 @@ const CampaignDetailContent = ({ campaign }) => {
                 <TableCell>-</TableCell>
               </TableRow>
               {campaign &&
-                campaign?.CampaignTimeline.map((timeline) => (
-                  <TableRow>
+                campaign?.campaignTimeline.map((timeline) => (
+                  <TableRow key={timeline?.id}>
                     <TableCell>{timeline?.name}</TableCell>
                     <TableCell>{dayjs(timeline.startDate).format('ddd LL')}</TableCell>
                     <TableCell>{dayjs(timeline.endDate).format('ddd LL')}</TableCell>
@@ -247,11 +247,11 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.openForPitch ??
-                campaign?.defaultCampaignTimeline?.openForPitch}{' '}
+              {campaign?.customcampaignTimeline?.openForPitch ??
+                campaign?.defaultcampaignTimeline?.openForPitch}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.openForPitch ??
-                  campaign?.defaultCampaignTimeline?.openForPitch
+                campaign?.customcampaignTimeline?.openForPitch ??
+                  campaign?.defaultcampaignTimeline?.openForPitch
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -262,11 +262,11 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.shortlistCreator ??
-                campaign?.defaultCampaignTimeline?.shortlistCreator}{' '}
+              {campaign?.customcampaignTimeline?.shortlistCreator ??
+                campaign?.defaultcampaignTimeline?.shortlistCreator}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.shortlistCreator ??
-                  campaign?.defaultCampaignTimeline?.shortlistCreator
+                campaign?.customcampaignTimeline?.shortlistCreator ??
+                  campaign?.defaultcampaignTimeline?.shortlistCreator
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -277,11 +277,11 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.firstDraft ??
-                campaign?.defaultCampaignTimeline?.firstDraft}{' '}
+              {campaign?.customcampaignTimeline?.firstDraft ??
+                campaign?.defaultcampaignTimeline?.firstDraft}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.firstDraft ??
-                  campaign?.defaultCampaignTimeline?.firstDraft
+                campaign?.customcampaignTimeline?.firstDraft ??
+                  campaign?.defaultcampaignTimeline?.firstDraft
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -292,11 +292,11 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.finalDraft ??
-                campaign?.defaultCampaignTimeline?.finalDraft}{' '}
+              {campaign?.customcampaignTimeline?.finalDraft ??
+                campaign?.defaultcampaignTimeline?.finalDraft}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.finalDraft ??
-                  campaign?.defaultCampaignTimeline?.finalDraft
+                campaign?.customcampaignTimeline?.finalDraft ??
+                  campaign?.defaultcampaignTimeline?.finalDraft
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -307,11 +307,11 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.feedBackFirstDraft ??
-                campaign?.defaultCampaignTimeline?.feedBackFirstDraft}{' '}
+              {campaign?.customcampaignTimeline?.feedBackFirstDraft ??
+                campaign?.defaultcampaignTimeline?.feedBackFirstDraft}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.feedBackFirstDraft ??
-                  campaign?.defaultCampaignTimeline?.feedBackFirstDraft
+                campaign?.customcampaignTimeline?.feedBackFirstDraft ??
+                  campaign?.defaultcampaignTimeline?.feedBackFirstDraft
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -322,11 +322,11 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.feedBackFinalDraft ??
-                campaign?.defaultCampaignTimeline?.feedBackFinalDraft}{' '}
+              {campaign?.customcampaignTimeline?.feedBackFinalDraft ??
+                campaign?.defaultcampaignTimeline?.feedBackFinalDraft}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.feedBackFinalDraft ??
-                  campaign?.defaultCampaignTimeline?.feedBackFinalDraft
+                campaign?.customcampaignTimeline?.feedBackFinalDraft ??
+                  campaign?.defaultcampaignTimeline?.feedBackFinalDraft
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -337,11 +337,11 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.filterPitch ??
-                campaign?.defaultCampaignTimeline?.filterPitch}{' '}
+              {campaign?.customcampaignTimeline?.filterPitch ??
+                campaign?.defaultcampaignTimeline?.filterPitch}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.filterPitch ??
-                  campaign?.defaultCampaignTimeline?.filterPitch
+                campaign?.customcampaignTimeline?.filterPitch ??
+                  campaign?.defaultcampaignTimeline?.filterPitch
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -352,11 +352,11 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.agreementSign ??
-                campaign?.defaultCampaignTimeline?.agreementSign}{' '}
+              {campaign?.customcampaignTimeline?.agreementSign ??
+                campaign?.defaultcampaignTimeline?.agreementSign}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.agreementSign ??
-                  campaign?.defaultCampaignTimeline?.agreementSign
+                campaign?.customcampaignTimeline?.agreementSign ??
+                  campaign?.defaultcampaignTimeline?.agreementSign
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -367,9 +367,9 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.qc ?? campaign?.defaultCampaignTimeline?.qc}{' '}
+              {campaign?.customcampaignTimeline?.qc ?? campaign?.defaultcampaignTimeline?.qc}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.qc ?? campaign?.defaultCampaignTimeline?.qc
+                campaign?.customcampaignTimeline?.qc ?? campaign?.defaultcampaignTimeline?.qc
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -380,11 +380,11 @@ const CampaignDetailContent = ({ campaign }) => {
           </TimelineItem>
           <TimelineItem>
             <TimelineOppositeContent color="text.secondary">
-              {campaign?.customCampaignTimeline?.posting ??
-                campaign?.defaultCampaignTimeline?.posting}{' '}
+              {campaign?.customcampaignTimeline?.posting ??
+                campaign?.defaultcampaignTimeline?.posting}{' '}
               {formatDays(
-                campaign?.customCampaignTimeline?.posting ??
-                  campaign?.defaultCampaignTimeline?.posting
+                campaign?.customcampaignTimeline?.posting ??
+                  campaign?.defaultcampaignTimeline?.posting
               )}
             </TimelineOppositeContent>
             <TimelineSeparator>
@@ -410,7 +410,7 @@ const CampaignDetailContent = ({ campaign }) => {
             </TimelineContent>
           </TimelineItem>
           {campaign &&
-            campaign?.CampaignTimeline.map((timeline) => (
+            campaign?.campaignTimeline.map((timeline) => (
               <TimelineItem>
                 <TimelineOppositeContent color="text.secondary">
                   <Typography variant="caption">

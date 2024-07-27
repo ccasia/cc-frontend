@@ -115,7 +115,7 @@ const CampaignMyTasks = ({ campaign }) => {
           },
         }}
       >
-        {campaign?.campaignTimelineTask
+        {campaign?.campaignTask
           .sort((a, b) => dayjs(a.endDate).diff(dayjs(b.endDate)))
           .map((timeline, index) => (
             <TimelineItem>
@@ -212,32 +212,6 @@ const CampaignMyTasks = ({ campaign }) => {
                     </Stack>
                   </Box>
                 )}
-                {/* {timeline.task === 'First Draft' && isSubmittedFirstDraft && (
-                  <Box
-                    component={Card}
-                    height={200}
-                    sx={{
-                      bgcolor: (theme) => alpha(theme.palette.success.main, 0.13),
-                      position: 'relative',
-                    }}
-                  >
-                    <Stack
-                      sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%,-50%)',
-                      }}
-                      direction="row"
-                      gap={1}
-                      alignItems="center"
-                    >
-                      <Iconify icon="mdi:tick-circle-outline" width={16} />
-                      <Typography variant="subtitle1">Submitted for review</Typography>
-                    </Stack>
-                  </Box>
-                )} */}
-
                 {dayjs(timeline.startDate) < dayjs() && dayjs() <= dayjs(timeline.endDate) && (
                   <Button size="small" variant="outlined" color="primary" sx={{ mt: 1 }}>
                     Manage
