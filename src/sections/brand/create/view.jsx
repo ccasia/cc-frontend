@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-import { SnackbarProvider } from 'notistack';
 import { useState, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
@@ -85,7 +84,7 @@ function CreateBrand() {
           </Stack>
         </Box>
       </Container>
-      <SnackbarProvider />
+      {/* <SnackbarProvider /> */}
     </>
   );
 }

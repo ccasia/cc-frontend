@@ -41,6 +41,7 @@ const MyCampaignView = ({ query, setQuery, filteredData, onClick }) => (
             key={campaign?.id}
             campaign={campaign}
             onClick={() => onClick(campaign?.id)}
+            type="my-campaign"
           />
         ))}
       </Box>

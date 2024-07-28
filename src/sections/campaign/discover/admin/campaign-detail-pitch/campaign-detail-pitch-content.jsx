@@ -116,15 +116,17 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {timelines?.map((timeline) => (
-                <TableRow key={timeline.id}>
-                  <TableCell>{timeline.name}</TableCell>
-                  <TableCell>{dayjs(timeline.endDate).format('ddd LL')}</TableCell>
-                  {/* <TableCell>
+              {timelines
+                .sort((a, b) => a.order - b.order)
+                ?.map((timeline) => (
+                  <TableRow key={timeline.id}>
+                    <TableCell>{timeline.name}</TableCell>
+                    <TableCell>{dayjs(timeline.endDate).format('ddd LL')}</TableCell>
+                    {/* <TableCell>
                     <Label>Low</Label>
                   </TableCell> */}
-                </TableRow>
-              ))}
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </TableContainer>

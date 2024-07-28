@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 
 import { Box, Tab, Tabs, Stack } from '@mui/material';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Image from 'src/components/image';
 
 import CampaignInfo from './campaign-info';
@@ -11,6 +13,7 @@ import CampaignMyTasks from './campaign-myTask';
 
 const CampaignDetailItem = ({ campaign }) => {
   const [currentTab, setCurrentTab] = useState('info');
+  const { user } = useAuthContext();
 
   const renderGallery = (
     <Box

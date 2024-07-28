@@ -22,16 +22,19 @@ import {
   InputAdornment,
 } from '@mui/material';
 
+import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
 
 export const EditTimeline = ({ open, campaign, onClose }) => {
   const { campaignTimeline } = campaign;
   const [isLoading, setIsLoading] = useState(false);
-  // const { timelineType } = useGetTimelineType();
+  const { data: timelineData, isLoading: timelineLoading } = useGetAllTimelineType();
+  const [query, setQuery] = useState('');
   const [dateError] = useState(false);
 
   const methods = useForm({
@@ -77,7 +80,6 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
           })),
     });
     setValue('campaignStartDate', dayjs(campaign?.campaignBrief?.startDate));
-    // setValue('campaignEndDate', dayjs(campaign?.campaignBrief?.endDate));
   }, [campaign, campaignTimeline, reset, setValue]);
 
   const updateTimelineDates = useCallback(() => {
@@ -143,35 +145,6 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
     remove(index);
   };
 
-  // const handleAdd = (index) => {
-  //   if (index === fields.length - 1) {
-  //     append({
-  //       timeline_type: { name: '' },
-  //       dependsOn: existingTimeline[index]?.name,
-  //       duration: null,
-  //       for: '',
-  //     });
-  //   } else {
-  //     insert(index + 1, {
-  //       timeline_type: { name: '' },
-  //       dependsOn: existingTimeline[index]?.name,
-  //       duration: null,
-  //       for: '',
-  //     });
-  //   }
-  // };
-
-  // const handleChange = (e, index) => {
-  //   setValue('campaignEndDate', dayjs(timelineEndDate).format('ddd LL'));
-  //   if (index === fields.length - 1) {
-  //     setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
-  //     setValue(`timeline[${index}].dependsOn`, existingTimeline[index - 1].timeline_type?.name);
-  //   } else {
-  //     setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
-  //     setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
-  //   }
-  // };
-
   const handleChange = (e, index) => {
     setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
     // eslint-disable-next-line no-unsafe-optional-chaining
@@ -188,6 +161,21 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
     }
 
     move(result.source.index, result.destination.index);
+  };
+
+  const handleSubmitNewTimelineType = async (index) => {
+    try {
+      const res = await axiosInstance.post(endpoints.campaign.timeline.createSingleTimelineType, {
+        name: query,
+      });
+      mutate(endpoints.campaign.getTimelineType);
+      setValue(`timeline[${index}].timeline_type`, { id: res.data.id, name: res.data.name });
+      enqueueSnackbar('New Timeline Type Created');
+    } catch (error) {
+      enqueueSnackbar('Create Failed', {
+        variant: 'error',
+      });
+    }
   };
 
   return (
@@ -346,12 +334,64 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
                                     alignItems="center"
                                     flexGrow={1}
                                   >
-                                    <RHFTextField
+                                    {/* <RHFTextField
                                       name={`timeline[${index}].timeline_type.name`}
                                       onChange={(e, val) => handleChange(e, index)}
                                       label="Timeline Type"
                                       placeholder="Eg: Open For Pitch"
-                                    />
+                                    /> */}
+
+                                    {!timelineLoading && (
+                                      <RHFAutocomplete
+                                        disabled={!!existingTimeline[index]?.timeline_type?.name}
+                                        label="Select a timeline name"
+                                        name={`timeline[${index}].timeline_type`}
+                                        fullWidth
+                                        onInputChange={(e, val) => setQuery(val)}
+                                        noOptionsText={
+                                          <Stack alignItems="center">
+                                            <Typography>No Option</Typography>
+                                            {query && (
+                                              <Button
+                                                variant="contained"
+                                                size="small"
+                                                fullWidth
+                                                sx={{ mt: 2, fontSize: 12 }}
+                                                onClick={() => handleSubmitNewTimelineType(index)}
+                                              >
+                                                Create {query}
+                                              </Button>
+                                            )}
+                                          </Stack>
+                                        }
+                                        options={timelineData || []}
+                                        getOptionLabel={(option) => option.name}
+                                        isOptionEqualToValue={(option, a) => option.name === a.name}
+                                        renderOption={(props, option) => {
+                                          // eslint-disable-next-line react/prop-types
+                                          const { key, ...optionProps } = props;
+                                          return (
+                                            <MenuItem key={key} {...optionProps}>
+                                              {option.name}
+                                            </MenuItem>
+                                          );
+                                        }}
+                                        filterOptions={(a, state) => {
+                                          const existingNames = existingTimeline.map(
+                                            (val) => val?.timeline_type?.name
+                                          );
+                                          const filtered = a.filter(
+                                            (option) =>
+                                              !existingNames.includes(option.name) &&
+                                              option.name
+                                                .toLowerCase()
+                                                .includes(state.inputValue.toLowerCase())
+                                          );
+
+                                          return filtered;
+                                        }}
+                                      />
+                                    )}
 
                                     <RHFSelect name={`timeline[${index}].for`} label="For">
                                       <MenuItem value="admin">Admin</MenuItem>

@@ -121,6 +121,7 @@ export const endpoints = {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
       delete: (id) => `/api/campaign/timelineType/${id}`,
+      createSingleTimelineType: `/api/campaign/createSingleTimelineType`,
     },
     pitch: {
       root: '/api/campaign/pitch',
@@ -134,7 +135,12 @@ export const endpoints = {
     draft: {
       getAllDraftInfo: (id) => `/api/draft/getAllDraftInfo/${id}`,
       submitFirstDraft: '/api/draft/firstDraft',
+      submitFinalDraft: '/api/draft/finalDraft',
       getFirstDraftForCreator: (id) => `/api/draft/firstDraft/${id}`,
+      submitFeedBackFirstDraft: '/api/draft/submitFeedBackFirstDraft',
+    },
+    tasks: {
+      uploadAgreeementForm: '/api/tasks/uploadAgreementForm',
     },
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
@@ -147,6 +153,14 @@ export const endpoints = {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
       getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,
     },
+  },
+  submission: {
+    root: '/api/tasks/submissions',
+    agreement: {
+      adminManageAgreementSubmission: '/api/tasks/adminManageAgreementSubmission',
+    },
+    firstDraft: '/api/tasks/firstDraft',
+    finalDraft: '/api/tasks/FinalDraft',
   },
   notification: {
     root: '/api/notification',

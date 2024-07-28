@@ -95,7 +95,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
           id: 1,
           label:
             campaign &&
-            campaign?.campaignBrief?.industries?.map((e, index) => (
+            campaign?.campaignBrief?.interests?.map((e, index) => (
               <Chip key={index} size="small" variant="outlined" label={e} color="error" />
             )),
           icon: <Iconify icon="mdi:company" sx={{ color: 'error.main' }} width={21} />,

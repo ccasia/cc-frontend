@@ -90,8 +90,8 @@ const CampaignDetailView = ({ id }) => {
       return <Label variant="filled">{currentCampaign?.pitch.length}</Label>;
     }
 
-    if (tab.value === 'creator' && currentCampaign?.shortListedCreator?.length) {
-      return <Label variant="filled">{currentCampaign?.shortListedCreator?.length}</Label>;
+    if (tab.value === 'creator' && currentCampaign?.shortlistCreator?.length) {
+      return <Label variant="filled">{currentCampaign?.shortlistCreator?.length}</Label>;
     }
 
     return '';
@@ -394,6 +394,7 @@ const CampaignDetailView = ({ id }) => {
       {currentTab === 'overview' && <CampaignOverview campaign={currentCampaign} />}
       {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
       {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
+
       {currentTab === 'brand' && (
         <CampaignDetailBrand brand={currentCampaign?.brand ?? currentCampaign?.company} />
       )}
@@ -405,7 +406,7 @@ const CampaignDetailView = ({ id }) => {
             currentCampaign?.campaignTimeline.filter((elem) => elem.name === 'Open For Pitch')[0]
           }
           timelines={currentCampaign?.campaignTimeline.filter((elem) => elem.for === 'creator')}
-          shortlisted={currentCampaign?.shortListedCreator}
+          shortlisted={currentCampaign?.shortlistCreator}
         />
       )}
       {currentTab === 'submission' && <CampaignDraftSubmissions campaign={currentCampaign} />}

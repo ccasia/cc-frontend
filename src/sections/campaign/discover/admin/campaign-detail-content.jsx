@@ -140,7 +140,12 @@ const CampaignDetailContent = ({ campaign }) => {
 
   const renderInformation = (
     <Stack spacing={5}>
-      <Typography variant="h4">{campaign?.name}</Typography>
+      <ListItemText
+        primary={campaign?.name}
+        secondary={campaign?.description}
+        primaryTypographyProps={{ variant: 'h4' }}
+        secondaryTypographyProps={{ variant: 'subtitle2' }}
+      />
 
       <Divider
         sx={{
@@ -219,13 +224,15 @@ const CampaignDetailContent = ({ campaign }) => {
                 <TableCell>-</TableCell>
               </TableRow>
               {campaign &&
-                campaign?.campaignTimeline.map((timeline) => (
-                  <TableRow key={timeline?.id}>
-                    <TableCell>{timeline?.name}</TableCell>
-                    <TableCell>{dayjs(timeline.startDate).format('ddd LL')}</TableCell>
-                    <TableCell>{dayjs(timeline.endDate).format('ddd LL')}</TableCell>
-                  </TableRow>
-                ))}
+                campaign?.campaignTimeline
+                  .sort((a, b) => a.order - b.order)
+                  .map((timeline) => (
+                    <TableRow key={timeline?.id}>
+                      <TableCell>{timeline?.name}</TableCell>
+                      <TableCell>{dayjs(timeline.startDate).format('ddd LL')}</TableCell>
+                      <TableCell>{dayjs(timeline.endDate).format('ddd LL')}</TableCell>
+                    </TableRow>
+                  ))}
               <TableRow>
                 <TableCell>Campaign End Date</TableCell>
                 <TableCell>-</TableCell>
