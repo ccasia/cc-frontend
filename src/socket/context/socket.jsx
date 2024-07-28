@@ -12,25 +12,40 @@ const SocketProvider = ({ children }) => {
   const { user } = useAuthContext();
 
   useEffect(() => {
+
+    // I used this for my connection - Zawad 
+    //  const socketConnection = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
     const socketConnection = io();
 
     socketConnection.on('connect', () => {
+      console.log("Connected");
       setSocket(socketConnection);
       setOnline(true);
     });
 
     socketConnection.emit('register', user?.id);
-
+    // socketConnection.emit('room', user?.id);
     return () => {
       socketConnection.disconnect();
       setOnline(false);
     };
   }, [user]);
 
+  // const sendMessage = (recipientId, message) => {
+  //   if (socket) {
+  //     socket.emit('chat', { userId: recipientId, message });
+  //   } else {
+  //     console.log('Socket is not initialized');
+  //   }
+  // };
+
+  
+
   const memoizedValue = useMemo(
     () => ({
       isOnline: online,
       socket,
+      // sendMessage,
     }),
     [online, socket]
   );

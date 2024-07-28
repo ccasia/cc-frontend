@@ -223,6 +223,11 @@ export function useNavData() {
             path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,
           },
+          {
+            title: 'Chat',
+            path: paths.dashboard.chat.root,
+            icon: ICONS.chat,
+          },
         ],
       },
     ],
