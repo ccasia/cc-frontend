@@ -7,6 +7,9 @@ import { AuthGuard, RoleBasedGuard } from 'src/auth/guard';
 import { LoadingScreen } from 'src/components/loading-screen';
 
 import { CalendarView } from 'src/sections/calendar/view';
+import { ChatView } from 'src/sections/chat/view';
+
+
 
 // ----------------------------------------------------------------------
 
@@ -355,6 +358,19 @@ export const dashboardRoutes = [
       {
         path: 'calendar',
         element: <CalendarView />,
+      },
+      {
+        path: 'chat',
+        children: [
+         { 
+          path: '', 
+          element: <ChatView />,
+         },
+         {
+          path: 'thread/:id',
+          element: <ChatView />
+         }
+        ]
       },
     ],
   },

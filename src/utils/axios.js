@@ -32,8 +32,20 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
-  chat: '/api/chat',
+  //  chat: '/api/chat',
   kanban: '/api/kanban',
+  threads: {
+    getAll: '/api/thread/threads',
+    single: '/api/thread/single',
+    getId: (threadId) => `/api/thread/${threadId}`,
+    getById: (threadId) => `/api/thread/threads/${threadId}`,
+    create: '/api/thread/createthread',
+    addUser: '/api/thread/adduser',
+    sendMessage: '/api/thread/send',
+    getMessage: (threadId) => `/api/thread/getmessage/${threadId}`,
+    archive: (threadId) => `/api/thread/threads/${threadId}/archive`,
+    unarchive: (threadId) => `/api/thread/threads/${threadId}/unarchive`,
+  },
   calendar: '/api/calendar',
   auth: {
     me: '/api/auth/me',
@@ -67,6 +79,7 @@ export const endpoints = {
     updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
+    allusers: '/api/users'
   },
   mail: {
     list: '/api/mail/list',
