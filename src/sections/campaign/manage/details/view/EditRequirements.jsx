@@ -35,33 +35,18 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
 
   const audienceLocation = watch('audienceLocation');
 
-  const onSubmit = handleSubmit(async (data) => {
-    try {
-      const res = await axiosInstance.patch(endpoints.campaign.editCampaignRequirements, {
-        ...data,
-        id: campaign?.id,
-      });
-      enqueueSnackbar(res?.data.message);
-    } catch (error) {
-      enqueueSnackbar('Failed to update requirements', {
-        variant: 'error',
-      });
-    }
-  });
-
   const closeDialog = () => onClose('campaignRequirements');
 
   const onSubmit = handleSubmit(async (data) => {
-
     try {
-      const res = await axiosInstance.patch(endpoints.campaign.editRequirement, {
+      const res = await axiosInstance.patch(endpoints.campaign.editCampaignRequirements, {
         ...data,
         campaignId: campaign.id,
       });
       mutate(endpoints.campaign.getCampaignById(campaign.id));
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar('Update Failed', {
+      enqueueSnackbar('Failed to update requirements', {
         variant: 'error',
       });
     }
@@ -75,13 +60,8 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <FormProvider
-        methods={methods}
-        onSubmit={onSubmit}
-      >
-        <DialogTitle id="alert-dialog-title">
-          Edit Requirements
-        </DialogTitle>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <DialogTitle id="alert-dialog-title">Edit Requirements</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description" p={1.5}>
             <Box sx={{
@@ -184,15 +164,8 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDialog}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            onClick={closeDialog}
-            autoFocus
-            color="primary"
-          >
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button type="submit" onClick={closeDialog} autoFocus color="primary">
             Save
           </Button>
         </DialogActions>

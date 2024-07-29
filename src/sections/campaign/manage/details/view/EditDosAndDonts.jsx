@@ -49,32 +49,18 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
     name: 'campaignDont',
   });
 
-  const onSubmit = handleSubmit(async (data) => {
-    try {
-      const res = await axiosInstance.patch(endpoints.campaign.editCampaignDosAndDonts, {
-        ...data,
-        id: campaign?.id,
-      });
-      enqueueSnackbar(res?.data.message);
-    } catch (error) {
-      enqueueSnackbar("Failed to update dos and don'ts", {
-        variant: 'error',
-      });
-    }
-  });
-
   const closeDialog = () => onClose('dosAndDonts');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await axiosInstance.patch(endpoints.campaign.editDosAndDonts, {
+      const res = await axiosInstance.patch(endpoints.campaign.editCampaignDosAndDonts, {
         ...data,
         campaignId: campaign.id,
       });
       mutate(endpoints.campaign.getCampaignById(campaign.id));
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar('Update Failed', {
+      enqueueSnackbar("Failed to update dos and don'ts", {
         variant: 'error',
       });
     }
@@ -88,13 +74,8 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <FormProvider
-        methods={methods}
-        onSubmit={onSubmit}
-      >
-        <DialogTitle id="alert-dialog-title">
-          Edit Dos and Don&apos;ts
-        </DialogTitle>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <DialogTitle id="alert-dialog-title">Edit Dos and Don&apos;ts</DialogTitle>
         <DialogContent>
           <DialogContentText
             id="alert-dialog-description"
@@ -116,7 +97,7 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
                   <Stack key={item.id} direction="row" spacing={1} alignItems="center">
                     <RHFTextField
                       name={`campaignDo[${index}].value`}
-                      label={`Campaign Do's ${index + 1}`}
+                      label={`Campaign Do ${index + 1}`}
                     />
                     {index !== 0 && (
                       <IconButton color="error" onClick={() => doRemove(index)}>
@@ -141,7 +122,7 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
                   <Stack key={item.id} direction="row" spacing={1} alignItems="center">
                     <RHFTextField
                       name={`campaignDont[${index}].value`}
-                      label={`Campaign Dont's ${index + 1}`}
+                      label={`Campaign Don't ${index + 1}`}
                     />
                     {index !== 0 && (
                       <IconButton color="error" onClick={() => dontRemove(index)}>
@@ -161,15 +142,8 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDialog}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            onClick={closeDialog}
-            autoFocus
-            color="primary"
-          >
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button type="submit" onClick={closeDialog} autoFocus color="primary">
             Save
           </Button>
         </DialogActions>

@@ -125,32 +125,6 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
                   ))
                 }
               />
-              {/* <RHFAutocomplete
-                name="campaignIndustries"
-                placeholder="+ Industries"
-                multiple
-                freeSolo
-                disableCloseOnSelect
-                options={interestsLists.map((option) => option)}
-                getOptionLabel={(option) => option}
-                renderOption={(props, option) => (
-                  <li {...props} key={option}>
-                    {option}
-                  </li>
-                )}
-                renderTags={(selected, getTagProps) =>
-                  selected.map((option, index) => (
-                    <Chip
-                      {...getTagProps({ index })}
-                      key={option}
-                      label={option}
-                      size="small"
-                      color="info"
-                      variant="soft"
-                    />
-                  ))
-                }
-              /> */}
             </Box>
           </DialogContentText>
         </DialogContent>
