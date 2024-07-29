@@ -1,3 +1,4 @@
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -7,6 +8,7 @@ import {
   Stack,
   Button,
   Dialog,
+  IconButton,
   DialogTitle,
   DialogActions,
   DialogContent,
@@ -15,6 +17,7 @@ import {
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
@@ -31,7 +34,7 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
   const {
     append: doAppend,
     fields: doFields,
-    // remove: doRemove,
+    remove: doRemove,
   } = useFieldArray({
     control,
     name: 'campaignDo',
@@ -40,7 +43,7 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
   const {
     append: dontAppend,
     fields: dontFields,
-    // remove: dontRemove,
+    remove: dontRemove,
   } = useFieldArray({
     control,
     name: 'campaignDont',
@@ -61,6 +64,21 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
   });
 
   const closeDialog = () => onClose('dosAndDonts');
+
+  const onSubmit = handleSubmit(async (data) => {
+    try {
+      const res = await axiosInstance.patch(endpoints.campaign.editDosAndDonts, {
+        ...data,
+        campaignId: campaign.id,
+      });
+      mutate(endpoints.campaign.getCampaignById(campaign.id));
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Update Failed', {
+        variant: 'error',
+      });
+    }
+  });
 
   return (
     <Dialog
@@ -95,10 +113,17 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
                 spacing={2}
               >
                 {doFields.map((item, index) => (
-                  <RHFTextField
-                    name={`campaignDo[${index}].value`}
-                    label={`Campaign Do ${index + 1}`}
-                  />
+                  <Stack key={item.id} direction="row" spacing={1} alignItems="center">
+                    <RHFTextField
+                      name={`campaignDo[${index}].value`}
+                      label={`Campaign Do's ${index + 1}`}
+                    />
+                    {index !== 0 && (
+                      <IconButton color="error" onClick={() => doRemove(index)}>
+                        <Iconify icon="ic:outline-delete" color="error.main" />
+                      </IconButton>
+                    )}
+                  </Stack>
                 ))}
                 <Button
                   variant="contained"
@@ -113,10 +138,17 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
                 spacing={2}
               >
                 {dontFields.map((item, index) => (
-                  <RHFTextField
-                    name={`campaignDont[${index}].value`}
-                    label={`Campaign Don't ${index + 1}`}
-                  />
+                  <Stack key={item.id} direction="row" spacing={1} alignItems="center">
+                    <RHFTextField
+                      name={`campaignDont[${index}].value`}
+                      label={`Campaign Dont's ${index + 1}`}
+                    />
+                    {index !== 0 && (
+                      <IconButton color="error" onClick={() => dontRemove(index)}>
+                        <Iconify icon="ic:outline-delete" color="error.main" />
+                      </IconButton>
+                    )}
+                  </Stack>
                 ))}
                 <Button
                   variant="contained"

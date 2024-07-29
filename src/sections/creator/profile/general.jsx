@@ -50,7 +50,7 @@ export default function AccountGeneral() {
     country: user?.country || '',
     address: user?.creator?.address || '',
     state: user?.creator?.state || '',
-    about: user?.creator?.MediaKit?.about || '',
+    about: user?.creator?.mediaKit?.about || '',
   };
 
   const methods = useForm({

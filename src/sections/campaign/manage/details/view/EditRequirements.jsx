@@ -1,3 +1,4 @@
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -49,6 +50,22 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
   });
 
   const closeDialog = () => onClose('campaignRequirements');
+
+  const onSubmit = handleSubmit(async (data) => {
+
+    try {
+      const res = await axiosInstance.patch(endpoints.campaign.editRequirement, {
+        ...data,
+        campaignId: campaign.id,
+      });
+      mutate(endpoints.campaign.getCampaignById(campaign.id));
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Update Failed', {
+        variant: 'error',
+      });
+    }
+  });
 
   return (
     <Dialog

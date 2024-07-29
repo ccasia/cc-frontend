@@ -27,7 +27,7 @@ import UserCard from './user-card';
 import MediaKitModal from '../media-kit-modal';
 import CampaignDetailPitchContent from './campaign-detail-pitch-content';
 
-const CampaignDetailPitch = ({ pitches, shortlisted, timeline }) => {
+const CampaignDetailPitch = ({ pitches, shortlisted, timeline, timelines }) => {
   const smUp = useResponsive('up', 'sm');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [search, setSearch] = useState();
@@ -153,7 +153,6 @@ const CampaignDetailPitch = ({ pitches, shortlisted, timeline }) => {
       </Box> */}
       <Box
         sx={{
-          // textAlign: 'end',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -291,7 +290,7 @@ const CampaignDetailPitch = ({ pitches, shortlisted, timeline }) => {
         <Grid item xs={12} sm={8}>
           <Box component={Card} p={2}>
             {selectedPitch ? (
-              <CampaignDetailPitchContent data={selectedPitch} />
+              <CampaignDetailPitchContent data={selectedPitch} timelines={timelines} />
             ) : (
               <EmptyContent title="Select a pitch" />
             )}
@@ -310,7 +309,8 @@ export default CampaignDetailPitch;
 CampaignDetailPitch.propTypes = {
   pitches: PropTypes.array,
   shortlisted: PropTypes.array,
-  timeline: PropTypes.array,
+  timeline: PropTypes.object,
+  timelines: PropTypes.array,
 };
 
 // {/* <Card

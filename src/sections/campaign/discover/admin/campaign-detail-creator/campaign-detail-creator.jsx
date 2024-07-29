@@ -15,10 +15,10 @@ const CampaignDetailCreator = ({ campaign }) => {
   const filteredData = useMemo(
     () =>
       query
-        ? campaign?.ShortListedCreator.filter((elem) =>
+        ? campaign?.shortlistCreator.filter((elem) =>
             elem.creator.name.toLowerCase().includes(query.toLowerCase())
           )
-        : campaign?.ShortListedCreator,
+        : campaign?.shortlistCreator,
     [campaign, query]
   );
 
@@ -39,7 +39,7 @@ const CampaignDetailCreator = ({ campaign }) => {
         }}
         onChange={(e) => setQuery(e.target.value)}
       />
-      {campaign?.ShortListedCreator.length > 0 ? (
+      {campaign?.shortlistCreator?.length > 0 ? (
         <>
           <Box
             display="grid"

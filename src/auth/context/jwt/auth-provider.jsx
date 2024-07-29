@@ -186,7 +186,7 @@ export function AuthProvider({ children }) {
 
   const checkAuthenticated = state.user ? 'authenticated' : 'unauthenticated';
 
-  const permission = flattenData(state.user?.admin?.AdminPermissionModule);
+  const permission = flattenData(state.user?.admin?.adminPermissionModule);
 
   const status = state.loading ? 'loading' : checkAuthenticated;
 

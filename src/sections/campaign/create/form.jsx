@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable no-unused-vars */
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
@@ -17,17 +18,9 @@ import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import {
-  Menu,
-  Grid,
-  Stack,
-  Avatar,
-  Divider,
-  Tooltip,
-  IconButton,
-  ListItemText,
-} from '@mui/material';
+import { Grid, Stack, Avatar, Divider, IconButton, StepContent, ListItemText } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
 import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
@@ -50,6 +43,9 @@ import FormProvider, {
 import CreateBrand from './brandDialog';
 import { useGetAdmins } from './hooks/get-am';
 import SelectTimeline from './steps/select-timeline';
+import TimelineTypeModal from './steps/timeline-type-modal';
+// import CampaignTaskManagement from './steps/campaign-tasks';
+
 // import NotificationReminder from './steps/notification-reminder';
 
 const steps = [
@@ -80,13 +76,14 @@ const interestsLists = [
 function CreateCampaignForm() {
   const { enqueueSnackbar } = useSnackbar();
   const active = localStorage.getItem('activeStep');
+  const modal = useBoolean();
+
   const { options } = useGetCampaignBrandOption();
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(parseInt(active, 10) || 0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const open = Boolean(anchorEl);
-  // eslint-disable-next-line no-unused-vars
   const [image, setImage] = useState(null);
   const { brand } = useBrand();
   const [brandState, setBrandState] = useState('');
@@ -95,7 +92,6 @@ function CreateCampaignForm() {
   const { defaultTimeline } = useGetTimeline();
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const [timeline, setTimeline] = useState('defaultTimeline');
-  // const { admins } = useAdmins();
   const { admins } = useGetAdmins();
   const { user } = useAuthContext();
   const timelineType = useGetAllTimelineType();
@@ -120,12 +116,11 @@ function CreateCampaignForm() {
   const campaignSchema = Yup.object().shape({
     // campaignName: Yup.string().required('Campaign name is required'),
     campaignInterests: Yup.array().min(3, 'Choose at least three option'),
-    campaignIndustries: Yup.array().min(3, 'Choose at least three option'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     // campaignCompany: Yup.string().required('Company name is required'),
     campaignBrand: Yup.object().required('Brand name is required'),
-    campaignStartDate: Yup.mixed().nullable().required('birthDate date is required'),
-    campaignEndDate: Yup.mixed().nullable().required('birthDate date is required'),
+    campaignStartDate: Yup.mixed().nullable().required('Campaign start date is required'),
+    // campaignEndDate: Yup.mixed().nullable().required('birthDate date is required'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     // campaginCoverImage: Yup.string().required('Campaign cover image is required'),
@@ -144,81 +139,129 @@ function CreateCampaignForm() {
       .required('Campaign dont is required '),
 
     adminManager: Yup.array().required('Admin Manager is required'),
-    campaignImages: Yup.array().min(1, 'Must have at least 2 items'),
+    campaignImages: Yup.array().min(3, 'Must have at least 3 items'),
     agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
-    // timeline: Yup.object().shape({
-    //   openForPitch: Yup.number('Must be a number')
-    //     .min(14, 'Minumum is 14 days')
-    //     .max(30, 'Maximum is 30 days')
-    //     .required('Open for pitch timeline is required'),
-    //   filterPitch: Yup.number('Must be a number')
-    //     .min(2, 'Minumum is 2 days')
-    //     .max(3, 'Maximum is 3 days')
-    //     .required('Filtering timeline is required'),
-    //   shortlistCreator: Yup.number('Must be a number')
-    //     .min(1, 'Minumum is 1 days')
-    //     .max(2, 'Maximum is 2 days')
-    //     .required('Shortlist creator timeline is required'),
-    //   agreementSign: Yup.number('Must be a number')
-    //     .min(1, 'Minumum is 1 days')
-    //     .max(2, 'Maximum is 2 days')
-    //     .required('Sign of agreement timeline is required'),
-    //   firstDraft: Yup.number('Must be a number')
-    //     .min(3, 'Minumum is 3 days')
-    //     .max(5, 'Maximum is 5 days')
-    //     .required('First draft timeline is required'),
-    //   feedBackFirstDraft: Yup.number('Must be a number')
-    //     .min(2, 'Minumum is 2 days')
-    //     .max(3, 'Maximum is 3 days')
-    //     .required('Feedback first draft timeline is required'),
-    //   finalDraft: Yup.number('Must be a number')
-    //     .min(2, 'Minumum is 2 days')
-    //     .max(4, 'Maximum is 4 days')
-    //     .required('Final draft timeline is required'),
-    //   feedBackFinalDraft: Yup.number('Must be a number')
-    //     .min(1, 'Minumum is 1 days')
-    //     .max(2, 'Maximum is 2 days')
-    //     .required('Feedback final draft timeline is required'),
-    //   posting: Yup.number('Must be a number')
-    //     .max(2, 'Maximum is 2 days')
-    //     .required('Posting social media timeline is required'),
-    //   qc: Yup.number('Must be a number').required('QC timeline is required'),
-    // }),
+    timeline: Yup.mixed().required(),
+    campaignTasksAdmin: Yup.array()
+      .min(1)
+      .of(
+        Yup.object().shape({
+          name: Yup.string().required('Name is required'),
+        })
+      ),
   });
 
-  const defaultValues = {
-    campaignTitle: '',
-    campaignBrand: null,
-    campaignStartDate: null,
-    campaignEndDate: null,
-    campaignInterests: [],
-    campaignIndustries: [],
-    campaignObjectives: '',
-    campaignDescription: '',
-    audienceGender: [],
-    audienceAge: [],
-    audienceLocation: [],
-    audienceLanguage: [],
-    audienceCreatorPersona: [],
-    audienceUserPersona: '',
-    campaignDo: [
-      {
-        value: '',
-      },
-    ],
-    campaignDont: [
-      {
-        value: '',
-      },
-    ],
-    campaignImages: [],
-    adminManager: [],
-    agreementFrom: null,
-    timeline: [{ timeline_type: '', duration: undefined, startDate: '', endDate: '' }],
+  const campaignInformationSchema = Yup.object().shape({
+    campaignInterests: Yup.array().min(3, 'Choose at least three option'),
+    campaignDescription: Yup.string().required('Campaign Description is required.'),
+    campaignBrand: Yup.object().required('Brand name is required'),
+    campaignTitle: Yup.string().required('Campaign title is required'),
+    campaignObjectives: Yup.string().required('Campaign objectives is required'),
+  });
+
+  const campaignRequirementSchema = Yup.object().shape({
+    audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
+    audienceGender: Yup.array()
+      .min(1, 'At least one option')
+      .required('Audience Gender is required'),
+    audienceLocation: Yup.array()
+      .min(1, 'At least one option')
+      .required('Audience location is required'),
+    audienceLanguage: Yup.array()
+      .min(1, 'At least one option')
+      .required('Audience language is required'),
+    audienceCreatorPersona: Yup.array()
+      .min(1, 'At least one option')
+      .required('Audience creator persona is required'),
+    audienceUserPersona: Yup.string().required('Audience influencer persona is required'),
+    campaignDo: Yup.array()
+      .min(1, 'At least one option')
+      .of(
+        Yup.object().shape({
+          value: Yup.string().required('This field is required'),
+        })
+      ),
+    campaignDont: Yup.array()
+      .min(1, 'At least one option')
+      .of(
+        Yup.object().shape({
+          value: Yup.string().required('This field is required'),
+        })
+      ),
+    // campaignDo: Yup.array().min(1, 'At least one option').required('Campaign do is required '),
+    // campaignDont: Yup.array().min(1, 'At least one option').required('Campaign dont is required '),
+  });
+
+  const campaignImagesSchema = Yup.object().shape({
+    campaignImages: Yup.array()
+      .min(3, 'Must have at least 3 items')
+      .required('Campaign Images ares required'),
+  });
+
+  const campaignAdminSchema = Yup.object().shape({
+    adminManager: Yup.array()
+      .min(1, 'At least One Admin is required')
+      .required('Admin Manager is required'),
+  });
+
+  const savedData = localStorage.getItem('formData');
+
+  const defaultValues = savedData
+    ? JSON.parse(savedData)
+    : {
+        campaignTitle: '',
+        campaignBrand: null,
+        campaignStartDate: null,
+        campaignEndDate: null,
+        campaignInterests: [],
+        campaignObjectives: '',
+        campaignDescription: '',
+        audienceGender: [],
+        audienceAge: [],
+        audienceLocation: [],
+        audienceLanguage: [],
+        audienceCreatorPersona: [],
+        audienceUserPersona: '',
+        campaignDo: [
+          {
+            value: '',
+          },
+        ],
+        campaignDont: [
+          {
+            value: '',
+          },
+        ],
+        campaignImages: [],
+        adminManager: [],
+        agreementFrom: null,
+        timeline: [{ timeline_type: '', duration: undefined, startDate: '', endDate: '' }],
+        // campaignTasksAdmin: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
+        campaignTasksAdmin: [],
+        campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
+      };
+
+  const getSchemaForStep = (step) => {
+    switch (step) {
+      case 0:
+        return campaignInformationSchema;
+      case 1:
+        return campaignRequirementSchema;
+      case 2:
+        return campaignImagesSchema;
+      case 3:
+        return undefined;
+      case 4:
+        return undefined;
+      case 5:
+        return campaignAdminSchema;
+      default:
+        return campaignSchema; // Assuming step 3 is the default or final step
+    }
   };
 
   const methods = useForm({
-    resolver: yupResolver(campaignSchema),
+    resolver: yupResolver(getSchemaForStep(activeStep)),
     defaultValues,
     reValidateMode: 'onChange',
     mode: 'onChange',
@@ -232,10 +275,15 @@ function CreateCampaignForm() {
     setValue,
     watch,
     reset,
+    trigger,
     formState: { errors },
   } = methods;
 
   const values = watch();
+
+  // useEffect(() => {
+  //   localStorage.setItem('formData', JSON.stringify(values));
+  // }, [values]);
 
   const {
     append: doAppend,
@@ -272,9 +320,7 @@ function CreateCampaignForm() {
         })
       );
 
-      setValue('campaignImages', [...files, ...newFiles], {
-        shouldValidate: true,
-      });
+      setValue('campaignImages', [...files, ...newFiles]);
     },
     [setValue, values.campaignImages]
   );
@@ -285,9 +331,16 @@ function CreateCampaignForm() {
     }
   }, [brandState, setValue]);
 
-  const handleNext = () => {
-    localStorage.setItem('activeStep', activeStep + 1);
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  const handleNext = async () => {
+    if (activeStep === 3 || activeStep === 4) {
+      localStorage.setItem('activeStep', activeStep + 1);
+      setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    }
+    const result = await trigger();
+    if (result) {
+      localStorage.setItem('activeStep', activeStep + 1);
+      setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    }
   };
 
   const handleBack = () => {
@@ -363,6 +416,7 @@ function CreateCampaignForm() {
       });
       reset();
       setActiveStep(0);
+      localStorage.setItem('activeStep', 0);
     } catch (error) {
       enqueueSnackbar('Error creating campaign. Contact our admin', {
         variant: 'error',
@@ -393,21 +447,34 @@ function CreateCampaignForm() {
           alignItems: 'center',
         }}
       >
-        <RHFAutocomplete
-          fullWidth
-          name="campaignBrand"
-          placeholder="Brand"
-          options={brandState ? [brandState] : options}
-          freeSolo
-          getOptionLabel={(option) => option.name}
-          renderOption={(props, option) => (
-            <Stack direction="row" spacing={1} p={1} {...props}>
-              <Avatar src={option?.logo} />
-              <ListItemText primary={option.name} />
-            </Stack>
-          )}
-        />
-        <Box>
+        {options && (
+          <RHFAutocomplete
+            fullWidth
+            name="campaignBrand"
+            placeholder="Brand"
+            options={brandState ? [brandState] : options}
+            getOptionLabel={(option) => option.name}
+            noOptionsText={
+              <Button
+                variant="contained"
+                size="small"
+                fullWidth
+                sx={{ mt: 2 }}
+                onClick={handleOpenCompanyDialog}
+              >
+                Create new brand
+              </Button>
+            }
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderOption={(props, option) => (
+              <Stack direction="row" spacing={1} p={1} {...props}>
+                <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                <ListItemText primary={option.name} />
+              </Stack>
+            )}
+          />
+        )}
+        {/* <Box>
           <Tooltip title="Create brand">
             <IconButton
               sx={{
@@ -449,7 +516,7 @@ function CreateCampaignForm() {
               </Stack>
             </MenuItem>
           </Menu>
-        </Box>
+        </Box> */}
       </Box>
 
       <RHFSelect name="campaignObjectives" label="Campaign Objectives">
@@ -489,7 +556,7 @@ function CreateCampaignForm() {
         }
       />
 
-      <RHFAutocomplete
+      {/* <RHFAutocomplete
         name="campaignIndustries"
         placeholder="+ Industries"
         multiple
@@ -514,7 +581,7 @@ function CreateCampaignForm() {
             />
           ))
         }
-      />
+      /> */}
     </Box>
   );
 
@@ -530,42 +597,6 @@ function CreateCampaignForm() {
           sm: 'repeat(2, 1fr)',
         }}
       >
-        {/* <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          flexDirection: 'column',
-          gap: 2,
-          p: 1,
-        }}
-      >
-        <UploadPhoto onDrop={onDrop}>
-          <Avatar
-            sx={{
-              width: 1,
-              height: 1,
-              borderRadius: '50%',
-            }}
-            src={image || null}
-          />
-        </UploadPhoto>
-        <Typography variant="h6">Campaign Logo</Typography>
-      </Box> */}
-        {/* <Box sx={{ flexGrow: 1 }} /> */}
-
-        {/* <RHFTextField name="campaignTitle" label="Campaign Title" /> */}
-
-        {/* <RHFTextField
-        name="campaignSuccessMetrics"
-        label="What does campaign success look like to you?"
-      /> */}
-
-        {/* <RHFSelect name="campaignStage" label="Campaign Stage">
-        <MenuItem value="draft">Draft</MenuItem>
-        <MenuItem value="publish">Publish</MenuItem>
-      </RHFSelect> */}
-
         <Typography variant="h4">Audience Requirements</Typography>
         <Box flexGrow={1} />
         <RHFMultiSelect
@@ -579,7 +610,6 @@ function CreateCampaignForm() {
           ]}
           label="Audience Gender"
         />
-
         <RHFMultiSelect
           name="audienceAge"
           checkbox
@@ -669,11 +699,17 @@ function CreateCampaignForm() {
         <Grid item xs={12} sm={6}>
           <Stack direction="column" spacing={2}>
             {doFields.map((item, index) => (
-              <RHFTextField
-                key={item.id}
-                name={`campaignDo[${index}].value`}
-                label={`Campaign Do's ${index + 1}`}
-              />
+              <Stack key={item.id} direction="row" spacing={1} alignItems="center">
+                <RHFTextField
+                  name={`campaignDo[${index}].value`}
+                  label={`Campaign Do's ${index + 1}`}
+                />
+                {index !== 0 && (
+                  <IconButton color="error" onClick={() => doRemove(index)}>
+                    <Iconify icon="ic:outline-delete" color="error.main" />
+                  </IconButton>
+                )}
+              </Stack>
             ))}
 
             <Button variant="contained" onClick={() => doAppend({ value: '' })}>
@@ -684,11 +720,17 @@ function CreateCampaignForm() {
         <Grid item xs={12} sm={6}>
           <Stack direction="column" spacing={2}>
             {dontFields.map((item, index) => (
-              <RHFTextField
-                key={item.id}
-                name={`campaignDont[${index}].value`}
-                label={`Campaign Dont's ${index + 1}`}
-              />
+              <Stack key={item.id} direction="row" spacing={1} alignItems="center">
+                <RHFTextField
+                  name={`campaignDont[${index}].value`}
+                  label={`Campaign Dont's ${index + 1}`}
+                />
+                {index !== 0 && (
+                  <IconButton color="error" onClick={() => dontRemove(index)}>
+                    <Iconify icon="ic:outline-delete" color="error.main" />
+                  </IconButton>
+                )}
+              </Stack>
             ))}
 
             <Button variant="contained" onClick={() => dontAppend({ value: '' })}>
@@ -763,7 +805,7 @@ function CreateCampaignForm() {
           )
         }
         onRemoveAll={() => setValue('campaignImages', [], { shouldValidate: true })}
-        onUpload={() => console.info('ON UPLOAD')}
+        // onUpload={() => console.info('ON UPLOAD')}
       />
     </Box>
   );
@@ -825,16 +867,11 @@ function CreateCampaignForm() {
             timeline={timeline}
             setTimeline={setTimeline}
             timelineMethods={timelineMethods}
-            // fields={timelineFields}
-            // remove={timelineRemove}
             watch={watch}
-            // append={timelineAppend}
-            // insert={insert}
             timelineType={timelineType}
+            modal={modal}
           />
         );
-      // case 3:
-      //   return <NotificationReminder />;
       case 4:
         return formSelectAdminManager;
       case 5:
@@ -853,58 +890,49 @@ function CreateCampaignForm() {
         borderRadius: '20px',
         mt: 3,
         bgcolor: 'background.paper',
-        p: 3,
+        p: { xs: 1, md: 3 },
       }}
     >
-      <Stepper
-        sx={{
-          pt: 2,
-          m: 1,
-        }}
-        activeStep={activeStep}
-        alternativeLabel
-      >
-        {steps.map((label, index) => {
-          const stepProps = {};
-          const labelProps = {};
-          return (
-            <Step key={label} {...stepProps}>
-              <StepLabel {...labelProps}>{label}</StepLabel>
-            </Step>
-          );
-        })}
-      </Stepper>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <Stepper
+          sx={{
+            pt: 2,
+            m: 1,
+          }}
+          activeStep={activeStep}
+          // alternativeLabel
+          orientation="vertical"
+        >
+          {steps.map((label, index) => {
+            const stepProps = {};
+            const labelProps = {};
+            return (
+              <Step key={label} {...stepProps}>
+                <StepLabel {...labelProps}>{label}</StepLabel>
+                <StepContent>
+                  {getStepContent(activeStep)}
+                  {activeStep !== steps.length - 1 && (
+                    <Stack mt={2} direction="row" gap={2}>
+                      <Button
+                        disabled={activeStep === 0}
+                        onClick={handleBack}
+                        variant="outlined"
+                        size="small"
+                      >
+                        Back
+                      </Button>
 
-      {/* {activeStep === steps.length ? (
-        <>
-          <Paper
-            sx={{
-              p: 3,
-              my: 3,
-              minHeight: 120,
-              bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-            }}
-          >
-            <Typography sx={{ my: 1 }}>All steps completed - you&apos;re finished</Typography>
-          </Paper>
-          <Box sx={{ display: 'flex', m: 2 }}>
-            <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
-              Back
-            </Button>
+                      <Button variant="contained" size="small" onClick={handleNext}>
+                        Next
+                      </Button>
+                    </Stack>
+                  )}
+                </StepContent>
+              </Step>
+            );
+          })}
+        </Stepper>
 
-            <Box sx={{ flexGrow: 1 }} />
-            <Button
-              onClick={() => {
-                //   reset();
-                setActiveStep((prevActiveStep) => prevActiveStep - 2);
-              }}
-            >
-              Reset
-            </Button>
-            <Button color="inherit">Submit</Button>
-          </Box>
-        </>
-      ) : (
         <Box
           sx={{
             display: 'flex',
@@ -919,133 +947,66 @@ function CreateCampaignForm() {
               my: 0.5,
               mx: 1,
               width: '100%',
-              // bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-              // width: '80%',
             }}
           >
             <Box sx={{ my: 1 }}>
               <FormProvider methods={methods} onSubmit={onSubmit}>
-                {getStepContent(activeStep)}
-                <Box sx={{ display: 'flex', m: 2 }}>
-                  <Button
-                    color="inherit"
-                    disabled={activeStep === 0}
-                    onClick={handleBack}
-                    sx={{ mr: 1 }}
-                  >
-                    Back
-                  </Button>
-                  <Box sx={{ flexGrow: 1 }} />
-                  {activeStep === steps.length - 1 ? (
-                    <Stack direction="row" spacing={1}>
-                      <LoadingButton
-                        variant="outlined"
-                        startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
-                      >
-                        Preview
-                      </LoadingButton>
-                      <LoadingButton
-                        variant="outlined"
-                        onClick={() => onSubmit('draft')}
-                        startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
-                        loading={isLoading}
-                      >
-                        Draft
-                      </LoadingButton>
-                      <LoadingButton
-                        variant="contained"
-                        color="primary"
-                        onClick={() => onSubmit('publish')}
-                        startIcon={<Iconify icon="material-symbols:publish" width={16} />}
-                        loading={isLoading}
-                      >
-                        Publish
-                      </LoadingButton>
-                    </Stack>
-                  ) : (
-                    <Button variant="contained" onClick={handleNext}>
-                      Next
+                {/* {getStepContent(activeStep)} */}
+                {activeStep === steps.length - 1 && (
+                  <Box sx={{ display: 'flex', m: 2, direction: { xs: 'column', md: 'row' } }}>
+                    <Button
+                      color="inherit"
+                      disabled={activeStep === 0}
+                      onClick={handleBack}
+                      sx={{ mr: 1 }}
+                    >
+                      Back
                     </Button>
-                  )}
-                </Box>
+                    <Box sx={{ flexGrow: 1 }} />
+                    {activeStep === steps.length - 1 ? (
+                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+                        <LoadingButton
+                          variant="outlined"
+                          startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
+                        >
+                          Preview
+                        </LoadingButton>
+                        <LoadingButton
+                          variant="outlined"
+                          onClick={() => onSubmit('DRAFT')}
+                          startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
+                          loading={isLoading}
+                        >
+                          Draft
+                        </LoadingButton>
+                        <LoadingButton
+                          variant="contained"
+                          color="primary"
+                          onClick={() => onSubmit('SCHEDULED')}
+                          startIcon={<Iconify icon="material-symbols:publish" width={16} />}
+                          loading={isLoading}
+                        >
+                          Schedule on {dayjs(startDate).format('ddd LL')}
+                        </LoadingButton>
+                      </Stack>
+                    ) : (
+                      <Button variant="contained" onClick={handleNext}>
+                        Next
+                      </Button>
+                    )}
+                  </Box>
+                )}
               </FormProvider>
             </Box>
           </Paper>
         </Box>
-      )} */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Paper
-          sx={{
-            p: 0.5,
-            my: 0.5,
-            mx: 1,
-            width: '100%',
-            // bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-            // width: '80%',
-          }}
-        >
-          <Box sx={{ my: 1 }}>
-            <FormProvider methods={methods} onSubmit={onSubmit}>
-              {getStepContent(activeStep)}
-              <Box sx={{ display: 'flex', m: 2 }}>
-                <Button
-                  color="inherit"
-                  disabled={activeStep === 0}
-                  onClick={handleBack}
-                  sx={{ mr: 1 }}
-                >
-                  Back
-                </Button>
-                <Box sx={{ flexGrow: 1 }} />
-                {activeStep === steps.length - 1 ? (
-                  <Stack direction="row" spacing={1}>
-                    <LoadingButton
-                      variant="outlined"
-                      startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
-                    >
-                      Preview
-                    </LoadingButton>
-                    <LoadingButton
-                      variant="outlined"
-                      onClick={() => onSubmit('DRAFT')}
-                      startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
-                      loading={isLoading}
-                    >
-                      Draft
-                    </LoadingButton>
-                    <LoadingButton
-                      variant="contained"
-                      color="primary"
-                      onClick={() => onSubmit('SCHEDULED')}
-                      startIcon={<Iconify icon="material-symbols:publish" width={16} />}
-                      loading={isLoading}
-                    >
-                      Schedule on {dayjs(startDate).format('ddd LL')}
-                    </LoadingButton>
-                  </Stack>
-                ) : (
-                  <Button variant="contained" onClick={handleNext}>
-                    Next
-                  </Button>
-                )}
-              </Box>
-            </FormProvider>
-          </Box>
-        </Paper>
-      </Box>
-      {/* <CreateCompany open={openCompanyDialog} onClose={handleCloseCompanyDialog} /> */}
+      </FormProvider>
       <CreateBrand
         open={openCompanyDialog}
         onClose={handleCloseCompanyDialog}
         setBrand={setBrandState}
       />
+      <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
     </Box>
   );
 }

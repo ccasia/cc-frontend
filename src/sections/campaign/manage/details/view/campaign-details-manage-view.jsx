@@ -42,6 +42,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import withPermission from 'src/auth/guard/withPermissions';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
@@ -93,7 +94,7 @@ const CampaignDetailManageView = ({ id }) => {
   };
 
   // const formatDays = (days) => (days === 1 ? 'day' : 'days');
-  const isEditable = campaign?.status !== 'active';
+  const isEditable = campaign?.status !== 'ACTIVE';
 
   const handleChangeStatus = async (status) => {
     if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate) < dayjs()) {
@@ -108,7 +109,7 @@ const CampaignDetailManageView = ({ id }) => {
         status,
       });
 
-      if (status === 'active') {
+      if (status === 'ACTIVE') {
         enqueueSnackbar('Campaign is now live!');
       } else {
         enqueueSnackbar('Campaign is paused');
@@ -214,20 +215,24 @@ const CampaignDetailManageView = ({ id }) => {
         <Stack spacing={1}>
           <Typography variant="subtitle1">Interests</Typography>
           <Stack direction="row" spacing={1}>
-            {campaign?.campaignBrief?.interests.map((interest) => (
-              <Chip label={interest} size="small" color="secondary" />
+            {campaign?.campaignBrief?.interests.map((interest, index) => (
+              <Label key={index} color="secondary">
+                {interest}
+              </Label>
             ))}
           </Stack>
         </Stack>
 
-        <Stack spacing={1} mt={2}>
+        {/* <Stack spacing={1} mt={2}>
           <Typography variant="subtitle1">Industries</Typography>
           <Stack direction="row" spacing={1}>
-            {campaign?.campaignBrief?.industries.map((industry) => (
-              <Chip label={industry} size="small" color="secondary" />
+            {campaign?.campaignBrief?.interests.map((industry, index) => (
+              <Label key={index} color="secondary">
+                {industry}
+              </Label>
             ))}
           </Stack>
-        </Stack>
+        </Stack> */}
       </Box>
 
       <EditCampaignInfo open={open} campaign={campaign} onClose={onClose} />
@@ -269,7 +274,20 @@ const CampaignDetailManageView = ({ id }) => {
               .map(
                 (e) =>
                   campaign?.brand[e] && (
-                    <ListItemText primary={formatText(e)} secondary={campaign?.brand[e]} />
+                    <ListItemText
+                      primary={formatText(e)}
+                      secondary={
+                        typeof campaign?.brand[e] === 'object' ? (
+                          <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
+                            {campaign?.brand[e].map((val) => (
+                              <Label>{val}</Label>
+                            ))}
+                          </Stack>
+                        ) : (
+                          campaign?.brand[e]
+                        )
+                      }
+                    />
                   )
               )}
         </Box>
@@ -390,81 +408,61 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="Gender"
             secondary={
-              campaign?.campaignRequirement?.gender?.map((e, index) => (
-                <Chip
-                  key={index}
-                  label={formatText(e)}
-                  size="small"
-                  sx={{
-                    mr: 1,
-                  }}
-                  color="primary"
-                />
-              )) || null
+              <Stack spacing={1} direction="row">
+                {campaign?.campaignRequirement?.gender?.map((e, index) => (
+                  <Label key={index} color="secondary">
+                    {formatText(e)}
+                  </Label>
+                )) || null}
+              </Stack>
             }
           />
           <ListItemText
             primary="Age"
             secondary={
-              campaign?.campaignRequirement?.age?.map((e, index) => (
-                <Chip
-                  key={index}
-                  label={formatText(e)}
-                  size="small"
-                  sx={{
-                    mr: 1,
-                  }}
-                  color="primary"
-                />
-              )) || null
+              <Stack spacing={1} direction="row">
+                {campaign?.campaignRequirement?.age?.map((e, index) => (
+                  <Label key={index} color="secondary">
+                    {formatText(e)}
+                  </Label>
+                )) || null}
+              </Stack>
             }
           />
           <ListItemText
             primary="Geo Location"
             secondary={
-              campaign?.campaignRequirement?.geoLocation?.map((e, index) => (
-                <Chip
-                  key={index}
-                  label={formatText(e)}
-                  size="small"
-                  sx={{
-                    mr: 1,
-                  }}
-                  color="primary"
-                />
-              )) || null
+              <Stack spacing={1} direction="row">
+                {campaign?.campaignRequirement?.geoLocation?.map((e, index) => (
+                  <Label key={index} color="secondary">
+                    {formatText(e)}
+                  </Label>
+                )) || null}
+              </Stack>
             }
           />
           <ListItemText
             primary="Language"
             secondary={
-              campaign?.campaignRequirement?.language?.map((e, index) => (
-                <Chip
-                  key={index}
-                  label={formatText(e)}
-                  size="small"
-                  sx={{
-                    mr: 1,
-                  }}
-                  color="primary"
-                />
-              )) || null
+              <Stack spacing={1} direction="row">
+                {campaign?.campaignRequirement?.language?.map((e, index) => (
+                  <Label key={index} color="secondary">
+                    {formatText(e)}
+                  </Label>
+                )) || null}
+              </Stack>
             }
           />
           <ListItemText
             primary="Creator Persona"
             secondary={
-              campaign?.campaignRequirement?.creator_persona?.map((e, index) => (
-                <Chip
-                  key={index}
-                  label={formatText(e)}
-                  size="small"
-                  sx={{
-                    mr: 1,
-                  }}
-                  color="primary"
-                />
-              )) || null
+              <Stack spacing={1} direction="row">
+                {campaign?.campaignRequirement?.creator_persona?.map((e, index) => (
+                  <Label key={index} color="secondary">
+                    {formatText(e)}
+                  </Label>
+                )) || null}
+              </Stack>
             }
           />
           <ListItemText
@@ -492,130 +490,25 @@ const CampaignDetailManageView = ({ id }) => {
             }
           />
         )}
-        {/* <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={1}>
-          <ListItemText
-            primary="Open For Pitch"
-            secondary={`${
-              campaign?.customCampaignTimeline?.openForPitch ??
-              campaign?.defaultCampaignTimeline?.openForPitch
-            }
-            ${formatDays(
-              campaign?.customCampaignTimeline?.openForPitch ??
-                campaign?.defaultCampaignTimeline?.openForPitch
-            )}`}
-          />
-          <ListItemText
-            primary="Shortlist Creator"
-            secondary={`${
-              campaign?.customCampaignTimeline?.shortlistCreator ??
-              campaign?.defaultCampaignTimeline?.shortlistCreator
-            }
-            ${formatDays(
-              campaign?.customCampaignTimeline?.shortlistCreator ??
-                campaign?.defaultCampaignTimeline?.shortlistCreator
-            )}`}
-          />
-          <ListItemText
-            primary="First Draft"
-            secondary={`${
-              campaign?.customCampaignTimeline?.firstDraft ??
-              campaign?.defaultCampaignTimeline?.firstDraft
-            }
-            ${formatDays(
-              campaign?.customCampaignTimeline?.firstDraft ??
-                campaign?.defaultCampaignTimeline?.firstDraft
-            )}`}
-          />
-          <ListItemText
-            primary="Final Draft"
-            secondary={`${
-              campaign?.customCampaignTimeline?.finalDraft ??
-              campaign?.defaultCampaignTimeline?.finalDraft
-            }
-            ${formatDays(
-              campaign?.customCampaignTimeline?.finalDraft ??
-                campaign?.defaultCampaignTimeline?.finalDraft
-            )}`}
-          />
-          <ListItemText
-            primary="Feedback First Draft"
-            secondary={`${
-              campaign?.customCampaignTimeline?.feedBackFirstDraft ??
-              campaign?.defaultCampaignTimeline?.feedBackFirstDraft
-            }
-            ${formatDays(
-              campaign?.customCampaignTimeline?.feedBackFirstDraft ??
-                campaign?.defaultCampaignTimeline?.feedBackFirstDraft
-            )}`}
-          />
-          <ListItemText
-            primary="Feedback Final Draft"
-            secondary={`${
-              campaign?.customCampaignTimeline?.feedBackFinalDraft ??
-              campaign?.defaultCampaignTimeline?.feedBackFinalDraft
-            }
-            ${formatDays(
-              campaign?.customCampaignTimeline?.feedBackFinalDraft ??
-                campaign?.defaultCampaignTimeline?.feedBackFinalDraft
-            )}`}
-          />
-          <ListItemText
-            primary="Filter Pitch"
-            secondary={`${
-              campaign?.customCampaignTimeline?.filterPitch ??
-              campaign?.defaultCampaignTimeline?.filterPitch
-            }
-            ${formatDays(
-              campaign?.customCampaignTimeline?.filterPitch ??
-                campaign?.defaultCampaignTimeline?.filterPitch
-            )}`}
-          />
-          <ListItemText
-            primary="Agreement Sign"
-            secondary={`${
-              campaign?.customCampaignTimeline?.agreementSign ??
-              campaign?.defaultCampaignTimeline?.agreementSign
-            }
-            ${formatDays(
-              campaign?.customCampaignTimeline?.agreementSign ??
-                campaign?.defaultCampaignTimeline?.agreementSign
-            )}`}
-          />
-          <ListItemText
-            primary="QC"
-            secondary={`${campaign?.customCampaignTimeline?.qc ?? campaign?.defaultCampaignTimeline?.qc}
-                ${formatDays(
-                  campaign?.customCampaignTimeline?.qc ?? campaign?.defaultCampaignTimeline?.qc
-                )}`}
-          />
-          <ListItemText
-            primary="Posting"
-            secondary={`${
-              campaign?.customCampaignTimeline?.posting ??
-              campaign?.defaultCampaignTimeline?.posting
-            }
-            ${formatDays(
-              campaign?.customCampaignTimeline?.posting ??
-                campaign?.defaultCampaignTimeline?.posting
-            )}`}
-          />
-        </Box> */}
+
         <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={2} mt={1}>
           {campaign &&
-            campaign?.CampaignTimeline.map((timeline, index) => (
-              <Box key={timeline?.id}>
-                <Stack direction="row" spacing={1} alignItems="start">
-                  <Avatar sx={{ width: 15, height: 15, fontSize: 10 }}>{index + 1}</Avatar>
-                  <ListItemText
-                    primary={timeline?.name}
-                    secondary={`${dayjs(timeline?.startDate).format('ddd LL')} - ${dayjs(timeline?.endDate).format('ddd LL')}`}
-                    secondaryTypographyProps={{
-                      variant: 'caption',
-                    }}
-                  />
-                </Stack>
-              </Box>
-            ))}
+            campaign?.campaignTimeline
+              .sort((a, b) => a.order - b.order)
+              .map((timeline, index) => (
+                <Box key={timeline?.id}>
+                  <Stack direction="row" spacing={1} alignItems="start">
+                    <Avatar sx={{ width: 15, height: 15, fontSize: 10 }}>{index + 1}</Avatar>
+                    <ListItemText
+                      primary={timeline?.name}
+                      secondary={`${dayjs(timeline?.startDate).format('ddd LL')} - ${dayjs(timeline?.endDate).format('ddd LL')}`}
+                      secondaryTypographyProps={{
+                        variant: 'caption',
+                      }}
+                    />
+                  </Stack>
+                </Box>
+              ))}
         </Box>
       </Box>
       {isEditable && <EditTimeline open={open} campaign={campaign} onClose={onClose} />}
@@ -626,7 +519,7 @@ const CampaignDetailManageView = ({ id }) => {
     <Box component={Card} p={2}>
       <Typography variant="h5">Admin Manager</Typography>
       <List>
-        {campaign?.CampaignAdmin?.map((item, index) => (
+        {campaign?.campaignAdmin?.map((item, index) => (
           <ListItem>
             <ListItemText primary={`${index + 1}. ${item?.admin?.user?.name}`} />
           </ListItem>
@@ -665,7 +558,7 @@ const CampaignDetailManageView = ({ id }) => {
         ]}
         action={
           <Stack direction="row" spacing={2}>
-            {campaign?.status === 'active' && (
+            {campaign?.status === 'ACTIVE' && (
               <LoadingButton
                 startIcon={<Iconify icon="ion:close" />}
                 variant="outlined"
@@ -676,30 +569,44 @@ const CampaignDetailManageView = ({ id }) => {
                 End Campaign
               </LoadingButton>
             )}
-            {campaign && campaign?.status === 'paused' && (
+            {campaign && campaign?.status === 'PAUSED' && (
               <LoadingButton
                 variant="contained"
                 color="primary"
                 size="small"
                 endIcon={<Iconify icon="eva:cloud-upload-fill" />}
-                onClick={() => handleChangeStatus('active')}
+                onClick={() => handleChangeStatus('ACTIVE')}
                 loading={loadingButton.value}
               >
                 Publish
               </LoadingButton>
             )}
-            {campaign && campaign?.status === 'active' && (
+            {campaign && campaign?.status === 'ACTIVE' && (
               <LoadingButton
                 variant="contained"
                 color="warning"
                 size="small"
                 endIcon={<Iconify icon="solar:file-text-bold" />}
-                onClick={() => handleChangeStatus('paused')}
+                onClick={() => handleChangeStatus('PAUSED')}
                 loading={loadingButton.value}
               >
                 Pause
               </LoadingButton>
             )}
+
+            {/* {dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') &&
+              campaign?.status !== 'ACTIVE' && (
+                <LoadingButton
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  endIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                  onClick={() => handleChangeStatus('ACTIVE')}
+                  loading={loadingButton.value}
+                >
+                  Publish
+                </LoadingButton>
+              )} */}
           </Stack>
         }
         sx={{

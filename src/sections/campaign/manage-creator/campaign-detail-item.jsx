@@ -3,15 +3,17 @@ import React, { useState } from 'react';
 
 import { Box, Tab, Tabs, Stack } from '@mui/material';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Image from 'src/components/image';
 
 import CampaignInfo from './campaign-info';
 import CampaignAdmin from './campaign-admin';
 import CampaignMyTasks from './campaign-myTask';
-import CampaignRequirement from './campaign-requirement';
 
 const CampaignDetailItem = ({ campaign }) => {
   const [currentTab, setCurrentTab] = useState('info');
+  const { user } = useAuthContext();
 
   const renderGallery = (
     <Box
@@ -46,7 +48,6 @@ const CampaignDetailItem = ({ campaign }) => {
       <Tab value="info" label="Campaign Info" />
       {/* <Tab value="brief" label="Campaign Brief" /> */}
       <Tab value="admin" label="Campaign Admin" />
-      <Tab value="requirement" label="Campaign Requirement" />
     </Tabs>
   );
 
@@ -58,7 +59,6 @@ const CampaignDetailItem = ({ campaign }) => {
         {currentTab === 'tasks' && <CampaignMyTasks campaign={campaign} />}
         {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
         {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />}
-        {currentTab === 'requirement' && <CampaignRequirement campaign={campaign} />}
       </Box>
     </Stack>
   );

@@ -1,5 +1,3 @@
-import { SnackbarProvider } from 'notistack';
-
 import Container from '@mui/material/Container';
 
 import { paths } from 'src/routes/paths';
@@ -31,7 +29,7 @@ function CreateCampaign() {
 
       <CreateCampaignForm />
 
-      <SnackbarProvider />
+      {/* <SnackbarProvider /> */}
     </Container>
   );
 }

@@ -189,7 +189,6 @@ const Profile = () => {
                   placeholder="Choose a country"
                   options={countries.map((option) => option.label)}
                   getOptionLabel={(option) => option}
-                  s
                 />
               </Grid>
               {/* {JSON.stringify(methods)} */}

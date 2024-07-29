@@ -18,7 +18,7 @@ const MediaKitCover = ({ user }) => {
       <Stack direction="column" alignItems="center" gap={2}>
         <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }}>N</Avatar>
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
-          {user?.creator?.MediaKit?.name || user?.name}
+          {user?.creator?.mediaKit?.name || user?.name}
         </Typography>
         <Stack
           direction="row"
@@ -29,7 +29,7 @@ const MediaKitCover = ({ user }) => {
           }}
         >
           {(user &&
-            user?.creator?.MediaKit?.interests.map((elem, index) => (
+            user?.creator?.mediaKit?.interests.map((elem, index) => (
               <Chip
                 key={index}
                 label={elem}
@@ -65,7 +65,7 @@ const MediaKitCover = ({ user }) => {
               overflowWrap: 'break-word',
             }}
           >
-            {user?.creator?.MediaKit?.about}
+            {user?.creator?.mediaKit?.about}
           </Typography>
           <Stack
             direction={{ sm: 'row' }}
