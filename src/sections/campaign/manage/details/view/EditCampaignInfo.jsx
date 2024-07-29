@@ -19,7 +19,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
-// TODO TEMP: Copied from `src/sections/campaign/create/form.jsx`, consider consolidating them sometime
+// TODO: Copied from `src/sections/campaign/create/form.jsx`, consider consolidating them sometime
 const interestsLists = [
   'Art',
   'Beauty',
