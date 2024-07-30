@@ -21,7 +21,8 @@ const useGetCampaigns = (type) => {
 
   useEffect(() => {
     if (type && type.toLowerCase() === 'creator') {
-      setEndPoint(endpoints.campaign.getAllActiveCampaign);
+      // setEndPoint(endpoints.campaign.getAllActiveCampaign);
+      setEndPoint(endpoints.campaign.getMatchedCampaign);
     } else {
       setEndPoint(endpoints.campaign.getCampaignsByAdminId);
     }

@@ -11,7 +11,6 @@ import CampaignItem from './campaign-item';
 
 export default function CampaignLists({ campaigns }) {
   const { user } = useAuthContext();
-
   return (
     <>
       <Box
@@ -22,7 +21,7 @@ export default function CampaignLists({ campaigns }) {
           sm: 'repeat(2, 1fr)',
           md: 'repeat(3, 1fr)',
         }}
-      >
+      >   
         {campaigns.map((campaign) => (
           <CampaignItem key={campaign.id} campaign={campaign} user={user} />
         ))}
