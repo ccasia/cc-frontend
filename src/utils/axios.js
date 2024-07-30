@@ -159,9 +159,9 @@ export const endpoints = {
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',
-    editRequirement: '/api/campaign/editRequirement',
-    editDosAndDonts: '/api/campaign/editDosandDonts',
-    updatecampaignTimeline: (id) => `/api/campaign/updatecampaignTimeline/${id}`,
+    editCampaignRequirements: '/api/campaign/editCampaignRequirements',
+    editCampaignDosAndDonts: '/api/campaign/editCampaignDosandDonts',
+    editCampaignTimeline: (id) => `/api/campaign/editCampaignTimeline/${id}`,
     creator: {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
       getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,

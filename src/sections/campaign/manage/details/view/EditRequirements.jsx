@@ -38,16 +38,15 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
   const closeDialog = () => onClose('campaignRequirements');
 
   const onSubmit = handleSubmit(async (data) => {
-   
     try {
-      const res = await axiosInstance.patch(endpoints.campaign.editRequirement, {
+      const res = await axiosInstance.patch(endpoints.campaign.editCampaignRequirements, {
         ...data,
         campaignId: campaign.id,
       });
       mutate(endpoints.campaign.getCampaignById(campaign.id));
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar('Update Failed', {
+      enqueueSnackbar('Failed to update requirements', {
         variant: 'error',
       });
     }
@@ -65,16 +64,14 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
         <DialogTitle id="alert-dialog-title">Edit Requirements</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description" p={1.5}>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
-                  md: 'repeat(2, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                md: 'repeat(2, 1fr)',
+              },
+              gap: 2,
+            }}>
               <RHFMultiSelect
                 name="audienceGender"
                 checkbox
@@ -114,7 +111,6 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                   { value: 'Others', label: 'Others' },
                 ]}
               />
-
               {audienceLocation === 'Others' && (
                 <TextField
                   name="audienceLocation"
@@ -162,14 +158,14 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
               <RHFTextField
                 name="audienceUserPersona"
                 label="User Persona"
-                placeholder=" let us know who you want your campaign to reach!"
+                placeholder="let us know who you want your campaign to reach!"
               />
             </Box>
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialog}>Cancel</Button>
-          <Button type="submit" autoFocus color="primary">
+          <Button type="submit" onClick={closeDialog} autoFocus color="primary">
             Save
           </Button>
         </DialogActions>

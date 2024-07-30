@@ -117,7 +117,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
     try {
       setIsLoading(true);
       const res = await axiosInstance.patch(
-        endpoints.campaign.updatecampaignTimeline(campaign?.id),
+        endpoints.campaign.editCampaignTimeline(campaign?.id),
         data
       );
       setIsLoading(false);

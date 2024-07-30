@@ -19,7 +19,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
-// TODO TEMP: Copied from `src/sections/campaign/create/form.jsx`, consider consolidating them sometime
+// TODO: Copied from `src/sections/campaign/create/form.jsx`, consider consolidating them sometime
 const interestsLists = [
   'Art',
   'Beauty',
@@ -75,19 +75,30 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle id="alert-dialog-title">Edit Campaign Info</DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-description" p={1.5}>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
-                  md: 'repeat(2, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
-              <RHFTextField name="name" label="Campaign Name" fullWidth />
-              <RHFTextField name="description" label="Campaign Description" multiline />
+          <DialogContentText
+            id="alert-dialog-description"
+            p={1.5}
+          >
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                md: 'repeat(2, 1fr)',
+              },
+              gap: 2,
+            }}>
+              <RHFTextField
+                name="name"
+                label="Campaign Name"
+                fullWidth
+              />
+
+              <RHFTextField
+                name="description"
+                label="Campaign Description"
+                multiline
+              />
+
               <RHFAutocomplete
                 name="campaignInterests"
                 placeholder="+ Interests"
@@ -114,32 +125,6 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
                   ))
                 }
               />
-              {/* <RHFAutocomplete
-                name="campaignIndustries"
-                placeholder="+ Industries"
-                multiple
-                freeSolo
-                disableCloseOnSelect
-                options={interestsLists.map((option) => option)}
-                getOptionLabel={(option) => option}
-                renderOption={(props, option) => (
-                  <li {...props} key={option}>
-                    {option}
-                  </li>
-                )}
-                renderTags={(selected, getTagProps) =>
-                  selected.map((option, index) => (
-                    <Chip
-                      {...getTagProps({ index })}
-                      key={option}
-                      label={option}
-                      size="small"
-                      color="info"
-                      variant="soft"
-                    />
-                  ))
-                }
-              /> */}
             </Box>
           </DialogContentText>
         </DialogContent>
