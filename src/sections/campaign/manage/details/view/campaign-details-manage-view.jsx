@@ -109,7 +109,7 @@ const CampaignDetailManageView = ({ id }) => {
         status,
       });
 
-      if (status === 'active') {
+      if (status === 'ACTIVE') {
         enqueueSnackbar('Campaign is now live!');
       } else {
         enqueueSnackbar('Campaign is paused');
@@ -226,7 +226,7 @@ const CampaignDetailManageView = ({ id }) => {
         {/* <Stack spacing={1} mt={2}>
           <Typography variant="subtitle1">Industries</Typography>
           <Stack direction="row" spacing={1}>
-            {campaign?.campaignBrief?.industries.map((industry, index) => (
+            {campaign?.campaignBrief?.interests.map((industry, index) => (
               <Label key={index} color="secondary">
                 {industry}
               </Label>
@@ -367,7 +367,7 @@ const CampaignDetailManageView = ({ id }) => {
           </List>
         </Stack>
         <Stack mt={2}>
-          <Typography variant="subtitle1">Donts</Typography>
+          <Typography variant="subtitle1">Don&apos;ts</Typography>
           <List>
             {campaign?.campaignBrief?.campaigns_dont.map((elem) => (
               <ListItem>
@@ -593,6 +593,20 @@ const CampaignDetailManageView = ({ id }) => {
                 Pause
               </LoadingButton>
             )}
+
+            {/* {dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') &&
+              campaign?.status !== 'ACTIVE' && (
+                <LoadingButton
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  endIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                  onClick={() => handleChangeStatus('ACTIVE')}
+                  loading={loadingButton.value}
+                >
+                  Publish
+                </LoadingButton>
+              )} */}
           </Stack>
         }
         sx={{

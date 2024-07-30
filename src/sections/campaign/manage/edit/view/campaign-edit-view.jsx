@@ -88,7 +88,7 @@ const CampaignEditView = ({ id }) => {
     setValue('name', campaign?.name);
     setValue('description', campaign?.description);
     setValue('interests', campaign?.campaignBrief?.interests);
-    setValue('industries', campaign?.campaignBrief?.industries);
+    setValue('industries', campaign?.campaignBrief?.interests);
     setValue('startDate', dayjs(campaign?.campaignBrief?.startDate));
     setValue('endDate', dayjs(campaign?.campaignBrief?.endDate));
     setValue('campaignsDo', campaign?.campaignBrief?.campaigns_do);

@@ -20,6 +20,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { Grid, Stack, Avatar, Divider, IconButton, StepContent, ListItemText } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
 import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
@@ -42,6 +43,7 @@ import FormProvider, {
 import CreateBrand from './brandDialog';
 import { useGetAdmins } from './hooks/get-am';
 import SelectTimeline from './steps/select-timeline';
+import TimelineTypeModal from './steps/timeline-type-modal';
 // import CampaignTaskManagement from './steps/campaign-tasks';
 
 // import NotificationReminder from './steps/notification-reminder';
@@ -74,6 +76,7 @@ const interestsLists = [
 function CreateCampaignForm() {
   const { enqueueSnackbar } = useSnackbar();
   const active = localStorage.getItem('activeStep');
+  const modal = useBoolean();
 
   const { options } = useGetCampaignBrandOption();
   const [activeStep, setActiveStep] = useState(parseInt(active, 10) || 0);
@@ -450,7 +453,6 @@ function CreateCampaignForm() {
             name="campaignBrand"
             placeholder="Brand"
             options={brandState ? [brandState] : options}
-            // freeSolo
             getOptionLabel={(option) => option.name}
             noOptionsText={
               <Button
@@ -867,10 +869,9 @@ function CreateCampaignForm() {
             timelineMethods={timelineMethods}
             watch={watch}
             timelineType={timelineType}
+            modal={modal}
           />
         );
-      // case 4:
-      //   return <CampaignTaskManagement methods={methods} />;
       case 4:
         return formSelectAdminManager;
       case 5:
@@ -1005,6 +1006,7 @@ function CreateCampaignForm() {
         onClose={handleCloseCompanyDialog}
         setBrand={setBrandState}
       />
+      <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
     </Box>
   );
 }

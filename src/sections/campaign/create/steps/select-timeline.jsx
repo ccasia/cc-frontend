@@ -1,6 +1,8 @@
 /* eslint-disable react/prop-types */
 import dayjs from 'dayjs';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
+import { enqueueSnackbar } from 'notistack';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Droppable, Draggable, DragDropContext } from 'react-beautiful-dnd';
 
@@ -27,20 +29,31 @@ import {
 } from '@mui/lab';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
 
 // eslint-disable-next-line react/prop-types
-const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, timelineType }) => {
+const SelectTimeline = ({
+  defaultTimelines,
+  setValue,
+  watch,
+  timelineMethods,
+  modal: timelineModal,
+}) => {
+  const { data, isLoading } = useGetAllTimelineType();
   const [dateError, setDateError] = useState(false);
   const { fields, remove, move, append } = timelineMethods;
   const modal = useBoolean();
+  const [query, setQuery] = useState('');
 
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
   const existingTimeline = watch('timeline');
-  const timelineEndDate = existingTimeline[fields.length - 1].endDate;
+  const timelineEndDate = existingTimeline[fields.length - 1]?.endDate;
 
   // useEffect(() => {
   //   // Sorted based on dependencies
@@ -77,7 +90,7 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
     setValue(
       'timeline',
       defaultTimelines?.map((elem) => ({
-        timeline_type: { name: elem?.timelineType?.name },
+        timeline_type: { id: elem?.timelineType?.id, name: elem.timelineType.name },
         id: elem?.id,
         duration: elem.duration,
         for: elem?.for,
@@ -88,6 +101,8 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
   }, [defaultTimelines, setValue]);
 
   const timelines = watch('timeline');
+
+  console.log('EXist', timelines);
 
   const updateTimelineDates = useCallback(() => {
     let currentStartDate = dayjs(startDate);
@@ -113,24 +128,23 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
   };
 
   const handleRemove = (index, item) => {
-    if (index < fields.length - 1) {
-      setValue(`timeline[${index + 1}]`, {
-        dependsOn: item.dependsOn,
-        timeline_type: timelines[index + 1].timeline_type,
-        duration: timelines[index + 1].duration,
-        for: timelines[index + 1].for,
-      });
-    }
+    // if (index < fields.length - 1) {
+    //   setValue(`timeline[${index + 1}]`, {
+    //     name:
+    //     duration: timelines[index + 1].duration,
+    //     for: timelines[index + 1].for,
+    //   });
+    // }
     remove(index);
   };
 
-  const handleChange = (e, index) => {
-    setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    if (index !== fields?.length - 1) {
-      setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
-    }
-  };
+  // const handleChange = (e, index) => {
+  //   setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
+  //   // eslint-disable-next-line no-unsafe-optional-chaining
+  //   if (index !== fields?.length - 1) {
+  //     setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
+  //   }
+  // };
 
   useEffect(() => {
     if (endDate && startDate && endDate < startDate) {
@@ -290,6 +304,30 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
     move(result.source.index, result.destination.index);
   };
 
+  const handleAdd = () => {
+    append({
+      timeline_type: null,
+      duration: null,
+      for: '',
+    });
+  };
+
+  const handleSubmitNewTimelineType = async (index) => {
+    try {
+      const res = await axiosInstance.post(endpoints.campaign.timeline.createSingleTimelineType, {
+        name: query,
+      });
+      mutate(endpoints.campaign.getTimelineType);
+      console.log(data);
+      setValue(`timeline[${index}].timeline_type`, { id: res.data.id, name: res.data.name });
+      enqueueSnackbar('New Timeline Type Created');
+    } catch (error) {
+      enqueueSnackbar('Create Failed', {
+        variant: 'error',
+      });
+    }
+  };
+
   const renderTimelineForm = (
     <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1,fr)', md: 'repeat(1, 1fr)' }} gap={1}>
       <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ md: 'center' }} mb={2} gap={2}>
@@ -347,12 +385,62 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
                             alignItems="center"
                             flexGrow={1}
                           >
-                            <RHFTextField
+                            {/* <RHFTextField
                               name={`timeline[${index}].timeline_type.name`}
                               onChange={(e, val) => handleChange(e, index)}
                               label="Timeline Type"
                               placeholder="Eg: Open For Pitch"
-                            />
+                            /> */}
+                            {!isLoading && (
+                              <RHFAutocomplete
+                                disabled={!!timelines[index]?.timeline_type?.name}
+                                label="Select a timeline name"
+                                name={`timeline[${index}].timeline_type`}
+                                fullWidth
+                                onInputChange={(e, val) => setQuery(val)}
+                                noOptionsText={
+                                  <Stack alignItems="center">
+                                    <Typography>No Option</Typography>
+                                    {query && (
+                                      <Button
+                                        variant="contained"
+                                        size="small"
+                                        fullWidth
+                                        sx={{ mt: 2, fontSize: 12 }}
+                                        onClick={() => handleSubmitNewTimelineType(index)}
+                                      >
+                                        Create {query}
+                                      </Button>
+                                    )}
+                                  </Stack>
+                                }
+                                options={data || []}
+                                getOptionLabel={(option) => option.name}
+                                isOptionEqualToValue={(option, a) => option.name === a.name}
+                                renderOption={(props, option) => {
+                                  const { key, ...optionProps } = props;
+                                  return (
+                                    <MenuItem key={key} {...optionProps}>
+                                      {option.name}
+                                    </MenuItem>
+                                  );
+                                }}
+                                filterOptions={(a, state) => {
+                                  const existingNames = timelines.map(
+                                    (val) => val?.timeline_type?.name
+                                  );
+                                  const filtered = a.filter(
+                                    (option) =>
+                                      !existingNames.includes(option.name) &&
+                                      option.name
+                                        .toLowerCase()
+                                        .includes(state.inputValue.toLowerCase())
+                                  );
+
+                                  return filtered;
+                                }}
+                              />
+                            )}
 
                             <RHFSelect name={`timeline[${index}].for`} label="For">
                               <MenuItem value="admin">Admin</MenuItem>
@@ -405,16 +493,7 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
           )}
         </Droppable>
       </DragDropContext>
-      <Button
-        variant="contained"
-        onClick={() =>
-          append({
-            timeline_type: { name: '' },
-            duration: null,
-            for: '',
-          })
-        }
-      >
+      <Button variant="contained" onClick={handleAdd}>
         Add new timeline
       </Button>
     </Box>
@@ -424,8 +503,8 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
     <Dialog open={modal.value} onClose={modal.onFalse}>
       <DialogContent>
         <Timeline position="alternate">
-          {existingTimeline.map((timeline) => (
-            <TimelineItem>
+          {existingTimeline.map((timeline, index) => (
+            <TimelineItem key={index}>
               <TimelineOppositeContent color="text.secondary" fontSize={13}>
                 {dayjs(timeline.startDate).format('ddd LL')}
               </TimelineOppositeContent>
@@ -433,7 +512,7 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
                 <TimelineDot />
                 <TimelineConnector />
               </TimelineSeparator>
-              <TimelineContent variant="subtitle1">{timeline.timeline_type?.name}</TimelineContent>
+              <TimelineContent variant="subtitle1">{timeline?.name}</TimelineContent>
             </TimelineItem>
           ))}
         </Timeline>
@@ -465,7 +544,7 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods, ti
               },
             }}
           />
-          <RHFTextField name="campaignEndDate" label="End Date" disabled />
+          <RHFTextField name="campaignEndDate" disabled />
           {/* <RHFDatePicker name="campaignEndDate" label="Campaign End Date" /> */}
         </Stack>
         {dateError && (

@@ -5,9 +5,9 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 const useGetAllTimelineType = () => {
   const { data, isLoading } = useSWR(endpoints.campaign.getTimelineType, fetcher, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
+    revalidateIfStale: true,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
   });
 
   const memoizedValue = useMemo(

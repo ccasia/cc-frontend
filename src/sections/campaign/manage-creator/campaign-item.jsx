@@ -1,16 +1,20 @@
-import React from 'react';
 import dayjs from 'dayjs';
+import React from 'react';
 import PropTypes from 'prop-types';
 // import { Link } from 'react-router-dom';
 
 import { Box, Card, Link, Stack, Typography, ListItemText } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+
 import Image from 'src/components/image';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
-const CampaignItem = ({ campaign, onClick }) => {
-  // const { tasks } = campaign;
+import CampaignModal from '../discover/creator/campaign-modal';
+
+const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
+  const campaignInfo = useBoolean();
 
   const renderImages = (
     <Stack
@@ -53,7 +57,6 @@ const CampaignItem = ({ campaign, onClick }) => {
         <Link
           component="a"
           color="inherit"
-          //   onClick={() => campaignInfo.onTrue()}
           sx={{
             cursor: 'pointer',
           }}
@@ -80,12 +83,12 @@ const CampaignItem = ({ campaign, onClick }) => {
     >
       {[
         {
-          label: campaign?.campaignBrief?.industries.map((e, index) => (
+          label: campaign?.campaignBrief?.interests.map((e, index) => (
             <Label key={index} variant="filled" size="small" color="primary">
               {e}
             </Label>
           )),
-          icon: <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />,
+          icon: <Iconify icon="material-symbols:interests-outline-rounded" color="error.main" />,
         },
         {
           label: (
@@ -111,17 +114,24 @@ const CampaignItem = ({ campaign, onClick }) => {
   );
 
   return (
-    <Box
-      component={Card}
-      onClick={onClick}
-      sx={{
-        cursor: 'pointer',
-      }}
-    >
-      {renderImages}
-      {renderText}
-      {renderInfo}
-    </Box>
+    <>
+      <Box
+        component={Card}
+        onClick={type === 'my-campaign' ? onClick : campaignInfo.onTrue}
+        sx={{
+          cursor: 'pointer',
+        }}
+      >
+        {renderImages}
+        {renderText}
+        {renderInfo}
+      </Box>
+      <CampaignModal
+        open={campaignInfo.value}
+        handleClose={campaignInfo.onFalse}
+        campaign={campaign}
+      />
+    </>
   );
 };
 
@@ -130,4 +140,6 @@ export default CampaignItem;
 CampaignItem.propTypes = {
   campaign: PropTypes.object,
   onClick: PropTypes.func,
+  pitchStatus: PropTypes.string,
+  type: PropTypes.string,
 };

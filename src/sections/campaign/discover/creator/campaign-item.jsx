@@ -12,6 +12,7 @@ import { Chip, Button, Typography } from '@mui/material';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Image from 'src/components/image';
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import CampaignModal from './campaign-modal';
@@ -24,11 +25,11 @@ export default function CampaignItem({ campaign, user }) {
   // const { user } = useAuthContext();
 
   const isShortlisted = useMemo(
-    () => user?.ShortListedCreator?.map((item) => item?.campaignId) || [],
+    () => user?.shortlistCreator?.map((item) => item?.campaignId) || [],
     [user]
   );
 
-  const campaignIds = useMemo(() => user?.Pitch?.map((item) => item.campaignId), [user]) || [];
+  const campaignIds = useMemo(() => user?.pitch?.map((item) => item.campaignId), [user]) || [];
 
   const handleClose = () => {
     setOpen(false);
@@ -107,23 +108,36 @@ export default function CampaignItem({ campaign, user }) {
         <Iconify icon="eva:more-vertical-fill" />
       </IconButton> */}
       {campaignIds?.includes(campaign.id) ? (
-        !isShortlisted.includes(campaign.id) ? (
-          <Chip
-            sx={{ position: 'absolute', bottom: 10, right: 10 }}
-            variant="filled"
-            color="warning"
-            size="small"
-            label="In Review"
-          />
+        !isShortlisted?.includes(campaign.id) ? (
+          <Label
+            sx={{
+              position: 'absolute',
+              bottom: 10,
+              right: 10,
+              color: (theme) => theme.palette.text.secondary,
+            }}
+          >
+            In Review
+          </Label>
         ) : (
-          <Chip
-            sx={{ position: 'absolute', bottom: 10, right: 10 }}
-            variant="filled"
-            icon={<Iconify icon="mdi:tick-circle-outline" />}
+          <Label
+            sx={{
+              position: 'absolute',
+              bottom: 10,
+              right: 10,
+            }}
             color="success"
-            size="small"
-            label="Approved"
-          />
+          >
+            Approved
+          </Label>
+          // <Chip
+          //   sx={{ position: 'absolute', bottom: 10, right: 10 }}
+          //   variant="filled"
+          //   icon={<Iconify icon="mdi:tick-circle-outline" />}
+          //   color="success"
+          //   size="small"
+          //   label="Approved"
+          // />
         )
       ) : (
         <Button
@@ -138,13 +152,15 @@ export default function CampaignItem({ campaign, user }) {
       )}
 
       {[
-        // this line causing error
-        // {
-        //   label: campaign?.campaignBrief?.industries.map((e, index) => (
-        //     <Chip key={index} label={e} variant="filled" size="small" color="primary" />
-        //   )),
-        //   icon: <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />,
-        // },
+
+
+        {
+          label: campaign?.campaignBrief?.interests.map((e, index) => (
+            <Chip key={index} label={e} variant="filled" size="small" color="primary" />
+          )),
+          icon: <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />,
+        },
+
         {
           label: (
             <Typography variant="caption" color="text.disabled">
@@ -176,7 +192,7 @@ export default function CampaignItem({ campaign, user }) {
         {renderTexts}
 
         {renderInfo}
-        
+
         <Chip
           sx={{ position: 'absolute', top: 10, left: 10 }}
           variant="filled"

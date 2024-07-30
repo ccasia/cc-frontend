@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { enqueueSnackbar, SnackbarProvider } from 'notistack';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -150,7 +150,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 
     try {
       await axiosInstance.put(endpoints.auth.updateCreator, newData);
-      enqueueSnackbar('Data updated successfully');
+      enqueueSnackbar('Welcome !');
 
       onClose();
     } catch (error) {
@@ -186,9 +186,6 @@ export default function CreatorForm({ creator, open, onClose }) {
             sm: 'repeat(2, 1fr)',
           }}
         >
-          {/* <RHFTextField name="instagram" label="instagram Account" />
-            <RHFTextField name="tiktok" label="tiktok Account" /> */}
-
           <RHFAutocomplete
             name="Nationality"
             type="country"
@@ -262,7 +259,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 
           <RHFAutocomplete
             name="interests"
-            placeholder="+ Interests"
+            placeholder="Your interests"
             multiple
             freeSolo
             disableCloseOnSelect
@@ -289,7 +286,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 
           <RHFAutocomplete
             name="industries"
-            placeholder="+ Industries"
+            placeholder="Favorite industries?"
             multiple
             freeSolo
             disableCloseOnSelect
@@ -330,12 +327,32 @@ export default function CreatorForm({ creator, open, onClose }) {
       }}
     >
       <Stack gap={1}>
-        <Iconify icon="mdi:instagram" width={30} />
-        <RHFTextField name="instagram" label="Instagram Username" />
+        <RHFTextField
+          name="instagram"
+          label="Instagram Username"
+          placeholder="Eg: instagram/yourusername"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify icon="mdi:instagram" width={20} />
+              </InputAdornment>
+            ),
+          }}
+        />
       </Stack>
       <Stack gap={1}>
-        <Iconify icon="ic:baseline-tiktok" width={30} />
-        <RHFTextField name="tiktok" label="Tiktok Username" />
+        <RHFTextField
+          name="tiktok"
+          label="Tiktok Username"
+           placeholder="Eg: tiktok/yourusername"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify icon="ic:baseline-tiktok" width={20} />
+              </InputAdornment>
+            ),
+          }}
+        />
       </Stack>
     </Box>
   );
@@ -452,16 +469,6 @@ export default function CreatorForm({ creator, open, onClose }) {
         Interests: ratingInterst,
         industries: ratingIndustries,
       };
-      console.log(data);
-      // try {
-      //   const response = await axiosInstance.put(endpoints.auth.updateCreator, data);
-      //   console.log(response);
-      //   enqueueSnackbar('Data updated successfully', { variant: 'success' });
-      //   onClose();
-      // } catch (error) {
-      //   console.error(error);
-      //   enqueueSnackbar('Something went wrong', { variant: 'error' });
-      // }
     }
   };
 
@@ -475,7 +482,6 @@ export default function CreatorForm({ creator, open, onClose }) {
         sx: { maxWidth: 720 },
       }}
     >
-      <SnackbarProvider />
       <>
         <Stepper
           sx={{
@@ -488,7 +494,6 @@ export default function CreatorForm({ creator, open, onClose }) {
           {steps.map((label, index) => {
             const stepProps = {};
             const labelProps = {};
-            // labelProps.error = stepError.includes(index) && true;
             return (
               <Step key={label} {...stepProps}>
                 <StepLabel {...labelProps}>{label}</StepLabel>

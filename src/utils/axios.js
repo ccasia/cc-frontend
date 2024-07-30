@@ -32,8 +32,20 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
-  chat: '/api/chat',
+  //  chat: '/api/chat',
   kanban: '/api/kanban',
+  threads: {
+    getAll: '/api/thread/threads',
+    single: '/api/thread/single',
+    getId: (threadId) => `/api/thread/${threadId}`,
+    getById: (threadId) => `/api/thread/threads/${threadId}`,
+    create: '/api/thread/createthread',
+    addUser: '/api/thread/adduser',
+    sendMessage: '/api/thread/send',
+    getMessage: (threadId) => `/api/thread/getmessage/${threadId}`,
+    archive: (threadId) => `/api/thread/threads/${threadId}/archive`,
+    unarchive: (threadId) => `/api/thread/threads/${threadId}/unarchive`,
+  },
   calendar: '/api/calendar',
   auth: {
     me: '/api/auth/me',
@@ -67,6 +79,7 @@ export const endpoints = {
     updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
+    allusers: '/api/users'
   },
   mail: {
     list: '/api/mail/list',
@@ -122,6 +135,7 @@ export const endpoints = {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
       delete: (id) => `/api/campaign/timelineType/${id}`,
+      createSingleTimelineType: `/api/campaign/createSingleTimelineType`,
     },
     pitch: {
       root: '/api/campaign/pitch',
@@ -135,19 +149,32 @@ export const endpoints = {
     draft: {
       getAllDraftInfo: (id) => `/api/draft/getAllDraftInfo/${id}`,
       submitFirstDraft: '/api/draft/firstDraft',
+      submitFinalDraft: '/api/draft/finalDraft',
       getFirstDraftForCreator: (id) => `/api/draft/firstDraft/${id}`,
+      submitFeedBackFirstDraft: '/api/draft/submitFeedBackFirstDraft',
+    },
+    tasks: {
+      uploadAgreeementForm: '/api/tasks/uploadAgreementForm',
     },
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',
-    editRequirement: '/api/campaign/editRequirement',
-    editDosAndDonts: '/api/campaign/editDosandDonts',
-    updatecampaignTimeline: (id) => `/api/campaign/updatecampaignTimeline/${id}`,
+    editCampaignRequirements: '/api/campaign/editCampaignRequirements',
+    editCampaignDosAndDonts: '/api/campaign/editCampaignDosandDonts',
+    editCampaignTimeline: (id) => `/api/campaign/editCampaignTimeline/${id}`,
     creator: {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
       getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,
     },
+  },
+  submission: {
+    root: '/api/tasks/submissions',
+    agreement: {
+      adminManageAgreementSubmission: '/api/tasks/adminManageAgreementSubmission',
+    },
+    firstDraft: '/api/tasks/firstDraft',
+    finalDraft: '/api/tasks/FinalDraft',
   },
   notification: {
     root: '/api/notification',

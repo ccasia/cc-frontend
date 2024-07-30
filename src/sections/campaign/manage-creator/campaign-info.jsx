@@ -47,7 +47,7 @@ const CampaignInfo = ({ campaign }) => {
             primary="Industries"
             secondary={
               <Stack direction="row" spacing={1}>
-                {campaign?.campaignBrief?.industries.map((value) => (
+                {campaign?.campaignBrief?.interests.map((value) => (
                   <Label>{value}</Label>
                 ))}
               </Stack>

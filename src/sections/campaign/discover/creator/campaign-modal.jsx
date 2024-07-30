@@ -28,10 +28,12 @@ import Iconify from 'src/components/iconify';
 const CampaignModal = ({ open, handleClose, campaign, openForm, existingCampaign }) => {
   const smUp = useResponsive('down', 'sm');
   const { user } = useAuthContext();
+  console.log(user);
 
   const isShortlisted =
-    user?.ShortListedCreator && user?.ShortListedCreator.map((item) => item.campaignId);
-  const campaignIds = user?.Pitch && user?.Pitch.map((item) => item.campaignId);
+    user?.ShortListedCreator && user?.shortlistCreator.map((item) => item.campaignId);
+
+  const campaignIds = user?.pitch && user?.pitch.map((item) => item.campaignId);
 
   const renderGallery = (
     <Box
@@ -136,7 +138,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, existingCampaign
       <DialogActions>
         <Button onClick={handleClose}>Close</Button>
         {campaignIds?.includes(campaign.id) ? (
-          isShortlisted.includes(campaign.id) ? (
+          isShortlisted?.includes(campaign.id) ? (
             <Button
               autoFocus
               variant="contained"

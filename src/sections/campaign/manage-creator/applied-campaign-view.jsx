@@ -4,14 +4,19 @@ import { Box, TextField, InputAdornment } from '@mui/material';
 
 import useGetCampaignPitch from 'src/hooks/use-get-campaign-pitch';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 
-import CampaignItem from '../discover/admin/campaign-item';
+import CampaignItem from '../discover/creator/campaign-item';
+
+// import CampaignItem from './campaign-item';
 
 const AppliedCampaignView = () => {
   const { data, isLoading } = useGetCampaignPitch();
   const [query, setQuery] = useState();
+  const { user } = useAuthContext();
 
   const filteredData = useMemo(
     () =>
@@ -54,7 +59,7 @@ const AppliedCampaignView = () => {
               key={elem.campaign?.id}
               campaign={elem.campaign}
               pitchStatus={elem.status}
-              status={false}
+              user={user}
               // onClick={() => onClick(campaign?.id)}
             />
           ))}

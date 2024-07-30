@@ -53,14 +53,14 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await axiosInstance.patch(endpoints.campaign.editDosAndDonts, {
+      const res = await axiosInstance.patch(endpoints.campaign.editCampaignDosAndDonts, {
         ...data,
         campaignId: campaign.id,
       });
       mutate(endpoints.campaign.getCampaignById(campaign.id));
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar('Update Failed', {
+      enqueueSnackbar("Failed to update dos and don'ts", {
         variant: 'error',
       });
     }
@@ -77,24 +77,27 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle id="alert-dialog-title">Edit Dos and Don&apos;ts</DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-description" p={1.5}>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
-                  md: 'repeat(2, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
-              <Stack direction="column" spacing={2}>
-                {/* TODO TEMP: Use a simpler placeholder for now */}
+          <DialogContentText
+            id="alert-dialog-description"
+            p={1.5}
+          >
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                md: 'repeat(2, 1fr)',
+              },
+              gap: 2,
+            }}>
+              <Stack
+                direction="column"
+                spacing={2}
+              >
                 {doFields.map((item, index) => (
                   <Stack key={item.id} direction="row" spacing={1} alignItems="center">
                     <RHFTextField
                       name={`campaignDo[${index}].value`}
-                      label={`Campaign Do's ${index + 1}`}
+                      label={`Campaign Do ${index + 1}`}
                     />
                     {index !== 0 && (
                       <IconButton color="error" onClick={() => doRemove(index)}>
@@ -103,18 +106,23 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
                     )}
                   </Stack>
                 ))}
-                {/* <RHFTextField name="Placeholder name" label="Campaign Do 1" /> */}
-                <Button variant="contained" onClick={() => doAppend({ value: '' })}>
+                <Button
+                  variant="contained"
+                  onClick={() => doAppend({ value: '' })}
+                >
                   Add Do
                 </Button>
               </Stack>
 
-              <Stack direction="column" spacing={2}>
+              <Stack
+                direction="column"
+                spacing={2}
+              >
                 {dontFields.map((item, index) => (
                   <Stack key={item.id} direction="row" spacing={1} alignItems="center">
                     <RHFTextField
                       name={`campaignDont[${index}].value`}
-                      label={`Campaign Dont's ${index + 1}`}
+                      label={`Campaign Don't ${index + 1}`}
                     />
                     {index !== 0 && (
                       <IconButton color="error" onClick={() => dontRemove(index)}>
@@ -123,7 +131,10 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
                     )}
                   </Stack>
                 ))}
-                <Button variant="contained" onClick={() => dontAppend({ value: '' })}>
+                <Button
+                  variant="contained"
+                  onClick={() => dontAppend({ value: '' })}
+                >
                   Add Don&apos;t
                 </Button>
               </Stack>
@@ -132,7 +143,7 @@ export const EditDosAndDonts = ({ open, campaign, onClose }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialog}>Cancel</Button>
-          <Button type="submit" autoFocus color="primary">
+          <Button type="submit" onClick={closeDialog} autoFocus color="primary">
             Save
           </Button>
         </DialogActions>
