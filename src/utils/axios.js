@@ -166,6 +166,7 @@ export const endpoints = {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
       getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,
     },
+    getCampaignLog: (id) => `/api/campaign/getCampaignLog/${id}`,
   },
   submission: {
     root: '/api/tasks/submissions',

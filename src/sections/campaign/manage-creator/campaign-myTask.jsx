@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import * as Yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { io } from 'socket.io-client';
@@ -16,7 +15,6 @@ import {
 } from '@mui/lab';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
-import useGetFirstDraftBySessionID from 'src/hooks/use-get-first-draft-for-creator';
 
 import { endpoints } from 'src/utils/axios';
 
@@ -37,14 +35,14 @@ const CampaignMyTasks = ({ campaign }) => {
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
   console.log(submissions);
 
-  const { data } = useGetFirstDraftBySessionID(campaign.id);
+  // const { data } = useGetFirstDraftBySessionID(campaign.id);
 
-  const isSubmittedFirstDraft = data?.status === 'Submitted';
+  // const isSubmittedFirstDraft = data?.status === 'Submitted';
 
-  const schema = Yup.object().shape({
-    // draft: Yup.string().required(),
-    caption: Yup.string().required(),
-  });
+  // const schema = Yup.object().shape({
+  //   // draft: Yup.string().required(),
+  //   caption: Yup.string().required(),
+  // });
 
   useEffect(() => {
     const socket = io();

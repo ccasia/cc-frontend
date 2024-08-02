@@ -145,13 +145,13 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
     remove(index);
   };
 
-  const handleChange = (e, index) => {
-    setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    if (index !== fields?.length - 1) {
-      setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
-    }
-  };
+  // const handleChange = (e, index) => {
+  //   setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
+  //   // eslint-disable-next-line no-unsafe-optional-chaining
+  //   if (index !== fields?.length - 1) {
+  //     setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
+  //   }
+  // };
 
   const closeDialog = () => onClose('timeline');
 

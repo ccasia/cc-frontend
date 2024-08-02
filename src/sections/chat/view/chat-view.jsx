@@ -1,5 +1,3 @@
-import { useEffect} from 'react';
-import PropTypes from 'prop-types';
 import { useParams } from 'react-router-dom';
 
 import Card from '@mui/material/Card';
@@ -7,8 +5,7 @@ import Stack from '@mui/material/Stack';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
-import { paths } from 'src/routes/paths';
-import { useRouter, useSearchParams } from 'src/routes/hooks';
+import { useSearchParams } from 'src/routes/hooks';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -25,31 +22,31 @@ import ChatHeaderCompose from '../chat-header-compose';
 
 
 export default function ChatView() {
-  const router = useRouter();
+  // const router = useRouter();
   const { user } = useAuthContext();
   const settings = useSettingsContext();
   const searchParams = useSearchParams();
   const selectedConversationId = searchParams.get('id') || '';
- 
- 
+
+
   const {id} = useParams(); // Extracts the threadId from the route
-  
+
   // useEffect(() => {
   //   if (!selectedConversationId) {
   //     router.push(paths.dashboard.chat);
-  //   } 
+  //   }
   // }, [router, selectedConversationId]);
 
 
   //  const filteredMessages = messages.filter(message => message.threadId === threadId);
 
-  
 
-  // Head is Showing all the search and names 
+
+  // Head is Showing all the search and names
   const renderHead = (
     <Stack direction="row" alignItems="center" flexShrink={0} sx={{ pr: 1, pl: 2.5, py: 1, minHeight: 72 }}>
       {selectedConversationId ? (
-        <ChatHeaderDetail participants={[]} /> 
+        <ChatHeaderDetail participants={[]} />
       ) : (
         <ChatHeaderCompose currentUserId={user.id} />
       )}
@@ -60,10 +57,10 @@ export default function ChatView() {
 
   const renderNav = (
     <ChatNav
-      contacts={[]} 
+      contacts={[]}
       selectedConversationId={selectedConversationId}
     />
-    
+
   );
 
 
@@ -88,9 +85,9 @@ export default function ChatView() {
               borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
             }}
           >
-            
+
              {id? (
-          
+
             <ThreadMessages threadId={id} />
           ) : (
             <Container maxWidth="xl" sx={{justifyContent: 'center', mt:10, alignItems: 'center', height: '100vh'}}>
@@ -99,9 +96,9 @@ export default function ChatView() {
           </Typography>
           </Container>
           )}
-          
-        
-            <ChatRoom  threadId={id}  /> 
+
+
+            <ChatRoom  threadId={id}  />
           </Stack>
         </Stack>
       </Stack>
@@ -111,5 +108,5 @@ export default function ChatView() {
 
 ChatView.propTypes = {
   // id: PropTypes.object.isRequired,
-  // threadId: PropTypes.string, 
+  // threadId: PropTypes.string,
 };
