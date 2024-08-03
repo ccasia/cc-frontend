@@ -1,5 +1,3 @@
-import { useEffect} from 'react';
-import PropTypes from 'prop-types';
 import { useParams } from 'react-router-dom';
 
 import Card from '@mui/material/Card';
@@ -7,7 +5,6 @@ import Stack from '@mui/material/Stack';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
-import { paths } from 'src/routes/paths';
 import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { useAuthContext } from 'src/auth/hooks';

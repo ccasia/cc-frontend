@@ -155,6 +155,9 @@ export const endpoints = {
     tasks: {
       uploadAgreeementForm: '/api/tasks/uploadAgreementForm',
     },
+    submission: {
+      agreement: "/api/campaign/getSubmissions"
+    },
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',

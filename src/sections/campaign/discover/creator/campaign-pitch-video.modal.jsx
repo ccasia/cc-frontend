@@ -7,7 +7,16 @@ import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Button, Dialog, Typography, DialogTitle, DialogActions } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Button,
+  Dialog,
+  Typography,
+  DialogTitle,
+  ListItemText,
+  DialogActions,
+} from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
@@ -24,6 +33,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   const schema = Yup.object().shape({
     // pitchVideo: required('Pitch Script is required'),
+    pitchVideo: Yup.mixed().required('Pitch video is required'),
   });
 
   const methods = useForm({
@@ -36,22 +46,19 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const { handleSubmit, setValue } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
     const formData = new FormData();
     formData.append('campaignId', campaign?.id);
     formData.append('pitchVideo', data.pitchVideo);
 
     try {
       setLoading(true);
-      // const res = await axiosInstance.patch(endpoints.campaign.pitch.root, {
-      //   campaignId: campaign?.id,
-      //   ...data,
-      // });
+
       const res = await axiosInstance.patch(endpoints.campaign.pitch.root, formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
+
       enqueueSnackbar(res?.data?.message);
       handleClose();
     } catch (error) {
@@ -78,7 +85,19 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" fullScreen={smUp}>
       <FormProvider methods={methods} onSubmit={onSubmit}>
         {/* <DialogTitle>Coming Soon</DialogTitle> */}
-        <DialogTitle>Upload Your Pitching Video !</DialogTitle>
+        {/* <DialogTitle>Upload Your Pitching Video !</DialogTitle> */}
+        <DialogTitle>
+          <ListItemText
+            primary="Upload Your Pitching Video"
+            secondary="Video should be less than 30 seconds"
+            primaryTypographyProps={{
+              variant: 'h6',
+            }}
+            secondaryTypographyProps={{
+              variant: 'caption',
+            }}
+          />
+        </DialogTitle>
         <Box p={2}>
           <RHFUpload
             name="pitchVideo"

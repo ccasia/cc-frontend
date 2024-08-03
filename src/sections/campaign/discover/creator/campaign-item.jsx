@@ -1,15 +1,22 @@
 /* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { enqueueSnackbar } from 'notistack';
+import { useMemo, useState, useEffect } from 'react';
 
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import { LoadingButton } from '@mui/lab';
 import ListItemText from '@mui/material/ListItemText';
-import { Chip, Button, Typography } from '@mui/material';
+import { Chip, Typography, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import { endpoints } from 'src/utils/axios';
+
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
 import Label from 'src/components/label';
@@ -22,11 +29,72 @@ import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 export default function CampaignItem({ campaign, user }) {
   const [open, setOpen] = useState(false);
-  // const { user } = useAuthContext();
+  const [upload, setUpload] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const isShortlisted = useMemo(
-    () => user?.shortlistCreator?.map((item) => item?.campaignId) || [],
-    [user]
+  const { socket } = useSocketContext();
+
+  useEffect(() => {
+    // Define the handler function
+    const handlePitchLoading = (data) => {
+      console.log(data);
+      setLoading(true);
+
+      if (upload.find((item) => item.campaignId === data.campaignId)) {
+        setUpload((prev) =>
+          prev.map((item) =>
+            item.campaignId === data.campaignId
+              ? {
+                  campaignId: data.campaignId,
+                  loading: true,
+                  // progress: data.progress && `${Math.floor(data.progress)}%`,
+                  progress: Math.floor(data.progress),
+                }
+              : item
+          )
+        );
+      } else {
+        setUpload((item) => [
+          ...item,
+          { loading: true, campaignId: data.campaignId, progress: Math.floor(data.progress) },
+        ]);
+      }
+
+      // setPercent((prev) => ({
+      //   ...prev,
+      //   data,
+      // }));
+      // setPercent(`${Math.floor(data.progress)}%`);
+    };
+
+    const handlePitchSuccess = (data) => {
+      mutate(endpoints.campaign.getAllActiveCampaign);
+      enqueueSnackbar(data.name);
+      setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));
+      setLoading(false);
+    };
+
+    // Attach the event listener
+    socket.on('pitch-loading', handlePitchLoading);
+    socket.on('pitch-uploaded', handlePitchSuccess);
+
+    // Clean-up function
+    return () => {
+      socket.off('pitch-loading', handlePitchLoading);
+      socket.off('pitch-uploaded', handlePitchSuccess);
+    };
+  }, [socket, upload]);
+
+  const pitch = useMemo(
+    () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
+    [campaign, user]
+  );
+
+  console.log(campaign);
+
+  const shortlisted = useMemo(
+    () => campaign?.shortlisted?.filter((elem) => elem.userId.includes(user?.id))[0],
+    [campaign, user]
   );
 
   const campaignIds = useMemo(() => user?.pitch?.map((item) => item.campaignId), [user]) || [];
@@ -86,12 +154,17 @@ export default function CampaignItem({ campaign, user }) {
           {campaign?.name}
         </Link>
       }
+      secondary={`by ${campaign?.brand?.name ?? campaign?.company?.name}`}
       primaryTypographyProps={{
-        mt: 1,
         noWrap: true,
         component: 'span',
         color: 'text.primary',
         typography: 'subtitle1',
+      }}
+      secondaryTypographyProps={{
+        noWrap: true,
+        color: 'text.disabled',
+        typography: 'caption',
       }}
     />
   );
@@ -107,7 +180,85 @@ export default function CampaignItem({ campaign, user }) {
       {/* <IconButton onClick={popover.onOpen} sx={{ position: 'absolute', bottom: 20, right: 8 }}>
         <Iconify icon="eva:more-vertical-fill" />
       </IconButton> */}
-      {campaignIds?.includes(campaign.id) ? (
+      {pitch && pitch.status !== 'approved' && (
+        <Label
+          sx={{
+            position: 'absolute',
+            bottom: 10,
+            right: 10,
+            color: (theme) => theme.palette.text.secondary,
+          }}
+        >
+          In Review
+        </Label>
+      )}
+      {shortlisted && (
+        <Label
+          sx={{
+            position: 'absolute',
+            bottom: 10,
+            right: 10,
+          }}
+          color="success"
+        >
+          Approved
+        </Label>
+      )}
+      {!shortlisted && !pitch && (
+        <>
+          {upload.find((item) => item.campaignId === campaign.id)?.loading ? (
+            <CircularProgress
+              sx={{ position: 'absolute', bottom: 10, right: 10 }}
+              variant="determinate"
+              value={upload.find((item) => item.campaignId === campaign.id).progress}
+            />
+          ) : (
+            // <LoadingButton
+            //   sx={{ position: 'absolute', bottom: 10, right: 10 }}
+            //   variant="contained"
+            //   size="small"
+            //   startIcon={<Iconify icon="eos-icons:loading" width={20} />}
+            //   // loading={loading}
+            //   disabled
+            // >
+            //   {upload.find((item) => item.campaignId === campaign.id).progress}
+            // </LoadingButton>
+            <LoadingButton
+              sx={{ position: 'absolute', bottom: 10, right: 10 }}
+              variant="contained"
+              size="small"
+              startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+              onClick={() => setOpen(true)}
+            >
+              Pitch
+            </LoadingButton>
+          )}
+        </>
+      )}
+
+      {/* {loading ? (
+        <LoadingButton
+          sx={{ position: 'absolute', bottom: 10, right: 10 }}
+          variant="contained"
+          size="small"
+          startIcon={<Iconify icon="eos-icons:loading" width={20} />}
+          // loading={loading}
+          disabled
+        >
+          {percent}
+        </LoadingButton>
+      ) : (
+        <LoadingButton
+          sx={{ position: 'absolute', bottom: 10, right: 10 }}
+          variant="contained"
+          size="small"
+          startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+          onClick={() => setOpen(true)}
+        >
+          Pitch
+        </LoadingButton>
+      )} */}
+      {/* {campaignIds?.includes(campaign.id) ? (
         !isShortlisted?.includes(campaign.id) ? (
           <Label
             sx={{
@@ -130,27 +281,33 @@ export default function CampaignItem({ campaign, user }) {
           >
             Approved
           </Label>
-          // <Chip
-          //   sx={{ position: 'absolute', bottom: 10, right: 10 }}
-          //   variant="filled"
-          //   icon={<Iconify icon="mdi:tick-circle-outline" />}
-          //   color="success"
-          //   size="small"
-          //   label="Approved"
-          // />
         )
       ) : (
-        <Button
-          sx={{ position: 'absolute', bottom: 10, right: 10 }}
-          variant="contained"
-          size="small"
-          startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-          onClick={() => setOpen(true)}
-        >
-          Pitch
-        </Button>
-      )}
-
+        <>
+          {loading ? (
+            <LoadingButton
+              sx={{ position: 'absolute', bottom: 10, right: 10 }}
+              variant="contained"
+              size="small"
+              startIcon={<Iconify icon="eos-icons:loading" width={20} />}
+              // loading={loading}
+              disabled
+            >
+              {percent}
+            </LoadingButton>
+          ) : (
+            <LoadingButton
+              sx={{ position: 'absolute', bottom: 10, right: 10 }}
+              variant="contained"
+              size="small"
+              startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+              onClick={() => setOpen(true)}
+            >
+              Pitch
+            </LoadingButton>
+          )}
+        </>
+      )} */}
       {[
         {
           label: campaign?.campaignBrief?.interests.map((e, index) => (

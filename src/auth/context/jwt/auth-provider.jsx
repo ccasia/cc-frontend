@@ -65,6 +65,8 @@ export function AuthProvider({ children }) {
   const initialize = useCallback(async () => {
     try {
       // const accessToken = sessionStorage.getItem(STORAGE_KEY);
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+
       const response = await axios.get(endpoints.auth.me);
 
       if (

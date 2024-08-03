@@ -1,12 +1,29 @@
-import { useState, useCallback } from 'react';
+import { mutate } from 'swr';
+import { m } from 'framer-motion';
+import { enqueueSnackbar } from 'notistack';
+import { useState, useEffect, useCallback } from 'react';
 
-import { Box, Typography } from '@mui/material';
 import Container from '@mui/material/Container';
+import {
+  Box,
+  Stack,
+  Divider,
+  IconButton,
+  Typography,
+  ListItemText,
+  CircularProgress,
+} from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
-import { _tours } from 'src/_mock';
+import { endpoints } from 'src/utils/axios';
 
+import { _tours } from 'src/_mock';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+
+import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
@@ -20,6 +37,59 @@ import CampaignSearch from '../campaign-search';
 export default function CampaignListView() {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns('creator');
+  const load = useBoolean();
+  const [upload, setUpload] = useState([]);
+  const { socket } = useSocketContext();
+  const smUp = useResponsive('up', 'sm');
+
+  useEffect(() => {
+    // Define the handler function
+    const handlePitchLoading = (data) => {
+      console.log(data);
+
+      if (upload.find((item) => item.campaignId === data.campaignId)) {
+        setUpload((prev) =>
+          prev.map((item) =>
+            item.campaignId === data.campaignId
+              ? {
+                  campaignId: data.campaignId,
+                  loading: true,
+                  // progress: data.progress && `${Math.floor(data.progress)}%`,
+                  progress: Math.floor(data.progress),
+                }
+              : item
+          )
+        );
+      } else {
+        setUpload((item) => [
+          ...item,
+          { loading: true, campaignId: data.campaignId, progress: Math.floor(data.progress) },
+        ]);
+      }
+
+      // setPercent((prev) => ({
+      //   ...prev,
+      //   data,
+      // }));
+      // setPercent(`${Math.floor(data.progress)}%`);
+    };
+
+    const handlePitchSuccess = (data) => {
+      mutate(endpoints.campaign.getAllActiveCampaign);
+      enqueueSnackbar(data.name);
+      setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));
+    };
+
+    // Attach the event listener
+    socket.on('pitch-loading', handlePitchLoading);
+    socket.on('pitch-uploaded', handlePitchSuccess);
+
+    // Clean-up function
+    return () => {
+      socket.off('pitch-loading', handlePitchLoading);
+      socket.off('pitch-uploaded', handlePitchSuccess);
+    };
+  }, [socket, upload]);
 
   const [search, setSearch] = useState({
     query: '',
@@ -47,6 +117,64 @@ export default function CampaignListView() {
     [search.query]
   );
 
+  const renderUploadProgress = (
+    <Box
+      component={m.div}
+      transition={{ ease: 'easeInOut', duration: 0.4 }}
+      animate={load.value ? { height: 400 } : { height: 50 }}
+      sx={{
+        position: 'fixed',
+        bottom: 0,
+        right: smUp ? 50 : 0,
+        width: smUp ? 300 : '100vw',
+        height: load.value ? 400 : 50,
+        bgcolor: (theme) => theme.palette.background.default,
+        boxShadow: 20,
+        border: 1,
+        borderRadius: '5px 5px 0 0',
+        borderColor: 'text.secondary',
+        p: 2,
+      }}
+    >
+      {/* Header */}
+      <Box sx={{ position: 'absolute', top: 10 }}>
+        <Stack direction="row" gap={1.5} alignItems="center">
+          <IconButton
+            sx={{
+              transform: load.value ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+            onClick={load.onToggle}
+          >
+            <Iconify icon="bxs:up-arrow" />
+          </IconButton>
+          <Typography variant="subtitle2">Uploading {upload.length} files</Typography>
+        </Stack>
+      </Box>
+
+      <Stack mt={5} gap={2}>
+        {upload.map((elem) => (
+          <>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <ListItemText
+                primary={campaigns && campaigns.find((item) => item.id === elem.campaignId)?.name}
+                secondary="Uploading pitch"
+                primaryTypographyProps={{ variant: 'subtitle1' }}
+                secondaryTypographyProps={{ variant: 'caption' }}
+              />
+              <CircularProgress
+                variant="determinate"
+                value={elem.progress}
+                sx={{ width: 20 }}
+                size="small"
+              />
+            </Stack>
+            <Divider sx={{ borderStyle: 'dashed' }} />
+          </>
+        ))}
+      </Stack>
+    </Box>
+  );
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <Typography
@@ -72,6 +200,8 @@ export default function CampaignListView() {
       ) : (
         <EmptyContent title="No campaign available" />
       )}
+
+      {upload.length > 0 && renderUploadProgress}
     </Container>
   );
 }
