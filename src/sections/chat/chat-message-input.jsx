@@ -42,7 +42,7 @@ export default function ChatMessageInput({
 
   const handleSendMessage = useCallback(
     (event) => {
-      if (event.key === 'Enter' || (event.type === 'click' && message.trim() !== '')) {
+      if (event.type === 'click' && message.trim() !== '') {
         console.log('message sent', message);
         onSendMessage(message);
         setMessage('');
@@ -73,43 +73,65 @@ export default function ChatMessageInput({
 
   return (
     <>
-      <InputBase
-        multiline
-        value={message}
-        onKeyUp={handleSendMessage}
-        onChange={handleChangeMessage}
-        placeholder="Type a message"
-        disabled={disabled}
-        startAdornment={
-          <IconButton>
-            <Iconify icon="eva:smiling-face-fill" />
-          </IconButton>
-        }
-        endAdornment={
-          <Stack direction="row" sx={{ flexShrink: 0 }}>
-            {/* <IconButton onClick={handleAttach}>
-              <Iconify icon="solar:gallery-add-bold" />
-            </IconButton>
-            <IconButton onClick={handleAttach}>
-              <Iconify icon="eva:attach-2-fill" />
-            </IconButton> */}
-            {/* <IconButton>
-              <Iconify icon="solar:microphone-bold" />
-            </IconButton> */}
-
-            <IconButton onClick={handleSendMessage}>
-              <Iconify icon="tabler:send" width={18} />
-            </IconButton>
-          </Stack>
-        }
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="normal"
+        overflow="hidden"
         sx={{
-          px: 1,
-          height: 56,
-          flexShrink: 0,
           borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
-          flexGrow: 1,
+          px: 1,
+          minHeight: 56,
+          // height: 56,
+          maxHeight: 100,
         }}
-      />
+      >
+        <IconButton>
+          <Iconify icon="eva:smiling-face-fill" />
+        </IconButton>
+        <InputBase
+          multiline
+          value={message}
+          onKeyUp={handleSendMessage}
+          onChange={handleChangeMessage}
+          placeholder="Type a message"
+          disabled={disabled}
+          // startAdornment={
+          //   <IconButton>
+          //     <Iconify icon="eva:smiling-face-fill" />
+          //   </IconButton>
+          // }
+          // endAdornment={
+          //   <Stack direction="row" sx={{ flexShrink: 0 }}>
+          //     {/* <IconButton onClick={handleAttach}>
+          //     <Iconify icon="solar:gallery-add-bold" />
+          //   </IconButton>
+          //   <IconButton onClick={handleAttach}>
+          //     <Iconify icon="eva:attach-2-fill" />
+          //   </IconButton> */}
+          //     {/* <IconButton>
+          //     <Iconify icon="solar:microphone-bold" />
+          //   </IconButton> */}
+
+          //     <IconButton onClick={handleSendMessage}>
+          //       <Iconify icon="tabler:send" width={18} />
+          //     </IconButton>
+          //   </Stack>
+          // }
+          sx={{
+            // height: 56,
+            maxHeight: 100,
+            // flexShrink: 0,
+            // borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
+            flexGrow: 1,
+            overflow: 'scroll',
+          }}
+        />
+
+        <IconButton onClick={handleSendMessage}>
+          <Iconify icon="tabler:send" width={18} />
+        </IconButton>
+      </Stack>
 
       {/* <Button onclick={socketMessage}>Send </Button> */}
       <input type="file" ref={fileRef} style={{ display: 'none' }} />
