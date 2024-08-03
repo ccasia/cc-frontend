@@ -18,7 +18,6 @@ export default function ChatRoomParticipantDialog({ participant, open, onClose }
       <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
         <Iconify icon="mingcute:close-line" />
       </IconButton>
-
       <DialogContent sx={{ py: 5, px: 3, display: 'flex' }}>
         <Avatar
           alt={participant.name}
@@ -32,7 +31,6 @@ export default function ChatRoomParticipantDialog({ participant, open, onClose }
           </Typography>
 
           <Typography variant="subtitle1">{participant.name}</Typography>
-
           <Stack direction="row" sx={{ typography: 'caption', color: 'text.disabled' }}>
             <Iconify
               icon="mingcute:location-fill"
@@ -41,7 +39,6 @@ export default function ChatRoomParticipantDialog({ participant, open, onClose }
             />
             {participant.address}
           </Stack>
-
           <Stack spacing={1} direction="row" sx={{ pt: 1.5 }}>
             <IconButton
               size="small"

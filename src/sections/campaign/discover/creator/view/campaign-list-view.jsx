@@ -131,7 +131,7 @@ export default function CampaignListView() {
         bgcolor: (theme) => theme.palette.background.default,
         boxShadow: 20,
         border: 1,
-        borderRadius: '5px 5px 0 0',
+        borderRadius: '10px 10px 0 0',
         borderColor: 'text.secondary',
         p: 2,
       }}
@@ -164,8 +164,8 @@ export default function CampaignListView() {
               <CircularProgress
                 variant="determinate"
                 value={elem.progress}
-                sx={{ width: 20 }}
-                size="small"
+                size={20}
+                thickness={7}
               />
             </Stack>
             <Divider sx={{ borderStyle: 'dashed' }} />

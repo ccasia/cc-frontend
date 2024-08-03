@@ -16,16 +16,12 @@ import { useGetThreadById } from 'src/api/chat';
 
 import Iconify from 'src/components/iconify';
 
-import { useCollapseNav } from './hooks'
+import { useCollapseNav } from './hooks';
 // import ChatRoomGroup from './chat-room-group';
 // import ChatRoomSingle from './chat-room-single';
 //  import ChatRoomAttachments from './chat-room-attachments';
 
 // ----------------------------------------------------------------------
-
-
-
- 
 
 const NAV_WIDTH = 250;
 
@@ -56,7 +52,7 @@ export default function ChatRoom({ participants, conversation, threadId }) {
 
   useEffect(() => {
     if (thread) {
-      console.log("Fetched Thread Data:", thread);
+      console.log('Fetched Thread Data:', thread);
     }
   }, [thread]);
 
@@ -69,17 +65,15 @@ export default function ChatRoom({ participants, conversation, threadId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lgUp]);
 
-  
-
   if (!thread) {
     return null;
   }
-  
+
   // onst group = participants.length > 1;
 
   // const attachments = uniq(flatten(conversation.messages.map((messages) => messages.attachments)));
 
-  // Update this soon 
+  // Update this soon
 
   const renderContent = (
     <>
@@ -89,42 +83,35 @@ export default function ChatRoom({ participants, conversation, threadId }) {
         <ChatRoomSingle participant={participants[0]} />
       )} */}
 
-    <Box  
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        position: 'relative',
-        margin: 2,
-        padding: 1, 
-      }}>
-    <Typography variant="h5" align="center" sx={{ marginBottom: 15 }} > Chat Details </Typography>
-    <Avatar
-      src={thread.photoURL}
-      alt={thread.name}
-      sx={{  cursor: 'pointer', width: 108, height: 108, marginBottom: 2 }}
-    />
-    <Typography variant="h6" align="center" sx={{ marginBottom: 2 }}>
-      {thread.title}
-    </Typography>
-    <Typography variant="body1" align="center" sx={{ marginBottom: 2 }}>
-      {thread.description}
-    </Typography>
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={1} 
-      justifyContent="center"
-    >
-      <Iconify
-        width={24}
-        icon="material-symbols:groups"
-      />
-      <Typography variant="body2">
-        Total Participants: {thread.userCount}
-      </Typography>
-    </Stack>
-    </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          position: 'relative',
+          margin: 2,
+          padding: 1,
+        }}
+      >
+        <Typography variant="h5" align="center" sx={{ marginBottom: 15 }}>
+          Chat Details
+        </Typography>
+        <Avatar
+          src={thread.photoURL}
+          alt={thread.name}
+          sx={{ cursor: 'pointer', width: 108, height: 108, marginBottom: 2 }}
+        />
+        <Typography variant="h6" align="center" sx={{ marginBottom: 2 }}>
+          {thread.title}
+        </Typography>
+        <Typography variant="body1" align="center" sx={{ marginBottom: 2 }}>
+          {thread.description}
+        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
+          <Iconify width={24} icon="material-symbols:groups" />
+          <Typography variant="body2">Total Participants: {thread.userCount}</Typography>
+        </Stack>
+      </Box>
 
       {/* <ChatRoomAttachments attachments={attachments} /> */}
     </>

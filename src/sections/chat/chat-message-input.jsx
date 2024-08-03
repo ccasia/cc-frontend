@@ -21,7 +21,6 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-
 //  const socket = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
 
 export default function ChatMessageInput({
@@ -38,39 +37,35 @@ export default function ChatMessageInput({
 
   const fileRef = useRef(null);
   const { socket } = useSocketContext();
- 
+
   const [message, setMessage] = useState('');
 
-  
+  const handleSendMessage = useCallback(
+    (event) => {
+      if (event.key === 'Enter' || (event.type === 'click' && message.trim() !== '')) {
+        console.log('message sent', message);
+        onSendMessage(message);
+        setMessage('');
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [message, onSendMessage]
+  );
 
-  
-
-  const handleSendMessage = useCallback((event) => {
-    if (event.key === 'Enter' && message.trim() !== '') {
-      console.log("message sent", message)
-      onSendMessage(message);
-      setMessage('');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [message]);
-
-  
-  
- // Handle message input change
+  // Handle message input change
   const handleChangeMessage = useCallback((event) => {
-  setMessage(event.target.value);
-}, []);
+    setMessage(event.target.value);
+  }, []);
 
   // Listen for incoming messages
   useEffect(() => {
-  const handleIncomingMessage = (data) => {
-  };
+    const handleIncomingMessage = (data) => {};
 
-  socket?.on('message', handleIncomingMessage);
-  return () => {
-    socket?.off('message', handleIncomingMessage);
-  };
-}, [socket]);
+    socket?.on('message', handleIncomingMessage);
+    return () => {
+      socket?.off('message', handleIncomingMessage);
+    };
+  }, [socket]);
 
   // const handleChangeMessage = useCallback((event) => {
   //   setMessage(event.target.value);
@@ -79,6 +74,7 @@ export default function ChatMessageInput({
   return (
     <>
       <InputBase
+        multiline
         value={message}
         onKeyUp={handleSendMessage}
         onChange={handleChangeMessage}
@@ -100,6 +96,10 @@ export default function ChatMessageInput({
             {/* <IconButton>
               <Iconify icon="solar:microphone-bold" />
             </IconButton> */}
+
+            <IconButton onClick={handleSendMessage}>
+              <Iconify icon="tabler:send" width={18} />
+            </IconButton>
           </Stack>
         }
         sx={{
@@ -107,6 +107,7 @@ export default function ChatMessageInput({
           height: 56,
           flexShrink: 0,
           borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
+          flexGrow: 1,
         }}
       />
 
