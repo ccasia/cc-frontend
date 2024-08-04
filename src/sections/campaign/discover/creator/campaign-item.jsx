@@ -10,7 +10,7 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
 import ListItemText from '@mui/material/ListItemText';
-import { Chip, Typography, CircularProgress } from '@mui/material';
+import { Grid, Typography, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -173,7 +173,7 @@ export default function CampaignItem({ campaign, user }) {
     <Stack
       spacing={1.5}
       sx={{
-        position: 'relative',
+        // position: 'relative',
         p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
       }}
     >
@@ -236,82 +236,38 @@ export default function CampaignItem({ campaign, user }) {
         </>
       )}
 
-      {/* {loading ? (
-        <LoadingButton
-          sx={{ position: 'absolute', bottom: 10, right: 10 }}
-          variant="contained"
-          size="small"
-          startIcon={<Iconify icon="eos-icons:loading" width={20} />}
-          // loading={loading}
-          disabled
-        >
-          {percent}
-        </LoadingButton>
-      ) : (
-        <LoadingButton
-          sx={{ position: 'absolute', bottom: 10, right: 10 }}
-          variant="contained"
-          size="small"
-          startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-          onClick={() => setOpen(true)}
-        >
-          Pitch
-        </LoadingButton>
-      )} */}
-      {/* {campaignIds?.includes(campaign.id) ? (
-        !isShortlisted?.includes(campaign.id) ? (
-          <Label
-            sx={{
-              position: 'absolute',
-              bottom: 10,
-              right: 10,
-              color: (theme) => theme.palette.text.secondary,
-            }}
-          >
-            In Review
-          </Label>
-        ) : (
-          <Label
-            sx={{
-              position: 'absolute',
-              bottom: 10,
-              right: 10,
-            }}
-            color="success"
-          >
-            Approved
-          </Label>
-        )
-      ) : (
-        <>
-          {loading ? (
-            <LoadingButton
-              sx={{ position: 'absolute', bottom: 10, right: 10 }}
-              variant="contained"
-              size="small"
-              startIcon={<Iconify icon="eos-icons:loading" width={20} />}
-              // loading={loading}
-              disabled
-            >
-              {percent}
-            </LoadingButton>
-          ) : (
-            <LoadingButton
-              sx={{ position: 'absolute', bottom: 10, right: 10 }}
-              variant="contained"
-              size="small"
-              startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-              onClick={() => setOpen(true)}
-            >
-              Pitch
-            </LoadingButton>
-          )}
-        </>
-      )} */}
-      {[
+      <Grid container>
+        <Grid item xs={1}>
+          <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />
+        </Grid>
+        <Grid item xs={11}>
+          <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
+            {campaign?.campaignBrief?.interests.map((e, index) => (
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Label color="primary">{e}</Label>
+              </Stack>
+            ))}
+          </Stack>
+        </Grid>
+      </Grid>
+
+      <Grid container>
+        <Grid item xs={1}>
+          <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} />
+        </Grid>
+        <Grid item xs={11}>
+          <Typography variant="caption" color="text.disabled">
+            {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
+          </Typography>
+        </Grid>
+      </Grid>
+
+      {/* {[
         {
           label: campaign?.campaignBrief?.interests.map((e, index) => (
-            <Chip key={index} label={e} variant="filled" size="small" color="primary" />
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Label color="primary">{e}</Label>
+            </Stack>
           )),
           icon: <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />,
         },
@@ -329,18 +285,19 @@ export default function CampaignItem({ campaign, user }) {
           spacing={1}
           direction="row"
           alignItems="center"
+          flexWrap="wrap"
           sx={{ typography: 'body2' }}
         >
           {item.icon}
           {item.label}
         </Stack>
-      ))}
+      ))} */}
     </Stack>
   );
 
   return (
     <>
-      <Card>
+      <Card sx={{ position: 'relative' }}>
         {renderImages}
 
         {renderTexts}
@@ -348,43 +305,6 @@ export default function CampaignItem({ campaign, user }) {
         {renderInfo}
       </Card>
 
-      {/* <CustomPopover
-        open={popover.open}
-        onClose={popover.onClose}
-        arrow="right-top"
-        sx={{ width: 140 }}
-      >
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
-            onView();
-          }}
-        >
-          <Iconify icon="solar:eye-bold" />
-          View
-        </MenuItem>
-
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
-            onEdit();
-          }}
-        >
-          <Iconify icon="solar:pen-bold" />
-          Edit
-        </MenuItem>
-
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
-            onDelete();
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <Iconify icon="solar:trash-bin-trash-bold" />
-          Delete
-        </MenuItem>
-      </CustomPopover> */}
       <CampaignModal
         open={campaignInfo.value}
         handleClose={campaignInfo.onFalse}

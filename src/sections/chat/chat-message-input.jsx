@@ -86,7 +86,7 @@ export default function ChatMessageInput({
           maxHeight: 100,
         }}
       >
-        <IconButton>
+        <IconButton sx={{ alignSelf: 'center' }}>
           <Iconify icon="eva:smiling-face-fill" />
         </IconButton>
         <InputBase
@@ -128,7 +128,7 @@ export default function ChatMessageInput({
           }}
         />
 
-        <IconButton onClick={handleSendMessage}>
+        <IconButton onClick={handleSendMessage} sx={{ alignSelf: 'center' }}>
           <Iconify icon="tabler:send" width={18} />
         </IconButton>
       </Stack>

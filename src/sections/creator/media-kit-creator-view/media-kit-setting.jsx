@@ -1,5 +1,6 @@
 import React from 'react';
 import * as Yup from 'yup';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -59,6 +60,8 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
         ...data,
         creatorId: user?.creator?.id,
       });
+
+      mutate(endpoints.auth.me);
 
       enqueueSnackbar(res?.data?.message, {
         variant: 'success',
