@@ -90,8 +90,6 @@ export default function CampaignItem({ campaign, user }) {
     [campaign, user]
   );
 
-  console.log(campaign);
-
   const shortlisted = useMemo(
     () => campaign?.shortlisted?.filter((elem) => elem.userId.includes(user?.id))[0],
     [campaign, user]
