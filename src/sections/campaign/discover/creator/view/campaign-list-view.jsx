@@ -76,7 +76,6 @@ export default function CampaignListView() {
     };
 
     const handlePitchSuccess = (data) => {
-      console.log('SUCCESS', data);
       mutate(endpoints.campaign.getAllActiveCampaign);
       enqueueSnackbar(data.name);
       setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));

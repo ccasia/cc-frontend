@@ -1,11 +1,10 @@
 import dayjs from 'dayjs';
-import * as Yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { io } from 'socket.io-client';
 import React, { useEffect } from 'react';
 
-import { Box, Card, Stack, Typography, ListItemText } from '@mui/material';
+import { Box, Card, Stack, Tooltip, Typography, ListItemText } from '@mui/material';
 import {
   Timeline,
   TimelineItem,
@@ -26,22 +25,26 @@ import Iconify from 'src/components/iconify';
 
 import CampaignAgreement from './campaign-agreement';
 
-const defaultSubmission = [
+export const defaultSubmission = [
   {
     name: 'Agreeement Submission',
     value: 'Agreement',
+    type: 'AGREEMENT_FORM',
   },
   {
     name: 'First Draft Submission',
     value: 'First Draft',
+    type: 'FIRST_DRAFT',
   },
   {
     name: 'Final Draft Submission',
     value: 'Final Draft',
+    type: 'FINAL_DRAFT',
   },
   {
     name: 'Posting',
     value: 'Posting',
+    type: 'POSTING',
   },
 ];
 
@@ -52,12 +55,15 @@ const CampaignMyTasks = ({ campaign }) => {
   const { user } = useAuthContext();
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
 
-  const timeline = campaign?.campaignTimeline;
+  const isSubmitted = (name) => {
+    if (!submissions) return;
+    // eslint-disable-next-line consistent-return
+    return submissions.some((item) => item.submissionType.type === name);
+  };
 
-  const schema = Yup.object().shape({
-    // draft: Yup.string().required(),
-    caption: Yup.string().required(),
-  });
+  const value = (name) => submissions?.find((item) => item.submissionType.type === name);
+
+  const timeline = campaign?.campaignTimeline;
 
   const getTimeline = (name) => timeline?.find((item) => item.name === name);
 
@@ -104,9 +110,17 @@ const CampaignMyTasks = ({ campaign }) => {
                       mb={2}
                     >
                       <Typography variant="subtitle2">{item.name}</Typography>
-                      <Box flexGrow={1}>
-                        <Label>{timeline.status}</Label>
-                      </Box>
+                      {value(item.type) && (
+                        <Box flexGrow={1}>
+                          {value(item.type)?.status === 'PENDING_REVIEW' && (
+                            <Tooltip title="Pending Review">
+                              <Label>
+                                <Iconify icon="mdi:clock-outline" color="warning.main" width={18} />
+                              </Label>
+                            </Tooltip>
+                          )}
+                        </Box>
+                      )}
                       <Typography variant="caption">
                         Due: {dayjs(getTimeline(item.value)?.endDate).format('ddd LL')}
                       </Typography>
@@ -121,7 +135,7 @@ const CampaignMyTasks = ({ campaign }) => {
                   <CampaignAgreement
                     campaign={campaign}
                     timeline={timeline}
-                    submission={submissions?.filter((val) => val?.type === 'AGREEMENT')[0]}
+                    submission={value(item.type)}
                   />
                 )}
                 {/* {timeline.task === 'First Draft' && (

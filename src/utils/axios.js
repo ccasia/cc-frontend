@@ -155,9 +155,9 @@ export const endpoints = {
     tasks: {
       uploadAgreeementForm: '/api/tasks/uploadAgreementForm',
     },
-    submission: {
-      agreement: '/api/campaign/getSubmissions',
-    },
+    // submission: {
+    //   agreement: '/api/submission/submitAgreement',
+    // },
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',
@@ -172,6 +172,9 @@ export const endpoints = {
   },
   submission: {
     root: '/api/tasks/submissions',
+    creator: {
+      agreement: '/api/submission/submitAgreement',
+    },
     agreement: {
       adminManageAgreementSubmission: '/api/tasks/adminManageAgreementSubmission',
     },

@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 
 import Label from 'src/components/label';
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
 const CampaignInfo = ({ campaign }) => {
@@ -109,6 +110,33 @@ const CampaignInfo = ({ campaign }) => {
           />
         </Stack>
       </Stack>
+    </Box>
+  );
+
+  const renderGallery = (
+    <Box
+      display="grid"
+      gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+      gap={1}
+      mt={2}
+    >
+      <Image
+        src={campaign?.campaignBrief?.images[0]}
+        alt="test"
+        ratio="1/1"
+        sx={{ borderRadius: 2, cursor: 'pointer' }}
+      />
+      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
+        {campaign?.campaignBrief?.images.map((elem, index) => (
+          <Image
+            key={index}
+            src={elem}
+            alt="test"
+            ratio="1/1"
+            sx={{ borderRadius: 2, cursor: 'pointer' }}
+          />
+        ))}
+      </Box>
     </Box>
   );
 
@@ -325,6 +353,7 @@ const CampaignInfo = ({ campaign }) => {
 
   return (
     <Stack spacing={2} maxWidth={800} mx="auto">
+      {renderGallery}
       {renderInformation}
       <Divider sx={{ borderStyle: 'dashed' }} />
       {renderRequirements}
