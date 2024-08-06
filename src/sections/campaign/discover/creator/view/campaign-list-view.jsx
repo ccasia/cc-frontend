@@ -21,6 +21,7 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 import { endpoints } from 'src/utils/axios';
 
 import { _tours } from 'src/_mock';
+import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -37,6 +38,7 @@ import CampaignSearch from '../campaign-search';
 export default function CampaignListView() {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns('creator');
+  const { user } = useAuthContext();
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
   const { socket } = useSocketContext();
@@ -45,7 +47,7 @@ export default function CampaignListView() {
   useEffect(() => {
     // Define the handler function
     const handlePitchLoading = (data) => {
-      console.log(data);
+      console.log('Loading', data);
 
       if (upload.find((item) => item.campaignId === data.campaignId)) {
         setUpload((prev) =>
@@ -54,7 +56,6 @@ export default function CampaignListView() {
               ? {
                   campaignId: data.campaignId,
                   loading: true,
-                  // progress: data.progress && `${Math.floor(data.progress)}%`,
                   progress: Math.floor(data.progress),
                 }
               : item
@@ -75,6 +76,7 @@ export default function CampaignListView() {
     };
 
     const handlePitchSuccess = (data) => {
+      console.log('SUCCESS', data);
       mutate(endpoints.campaign.getAllActiveCampaign);
       enqueueSnackbar(data.name);
       setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));
@@ -117,6 +119,11 @@ export default function CampaignListView() {
     [search.query]
   );
 
+  // const pitch = useMemo(
+  //   () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
+  //   [campaign, user]
+  // );
+
   const renderUploadProgress = (
     <Box
       component={m.div}
@@ -131,6 +138,7 @@ export default function CampaignListView() {
         bgcolor: (theme) => theme.palette.background.default,
         boxShadow: 20,
         border: 1,
+        borderBottom: 0,
         borderRadius: '10px 10px 0 0',
         borderColor: 'text.secondary',
         p: 2,

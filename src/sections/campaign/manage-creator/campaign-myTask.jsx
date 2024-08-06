@@ -16,7 +16,6 @@ import {
 } from '@mui/lab';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
-import useGetFirstDraftBySessionID from 'src/hooks/use-get-first-draft-for-creator';
 
 import { endpoints } from 'src/utils/axios';
 
@@ -26,8 +25,25 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import CampaignAgreement from './campaign-agreement';
-import CampaignFirstDraft from './campaign-first-draft';
-import CampaignFinalDraft from './campaign-final-draft';
+
+const defaultSubmission = [
+  {
+    name: 'Agreeement Submission',
+    value: 'Agreement',
+  },
+  {
+    name: 'First Draft Submission',
+    value: 'First Draft',
+  },
+  {
+    name: 'Final Draft Submission',
+    value: 'Final Draft',
+  },
+  {
+    name: 'Posting',
+    value: 'Posting',
+  },
+];
 
 const CampaignMyTasks = ({ campaign }) => {
   // const [preview, setPreview] = useState('');
@@ -35,16 +51,15 @@ const CampaignMyTasks = ({ campaign }) => {
   // const [taskId, setTimelineId] = useState('');
   const { user } = useAuthContext();
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
-  console.log(submissions);
 
-  const { data } = useGetFirstDraftBySessionID(campaign.id);
-
-  const isSubmittedFirstDraft = data?.status === 'Submitted';
+  const timeline = campaign?.campaignTimeline;
 
   const schema = Yup.object().shape({
     // draft: Yup.string().required(),
     caption: Yup.string().required(),
   });
+
+  const getTimeline = (name) => timeline?.find((item) => item.name === name);
 
   useEffect(() => {
     const socket = io();
@@ -73,7 +88,60 @@ const CampaignMyTasks = ({ campaign }) => {
             },
           }}
         >
-          {campaign?.campaignTasks
+          {defaultSubmission.map((item, index) => (
+            <TimelineItem>
+              <TimelineSeparator>
+                <Label sx={{ mt: 0.5 }}>{index + 1}</Label>
+                <TimelineConnector />
+              </TimelineSeparator>
+              <TimelineContent>
+                <ListItemText
+                  primary={
+                    <Stack
+                      direction={{ xs: 'column', md: 'row' }}
+                      spacing={1}
+                      alignItems={{ md: 'center' }}
+                      mb={2}
+                    >
+                      <Typography variant="subtitle2">{item.name}</Typography>
+                      <Box flexGrow={1}>
+                        <Label>{timeline.status}</Label>
+                      </Box>
+                      <Typography variant="caption">
+                        Due: {dayjs(getTimeline(item.value)?.endDate).format('ddd LL')}
+                      </Typography>
+                    </Stack>
+                  }
+                  secondaryTypographyProps={{
+                    variant: 'caption',
+                    color: 'text.disabled',
+                  }}
+                />
+                {item.value === 'Agreement' && (
+                  <CampaignAgreement
+                    campaign={campaign}
+                    timeline={timeline}
+                    submission={submissions?.filter((val) => val?.type === 'AGREEMENT')[0]}
+                  />
+                )}
+                {/* {timeline.task === 'First Draft' && (
+                  <CampaignFirstDraft
+                    campaign={campaign}
+                    timeline={timeline}
+                    submission={submissions?.filter((item) => item?.type === 'FIRST_DRAFT')[0]}
+                  />
+                )}
+                {timeline.task === 'Final Draft' && (
+                  <CampaignFinalDraft
+                    campaign={campaign}
+                    timeline={timeline}
+                    submission={submissions?.filter((item) => item?.type === 'FINAL_DRAFT')[0]}
+                  />
+                )} */}
+              </TimelineContent>
+            </TimelineItem>
+          ))}
+          {/* {campaign?.campaignTasks
             .sort((a, b) => dayjs(a.endDate).diff(dayjs(b.endDate)))
             .map((timeline, index) => (
               <TimelineItem>
@@ -125,40 +193,9 @@ const CampaignMyTasks = ({ campaign }) => {
                       submission={submissions?.filter((item) => item?.type === 'FINAL_DRAFT')[0]}
                     />
                   )}
-
-                  {/* {timeline.status === 'PENDING_REVIEW' && isSubmittedFirstDraft && (
-                    <Box
-                      component={Card}
-                      height={200}
-                      sx={{
-                        bgcolor: (theme) => alpha(theme.palette.success.main, 0.13),
-                        position: 'relative',
-                      }}
-                    >
-                      <Stack
-                        sx={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%,-50%)',
-                        }}
-                        direction="row"
-                        gap={1}
-                        alignItems="center"
-                      >
-                        <Iconify icon="mdi:tick-circle-outline" width={16} />
-                        <Typography variant="subtitle1">Submitted for review</Typography>
-                      </Stack>
-                    </Box>
-                  )} */}
-                  {/* {dayjs(timeline.startDate) < dayjs() && dayjs() <= dayjs(timeline.endDate) && (
-                    <Button size="small" variant="outlined" color="primary" sx={{ mt: 1 }}>
-                      Manage
-                    </Button>
-                  )} */}
                 </TimelineContent>
               </TimelineItem>
-            ))}
+            ))} */}
         </Timeline>
       )}
     </Box>

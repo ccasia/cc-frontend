@@ -178,7 +178,20 @@ export default function CampaignItem({ campaign, user }) {
       {/* <IconButton onClick={popover.onOpen} sx={{ position: 'absolute', bottom: 20, right: 8 }}>
         <Iconify icon="eva:more-vertical-fill" />
       </IconButton> */}
-      {pitch && pitch.status !== 'approved' && (
+      {pitch && pitch.status === 'pending' && (
+        <Label
+          color="warning"
+          sx={{
+            position: 'absolute',
+            bottom: 10,
+            right: 10,
+            // color: (theme) => theme.palette.text.secondary,
+          }}
+        >
+          Pending
+        </Label>
+      )}
+      {pitch && pitch.status !== 'approved' && pitch.status !== 'pending' && (
         <Label
           sx={{
             position: 'absolute',
