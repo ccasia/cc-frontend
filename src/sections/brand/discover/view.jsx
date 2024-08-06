@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Container from '@mui/material/Container';
-import { Box, TextField, InputAdornment } from '@mui/material';
+import { Box, Button, TextField, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
@@ -55,6 +55,11 @@ function DiscoverBrand() {
           },
           { name: 'List' },
         ]}
+        action={
+          <Button variant="contained" size="small" startIcon={<Iconify icon="ion:create" />}>
+            Create new brand
+          </Button>
+        }
         sx={{
           mb: { xs: 3, md: 5 },
         }}

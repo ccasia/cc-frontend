@@ -90,8 +90,8 @@ const CampaignDetailView = ({ id }) => {
       return <Label variant="filled">{currentCampaign?.pitch.length}</Label>;
     }
 
-    if (tab.value === 'creator' && currentCampaign?.shortlistCreator?.length) {
-      return <Label variant="filled">{currentCampaign?.shortlistCreator?.length}</Label>;
+    if (tab.value === 'creator' && currentCampaign?.shortlisted?.length) {
+      return <Label variant="filled">{currentCampaign?.shortlisted?.length}</Label>;
     }
 
     return '';
@@ -211,20 +211,14 @@ const CampaignDetailView = ({ id }) => {
             </ListItem>
             <ListItem>
               {isDue(
-                timelineHelper(
-                  currentCampaign?.campaignBrief?.startDate,
-                  timeline?.shortlistCreator
-                )
+                timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlisted)
               ) && (
                 <ListItemIcon>
                   <Iconify icon="clarity:warning-solid" color="warning.main" />
                 </ListItemIcon>
               )}
               {isDone(
-                timelineHelper(
-                  currentCampaign?.campaignBrief?.startDate,
-                  timeline?.shortlistCreator
-                )
+                timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlisted)
               ) && (
                 <ListItemIcon>
                   <Iconify icon="hugeicons:tick-04" color="success.main" />
@@ -232,7 +226,7 @@ const CampaignDetailView = ({ id }) => {
               )}
               <ListItemText
                 primary="Shortlist Creator"
-                secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlistCreator)}`}
+                secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlisted)}`}
                 primaryTypographyProps={{
                   variant: 'subtitle2',
                 }}
@@ -406,7 +400,7 @@ const CampaignDetailView = ({ id }) => {
             currentCampaign?.campaignTimeline.filter((elem) => elem.name === 'Open For Pitch')[0]
           }
           timelines={currentCampaign?.campaignTimeline.filter((elem) => elem.for === 'creator')}
-          shortlisted={currentCampaign?.shortlistCreator}
+          shortlisted={currentCampaign?.shortlisted}
         />
       )}
       {currentTab === 'submission' && <CampaignDraftSubmissions campaign={currentCampaign} />}

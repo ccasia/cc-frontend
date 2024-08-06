@@ -33,6 +33,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 
 import OverView from '../creator-stuff/overview';
 import Agreement from '../creator-stuff/agreement';
+import Submissions from '../creator-stuff/submissions';
 import FirstDraft from '../creator-stuff/draft/first-draft';
 import FinalDraft from '../creator-stuff/draft/final-draft';
 
@@ -43,7 +44,6 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data: submissionData, /* isLoading: submissionLoading */ } = useGetSubmissions(id, campaignId);
   const theme = useTheme();
   const router = useRouter();
-  console.log(submissionData);
 
   const phoneNumberHelper = (country, phoneNumber) => {
     if (!phoneNumber) {
@@ -83,7 +83,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         icon={<Iconify icon="flowbite:profile-card-outline" width={18} />}
       />
       <Tab value="overview" label="Overview" />
-      <Tab
+      <Tab value="submission" label="Submissions" />
+      {/* <Tab
         icon={
           agreement?.campaignTask.status === 'PENDING_REVIEW' ? (
             <Iconify icon="material-symbols:pending-actions" color="warning.main" width={18} />
@@ -97,8 +98,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         }
         value="agreement"
         label="Agreement"
-      />
-      <Tab
+      /> */}
+      {/* <Tab
         value="firstDraft"
         label="First Draft"
         icon={
@@ -114,8 +115,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             <Iconify icon="pajamas:progress" width={18} color="warning.main" />
           )
         }
-      />
-      <Tab
+      /> */}
+      {/* <Tab
         value="finalDraft"
         label="Final Draft"
         icon={
@@ -131,11 +132,11 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             <Iconify icon="pajamas:progress" width={18} color="warning.main" />
           )
         }
-      />
+      /> */}
 
       <Tab value="logistics" label="Logistics" />
       <Tab value="timeline" label="Timeline" />
-      <Tab value="reminder" label="Reminder" />
+      {/* <Tab value="reminder" label="Reminder" /> */}
     </Tabs>
   );
 
@@ -292,6 +293,13 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
           )}
           {currentTab === 'finalDraft' && (
             <FinalDraft campaign={campaign} submission={finalDraft} user={data} />
+          )}
+          {currentTab === 'submission' && (
+            <Submissions
+              campaign={campaign}
+              submissions={campaign?.campaignSubmissionRequirement}
+              creator={data}
+            />
           )}
         </>
       )}

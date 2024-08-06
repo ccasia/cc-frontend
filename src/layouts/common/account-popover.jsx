@@ -88,7 +88,7 @@ export default function AccountPopover({ isOnline }) {
               border: (theme) => `solid 2px ${theme.palette.background.default}`,
             }}
           >
-            {user?.name.charAt(0).toUpperCase()}
+            {user?.name?.charAt(0).toUpperCase()}
           </Avatar>
         </Badge>
       </IconButton>

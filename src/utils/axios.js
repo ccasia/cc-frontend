@@ -79,7 +79,7 @@ export const endpoints = {
     updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
-    allusers: '/api/users'
+    allusers: '/api/users',
   },
   mail: {
     list: '/api/mail/list',
@@ -155,6 +155,9 @@ export const endpoints = {
     tasks: {
       uploadAgreeementForm: '/api/tasks/uploadAgreementForm',
     },
+    // submission: {
+    //   agreement: '/api/submission/submitAgreement',
+    // },
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',
@@ -170,6 +173,9 @@ export const endpoints = {
   },
   submission: {
     root: '/api/tasks/submissions',
+    creator: {
+      agreement: '/api/submission/submitAgreement',
+    },
     agreement: {
       adminManageAgreementSubmission: '/api/tasks/adminManageAgreementSubmission',
     },

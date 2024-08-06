@@ -27,7 +27,7 @@ import UserCard from './user-card';
 import MediaKitModal from '../media-kit-modal';
 import CampaignDetailPitchContent from './campaign-detail-pitch-content';
 
-const CampaignDetailPitch = ({ pitches, shortlisted, timeline, timelines }) => {
+const CampaignDetailPitch = ({ pitches, timelines }) => {
   const smUp = useResponsive('up', 'sm');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [search, setSearch] = useState();
@@ -211,28 +211,6 @@ const CampaignDetailPitch = ({ pitches, shortlisted, timeline, timelines }) => {
                 ))}
               </Stack>
             )}
-            {/* <Dialog open={open} onClose={handleClose}>
-              <DialogTitle>Pitch Content</DialogTitle>
-              <DialogContent>
-                <Markdown children={selectedPitch?.content} />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleClose}>Close</Button>
-                <Button
-                  onClick={() => {
-                    approve({
-                      campaignId: selectedPitch?.campaignId,
-                      creatorId: selectedPitch?.userId,
-                      pitchId: selectedPitch?.id,
-                    });
-                    handleClose();
-                  }}
-                  color="success"
-                >
-                  Approve
-                </Button>
-              </DialogActions>
-            </Dialog> */}
           </Grid>
         )}
         {!smUp && (
@@ -308,8 +286,7 @@ export default CampaignDetailPitch;
 
 CampaignDetailPitch.propTypes = {
   pitches: PropTypes.array,
-  shortlisted: PropTypes.array,
-  timeline: PropTypes.object,
+
   timelines: PropTypes.array,
 };
 

@@ -5,7 +5,9 @@ import Stack from '@mui/material/Stack';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
-import { useSearchParams } from 'src/routes/hooks';
+
+import { useRouter, useSearchParams } from 'src/routes/hooks';
+
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -17,9 +19,7 @@ import ThreadMessages from './threadmessages';
 import ChatHeaderDetail from '../chat-header-detail';
 import ChatHeaderCompose from '../chat-header-compose';
 
-
 // ----------------------------------------------------------------------
-
 
 export default function ChatView() {
   // const router = useRouter();
@@ -37,14 +37,16 @@ export default function ChatView() {
   //   }
   // }, [router, selectedConversationId]);
 
-
   //  const filteredMessages = messages.filter(message => message.threadId === threadId);
-
-
-
+  
   // Head is Showing all the search and names
   const renderHead = (
-    <Stack direction="row" alignItems="center" flexShrink={0} sx={{ pr: 1, pl: 2.5, py: 1, minHeight: 72 }}>
+    <Stack
+      direction="row"
+      alignItems="center"
+      flexShrink={0}
+      sx={{ pr: 1, pl: 2.5, py: 1, minHeight: 72 }}
+    >
       {selectedConversationId ? (
         <ChatHeaderDetail participants={[]} />
       ) : (
@@ -63,9 +65,8 @@ export default function ChatView() {
 
   );
 
-
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'} >
+    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
         Chat
       </Typography>
@@ -86,19 +87,33 @@ export default function ChatView() {
             }}
           >
 
-             {id? (
+//              {id? (
 
-            <ThreadMessages threadId={id} />
-          ) : (
-            <Container maxWidth="xl" sx={{justifyContent: 'center', mt:10, alignItems: 'center', height: '100vh'}}>
-            <Typography  variant="body1" color="textSecondary" style={{ textAlign: 'center' }}>
-              Choose a thread to start messaging
-          </Typography>
-          </Container>
-          )}
+//             <ThreadMessages threadId={id} />
+//           ) : (
+//             <Container maxWidth="xl" sx={{justifyContent: 'center', mt:10, alignItems: 'center', height: '100vh'}}>
+//             <Typography  variant="body1" color="textSecondary" style={{ textAlign: 'center' }}>
+//               Choose a thread to start messaging
+//           </Typography>
+//           </Container>
+//           )}
 
 
-            <ChatRoom  threadId={id}  />
+//             <ChatRoom  threadId={id}  />
+            {id ? (
+              <ThreadMessages threadId={id} />
+            ) : (
+              <Container
+                maxWidth="xl"
+                sx={{ justifyContent: 'center', mt: 10, alignItems: 'center', height: '100vh' }}
+              >
+                <Typography variant="body1" color="textSecondary" style={{ textAlign: 'center' }}>
+                  Choose a thread to start messaging
+                </Typography>
+              </Container>
+            )}
+
+            <ChatRoom threadId={id} />
           </Stack>
         </Stack>
       </Stack>
