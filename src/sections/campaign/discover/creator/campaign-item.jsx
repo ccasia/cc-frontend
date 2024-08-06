@@ -152,8 +152,6 @@ export default function CampaignItem({ campaign, user }) {
       )}
 
       {[
-
-
         {
           label: campaign?.campaignBrief?.interests.map((e, index) => (
             <Chip key={index} label={e} variant="filled" size="small" color="primary" />
@@ -196,7 +194,7 @@ export default function CampaignItem({ campaign, user }) {
         <Chip
           sx={{ position: 'absolute', top: 10, left: 10 }}
           variant="filled"
-          color={campaign?.percentageMatch > 50 ? 'success' : 'error'}
+          color='success'
           size="small"
           label={`${campaign?.percentageMatch} % Match`}
         />
