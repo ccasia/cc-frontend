@@ -144,7 +144,7 @@ export default function CampaignItem({ campaign, user }) {
         <Link
           component="a"
           color="inherit"
-          onClick={() => campaignInfo.onTrue()}
+          onClick={() => campaignInfo?.onTrue()}
           sx={{
             cursor: 'pointer',
           }}
@@ -282,6 +282,7 @@ export default function CampaignItem({ campaign, user }) {
           )),
           icon: <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />,
         },
+
         {
           label: (
             <Typography variant="caption" color="text.disabled">
@@ -314,6 +315,14 @@ export default function CampaignItem({ campaign, user }) {
         {renderTexts}
 
         {renderInfo}
+
+        <Chip
+          sx={{ position: 'absolute', top: 10, left: 10 }}
+          variant="filled"
+          color='success'
+          size="small"
+          label={`${campaign?.percentageMatch} % Match`}
+        />
       </Card>
 
       <CampaignModal
