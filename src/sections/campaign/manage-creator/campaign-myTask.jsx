@@ -55,6 +55,14 @@ const CampaignMyTasks = ({ campaign }) => {
   const { user } = useAuthContext();
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
 
+  // const { data } = useGetFirstDraftBySessionID(campaign.id);
+
+  // const isSubmittedFirstDraft = data?.status === 'Submitted';
+
+  // const schema = Yup.object().shape({
+  //   // draft: Yup.string().required(),
+  //   caption: Yup.string().required(),
+  // });
   const isSubmitted = (name) => {
     if (!submissions) return;
     // eslint-disable-next-line consistent-return
@@ -66,6 +74,7 @@ const CampaignMyTasks = ({ campaign }) => {
   const timeline = campaign?.campaignTimeline;
 
   const getTimeline = (name) => timeline?.find((item) => item.name === name);
+
 
   useEffect(() => {
     const socket = io();

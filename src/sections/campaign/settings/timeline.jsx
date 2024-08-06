@@ -32,7 +32,7 @@ import TimelineTypeModal from './timeline-type-modal';
 // eslint-disable-next-line react/prop-types
 const Timeline = ({ timelineType, isSmallScreen }) => {
   const { data: timelines, isLoading } = useGetAllTimelineType();
-  const [query, setQuery] = useState('');
+  const [, setQuery] = useState('');
 
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const errorTimeline = useBoolean();
@@ -372,7 +372,7 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
                     }
                   />
                 )}
-                {/* 
+                {/*
                   <RHFSelect disabled name={`timeline[${index}].dependsOn`} label="Depends On">
                     {!isLoading &&
                       timelines.map((elem) => (

@@ -41,7 +41,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const [currentTab, setCurrentTab] = useState('profile');
   const { campaign, campaignLoading } = useGetCampaignById(campaignId);
-  const { data: submissionData, isLoading: submissionLoading } = useGetSubmissions(id, campaignId);
+  const { data: submissionData, /* isLoading: submissionLoading */ } = useGetSubmissions(id, campaignId);
   const theme = useTheme();
   const router = useRouter();
 
@@ -140,19 +140,19 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     </Tabs>
   );
 
-  const renderOverview = (
-    <Box display="grid" gridTemplateColumns="repeat(3, 1fr)" gap={2}>
-      <Box
-        sx={{
-          height: 150,
-          p: 3,
-        }}
-        component={Card}
-      >
-        <Typography variant="h3">Draft</Typography>
-      </Box>
-    </Box>
-  );
+  // const renderOverview = (
+  //   <Box display="grid" gridTemplateColumns="repeat(3, 1fr)" gap={2}>
+  //     <Box
+  //       sx={{
+  //         height: 150,
+  //         p: 3,
+  //       }}
+  //       component={Card}
+  //     >
+  //       <Typography variant="h3">Draft</Typography>
+  //     </Box>
+  //   </Box>
+  // );
 
   const renderProfile = (
     <Box display="grid" gridTemplateColumns="repeat(3, 1fr)" gap={2}>

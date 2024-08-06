@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import React from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { Box, Card, Chip, Stack, Divider, MenuItem, IconButton, Typography } from '@mui/material';
@@ -15,11 +15,16 @@ import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import CustomPopover from 'src/components/custom-popover/custom-popover';
 
+import { CampaignLog } from './CampaignLog';
+
 const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
   const smUp = useResponsive('up', 'sm');
 
   const { user } = useAuthContext();
   const popover = usePopover();
+
+  const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
+  const onCloseCampaignLog = () => setCampaignLogIsOpen(false);
 
   return (
     <>
@@ -153,6 +158,15 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
           <Iconify icon="solar:pen-bold" />
           Edit
         </MenuItem> */}
+        <MenuItem
+          onClick={() => {
+            popover.onClose();
+            setCampaignLogIsOpen(true);
+          }}
+        >
+          <Iconify icon="material-symbols:note-rounded" />
+          View Log
+        </MenuItem>
         {user?.role === 'superadmin' && (
           <MenuItem
             onClick={() => {
@@ -166,6 +180,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
           </MenuItem>
         )}
       </CustomPopover>
+      <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
     </>
   );
 };

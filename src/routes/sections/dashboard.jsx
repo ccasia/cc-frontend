@@ -9,8 +9,6 @@ import { LoadingScreen } from 'src/components/loading-screen';
 import { ChatView } from 'src/sections/chat/view';
 import { CalendarView } from 'src/sections/calendar/view';
 
-
-
 // ----------------------------------------------------------------------
 
 const IndexPage = lazy(() => import('src/pages/dashboard/one'));
@@ -362,8 +360,8 @@ export const dashboardRoutes = [
       {
         path: 'chat',
         children: [
-         { 
-          path: '', 
+         {
+          path: '',
           element: <ChatView />,
          },
          {
