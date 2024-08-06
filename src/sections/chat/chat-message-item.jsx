@@ -8,6 +8,8 @@ import Typography from '@mui/material/Typography';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Label from 'src/components/label';
+
 // ----------------------------------------------------------------------
 
 export default function ChatMessageItem({ message }) {
@@ -19,7 +21,6 @@ export default function ChatMessageItem({ message }) {
   const isAdmin = sender?.role === 'admin';
   const isSprAdmin = sender?.role === 'superadmin';
 
-  console.log("Message CreatedAt", message.createdAt); 
   const renderInfo = (
     <Typography
       noWrap
@@ -32,31 +33,28 @@ export default function ChatMessageItem({ message }) {
         }),
       }}
     >
-    
       {!isMe && (
         <>
-        {sender?.name}
-        {(isAdmin || isSprAdmin)  && (
-          <Typography
-            variant="caption"
-            component="span"
-            sx={{
-              ml: 1,
-              py: 0.5,
-              px: 2,
-              backgroundColor: ' #d8b400 ',
-              color: 'black',
-              borderRadius: 4,
-            }}
-          >
-            Admin
-          </Typography>
-        )}
-        {`  `}
+          {sender?.name}
+          {(isAdmin || isSprAdmin) && (
+            <Label sx={{ ml: 0.5 }}>Admin</Label>
+            // <Typography
+            //   variant="caption"
+            //   component="span"
+            //   sx={{
+            //     ml: 1,
+            //     py: 0.5,
+            //     px: 2,
+            //     backgroundColor: ' #d8b400 ',
+            //     color: 'black',
+            //     borderRadius: 4,
+            //   }}
+            // >
+            //   Admin
+            // </Typography>
+          )}
         </>
-
-      )} 
-  
+      )}
     </Typography>
   );
 
@@ -73,16 +71,18 @@ export default function ChatMessageItem({ message }) {
         }),
       }}
     >
-       {message.createdAt ? formatDistanceToNowStrict(new Date(message.createdAt), {
-        addSuffix: true,
-      }) : 'sent'}
+      {message.createdAt
+        ? formatDistanceToNowStrict(new Date(message.createdAt), {
+            addSuffix: true,
+          })
+        : 'sent'}
     </Typography>
   );
 
   const renderBody = (
     <Stack
       sx={{
-        p: 1.5,
+        p: 1,
         minWidth: 48,
         maxWidth: 320,
         borderRadius: 1,
@@ -93,23 +93,31 @@ export default function ChatMessageItem({ message }) {
           bgcolor: 'primary.lighter',
         }),
         ...(isAdmin && {
-          bgcolor:  '#efc800' ,
-          color: 'black'
+          bgcolor: '#efc800',
+          color: 'black',
         }),
         ...(isSprAdmin && {
           bgcolor: ' #FFC300 ',
-          color: 'black'
+          color: 'black',
         }),
       }}
     >
-      {body}
+      <Typography
+        variant="inherit"
+        textTransform="capitalize"
+        sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+      >
+        {body}
+      </Typography>
     </Stack>
   );
 
   return (
     <Stack direction="row" justifyContent={isMe ? 'flex-end' : 'unset'} sx={{ mb: 5 }}>
-      {!isMe && <Avatar alt={sender?.name} src={sender?.photoURL} sx={{ width: 32, height: 32, mr: 2 }} />}
-      <Stack alignItems="flex-end">
+      {!isMe && (
+        <Avatar alt={sender?.name} src={sender?.photoURL} sx={{ width: 32, height: 32, mr: 2 }} />
+      )}
+      <Stack alignItems="start">
         {renderInfo}
         <Stack
           direction="row"
@@ -125,7 +133,7 @@ export default function ChatMessageItem({ message }) {
         >
           {renderBody}
         </Stack>
-         {renderTimestamp}
+        {renderTimestamp}
       </Stack>
     </Stack>
   );
@@ -139,7 +147,7 @@ ChatMessageItem.propTypes = {
     sender: PropTypes.shape({
       name: PropTypes.string,
       photoURL: PropTypes.string,
-      role: PropTypes.string
+      role: PropTypes.string,
     }),
   }),
   // onOpenLightbox: PropTypes.func,

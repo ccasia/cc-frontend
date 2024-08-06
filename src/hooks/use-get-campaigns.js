@@ -1,58 +1,72 @@
-import { io } from 'socket.io-client';
-import { enqueueSnackbar } from 'notistack';
-import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
+import { useMemo } from 'react';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import { fetcher, endpoints } from 'src/utils/axios';
 
 const useGetCampaigns = (type) => {
-  const [campaigns, setCampaigns] = useState();
-  const [endpoint, setEndPoint] = useState();
+  // const [campaigns, setCampaigns] = useState();
+  // const [endpoint, setEndPoint] = useState();
 
-  const getCampaigns = useCallback(async () => {
-    try {
-      const res = await axiosInstance.get(endpoint);
-      setCampaigns(res?.data);
-    } catch (error) {
-      enqueueSnackbar('Failed fetching campaign', {
-        variant: 'error',
-      });
-    }
-  }, [endpoint]);
+  const endpoint =
+    type === 'creator'
+      ? endpoints.campaign.getAllActiveCampaign
+      : endpoints.campaign.getCampaignsByAdminId;
 
-  useEffect(() => {
-    if (type && type.toLowerCase() === 'creator') {
-      // setEndPoint(endpoints.campaign.getAllActiveCampaign);
-      setEndPoint(endpoints.campaign.getMatchedCampaign);
-    } else {
-      setEndPoint(endpoints.campaign.getCampaignsByAdminId);
-    }
-  }, [type]);
+  const { data } = useSWR(endpoint, fetcher);
 
-  useEffect(() => {
-    if (!endpoint) {
-      return;
-    }
+  const memoizedValue = useMemo(
+    () => ({
+      campaigns: data,
+    }),
+    [data]
+  );
 
-    getCampaigns();
-  }, [getCampaigns, endpoint]);
+  return memoizedValue;
 
-  useEffect(() => {
-    const socket = io();
+  // const getCampaigns = useCallback(async () => {
+  //   try {
+  //     const res = await axiosInstance.get(endpoint);
+  //     setCampaigns(res?.data);
+  //   } catch (error) {
+  //     enqueueSnackbar('Failed fetching campaign', {
+  //       variant: 'error',
+  //     });
+  //   }
+  // }, [endpoint]);
 
-    socket.on('campaignStatus', (data) => {
-      getCampaigns();
-      enqueueSnackbar(`${data.name} is now ${data.status}`);
-    });
+  // useEffect(() => {
+  //   if (type && type.toLowerCase() === 'creator') {
+  //     setEndPoint(endpoints.campaign.getAllActiveCampaign);
+  //   } else {
+  //     setEndPoint(endpoints.campaign.getCampaignsByAdminId);
+  //   }
+  // }, [type]);
 
-    return () => {
-      socket.off('campaignStatus');
-      socket.close();
-    };
-  }, [campaigns, getCampaigns]);
+  // useEffect(() => {
+  //   if (!endpoint) {
+  //     return;
+  //   }
 
-  return {
-    campaigns,
-  };
+  //   getCampaigns();
+  // }, [getCampaigns, endpoint]);
+
+  // useEffect(() => {
+  //   const socket = io();
+
+  //   socket.on('campaignStatus', (value) => {
+  //     getCampaigns();
+  //     enqueueSnackbar(`${value.name} is now ${value.status}`);
+  //   });
+
+  //   return () => {
+  //     socket.off('campaignStatus');
+  //     socket.close();
+  //   };
+  // }, [campaigns, getCampaigns]);
+
+  // return {
+  //   // campaigns,
+  // };
 };
 
 export default useGetCampaigns;

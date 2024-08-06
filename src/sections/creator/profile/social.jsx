@@ -5,6 +5,8 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import { Button, Typography } from '@mui/material';
 
+import axiosInstance from 'src/utils/axios';
+
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 import { useSnackbar } from 'src/components/snackbar';
@@ -53,7 +55,8 @@ export default function AccountSocialLinks({ socialLinks }) {
             <Button
               LinkComponent="a"
               target="__blank"
-              href="https://www.facebook.com/v20.0/dialog/oauth?response_type=token&display=popup&client_id=409133052006045&redirect_uri=https%3A%2F%2Fdevelopers.facebook.com%2Ftools%2Fexplorer%2Fcallback&auth_type=rerequest&scope=email%2Cpages_show_list%2Cbusiness_management%2Cinstagram_basic%2Cinstagram_manage_comments%2Cinstagram_manage_insights%2Cinstagram_content_publish%2Cinstagram_manage_messages%2Cpages_manage_metadata"
+              href="https://api.instagram.com/oauth/authorize?client_id=1027488538993176&redirect_uri=https://app.cultcreativeasia.com/dashboard/user/profile&scope=user_profile,user_media&response_type=code"
+              // href="https://www.facebook.com/v20.0/dialog/oauth?response_type=token&display=popup&client_id=409133052006045&redirect_uri=https%3A%2F%2Fdevelopers.facebook.com%2Ftools%2Fexplorer%2Fcallback&auth_type=rerequest&scope=email%2Cpages_show_list%2Cbusiness_management%2Cinstagram_basic%2Cinstagram_manage_comments%2Cinstagram_manage_insights%2Cinstagram_content_publish%2Cinstagram_manage_messages%2Cpages_manage_metadata"
               variant="contained"
               color="info"
               size="medium"
@@ -76,9 +79,15 @@ export default function AccountSocialLinks({ socialLinks }) {
               variant="contained"
               color="info"
               size="medium"
-              LinkComponent="a"
-              target="__blank"
-              href="http://localhost/api/outh"
+              onClick={async () => {
+                try {
+                  const response = await axiosInstance.get('/api/tiktokOuth');
+                  console.log(response);
+                  window.location.href = response.data.url;
+                } catch (error) {
+                  console.log(error);
+                }
+              }}
             >
               Connect
             </Button>

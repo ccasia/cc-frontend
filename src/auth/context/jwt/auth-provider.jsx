@@ -1,8 +1,9 @@
+import useSWR from 'swr';
 import PropTypes from 'prop-types';
 import { useMemo, useEffect, useReducer, useCallback } from 'react';
 
-import axios, { endpoints } from 'src/utils/axios';
 import { flattenData } from 'src/utils/flatten-array';
+import axios, { fetcher, endpoints } from 'src/utils/axios';
 
 import { AuthContext } from './auth-context';
 import { setSession, isValidToken } from './utils';
@@ -60,20 +61,27 @@ const reducer = (state, action) => {
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  const { data: userData } = useSWR(endpoints.auth.me, fetcher);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const initialize = useCallback(async () => {
     try {
       // const accessToken = sessionStorage.getItem(STORAGE_KEY);
-      const response = await axios.get(endpoints.auth.me);
+      // eslint-disable-next-line react-hooks/rules-of-hooks
 
-      if (
-        response.status === 200 ||
-        (response.status === 202 && isValidToken(response?.data?.accessToken))
-      ) {
+      // const response = await axios.get(endpoints.auth.me);
+
+      // if (
+      //   response.status === 200 ||
+      //   (response.status === 202 && isValidToken(response?.data?.accessToken))
+      // )
+
+      if (userData && isValidToken(userData.accessToken)) {
         // setSession(accessToken);
-
-        const { user } = response.data;
+        const { user } = userData;
+        // const { user } = response.data;
 
         dispatch({
           type: 'INITIAL',
@@ -100,7 +108,7 @@ export function AuthProvider({ children }) {
         },
       });
     }
-  }, []);
+  }, [userData]);
 
   useEffect(() => {
     initialize();

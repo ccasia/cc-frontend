@@ -15,10 +15,10 @@ const CampaignDetailCreator = ({ campaign }) => {
   const filteredData = useMemo(
     () =>
       query
-        ? campaign?.shortlistCreator.filter((elem) =>
+        ? campaign?.shortlisted.filter((elem) =>
             elem.creator.name.toLowerCase().includes(query.toLowerCase())
           )
-        : campaign?.shortlistCreator,
+        : campaign?.shortlisted,
     [campaign, query]
   );
 
@@ -39,7 +39,7 @@ const CampaignDetailCreator = ({ campaign }) => {
         }}
         onChange={(e) => setQuery(e.target.value)}
       />
-      {campaign?.shortlistCreator?.length > 0 ? (
+      {campaign?.shortlisted?.length > 0 ? (
         <>
           <Box
             display="grid"
@@ -51,7 +51,7 @@ const CampaignDetailCreator = ({ campaign }) => {
             gap={2}
           >
             {filteredData.map((elem, index) => (
-              <UserCard key={elem.id} creator={elem?.creator} campaignId={campaign?.id} />
+              <UserCard key={elem.id} creator={elem?.user} campaignId={campaign?.id} />
             ))}
           </Box>
           {filteredData?.length < 1 && (

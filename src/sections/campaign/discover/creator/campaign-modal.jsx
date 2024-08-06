@@ -25,13 +25,11 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
-const CampaignModal = ({ open, handleClose, campaign, openForm, existingCampaign }) => {
+const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
   const smUp = useResponsive('down', 'sm');
   const { user } = useAuthContext();
-  console.log(user);
 
-  const isShortlisted =
-    user?.ShortListedCreator && user?.shortlistCreator.map((item) => item.campaignId);
+  const isShortlisted = user?.shortlisted && user?.shortlisted.map((item) => item.campaignId);
 
   const campaignIds = user?.pitch && user?.pitch.map((item) => item.campaignId);
 
@@ -184,5 +182,4 @@ CampaignModal.propTypes = {
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
   openForm: PropTypes.func,
-  existingCampaign: PropTypes.array,
 };

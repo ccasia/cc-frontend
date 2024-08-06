@@ -25,11 +25,13 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign }) => {
             sx={{
               width: 200,
               height: 200,
-              bgcolor: (theme) => theme.palette.grey[900],
+              bgcolor: (theme) =>
+                theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[300],
               borderRadius: 2,
               position: 'relative',
               '&:hover': {
-                border: (theme) => `1px solid ${theme.palette.secondary.main}`,
+                border: 1,
+                borderColor: 'text.secondary',
               },
             }}
             component={Button}
@@ -57,11 +59,13 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign }) => {
             sx={{
               width: 200,
               height: 200,
-              bgcolor: (theme) => theme.palette.grey[900],
+              bgcolor: (theme) =>
+                theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[300],
               borderRadius: 2,
               position: 'relative',
               '&:hover': {
-                border: (theme) => `1px solid ${theme.palette.secondary.main}`,
+                border: 1,
+                borderColor: 'text.secondary',
               },
             }}
             component={Button}

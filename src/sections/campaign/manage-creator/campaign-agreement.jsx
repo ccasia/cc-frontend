@@ -5,17 +5,22 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Card, Stack, Button, Typography, ListItemText } from '@mui/material';
+import { Box, Stack, Paper, alpha, Button, Typography, ListItemText } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-const CampaignAgreement = ({ campaign, timeline }) => {
+const CampaignAgreement = ({ campaign, timeline, submission }) => {
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
+  const { user } = useAuthContext();
+
+  const agreement = campaign?.campaignTimeline.find((elem) => elem.name === 'Agreement');
 
   const methods = useForm({
     defaultValues: {
@@ -36,20 +41,24 @@ const CampaignAgreement = ({ campaign, timeline }) => {
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
     formData.append('agreementForm', data.agreementForm);
-    formData.append('data', JSON.stringify({ campaignId: campaign.id, timelineId: timeline.id }));
+    formData.append(
+      'data',
+      JSON.stringify({
+        campaignId: campaign.id,
+        timelineId: timeline.id,
+        submissionTypeId: agreement.submissionTypeId,
+      })
+    );
 
     try {
       setLoading(true);
-      const res = await axiosInstance.post(
-        endpoints.campaign.tasks.uploadAgreeementForm,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      const res = await axiosInstance.post(endpoints.submission.creator.agreement, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       enqueueSnackbar(res?.data?.message);
+      mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
       reset();
       setPreview('');
@@ -64,17 +73,25 @@ const CampaignAgreement = ({ campaign, timeline }) => {
 
   return (
     <Box p={1.5}>
-      {timeline?.status === 'PENDING_REVIEW' && (
-        <Box component={Card} position="relative" p={10}>
+      {submission?.status === 'PENDING_REVIEW' ? (
+        <Box
+          component={Paper}
+          position="relative"
+          p={10}
+          sx={{
+            // border: 1,
+            // borderColor: (theme) => theme.palette.text.secondary,
+            bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
+          }}
+        >
           <Stack gap={1.5} alignItems="center">
-            <Iconify icon="ic:sharp-pending-actions" color="success.main" width={40} />
+            <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
             <Typography variant="subtitle2" color="text.secondary">
-              Your submission is in review
+              Your agreement submission is submitted
             </Typography>
           </Stack>
         </Box>
-      )}
-      {timeline?.status === 'IN_PROGRESS' && (
+      ) : (
         <Stack gap={2}>
           <ListItemText
             primary="1. Please download and review the Agreement Form."
@@ -164,4 +181,5 @@ export default CampaignAgreement;
 CampaignAgreement.propTypes = {
   campaign: PropTypes.object,
   timeline: PropTypes.object,
+  submission: PropTypes.object,
 };
