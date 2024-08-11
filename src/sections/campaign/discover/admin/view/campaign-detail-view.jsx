@@ -134,6 +134,8 @@ const CampaignDetailView = ({ id }) => {
     });
   }, [open]);
 
+  console.log(currentCampaign?.campaignTimeline);
+
   // eslint-disable-next-line no-unused-vars
   const renderReminder = (
     <>
@@ -399,7 +401,9 @@ const CampaignDetailView = ({ id }) => {
           timeline={
             currentCampaign?.campaignTimeline.filter((elem) => elem.name === 'Open For Pitch')[0]
           }
-          timelines={currentCampaign?.campaignTimeline.filter((elem) => elem.for === 'creator')}
+          timelines={currentCampaign?.campaignTimeline.filter(
+            (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
+          )}
           shortlisted={currentCampaign?.shortlisted}
         />
       )}

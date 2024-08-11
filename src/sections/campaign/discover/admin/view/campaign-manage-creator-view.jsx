@@ -3,11 +3,13 @@ import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useTheme } from '@emotion/react';
 
+import { Gauge } from '@mui/x-charts';
 import {
   Box,
   Tab,
   Card,
   Tabs,
+  Grid,
   Stack,
   alpha,
   Button,
@@ -32,18 +34,21 @@ import Iconify from 'src/components/iconify';
 import { LoadingScreen } from 'src/components/loading-screen';
 
 import OverView from '../creator-stuff/overview';
-import Agreement from '../creator-stuff/agreement';
 import Submissions from '../creator-stuff/submissions';
-import FirstDraft from '../creator-stuff/draft/first-draft';
-import FinalDraft from '../creator-stuff/draft/final-draft';
 
 const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const [currentTab, setCurrentTab] = useState('profile');
   const { campaign, campaignLoading } = useGetCampaignById(campaignId);
-  const { data: submissionData, /* isLoading: submissionLoading */ } = useGetSubmissions(id, campaignId);
+  const { data: submissions /* isLoading: submissionLoading */ } = useGetSubmissions(
+    id,
+    campaignId
+  );
   const theme = useTheme();
   const router = useRouter();
+  console.log(data);
+
+  const interests = data?.user?.creator?.interests;
 
   const phoneNumberHelper = (country, phoneNumber) => {
     if (!phoneNumber) {
@@ -54,9 +59,11 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     return `+${prefix} ${phoneNumber}`;
   };
 
-  const agreement = submissionData?.filter((item) => item?.type === 'AGREEMENT_FORM')[0];
-  const firstDraft = submissionData?.filter((item) => item?.type === 'FIRST_DRAFT')[0];
-  const finalDraft = submissionData?.filter((item) => item?.type === 'FINAL_DRAFT')[0];
+  const calculateRank = (val) => Math.ceil((val / 5) * 100);
+
+  // const agreement = submissionData?.filter((item) => item?.type === 'AGREEMENT_FORM')[0];
+  // const firstDraft = submissionData?.filter((item) => item?.type === 'FIRST_DRAFT')[0];
+  // const finalDraft = submissionData?.filter((item) => item?.type === 'FINAL_DRAFT')[0];
 
   const renderTabs = (
     <Tabs
@@ -84,123 +91,91 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
       />
       <Tab value="overview" label="Overview" />
       <Tab value="submission" label="Submissions" />
-      {/* <Tab
-        icon={
-          agreement?.campaignTask.status === 'PENDING_REVIEW' ? (
-            <Iconify icon="material-symbols:pending-actions" color="warning.main" width={18} />
-          ) : agreement?.campaignTask.status === 'COMPLETED' ? (
-            <Iconify icon="hugeicons:tick-03" color="success.main" width={18} />
-          ) : agreement?.campaignTask.status === 'CHANGES_REQUIRED' ? (
-            <Iconify icon="mingcute:time-fill" width={18} />
-          ) : agreement?.campaignTask.status === 'IN_PROGRESS' ? (
-            <Iconify icon="mingcute:time-fill" width={18} />
-          ) : null
-        }
-        value="agreement"
-        label="Agreement"
-      /> */}
-      {/* <Tab
-        value="firstDraft"
-        label="First Draft"
-        icon={
-          firstDraft?.campaignTask.status === 'PENDING_REVIEW' ? (
-            <Iconify icon="material-symbols:pending-actions" color="warning.main" width={18} />
-          ) : firstDraft?.campaignTask.status === 'COMPLETED' ? (
-            <Iconify icon="hugeicons:tick-03" color="success.main" width={18} />
-          ) : firstDraft?.campaignTask.status === 'CHANGES_REQUIRED' ? (
-            <Iconify icon="hugeicons:tick-03" color="success.main" width={18} />
-          ) : firstDraft?.campaignTask.status === 'IN_PROGRESS' ? (
-            <Iconify icon="pajamas:progress" width={18} />
-          ) : (
-            <Iconify icon="pajamas:progress" width={18} color="warning.main" />
-          )
-        }
-      /> */}
-      {/* <Tab
-        value="finalDraft"
-        label="Final Draft"
-        icon={
-          finalDraft?.campaignTask.status === 'PENDING_REVIEW' ? (
-            <Iconify icon="material-symbols:pending-actions" color="warning.main" width={18} />
-          ) : finalDraft?.campaignTask.status === 'COMPLETED' ? (
-            <Iconify icon="hugeicons:tick-03" color="success.main" width={18} />
-          ) : finalDraft?.campaignTask.status === 'CHANGES_REQUIRED' ? (
-            <Iconify icon="hugeicons:tick-03" color="success.main" width={18} />
-          ) : finalDraft?.campaignTask.status === 'IN_PROGRESS' ? (
-            <Iconify icon="pajamas:progress" width={18} />
-          ) : (
-            <Iconify icon="pajamas:progress" width={18} color="warning.main" />
-          )
-        }
-      /> */}
-
       <Tab value="logistics" label="Logistics" />
       <Tab value="timeline" label="Timeline" />
       {/* <Tab value="reminder" label="Reminder" /> */}
     </Tabs>
   );
 
-  // const renderOverview = (
-  //   <Box display="grid" gridTemplateColumns="repeat(3, 1fr)" gap={2}>
-  //     <Box
-  //       sx={{
-  //         height: 150,
-  //         p: 3,
-  //       }}
-  //       component={Card}
-  //     >
-  //       <Typography variant="h3">Draft</Typography>
-  //     </Box>
-  //   </Box>
-  // );
-
   const renderProfile = (
-    <Box display="grid" gridTemplateColumns="repeat(3, 1fr)" gap={2}>
-      <Stack gap={2}>
-        <Box
-          sx={{
-            p: 3,
-          }}
-          component={Card}
-        >
-          <Typography variant="h6">About</Typography>
-          <Stack gap={1.5} mt={2}>
-            <Box display="inline-flex" alignItems="center" gap={1}>
-              <Iconify icon="ic:baseline-email" width={20} color="text.secondary" />
-              <Typography variant="subtitle2">{data?.user?.email}</Typography>
-            </Box>
-            <Box display="inline-flex" alignItems="center" gap={1}>
-              <Iconify icon="ic:baseline-phone" width={20} color="text.secondary" />
-              <Typography variant="subtitle2">
-                {phoneNumberHelper(data?.user?.country, data?.user?.phoneNumber)}
-              </Typography>
-            </Box>
-            <Box display="inline-flex" alignItems="center" gap={1}>
-              {/* <Iconify icon="material-symbols:globe" width={20} color="text.secondary" /> */}
-              <Iconify icon={`twemoji:flag-${data?.user?.country.toLowerCase()}`} width={20} />
-              <Typography variant="subtitle2">{data?.user?.country}</Typography>
-            </Box>
+    <Grid container spacing={2}>
+      <Grid item xs={12} md={4}>
+        <Stack gap={2}>
+          <Box
+            sx={{
+              p: 3,
+            }}
+            component={Card}
+          >
+            <Typography variant="h6">About</Typography>
+            <Stack gap={1.5} mt={2}>
+              <Box display="inline-flex" alignItems="center" gap={1}>
+                <Iconify icon="ic:baseline-email" width={20} color="text.secondary" />
+                <Typography variant="subtitle2">{data?.user?.email}</Typography>
+              </Box>
+              <Box display="inline-flex" alignItems="center" gap={1}>
+                <Iconify icon="ic:baseline-phone" width={20} color="text.secondary" />
+                <Typography variant="subtitle2">
+                  {phoneNumberHelper(data?.user?.country, data?.user?.phoneNumber)}
+                </Typography>
+              </Box>
+              <Box display="inline-flex" alignItems="center" gap={1}>
+                {/* <Iconify icon="material-symbols:globe" width={20} color="text.secondary" /> */}
+                <Iconify icon={`twemoji:flag-${data?.user?.country.toLowerCase()}`} width={20} />
+                <Typography variant="subtitle2">{data?.user?.country}</Typography>
+              </Box>
+            </Stack>
+          </Box>
+          <Card
+            sx={{
+              p: 3,
+            }}
+          >
+            <Typography variant="h6">Social</Typography>
+            <Stack gap={1.5} mt={2}>
+              <Box display="inline-flex" alignItems="center" gap={1}>
+                <Iconify icon="mdi:instagram" width={20} color="text.secondary" />
+                <Typography variant="subtitle2">{data?.user?.creator?.instagram}</Typography>
+              </Box>
+              <Box display="inline-flex" alignItems="center" gap={1}>
+                <Iconify icon="ic:baseline-tiktok" width={20} color="text.secondary" />
+                <Typography variant="subtitle2">{data?.user?.creator?.tiktok}</Typography>
+              </Box>
+            </Stack>
+          </Card>
+        </Stack>
+      </Grid>
+      <Grid item xs={12} md={8}>
+        <Box component={Card} sx={{ p: 2 }}>
+          <Typography variant="h6">Interests</Typography>
+
+          {/* List creator interests */}
+          <Stack direction="row" justifyContent="space-evenly" mt={2}>
+            {!isLoading &&
+              interests?.map((item) => (
+                <ListItemText
+                  primary={item.name}
+                  secondary={
+                    <Gauge
+                      cornerRadius="50%"
+                      width={100}
+                      height={100}
+                      innerRadius="70%"
+                      outerRadius="100%"
+                      value={calculateRank(item.rank)}
+                      text={({ value }) => `${value}%`}
+                    />
+                  }
+                  primaryTypographyProps={{
+                    variant: 'subtitle2',
+                    fontWeight: 800,
+                  }}
+                />
+              ))}
           </Stack>
         </Box>
-        <Card
-          sx={{
-            p: 3,
-          }}
-        >
-          <Typography variant="h6">Social</Typography>
-          <Stack gap={1.5} mt={2}>
-            <Box display="inline-flex" alignItems="center" gap={1}>
-              <Iconify icon="mdi:instagram" width={20} color="text.secondary" />
-              <Typography variant="subtitle2">{data?.user?.creator?.instagram}</Typography>
-            </Box>
-            <Box display="inline-flex" alignItems="center" gap={1}>
-              <Iconify icon="ic:baseline-tiktok" width={20} color="text.secondary" />
-              <Typography variant="subtitle2">{data?.user?.creator?.tiktok}</Typography>
-            </Box>
-          </Stack>
-        </Card>
-      </Stack>
-    </Box>
+      </Grid>
+    </Grid>
   );
 
   return (
@@ -285,7 +260,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         <>
           {currentTab === 'profile' && renderProfile}
           {currentTab === 'overview' && <OverView campaign={campaign} />}
-          {currentTab === 'agreement' && (
+          {/* {currentTab === 'agreement' && (
             <Agreement campaign={campaign} submission={agreement} user={data} />
           )}
           {currentTab === 'firstDraft' && (
@@ -293,13 +268,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
           )}
           {currentTab === 'finalDraft' && (
             <FinalDraft campaign={campaign} submission={finalDraft} user={data} />
-          )}
+          )} */}
           {currentTab === 'submission' && (
-            <Submissions
-              campaign={campaign}
-              submissions={campaign?.campaignSubmissionRequirement}
-              creator={data}
-            />
+            <Submissions campaign={campaign} submissions={submissions} creator={data} />
           )}
         </>
       )}

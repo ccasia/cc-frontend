@@ -176,10 +176,13 @@ export const endpoints = {
     root: '/api/tasks/submissions',
     creator: {
       agreement: '/api/submission/submitAgreement',
+      draftSubmission: '/api/submission/draftSubmission',
     },
-    agreement: {
-      adminManageAgreementSubmission: '/api/tasks/adminManageAgreementSubmission',
+    admin: {
+      agreement: '/api/submission/adminManageAgreementSubmission',
+      draft: '/api/submission/adminManageDraft',
     },
+
     firstDraft: '/api/tasks/firstDraft',
     finalDraft: '/api/tasks/FinalDraft',
   },

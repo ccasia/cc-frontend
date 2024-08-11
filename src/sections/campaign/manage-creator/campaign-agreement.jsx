@@ -15,7 +15,7 @@ import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-const CampaignAgreement = ({ campaign, timeline, submission }) => {
+const CampaignAgreement = ({ campaign, timeline, submission, getDependency }) => {
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const { user } = useAuthContext();
@@ -47,6 +47,7 @@ const CampaignAgreement = ({ campaign, timeline, submission }) => {
         campaignId: campaign.id,
         timelineId: timeline.id,
         submissionTypeId: agreement.submissionTypeId,
+        submissionId: submission?.id,
       })
     );
 
@@ -73,7 +74,7 @@ const CampaignAgreement = ({ campaign, timeline, submission }) => {
 
   return (
     <Box p={1.5}>
-      {submission?.status === 'PENDING_REVIEW' ? (
+      {submission?.status === 'PENDING_REVIEW' && (
         <Box
           component={Paper}
           position="relative"
@@ -91,7 +92,8 @@ const CampaignAgreement = ({ campaign, timeline, submission }) => {
             </Typography>
           </Stack>
         </Box>
-      ) : (
+      )}
+      {submission?.status === 'IN_PROGRESS' && (
         <Stack gap={2}>
           <ListItemText
             primary="1. Please download and review the Agreement Form."
@@ -172,6 +174,25 @@ const CampaignAgreement = ({ campaign, timeline, submission }) => {
           />
         </Stack>
       )}
+      {/* {submission?.status === 'APPROVED' && (
+        <Box
+          component={Paper}
+          position="relative"
+          p={10}
+          sx={{
+            // border: 1,
+            // borderColor: (theme) => theme.palette.text.secondary,
+            bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
+          }}
+        >
+          <Stack gap={1.5} alignItems="center">
+            <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
+            <Typography variant="subtitle2" color="text.secondary">
+              Your agreement has been approved
+            </Typography>
+          </Stack>
+        </Box>
+      )} */}
     </Box>
   );
 };
@@ -182,4 +203,5 @@ CampaignAgreement.propTypes = {
   campaign: PropTypes.object,
   timeline: PropTypes.object,
   submission: PropTypes.object,
+  getDependency: PropTypes.func,
 };

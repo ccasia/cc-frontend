@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import ListItemText from '@mui/material/ListItemText';
-import { Box, Card, Chip, Typography } from '@mui/material';
+import { Box, Card, Chip, Grid, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -13,6 +13,7 @@ import { RouterLink } from 'src/routes/components';
 import { formatText } from 'src/utils/format-test';
 
 import Image from 'src/components/image';
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
@@ -83,52 +84,85 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   );
 
   const renderInfo = (
+    // <Stack
+    //   spacing={1.5}
+    //   sx={{
+    //     position: 'relative',
+    //     p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
+    //   }}
+    // >
+    //   {[
+    //     {
+    //       id: 1,
+    //       label:
+    //         campaign &&
+    //         campaign?.campaignBrief?.interests?.map((e, index) => (
+    //           <Chip key={index} size="small" variant="outlined" label={e} color="error" />
+    //         )),
+    //       icon: <Iconify icon="mdi:company" sx={{ color: 'error.main' }} width={21} />,
+    //     },
+    //     {
+    //       id: 2,
+    //       label: (
+    //         <Typography variant="caption">
+    //           {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} -
+    //             ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
+    //         </Typography>
+    //       ),
+    //       icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} width={21} />,
+    //     },
+    //     // {
+    //     //   id: 3,
+    //     //   label: (
+    //     //     <Chip label={campaign?.status} size="small" color="secondary" variant="outlined" />
+    //     //   ),
+    //     //   icon: <Iconify icon="lets-icons:status" sx={{ color: 'secondary.main' }} width={21} />,
+    //     // },
+    //   ].map((item, index) => (
+    //     <Stack
+    //       key={item.id}
+    //       spacing={1}
+    //       direction="row"
+    //       alignItems="center"
+    //       sx={{ typography: 'body2' }}
+    //     >
+    //       {item.icon}
+    //       {item.label}
+    //     </Stack>
+    //   ))}
+    // </Stack>
     <Stack
       spacing={1.5}
       sx={{
-        position: 'relative',
+        // position: 'relative',
         p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
       }}
     >
-      {[
-        {
-          id: 1,
-          label:
-            campaign &&
-            campaign?.campaignBrief?.interests?.map((e, index) => (
-              <Chip key={index} size="small" variant="outlined" label={e} color="error" />
-            )),
-          icon: <Iconify icon="mdi:company" sx={{ color: 'error.main' }} width={21} />,
-        },
-        {
-          id: 2,
-          label: (
-            <Typography variant="caption">
-              {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} -
-                ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
-            </Typography>
-          ),
-          icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} width={21} />,
-        },
-        // {
-        //   id: 3,
-        //   label: (
-        //     <Chip label={campaign?.status} size="small" color="secondary" variant="outlined" />
-        //   ),
-        //   icon: <Iconify icon="lets-icons:status" sx={{ color: 'secondary.main' }} width={21} />,
-        // },
-      ].map((item, index) => (
-        <Stack
-          key={item.id}
-          spacing={1}
-          direction="row"
-          alignItems="center"
-          sx={{ typography: 'body2' }}
-        >
-          {item.icon}
-          {item.label}
-        </Stack>
-      ))}
+      <Grid container>
+        <Grid item xs={1}>
+          <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />
+        </Grid>
+        <Grid item xs={11}>
+          <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
+            {campaign?.campaignBrief?.interests.map((e, index) => (
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Label color="primary">{e}</Label>
+              </Stack>
+            ))}
+          </Stack>
+        </Grid>
+      </Grid>
+
+      <Grid container>
+        <Grid item xs={1}>
+          <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} />
+        </Grid>
+        <Grid item xs={11}>
+          <Typography variant="caption" color="text.disabled">
+            {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
+          </Typography>
+        </Grid>
+      </Grid>
     </Stack>
   );
 

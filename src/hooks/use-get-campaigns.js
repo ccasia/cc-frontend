@@ -9,7 +9,7 @@ const useGetCampaigns = (type) => {
 
   const endpoint =
     type === 'creator'
-      ? endpoints.campaign.getAllActiveCampaign
+      ? endpoints.campaign.getMatchedCampaign
       : endpoints.campaign.getCampaignsByAdminId;
 
   const { data } = useSWR(endpoint, fetcher);

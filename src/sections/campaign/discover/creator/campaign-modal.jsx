@@ -63,20 +63,20 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" fullScreen={smUp}>
       <DialogTitle>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <ListItemText
-          primary={campaign?.name}
-          secondary={`by ${campaign?.company?.name || campaign?.brand?.name}`}
-          primaryTypographyProps={{
-            mt: 1,
-            noWrap: true,
-            component: 'span',
-            color: 'text.primary',
-            typography: 'h5',
-          }}
-        />
-        <Chip label={`${campaign?.percentageMatch}% Match`} color="primary" />
-      </Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <ListItemText
+            primary={campaign?.name}
+            secondary={`by ${campaign?.company?.name || campaign?.brand?.name}`}
+            primaryTypographyProps={{
+              mt: 1,
+              noWrap: true,
+              component: 'span',
+              color: 'text.primary',
+              typography: 'h5',
+            }}
+          />
+          <Chip label={`${Math.ceil(campaign?.percentageMatch)}% Match`} color="primary" />
+        </Box>
       </DialogTitle>
       <DialogContent>
         {renderGallery}

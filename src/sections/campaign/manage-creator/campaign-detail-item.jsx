@@ -1,11 +1,9 @@
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
+import { Box, Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
 
-import Image from 'src/components/image';
-
-import { Box, Stack, ToggleButton, ToggleButtonGroup, Tab, Tabs } from '@mui/material';
-
+// import Image from 'src/components/image';
 
 import CampaignInfo from './campaign-info';
 import CampaignAdmin from './campaign-admin';
@@ -15,32 +13,32 @@ const CampaignDetailItem = ({ campaign }) => {
   const [currentTab, setCurrentTab] = useState('tasks');
   // const { user } = useAuthContext();
 
-  const renderGallery = (
-    <Box
-      display="grid"
-      gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-      gap={1}
-      mt={2}
-    >
-      <Image
-        src={campaign?.campaignBrief?.images[0]}
-        alt="test"
-        ratio="1/1"
-        sx={{ borderRadius: 2, cursor: 'pointer' }}
-      />
-      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
-        {campaign?.campaignBrief?.images.map((elem, index) => (
-          <Image
-            key={index}
-            src={elem}
-            alt="test"
-            ratio="1/1"
-            sx={{ borderRadius: 2, cursor: 'pointer' }}
-          />
-        ))}
-      </Box>
-    </Box>
-  );
+  // const renderGallery = (
+  //   <Box
+  //     display="grid"
+  //     gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+  //     gap={1}
+  //     mt={2}
+  //   >
+  //     <Image
+  //       src={campaign?.campaignBrief?.images[0]}
+  //       alt="test"
+  //       ratio="1/1"
+  //       sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //     />
+  //     <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
+  //       {campaign?.campaignBrief?.images.map((elem, index) => (
+  //         <Image
+  //           key={index}
+  //           src={elem}
+  //           alt="test"
+  //           ratio="1/1"
+  //           sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //         />
+  //       ))}
+  //     </Box>
+  //   </Box>
+  // );
 
   // const renderTabs = (
   //   <Tabs value={currentTab} onChange={(e, val) => setCurrentTab(val)} variant="scrollable">
@@ -52,7 +50,7 @@ const CampaignDetailItem = ({ campaign }) => {
   // );
 
   return (
-    <Stack overflow="scroll" gap={2}>
+    <Stack overflow="auto" gap={2}>
       {/* {renderGallery} */}
       <ToggleButtonGroup
         sx={{ mt: 2 }}

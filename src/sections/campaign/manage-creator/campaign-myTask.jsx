@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { io } from 'socket.io-client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 
 import { Box, Card, Stack, Tooltip, Typography, ListItemText } from '@mui/material';
 import {
@@ -24,6 +24,8 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import CampaignAgreement from './campaign-agreement';
+import CampaignFirstDraft from './campaign-first-draft';
+import CampaignFinalDraft from './campaign-final-draft';
 
 export const defaultSubmission = [
   {
@@ -49,25 +51,8 @@ export const defaultSubmission = [
 ];
 
 const CampaignMyTasks = ({ campaign }) => {
-  // const [preview, setPreview] = useState('');
-  // const [loading, setLoading] = useState(false);
-  // const [taskId, setTimelineId] = useState('');
   const { user } = useAuthContext();
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
-
-  // const { data } = useGetFirstDraftBySessionID(campaign.id);
-
-  // const isSubmittedFirstDraft = data?.status === 'Submitted';
-
-  // const schema = Yup.object().shape({
-  //   // draft: Yup.string().required(),
-  //   caption: Yup.string().required(),
-  // });
-  const isSubmitted = (name) => {
-    if (!submissions) return;
-    // eslint-disable-next-line consistent-return
-    return submissions.some((item) => item.submissionType.type === name);
-  };
 
   const value = (name) => submissions?.find((item) => item.submissionType.type === name);
 
@@ -75,6 +60,14 @@ const CampaignMyTasks = ({ campaign }) => {
 
   const getTimeline = (name) => timeline?.find((item) => item.name === name);
 
+  const getDependency = useCallback(
+    (submissionId) => {
+      const isDependencyeExist = submissions?.find((item) => item.id === submissionId)
+        .dependentOn[0];
+      return isDependencyeExist;
+    },
+    [submissions]
+  );
 
   useEffect(() => {
     const socket = io();
@@ -128,6 +121,21 @@ const CampaignMyTasks = ({ campaign }) => {
                               </Label>
                             </Tooltip>
                           )}
+
+                          {value(item.type)?.status === 'APPROVED' && (
+                            <Tooltip title="Approved">
+                              <Label color="success">
+                                <Iconify icon="hugeicons:tick-04" color="success.main" width={18} />
+                              </Label>
+                            </Tooltip>
+                          )}
+                          {value(item.type)?.status === 'CHANGES_REQUIRED' && (
+                            <Tooltip title="Change Required">
+                              <Label color="warning">
+                                <Iconify icon="uiw:warning" color="warning.main" width={18} />
+                              </Label>
+                            </Tooltip>
+                          )}
                         </Box>
                       )}
                       <Typography variant="caption">
@@ -145,6 +153,25 @@ const CampaignMyTasks = ({ campaign }) => {
                     campaign={campaign}
                     timeline={timeline}
                     submission={value(item.type)}
+                    getDependency={getDependency}
+                  />
+                )}
+                {item.value === 'First Draft' && (
+                  <CampaignFirstDraft
+                    campaign={campaign}
+                    timeline={timeline}
+                    fullSubmission={submissions}
+                    submission={value(item.type)}
+                    getDependency={getDependency}
+                  />
+                )}
+                {item.value === 'Final Draft' && (
+                  <CampaignFinalDraft
+                    campaign={campaign}
+                    timeline={timeline}
+                    submission={value(item.type)}
+                    fullSubmission={submissions}
+                    getDependency={getDependency}
                   />
                 )}
                 {/* {timeline.task === 'First Draft' && (
