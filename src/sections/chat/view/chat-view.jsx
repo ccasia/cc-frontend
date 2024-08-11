@@ -87,7 +87,7 @@ export default function ChatView() {
             }}
           >
 
-//              {id? (
+{/* //              {id? (
 
 //             <ThreadMessages threadId={id} />
 //           ) : (
@@ -99,7 +99,7 @@ export default function ChatView() {
 //           )}
 
 
-//             <ChatRoom  threadId={id}  />
+//             <ChatRoom  threadId={id}  /> */}
             {id ? (
               <ThreadMessages threadId={id} />
             ) : (
