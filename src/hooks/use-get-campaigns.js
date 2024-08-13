@@ -12,13 +12,14 @@ const useGetCampaigns = (type) => {
       ? endpoints.campaign.getMatchedCampaign
       : endpoints.campaign.getCampaignsByAdminId;
 
-  const { data } = useSWR(endpoint, fetcher);
+  const { data, isLoading } = useSWR(endpoint, fetcher);
 
   const memoizedValue = useMemo(
     () => ({
       campaigns: data,
+      isLoading,
     }),
-    [data]
+    [data, isLoading]
   );
 
   return memoizedValue;

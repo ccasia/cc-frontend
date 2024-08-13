@@ -7,12 +7,15 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import { useSettingsContext } from 'src/components/settings';
 
+import DashboardSuperadmin from './dashboard-superadmin';
+
 const DashboardFinance = lazy(() => import('src/sections/admin/Finance/Dashboard'));
 
 const DashboardAdmin = () => {
   const settings = useSettingsContext();
 
   const { user } = useAuthContext();
+  console.log(user);
   // const { socket } = useSocketContext();
 
   // const onChange = (e) => {
@@ -23,7 +26,7 @@ const DashboardAdmin = () => {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       {user?.admin?.designation === 'Finance' && <DashboardFinance />}
-      {user?.admin?.designation === 'CSM' && (
+      {user?.admin?.designation === 'CSM' && user?.admin?.mode === 'normal' && (
         <Grid container columnSpacing={5}>
           {/* {JSON.stringify(user)} */}
           <Grid item xs={12} md={8}>
@@ -53,6 +56,7 @@ const DashboardAdmin = () => {
           {/* <TextField placeholder="Type anything" onChange={onChange} /> */}
         </Grid>
       )}
+      {user?.admin?.mode === 'god' && <DashboardSuperadmin />}
     </Container>
   );
 };
