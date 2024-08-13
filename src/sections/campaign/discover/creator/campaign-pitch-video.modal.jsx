@@ -39,7 +39,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const [source, setSource] = useState(undefined);
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [duration, setDuration] = useState();
+  const [, setDuration] = useState();
   const { socket } = useSocketContext();
 
   const schema = Yup.object().shape({

@@ -32,9 +32,9 @@ const Agreement = ({ campaign, submission, creator }) => {
       feedback: '',
     },
   });
-  const campaignTasks = creator?.user?.campaignTasks.filter(
-    (task) => task?.campaignId === campaign.id
-  );
+  // const campaignTasks = creator?.user?.campaignTasks.filter(
+  //   (task) => task?.campaignId === campaign.id
+  // );
 
   const { reset, handleSubmit } = methods;
 
@@ -61,7 +61,7 @@ const Agreement = ({ campaign, submission, creator }) => {
         status: 'reject',
         userId: creator?.user?.id,
         campaignTaskId: submission?.campaignTask?.id,
-        firstDraftId: campaignTasks.filter((value) => value.task === 'First Draft')[0]?.id,
+        // firstDraftId: campaignTasks.filter((value) => value.task === 'First Draft')[0]?.id,
         submissionId: submission?.id,
         feedback: data.feedback,
       });

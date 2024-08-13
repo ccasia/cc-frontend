@@ -30,7 +30,7 @@ import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 export default function CampaignItem({ campaign, user }) {
   const [open, setOpen] = useState(false);
   const [upload, setUpload] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   const { socket } = useSocketContext();
 

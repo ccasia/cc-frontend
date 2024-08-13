@@ -1,11 +1,12 @@
 /* eslint-disable no-unused-vars */
+import axios from 'axios';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
-import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -32,7 +33,6 @@ import FormProvider, {
   RHFDatePicker,
   RHFAutocomplete,
 } from 'src/components/hook-form';
-import axios from 'axios';
 
 const steps = [
   'Fill in your details',
@@ -161,7 +161,8 @@ export default function CreatorForm({ creator, open, onClose }) {
       });
     }
   });
-  function creatorLocation() {
+
+  const creatorLocation = useCallback(() => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -178,7 +179,7 @@ export default function CreatorForm({ creator, open, onClose }) {
     } else {
       console.log('Geolocation is not supported by this browser.');
     }
-  }
+  }, [setValue]);
 
   function getStepContent(step) {
     switch (step) {
@@ -195,7 +196,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 
   useEffect(() => {
     creatorLocation();
-  }, []);
+  }, [creatorLocation]);
 
   function formComponent() {
     return (

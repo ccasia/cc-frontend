@@ -21,7 +21,6 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 import { endpoints } from 'src/utils/axios';
 
 import { _tours } from 'src/_mock';
-import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -38,7 +37,8 @@ import CampaignSearch from '../campaign-search';
 export default function CampaignListView() {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns('creator');
-  const { user } = useAuthContext();
+
+  // const { user } = useAuthContext();
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
   const { socket } = useSocketContext();

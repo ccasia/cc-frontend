@@ -6,7 +6,7 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Card, Stack, Paper, alpha, Button, Typography } from '@mui/material';
+import { Box, Card, Stack, alpha, Paper, Button, Typography } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -76,101 +76,27 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   );
 
   return (
-    value?.status === 'APPROVED' && (
-      <Box>
-        {submission?.status === 'PENDING_REVIEW' && (
-          <Box
-            component={Paper}
-            position="relative"
-            p={10}
-            sx={{
-              bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
-            }}
-          >
-            <Stack gap={1.5} alignItems="center">
-              <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
-              <Typography variant="subtitle2" color="text.secondary">
-                Your agreement submission is submitted
-              </Typography>
-            </Stack>
-          </Box>
-        )}
-        {submission?.status === 'IN_PROGRESS' && (
-          <FormProvider methods={methods} onSubmit={onSubmit}>
-            <Stack gap={2}>
-              {preview ? (
-                <Box>
-                  {/* // eslint-disable-next-line jsx-a11y/media-has-caption */}
-                  <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
-                    <source src={preview} />
-                  </video>
-                  <Button color="error" variant="outlined" size="small" onClick={handleRemoveFile}>
-                    Change Video
-                  </Button>
-                </Box>
-              ) : (
-                <RHFUpload
-                  name="draft"
-                  type="video"
-                  onDrop={handleDrop}
-                  onRemove={handleRemoveFile}
-                />
-              )}
-              <RHFTextField name="caption" placeholder="Caption" multiline />
-              <LoadingButton loading={loading} variant="contained" type="submit">
-                Submit Final Draft
-              </LoadingButton>
-            </Stack>
-          </FormProvider>
-        )}
-        {submission?.status === 'APPROVED' && (
-          <Stack gap={1.5}>
-            <Card
+    <>
+      {value?.status === 'CHANGES_REQUIRED' && (
+        <Box>
+          {submission?.status === 'PENDING_REVIEW' && (
+            <Box
+              component={Paper}
+              position="relative"
+              p={10}
               sx={{
-                bgcolor: (theme) => alpha(theme.palette.success.main, 0.2),
-                p: 1.5,
+                bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
               }}
             >
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <Iconify icon="icon-park-twotone:success" color="success.main" width={18} />
-                <Typography variant="subtitle2">You draft submission has been approved</Typography>
+              <Stack gap={1.5} alignItems="center">
+                <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
+                <Typography variant="subtitle2" color="text.secondary">
+                  Your agreement submission is submitted
+                </Typography>
               </Stack>
-            </Card>
-            <Box textAlign="center">
-              <video autoPlay controls width="80%" style={{ borderRadius: 10 }}>
-                <source src={submission?.content} />
-              </video>
             </Box>
-            <Box p={2}>
-              <Typography
-                variant="subtitle1"
-                color="text.secondary"
-                sx={{ whiteSpace: 'pre-line' }}
-              >
-                {submission?.caption}
-              </Typography>
-            </Box>
-          </Stack>
-        )}
-        {submission?.status === 'CHANGES_REQUIRED' && (
-          <>
-            <Box textAlign="center">
-              {submission && (
-                <video autoPlay controls width="80%" style={{ borderRadius: 10 }}>
-                  <source src={submission?.content} />
-                </video>
-              )}
-            </Box>
-            <Box p={2}>
-              <Typography variant="h6">Changes Required</Typography>
-              <Typography
-                variant="subtitle1"
-                color="text.secondary"
-                sx={{ whiteSpace: 'pre-line' }}
-              >
-                {submission?.feedback?.content}
-              </Typography>
-            </Box>
+          )}
+          {submission?.status === 'IN_PROGRESS' && (
             <FormProvider methods={methods} onSubmit={onSubmit}>
               <Stack gap={2}>
                 {preview ? (
@@ -202,10 +128,93 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                 </LoadingButton>
               </Stack>
             </FormProvider>
-          </>
-        )}
-      </Box>
-    )
+          )}
+          {submission?.status === 'APPROVED' && (
+            <Stack gap={1.5}>
+              <Card
+                sx={{
+                  bgcolor: (theme) => alpha(theme.palette.success.main, 0.2),
+                  p: 1.5,
+                }}
+              >
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Iconify icon="icon-park-twotone:success" color="success.main" width={18} />
+                  <Typography variant="subtitle2">
+                    You draft submission has been approved
+                  </Typography>
+                </Stack>
+              </Card>
+              <Box textAlign="center">
+                <video autoPlay controls width="80%" style={{ borderRadius: 10 }}>
+                  <source src={submission?.content} />
+                </video>
+              </Box>
+              <Box p={2}>
+                <Typography
+                  variant="subtitle1"
+                  color="text.secondary"
+                  sx={{ whiteSpace: 'pre-line' }}
+                >
+                  {submission?.caption}
+                </Typography>
+              </Box>
+            </Stack>
+          )}
+          {submission?.status === 'CHANGES_REQUIRED' && (
+            <>
+              <Box textAlign="center">
+                {submission && (
+                  <video autoPlay controls width="80%" style={{ borderRadius: 10 }}>
+                    <source src={submission?.content} />
+                  </video>
+                )}
+              </Box>
+              <Box p={2}>
+                <Typography variant="h6">Changes Required</Typography>
+                <Typography
+                  variant="subtitle1"
+                  color="text.secondary"
+                  sx={{ whiteSpace: 'pre-line' }}
+                >
+                  {submission?.feedback?.content}
+                </Typography>
+              </Box>
+              <FormProvider methods={methods} onSubmit={onSubmit}>
+                <Stack gap={2}>
+                  {preview ? (
+                    <Box>
+                      {/* // eslint-disable-next-line jsx-a11y/media-has-caption */}
+                      <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+                        <source src={preview} />
+                      </video>
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        size="small"
+                        onClick={handleRemoveFile}
+                      >
+                        Change Video
+                      </Button>
+                    </Box>
+                  ) : (
+                    <RHFUpload
+                      name="draft"
+                      type="video"
+                      onDrop={handleDrop}
+                      onRemove={handleRemoveFile}
+                    />
+                  )}
+                  <RHFTextField name="caption" placeholder="Caption" multiline />
+                  <LoadingButton loading={loading} variant="contained" type="submit">
+                    Submit Final Draft
+                  </LoadingButton>
+                </Stack>
+              </FormProvider>
+            </>
+          )}
+        </Box>
+      )}
+    </>
   );
 };
 

@@ -33,6 +33,26 @@ const DashboardSuperadmin = () => {
   const theme = useTheme();
   const setting = useSettingsContext();
 
+  const taskLists =
+    !isLoading &&
+    campaigns
+      .filter((campaign) => campaign.status === 'ACTIVE')
+      .map((campaign) => {
+        const campaignTasks = campaign?.campaignTasks.filter(
+          (item) => item.status === 'IN_PROGRESS'
+        );
+        return (
+          campaignTasks.length &&
+          campaignTasks.map((task) => ({
+            campaignName: campaign.name,
+            campaignTask: task.task,
+            dueDate: task.dueDate,
+          }))
+        );
+      })
+      .flat()
+      .filter((item) => item !== 0);
+
   const chartOptions = {
     colors: [theme.palette.primary.light, theme.palette.primary.main].map((colr) => colr[1]),
     fill: {
@@ -86,7 +106,7 @@ const DashboardSuperadmin = () => {
 
   const renderCampaignLists = (
     <TableContainer component={Paper} sx={{ mt: 2 }}>
-      <Table>
+      <Table size="small">
         <TableHead>
           <TableRow>
             <TableCell align="center">Campaign Name</TableCell>
@@ -98,24 +118,26 @@ const DashboardSuperadmin = () => {
         </TableHead>
         <TableBody>
           {!isLoading &&
-            campaigns.map((campaign) => (
-              <TableRow>
-                <TableCell align="center">{campaign?.name}</TableCell>
-                <TableCell align="center">
-                  {dayjs(campaign?.campaignBrief?.startDate).format('ddd LL')}
-                </TableCell>
-                <TableCell align="center">
-                  {dayjs(campaign?.campaignBrief?.endDate).format('ddd LL')}
-                </TableCell>
-                <TableCell align="center">
-                  <Label color="success">{campaign?.shortlisted.length}</Label>
-                </TableCell>
-                <TableCell align="center">
-                  {' '}
-                  <Label color="success">{campaign?.pitch.length}</Label>
-                </TableCell>
-              </TableRow>
-            ))}
+            campaigns
+              .filter((item) => item.status === 'ACTIVE')
+              .map((campaign) => (
+                <TableRow>
+                  <TableCell align="center">{campaign?.name}</TableCell>
+                  <TableCell align="center">
+                    {dayjs(campaign?.campaignBrief?.startDate).format('ddd LL')}
+                  </TableCell>
+                  <TableCell align="center">
+                    {dayjs(campaign?.campaignBrief?.endDate).format('ddd LL')}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Label color="success">{campaign?.shortlisted.length}</Label>
+                  </TableCell>
+                  <TableCell align="center">
+                    {' '}
+                    <Label color="success">{campaign?.pitch.length}</Label>
+                  </TableCell>
+                </TableRow>
+              ))}
         </TableBody>
       </Table>
     </TableContainer>
@@ -212,7 +234,7 @@ const DashboardSuperadmin = () => {
             </Stack>
           </Box>
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={7}>
           <Box
             component={Card}
             p={2}
@@ -228,15 +250,56 @@ const DashboardSuperadmin = () => {
             </Stack>
           </Box>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={5}>
           <Box
             component={Card}
             p={2}
             sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
           >
-            <Stack gap={1}>
-              <Typography variant="subtitle2">Total campaign</Typography>
-              <Typography variant="h3">{fNumber(20)}</Typography>
+            <Stack spacing={1}>
+              <Typography variant="subtitle2">Tasks</Typography>
+
+              <TableContainer component={Paper}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Task</TableCell>
+                      <TableCell>Campaign</TableCell>
+                      <TableCell>Due</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {taskLists.length &&
+                      taskLists?.map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Typography variant="subtitle2">{item.campaignTask}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="subtitle2">{item.campaignName}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="caption" color="text.secondary">
+                              {dayjs(item.dueDate).format('ddd LL')}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* <Stack spacing={1}>
+                {taskLists.length &&
+                  taskLists?.map((item) => (
+                    <Stack direction="row" justifyContent="space-between" alignItems="start">
+                      <ListItemText secondary={item.campaignName} primary={item.campaignTask} />
+                      <Typography variant="caption" color="text.secondary">
+                        Due {dayjs(item.dueDate).format('ddd LL')}
+                      </Typography>
+                    </Stack>
+                  ))}
+              </Stack> */}
             </Stack>
           </Box>
         </Grid>

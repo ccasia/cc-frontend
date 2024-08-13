@@ -173,7 +173,7 @@ export const endpoints = {
     getCampaignLog: (id) => `/api/campaign/getCampaignLog/${id}`,
   },
   submission: {
-    root: '/api/tasks/submissions',
+    root: '/api/submission/',
     creator: {
       agreement: '/api/submission/submitAgreement',
       draftSubmission: '/api/submission/draftSubmission',
@@ -182,9 +182,6 @@ export const endpoints = {
       agreement: '/api/submission/adminManageAgreementSubmission',
       draft: '/api/submission/adminManageDraft',
     },
-
-    firstDraft: '/api/tasks/firstDraft',
-    finalDraft: '/api/tasks/FinalDraft',
   },
   notification: {
     root: '/api/notification',

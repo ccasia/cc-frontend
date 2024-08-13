@@ -139,25 +139,6 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
           <Iconify icon="material-symbols:bookmark-manager" />
           Manage
         </MenuItem>
-        {/* <MenuItem
-          onClick={() => {
-            popover.onClose();
-            onView();
-          }}
-        >
-          <Iconify icon="solar:eye-bold" />
-          View
-        </MenuItem>
-
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
-            onEdit();
-          }}
-        >
-          <Iconify icon="solar:pen-bold" />
-          Edit
-        </MenuItem> */}
         <MenuItem
           onClick={() => {
             popover.onClose();
