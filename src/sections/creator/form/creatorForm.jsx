@@ -40,7 +40,7 @@ const steps = [
   'Rate your Interests and Industries',
 ];
 
-export const langList = ['English', 'Malay', 'Mandarin', 'Hindi', 'All of the above', 'Others'];
+export const langList = ['English', 'Malay', 'Chinese', 'Tamil', 'All of the above', 'Others'];
 
 export const interestsList = [
   'Art',

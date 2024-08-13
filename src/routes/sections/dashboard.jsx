@@ -360,15 +360,15 @@ export const dashboardRoutes = [
       {
         path: 'chat',
         children: [
-         {
-          path: '',
-          element: <ChatView />,
-         },
-         {
-          path: 'thread/:id',
-          element: <ChatView />
-         }
-        ]
+          {
+            path: '',
+            element: <ChatView />,
+          },
+          {
+            path: 'thread/:id',
+            element: <ChatView />,
+          },
+        ],
       },
     ],
   },

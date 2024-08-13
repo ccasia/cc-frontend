@@ -100,12 +100,13 @@ const CampaignOverview = ({ campaign }) => {
         <Box component={Card} p={3}>
           <Stack gap={2}>
             <Typography variant="subtitle2">Shortlisted Creators</Typography>
+
             {campaign?.shortlisted?.length ? (
               campaign?.shortlisted.map((item, index) => (
                 <Stack key={item.id} direction="row" alignItems="center" spacing={2}>
                   <Label>{index + 1}</Label>
-                  <Avatar src={item.creator.photoURL} />
-                  <Typography variant="subtitle2">{item.creator.name}</Typography>
+                  <Avatar src={item.user.photoURL} />
+                  <Typography variant="subtitle2">{item.user.name}</Typography>
                 </Stack>
               ))
             ) : (

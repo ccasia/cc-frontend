@@ -10,7 +10,7 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
 import ListItemText from '@mui/material/ListItemText';
-import { Grid, Typography, CircularProgress } from '@mui/material';
+import { Grid, Chip, Typography, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -319,9 +319,9 @@ export default function CampaignItem({ campaign, user }) {
         <Chip
           sx={{ position: 'absolute', top: 10, left: 10 }}
           variant="filled"
-          color='success'
+          color="success"
           size="small"
-          label={`${campaign?.percentageMatch} % Match`}
+          label={`${Math.ceil(campaign?.percentageMatch)} % Match`}
         />
       </Card>
 

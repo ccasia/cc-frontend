@@ -5,9 +5,7 @@ import Stack from '@mui/material/Stack';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
-
-import { useRouter, useSearchParams } from 'src/routes/hooks';
-
+import { useSearchParams } from 'src/routes/hooks';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -28,8 +26,7 @@ export default function ChatView() {
   const searchParams = useSearchParams();
   const selectedConversationId = searchParams.get('id') || '';
 
-
-  const {id} = useParams(); // Extracts the threadId from the route
+  const { id } = useParams(); // Extracts the threadId from the route
 
   // useEffect(() => {
   //   if (!selectedConversationId) {
@@ -38,7 +35,7 @@ export default function ChatView() {
   // }, [router, selectedConversationId]);
 
   //  const filteredMessages = messages.filter(message => message.threadId === threadId);
-  
+
   // Head is Showing all the search and names
   const renderHead = (
     <Stack
@@ -57,13 +54,7 @@ export default function ChatView() {
 
   // Renders the navigation
 
-  const renderNav = (
-    <ChatNav
-      contacts={[]}
-      selectedConversationId={selectedConversationId}
-    />
-
-  );
+  const renderNav = <ChatNav contacts={[]} selectedConversationId={selectedConversationId} />;
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
@@ -86,20 +77,6 @@ export default function ChatView() {
               borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
             }}
           >
-
-{/* //              {id? (
-
-//             <ThreadMessages threadId={id} />
-//           ) : (
-//             <Container maxWidth="xl" sx={{justifyContent: 'center', mt:10, alignItems: 'center', height: '100vh'}}>
-//             <Typography  variant="body1" color="textSecondary" style={{ textAlign: 'center' }}>
-//               Choose a thread to start messaging
-//           </Typography>
-//           </Container>
-//           )}
-
-
-//             <ChatRoom  threadId={id}  /> */}
             {id ? (
               <ThreadMessages threadId={id} />
             ) : (

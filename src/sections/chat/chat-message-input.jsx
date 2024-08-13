@@ -124,7 +124,7 @@ export default function ChatMessageInput({
             // flexShrink: 0,
             // borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
             flexGrow: 1,
-            overflow: 'scroll',
+            overflow: 'auto',
           }}
         />
 
