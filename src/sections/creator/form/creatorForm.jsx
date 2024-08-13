@@ -2,7 +2,7 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -32,6 +32,7 @@ import FormProvider, {
   RHFDatePicker,
   RHFAutocomplete,
 } from 'src/components/hook-form';
+import axios from 'axios';
 
 const steps = [
   'Fill in your details',
@@ -122,6 +123,7 @@ export default function CreatorForm({ creator, open, onClose }) {
     handleSubmit,
     watch,
     getValues,
+    setValue,
     formState: { errors },
   } = methods;
 
@@ -159,6 +161,24 @@ export default function CreatorForm({ creator, open, onClose }) {
       });
     }
   });
+  function creatorLocation() {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const address = await axios.get(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          setValue('location', address.data.display_name);
+        },
+        (error) => {
+          console.error(`Error Code = ${error.code} - ${error.message}`);
+        }
+      );
+    } else {
+      console.log('Geolocation is not supported by this browser.');
+    }
+  }
 
   function getStepContent(step) {
     switch (step) {
@@ -172,6 +192,10 @@ export default function CreatorForm({ creator, open, onClose }) {
         return 'Unknown step';
     }
   }
+
+  useEffect(() => {
+    creatorLocation();
+  }, []);
 
   function formComponent() {
     return (
@@ -344,7 +368,7 @@ export default function CreatorForm({ creator, open, onClose }) {
         <RHFTextField
           name="tiktok"
           label="Tiktok Username"
-           placeholder="Eg: tiktok/yourusername"
+          placeholder="Eg: tiktok/yourusername"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">

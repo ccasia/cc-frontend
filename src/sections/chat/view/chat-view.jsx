@@ -77,16 +77,6 @@ export default function ChatView() {
               borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
             }}
           >
-            {/* //             <ThreadMessages threadId={id} />
-//           ) : (
-//             <Container maxWidth="xl" sx={{justifyContent: 'center', mt:10, alignItems: 'center', height: '100vh'}}>
-//             <Typography  variant="body1" color="textSecondary" style={{ textAlign: 'center' }}>
-//               Choose a thread to start messaging
-//           </Typography>
-//           </Container>
-//           )} */}
-
-            {/* //             <ChatRoom  threadId={id}  /> */}
             {id ? (
               <ThreadMessages threadId={id} />
             ) : (
