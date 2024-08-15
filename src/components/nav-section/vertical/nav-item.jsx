@@ -96,10 +96,14 @@ const NavItem = forwardRef(
       </StyledNavItem>
     );
 
-    // Hidden item by role
-    if (roles && !roles.includes(user?.role)) {
+    if (user.role === 'admin' && roles && !roles?.includes(user?.admin?.role?.name)) {
       return null;
     }
+
+    // Hidden item by role
+    // if (roles && !roles.includes(user?.role)) {
+    //   return null;
+    // }
 
     if (hasChild) {
       return renderContent;

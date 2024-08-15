@@ -188,4 +188,7 @@ export const endpoints = {
     read: '/api/notification/markRead',
     archive: '/api/notification/archiveAll',
   },
+  roles: {
+    root: '/api/role',
+  },
 };

@@ -15,18 +15,11 @@ const DashboardAdmin = () => {
   const settings = useSettingsContext();
 
   const { user } = useAuthContext();
-  console.log(user);
-  // const { socket } = useSocketContext();
-
-  // const onChange = (e) => {
-  //   console.log(e.target.value);
-  //   socket.emit('chat', e.target.value);
-  // };
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      {user?.admin?.designation === 'Finance' && <DashboardFinance />}
-      {user?.admin?.designation === 'CSM' && user?.admin?.mode === 'normal' && (
+      {user?.admin?.role?.name === 'Finance' && <DashboardFinance />}
+      {user?.admin?.role?.name === 'CSM' && user?.admin?.mode === 'normal' && (
         <Grid container columnSpacing={5}>
           {/* {JSON.stringify(user)} */}
           <Grid item xs={12} md={8}>

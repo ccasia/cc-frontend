@@ -52,7 +52,7 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{phoneNumber || 'null'}</TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{admin?.designation || 'null'}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{admin?.role?.name || 'null'}</TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{country || 'null'}</TableCell>
 

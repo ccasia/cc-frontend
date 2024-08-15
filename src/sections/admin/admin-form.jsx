@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form';
 import { Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -35,9 +35,10 @@ const AdminForm = () => {
   const navigate = useNavigate();
 
   const AdminSchema = Yup.object().shape({
+    email: Yup.string(),
     password: Yup.string().required('Password is required'),
     name: Yup.string().required('Name is required'),
-    designation: Yup.string().required('Designation is required'),
+    // designation: Yup.string().required('Designation is required'),
     country: Yup.string().required('Country is required'),
     phoneNumber: Yup.string().required('Phone Number is required'),
   });
@@ -46,6 +47,13 @@ const AdminForm = () => {
 
   const methods = useForm({
     resolver: yupResolver(AdminSchema),
+    defaultValues: {
+      email: user?.email || '',
+      name: '',
+      role: '',
+      country: '',
+      phoneNumber: '',
+    },
   });
 
   const {
@@ -55,6 +63,11 @@ const AdminForm = () => {
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
+
+  useEffect(() => {
+    setValue('email', user?.email);
+    setValue('role', user?.admin?.role?.name);
+  }, [setValue, user]);
 
   const handleDrop = useCallback(
     (acceptedFiles) => {
@@ -100,9 +113,10 @@ const AdminForm = () => {
         sm: 'repeat(2, 1fr)',
       }}
     >
-      <RHFTextField name="email" label="Email" type="email" value={user?.email} />
+      <RHFTextField name="email" label="Email" type="email" disabled />
       <RHFTextField name="name" label="Name" type="text" />
-      <RHFAutocomplete
+      <RHFTextField name="role" label="Role" type="text" disabled />
+      {/* <RHFAutocomplete
         name="designation"
         type="designation"
         label="Designation"
@@ -110,7 +124,7 @@ const AdminForm = () => {
         fullWidth
         options={['Finance', 'CSM', 'BD', 'Growth']}
         getOptionLabel={(option) => option}
-      />
+      /> */}
       <RHFAutocomplete
         name="country"
         type="country"
