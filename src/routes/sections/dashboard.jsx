@@ -93,6 +93,7 @@ export const dashboardRoutes = [
         ],
       },
       // For admin/superadmin
+      // dashboard/creator
       {
         path: 'creator',
         children: [
@@ -135,7 +136,23 @@ export const dashboardRoutes = [
           },
         ],
       },
-      // For Creator
+      // For Finance
+      {
+        path: 'finance',
+        element: (
+          <RoleBasedGuard roles={['finance']} hasContent>
+            <div>hi finance guy</div>
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'invoice',
+        element: (
+          <RoleBasedGuard roles={['finance']} hasContent>
+            <div>hi there</div>
+          </RoleBasedGuard>
+        ),
+      },
       {
         path: 'mediakit',
         element: (

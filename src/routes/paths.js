@@ -77,5 +77,9 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/chat`,
       thread: (id) => `${ROOTS.DASHBOARD}/chat/thread/${id}`,
     },
+    finance:{
+      root: `${ROOTS.DASHBOARD}/finance`,
+      invoice:`${ROOTS.DASHBOARD}/invoice`
+    }
   },
 };

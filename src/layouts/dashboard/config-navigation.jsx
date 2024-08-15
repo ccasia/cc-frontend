@@ -9,6 +9,8 @@ import SvgColor from 'src/components/svg-color';
 
 // ----------------------------------------------------------------------
 
+// add finance user here as well
+
 const icon = (name) => (
   <SvgColor src={`/assets/icons/navbar/${name}.svg`} sx={{ width: 1, height: 1 }} />
   // OR
@@ -202,10 +204,37 @@ export function useNavData() {
     []
   );
 
+  const financeNavigations = useMemo(
+    () => [
+      {
+        items: [
+          {
+            title: 'Dashboard',
+            path: paths.dashboard.finance.root,
+            icon: <Iconify icon="iconamoon:discover" width={25} />,
+          },
+          {
+            title: 'Invoices',
+            path: paths.dashboard.finance.invoice,
+            icon: <Iconify icon="iconamoon:discover" width={25} />,
+          },
+        ],
+      },
+    ],
+    []
+  );
+
+  // add finance naviagation
   const navigations = useMemo(
     () =>
       // roles => "god" , "normal", "designation", "admin", "creator"
-      user?.role === 'creator' ? creatorNavigations : adminNavigations,
+      // user?.role === 'creator' ? creatorNavigations : adminNavigations,
+
+      user?.role === 'creator' || user?.role === 'finance'
+        ? user?.role === 'finance'
+          ? financeNavigations
+          : creatorNavigations
+        : adminNavigations,
 
     [adminNavigations, creatorNavigations, user]
   );
