@@ -15,7 +15,7 @@ import CampaignItem from '../discover/creator/campaign-item';
 
 const AppliedCampaignView = () => {
   const { data, isLoading } = useGetCampaignPitch();
-  const [query, setQuery] = useState();
+  const [query, setQuery] = useState('');
   const { user } = useAuthContext();
 
   const filteredData = useMemo(
@@ -43,7 +43,7 @@ const AppliedCampaignView = () => {
         }}
         onChange={(e) => setQuery(e.target.value)}
       />
-      {!isLoading && filteredData.length ? (
+      {!isLoading && filteredData?.length ? (
         <Box
           gap={3}
           display="grid"
@@ -65,7 +65,7 @@ const AppliedCampaignView = () => {
           ))}
         </Box>
       ) : (
-        <EmptyContent title={`No campaign ${query} found.`} />
+        <EmptyContent title={`No campaign ${query && query} found.`} />
       )}
     </Box>
   );

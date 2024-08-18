@@ -67,8 +67,8 @@ const CampaignFilter = ({ open, onOpen, onClose, brands, filters, onFilters, res
         value={filters.status}
         onChange={handleFilterStatus}
       >
-        <FormControlLabel value="active" control={<Radio />} label="Active" />
-        <FormControlLabel value="completed" control={<Radio />} label="Completed" />
+        <FormControlLabel value="ACTIVE" control={<Radio />} label="Active" />
+        <FormControlLabel value="COMPLETED" control={<Radio />} label="Completed" />
       </RadioGroup>
     </Stack>
   );

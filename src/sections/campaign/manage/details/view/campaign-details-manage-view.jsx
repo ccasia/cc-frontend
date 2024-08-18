@@ -622,7 +622,6 @@ const CampaignDetailManageView = ({ id }) => {
               <Stack spacing={2}>
                 {renderCampaignInformation}
                 {campaign?.brand ? renderBrand : renderCompany}
-
                 {renderDosAndDonts}
               </Stack>
             </Grid>
@@ -661,7 +660,7 @@ const CampaignDetailManageView = ({ id }) => {
   );
 };
 
-export default withPermission(['read'], 'campaign', CampaignDetailManageView);
+export default withPermission(['view:campaign'], CampaignDetailManageView);
 
 CampaignDetailManageView.propTypes = {
   id: PropTypes.string,

@@ -68,7 +68,6 @@ export default function NavVertical({ openNav, onCloseNav }) {
         width: { lg: NAV.W_VERTICAL },
       }}
     >
-      {/* <h1>PENINGG</h1> */}
       <NavToggleButton />
 
       {lgUp ? (

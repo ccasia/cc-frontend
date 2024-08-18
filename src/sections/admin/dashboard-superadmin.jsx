@@ -46,6 +46,7 @@ const DashboardSuperadmin = () => {
             campaignName: campaign.name,
             campaignTask: task.task,
             dueDate: task.dueDate,
+            status: task.status,
           }))
         );
       })
@@ -132,7 +133,6 @@ const DashboardSuperadmin = () => {
                     <Label color="success">{campaign?.shortlisted.length}</Label>
                   </TableCell>
                   <TableCell align="center">
-                    {' '}
                     <Label color="success">{campaign?.pitch.length}</Label>
                   </TableCell>
                 </TableRow>
@@ -252,48 +252,43 @@ const DashboardSuperadmin = () => {
         >
           <Stack spacing={1}>
             <Typography variant="subtitle2">Tasks</Typography>
-
-            <TableContainer component={Paper}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Task</TableCell>
-                    <TableCell>Campaign</TableCell>
-                    <TableCell>Due</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {taskLists.length &&
-                    taskLists?.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          <Typography variant="subtitle2">{item.campaignTask}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="subtitle2">{item.campaignName}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption" color="text.secondary">
-                            {dayjs(item.dueDate).format('ddd LL')}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            {/* <Stack spacing={1}>
-                {taskLists.length &&
-                  taskLists?.map((item) => (
-                    <Stack direction="row" justifyContent="space-between" alignItems="start">
-                      <ListItemText secondary={item.campaignName} primary={item.campaignTask} />
-                      <Typography variant="caption" color="text.secondary">
-                        Due {dayjs(item.dueDate).format('ddd LL')}
-                      </Typography>
-                    </Stack>
-                  ))}
-              </Stack> */}
+            {taskLists.length ? (
+              <TableContainer component={Paper}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Task</TableCell>
+                      <TableCell>Campaign</TableCell>
+                      <TableCell>Due</TableCell>
+                      <TableCell>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {taskLists.length > 0 &&
+                      taskLists?.map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Typography variant="subtitle2">{item.campaignTask}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="subtitle2">{item.campaignName}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="caption" color="text.secondary">
+                              {dayjs(item.dueDate).format('ddd LL')}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Label>{item.status}</Label>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <EmptyContent title="No task" />
+            )}
           </Stack>
         </Box>
       </Grid>

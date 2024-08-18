@@ -32,7 +32,6 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
-  //  chat: '/api/chat',
   kanban: '/api/kanban',
   threads: {
     getAll: '/api/thread/threads',
@@ -156,9 +155,6 @@ export const endpoints = {
     tasks: {
       uploadAgreeementForm: '/api/tasks/uploadAgreementForm',
     },
-    // submission: {
-    //   agreement: '/api/submission/submitAgreement',
-    // },
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',
@@ -169,6 +165,8 @@ export const endpoints = {
     creator: {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
       getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,
+      saveCampaign: '/api/campaign/saveCampaign',
+      unsaveCampaign: (id) => `/api/campaign/unsaveCampaign/${id}`,
     },
     getCampaignLog: (id) => `/api/campaign/getCampaignLog/${id}`,
   },

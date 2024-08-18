@@ -10,6 +10,7 @@ import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import useCheckPermission from 'src/hooks/use-check-permission';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -71,22 +72,29 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
         </TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
-          <Tooltip title="Quick Edit" placement="top" arrow>
-            <IconButton color={quickEdit.value ? 'inherit' : 'default'} onClick={quickEdit.onTrue}>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete" placement="top" arrow>
-            <IconButton
-              onClick={() => {
-                confirm.onTrue();
-                popover.onClose();
-              }}
-              sx={{ color: 'error.main' }}
-            >
-              <Iconify icon="solar:trash-bin-trash-bold" />
-            </IconButton>
-          </Tooltip>
+          {useCheckPermission(['update:creator']) && (
+            <Tooltip title="Quick Edit" placement="top" arrow>
+              <IconButton
+                color={quickEdit.value ? 'inherit' : 'default'}
+                onClick={quickEdit.onTrue}
+              >
+                <Iconify icon="solar:pen-bold" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {useCheckPermission(['delete:creator']) && (
+            <Tooltip title="Delete" placement="top" arrow>
+              <IconButton
+                onClick={() => {
+                  confirm.onTrue();
+                  popover.onClose();
+                }}
+                sx={{ color: 'error.main' }}
+              >
+                <Iconify icon="solar:trash-bin-trash-bold" />
+              </IconButton>
+            </Tooltip>
+          )}
         </TableCell>
       </TableRow>
 

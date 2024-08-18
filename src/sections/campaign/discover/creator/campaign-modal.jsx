@@ -1,14 +1,19 @@
 /* eslint-disable no-nested-ternary */
 import React from 'react';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
+import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
   Chip,
+  Stack,
   Dialog,
   Button,
+  Tooltip,
   Typography,
+  IconButton,
   DialogTitle,
   ListItemText,
   DialogContent,
@@ -19,6 +24,7 @@ import {
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { formatText } from 'src/utils/format-test';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -32,6 +38,34 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
   const isShortlisted = user?.shortlisted && user?.shortlisted.map((item) => item.campaignId);
 
   const campaignIds = user?.pitch && user?.pitch.map((item) => item.campaignId);
+
+  const saveCampaign = async (campaignId) => {
+    try {
+      const res = await axiosInstance.post(endpoints.campaign.creator.saveCampaign, {
+        campaignId,
+      });
+      mutate(endpoints.campaign.getMatchedCampaign);
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error', {
+        variant: 'error',
+      });
+    }
+  };
+
+  const unSaveCampaign = async (saveCampaignId) => {
+    try {
+      const res = await axiosInstance.delete(
+        endpoints.campaign.creator.unsaveCampaign(saveCampaignId)
+      );
+      mutate(endpoints.campaign.getMatchedCampaign);
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error', {
+        variant: 'error',
+      });
+    }
+  };
 
   const renderGallery = (
     <Box
@@ -75,7 +109,30 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
               typography: 'h5',
             }}
           />
-          <Chip label={`${Math.ceil(campaign?.percentageMatch)}% Match`} color="primary" />
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            {campaign?.bookMarkCampaign ? (
+              <Tooltip title="Saved">
+                <IconButton
+                  onClick={() => {
+                    unSaveCampaign(campaign?.bookMarkCampaign.id);
+                  }}
+                >
+                  <Iconify icon="flowbite:bookmark-solid" width={25} />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <Tooltip title="Save">
+                <IconButton
+                  onClick={() => {
+                    saveCampaign(campaign?.id);
+                  }}
+                >
+                  <Iconify icon="mynaui:bookmark" width={25} />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Chip label={`${Math.ceil(campaign?.percentageMatch)}% Match`} color="primary" />
+          </Stack>
         </Box>
       </DialogTitle>
       <DialogContent>

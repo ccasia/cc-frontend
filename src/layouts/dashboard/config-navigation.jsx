@@ -48,7 +48,6 @@ const ICONS = {
 // ----------------------------------------------------------------------
 
 export function useNavData() {
-  // let items;
   const { user } = useAuthContext();
 
   const adminNavigations = useMemo(
@@ -110,7 +109,7 @@ export function useNavData() {
             ],
           },
           {
-            roles: ['superadmin'],
+            roles: ['superadmin', 'CSM'],
             title: 'Clients',
             path: paths.dashboard.company.root,
             icon: <Iconify icon="mdi:company" width={25} />,
@@ -174,14 +173,14 @@ export function useNavData() {
             icon: <Iconify icon="iconamoon:discover" width={25} />,
           },
           {
+            title: 'My Campaigns',
+            path: paths.dashboard.campaign.creator.manage,
+            icon: <Iconify icon="material-symbols:assignment" width={25} />,
+          },
+          {
             title: 'Media Kit',
             path: paths.dashboard.creator.mediaKitCreator,
             icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
-          },
-          {
-            title: 'My Campaigns',
-            path: paths.dashboard.campaign.creator.manage,
-            icon: <Iconify icon="iconamoon:discover" width={25} />,
           },
         ],
       },
