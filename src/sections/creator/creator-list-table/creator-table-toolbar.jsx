@@ -1,16 +1,20 @@
 import PropTypes from 'prop-types';
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Popover from '@mui/material/Popover';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
+import Slider from '@mui/material/Slider';
+import Divider from '@mui/material/Divider';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
-import TextField from '@mui/material/TextField';
-import InputLabel from '@mui/material/InputLabel';
-import IconButton from '@mui/material/IconButton';
-import FormControl from '@mui/material/FormControl';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import InputAdornment from '@mui/material/InputAdornment';
+import ListItemText from '@mui/material/ListItemText';
 
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
@@ -20,10 +24,25 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 export default function CreatorTableToolbar({
   filters,
   onFilters,
-  //
-  roleOptions,
+  ageRange,
+  onAgeRangeChange,
 }) {
+
   const popover = usePopover();
+
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleAgeRangeChange = (event, newValue) => {
+    onAgeRangeChange(newValue);
+  };
+
+  const handleOpenFilters = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseFilters = () => {
+    setAnchorEl(null);
+  };
 
   const handleFilterName = useCallback(
     (event) => {
@@ -56,54 +75,52 @@ export default function CreatorTableToolbar({
           pr: { xs: 2.5, md: 1 },
         }}
       >
-        <FormControl
-          sx={{
-            flexShrink: 0,
-            width: { xs: 1, md: 200 },
+        <Button
+          variant="outlined"
+          onClick={handleOpenFilters}
+          endIcon={<Iconify icon="eva:chevron-down-fill" />}
+        >
+          Filters
+        </Button>
+        <TextField
+          fullWidth
+          value={filters.name}
+          onChange={handleFilterName}
+          placeholder="Search..."
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Popover
+          open={Boolean(anchorEl)}
+          anchorEl={anchorEl}
+          onClose={handleCloseFilters}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          PaperProps={{
+            sx: { width: 300, p: 3 },
           }}
         >
-          <InputLabel>Role</InputLabel>
+          <Typography variant="h6" gutterBottom>
+            Filters
+          </Typography>
 
-          <Select
-            multiple
-            value={filters.role}
-            onChange={handleFilterRole}
-            input={<OutlinedInput label="Role" />}
-            renderValue={(selected) => selected.map((value) => value).join(', ')}
-            MenuProps={{
-              PaperProps: {
-                sx: { maxHeight: 240 },
-              },
-            }}
-          >
-            {roleOptions.map((option) => (
-              <MenuItem key={option} value={option}>
-                <Checkbox disableRipple size="small" checked={filters.role.includes(option)} />
-                {option}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
-          <TextField
-            fullWidth
-            value={filters.name}
-            onChange={handleFilterName}
-            placeholder="Search..."
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
-                </InputAdornment>
-              ),
-            }}
+          <Typography gutterBottom>Age Range</Typography>
+          <Slider
+            value={ageRange}
+            onChange={handleAgeRangeChange}
+            valueLabelDisplay="auto"
+            min={18}
+            max={100}
           />
 
-          <IconButton onClick={popover.onOpen}>
-            <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
-        </Stack>
+          <Divider sx={{ my: 2 }} />
+
+        </Popover>
       </Stack>
 
       <CustomPopover
@@ -146,5 +163,6 @@ export default function CreatorTableToolbar({
 CreatorTableToolbar.propTypes = {
   filters: PropTypes.object,
   onFilters: PropTypes.func,
-  roleOptions: PropTypes.array,
+  ageRange: PropTypes.array,
+  onAgeRangeChange: PropTypes.func,
 };

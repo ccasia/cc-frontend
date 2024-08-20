@@ -14,9 +14,7 @@ import Iconify from 'src/components/iconify';
 export default function CreatorTableFilter({
   filters,
   onFilters,
-  //
   onResetFilters,
-  //
   results,
   ...other
 }) {
@@ -28,14 +26,9 @@ export default function CreatorTableFilter({
     onFilters('status', 'all');
   }, [onFilters]);
 
-  const handleRemoveRole = useCallback(
-    (inputValue) => {
-      const newValue = filters.role.filter((item) => item !== inputValue);
-
-      onFilters('role', newValue);
-    },
-    [filters.role, onFilters]
-  );
+  const handleRemoveAgeRange = useCallback(() => {
+    onFilters('ageRange', [18, 100]);
+  }, [onFilters]);
 
   return (
     <Stack spacing={1.5} {...other}>
@@ -53,11 +46,13 @@ export default function CreatorTableFilter({
           </Block>
         )}
 
-        {!!filters.role.length && (
-          <Block label="Role:">
-            {filters.role.map((item) => (
-              <Chip key={item} label={item} size="small" onDelete={() => handleRemoveRole(item)} />
-            ))}
+        {(filters.ageRange[0] !== 18 || filters.ageRange[1] !== 100) && (
+          <Block label="Age Range:">
+            <Chip 
+              size="small" 
+              label={`${filters.ageRange[0]} - ${filters.ageRange[1]}`} 
+              onDelete={handleRemoveAgeRange} 
+            />
           </Block>
         )}
 
