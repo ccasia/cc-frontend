@@ -69,6 +69,7 @@ const defaultFilters = {
   name: '',
   status: 'all',
   ageRange: [18, 100],
+  pronounce: [],
 };
 
 // ----------------------------------------------------------------------
@@ -260,7 +261,7 @@ function CreatorTableView() {
             ))}
           </Tabs>
 
-          <CreatorTableToolbar filters={filters} onFilters={handleFilters} ageRange={ageRange} onAgeRangeChange={handleAgeRangeChange} />
+          <CreatorTableToolbar filters={filters} onFilters={handleFilters} ageRange={ageRange} onAgeRangeChange={handleAgeRangeChange} pronounceOptions={['he/him', 'she/her', 'they/them', 'others']} />
 
           {canReset && (
             <CreatorTableFilter
@@ -403,6 +404,10 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
 
   if (status !== 'all') {
     inputData = inputData.filter((user) => user.status === status);
+  }
+
+  if (filters.pronounce.length) {
+    inputData = inputData.filter((user) => filters.pronounce.includes(user.creator.pronounce));
   }
 
   // Filter by age range

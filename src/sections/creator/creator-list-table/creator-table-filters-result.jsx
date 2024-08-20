@@ -16,8 +16,14 @@ export default function CreatorTableFilter({
   onFilters,
   onResetFilters,
   results,
+  pronounceOptions,
   ...other
 }) {
+
+  const handleRemovePronounce = useCallback(() => {
+    onFilters('pronounce', []);
+  }, [onFilters]);
+
   const handleRemoveKeyword = useCallback(() => {
     onFilters('name', '');
   }, [onFilters]);
@@ -48,11 +54,27 @@ export default function CreatorTableFilter({
 
         {(filters.ageRange[0] !== 18 || filters.ageRange[1] !== 100) && (
           <Block label="Age Range:">
-            <Chip 
-              size="small" 
-              label={`${filters.ageRange[0]} - ${filters.ageRange[1]}`} 
-              onDelete={handleRemoveAgeRange} 
+            <Chip
+              size="small"
+              label={`${filters.ageRange[0]} - ${filters.ageRange[1]}`}
+              onDelete={handleRemoveAgeRange}
             />
+          </Block>
+        )}
+
+        {filters.pronounce.length > 0 && (
+          <Block label="Gender:">
+            {filters.pronounce.map((item) => (
+              <Chip
+                key={item}
+                label={item}
+                size="small"
+                onDelete={() => {
+                  const newPronounce = filters.pronounce.filter((pronounce) => pronounce !== item);
+                  onFilters('pronounce', newPronounce);
+                }}
+              />
+            ))}
           </Block>
         )}
 

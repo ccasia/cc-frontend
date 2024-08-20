@@ -26,6 +26,7 @@ export default function CreatorTableToolbar({
   onFilters,
   ageRange,
   onAgeRangeChange,
+  pronounceOptions
 }) {
 
   const popover = usePopover();
@@ -117,9 +118,23 @@ export default function CreatorTableToolbar({
             min={18}
             max={100}
           />
-
           <Divider sx={{ my: 2 }} />
-
+          <Typography gutterBottom>Gender</Typography>
+          <FormControl fullWidth>
+            <Select
+              multiple
+              value={filters.pronounce}
+              onChange={(event) => onFilters('pronounce', event.target.value)}
+              renderValue={(selected) => selected.join(', ')}
+            >
+              {pronounceOptions.map((option) => (
+                <MenuItem key={option} value={option}>
+                  <Checkbox checked={filters.pronounce.indexOf(option) > -1} />
+                  <ListItemText primary={option} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Popover>
       </Stack>
 
