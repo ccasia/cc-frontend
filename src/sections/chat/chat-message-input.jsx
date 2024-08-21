@@ -1,15 +1,9 @@
-// import { sub } from 'date-fns';
 import PropTypes from 'prop-types';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
-//  import Button from '@mui/material/Button'
-//  import { socket } from 'src/layouts/dashboard/index'
-//  import { io } from 'socket.io-client';
-//  import { paths } from 'src/routes/paths';
-//  import { socket } from 'src/socket';
 //  import { useRouter } from 'src/routes/hooks';
 //  import { useAuthContext } from 'src/auth/hooks';
 //  import uuidv4 from 'src/utils/uuidv4';
@@ -25,29 +19,20 @@ import Iconify from 'src/components/iconify';
 //  const socket = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
 
 export default function ChatMessageInput({
-  // recipients,
-  // onAddRecipients,
   disabled,
-  threadId,
   onSendMessage,
-  // selectedConversationId,
 }) {
   //  const router = useRouter();
 
-  //  const { user } = useAuthContext();
-
-  const fileRef = useRef(null);
   const { socket } = useSocketContext();
  
   const [message, setMessage] = useState('');
 
   
 
-  
 
   const handleSendMessage = useCallback((event) => {
     if (event.key === 'Enter' && message.trim() !== '') {
-      console.log("message sent", message)
       onSendMessage(message);
       setMessage('');
     }
@@ -72,13 +57,8 @@ export default function ChatMessageInput({
   };
 }, [socket]);
 
-  // const handleChangeMessage = useCallback((event) => {
-  //   setMessage(event.target.value);
-  // }, []);
-
   return (
-    <>
-      <InputBase
+    <InputBase
         value={message}
         onKeyUp={handleSendMessage}
         onChange={handleChangeMessage}
@@ -109,17 +89,10 @@ export default function ChatMessageInput({
           borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
         }}
       />
-
-      {/* <Button onclick={socketMessage}>Send </Button> */}
-      <input type="file" ref={fileRef} style={{ display: 'none' }} />
-    </>
   );
 }
 
 ChatMessageInput.propTypes = {
   disabled: PropTypes.bool,
-  threadId: PropTypes.string,
   onSendMessage: PropTypes.func.isRequired,
-  // recipients: PropTypes.array,
-  // selectedConversationId: PropTypes.string,
 };

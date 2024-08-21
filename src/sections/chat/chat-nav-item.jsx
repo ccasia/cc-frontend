@@ -1,5 +1,5 @@
 /* eslint-disable */ 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -22,15 +22,16 @@ import Iconify from 'src/components/iconify';
 
 
 // import { paths } from 'src/routes/paths';
+import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-import { useGetAllThreads, archiveThread, unarchiveThread } from 'src/api/chat';
+
+import { useGetAllThreads, archiveThread, unarchiveThread, useGetUnreadMessageCount } from 'src/api/chat';
 import { useResponsive } from 'src/hooks/use-responsive';
+
 // import { useMockedUser } from 'src/hooks/use-mocked-user';
 import { useAuthContext } from 'src/auth/hooks';
 // import { clickConversation } from 'src/api/chat';
 
-import { paths } from 'src/routes/paths';
-// import { useGetNavItem } from './hooks';
 
 // ----------------------------------------------------------------------
 
@@ -40,22 +41,34 @@ export default function ChatNavItem({ photoURL, onArchive, selected, collapse, t
   const mdUp = useResponsive('up', 'md');
 
   const router = useRouter();
+  const { unreadCount, loading: unreadLoading, error: unreadError } = useGetUnreadMessageCount(thread.id);
+  const [otherUser, setOtherUser] = useState(null);
+
+  // useEffect(() => {
+  //   if (!thread.isGroup && thread.UserThread) {
+  //     // Find the user that is not the current user
+  //     const otherUserInfo = thread.UserThread.find(userThread => userThread.userId !== user.id)?.user;
+  //     setOtherUser(otherUserInfo);
+  //     console.log("user info", otherUserInfo)
+  //   }
+  // }, [thread, user]);
+
+  useEffect(() => {
+    if (!thread.isGroup && thread.UserThread) {
+      // Find the user that is not the current user
+      const otherUserInfo = thread.UserThread.find(userThread => userThread.user.id !== user.id)?.user;
+      setOtherUser(otherUserInfo);
+      console.log("user info", otherUserInfo)
+    }
+  }, [thread, user]);
 
   //  const isGroupChat = thread.isGroup;
-  const avatarURL = thread.photoURL
+  // const avatarURL = thread.photoURL
+
+  const avatarURL = thread.isGroup ? thread.photoURL : otherUser?.photoURL;
+  const title = thread.isGroup ? thread.title : otherUser?.name;
 
   //  const { threads, loading: threadsLoading, error: threadsError } = useGetAllThreads();
-
- // console.log('AUth user', user)
-  // const { group, displayName, displayText, participants, lastActivity, hasOnlineInGroup } =
-  //   useGetNavItem({
-  //     threads,
-  //     currentUserId: `${user?.id}`,
-  //   });
-
-  // const singleParticipant = participants[0];
-
-  // const { name, avatarUrl, status } = singleParticipant;
 
   // if (threadsLoading) return <div>Loading threads...</div>;
   // if (threadsError) return <div>Error loading threads: {threadsError.message}</div>;
@@ -84,21 +97,21 @@ export default function ChatNavItem({ photoURL, onArchive, selected, collapse, t
   };
 
 
-  const handleClickThread = useCallback(async () => {
-    try {
-      if (!mdUp) {
-        onCloseMobile();
-      }
+  // const handleClickThread = useCallback(async () => {
+  //   try {
+  //     if (!mdUp) {
+  //       onCloseMobile();
+  //     }
 
-      const threadPath = paths.dashboard.chat.thread(thread.id);
-      router.push(threadPath);
+  //     const threadPath = paths.dashboard.chat.thread(thread.id);
+  //     router.push(threadPath);
 
-      // await clickThread(thread.id);
+  //     // await clickThread(thread.id);
       
-    } catch (error) {
-      console.error(error);
-    }
-  }, [thread.id, mdUp, onCloseMobile, router]);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // }, [thread.id, mdUp, onCloseMobile, router]);
 
 
  
@@ -128,10 +141,10 @@ export default function ChatNavItem({ photoURL, onArchive, selected, collapse, t
         }),
       }}
     >
-      <Badge
+       <Badge
         color="error"
         overlap="circular"
-        badgeContent={collapse ? thread.unreadCount : 0}
+        badgeContent={unreadLoading ? '...' : unreadCount}
       >
          {renderSingle}
       </Badge>
@@ -140,7 +153,7 @@ export default function ChatNavItem({ photoURL, onArchive, selected, collapse, t
         <>
           <ListItemText
             sx={{ ml: 2 }}
-            primary={thread.title}
+            primary={title}
             primaryTypographyProps={{
               noWrap: true,
               variant: 'subtitle2',
@@ -165,22 +178,10 @@ export default function ChatNavItem({ photoURL, onArchive, selected, collapse, t
                 color: 'text.disabled',
               }}
             >
-              {/* {formatDistanceToNowStrict(new Date(lastActivity), {
-                addSuffix: false,
-              })} */}
             </Typography>
 
-            {/* {!!conversation.unreadCount && (
-              <Box
-                sx={{
-                  width: 8,
-                  height: 8,
-                  bgcolor: 'info.main',
-                  borderRadius: '50%',
-                }}
-              />
-            )} */}
           </Stack>
+          
          {/* Menu for Actions */}
          <IconButton
             onClick={handleMenuOpen}

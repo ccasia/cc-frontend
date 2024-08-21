@@ -45,6 +45,9 @@ export const endpoints = {
     getMessage: (threadId) => `/api/thread/getmessage/${threadId}`,
     archive: (threadId) => `/api/thread/threads/${threadId}/archive`,
     unarchive: (threadId) => `/api/thread/threads/${threadId}/unarchive`,
+    getUnreadCount:(threadId) => `/api/thread/${threadId}/unreadcount`, 
+    markAsSeen: (threadId) => `/api/thread/${threadId}/seen`,
+    getTotalCount: '/api/thread/message/totalcount',
   },
   calendar: '/api/calendar',
   auth: {

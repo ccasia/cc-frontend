@@ -19,7 +19,7 @@ export default function ChatMessageItem({ message }) {
   const isAdmin = sender?.role === 'admin';
   const isSprAdmin = sender?.role === 'superadmin';
 
-  console.log("Message CreatedAt", message.createdAt); 
+
   const renderInfo = (
     <Typography
       noWrap

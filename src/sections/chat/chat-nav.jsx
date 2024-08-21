@@ -131,13 +131,13 @@ export default function ChatNav({}) {
     </IconButton>
   );
 
-  const renderSkeleton = (
-    <>
-      {[...Array(12)].map((_, index) => (
-        <ChatNavItemSkeleton key={index} />
-      ))}
-    </>
-  );
+  // const renderSkeleton = (
+  //   <>
+  //     {[...Array(12)].map((_, index) => (
+  //       <ChatNavItemSkeleton key={index} />
+  //     ))}
+  //   </>
+  // );
 
   const renderList = (
     <>
