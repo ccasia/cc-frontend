@@ -17,8 +17,8 @@ import { useGetThreadById } from 'src/api/chat';
 import Iconify from 'src/components/iconify';
 
 import { useCollapseNav } from './hooks'
-// import ChatRoomGroup from './chat-room-group';
-// import ChatRoomSingle from './chat-room-single';
+import ChatRoomGroup from './chat-room-group';
+import ChatRoomSingle from './chat-room-single';
 //  import ChatRoomAttachments from './chat-room-attachments';
 
 // ----------------------------------------------------------------------
@@ -75,19 +75,19 @@ export default function ChatRoom({ participants, conversation, threadId }) {
     return null;
   }
   
-  // onst group = participants.length > 1;
+  // const group = participants.length > 1;
 
   // const attachments = uniq(flatten(conversation.messages.map((messages) => messages.attachments)));
 
   // Update this soon 
 
-  const renderContent = (
-    <>
-      {/* {group ? (
-        <ChatRoomGroup participants={participants} />
+  console.log("Thread 1.0", thread)
+  const renderContent =  thread.isGroup ? (
+    <ChatRoomGroup thread={thread} />
       ) : (
-        <ChatRoomSingle participant={participants[0]} />
-      )} */}
+    <ChatRoomSingle thread={thread} />
+    );
+
 
     <Box  
       sx={{
@@ -99,7 +99,8 @@ export default function ChatRoom({ participants, conversation, threadId }) {
         padding: 1, 
       }}>
     <Typography variant="h5" align="center" sx={{ marginBottom: 15 }} > Chat Details </Typography>
-    <Avatar
+    
+    {/* <Avatar
       src={thread.photoURL}
       alt={thread.name}
       sx={{  cursor: 'pointer', width: 108, height: 108, marginBottom: 2 }}
@@ -123,12 +124,8 @@ export default function ChatRoom({ participants, conversation, threadId }) {
       <Typography variant="body2">
         Total Participants: {thread.userCount}
       </Typography>
-    </Stack>
+    </Stack> */}
     </Box>
-
-      {/* <ChatRoomAttachments attachments={attachments} /> */}
-    </>
-  );
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
@@ -136,8 +133,6 @@ export default function ChatRoom({ participants, conversation, threadId }) {
   if (!thread) {
     return <div>No thread found</div>;
   }
-
-  console.log('Thread:', thread);
 
   const renderToggleBtn = (
     <IconButton

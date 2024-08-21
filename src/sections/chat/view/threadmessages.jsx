@@ -6,7 +6,7 @@ import ChatMessageInput from '../chat-message-input';
 import ChatMessageList from '../chat-message-list';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useAuthContext } from 'src/auth/hooks';
-import { useGetMessagesFromThread } from 'src/api/chat';
+import { markMessagesAsSeen, useTotalUnreadCount } from 'src/api/chat';
 
 
 const ThreadMessages = ({ threadId }) => {
@@ -14,6 +14,7 @@ const ThreadMessages = ({ threadId }) => {
   // const [message, setMessage] = useState([]);
   const [threadMessages, setThreadMessages] = useState({});
   const { user } = useAuthContext();
+  const { triggerRefetch } = useTotalUnreadCount();
   // const { message, loading, error } = useGetMessagesFromThread(threadId);
  
   useEffect(() => {
@@ -27,7 +28,7 @@ const ThreadMessages = ({ threadId }) => {
   
       // Join the room
       socket.emit('room', threadId);
-      console.log ('user joined', threadId)
+      //  console.log ('user joined', threadId)
 
       // if (message) {
       //   setThreadMessages((prevThreadMessages) => ({
@@ -38,7 +39,6 @@ const ThreadMessages = ({ threadId }) => {
 
       // Listen for incoming messages
     socket.on('message', (message) => {
-      console.log("message sent 2", message)
       setThreadMessages((prevThreadMessages) => {
         const { threadId: messageThreadId } = message;
         return {
@@ -49,7 +49,15 @@ const ThreadMessages = ({ threadId }) => {
     });
 
    
-    
+    const markAsSeen = async () => {
+      try {
+        await markMessagesAsSeen(threadId);
+        triggerRefetch();
+      } catch (error) {
+        console.error('Failed to mark messages as seen:', error);
+      }
+    };
+    markAsSeen();
     
     // Cleanup on component unmount
     return () => {

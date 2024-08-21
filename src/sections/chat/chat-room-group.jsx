@@ -1,106 +1,73 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Badge from '@mui/material/Badge';
+import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
-import Collapse from '@mui/material/Collapse';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemButton from '@mui/material/ListItemButton';
-
-import { useBoolean } from 'src/hooks/use-boolean';
+import { Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
-import Scrollbar from 'src/components/scrollbar';
 
-import ChatRoomParticipantDialog from './chat-room-participant-dialog';
 
 // ----------------------------------------------------------------------
 
-export default function ChatRoomGroup({ participants }) {
-  const [selected, setSelected] = useState(null);
-
-  const collapse = useBoolean(true);
-
-  const handleOpen = useCallback((participant) => {
-    setSelected(participant);
-  }, []);
-
-  const handleClose = () => {
-    setSelected(null);
-  };
-
-  const totalParticipants = participants.length;
-
-  const renderBtn = (
-    <ListItemButton
-      onClick={collapse.onToggle}
-      sx={{
-        pl: 2.5,
-        pr: 1.5,
-        height: 40,
-        flexShrink: 0,
-        flexGrow: 'unset',
-        typography: 'overline',
-        color: 'text.secondary',
-        bgcolor: 'background.neutral',
-      }}
-    >
-      <Box component="span" sx={{ flexGrow: 1 }}>
-        In room ({totalParticipants})
-      </Box>
-      <Iconify
-        width={16}
-        icon={collapse.value ? 'eva:arrow-ios-downward-fill' : 'eva:arrow-ios-forward-fill'}
-      />
-    </ListItemButton>
-  );
+export default function ChatRoomGroup({thread}) {
 
   const renderContent = (
-    <Scrollbar sx={{ height: 56 * 4 }}>
-      {participants.map((participant) => (
-        <ListItemButton key={participant.id} onClick={() => handleOpen(participant)}>
-          <Badge
-            variant={participant.status}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          >
-            <Avatar alt={participant.name} src={participant.avatarUrl} />
-          </Badge>
+    <Box  
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        position: 'relative',
+        margin: 2,
+        padding: 1, 
+      }} >
 
-          <ListItemText
-            sx={{ ml: 2 }}
-            primary={participant.name}
-            secondary={participant.role}
-            primaryTypographyProps={{
-              noWrap: true,
-              typography: 'subtitle2',
-            }}
-            secondaryTypographyProps={{
-              noWrap: true,
-              component: 'span',
-              typography: 'caption',
-            }}
-          />
-        </ListItemButton>
-      ))}
-    </Scrollbar>
+      <Avatar alt={thread.name} src={thread.photoURL}
+      sx={{ alignContent:'center', cursor: 'pointer', width: 108, height: 108, margin: 2 }} />
+      
+      <Typography variant="h6" align="center" sx={{ marginBottom: 2 }}>
+        {thread.title}
+      </Typography>
+      
+      <Typography variant="body1" align="center" sx={{ marginBottom: 2 }}>
+        {thread.description}
+      </Typography>
+      
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        justifyContent="center"
+      >
+        <Iconify
+          width={24}
+          icon="material-symbols:groups" />
+        <Typography variant="body2">
+          Total Participants: {thread.userCount}
+        </Typography>
+      </Stack>
+      </Box>
+ 
   );
 
   return (
     <>
-      {renderBtn}
+   
+    {renderContent}
 
-      <div>
+      {/* <div>
         <Collapse in={collapse.value}>{renderContent}</Collapse>
       </div>
 
       {selected && (
         <ChatRoomParticipantDialog participant={selected} open={!!selected} onClose={handleClose} />
-      )}
+      )} */}
     </>
   );
 }
 
 ChatRoomGroup.propTypes = {
-  participants: PropTypes.array,
+  thread: PropTypes.object.isRequired,
+  //  participants: PropTypes.array,
 };
