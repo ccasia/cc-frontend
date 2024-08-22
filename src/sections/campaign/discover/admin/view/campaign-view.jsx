@@ -36,7 +36,6 @@ const defaultFilters = {
 const CampaignView = () => {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns();
-  console.log(campaigns);
   const router = useRouter();
 
   const [anchorEl, setAnchorEl] = useState(null);

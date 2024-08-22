@@ -1,19 +1,13 @@
-/* eslint-disable */ 
+/* eslint-disable */
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-// import { socket } from 'src/socket';
 
 import Box from '@mui/material/Box';
-//  import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
-import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Autocomplete from '@mui/material/Autocomplete';
 import { useAuthContext } from 'src/auth/hooks';
-//  import { useGetContacts } from 'src/api/chat';
-import Iconify from 'src/components/iconify';
 import SearchNotFound from 'src/components/search-not-found';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -23,41 +17,33 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 export default function ChatHeaderCompose({ currentUserId }) {
   const { user } = useAuthContext();
-  //  const [searchRecipients, setSearchRecipients] = useState('');
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState();
-  const [loading, setLoading] = useState(true); 
-  
-
+  const [loading, setLoading] = useState(true);
 
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'superadmin';
 
-
   useEffect(() => {
     async function fetchUsers() {
       try {
-        const response = await axiosInstance.get(endpoints.users.allusers)
-        const filteredContacts = response.data.filter(user => user.id !== currentUserId);
+        const response = await axiosInstance.get(endpoints.users.allusers);
+        const filteredContacts = response.data.filter((user) => user.id !== currentUserId);
         setContacts(filteredContacts);
-        console.log("FIlted contacts", filteredContacts)
-        
+        console.log('FIlted contacts', filteredContacts);
+
         //  console.log('Api Response', response.data) // Assuming response.data contains an array of users
       } catch (error) {
         console.error('Error fetching users:', error);
         // Handle error fetching users
+      } finally {
+        setLoading(false);
       }
-      finally {
-        setLoading(false); 
-      }
-
     }
     fetchUsers();
   }, [currentUserId]);
 
-  console.log("CUrrent user", currentUserId)
-
-
+  console.log('CUrrent user', currentUserId);
 
   useEffect(() => {
     console.log('selectedContact in useEffect:', selectedContact);
@@ -79,9 +65,9 @@ export default function ChatHeaderCompose({ currentUserId }) {
     // try {
     //   // Check if a thread already exists
     //   const existingThreadResponse = await axiosInstance.get(endpoints.threads.getAll, {
-    
+
     //   });
-  
+
     //   const existingThread = existingThreadResponse.data;
     //   console.log ("existing thread", existingThreadResponse)
 
@@ -101,7 +87,7 @@ export default function ChatHeaderCompose({ currentUserId }) {
     // } catch (error) {
     //   console.error('Error handling thread creation or retrieval:', error);
     // }
-   
+
     try {
       const recipientId = recipient.id; // Use the recipient parameter directly
       const response = await axiosInstance.post(endpoints.threads.create, {
@@ -110,17 +96,14 @@ export default function ChatHeaderCompose({ currentUserId }) {
         userIds: [currentUserId, recipientId],
       });
       console.log('Thread created:', response.data);
-      console.log("Recipient ID:", recipientId);
+      console.log('Recipient ID:', recipientId);
     } catch (error) {
       console.error('Error creating thread:', error);
     }
   };
 
- 
-
-
   if (loading) {
-    return <Typography variant="body2">Loading users...</Typography>; 
+    return <Typography variant="body2">Loading users...</Typography>;
   }
 
   // useEffect(() => {
@@ -136,7 +119,6 @@ export default function ChatHeaderCompose({ currentUserId }) {
   //   };
   // }, []);
 
-
   // const handleAddRecipients = useCallback(
   //   (selected) => {
   //     setSearchRecipients('');
@@ -144,10 +126,9 @@ export default function ChatHeaderCompose({ currentUserId }) {
   //   },
   //   [onAddRecipients]
   // );
-  
 
   if (loading) {
-    return <Typography variant="body2">Loading users...</Typography>; 
+    return <Typography variant="body2">Loading users...</Typography>;
   }
 
   return (
@@ -157,56 +138,57 @@ export default function ChatHeaderCompose({ currentUserId }) {
       </Typography> */}
 
       {(isAdmin || isSuperAdmin) && contacts.length > 0 && (
-       <Autocomplete
-       sx={{ minWidth: 320, }}
-       popupIcon={null}
-       disablePortal
-       noOptionsText={<SearchNotFound query={contacts} />}
-       onChange={handleChange}
-       options={contacts}
-       getOptionLabel={(recipient) => recipient.name}
-       renderInput={(params) => <TextField {...params} placeholder="Search recipients" />}
-       renderOption={(props, recipient, { selected }) => (
-         <li {...props} key={recipient.id}>
-           <Box
-             sx={{
-               display: 'flex',
-               alignItems: 'center',
-             }}
-           >
-             <Avatar alt={recipient.name} src={recipient.avatarUrl} sx={{ width: 32, height: 32, mr: 1 }} />
-             <div>
-               <Typography variant="body1">{recipient.name}</Typography>
-               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                 {recipient.role === 'admin' ? 'Admin' : 'Creator'}
-               </Typography>
-             </div>
-           </Box>
-         </li>
-       )}
+        <Autocomplete
+          sx={{ minWidth: 320 }}
+          popupIcon={null}
+          disablePortal
+          noOptionsText={<SearchNotFound query={contacts} />}
+          onChange={handleChange}
+          options={contacts}
+          getOptionLabel={(recipient) => recipient.name}
+          renderInput={(params) => <TextField {...params} placeholder="Search recipients" />}
+          renderOption={(props, recipient, { selected }) => (
+            <li {...props} key={recipient.id}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <Avatar
+                  alt={recipient.name}
+                  src={recipient.avatarUrl}
+                  sx={{ width: 32, height: 32, mr: 1 }}
+                />
+                <div>
+                  <Typography variant="body1">{recipient.name}</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    {recipient.role === 'admin' ? 'Admin' : 'Creator'}
+                  </Typography>
+                </div>
+              </Box>
+            </li>
+          )}
 
-      //  renderTags={(selected, getTagProps) =>
-      //    selected.map((recipient, index) => (
-      //      <Chip
-      //        {...getTagProps({ index })}
-      //        key={recipient.id}
-      //        label={recipient.name}
-      //        avatar={<Avatar alt={recipient.name} src={recipient.avatarUrl} />}
-      //        size="small"
-      //        variant="soft"
-      //      />
-      //    ))
-      //  }
-     />
-     
+          //  renderTags={(selected, getTagProps) =>
+          //    selected.map((recipient, index) => (
+          //      <Chip
+          //        {...getTagProps({ index })}
+          //        key={recipient.id}
+          //        label={recipient.name}
+          //        avatar={<Avatar alt={recipient.name} src={recipient.avatarUrl} />}
+          //        size="small"
+          //        variant="soft"
+          //      />
+          //    ))
+          //  }
+        />
       )}
     </>
-
-  
   );
 }
 
 ChatHeaderCompose.propTypes = {
- // onAddRecipients: PropTypes.func.isRequired,
- currentUserId: PropTypes.string,
+  // onAddRecipients: PropTypes.func.isRequired,
+  currentUserId: PropTypes.string,
 };

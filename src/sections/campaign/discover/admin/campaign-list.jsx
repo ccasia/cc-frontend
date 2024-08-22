@@ -19,12 +19,12 @@ export default function CampaignLists({ campaigns }) {
           md: 'repeat(3, 1fr)',
         }}
       >
-        {campaigns.map((campaign) => (
+        {campaigns?.map((campaign) => (
           <CampaignItem key={campaign.id} campaign={campaign} status={campaign?.status} />
         ))}
       </Box>
 
-      {campaigns.length > 8 && (
+      {campaigns?.length > 8 && (
         <Pagination
           count={8}
           sx={{

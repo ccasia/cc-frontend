@@ -11,7 +11,6 @@ import {
   Table,
   Paper,
   TableRow,
-  Container,
   TableHead,
   TableCell,
   TableBody,
@@ -144,152 +143,147 @@ const DashboardSuperadmin = () => {
   );
 
   return (
-    <Container maxWidth="lg">
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={3}>
-          <Box
-            component={Card}
-            p={2}
-            sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-          >
-            <Stack gap={1}>
-              <Typography variant="subtitle2">Total campaign</Typography>
-              <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h3">{campaigns?.length}</Typography>
-                <Chart
-                  dir="ltr"
-                  type="bar"
-                  series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
-                  options={chartOptions}
-                  width={60}
-                  height={36}
-                />
-              </Stack>
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={3}>
+        <Box
+          component={Card}
+          p={2}
+          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+        >
+          <Stack gap={1}>
+            <Typography variant="subtitle2">Total campaign</Typography>
+            <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="h3">{campaigns?.length}</Typography>
+              <Chart
+                dir="ltr"
+                type="bar"
+                series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
+                options={chartOptions}
+                width={60}
+                height={36}
+              />
             </Stack>
-          </Box>
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <Box
-            component={Card}
-            p={2}
-            sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-          >
-            <Stack gap={1}>
-              <Typography variant="subtitle2">Total Pitch</Typography>
-              <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h3">{campaigns?.length}</Typography>
-                <Chart
-                  dir="ltr"
-                  type="bar"
-                  series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
-                  options={chartOptions}
-                  width={60}
-                  height={36}
-                />
-              </Stack>
+          </Stack>
+        </Box>
+      </Grid>
+      <Grid item xs={12} md={3}>
+        <Box
+          component={Card}
+          p={2}
+          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+        >
+          <Stack gap={1}>
+            <Typography variant="subtitle2">Total Pitch</Typography>
+            <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="h3">{campaigns?.length}</Typography>
+              <Chart
+                dir="ltr"
+                type="bar"
+                series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
+                options={chartOptions}
+                width={60}
+                height={36}
+              />
             </Stack>
-          </Box>
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <Box
-            component={Card}
-            p={2}
-            sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-          >
-            <Stack gap={1}>
-              <Typography variant="subtitle2">Total Creator</Typography>
-              <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h3">{campaigns?.length}</Typography>
-                <Chart
-                  dir="ltr"
-                  type="bar"
-                  series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
-                  options={chartOptions}
-                  width={60}
-                  height={36}
-                />
-              </Stack>
+          </Stack>
+        </Box>
+      </Grid>
+      <Grid item xs={12} md={3}>
+        <Box
+          component={Card}
+          p={2}
+          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+        >
+          <Stack gap={1}>
+            <Typography variant="subtitle2">Total Creator</Typography>
+            <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="h3">{campaigns?.length}</Typography>
+              <Chart
+                dir="ltr"
+                type="bar"
+                series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
+                options={chartOptions}
+                width={60}
+                height={36}
+              />
             </Stack>
-          </Box>
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <Box
-            component={Card}
-            p={2}
-            sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-          >
-            <Stack gap={1}>
-              <Typography variant="subtitle2">Total Task</Typography>
-              <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h3">{campaigns?.length}</Typography>
-                <Chart
-                  dir="ltr"
-                  type="bar"
-                  series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
-                  options={chartOptions}
-                  width={60}
-                  height={36}
-                />
-              </Stack>
+          </Stack>
+        </Box>
+      </Grid>
+      <Grid item xs={12} md={3}>
+        <Box
+          component={Card}
+          p={2}
+          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+        >
+          <Stack gap={1}>
+            <Typography variant="subtitle2">Total Task</Typography>
+            <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="h3">{campaigns?.length}</Typography>
+              <Chart
+                dir="ltr"
+                type="bar"
+                series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
+                options={chartOptions}
+                width={60}
+                height={36}
+              />
             </Stack>
-          </Box>
-        </Grid>
-        <Grid item xs={12} md={7}>
-          <Box
-            component={Card}
-            p={2}
-            sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
-          >
-            <Stack gap={1}>
-              <Typography variant="subtitle2">Active Campaigns</Typography>
-              {campaigns?.length ? (
-                renderCampaignLists
-              ) : (
-                <EmptyContent title="No active campaign" />
-              )}
-            </Stack>
-          </Box>
-        </Grid>
-        <Grid item xs={12} md={5}>
-          <Box
-            component={Card}
-            p={2}
-            sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
-          >
-            <Stack spacing={1}>
-              <Typography variant="subtitle2">Tasks</Typography>
+          </Stack>
+        </Box>
+      </Grid>
+      <Grid item xs={12} md={7}>
+        <Box
+          component={Card}
+          p={2}
+          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
+        >
+          <Stack gap={1}>
+            <Typography variant="subtitle2">Active Campaigns</Typography>
+            {campaigns?.length ? renderCampaignLists : <EmptyContent title="No active campaign" />}
+          </Stack>
+        </Box>
+      </Grid>
+      <Grid item xs={12} md={5}>
+        <Box
+          component={Card}
+          p={2}
+          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
+        >
+          <Stack spacing={1}>
+            <Typography variant="subtitle2">Tasks</Typography>
 
-              <TableContainer component={Paper}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Task</TableCell>
-                      <TableCell>Campaign</TableCell>
-                      <TableCell>Due</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {taskLists.length &&
-                      taskLists?.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Typography variant="subtitle2">{item.campaignTask}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="subtitle2">{item.campaignName}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="caption" color="text.secondary">
-                              {dayjs(item.dueDate).format('ddd LL')}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+            <TableContainer component={Paper}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Task</TableCell>
+                    <TableCell>Campaign</TableCell>
+                    <TableCell>Due</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {taskLists.length &&
+                    taskLists?.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Typography variant="subtitle2">{item.campaignTask}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="subtitle2">{item.campaignName}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" color="text.secondary">
+                            {dayjs(item.dueDate).format('ddd LL')}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
-              {/* <Stack spacing={1}>
+            {/* <Stack spacing={1}>
                 {taskLists.length &&
                   taskLists?.map((item) => (
                     <Stack direction="row" justifyContent="space-between" alignItems="start">
@@ -300,11 +294,10 @@ const DashboardSuperadmin = () => {
                     </Stack>
                   ))}
               </Stack> */}
-            </Stack>
-          </Box>
-        </Grid>
+          </Stack>
+        </Box>
       </Grid>
-    </Container>
+    </Grid>
   );
 };
 

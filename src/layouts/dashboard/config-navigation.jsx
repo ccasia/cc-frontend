@@ -68,7 +68,7 @@ export function useNavData() {
         subheader: 'Management',
         items: [
           {
-            roles: ['superadmin', 'admin'],
+            roles: ['superadmin', 'CSM'],
             title: 'Admin',
             path: paths.dashboard.admins,
             icon: ICONS.user,
@@ -80,7 +80,7 @@ export function useNavData() {
             ],
           },
           {
-            roles: ['superadmin', 'admin'],
+            roles: ['superadmin', 'CSM'],
             title: 'Creator',
             path: paths.dashboard.creator.root,
             icon: <Iconify icon="solar:users-group-rounded-bold" width={25} />,
@@ -96,7 +96,7 @@ export function useNavData() {
             ],
           },
           {
-            roles: ['superadmin', 'admin'],
+            roles: ['superadmin'],
             title: 'Landing pages',
             path: paths.dashboard.landing.creator,
             icon: <Iconify icon="fluent:people-team-28-regular" width={25} />,
@@ -112,7 +112,7 @@ export function useNavData() {
             ],
           },
           {
-            roles: ['superadmin', 'admin'],
+            roles: ['superadmin'],
             title: 'Clients',
             path: paths.dashboard.company.root,
             icon: <Iconify icon="mdi:company" width={25} />,
@@ -125,15 +125,10 @@ export function useNavData() {
                 title: 'Create',
                 path: paths.dashboard.company.create,
               },
-              // {
-              //   title: 'Manage Brand',
-              //   path: paths.dashboard.company.manage,
-              //   // icon: <Iconify icon="mingcute:settings-3-fill" />,
-              // },
             ],
           },
           {
-            roles: ['superadmin', 'admin'],
+            roles: ['superadmin', 'CSM', 'Growth', 'BD'],
             title: 'Campaign',
             path: paths.dashboard.campaign.root,
             icon: <Iconify icon="material-symbols:explore-outline" width={25} />,
@@ -143,10 +138,12 @@ export function useNavData() {
                 path: paths.dashboard.campaign.view,
               },
               {
+                roles: ['superadmin', 'CSM'],
                 title: 'Create',
                 path: paths.dashboard.campaign.create,
               },
               {
+                roles: ['superadmin', 'CSM'],
                 title: 'Manage',
                 path: paths.dashboard.campaign.manage,
               },
@@ -190,16 +187,6 @@ export function useNavData() {
           },
         ],
       },
-      // {
-      //   // subheader: 'Campaigns',
-      //   items: [
-      //     {
-      //       title: 'My Campaigns',
-      //       path: paths.dashboard.campaign.creator.manage,
-      //       icon: <Iconify icon="iconamoon:discover" width={25} />,
-      //     },
-      //   ],
-      // },
     ],
     []
   );
@@ -216,7 +203,7 @@ export function useNavData() {
           {
             title: 'Invoices',
             path: paths.dashboard.finance.invoice,
-            icon: <Iconify icon="iconamoon:discover" width={25} />,
+            icon: <Iconify icon="iconamoon:invoice" width={25} />,
           },
         ],
       },
@@ -229,12 +216,13 @@ export function useNavData() {
     () =>
       // roles => "god" , "normal", "designation", "admin", "creator"
       // user?.role === 'creator' ? creatorNavigations : adminNavigations,
-
+      // eslint-disable-next-line no-nested-ternary
       user?.role === 'creator' || user?.role === 'finance'
         ? user?.role === 'finance'
           ? financeNavigations
           : creatorNavigations
         : adminNavigations,
+    // () => (user?.role === 'creator' ? creatorNavigations : adminNavigations),
 
     [adminNavigations, creatorNavigations, user]
   );

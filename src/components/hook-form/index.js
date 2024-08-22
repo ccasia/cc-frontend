@@ -1,6 +1,6 @@
 export * from './rhf-upload';
 export * from './rhf-select';
-// export * from './rhf-checkbox';
+export * from './rhf-checkbox';
 
 export { default } from './form-provider';
 export { default as RHFCode } from './rhf-code';
@@ -13,3 +13,4 @@ export { default as RHFDatePicker } from './rhf-datePicker';
 
 export { default as RHFRadioGroup } from './rhf-radio-group';
 export { default as RHFAutocomplete } from './rhf-autocomplete';
+

@@ -79,7 +79,10 @@ export const paths = {
     },
     finance:{
       root: `${ROOTS.DASHBOARD}/finance`,
-      invoice:`${ROOTS.DASHBOARD}/invoice`
+      invoice:`${ROOTS.DASHBOARD}/invoice`,
+      creatorInvoice:(id)=>`${ROOTS.DASHBOARD}/invoice/creator-list/${id}`,
+      invoiceDetail:(id)=>`${ROOTS.DASHBOARD}/invoice/detail/${id}`,
+      createInvoice :(id) => `${ROOTS.DASHBOARD}/invoice/create/${id}`,
     }
   },
 };

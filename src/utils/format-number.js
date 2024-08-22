@@ -62,3 +62,21 @@ export function fShortenNumber(inputValue) {
 
   return fm.replace(/[A-Z]/g, (match) => match.toLowerCase());
 }
+
+
+export function fCurrency(inputValue) {
+  const { code, currency } = getLocaleCode();
+
+  if (!inputValue) return '';
+
+  const number = Number(inputValue);
+
+  const fm = new Intl.NumberFormat(code, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(number);
+
+  return fm;
+}

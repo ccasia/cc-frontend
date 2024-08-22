@@ -1,9 +1,9 @@
 import * as yup from 'yup';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
+import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useState, useEffect, useCallback } from 'react';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -17,21 +17,15 @@ import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
 import {
-  Box,
-  Menu,
   Step,
   Stack,
   Dialog,
-  Select,
   Stepper,
   MenuItem,
-  TextField,
   StepLabel,
   Typography,
-  InputLabel,
   DialogTitle,
   StepContent,
-  FormControl,
   DialogContent,
   DialogActions,
 } from '@mui/material';
@@ -43,6 +37,10 @@ import { useBoolean } from 'src/hooks/use-boolean';
 // eslint-disable-next-line import/no-cycle
 
 import PropTypes from 'prop-types';
+
+import { LoadingButton } from '@mui/lab';
+
+import useGetRoles from 'src/hooks/use-get-roles';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -56,6 +54,8 @@ import { useSnackbar } from 'src/components/snackbar';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
+import FormProvider from 'src/components/hook-form/form-provider';
+import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import {
   useTable,
   emptyRows,
@@ -90,22 +90,27 @@ const TABLE_HEAD = [
 export const MODULE_ITEMS = [
   {
     name: 'Manage Creator',
+    items: ['view_creator', 'create_creator', 'edit_creator', 'delete_creator'],
     value: 'creator',
   },
   {
     name: 'Manage Campaign',
+    items: ['view_campaign', 'create_campaign', 'edit_campaign', 'delete_campaign'],
     value: 'campaign',
   },
   {
     name: 'Manage Brand',
+    items: ['view_brand', 'create_brand', 'edit_brand', 'delete_brand'],
     value: 'brand',
   },
   {
     name: 'Manage Metric',
+    items: ['view_metric', 'create_metric', 'edit_metric', 'delete_metric'],
     value: 'metric',
   },
   {
     name: 'Manage Invoice',
+    items: ['view_invoice', 'create_invoice', 'edit_invoice', 'delete_invoice'],
     value: 'invoice',
   },
 ];
@@ -120,15 +125,12 @@ const defaultFilters = {
 
 export default function UserListView({ admins }) {
   const { user } = useAuthContext();
-
   const { enqueueSnackbar } = useSnackbar();
-  const [anchorEl, setAnchorEl] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const { data: roles, isLoading } = useGetRoles();
+  const buttonLoading = useBoolean();
 
-  const handleClickOpenCreateDialog = () => {
-    setOpenCreateDialog(true);
-  };
   const handleCloseCreateDialog = () => {
     setOpenCreateDialog(false);
   };
@@ -139,16 +141,6 @@ export default function UserListView({ admins }) {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-  };
-
-  const open = Boolean(anchorEl);
-
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
   };
 
   const table = useTable();
@@ -203,7 +195,7 @@ export default function UserListView({ admins }) {
         setTableData(deleteRows);
         enqueueSnackbar('Successfully deleted admin');
       } catch (error) {
-        enqueueSnackbar('Error delete admin', { variant: 'error' });
+        enqueueSnackbar(error?.message, { variant: 'error' });
       }
     },
     [enqueueSnackbar, tableData]
@@ -247,195 +239,239 @@ export default function UserListView({ admins }) {
   };
 
   const schema = yup.object().shape({
-    email: yup.string().email().required(),
-    permission: yup.array().of(
-      yup.object().shape({
-        module: yup.string().required(),
-        permissions: yup.array().required(),
-      })
-    ),
+    email: yup.string().email().required('Email is required'),
+    role: yup.string().required('Role is required'),
+    // permission: yup.array().of(
+    //   yup.object().shape({
+    //     module: yup.string().required(),
+    //     permissions: yup.array().required(),
+    //   })
+    // ),
   });
 
-  const {
-    control,
-    handleSubmit,
-
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      permission: [
-        {
-          module: '',
-          permissions: [],
-        },
-      ],
-    },
+  const methods = useForm({
     resolver: yupResolver(schema),
+    defaultValues: {
+      role: '',
+      email: '',
+      // permission: [
+      //   {
+      //     module: '',
+      //     permissions: [],
+      //   },
+      // ],
+    },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'permission',
-  });
+  const { handleSubmit, watch } = methods;
 
-  const onSubmit = async (data) => {
+  const r = watch('role');
+
+  // const { fields, append, remove } = useFieldArray({
+  //   control,
+  //   name: 'permission',
+  // });
+
+  const onSubmit = handleSubmit(async (data) => {
     try {
+      buttonLoading.onTrue();
       await axiosInstance.post(endpoints.users.newAdmin, data);
       enqueueSnackbar('Link has been sent to admin!');
       handleCloseDialog();
-      handleClose();
     } catch (error) {
       enqueueSnackbar(error.message, { variant: 'error' });
+    } finally {
+      buttonLoading.onFalse();
     }
-  };
+  });
 
   const inviteAdminDialog = (
-    <Dialog
-      open={openDialog}
-      onClose={handleCloseDialog}
-      fullWidth
-      PaperProps={{
-        component: 'form',
-        onSubmit: handleSubmit(onSubmit),
-      }}
-    >
-      <DialogTitle>Invite Admin</DialogTitle>
+    <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <DialogTitle>Invite Admin</DialogTitle>
+        <DialogContent>
+          <Stepper activeStep={activeStep} orientation="vertical">
+            <Step>
+              <StepLabel>Role</StepLabel>
+              <StepContent>
+                <RHFSelect name="role" label="Role">
+                  {!isLoading &&
+                    roles.map((role) => <MenuItem value={role.id}>{role.name}</MenuItem>)}
+                </RHFSelect>
 
-      <DialogContent>
-        {/* <DialogContentText>Please enter the email you wish to use the system.</DialogContentText> */}
-        <Stepper activeStep={activeStep} orientation="vertical">
-          <Step>
+                <Stack spacing={0.5} mt={1}>
+                  {!isLoading &&
+                    r &&
+                    roles
+                      .find((item) => item.id === r)
+                      ?.permissions.map((permission) => (
+                        <Typography variant="caption" color="text.secondary">
+                          [{permission.name}] {'=>'} {permission.descriptions}
+                        </Typography>
+                      ))}
+                </Stack>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNext}
+                  sx={{
+                    my: 2,
+                  }}
+                >
+                  Next
+                </Button>
+              </StepContent>
+            </Step>
+            {/* <Step>
             <StepLabel>Permission</StepLabel>
             <StepContent>
-              {fields.map((elem, index) => (
-                <Box key={index} display="flex" gap={2} my={2} alignItems="center">
-                  <Controller
-                    name={`permission.${index}.module`}
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl
-                        fullWidth
-                        error={
-                          errors.permission &&
-                          errors.permission[index] &&
-                          errors.permission[index].module
-                        }
-                      >
-                        <InputLabel id="module">Module</InputLabel>
-                        <Select labelId="module" label="Module" {...field}>
-                          {MODULE_ITEMS.map((item, a) => (
-                            <MenuItem value={item.value} key={a}>
-                              {item.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    )}
-                  />
-
-                  <Controller
-                    name={`permission.${index}.permissions`}
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl
-                        fullWidth
-                        error={
-                          errors.permission &&
-                          errors.permission[index] &&
-                          errors.permission[index].permissions
-                        }
-                      >
-                        <InputLabel id="permission">Permission</InputLabel>
-                        <Select
-                          labelId="permission"
-                          label="Permission"
-                          {...field}
-                          required
-                          multiple
+              {fields.map((elem, index) => {
+                const module = watch(`permission.${[index]}.module`);
+                return (
+                  <Box key={elem.id} display="flex" gap={2} my={2} alignItems="center">
+                    <Controller
+                      name={`permission.${index}.module`}
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl
+                          fullWidth
+                          error={
+                            errors.permission &&
+                            errors.permission[index] &&
+                            errors.permission[index].module
+                          }
                         >
-                          <MenuItem value="create">Create</MenuItem>
-                          <MenuItem value="read">Read</MenuItem>
-                          <MenuItem value="update">Update</MenuItem>
-                          <MenuItem value="delete">Delete</MenuItem>
-                        </Select>
-                      </FormControl>
-                    )}
-                  />
-                  <IconButton color="error" onClick={() => remove(index)}>
-                    <Iconify icon="mdi:trash" />
-                  </IconButton>
-                </Box>
-              ))}
+                          <InputLabel id="module">Module</InputLabel>
+                          <Select labelId="module" label="Module" {...field}>
+                            {MODULE_ITEMS.map((item, a) => (
+                              <MenuItem value={item.value} key={a}>
+                                {item.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )}
+                    />
+
+                    <Controller
+                      name={`permission.${index}.permissions`}
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl
+                          fullWidth
+                          error={
+                            errors.permission &&
+                            errors.permission[index] &&
+                            errors.permission[index].permissions
+                          }
+                        >
+                          <InputLabel id="permission">Permission</InputLabel>
+                          <Select
+                            labelId="permission"
+                            label="Permission"
+                            {...field}
+                            required
+                            multiple
+                          >
+                            {MODULE_ITEMS.find((item) => item.value === module)?.items.map(
+                              (val, i) => (
+                                <MenuItem key={i} value={val}>
+                                  {val}
+                                </MenuItem>
+                              )
+                            )}
+                          </Select>
+                        </FormControl>
+                      )}
+                    />
+                    <IconButton color="error" onClick={() => remove(index)}>
+                      <Iconify icon="mdi:trash" />
+                    </IconButton>
+                  </Box>
+                );
+              })}
 
               {fields.length < 5 && (
                 <Button
                   fullWidth
                   variant="outlined"
-                  // onClick={() => permissionLength < 5 && setPermissionLength((prev) => prev + 1)}
                   onClick={() => append({ module: '', permissions: [] })}
                   sx={{
                     my: 2,
                   }}
                 >
-                  +
+                  + Add New Role
                 </Button>
               )}
-              <Button
-                variant="contained"
-                color="primary"
-                // onClick={() => permissionLength < 5 && setPermissionLength((prev) => prev + 1)}
-                onClick={handleNext}
-                sx={{
-                  my: 2,
-                }}
-              >
-                Next
-              </Button>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="outlined"
+                  onClick={handleBack}
+                  sx={{
+                    my: 2,
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNext}
+                  sx={{
+                    my: 2,
+                  }}
+                >
+                  Next
+                </Button>
+              </Stack>
             </StepContent>
-          </Step>
-          <Step>
-            <StepLabel>Email</StepLabel>
-            <StepContent>
-              <Controller
-                name="email"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    margin="dense"
-                    label="Email Address"
-                    type="email"
-                    fullWidth
-                    variant="outlined"
-                    error={errors.email}
-                  />
-                )}
-              />
-              <Button
-                variant="outlined"
-                color="warning"
-                onClick={handleBack}
-                sx={{
-                  my: 2,
-                }}
-              >
-                Back
-              </Button>
-            </StepContent>
-          </Step>
-        </Stepper>
-      </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={() => {
-            handleCloseDialog();
-            handleClose();
-          }}
-        >
-          Cancel
-        </Button>
-        <Button type="submit">Invite</Button>
-      </DialogActions>
+          </Step> */}
+            <Step>
+              <StepLabel>Email</StepLabel>
+              <StepContent>
+                <RHFTextField name="email" type="email" label="Email" />
+                {/* <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      margin="dense"
+                      label="Email Address"
+                      type="email"
+                      fullWidth
+                      variant="outlined"
+                      error={errors.email}
+                    />
+                  )}
+                /> */}
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  onClick={handleBack}
+                  sx={{
+                    my: 2,
+                  }}
+                >
+                  Back
+                </Button>
+              </StepContent>
+            </Step>
+          </Stepper>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              handleCloseDialog();
+            }}
+          >
+            Cancel
+          </Button>
+          <LoadingButton type="submit" loading={buttonLoading.value}>
+            Invite
+          </LoadingButton>
+        </DialogActions>
+      </FormProvider>
     </Dialog>
   );
 
@@ -454,50 +490,14 @@ export default function UserListView({ admins }) {
             { name: 'List' },
           ]}
           action={
-            <>
-              <IconButton
-                sx={{
-                  bgcolor: 'whitesmoke',
-                }}
-                onClick={handleClick}
-              >
-                <Iconify icon="mingcute:add-line" />
-              </IconButton>
-              <Menu
-                id="basic-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                MenuListProps={{
-                  'aria-labelledby': 'basic-button',
-                }}
-                anchorOrigin={{
-                  vertical: 'center',
-                  horizontal: 'left',
-                }}
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-              >
-                <MenuItem
-                  onClick={() => {
-                    handleClickOpenDialog();
-                  }}
-                >
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Iconify icon="mdi:invite" />
-                    <Typography variant="button">Invite admin</Typography>
-                  </Stack>
-                </MenuItem>
-                <MenuItem onClick={handleClickOpenCreateDialog}>
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Iconify icon="material-symbols:add" />
-                    <Typography variant="button">Create admin</Typography>
-                  </Stack>
-                </MenuItem>
-              </Menu>
-            </>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleClickOpenDialog}
+              startIcon={<Iconify icon="mdi:invite" width={18} />}
+            >
+              Invite admin
+            </Button>
           }
           sx={{
             mb: { xs: 3, md: 5 },

@@ -128,9 +128,11 @@ export const endpoints = {
     getDefaultTimeline: '/api/campaign/defaultTimeline',
     getTimelineType: '/api/campaign/timelineType',
     getAllActiveCampaign: '/api/campaign/getAllActiveCampaign',
+    getAllCampaigns: '/api/campaign/getAllCampaignsFinance',
     getMatchedCampaign: '/api/campaign/matchCampaignWithCreator',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
+    getCampaignPitchById: (id) => `/api/campaign/getClientByCampID/${id}`,
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
@@ -187,5 +189,14 @@ export const endpoints = {
     root: '/api/notification',
     read: '/api/notification/markRead',
     archive: '/api/notification/archiveAll',
+  },
+  roles: {
+    root: '/api/role',
+  },
+  invoice: {
+    getCampaignById:(id) => `/api/campaign/getCampaignByIdInvoice/${id}`,
+    create: '/api/invoice/create', 
+    getInvoicesByCampaignId: (id) => `/api/invoice/getInvoicesByCampaignId/${id}`,
+    getInvoiceById: (id) => `/api/invoice/${id}`,
   },
 };
