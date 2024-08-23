@@ -5,7 +5,6 @@ import { mutate } from 'swr';
 import { useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
-//  import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
@@ -49,8 +48,6 @@ export default function ChatHeaderCompose({ currentUserId }) {
     fetchUsers();
   }, [currentUserId]);
 
-  console.log("CUrrent user", currentUserId)
-
   const handleChange = (_event, newValue) => {
     console.log('newValue:', newValue);
     setSelectedContact(newValue);
@@ -74,7 +71,7 @@ export default function ChatHeaderCompose({ currentUserId }) {
     });
   
     if (existingThread) {
-      console.log('Thread already exists:', existingThread);
+      //  console.log('Thread already exists:', existingThread);
       navigate(`/dashboard/chat/thread/${existingThread.id}`);
     } else {
       const response = await axiosInstance.post(endpoints.threads.create, {
@@ -126,11 +123,11 @@ export default function ChatHeaderCompose({ currentUserId }) {
                alignItems: 'center',
              }}
            >
-             <Avatar alt={recipient.name} src={recipient.avatarUrl} sx={{ width: 32, height: 32, mr: 1 }} />
+             <Avatar alt={recipient.name} src={recipient.photoURL} sx={{ width: 32, height: 32, mr: 1 }} />
              <div>
                <Typography variant="body1">{recipient.name}</Typography>
                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                 {recipient.role === 'admin' ? 'Admin' : 'Creator'}
+                 {recipient.email}
                </Typography>
              </div>
            </Box>

@@ -1,77 +1,67 @@
 /* eslint-disable */ 
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { useCallback } from 'react';
-import { formatDistanceToNowStrict } from 'date-fns';
 
-import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
-import AvatarGroup from '@mui/material/AvatarGroup';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 import { Icon } from '@iconify/react';
-import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
-import ListItemIcon from '@mui/material/ListItemIcon'; 
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Iconify from 'src/components/iconify';
 
-
-// import { paths } from 'src/routes/paths';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useGetAllThreads, archiveThread, unarchiveThread, useGetUnreadMessageCount } from 'src/api/chat';
+import { useGetThreadById, archiveThread, unarchiveThread, useGetUnreadMessageCount } from 'src/api/chat';
 import { useResponsive } from 'src/hooks/use-responsive';
-
-// import { useMockedUser } from 'src/hooks/use-mocked-user';
 import { useAuthContext } from 'src/auth/hooks';
-// import { clickConversation } from 'src/api/chat';
+
 
 
 // ----------------------------------------------------------------------
 
-export default function ChatNavItem({ photoURL, onArchive, selected, collapse, thread, onCloseMobile }) {
+export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
   const { user } = useAuthContext();
   const [anchorEl, setAnchorEl] = useState(null);
   const mdUp = useResponsive('up', 'md');
 
   const router = useRouter();
-  const { unreadCount, loading: unreadLoading, error: unreadError } = useGetUnreadMessageCount(thread.id);
+  const { unreadCount, loading: unreadLoading} = useGetUnreadMessageCount(thread.id);
   const [otherUser, setOtherUser] = useState(null);
+  const [userThreadData, setUserThreadData] = useState(null);
+  const { thread: threadData } = useGetThreadById(thread.id);
 
+  // global thread
   // useEffect(() => {
   //   if (!thread.isGroup && thread.UserThread) {
-  //     // Find the user that is not the current user
-  //     const otherUserInfo = thread.UserThread.find(userThread => userThread.userId !== user.id)?.user;
+  //     const otherUserInfo = thread.UserThread.find(userThread => userThread.user.id !== user.id)?.user;
   //     setOtherUser(otherUserInfo);
-  //     console.log("user info", otherUserInfo)
   //   }
   // }, [thread, user]);
 
   useEffect(() => {
-    if (!thread.isGroup && thread.UserThread) {
-      // Find the user that is not the current user
-      const otherUserInfo = thread.UserThread.find(userThread => userThread.user.id !== user.id)?.user;
+    if (threadData && !threadData.isGroup && threadData.UserThread) {
+      const otherUserInfo = threadData.UserThread.find(userThread => userThread.user.id !== user.id)?.user;
       setOtherUser(otherUserInfo);
-      console.log("user info", otherUserInfo)
     }
-  }, [thread, user]);
+  }, [threadData, user]);
 
-  //  const isGroupChat = thread.isGroup;
-  // const avatarURL = thread.photoURL
+  useEffect(() => {
+    if (threadData) {
+      const userThread = threadData.UserThread.find(ut => ut.userId === user.id);
+      setUserThreadData(userThread);
+    }
+   
+  }, [threadData, user]);
 
   const avatarURL = thread.isGroup ? thread.photoURL : otherUser?.photoURL;
   const title = thread.isGroup ? thread.title : otherUser?.name;
 
-  //  const { threads, loading: threadsLoading, error: threadsError } = useGetAllThreads();
-
-  // if (threadsLoading) return <div>Loading threads...</div>;
-  // if (threadsError) return <div>Error loading threads: {threadsError.message}</div>;
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget); // Set anchor element to ellipses IconButton
@@ -81,40 +71,37 @@ export default function ChatNavItem({ photoURL, onArchive, selected, collapse, t
     setAnchorEl(null); // Close the menu
   };
 
-  
+  // global thread archive
+  // const handleArchiveClick = async () => {
+  //   try {
+  //     if (thread.archived) {
+  //       await unarchiveThread(thread.id); 
+  //       console.log('unarchviing')
+  //     } else {
+  //       console.log('archiving thread...');
+  //       await archiveThread(thread.id);
+  //     }
+  //     onArchive(thread.id);
+  //     handleMenuClose();
+  //   } catch (error) {
+  //     console.error('Error archiving/unarchiving thread:', error);
+  //   }
+  // };
+
   const handleArchiveClick = async () => {
     try {
-      if (thread.archived) {
-        await unarchiveThread(thread.id); 
+      if (userThreadData.archived) {
+        await unarchiveThread(threadData.id);
       } else {
-        await archiveThread(thread.id);
+        console.log('Data', threadData )
+        await archiveThread(threadData.id);
       }
-      onArchive(thread.id);
+      onArchive(threadData.id);
       handleMenuClose();
     } catch (error) {
       console.error('Error archiving/unarchiving thread:', error);
     }
   };
-
-
-  // const handleClickThread = useCallback(async () => {
-  //   try {
-  //     if (!mdUp) {
-  //       onCloseMobile();
-  //     }
-
-  //     const threadPath = paths.dashboard.chat.thread(thread.id);
-  //     router.push(threadPath);
-
-  //     // await clickThread(thread.id);
-      
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // }, [thread.id, mdUp, onCloseMobile, router]);
-
-
- 
 
   // use this to show the reciever images and details
   const renderSingle = (
@@ -207,10 +194,9 @@ export default function ChatNavItem({ photoURL, onArchive, selected, collapse, t
       }}
           >
             <MenuItem onClick={handleArchiveClick}>
-            <ListItemText> {thread.archived ? 'Unarchive' : 'Archive'} </ListItemText>
             <Iconify width={16} icon="material-symbols:archive-outline" />
+            <ListItemText> {userThreadData?.archived ? 'Unarchive' : 'Archive'} </ListItemText>
             </MenuItem>
-
             {/* <MenuItem>
             <ListItemText> Mute </ListItemText>
             {/* <ListItemIcon style={{ justifyContent: 'flex-end' }}> */}

@@ -49,10 +49,6 @@ export default function ChatNav({}) {
   const handleClick = () => {
     onSelectThread(threads.id);
   };
-
-  const handleArchiveClick = () => {
-    onArchive(threads.id); 
-  };
   
   const {
     collapseDesktop,
@@ -64,10 +60,6 @@ export default function ChatNav({}) {
     onCloseMobile,
   } = useCollapseNav();
 
-  // const [searchContacts, setSearchContacts] = useState({
-  //   query: '',
-  //   results: [],
-  // });
 
   useEffect(() => {
     if (!mdUp) {
@@ -131,17 +123,9 @@ export default function ChatNav({}) {
     </IconButton>
   );
 
-  // const renderSkeleton = (
-  //   <>
-  //     {[...Array(12)].map((_, index) => (
-  //       <ChatNavItemSkeleton key={index} />
-  //     ))}
-  //   </>
-  // );
-
   const renderList = (
     <>
-       {(!threads || threads.length === 0) && (
+       {/* {(!threads || threads.length === 0) && (
       <Typography variant="body2" color="textSecondary">
         No chat groups available
       </Typography>
@@ -159,7 +143,36 @@ export default function ChatNav({}) {
         onClick={handleClick}
         onArchive={handleArchive}
       />
-    )))}
+    )))
+    } */}
+     {(!threads || threads.length === 0) && (
+      <Typography variant="body2" color="textSecondary">
+        No chat groups available
+      </Typography>
+    )}
+    {threads && threads.map((thread) => {
+      const userThread = thread.UserThread.find((ut) => ut.userId === user.id);
+
+      if (!userThread) return null; // Skip if there's no UserThread entry for the user
+
+      const isArchived = userThread.archived;
+
+      if ((showArchived && isArchived) || (!showArchived && !isArchived)) {
+        return (
+          <ChatNavItem
+            key={thread.id}
+            collapse={collapseDesktop}
+            thread={thread}
+            selected={thread.id === selectedThreadId}
+            onCloseMobile={onCloseMobile}
+            onClick={() => handleClick(thread.id)}
+            onArchive={() => handleArchive(thread.id)}
+          />
+        );
+      }
+
+      return null; // Skip threads that don't match the current archive filter
+    })}
     </>
   );
 
