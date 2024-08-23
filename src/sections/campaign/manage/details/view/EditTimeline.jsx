@@ -145,13 +145,13 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
     remove(index);
   };
 
-  const handleChange = (e, index) => {
-    setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    if (index !== fields?.length - 1) {
-      setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
-    }
-  };
+  // const handleChange = (e, index) => {
+  //   setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
+  //   // eslint-disable-next-line no-unsafe-optional-chaining
+  //   if (index !== fields?.length - 1) {
+  //     setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
+  //   }
+  // };
 
   const closeDialog = () => onClose('timeline');
 
@@ -189,7 +189,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle id="alert-dialog-title">Edit Timeline</DialogTitle>
         <DialogContent>
-          <Box sx={{ overflow: 'auto', maxHeight: '80vh', pt: 5 }}>
+          <Box my={3}>
             <Stack gap={1}>
               <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
                 <RHFDatePicker name="campaignStartDate" label="Campaign Start Date" />
@@ -220,10 +220,13 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
               }}
             />
 
+            {/* Droppable container */}
             <Box
               display="grid"
               gridTemplateColumns={{ xs: 'repeat(1,fr)', md: 'repeat(1, 1fr)' }}
               gap={1}
+              // maxHeight={600}
+              // overflow="hidden"
             >
               <Stack direction="row" justifyContent="space-between">
                 <Typography sx={{ textAlign: 'start', mb: 2 }} variant="h6">
@@ -233,78 +236,11 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
                   Total days: {dayjs(endDate).diff(dayjs(startDate), 'day') || 0}
                 </Typography>
               </Stack>
-              {/* {fields.map((item, index) => (
-                <Box key={item.id}>
-                  <Stack direction="row" alignItems="center" gap={1}>
-                    <Avatar
-                      sx={{
-                        width: 14,
-                        height: 14,
-                        fontSize: 10,
-                        bgcolor: (theme) => theme.palette.success.main,
-                      }}
-                    >
-                      {index + 1}
-                    </Avatar>
-                    <Stack
-                      direction={{ xs: 'column', md: 'row' }}
-                      gap={1}
-                      alignItems="center"
-                      flexGrow={1}
-                    >
-                      <RHFTextField
-                        name={`timeline[${index}].timeline_type.name`}
-                        onChange={(e, val) => handleChange(e, index)}
-                        label="Timeline Type"
-                        placeholder="Eg: Open For Pitch"
-                      />
-                      <RHFTextField
-                        disabled
-                        name={`timeline[${index}].dependsOn`}
-                        label="Depends On"
-                      />
 
-                      <RHFSelect name={`timeline[${index}].for`} label="For">
-                        <MenuItem value="admin">Admin</MenuItem>
-                        <MenuItem value="creator">Creator</MenuItem>
-                      </RHFSelect>
-                      <RHFTextField
-                        name={`timeline[${index}].duration`}
-                        type="number"
-                        label="Duration"
-                        placeholder="Eg: 2"
-                        InputProps={{
-                          endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                        }}
-                        onChange={(e) => handleDurationChange(index, e.target.value)}
-                      />
-
-                      <RHFTextField name={`timeline[${index}].endDate`} label="End Date" disabled />
-                      <IconButton color="error" onClick={() => handleRemove(index, item)}>
-                        <Iconify icon="uil:trash" />
-                      </IconButton>
-                    </Stack>
-                  </Stack>
-                  <Stack direction="row" alignItems="center" mt={2} gap={1}>
-                    <Tooltip
-                      title={`Add a new row under ${existingTimeline[index]?.timeline_type?.name}`}
-                    >
-                      <IconButton
-                        onClick={() => {
-                          handleAdd(index);
-                        }}
-                      >
-                        <Iconify icon="carbon:add-filled" />
-                      </IconButton>
-                    </Tooltip>
-                    <Divider sx={{ borderStyle: 'dashed', flexGrow: 1 }} />
-                  </Stack>
-                </Box>
-              ))} */}
               <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId="chraraters">
                   {(value) => (
-                    <Box {...value.droppableProps} ref={value.innerRef}>
+                    <Box {...value.droppableProps} ref={value.innerRef} overflow="auto">
                       <Stack gap={3}>
                         {fields.map((item, index) => (
                           <Draggable key={item.id} draggableId={item.id} index={index}>
@@ -334,13 +270,6 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
                                     alignItems="center"
                                     flexGrow={1}
                                   >
-                                    {/* <RHFTextField
-                                      name={`timeline[${index}].timeline_type.name`}
-                                      onChange={(e, val) => handleChange(e, index)}
-                                      label="Timeline Type"
-                                      placeholder="Eg: Open For Pitch"
-                                    /> */}
-
                                     {!timelineLoading && (
                                       <RHFAutocomplete
                                         disabled={!!existingTimeline[index]?.timeline_type?.name}
@@ -433,6 +362,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
                   )}
                 </Droppable>
               </DragDropContext>
+
               <Button
                 variant="contained"
                 onClick={() =>

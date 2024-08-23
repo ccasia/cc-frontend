@@ -27,7 +27,7 @@ import UserCard from './user-card';
 import MediaKitModal from '../media-kit-modal';
 import CampaignDetailPitchContent from './campaign-detail-pitch-content';
 
-const CampaignDetailPitch = ({ pitches, shortlisted, timeline, timelines }) => {
+const CampaignDetailPitch = ({ pitches, timelines }) => {
   const smUp = useResponsive('up', 'sm');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [search, setSearch] = useState();
@@ -69,88 +69,8 @@ const CampaignDetailPitch = ({ pitches, shortlisted, timeline, timelines }) => {
     </Drawer>
   );
 
-  // const renderOverview = (
-  //   <Tabs
-  //     variant="fullWidth"
-  //     value={currentTab}
-  //     onChange={(e, val) => setCurrentTab(val)}
-  //     sx={{ mb: 2 }}
-  //   >
-  //     <Tab
-  //       value="undecided"
-  //       label="Undecided"
-  //       iconPosition="end"
-  //       icon={
-  //         <Label variant="filled">
-  //           {pitches?.filter((item) => item.status === 'undecided').length}
-  //         </Label>
-  //       }
-  //     />
-  //     <Tab
-  //       value="approved"
-  //       label="Approved"
-  //       iconPosition="end"
-  //       icon={
-  //         <Label variant="filled">
-  //           {pitches?.filter((item) => item.status === 'approved').length}
-  //         </Label>
-  //       }
-  //     />
-  //     <Tab
-  //       value="filtered"
-  //       label="Filtered"
-  //       iconPosition="end"
-  //       icon={
-  //         <Label variant="filled">
-  //           {pitches?.filter((item) => item.status === 'filtered').length}
-  //         </Label>
-  //       }
-  //     />
-  //     <Tab
-  //       value="rejected"
-  //       label="Rejected"
-  //       iconPosition="end"
-  //       icon={
-  //         <Label variant="filled">
-  //           {pitches?.filter((item) => item.status === 'rejected').length}
-  //         </Label>
-  //       }
-  //     />
-  //   </Tabs>
-  // );
-
   return pitches?.length > 0 ? (
     <>
-      {/* <Box
-        sx={{
-          bgcolor: alpha(theme.palette.warning.light, 0.8),
-          borderRadius: 1,
-          p: 1,
-          color: theme.palette.text.primary,
-          mb: 2,
-        }}
-      >
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Iconify icon="fluent:warning-24-filled" />
-          <Stack direction="row" gap={2} alignItems="center">
-            <Typography variant="caption" fontWeight={700}>
-              Submission Timelime
-            </Typography>
-            <Stack direction="row" alignItems="center" gap={1}>
-              <Iconify icon="mdi:calendar" />
-              <Typography variant="caption" fontWeight={700}>
-                {dayjs(timeline.startDate).format('ddd LL')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" alignItems="center" gap={1}>
-              <Iconify icon="mdi:calendar" />
-              <Typography variant="caption" fontWeight={700}>
-                {dayjs(timeline.endDate).format('ddd LL')}
-              </Typography>
-            </Stack>
-          </Stack>
-        </Stack>
-      </Box> */}
       <Box
         sx={{
           display: 'flex',
@@ -185,13 +105,16 @@ const CampaignDetailPitch = ({ pitches, shortlisted, timeline, timelines }) => {
             sm={4}
             sx={{
               maxHeight: 490,
-              overflow: 'scroll',
+              overflow: 'auto',
+              scrollbarWidth: 'thin',
+              scrollSnapType: 'y mandatory',
+              mt: 2,
             }}
           >
             {notfound ? (
               <EmptyContent title="Not found" />
             ) : (
-              <Stack gap={2} gridColumn={1} overflow="scroll">
+              <Stack gap={2}>
                 {filteredPitches?.map((pitch) => (
                   <Box
                     key={pitch?.id}
@@ -200,6 +123,9 @@ const CampaignDetailPitch = ({ pitches, shortlisted, timeline, timelines }) => {
                         ? setSelectedPitch(pitch)
                         : router.push(paths.dashboard.campaign.pitch(pitch?.campaignId, pitch?.id))
                     }
+                    sx={{
+                      scrollSnapAlign: 'start',
+                    }}
                   >
                     <UserCard creator={pitch} selectedPitch={selectedPitch} />
                     <MediaKitModal
@@ -211,28 +137,6 @@ const CampaignDetailPitch = ({ pitches, shortlisted, timeline, timelines }) => {
                 ))}
               </Stack>
             )}
-            {/* <Dialog open={open} onClose={handleClose}>
-              <DialogTitle>Pitch Content</DialogTitle>
-              <DialogContent>
-                <Markdown children={selectedPitch?.content} />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleClose}>Close</Button>
-                <Button
-                  onClick={() => {
-                    approve({
-                      campaignId: selectedPitch?.campaignId,
-                      creatorId: selectedPitch?.userId,
-                      pitchId: selectedPitch?.id,
-                    });
-                    handleClose();
-                  }}
-                  color="success"
-                >
-                  Approve
-                </Button>
-              </DialogActions>
-            </Dialog> */}
           </Grid>
         )}
         {!smUp && (
@@ -308,8 +212,7 @@ export default CampaignDetailPitch;
 
 CampaignDetailPitch.propTypes = {
   pitches: PropTypes.array,
-  shortlisted: PropTypes.array,
-  timeline: PropTypes.object,
+
   timelines: PropTypes.array,
 };
 

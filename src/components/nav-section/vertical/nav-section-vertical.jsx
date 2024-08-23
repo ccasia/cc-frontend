@@ -41,12 +41,9 @@ function Group({ subheader, items, slotProps, whoCanSee }) {
     setOpen((prev) => !prev);
   }, []);
 
-  const renderContent =
-    // whoCanSee &&
-    // (Array.from(whoCanSee).includes(user?.role) ||
-    //   Array.from(whoCanSee).includes(user?.admin?.designation) ||
-    //   Array.from(whoCanSee).includes(user?.admin?.mode)) &&
-    items?.map((list) => <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />);
+  const renderContent = items?.map((list) => (
+    <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />
+  ));
 
   return (
     <Stack sx={{ px: 2 }}>

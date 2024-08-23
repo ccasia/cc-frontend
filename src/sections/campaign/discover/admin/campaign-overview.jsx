@@ -42,7 +42,7 @@ const CampaignOverview = ({ campaign }) => {
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <Stack gap={1}>
               <Typography variant="subtitle2">Shortlisted Creator</Typography>
-              <Typography variant="h4">{campaign?.shortlistCreator?.length}</Typography>
+              <Typography variant="h4">{campaign?.shortlisted?.length}</Typography>
             </Stack>
             <Box>
               <SparkLineChart
@@ -100,12 +100,13 @@ const CampaignOverview = ({ campaign }) => {
         <Box component={Card} p={3}>
           <Stack gap={2}>
             <Typography variant="subtitle2">Shortlisted Creators</Typography>
-            {campaign?.shortlistCreator?.length ? (
-              campaign?.shortlistCreator.map((item, index) => (
+
+            {campaign?.shortlisted?.length ? (
+              campaign?.shortlisted.map((item, index) => (
                 <Stack key={item.id} direction="row" alignItems="center" spacing={2}>
                   <Label>{index + 1}</Label>
-                  <Avatar src={item.creator.photoURL} />
-                  <Typography variant="subtitle2">{item.creator.name}</Typography>
+                  <Avatar src={item.user.photoURL} />
+                  <Typography variant="subtitle2">{item.user.name}</Typography>
                 </Stack>
               ))
             ) : (

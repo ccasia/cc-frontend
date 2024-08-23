@@ -15,7 +15,6 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-
 //  const socket = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
 
 export default function ChatMessageInput({
@@ -25,70 +24,105 @@ export default function ChatMessageInput({
   //  const router = useRouter();
 
   const { socket } = useSocketContext();
- 
+
   const [message, setMessage] = useState('');
 
-  
+  const handleSendMessage = useCallback(
+    (event) => {
+      if (event.type === 'click' && message.trim() !== '') {
+        console.log('message sent', message);
+        onSendMessage(message);
+        setMessage('');
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [message, onSendMessage]
+  );
 
-
-  const handleSendMessage = useCallback((event) => {
-    if (event.key === 'Enter' && message.trim() !== '') {
-      onSendMessage(message);
-      setMessage('');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [message]);
-
-  
-  
- // Handle message input change
+  // Handle message input change
   const handleChangeMessage = useCallback((event) => {
-  setMessage(event.target.value);
-}, []);
+    setMessage(event.target.value);
+  }, []);
 
   // Listen for incoming messages
   useEffect(() => {
-  const handleIncomingMessage = (data) => {
-  };
+    const handleIncomingMessage = (data) => {};
 
-  socket?.on('message', handleIncomingMessage);
-  return () => {
-    socket?.off('message', handleIncomingMessage);
-  };
-}, [socket]);
+    socket?.on('message', handleIncomingMessage);
+    return () => {
+      socket?.off('message', handleIncomingMessage);
+    };
+  }, [socket]);
+
+  // const handleChangeMessage = useCallback((event) => {
+  //   setMessage(event.target.value);
+  // }, []);
 
   return (
-    <InputBase
-        value={message}
-        onKeyUp={handleSendMessage}
-        onChange={handleChangeMessage}
-        placeholder="Type a message"
-        disabled={disabled}
-        startAdornment={
-          <IconButton>
-            <Iconify icon="eva:smiling-face-fill" />
-          </IconButton>
-        }
-        endAdornment={
-          <Stack direction="row" sx={{ flexShrink: 0 }}>
-            {/* <IconButton onClick={handleAttach}>
-              <Iconify icon="solar:gallery-add-bold" />
-            </IconButton>
-            <IconButton onClick={handleAttach}>
-              <Iconify icon="eva:attach-2-fill" />
-            </IconButton> */}
-            {/* <IconButton>
-              <Iconify icon="solar:microphone-bold" />
-            </IconButton> */}
-          </Stack>
-        }
+    <>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="normal"
+        overflow="hidden"
         sx={{
-          px: 1,
-          height: 56,
-          flexShrink: 0,
           borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
+          px: 1,
+          minHeight: 56,
+          // height: 56,
+          maxHeight: 100,
         }}
-      />
+      >
+        <IconButton sx={{ alignSelf: 'center' }}>
+          <Iconify icon="eva:smiling-face-fill" />
+        </IconButton>
+        <InputBase
+          multiline
+          value={message}
+          onKeyUp={handleSendMessage}
+          onChange={handleChangeMessage}
+          placeholder="Type a message"
+          disabled={disabled}
+          // startAdornment={
+          //   <IconButton>
+          //     <Iconify icon="eva:smiling-face-fill" />
+          //   </IconButton>
+          // }
+          // endAdornment={
+          //   <Stack direction="row" sx={{ flexShrink: 0 }}>
+          //     {/* <IconButton onClick={handleAttach}>
+          //     <Iconify icon="solar:gallery-add-bold" />
+          //   </IconButton>
+          //   <IconButton onClick={handleAttach}>
+          //     <Iconify icon="eva:attach-2-fill" />
+          //   </IconButton> */}
+          //     {/* <IconButton>
+          //     <Iconify icon="solar:microphone-bold" />
+          //   </IconButton> */}
+
+          //     <IconButton onClick={handleSendMessage}>
+          //       <Iconify icon="tabler:send" width={18} />
+          //     </IconButton>
+          //   </Stack>
+          // }
+          sx={{
+            // height: 56,
+            maxHeight: 100,
+            // flexShrink: 0,
+            // borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
+            flexGrow: 1,
+            overflow: 'auto',
+          }}
+        />
+
+        <IconButton onClick={handleSendMessage} sx={{ alignSelf: 'center' }}>
+          <Iconify icon="tabler:send" width={18} />
+        </IconButton>
+      </Stack>
+
+      {/* <Button onclick={socketMessage}>Send </Button> */}
+      <input type="file" ref={fileRef} style={{ display: 'none' }} />
+    </>
   );
 }
 

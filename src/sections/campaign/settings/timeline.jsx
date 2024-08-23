@@ -32,7 +32,7 @@ import TimelineTypeModal from './timeline-type-modal';
 // eslint-disable-next-line react/prop-types
 const Timeline = ({ timelineType, isSmallScreen }) => {
   const { data: timelines, isLoading } = useGetAllTimelineType();
-  const [query, setQuery] = useState('');
+  const [, setQuery] = useState('');
 
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const errorTimeline = useBoolean();
@@ -134,174 +134,6 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
         Default Timeline
       </Typography>
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        {/* <Box
-          display="grid"
-          columnGap={2}
-          rowGap={2}
-          gridTemplateColumns={{
-            xs: 'repeat(1, 1fr)',
-            sm: 'repeat(2, 1fr)',
-          }}
-        >
-          <Controller
-            name="openForPitch"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Open For Pitches"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.openForPitch}
-                helperText={errors?.openForPitch && errors?.openForPitch?.message}
-              />
-            )}
-          />
-          <Controller
-            name="filterPitch"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Filtering of pitches by CC"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.filterPitch}
-                helperText={errors?.filterPitch && errors?.filterPitch?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="shortlistCreator"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Shortlisting of creators by brand"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.shortlistCreator}
-                helperText={errors?.shortlistCreator && errors?.shortlistCreator?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="agreementSign"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Signing of agreement"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.agreementSign}
-                helperText={errors?.agreementSign && errors?.agreementSign?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="firstDraft"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="First draft from creators"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.firstDraft}
-                helperText={errors?.firstDraft && errors?.firstDraft?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="feedBackFirstDraft"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Feedback on first draft by brand"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.feedBackFirstDraft}
-                helperText={errors?.feedBackFirstDraft && errors?.feedBackFirstDraft?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="finalDraft"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Final draft from creators"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.finalDraft}
-                helperText={errors?.finalDraft && errors?.finalDraft?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="qc"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="QC of drafts by CC"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.qc}
-                helperText={errors?.qc && errors?.qc?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="feedBackFinalDraft"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Feedback on final draft by brand"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.feedBackFinalDraft}
-                helperText={errors?.feedBackFinalDraft && errors?.feedBackFinalDraft?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="posting"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Posting in social media"
-                InputProps={{
-                  endAdornment: <InputAdornment position="start">days</InputAdornment>,
-                }}
-                error={errors?.posting}
-                helperText={errors?.posting && errors?.posting?.message}
-              />
-            )}
-          />
-        </Box> */}
         <Box
           display="grid"
           columnGap={2}
@@ -310,7 +142,7 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
             sm: 'repeat(1, 1fr)',
           }}
           maxHeight={400}
-          overflow="scroll"
+          overflow="auto"
           py={2}
         >
           {fields.map((item, index) => (
@@ -372,17 +204,6 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
                     }
                   />
                 )}
-                {/* 
-                  <RHFSelect disabled name={`timeline[${index}].dependsOn`} label="Depends On">
-                    {!isLoading &&
-                      timelines.map((elem) => (
-                        // <MenuItem key={elem?.id} value={elem?.id}>
-                        <MenuItem key={elem?.id} value={elem?.id}>
-                          {elem?.name}
-                        </MenuItem>
-                      ))}
-                    <MenuItem value="startDate">Campaign Start Date</MenuItem>
-                  </RHFSelect> */}
 
                 <RHFTextField
                   name={`timeline[${index}].duration`}

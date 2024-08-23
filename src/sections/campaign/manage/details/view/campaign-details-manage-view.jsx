@@ -272,15 +272,16 @@ const CampaignDetailManageView = ({ id }) => {
                   ].includes(e)
               )
               .map(
-                (e) =>
+                (e, index) =>
                   campaign?.brand[e] && (
                     <ListItemText
+                      key={index}
                       primary={formatText(e)}
                       secondary={
                         typeof campaign?.brand[e] === 'object' ? (
                           <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                            {campaign?.brand[e].map((val) => (
-                              <Label>{val}</Label>
+                            {campaign?.brand[e].map((val, index2) => (
+                              <Label key={index2}>{val}</Label>
                             ))}
                           </Stack>
                         ) : (
@@ -351,8 +352,8 @@ const CampaignDetailManageView = ({ id }) => {
         <Stack>
           <Typography variant="subtitle1">Dos</Typography>
           <List>
-            {campaign?.campaignBrief?.campaigns_do.map((elem) => (
-              <ListItem>
+            {campaign?.campaignBrief?.campaigns_do.map((elem, index) => (
+              <ListItem key={index}>
                 <ListItemIcon>
                   <Iconify
                     icon="octicon:dot-24"
@@ -369,8 +370,8 @@ const CampaignDetailManageView = ({ id }) => {
         <Stack mt={2}>
           <Typography variant="subtitle1">Don&apos;ts</Typography>
           <List>
-            {campaign?.campaignBrief?.campaigns_dont.map((elem) => (
-              <ListItem>
+            {campaign?.campaignBrief?.campaigns_dont.map((elem, index) => (
+              <ListItem key={index}>
                 <ListItemIcon>
                   <Iconify
                     icon="octicon:dot-24"
@@ -520,7 +521,7 @@ const CampaignDetailManageView = ({ id }) => {
       <Typography variant="h5">Admin Manager</Typography>
       <List>
         {campaign?.campaignAdmin?.map((item, index) => (
-          <ListItem>
+          <ListItem key={index}>
             <ListItemText primary={`${index + 1}. ${item?.admin?.user?.name}`} />
           </ListItem>
         ))}
@@ -621,7 +622,6 @@ const CampaignDetailManageView = ({ id }) => {
               <Stack spacing={2}>
                 {renderCampaignInformation}
                 {campaign?.brand ? renderBrand : renderCompany}
-
                 {renderDosAndDonts}
               </Stack>
             </Grid>
@@ -660,7 +660,7 @@ const CampaignDetailManageView = ({ id }) => {
   );
 };
 
-export default withPermission(['read'], 'campaign', CampaignDetailManageView);
+export default withPermission(['view:campaign'], CampaignDetailManageView);
 
 CampaignDetailManageView.propTypes = {
   id: PropTypes.string,

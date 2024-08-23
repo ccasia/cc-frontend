@@ -1,11 +1,10 @@
 import dayjs from 'dayjs';
-import * as Yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { io } from 'socket.io-client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 
-import { Box, Card, Stack, Typography, ListItemText } from '@mui/material';
+import { Box, Card, Stack, Tooltip, Typography, ListItemText } from '@mui/material';
 import {
   Timeline,
   TimelineItem,
@@ -16,7 +15,6 @@ import {
 } from '@mui/lab';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
-import useGetFirstDraftBySessionID from 'src/hooks/use-get-first-draft-for-creator';
 
 import { endpoints } from 'src/utils/axios';
 
@@ -29,22 +27,47 @@ import CampaignAgreement from './campaign-agreement';
 import CampaignFirstDraft from './campaign-first-draft';
 import CampaignFinalDraft from './campaign-final-draft';
 
+export const defaultSubmission = [
+  {
+    name: 'Agreeement Submission',
+    value: 'Agreement',
+    type: 'AGREEMENT_FORM',
+  },
+  {
+    name: 'First Draft Submission',
+    value: 'First Draft',
+    type: 'FIRST_DRAFT',
+  },
+  {
+    name: 'Final Draft Submission',
+    value: 'Final Draft',
+    type: 'FINAL_DRAFT',
+  },
+  {
+    name: 'Posting',
+    value: 'Posting',
+    type: 'POSTING',
+  },
+];
+
 const CampaignMyTasks = ({ campaign }) => {
-  // const [preview, setPreview] = useState('');
-  // const [loading, setLoading] = useState(false);
-  // const [taskId, setTimelineId] = useState('');
   const { user } = useAuthContext();
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
-  console.log(submissions);
 
-  const { data } = useGetFirstDraftBySessionID(campaign.id);
+  const value = (name) => submissions?.find((item) => item.submissionType.type === name);
 
-  const isSubmittedFirstDraft = data?.status === 'Submitted';
+  const timeline = campaign?.campaignTimeline;
 
-  const schema = Yup.object().shape({
-    // draft: Yup.string().required(),
-    caption: Yup.string().required(),
-  });
+  const getTimeline = (name) => timeline?.find((item) => item.name === name);
+
+  const getDependency = useCallback(
+    (submissionId) => {
+      const isDependencyeExist = submissions?.find((item) => item.id === submissionId)
+        .dependentOn[0];
+      return isDependencyeExist;
+    },
+    [submissions]
+  );
 
   useEffect(() => {
     const socket = io();
@@ -73,7 +96,102 @@ const CampaignMyTasks = ({ campaign }) => {
             },
           }}
         >
-          {campaign?.campaignTasks
+          {defaultSubmission.map((item, index) => (
+            <TimelineItem>
+              <TimelineSeparator>
+                <Label sx={{ mt: 0.5 }}>{index + 1}</Label>
+                <TimelineConnector />
+              </TimelineSeparator>
+              <TimelineContent>
+                <ListItemText
+                  primary={
+                    <Stack
+                      direction={{ xs: 'column', md: 'row' }}
+                      spacing={1}
+                      alignItems={{ md: 'center' }}
+                      mb={2}
+                    >
+                      <Typography variant="subtitle2">{item.name}</Typography>
+                      {value(item.type) && (
+                        <Box flexGrow={1}>
+                          {value(item.type)?.status === 'PENDING_REVIEW' && (
+                            <Tooltip title="Pending Review">
+                              <Label>
+                                <Iconify icon="mdi:clock-outline" color="warning.main" width={18} />
+                              </Label>
+                            </Tooltip>
+                          )}
+
+                          {value(item.type)?.status === 'APPROVED' && (
+                            <Tooltip title="Approved">
+                              <Label color="success">
+                                <Iconify icon="hugeicons:tick-04" color="success.main" width={18} />
+                              </Label>
+                            </Tooltip>
+                          )}
+                          {value(item.type)?.status === 'CHANGES_REQUIRED' && (
+                            <Tooltip title="Change Required">
+                              <Label color="warning">
+                                <Iconify icon="uiw:warning" color="warning.main" width={18} />
+                              </Label>
+                            </Tooltip>
+                          )}
+                        </Box>
+                      )}
+                      <Typography variant="caption">
+                        Due: {dayjs(getTimeline(item.value)?.endDate).format('ddd LL')}
+                      </Typography>
+                    </Stack>
+                  }
+                  secondaryTypographyProps={{
+                    variant: 'caption',
+                    color: 'text.disabled',
+                  }}
+                />
+                {item.value === 'Agreement' && (
+                  <CampaignAgreement
+                    campaign={campaign}
+                    timeline={timeline}
+                    submission={value(item.type)}
+                    getDependency={getDependency}
+                  />
+                )}
+                {item.value === 'First Draft' && (
+                  <CampaignFirstDraft
+                    campaign={campaign}
+                    timeline={timeline}
+                    fullSubmission={submissions}
+                    submission={value(item.type)}
+                    getDependency={getDependency}
+                  />
+                )}
+                {item.value === 'Final Draft' && (
+                  <CampaignFinalDraft
+                    campaign={campaign}
+                    timeline={timeline}
+                    submission={value(item.type)}
+                    fullSubmission={submissions}
+                    getDependency={getDependency}
+                  />
+                )}
+                {/* {timeline.task === 'First Draft' && (
+                  <CampaignFirstDraft
+                    campaign={campaign}
+                    timeline={timeline}
+                    submission={submissions?.filter((item) => item?.type === 'FIRST_DRAFT')[0]}
+                  />
+                )}
+                {timeline.task === 'Final Draft' && (
+                  <CampaignFinalDraft
+                    campaign={campaign}
+                    timeline={timeline}
+                    submission={submissions?.filter((item) => item?.type === 'FINAL_DRAFT')[0]}
+                  />
+                )} */}
+              </TimelineContent>
+            </TimelineItem>
+          ))}
+          {/* {campaign?.campaignTasks
             .sort((a, b) => dayjs(a.endDate).diff(dayjs(b.endDate)))
             .map((timeline, index) => (
               <TimelineItem>
@@ -125,40 +243,9 @@ const CampaignMyTasks = ({ campaign }) => {
                       submission={submissions?.filter((item) => item?.type === 'FINAL_DRAFT')[0]}
                     />
                   )}
-
-                  {/* {timeline.status === 'PENDING_REVIEW' && isSubmittedFirstDraft && (
-                    <Box
-                      component={Card}
-                      height={200}
-                      sx={{
-                        bgcolor: (theme) => alpha(theme.palette.success.main, 0.13),
-                        position: 'relative',
-                      }}
-                    >
-                      <Stack
-                        sx={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%,-50%)',
-                        }}
-                        direction="row"
-                        gap={1}
-                        alignItems="center"
-                      >
-                        <Iconify icon="mdi:tick-circle-outline" width={16} />
-                        <Typography variant="subtitle1">Submitted for review</Typography>
-                      </Stack>
-                    </Box>
-                  )} */}
-                  {/* {dayjs(timeline.startDate) < dayjs() && dayjs() <= dayjs(timeline.endDate) && (
-                    <Button size="small" variant="outlined" color="primary" sx={{ mt: 1 }}>
-                      Manage
-                    </Button>
-                  )} */}
                 </TimelineContent>
               </TimelineItem>
-            ))}
+            ))} */}
         </Timeline>
       )}
     </Box>

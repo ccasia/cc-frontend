@@ -367,7 +367,7 @@ function CreatorTableView() {
   );
 }
 
-export default withPermission(['read', 'update', 'delete'], 'creator', CreatorTableView);
+export default withPermission(['list:creator'], CreatorTableView);
 
 // export default CreatorTableView;
 

@@ -15,9 +15,8 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import { Tab, Tabs, Select, InputLabel, FormControl, InputAdornment } from '@mui/material';
 
+import useGetRoles from 'src/hooks/use-get-roles';
 import { editAdmin } from 'src/hooks/use-get-admins-for-superadmin';
-
-import { flattenData } from 'src/utils/flatten-array';
 
 import { countries } from 'src/assets/data';
 import { USER_STATUS_OPTIONS } from 'src/_mock';
@@ -30,7 +29,8 @@ import { MODULE_ITEMS } from './view/user-list-view';
 // ----------------------------------------------------------------------
 
 function UserQuickEditForm({ currentUser, open, onClose }) {
-  const { admin } = currentUser;
+  // const { admin } = currentUser;
+  const { data: roles, isLoading } = useGetRoles();
 
   const [currentTab, setCurrentTab] = useState('profile');
 
@@ -39,7 +39,8 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
-    designation: Yup.string().required('Designation is required'),
+    role: Yup.string().required('Role is required'),
+    // designation: Yup.string().required('Designation is required'),
     mode: Yup.string().required('Mode is required'),
   });
 
@@ -50,17 +51,18 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
       phoneNumber: currentUser?.phoneNumber || '',
       country: currentUser?.country || '',
       status: currentUser?.status,
-      designation: currentUser?.admin?.designation || '',
+      role: currentUser?.admin?.role?.id,
+      // designation: currentUser?.admin?.designation || '',
       mode: currentUser?.admin?.mode || '',
-      permission: (admin?.adminPermissionModule &&
-        Object.values(flattenData(admin?.adminPermissionModule))) || [
-        {
-          module: '',
-          permissions: [],
-        },
-      ],
+      // permission: (admin?.adminPermissionModule &&
+      //   Object.values(flattenData(admin?.adminPermissionModule))) || [
+      //   {
+      //     module: '',
+      //     permissions: [],
+      //   },
+      // ],
     }),
-    [currentUser, admin]
+    [currentUser]
   );
 
   const methods = useForm({
@@ -78,14 +80,11 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      // await axiosInstance.patch(endpoints.auth.updateProfileAdmin, {
-      //   ...data,
-      //   userId: currentUser?.id,
-      // });
       editAdmin({ ...data, userId: currentUser?.id });
       await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
       onClose();
+
       enqueueSnackbar('Success', {
         anchorOrigin: {
           horizontal: 'center',
@@ -132,7 +131,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
             }}
           >
             <Tab value="profile" label="Profile" />
-            <Tab value="permission" label="Permissions" />
+            {/* <Tab value="permission" label="Permissions" /> */}
           </Tabs>
           {currentTab === 'profile' && (
             <Box
@@ -177,11 +176,16 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
                 getOptionLabel={(option) => option}
               />
 
-              <RHFSelect name="designation" label="Designation">
+              {/* <RHFSelect name="designation" label="Designation">
                 <MenuItem value="Finance">Finance</MenuItem>
                 <MenuItem value="CSM">CSM</MenuItem>
                 <MenuItem value="BD">BD</MenuItem>
                 <MenuItem value="Growth">Growth</MenuItem>
+              </RHFSelect> */}
+
+              <RHFSelect name="role" label="Role">
+                {!isLoading &&
+                  roles.map((role) => <MenuItem value={role?.id}>{role?.name}</MenuItem>)}
               </RHFSelect>
 
               <RHFSelect name="mode" label="Mode">

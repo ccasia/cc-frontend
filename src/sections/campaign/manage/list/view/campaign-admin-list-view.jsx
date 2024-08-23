@@ -74,7 +74,7 @@ const CampaignListView = () => {
         setCampaigns(res?.data);
         setLoading(false);
       } catch (error) {
-        enqueueSnackbar('FAIL', {
+        enqueueSnackbar(error?.message, {
           variant: 'error',
         });
       } finally {

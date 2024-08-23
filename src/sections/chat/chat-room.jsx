@@ -23,10 +23,6 @@ import ChatRoomSingle from './chat-room-single';
 
 // ----------------------------------------------------------------------
 
-
-
- 
-
 const NAV_WIDTH = 250;
 
 export default function ChatRoom({ participants, conversation, threadId }) {
@@ -56,7 +52,7 @@ export default function ChatRoom({ participants, conversation, threadId }) {
 
   useEffect(() => {
     if (thread) {
-      console.log("Fetched Thread Data:", thread);
+      console.log('Fetched Thread Data:', thread);
     }
   }, [thread]);
 
@@ -69,8 +65,6 @@ export default function ChatRoom({ participants, conversation, threadId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lgUp]);
 
-  
-
   if (!thread) {
     return null;
   }
@@ -79,7 +73,7 @@ export default function ChatRoom({ participants, conversation, threadId }) {
 
   // const attachments = uniq(flatten(conversation.messages.map((messages) => messages.attachments)));
 
-  // Update this soon 
+  // Update this soon
 
   console.log("Thread 1.0", thread)
   const renderContent =  thread.isGroup ? (

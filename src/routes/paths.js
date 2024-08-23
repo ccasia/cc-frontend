@@ -22,7 +22,7 @@ export const paths = {
   // DASHBOARD
   dashboard: {
     root: ROOTS.DASHBOARD,
-    admins: `${ROOTS.DASHBOARD}/admins`,
+    admins: `${ROOTS.DASHBOARD}/admins`, // /dashboard/admins
     company: {
       root: `${ROOTS.DASHBOARD}/company`,
       manage: `${ROOTS.DASHBOARD}/company/manage`,
@@ -73,7 +73,7 @@ export const paths = {
     calendar: {
       root: `${ROOTS.DASHBOARD}/calendar`,
     },
-    chat: { 
+    chat: {
       root: `${ROOTS.DASHBOARD}/chat`,
       thread: (id) => `${ROOTS.DASHBOARD}/chat/thread/${id}`,
     },

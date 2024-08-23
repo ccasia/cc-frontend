@@ -32,7 +32,6 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
-  //  chat: '/api/chat',
   kanban: '/api/kanban',
   threads: {
     getAll: '/api/thread/threads',
@@ -82,7 +81,7 @@ export const endpoints = {
     updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
-    allusers: '/api/users'
+    allusers: '/api/users',
   },
   mail: {
     list: '/api/mail/list',
@@ -131,6 +130,7 @@ export const endpoints = {
     getDefaultTimeline: '/api/campaign/defaultTimeline',
     getTimelineType: '/api/campaign/timelineType',
     getAllActiveCampaign: '/api/campaign/getAllActiveCampaign',
+    getMatchedCampaign: '/api/campaign/matchCampaignWithCreator',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
     timeline: {
@@ -168,19 +168,28 @@ export const endpoints = {
     creator: {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
       getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,
+      saveCampaign: '/api/campaign/saveCampaign',
+      unsaveCampaign: (id) => `/api/campaign/unsaveCampaign/${id}`,
     },
+    getCampaignLog: (id) => `/api/campaign/getCampaignLog/${id}`,
   },
   submission: {
-    root: '/api/tasks/submissions',
-    agreement: {
-      adminManageAgreementSubmission: '/api/tasks/adminManageAgreementSubmission',
+    root: '/api/submission/',
+    creator: {
+      agreement: '/api/submission/submitAgreement',
+      draftSubmission: '/api/submission/draftSubmission',
     },
-    firstDraft: '/api/tasks/firstDraft',
-    finalDraft: '/api/tasks/FinalDraft',
+    admin: {
+      agreement: '/api/submission/adminManageAgreementSubmission',
+      draft: '/api/submission/adminManageDraft',
+    },
   },
   notification: {
     root: '/api/notification',
     read: '/api/notification/markRead',
     archive: '/api/notification/archiveAll',
+  },
+  roles: {
+    root: '/api/role',
   },
 };
