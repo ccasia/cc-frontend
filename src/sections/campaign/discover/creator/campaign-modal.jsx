@@ -21,6 +21,9 @@ import {
   DialogContentText,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { formatText } from 'src/utils/format-test';
@@ -34,10 +37,13 @@ import Iconify from 'src/components/iconify';
 const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
   const smUp = useResponsive('down', 'sm');
   const { user } = useAuthContext();
+  const router = useRouter();
 
   const isShortlisted = user?.shortlisted && user?.shortlisted.map((item) => item.campaignId);
 
-  const campaignIds = user?.pitch && user?.pitch.map((item) => item.campaignId);
+  const existingPitch = user?.pitch && user?.pitch.find((item) => item.campaignId);
+
+  // const campaignIds = user?.pitch && user?.pitch.map((item) => item.campaignId);
 
   const saveCampaign = async (campaignId) => {
     try {
@@ -192,16 +198,54 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Close</Button>
-        {campaignIds?.includes(campaign.id) ? (
+        {isShortlisted?.includes(campaign.id) ? (
+          <Button
+            autoFocus
+            variant="contained"
+            onClick={() => router.push(paths.dashboard.campaign.creator.detail(campaign.id))}
+            size="small"
+          >
+            Manage
+          </Button>
+        ) : (
+          <>
+            {existingPitch?.status === 'Pending' && (
+              <Button
+                autoFocus
+                variant="contained"
+                startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+                disabled
+                color="warning"
+              >
+                In Review
+              </Button>
+            )}
+            {!existingPitch && (
+              <Button
+                autoFocus
+                variant="contained"
+                startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+                onClick={() => {
+                  handleClose();
+                  openForm();
+                }}
+              >
+                Pitch
+              </Button>
+            )}
+          </>
+        )}
+        {/* {campaignIds?.includes(campaign.id) ? (
           isShortlisted?.includes(campaign.id) ? (
             <Button
               autoFocus
               variant="contained"
-              startIcon={<Iconify icon="charm:circle-tick" width={20} />}
-              disabled
-              color="success"
+              onClick={() => router.push(paths.dashboard.campaign.creator.detail(campaign.id))}
+              // startIcon={<Iconify icon="charm:circle-tick" width={20} />}
+              // color="success"
+              size="small"
             >
-              Shortlisted
+              Manage
             </Button>
           ) : (
             <Button
@@ -226,7 +270,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
           >
             Pitch
           </Button>
-        )}
+        )} */}
       </DialogActions>
     </Dialog>
   );

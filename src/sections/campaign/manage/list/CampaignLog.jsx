@@ -47,7 +47,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
           </TableHead>
           <TableBody>
             {rows.map((row) => (
-              <TableRow>
+              <TableRow key={row.id}>
                 <TableCell>{row.datePerformed}</TableCell>
                 <TableCell>{row.action}</TableCell>
                 <TableCell>{row.performedBy}</TableCell>

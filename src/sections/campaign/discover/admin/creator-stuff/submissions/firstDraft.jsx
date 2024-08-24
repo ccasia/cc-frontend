@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/media-has-caption */
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 /* eslint-disable no-undef */
 import React, { useState } from 'react';
@@ -28,18 +29,21 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const FirstDraft = ({ campaign, submission, creator }) => {
+  console.log(campaign, submission, creator);
   const [type, setType] = useState('approve');
   const approve = useBoolean();
   const request = useBoolean();
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
+    type: Yup.string(),
   });
 
   const methods = useForm({
@@ -58,7 +62,10 @@ const FirstDraft = ({ campaign, submission, creator }) => {
         ...data,
         submissionId: submission.id,
       });
-
+      mutate(
+        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+      );
+      // mutate(endpoints.campaign.getCampaignsByAdminId);
       enqueueSnackbar(res?.data?.message);
       approve.onFalse();
       request.onFalse();
@@ -80,7 +87,14 @@ const FirstDraft = ({ campaign, submission, creator }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onclose}>Cancel</Button>
-        <Button onClick={onSubmit}>Confirm</Button>
+        <Button
+          onClick={() => {
+            setValue('type', 'approve');
+            onSubmit();
+          }}
+        >
+          Confirm
+        </Button>
       </DialogActions>
     </Dialog>
   );
@@ -93,13 +107,29 @@ const FirstDraft = ({ campaign, submission, creator }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onclose}>Cancel</Button>
-        <Button onClick={onSubmit}>Confirm</Button>
+        <Button
+          onClick={() => {
+            onSubmit();
+          }}
+        >
+          Confirm
+        </Button>
       </DialogActions>
     </Dialog>
   );
 
   return (
     <Box>
+      {submission?.isReview && (
+        <Card sx={{ p: 2, mb: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2) }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="hugeicons:tick-03" />
+            <Typography variant="caption" color="text.secondary">
+              Reviewed
+            </Typography>
+          </Stack>
+        </Card>
+      )}
       <Card sx={{ p: 2, mb: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="caption" color="text.secondary">
@@ -204,15 +234,21 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                 component={Paper}
                 position="relative"
                 p={10}
-                sx={{
-                  // border: 1,
-                  // borderColor: (theme) => theme.palette.text.secondary,
-                  bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
-                }}
+                sx={
+                  {
+                    // border: 1,
+                    // borderColor: (theme) => theme.palette.text.secondary,
+                    // bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
+                  }
+                }
               >
                 <Stack gap={1.5} alignItems="center">
-                  <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
-                  <Typography variant="subtitle2" color="text.secondary">
+                  <Image src="/assets/approve.svg" />
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ textAlign: 'center' }}
+                  >
                     First Draft has been reviewed
                   </Typography>
                 </Stack>

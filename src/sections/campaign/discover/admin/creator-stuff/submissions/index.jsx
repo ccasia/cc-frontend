@@ -10,15 +10,15 @@ import FinalDraft from './finalDraft';
 const Submissions = ({ campaign, submissions, creator }) => {
   const [currentTab, setCurrentTab] = useState('agreement');
 
-  const agreementSubmission = submissions.find(
+  const agreementSubmission = submissions?.find(
     (item) => item.submissionType.type === 'AGREEMENT_FORM'
   );
 
-  const firstDraftSubmission = submissions.find(
+  const firstDraftSubmission = submissions?.find(
     (item) => item.submissionType.type === 'FIRST_DRAFT'
   );
 
-  const finalDraftSubmission = submissions.find(
+  const finalDraftSubmission = submissions?.find(
     (item) => item.submissionType.type === 'FINAL_DRAFT'
   );
 
@@ -57,10 +57,6 @@ const Submissions = ({ campaign, submissions, creator }) => {
       {currentTab === 'finalDraft' && firstDraftSubmission && (
         <FinalDraft submission={finalDraftSubmission} campaign={campaign} creator={creator} />
       )}
-
-      {/* {firstDraftSubmission.submissionType.type === 'FIRST_DRAFT' && <FirstDraft />} */}
-      {/* {finalDraftSubmission.submissionType.type === 'FINAL_DRAFT' && <FinalDraft />} */}
-      {/* {posting.submissionType.type === 'POSTING' && <Posting />} */}
     </>
   );
 };

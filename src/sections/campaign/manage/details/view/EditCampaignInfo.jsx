@@ -41,7 +41,7 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
     defaultValues: {
       name: campaign?.name || '',
       description: campaign?.description || '',
-      campaignInterests: campaign?.campaignBrief?.interests || [],
+      campaignIndustries: campaign?.campaignBrief?.industries || [],
     },
   });
 
@@ -75,33 +75,24 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle id="alert-dialog-title">Edit Campaign Info</DialogTitle>
         <DialogContent>
-          <DialogContentText
-            id="alert-dialog-description"
-            p={1.5}
-          >
-            <Box sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'repeat(1, 1fr)',
-                md: 'repeat(2, 1fr)',
-              },
-              gap: 2,
-            }}>
-              <RHFTextField
-                name="name"
-                label="Campaign Name"
-                fullWidth
-              />
+          <DialogContentText id="alert-dialog-description" p={1.5}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'repeat(1, 1fr)',
+                  md: 'repeat(2, 1fr)',
+                },
+                gap: 2,
+              }}
+            >
+              <RHFTextField name="name" label="Campaign Name" fullWidth />
 
-              <RHFTextField
-                name="description"
-                label="Campaign Description"
-                multiline
-              />
+              <RHFTextField name="description" label="Campaign Description" multiline />
 
               <RHFAutocomplete
-                name="campaignInterests"
-                placeholder="+ Interests"
+                name="campaignIndustries"
+                placeholder="+ Industries"
                 multiple
                 freeSolo
                 disableCloseOnSelect

@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
 import { useTheme } from '@emotion/react';
+import React, { useMemo, useState } from 'react';
 
 import { Gauge } from '@mui/x-charts';
 import {
@@ -20,6 +20,7 @@ import {
   ListItemText,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
@@ -35,6 +36,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 
 import OverView from '../creator-stuff/overview';
 import Submissions from '../creator-stuff/submissions';
+import LogisticView from '../creator-stuff/logistics/view/logistic-view';
 
 const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
@@ -46,7 +48,6 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
   );
   const theme = useTheme();
   const router = useRouter();
-  console.log(data);
 
   const interests = data?.user?.creator?.interests;
 
@@ -60,10 +61,6 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
   };
 
   const calculateRank = (val) => Math.ceil((val / 5) * 100);
-
-  // const agreement = submissionData?.filter((item) => item?.type === 'AGREEMENT_FORM')[0];
-  // const firstDraft = submissionData?.filter((item) => item?.type === 'FIRST_DRAFT')[0];
-  // const finalDraft = submissionData?.filter((item) => item?.type === 'FINAL_DRAFT')[0];
 
   const renderTabs = (
     <Tabs
@@ -93,7 +90,6 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
       <Tab value="submission" label="Submissions" />
       <Tab value="logistics" label="Logistics" />
       <Tab value="timeline" label="Timeline" />
-      {/* <Tab value="reminder" label="Reminder" /> */}
     </Tabs>
   );
 
@@ -150,7 +146,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
           <Typography variant="h6">Interests</Typography>
 
           {/* List creator interests */}
-          <Stack direction="row" justifyContent="space-evenly" mt={2}>
+          <Stack direction="row" justifyContent="space-evenly" mt={2} flexWrap="wrap">
             {!isLoading &&
               interests?.map((item) => (
                 <ListItemText
@@ -178,18 +174,68 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     </Grid>
   );
 
+  const shortlistedCreators = useMemo(
+    () =>
+      !campaignLoading && campaign?.shortlisted
+        ? campaign.shortlisted.map((item, index) => ({ index, userId: item?.userId }))
+        : [],
+    [campaign, campaignLoading]
+  );
+
+  const currentIndex = shortlistedCreators.find((a) => a?.userId === id)?.index;
+
   return (
     <Container>
+      <Button
+        onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id))}
+        sx={{
+          mb: 3,
+        }}
+        variant="contained"
+        size="small"
+      >
+        All creators
+      </Button>
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Button
-          startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} sx={{ ml: 1 }} />}
-          onClick={() => router.back()}
+          startIcon={<Iconify icon="ic:round-navigate-before" width={20} sx={{ ml: 1 }} />}
+          onClick={() =>
+            router.push(
+              paths.dashboard.campaign.manageCreator(
+                campaignId,
+                shortlistedCreators[
+                  currentIndex === 0 ? (shortlistedCreators?.length ?? 0) - 1 : currentIndex - 1
+                ].userId
+              )
+            )
+          }
           sx={{
             mb: 3,
           }}
         >
-          Back
+          Prev creator
         </Button>
+
+        {shortlistedCreators.length > 0 && (
+          <Button
+            endIcon={<Iconify icon="ic:round-navigate-next" width={20} sx={{ mr: 1 }} />}
+            onClick={() =>
+              router.push(
+                paths.dashboard.campaign.manageCreator(
+                  campaignId,
+                  shortlistedCreators[
+                    currentIndex === (shortlistedCreators?.length ?? 0) - 1 ? 0 : currentIndex + 1
+                  ].userId
+                )
+              )
+            }
+            sx={{
+              mb: 3,
+            }}
+          >
+            Next creator
+          </Button>
+        )}
       </Stack>
 
       {isLoading && <LoadingScreen />}
@@ -260,21 +306,13 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         <>
           {currentTab === 'profile' && renderProfile}
           {currentTab === 'overview' && <OverView campaign={campaign} />}
-          {/* {currentTab === 'agreement' && (
-            <Agreement campaign={campaign} submission={agreement} user={data} />
-          )}
-          {currentTab === 'firstDraft' && (
-            <FirstDraft campaign={campaign} submission={firstDraft} user={data} />
-          )}
-          {currentTab === 'finalDraft' && (
-            <FinalDraft campaign={campaign} submission={finalDraft} user={data} />
-          )} */}
+
           {currentTab === 'submission' && (
             <Submissions campaign={campaign} submissions={submissions} creator={data} />
           )}
+          {currentTab === 'logistics' && <LogisticView campaign={campaign} creator={data} />}
         </>
       )}
-      {/* {currentTab === 'draft' && renderDraft} */}
     </Container>
   );
 };

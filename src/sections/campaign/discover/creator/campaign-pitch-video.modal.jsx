@@ -21,8 +21,10 @@ import {
   DialogTitle,
   ListItemText,
   DialogActions,
+  DialogContent,
 } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -37,10 +39,12 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const sources = useRef(null);
   const smUp = useResponsive('sm', 'down');
   const [source, setSource] = useState(undefined);
+  const [sourceName, setSourceName] = useState('');
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(false);
   const [, setDuration] = useState();
   const { socket } = useSocketContext();
+  const confirm = useBoolean();
 
   const schema = Yup.object().shape({
     // pitchVideo: required('Pitch Script is required'),
@@ -57,29 +61,6 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const { handleSubmit, setValue, watch } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    // const formData = new FormData();
-    // formData.append('campaignId', campaign?.id);
-    // formData.append('pitchVideo', data.pitchVideo);
-
-    // try {
-    //   setLoading(true);
-
-    //   const res = await axiosInstance.patch(endpoints.campaign.pitch.root, formData, {
-    //     headers: {
-    //       'Content-Type': 'application/x-www-form-urlencoded',
-    //     },
-    //   });
-
-    //   enqueueSnackbar(res?.data?.message);
-    //   handleClose();
-    // } catch (error) {
-    //   enqueueSnackbar(error?.message, {
-    //     variant: 'error',
-    //   });
-    // } finally {
-    //   setLoading(false);
-    // }
-
     try {
       setLoading(true);
       const res = await axiosInstance.patch(endpoints.campaign.pitch.root, {
@@ -121,7 +102,8 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
           return;
         }
         setSource(url);
-        setValue('pitchVideo', e[0]);
+        setSourceName(e[0].path);
+
         const formData = new FormData();
         formData.append('campaignId', campaign?.id);
         formData.append('pitchVideo', e[0]);
@@ -137,7 +119,10 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
             cancelToken: sources.current.token,
           });
 
-          setValue('pitchVideo', data.publicUrl);
+          if (data.publicUrl) {
+            setValue('pitchVideo', data.publicUrl);
+          }
+
           setSource(data.publicUrl);
         } catch (error) {
           if (axios.isCancel(error)) {
@@ -189,105 +174,123 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   }, [socket]);
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" fullScreen={smUp}>
-      <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>
-          <ListItemText
-            primary="Upload Your Pitching Video"
-            secondary="Video should be less than 30 seconds"
-            primaryTypographyProps={{
-              variant: 'h6',
-            }}
-            secondaryTypographyProps={{
-              variant: 'caption',
-            }}
-          />
-        </DialogTitle>
-        <Box p={2}>
-          <RHFUpload
-            name="pitchVideo"
-            type="video"
-            onDrop={handleDropSingleFile}
-            // onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
-          />
-        </Box>
-        {source && (
-          <Stack p={2} gap={2}>
-            <Stack direction="row" justifyContent="space-between" px={4} alignItems="center">
-              <Typography variant="h5">Preview</Typography>
-              <Button
-                startIcon={<Iconify icon="pajamas:remove" />}
-                color="error"
-                onClick={handleRemove}
+    <>
+      <Dialog
+        open={open}
+        onClose={() => {
+          if (watch('pitchVideo')) {
+            confirm.onTrue();
+          } else {
+            handleClose();
+          }
+        }}
+        fullWidth
+        maxWidth="md"
+        fullScreen={smUp}
+      >
+        <FormProvider methods={methods} onSubmit={onSubmit}>
+          <DialogTitle>
+            <ListItemText
+              primary="Upload Your Pitching Video"
+              secondary="Video should be less than 30 seconds"
+              primaryTypographyProps={{
+                variant: 'h6',
+              }}
+              secondaryTypographyProps={{
+                variant: 'caption',
+              }}
+            />
+          </DialogTitle>
+          <Box p={2}>
+            <RHFUpload
+              name="pitchVideo"
+              type="video"
+              onDrop={handleDropSingleFile}
+              // onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
+            />
+          </Box>
+          {source && (
+            <Stack p={2} gap={2}>
+              <Stack direction="row" justifyContent="space-between" px={4} alignItems="center">
+                <Typography variant="h5">Preview</Typography>
+                <Button
+                  startIcon={<Iconify icon="pajamas:remove" />}
+                  color="error"
+                  onClick={handleRemove}
+                >
+                  Remove
+                </Button>
+              </Stack>
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <video
+                autoPlay
+                style={{ width: '90%', borderRadius: 10, margin: 'auto' }}
+                controls
+                onLoadedMetadata={handleLoadedMetadata}
               >
-                Remove
-              </Button>
+                <source src={source} />
+              </video>
+              {progress && progress.some((elem) => elem.campaignId === campaign.id) && (
+                <Box
+                  component={Paper}
+                  sx={{
+                    bgcolor: (theme) => alpha(theme.palette.warning.main, 0.2),
+                    p: 1.5,
+                    mx: 4,
+                  }}
+                >
+                  <Typography>
+                    Uploading {sourceName}{' '}
+                    {Math.floor(progress.find((item) => item.campaignId === campaign.id).progress)}%
+                  </Typography>
+                </Box>
+              )}
             </Stack>
-            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-            <video
-              autoPlay
-              style={{ width: '90%', borderRadius: 10, margin: 'auto' }}
-              controls
-              onLoadedMetadata={handleLoadedMetadata}
-            >
-              <source src={source} />
-            </video>
-            {progress && progress.some((elem) => elem.campaignId === campaign.id) && (
-              <Box
-                component={Paper}
-                sx={{
-                  bgcolor: (theme) => alpha(theme.palette.warning.main, 0.2),
-                  p: 1.5,
-                  mx: 4,
-                }}
-              >
-                <Typography>
-                  Uploading {watch('pitchVideo').path}{' '}
-                  {Math.floor(progress.find((item) => item.campaignId === campaign.id).progress)}%
-                </Typography>
-              </Box>
-            )}
-          </Stack>
-        )}
+          )}
 
-        <DialogActions>
-          <Button onClick={handleClose}>Close</Button>
-          {/* {progress.some((elem) => elem.campaignId === campaign.id)} */}
-          <LoadingButton
-            autoFocus
-            variant="contained"
-            startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-            type="submit"
-            loading={loading}
-            disabled={progress.some((elem) => elem.campaignId === campaign.id)}
-          >
-            Pitch
-          </LoadingButton>
-          {/* {progress && progress.some((elem) => elem.campaignId === campaign.id) ? (
-            <LoadingButton
-              autoFocus
-              variant="contained"
-              startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-              type="submit"
-              loading={loading}
+          <DialogActions>
+            <Button
+              onClick={() => {
+                if (watch('pitchVideo')) {
+                  confirm.onTrue();
+                } else {
+                  handleClose();
+                }
+              }}
             >
-              Uploading{' '}
-              {Math.floor(progress.find((item) => item.campaignId === campaign.id).progress)}%
-            </LoadingButton>
-          ) : (
+              Close
+            </Button>
             <LoadingButton
               autoFocus
               variant="contained"
               startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
               type="submit"
               loading={loading}
+              disabled={progress.some((elem) => elem.campaignId === campaign.id)}
             >
               Pitch
             </LoadingButton>
-          )} */}
+          </DialogActions>
+        </FormProvider>
+      </Dialog>
+      <Dialog open={confirm.value} onClose={confirm.onFalse}>
+        <DialogTitle>You have a uploaded video</DialogTitle>
+        <DialogContent>Confirm to remove ?</DialogContent>
+        <DialogActions>
+          <Button onClick={confirm.onFalse}>Cancel</Button>
+          <Button
+            onClick={() => {
+              setValue('pitchVideo', null);
+              setSource('');
+              handleClose();
+              confirm.onFalse();
+            }}
+          >
+            Confirm
+          </Button>
         </DialogActions>
-      </FormProvider>
-    </Dialog>
+      </Dialog>
+    </>
   );
 };
 

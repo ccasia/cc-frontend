@@ -48,7 +48,7 @@ const CampaignInfo = ({ campaign }) => {
             primary="Industries"
             secondary={
               <Stack direction="row" spacing={1}>
-                {campaign?.campaignBrief?.interests.map((value) => (
+                {campaign?.campaignBrief?.industries.map((value) => (
                   <Label>{value}</Label>
                 ))}
               </Stack>
@@ -70,10 +70,10 @@ const CampaignInfo = ({ campaign }) => {
         <Iconify icon="typcn:point-of-interest" width={18} />
         <Stack>
           <ListItemText
-            primary="Interests"
+            primary="Industries"
             secondary={
               <Stack direction="row" spacing={1}>
-                {campaign?.campaignBrief?.interests.map((value) => (
+                {campaign?.campaignBrief?.industries.map((value) => (
                   <Label>{value}</Label>
                 ))}
               </Stack>

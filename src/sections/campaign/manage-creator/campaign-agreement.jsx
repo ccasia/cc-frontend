@@ -5,12 +5,27 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Paper, alpha, Button, Typography, ListItemText } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Paper,
+  alpha,
+  Button,
+  Dialog,
+  Typography,
+  DialogTitle,
+  ListItemText,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -19,6 +34,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, getDependency }) =>
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const { user } = useAuthContext();
+  const display = useBoolean();
 
   const agreement = campaign?.campaignTimeline.find((elem) => elem.name === 'Agreement');
 
@@ -174,25 +190,31 @@ const CampaignAgreement = ({ campaign, timeline, submission, getDependency }) =>
           />
         </Stack>
       )}
-      {/* {submission?.status === 'APPROVED' && (
-        <Box
-          component={Paper}
-          position="relative"
-          p={10}
-          sx={{
-            // border: 1,
-            // borderColor: (theme) => theme.palette.text.secondary,
-            bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
-          }}
-        >
-          <Stack gap={1.5} alignItems="center">
-            <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
-            <Typography variant="subtitle2" color="text.secondary">
-              Your agreement has been approved
-            </Typography>
-          </Stack>
-        </Box>
-      )} */}
+      {submission?.status === 'APPROVED' && (
+        <Stack justifyContent="center" alignItems="center" spacing={2}>
+          <Image src="/assets/approve.svg" sx={{ width: 250 }} />
+          <Typography variant="subtitle2">Your agreement has been approved.</Typography>
+          <Button onClick={display.onTrue}>Preview agreement</Button>
+        </Stack>
+      )}
+      <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
+        <DialogTitle>Agreement</DialogTitle>
+        <DialogContent>
+          <iframe
+            src={submission?.content}
+            style={{
+              width: '100%',
+              height: 600,
+              border: 0,
+              borderRadius: 15,
+            }}
+            title="PDF Viewer"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={display.onFalse}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
