@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import { ToggleButton, ToggleButtonGroup } from '@mui/material';
 
+import Posting from './posting';
 import Agreement from './agreement';
 import FirstDraft from './firstDraft';
 import FinalDraft from './finalDraft';
@@ -22,11 +23,7 @@ const Submissions = ({ campaign, submissions, creator }) => {
     (item) => item.submissionType.type === 'FINAL_DRAFT'
   );
 
-  //   const finalDraftSubmission = submissions.find(
-  //     (item) => item.submissionType.type === 'FINAL_DRAFT'
-  //   );
-
-  //   const posting = submissions.find((item) => item.submissionType.type === 'POSTING');
+  const postingSubmission = submissions?.find((item) => item.submissionType.type === 'POSTING');
 
   const renderTabs = (
     <ToggleButtonGroup
@@ -56,6 +53,9 @@ const Submissions = ({ campaign, submissions, creator }) => {
       )}
       {currentTab === 'finalDraft' && firstDraftSubmission && (
         <FinalDraft submission={finalDraftSubmission} campaign={campaign} creator={creator} />
+      )}
+      {currentTab === 'posting' && postingSubmission && (
+        <Posting submission={postingSubmission} campaign={campaign} creator={creator} />
       )}
     </>
   );

@@ -6,13 +6,27 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Paper, alpha, Button, Typography, LinearProgress } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Paper,
+  Button,
+  Dialog,
+  Typography,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  LinearProgress,
+} from '@mui/material';
+
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
-import Iconify from 'src/components/iconify';
+import Image from 'src/components/image';
+import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
@@ -24,6 +38,9 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   const dependency = getDependency(submission?.id);
   const { socket } = useSocketContext();
   const [progress, setProgress] = useState(0);
+  const display = useBoolean();
+
+  console.log(submission);
 
   const methods = useForm();
 
@@ -76,7 +93,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
     }
   });
 
-  const value = useMemo(
+  const previewSubmission = useMemo(
     () => fullSubmission?.find((item) => item?.id === dependency?.dependentSubmissionId),
     [fullSubmission, dependency]
   );
@@ -84,6 +101,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   useEffect(() => {
     if (socket) {
       socket.on('progress', (data) => {
+        console.log(data);
         if (submission?.id === data.submissionId) {
           setIsProcessing(true);
           setProgress(data.progress);
@@ -118,24 +136,14 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   };
 
   return (
-    value?.status === 'CHANGES_REQUIRED' && (
+    previewSubmission?.status === 'CHANGES_REQUIRED' && (
       <Box>
         {submission?.status === 'PENDING_REVIEW' && (
-          <Box
-            component={Paper}
-            position="relative"
-            p={10}
-            sx={{
-              bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
-            }}
-          >
-            <Stack gap={1.5} alignItems="center">
-              <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
-              <Typography variant="subtitle2" color="text.secondary">
-                Your agreement submission is submitted
-              </Typography>
-            </Stack>
-          </Box>
+          <Stack justifyContent="center" alignItems="center" spacing={2}>
+            <Image src="/assets/pending.svg" sx={{ width: 250 }} />
+            <Typography variant="subtitle2">Your Final Draft is in review.</Typography>
+            <Button onClick={display.onTrue}>Preview Draft</Button>
+          </Stack>
         )}
         {submission?.status === 'IN_PROGRESS' && (
           <>
@@ -182,14 +190,16 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
         {submission?.status === 'CHANGES_REQUIRED' && (
           <>
             <Box textAlign="center">
-              {submission && (
-                <video autoPlay controls width="80%" style={{ borderRadius: 10 }}>
-                  <source src={submission?.content} />
-                </video>
-              )}
+              <Button onClick={display.onTrue}>Preview Draft</Button>
             </Box>
-            <Box p={2}>
+            <Box p={2} display="flex" gap={1.5} flexDirection="column">
               <Typography variant="h6">Changes Required</Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                {submission?.feedback?.reasons?.length > 0 &&
+                  submission?.feedback?.reasons?.map((item, index) => (
+                    <Label key={index}>{item}</Label>
+                  ))}
+              </Stack>
               <Typography
                 variant="subtitle1"
                 color="text.secondary"
@@ -198,8 +208,74 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                 {submission?.feedback?.content}
               </Typography>
             </Box>
+            {isProcessing ? (
+              <>
+                <LinearProgress variant="determinate" value={progress} />
+                <Button onClick={() => handleCancel()}>Cancel</Button>
+              </>
+            ) : (
+              <FormProvider methods={methods} onSubmit={onSubmit}>
+                <Stack gap={2}>
+                  {localStorage.getItem('preview') ? (
+                    <Box>
+                      {/* // eslint-disable-next-line jsx-a11y/media-has-caption */}
+                      <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+                        <source src={localStorage.getItem('preview')} />
+                      </video>
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        size="small"
+                        onClick={handleRemoveFile}
+                      >
+                        Change Video
+                      </Button>
+                    </Box>
+                  ) : (
+                    <RHFUpload
+                      name="draft"
+                      type="video"
+                      onDrop={handleDrop}
+                      onRemove={handleRemoveFile}
+                    />
+                  )}
+                  <RHFTextField name="caption" placeholder="Caption" multiline />
+                  <LoadingButton loading={loading} variant="contained" type="submit">
+                    Submit Draft
+                  </LoadingButton>
+                </Stack>
+              </FormProvider>
+            )}
           </>
         )}
+        {submission?.status === 'APPROVED' && (
+          <Stack justifyContent="center" alignItems="center" spacing={2}>
+            <Image src="/assets/approve.svg" sx={{ width: 250 }} />
+            <Typography variant="subtitle2">Your Final Draft has been approved.</Typography>
+            <Button onClick={display.onTrue}>Preview Draft</Button>
+          </Stack>
+        )}
+        <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
+          <DialogTitle>Agreement</DialogTitle>
+          <DialogContent>
+            <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+              <source src={submission?.content} />
+            </video>
+            <Box
+              component={Paper}
+              p={1.5}
+              my={1}
+              sx={{
+                bgcolor: (theme) => theme.palette.background.default,
+              }}
+            >
+              <Typography>{submission?.caption}</Typography>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={display.onFalse}>Close</Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     )
   );

@@ -182,10 +182,12 @@ export const endpoints = {
     creator: {
       agreement: '/api/submission/submitAgreement',
       draftSubmission: '/api/submission/draftSubmission',
+      postSubmission: '/api/submission/postSubmission',
     },
     admin: {
       agreement: '/api/submission/adminManageAgreementSubmission',
       draft: '/api/submission/adminManageDraft',
+      posting: '/api/submission/adminManagePosting',
     },
   },
   notification: {

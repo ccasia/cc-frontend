@@ -10,7 +10,6 @@ import {
   Box,
   Stack,
   Paper,
-  alpha,
   Button,
   Dialog,
   Typography,
@@ -27,7 +26,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
-import Iconify from 'src/components/iconify';
+import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
@@ -40,6 +39,7 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
   const { socket } = useSocketContext();
   const [progress, setProgress] = useState(0);
   const display = useBoolean();
+  console.log(submission);
 
   const methods = useForm();
 
@@ -137,21 +137,11 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
     previousSubmission?.status === 'APPROVED' && (
       <Box>
         {submission?.status === 'PENDING_REVIEW' && (
-          <Box
-            component={Paper}
-            position="relative"
-            p={10}
-            sx={{
-              bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
-            }}
-          >
-            <Stack gap={1.5} alignItems="center">
-              <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
-              <Typography variant="subtitle2" color="text.secondary">
-                Your agreement submission is submitted
-              </Typography>
-            </Stack>
-          </Box>
+          <Stack justifyContent="center" alignItems="center" spacing={2}>
+            <Image src="/assets/pending.svg" sx={{ width: 250 }} />
+            <Typography variant="subtitle2">Your First Draft is in review.</Typography>
+            <Button onClick={display.onTrue}>Preview Draft</Button>
+          </Stack>
         )}
         {submission?.status === 'IN_PROGRESS' && (
           <>
@@ -204,8 +194,16 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
                 </video>
               )}
             </Box>
-            <Box p={2}>
-              <Typography variant="h6">Changes Required</Typography>
+            <Box p={2} display="flex" gap={1.5} flexDirection="column">
+              <Typography variant="subtitle1" sx={{ textDecoration: 'underline' }}>
+                Changes Required
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                {submission?.feedback?.reasons?.length &&
+                  submission?.feedback?.reasons?.map((item, index) => (
+                    <Label key={index}>{item}</Label>
+                  ))}
+              </Stack>
               <Typography
                 variant="subtitle1"
                 color="text.secondary"

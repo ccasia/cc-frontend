@@ -7,9 +7,9 @@ import { enqueueSnackbar } from 'notistack';
 
 import {
   Box,
-  Card,
+  Grid,
   Stack,
-  alpha,
+  Paper,
   Button,
   Dialog,
   Typography,
@@ -22,6 +22,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -63,7 +64,9 @@ const Agreement = ({ campaign, submission, creator }) => {
         submissionId: submission?.id,
         feedback: data.feedback,
       });
-      mutate(endpoints.campaign.getCampaignsByAdminId);
+      mutate(
+        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+      );
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Failed', {
@@ -107,7 +110,78 @@ const Agreement = ({ campaign, submission, creator }) => {
 
   return (
     <Box>
-      {submission?.isReview && (
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={3}>
+          <Box component={Paper} p={1.5}>
+            <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
+              <Stack spacing={1} justifyContent="space-evenly">
+                <Typography variant="subtitle2">Due Date</Typography>
+                <Typography variant="subtitle2">Status</Typography>
+                <Typography variant="subtitle2">Date Submission</Typography>
+                <Typography variant="subtitle2">Review on</Typography>
+              </Stack>
+              <Stack spacing={1} justifyContent="space-evenly">
+                <Typography variant="subtitle2" color="text.secondary">
+                  {dayjs(submission?.dueDate).format('ddd LL')}
+                </Typography>
+                <Label>{submission?.status}</Label>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {submission?.submissionDate
+                    ? dayjs(submission?.submissionDate).format('ddd LL')
+                    : '-'}
+                </Typography>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {submission?.isReview
+                    ? dayjs(submission?.updatedAt).format('ddd LL')
+                    : 'Pending Review'}
+                </Typography>
+              </Stack>
+            </Box>
+          </Box>
+        </Grid>
+        <Grid item xs={12} md={9}>
+          <Box component={Paper} p={1.5}>
+            {submission?.status === 'IN_PROGRESS' && !submission?.content ? (
+              <EmptyContent title="No submission" />
+            ) : (
+              <>
+                <iframe
+                  src={submission?.content}
+                  style={{
+                    borderRadius: 10,
+                    width: '100%',
+                    height: 900,
+                  }}
+                  title="AgreementForm"
+                />
+                {submission.status === 'PENDING_REVIEW' && (
+                  <Stack direction="row" gap={1.5} justifyContent="end" mt={2}>
+                    <Button
+                      onClick={modal.onTrue}
+                      size="small"
+                      variant="outlined"
+                      startIcon={<Iconify icon="mingcute:close-fill" />}
+                    >
+                      Reject
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => handleClick()}
+                      variant="contained"
+                      color="success"
+                      startIcon={<Iconify icon="hugeicons:tick-03" />}
+                    >
+                      Approve
+                    </Button>
+                  </Stack>
+                )}
+                {renderFeedbackForm}
+              </>
+            )}
+          </Box>
+        </Grid>
+      </Grid>
+      {/* {submission?.isReview && (
         <Card sx={{ p: 2, mb: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2) }}>
           <Stack direction="row" alignItems="center" spacing={1}>
             <Iconify icon="hugeicons:tick-03" />
@@ -163,7 +237,7 @@ const Agreement = ({ campaign, submission, creator }) => {
           )}
           {renderFeedbackForm}
         </>
-      )}
+      )} */}
     </Box>
   );
 };
