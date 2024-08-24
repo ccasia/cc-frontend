@@ -123,13 +123,13 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
               noWrap: true,
               variant: 'subtitle2',
             }}
-            secondary={latestMessageContent}
-            secondaryTypographyProps={{
-              noWrap: true,
-              component: 'span',
-              // variant: conversation.unreadCount ? 'subtitle2' : 'body2',
-              // color: conversation.unreadCount ? 'text.primary' : 'text.secondary',
-            }}  
+            // secondary={latestMessageContent}
+            // secondaryTypographyProps={{
+            //   noWrap: true,
+            //   component: 'span',
+            // variant: conversation.unreadCount ? 'subtitle2' : 'body2',
+            // color: conversation.unreadCount ? 'text.primary' : 'text.secondary',
+            // }}  
           />
 
           <Stack alignItems="flex-end" sx={{ ml: 2, height: 44 }}>

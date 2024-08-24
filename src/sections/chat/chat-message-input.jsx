@@ -5,7 +5,7 @@ import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
 
-import useSocketContext from 'src/socket/hooks/useSocketContext';
+//  import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 
@@ -88,10 +88,7 @@ export default function ChatMessageInput({
           //   </Stack>
           // }
           sx={{
-            // height: 56,
             maxHeight: 100,
-            // flexShrink: 0,
-            // borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
             flexGrow: 1,
             overflow: 'auto',
           }}
