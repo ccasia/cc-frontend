@@ -6,6 +6,7 @@ import Container from '@mui/material/Container';
 import { Box, Button, TextField, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import useGetCompany from 'src/hooks/use-get-company';
 
@@ -28,6 +29,7 @@ const defaultFilters = {
 
 function DiscoverBrand() {
   const settings = useSettingsContext();
+  const router = useRouter();
 
   const { companies } = useGetCompany();
 
@@ -56,7 +58,12 @@ function DiscoverBrand() {
           { name: 'List' },
         ]}
         action={
-          <Button variant="contained" size="small" startIcon={<Iconify icon="ion:create" />}>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Iconify icon="ion:create" />}
+            onClick={() => router.push(paths.dashboard.company.create)}
+          >
             Create new brand
           </Button>
         }

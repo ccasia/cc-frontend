@@ -65,45 +65,6 @@ const ManageCampaignView = () => {
           filteredData={filteredData}
           onClick={handleClick}
         />
-        // <Box mt={2}>
-        //   <TextField
-        //     value={query}
-        //     placeholder="Search By Campaign Name"
-        //     InputProps={{
-        //       startAdornment: (
-        //         <InputAdornment position="start">
-        //           <Iconify icon="hugeicons:search-02" />
-        //         </InputAdornment>
-        //       ),
-        //     }}
-        //     sx={{
-        //       width: 250,
-        //     }}
-        //     onChange={(e) => setQuery(e.target.value)}
-        //   />
-        //   {!isLoading && filteredData.length ? (
-        //     <Box
-        //       gap={3}
-        //       display="grid"
-        //       mt={2}
-        //       gridTemplateColumns={{
-        //         xs: 'repeat(1, 1fr)',
-        //         sm: 'repeat(2, 1fr)',
-        //         md: 'repeat(3, 1fr)',
-        //       }}
-        //     >
-        //       {filteredData.map((campaign) => (
-        //         <CampaignItem
-        //           key={campaign?.id}
-        //           campaign={campaign}
-        //           onClick={() => handleClick(campaign?.id)}
-        //         />
-        //       ))}
-        //     </Box>
-        //   ) : (
-        //     <EmptyContent title={`No campaign ${query} found.`} />
-        //   )}
-        // </Box>
       )}
       {currentTab === 'applied' && <AppliedCampaignView />}
     </Container>

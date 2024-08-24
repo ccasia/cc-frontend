@@ -68,6 +68,7 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
       });
       handleClose();
     } catch (error) {
+      console.log(error);
       enqueueSnackbar('error', {
         variant: 'error',
       });

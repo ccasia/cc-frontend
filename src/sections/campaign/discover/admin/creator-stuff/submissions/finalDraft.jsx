@@ -58,7 +58,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
         ...data,
         submissionId: submission.id,
       });
-
+      mutate(endpoints.campaign.getCampaignsByAdminId);
       enqueueSnackbar(res?.data?.message);
       approve.onFalse();
       request.onFalse();
@@ -100,6 +100,16 @@ const FinalDraft = ({ campaign, submission, creator }) => {
 
   return (
     <Box>
+      {submission?.isReview && (
+        <Card sx={{ p: 2, mb: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2) }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="hugeicons:tick-03" />
+            <Typography variant="caption" color="text.secondary">
+              Reviewed
+            </Typography>
+          </Stack>
+        </Card>
+      )}
       <Card sx={{ p: 2, mb: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="caption" color="text.secondary">

@@ -213,9 +213,9 @@ const CampaignDetailManageView = ({ id }) => {
         />
 
         <Stack spacing={1}>
-          <Typography variant="subtitle1">Interests</Typography>
+          <Typography variant="subtitle1">Industries</Typography>
           <Stack direction="row" spacing={1}>
-            {campaign?.campaignBrief?.interests.map((interest, index) => (
+            {campaign?.campaignBrief?.industries.map((interest, index) => (
               <Label key={index} color="secondary">
                 {interest}
               </Label>

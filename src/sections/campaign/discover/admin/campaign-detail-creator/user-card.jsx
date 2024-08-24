@@ -76,13 +76,6 @@ export default function UserCard({ creator, campaignId }) {
             ratio="16/9"
             overlay={alpha(theme.palette.grey[900], 0.48)}
           />
-          {/* <Box
-            sx={{
-              width: '100%',
-              height: 200,
-              bgcolor: theme.palette.grey[400],
-            }}
-          /> */}
         </Box>
 
         <ListItemText

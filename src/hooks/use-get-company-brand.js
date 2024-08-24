@@ -1,21 +1,22 @@
-import { useState, useEffect } from 'react';
+import useSWR from 'swr';
+import { useMemo } from 'react';
 
-import axios, { endpoints } from 'src/utils/axios';
+import { fetcher, endpoints } from 'src/utils/axios';
 
 export const useGetCampaignBrandOption = () => {
-  const [options, setOptions] = useState();
+  const { data, isLoading } = useSWR(endpoints.company.getOptions, fetcher, {
+    revalidateOnFocus: true,
+    revalidateOnMount: true,
+    revalidateOnReconnect: true,
+  });
 
-  useEffect(() => {
-    const getOptions = async () => {
-      try {
-        const res = await axios.get(endpoints.company.getOptions);
-        setOptions(res.data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    getOptions();
-  }, []);
+  const memoizedValue = useMemo(
+    () => ({
+      data,
+      isLoading,
+    }),
+    [data, isLoading]
+  );
 
-  return { options };
+  return memoizedValue;
 };

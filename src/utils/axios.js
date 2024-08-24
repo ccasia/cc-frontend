@@ -65,7 +65,7 @@ export const endpoints = {
     checkTokenValidity: '/api/auth/checkTokenValidity',
   },
   creators: {
-    getCreators: '/api/creator/getAll',
+    getCreators: '/api/creator/getAllCreators',
     getCreatorById: '/api/creator/getCreatorByID',
     deleteCreator: '/api/creator/delete',
     updateCreator: '/api/creator/update-creator',
@@ -130,6 +130,7 @@ export const endpoints = {
     getMatchedCampaign: '/api/campaign/matchCampaignWithCreator',
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
+    shortlistCreator: '/api/campaign/shortlistCreator',
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
@@ -169,6 +170,12 @@ export const endpoints = {
       unsaveCampaign: (id) => `/api/campaign/unsaveCampaign/${id}`,
     },
     getCampaignLog: (id) => `/api/campaign/getCampaignLog/${id}`,
+    logistics: {
+      admin: {
+        create: '/api/campaign/createLogistic',
+        changeStatus: '/api/campaign/changeLogisticStatus',
+      },
+    },
   },
   submission: {
     root: '/api/submission/',

@@ -96,101 +96,116 @@ const CampaignMyTasks = ({ campaign }) => {
             },
           }}
         >
-          {defaultSubmission.map((item, index) => (
-            <TimelineItem>
-              <TimelineSeparator>
-                <Label sx={{ mt: 0.5 }}>{index + 1}</Label>
-                <TimelineConnector />
-              </TimelineSeparator>
-              <TimelineContent>
-                <ListItemText
-                  primary={
-                    <Stack
-                      direction={{ xs: 'column', md: 'row' }}
-                      spacing={1}
-                      alignItems={{ md: 'center' }}
-                      mb={2}
-                    >
-                      <Typography variant="subtitle2">{item.name}</Typography>
-                      {value(item.type) && (
-                        <Box flexGrow={1}>
-                          {value(item.type)?.status === 'PENDING_REVIEW' && (
-                            <Tooltip title="Pending Review">
-                              <Label>
-                                <Iconify icon="mdi:clock-outline" color="warning.main" width={18} />
-                              </Label>
-                            </Tooltip>
-                          )}
+          {defaultSubmission.map((item, index) => {
+            if (item.type === 'FINAL_DRAFT' && value('FIRST_DRAFT')?.status === 'APPROVED') {
+              return null;
+            }
 
-                          {value(item.type)?.status === 'APPROVED' && (
-                            <Tooltip title="Approved">
-                              <Label color="success">
-                                <Iconify icon="hugeicons:tick-04" color="success.main" width={18} />
-                              </Label>
-                            </Tooltip>
-                          )}
-                          {value(item.type)?.status === 'CHANGES_REQUIRED' && (
-                            <Tooltip title="Change Required">
-                              <Label color="warning">
-                                <Iconify icon="uiw:warning" color="warning.main" width={18} />
-                              </Label>
-                            </Tooltip>
-                          )}
-                        </Box>
-                      )}
-                      <Typography variant="caption">
-                        Due: {dayjs(getTimeline(item.value)?.endDate).format('ddd LL')}
-                      </Typography>
-                    </Stack>
-                  }
-                  secondaryTypographyProps={{
-                    variant: 'caption',
-                    color: 'text.disabled',
-                  }}
-                />
-                {item.value === 'Agreement' && (
-                  <CampaignAgreement
-                    campaign={campaign}
-                    timeline={timeline}
-                    submission={value(item.type)}
-                    getDependency={getDependency}
+            return (
+              <TimelineItem>
+                <TimelineSeparator>
+                  <Label sx={{ mt: 0.5 }}>{index + 1}</Label>
+                  <TimelineConnector />
+                </TimelineSeparator>
+                <TimelineContent>
+                  <ListItemText
+                    primary={
+                      <Stack
+                        direction={{ xs: 'column', md: 'row' }}
+                        spacing={1}
+                        alignItems={{ md: 'center' }}
+                        mb={2}
+                      >
+                        <Typography variant="subtitle2">{item.name}</Typography>
+                        {value(item.type) && (
+                          <Box flexGrow={1}>
+                            {value(item.type)?.status === 'PENDING_REVIEW' && (
+                              <Tooltip title="Pending Review">
+                                <Label>
+                                  <Iconify
+                                    icon="mdi:clock-outline"
+                                    color="warning.main"
+                                    width={18}
+                                  />
+                                </Label>
+                              </Tooltip>
+                            )}
+
+                            {value(item.type)?.status === 'APPROVED' && (
+                              <Tooltip title="Approved">
+                                <Label color="success">
+                                  <Iconify
+                                    icon="hugeicons:tick-04"
+                                    color="success.main"
+                                    width={18}
+                                  />
+                                </Label>
+                              </Tooltip>
+                            )}
+
+                            {value(item.type)?.status === 'CHANGES_REQUIRED' && (
+                              <Tooltip title="Change Required">
+                                <Label color="warning">
+                                  <Iconify icon="uiw:warning" color="warning.main" width={18} />
+                                </Label>
+                              </Tooltip>
+                            )}
+                          </Box>
+                        )}
+                        <Typography variant="caption">
+                          Due: {dayjs(getTimeline(item.value)?.endDate).format('ddd LL')}
+                        </Typography>
+                      </Stack>
+                    }
+                    secondaryTypographyProps={{
+                      variant: 'caption',
+                      color: 'text.disabled',
+                    }}
                   />
-                )}
-                {item.value === 'First Draft' && (
-                  <CampaignFirstDraft
-                    campaign={campaign}
-                    timeline={timeline}
-                    fullSubmission={submissions}
-                    submission={value(item.type)}
-                    getDependency={getDependency}
-                  />
-                )}
-                {item.value === 'Final Draft' && (
-                  <CampaignFinalDraft
-                    campaign={campaign}
-                    timeline={timeline}
-                    submission={value(item.type)}
-                    fullSubmission={submissions}
-                    getDependency={getDependency}
-                  />
-                )}
-                {/* {timeline.task === 'First Draft' && (
-                  <CampaignFirstDraft
-                    campaign={campaign}
-                    timeline={timeline}
-                    submission={submissions?.filter((item) => item?.type === 'FIRST_DRAFT')[0]}
-                  />
-                )}
-                {timeline.task === 'Final Draft' && (
-                  <CampaignFinalDraft
-                    campaign={campaign}
-                    timeline={timeline}
-                    submission={submissions?.filter((item) => item?.type === 'FINAL_DRAFT')[0]}
-                  />
-                )} */}
-              </TimelineContent>
-            </TimelineItem>
-          ))}
+                  {item.value === 'Agreement' && (
+                    <CampaignAgreement
+                      campaign={campaign}
+                      timeline={timeline}
+                      submission={value(item.type)}
+                      getDependency={getDependency}
+                    />
+                  )}
+                  {item.value === 'First Draft' && (
+                    <CampaignFirstDraft
+                      campaign={campaign}
+                      timeline={timeline}
+                      fullSubmission={submissions}
+                      submission={value(item.type)}
+                      getDependency={getDependency}
+                    />
+                  )}
+                  {item.value === 'Final Draft' && (
+                    <CampaignFinalDraft
+                      campaign={campaign}
+                      timeline={timeline}
+                      submission={value(item.type)}
+                      fullSubmission={submissions}
+                      getDependency={getDependency}
+                    />
+                  )}
+                  {/* {timeline.task === 'First Draft' && (
+          <CampaignFirstDraft
+            campaign={campaign}
+            timeline={timeline}
+            submission={submissions?.filter((item) => item?.type === 'FIRST_DRAFT')[0]}
+          />
+        )}
+        {timeline.task === 'Final Draft' && (
+          <CampaignFinalDraft
+            campaign={campaign}
+            timeline={timeline}
+            submission={submissions?.filter((item) => item?.type === 'FINAL_DRAFT')[0]}
+          />
+        )} */}
+                </TimelineContent>
+              </TimelineItem>
+            );
+          })}
           {/* {campaign?.campaignTasks
             .sort((a, b) => dayjs(a.endDate).diff(dayjs(b.endDate)))
             .map((timeline, index) => (

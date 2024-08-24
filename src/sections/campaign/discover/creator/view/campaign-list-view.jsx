@@ -192,10 +192,18 @@ export default function CampaignListView() {
       />
 
       <Stack direction="row" spacing={1} my={1.5}>
-        <Button variant="outlined" onClick={() => setFilter('all')}>
+        <Button
+          size="small"
+          variant={filter !== 'saved' && 'contained'}
+          onClick={() => setFilter('all')}
+        >
           All
         </Button>
-        <Button variant="outlined" onClick={() => setFilter('saved')}>
+        <Button
+          size="small"
+          variant={filter === 'saved' ? 'contained' : 'outlined'}
+          onClick={() => setFilter('saved')}
+        >
           Saved
         </Button>
       </Stack>

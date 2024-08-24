@@ -31,7 +31,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
 
 export const EditTimeline = ({ open, campaign, onClose }) => {
-  const { campaignTimeline } = campaign;
+  const { campaignTimeline } = campaign && campaign;
   const [isLoading, setIsLoading] = useState(false);
   const { data: timelineData, isLoading: timelineLoading } = useGetAllTimelineType();
   const [query, setQuery] = useState('');
@@ -144,14 +144,6 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
     }
     remove(index);
   };
-
-  // const handleChange = (e, index) => {
-  //   setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
-  //   // eslint-disable-next-line no-unsafe-optional-chaining
-  //   if (index !== fields?.length - 1) {
-  //     setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
-  //   }
-  // };
 
   const closeDialog = () => onClose('timeline');
 

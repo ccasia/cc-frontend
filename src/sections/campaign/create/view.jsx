@@ -28,8 +28,6 @@ function CreateCampaign() {
       />
 
       <CreateCampaignForm />
-
-      {/* <SnackbarProvider /> */}
     </Container>
   );
 }

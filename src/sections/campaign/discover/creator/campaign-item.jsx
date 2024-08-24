@@ -31,7 +31,6 @@ export default function CampaignItem({ campaign, user }) {
   const [open, setOpen] = useState(false);
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
-  console.log(campaign);
 
   const { socket } = useSocketContext();
 
@@ -287,7 +286,7 @@ export default function CampaignItem({ campaign, user }) {
         </Grid>
         <Grid item xs={11}>
           <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
-            {campaign?.campaignBrief?.interests.map((e, index) => (
+            {campaign?.campaignBrief?.industries.map((e, index) => (
               <Stack key={index} direction="row" spacing={1} flexWrap="wrap">
                 <Label color="primary">{e}</Label>
               </Stack>

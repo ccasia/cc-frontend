@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/media-has-caption */
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 /* eslint-disable no-undef */
 import React, { useState } from 'react';
@@ -40,6 +41,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
+    type: Yup.string(),
   });
 
   const methods = useForm({
@@ -58,7 +60,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
         ...data,
         submissionId: submission.id,
       });
-
+      mutate(endpoints.campaign.getCampaignsByAdminId);
       enqueueSnackbar(res?.data?.message);
       approve.onFalse();
       request.onFalse();
@@ -80,7 +82,14 @@ const FirstDraft = ({ campaign, submission, creator }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onclose}>Cancel</Button>
-        <Button onClick={onSubmit}>Confirm</Button>
+        <Button
+          onClick={() => {
+            setValue('type', 'approve');
+            onSubmit();
+          }}
+        >
+          Confirm
+        </Button>
       </DialogActions>
     </Dialog>
   );
@@ -93,13 +102,29 @@ const FirstDraft = ({ campaign, submission, creator }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onclose}>Cancel</Button>
-        <Button onClick={onSubmit}>Confirm</Button>
+        <Button
+          onClick={() => {
+            onSubmit();
+          }}
+        >
+          Confirm
+        </Button>
       </DialogActions>
     </Dialog>
   );
 
   return (
     <Box>
+      {submission?.isReview && (
+        <Card sx={{ p: 2, mb: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2) }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="hugeicons:tick-03" />
+            <Typography variant="caption" color="text.secondary">
+              Reviewed
+            </Typography>
+          </Stack>
+        </Card>
+      )}
       <Card sx={{ p: 2, mb: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="caption" color="text.secondary">

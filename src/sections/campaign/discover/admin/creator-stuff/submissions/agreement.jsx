@@ -1,5 +1,6 @@
 import React from 'react';
 import dayjs from 'dayjs';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -8,6 +9,7 @@ import {
   Box,
   Card,
   Stack,
+  alpha,
   Button,
   Dialog,
   Typography,
@@ -32,9 +34,6 @@ const Agreement = ({ campaign, submission, creator }) => {
       feedback: '',
     },
   });
-  // const campaignTasks = creator?.user?.campaignTasks.filter(
-  //   (task) => task?.campaignId === campaign.id
-  // );
 
   const { reset, handleSubmit } = methods;
 
@@ -61,10 +60,10 @@ const Agreement = ({ campaign, submission, creator }) => {
         status: 'reject',
         userId: creator?.user?.id,
         campaignTaskId: submission?.campaignTask?.id,
-        // firstDraftId: campaignTasks.filter((value) => value.task === 'First Draft')[0]?.id,
         submissionId: submission?.id,
         feedback: data.feedback,
       });
+      mutate(endpoints.campaign.getCampaignsByAdminId);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Failed', {
@@ -108,6 +107,16 @@ const Agreement = ({ campaign, submission, creator }) => {
 
   return (
     <Box>
+      {submission?.isReview && (
+        <Card sx={{ p: 2, mb: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2) }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="hugeicons:tick-03" />
+            <Typography variant="caption" color="text.secondary">
+              Reviewed
+            </Typography>
+          </Stack>
+        </Card>
+      )}
       <Card sx={{ p: 2, mb: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="caption" color="text.secondary">

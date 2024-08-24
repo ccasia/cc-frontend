@@ -3,21 +3,27 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Paper, alpha, Button, Typography } from '@mui/material';
+import { Box, Stack, Paper, alpha, Button, Typography, LinearProgress } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
 const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, fullSubmission }) => {
+  // eslint-disable-next-line no-unused-vars
   const [preview, setPreview] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [loading, setLoading] = useState(false);
   const dependency = getDependency(submission?.id);
+  const { socket } = useSocketContext();
+  const [progress, setProgress] = useState(0);
 
   const methods = useForm();
 
@@ -26,6 +32,7 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
   const handleRemoveFile = () => {
     setValue('draft', '');
     setPreview('');
+    localStorage.removeItem('preview');
   };
 
   const handleDrop = useCallback(
@@ -37,6 +44,7 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
       });
 
       setPreview(newFile.preview);
+      localStorage.setItem('preview', newFile.preview);
 
       if (file) {
         setValue('draft', newFile, { shouldValidate: true });
@@ -59,8 +67,6 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
       });
       enqueueSnackbar(res.data.message);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
-      reset();
-      setPreview('');
     } catch (error) {
       enqueueSnackbar('Failed to submit draft', {
         variant: 'error',
@@ -74,6 +80,42 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
     () => fullSubmission?.find((item) => item?.id === dependency?.dependentSubmissionId),
     [fullSubmission, dependency]
   );
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('progress', (data) => {
+        if (submission?.id === data.submissionId) {
+          setIsProcessing(true);
+          setProgress(data.progress);
+
+          if (data.progress === 100) {
+            mutate(endpoints.campaign.creator.getCampaign(campaign?.id));
+            setIsProcessing(false);
+            reset();
+            setPreview('');
+            localStorage.removeItem('preview');
+          } else if (progress === 0) {
+            setIsProcessing(false);
+            reset();
+            setPreview('');
+            localStorage.removeItem('preview');
+          }
+        }
+      });
+    }
+    return () => {
+      socket.off('progress');
+    };
+  }, [socket, submission, reset, progress, campaign]);
+
+  const handleCancel = () => {
+    if (isProcessing) {
+      socket.emit('cancel-processing', { submissionId: submission.id });
+      setIsProcessing(false);
+      setProgress(0);
+      localStorage.removeItem('preview');
+    }
+  };
 
   return (
     value?.status === 'APPROVED' && (
@@ -96,32 +138,46 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
           </Box>
         )}
         {submission?.status === 'IN_PROGRESS' && (
-          <FormProvider methods={methods} onSubmit={onSubmit}>
-            <Stack gap={2}>
-              {preview ? (
-                <Box>
-                  {/* // eslint-disable-next-line jsx-a11y/media-has-caption */}
-                  <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
-                    <source src={preview} />
-                  </video>
-                  <Button color="error" variant="outlined" size="small" onClick={handleRemoveFile}>
-                    Change Video
-                  </Button>
-                </Box>
-              ) : (
-                <RHFUpload
-                  name="draft"
-                  type="video"
-                  onDrop={handleDrop}
-                  onRemove={handleRemoveFile}
-                />
-              )}
-              <RHFTextField name="caption" placeholder="Caption" multiline />
-              <LoadingButton loading={loading} variant="contained" type="submit">
-                Submit Draft
-              </LoadingButton>
-            </Stack>
-          </FormProvider>
+          <>
+            {isProcessing ? (
+              <>
+                <LinearProgress variant="determinate" value={progress} />
+                <Button onClick={() => handleCancel()}>Cancel</Button>
+              </>
+            ) : (
+              <FormProvider methods={methods} onSubmit={onSubmit}>
+                <Stack gap={2}>
+                  {localStorage.getItem('preview') ? (
+                    <Box>
+                      {/* // eslint-disable-next-line jsx-a11y/media-has-caption */}
+                      <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+                        <source src={localStorage.getItem('preview')} />
+                      </video>
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        size="small"
+                        onClick={handleRemoveFile}
+                      >
+                        Change Video
+                      </Button>
+                    </Box>
+                  ) : (
+                    <RHFUpload
+                      name="draft"
+                      type="video"
+                      onDrop={handleDrop}
+                      onRemove={handleRemoveFile}
+                    />
+                  )}
+                  <RHFTextField name="caption" placeholder="Caption" multiline />
+                  <LoadingButton loading={loading} variant="contained" type="submit">
+                    Submit Draft
+                  </LoadingButton>
+                </Stack>
+              </FormProvider>
+            )}
+          </>
         )}
         {submission?.status === 'CHANGES_REQUIRED' && (
           <>

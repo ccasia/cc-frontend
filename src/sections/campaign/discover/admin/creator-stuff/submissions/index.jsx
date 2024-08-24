@@ -57,10 +57,6 @@ const Submissions = ({ campaign, submissions, creator }) => {
       {currentTab === 'finalDraft' && firstDraftSubmission && (
         <FinalDraft submission={finalDraftSubmission} campaign={campaign} creator={creator} />
       )}
-
-      {/* {firstDraftSubmission.submissionType.type === 'FIRST_DRAFT' && <FirstDraft />} */}
-      {/* {finalDraftSubmission.submissionType.type === 'FINAL_DRAFT' && <FinalDraft />} */}
-      {/* {posting.submissionType.type === 'POSTING' && <Posting />} */}
     </>
   );
 };

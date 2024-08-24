@@ -83,7 +83,7 @@ const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
     >
       {[
         {
-          label: campaign?.campaignBrief?.interests.map((e, index) => (
+          label: campaign?.campaignBrief?.industries.map((e, index) => (
             <Label key={index} variant="filled" size="small" color="primary">
               {e}
             </Label>

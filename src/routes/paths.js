@@ -52,7 +52,7 @@ export const paths = {
         manage: `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`,
         detail: (id) => `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${id}`,
       },
-      manageCreator: (campaignId, creatorId) =>
+      manageCreator: (campaignId, creatorId, index) =>
         `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/creator/${creatorId}`,
     },
     user: {

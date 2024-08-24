@@ -131,17 +131,17 @@ export function useNavData() {
             icon: <Iconify icon="material-symbols:explore-outline" width={25} />,
             children: [
               {
-                title: 'List',
+                title: 'Manage Campaign',
                 path: paths.dashboard.campaign.view,
               },
               {
                 roles: ['superadmin', 'CSM'],
-                title: 'Create',
+                title: 'Create Campaign',
                 path: paths.dashboard.campaign.create,
               },
               {
                 roles: ['superadmin', 'CSM'],
-                title: 'Manage',
+                title: 'Edit Campaign',
                 path: paths.dashboard.campaign.manage,
               },
               {
@@ -151,11 +151,17 @@ export function useNavData() {
               },
             ],
           },
+          // {
+          //   roles: ['creator'],
+          //   title: 'Media Kit',
+          //   path: paths.dashboard.creator.mediaKitCreator,
+          //   icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
+          // },
           {
-            roles: ['creator'],
-            title: 'Media Kit',
+            roles: ['superadmin', 'CSM'],
+            title: 'My Tasks',
             path: paths.dashboard.creator.mediaKitCreator,
-            icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
+            icon: <Iconify icon="hugeicons:task-01" width={25} />,
           },
         ],
       },
