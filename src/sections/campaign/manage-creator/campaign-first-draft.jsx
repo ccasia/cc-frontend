@@ -6,12 +6,27 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Paper, alpha, Button, Typography, LinearProgress } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Paper,
+  alpha,
+  Button,
+  Dialog,
+  Typography,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  LinearProgress,
+} from '@mui/material';
+
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
@@ -24,6 +39,7 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
   const dependency = getDependency(submission?.id);
   const { socket } = useSocketContext();
   const [progress, setProgress] = useState(0);
+  const display = useBoolean();
 
   const methods = useForm();
 
@@ -76,7 +92,7 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
     }
   });
 
-  const value = useMemo(
+  const previousSubmission = useMemo(
     () => fullSubmission?.find((item) => item?.id === dependency?.dependentSubmissionId),
     [fullSubmission, dependency]
   );
@@ -118,7 +134,7 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
   };
 
   return (
-    value?.status === 'APPROVED' && (
+    previousSubmission?.status === 'APPROVED' && (
       <Box>
         {submission?.status === 'PENDING_REVIEW' && (
           <Box
@@ -200,6 +216,34 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
             </Box>
           </>
         )}
+        {submission?.status === 'APPROVED' && (
+          <Stack justifyContent="center" alignItems="center" spacing={2}>
+            <Image src="/assets/approve.svg" sx={{ width: 250 }} />
+            <Typography variant="subtitle2">Your First Draft has been approved.</Typography>
+            <Button onClick={display.onTrue}>Preview Draft</Button>
+          </Stack>
+        )}
+        <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
+          <DialogTitle>Agreement</DialogTitle>
+          <DialogContent>
+            <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+              <source src={submission?.content} />
+            </video>
+            <Box
+              component={Paper}
+              p={1.5}
+              my={1}
+              sx={{
+                bgcolor: (theme) => theme.palette.background.default,
+              }}
+            >
+              <Typography>{submission?.caption}</Typography>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={display.onFalse}>Close</Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     )
   );
