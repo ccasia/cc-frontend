@@ -29,12 +29,14 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const FirstDraft = ({ campaign, submission, creator }) => {
+  console.log(campaign, submission, creator);
   const [type, setType] = useState('approve');
   const approve = useBoolean();
   const request = useBoolean();
@@ -60,7 +62,10 @@ const FirstDraft = ({ campaign, submission, creator }) => {
         ...data,
         submissionId: submission.id,
       });
-      mutate(endpoints.campaign.getCampaignsByAdminId);
+      mutate(
+        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+      );
+      // mutate(endpoints.campaign.getCampaignsByAdminId);
       enqueueSnackbar(res?.data?.message);
       approve.onFalse();
       request.onFalse();
@@ -229,15 +234,21 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                 component={Paper}
                 position="relative"
                 p={10}
-                sx={{
-                  // border: 1,
-                  // borderColor: (theme) => theme.palette.text.secondary,
-                  bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
-                }}
+                sx={
+                  {
+                    // border: 1,
+                    // borderColor: (theme) => theme.palette.text.secondary,
+                    // bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
+                  }
+                }
               >
                 <Stack gap={1.5} alignItems="center">
-                  <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
-                  <Typography variant="subtitle2" color="text.secondary">
+                  <Image src="/assets/approve.svg" />
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{ textAlign: 'center' }}
+                  >
                     First Draft has been reviewed
                   </Typography>
                 </Stack>
