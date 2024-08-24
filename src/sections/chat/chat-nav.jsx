@@ -19,7 +19,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
-
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useCollapseNav } from './hooks';
 import ChatNavItem from './chat-nav-item';
 import ChatNavAccount from './chat-nav-account';
@@ -37,10 +37,11 @@ export default function ChatNav({}) {
   const theme = useTheme();
   const { user } = useAuthContext();
   const router = useRouter();
-  // console.log (" USER INFO" , user?.id)
+  const { socket } = useSocketContext();
   const mdUp = useResponsive('up', 'md');
-
-  const { threads, loading, error } = useGetAllThreads();
+  const [latestMessages, setLatestMessages] = useState({});
+  const [sortedThread, setSortedThreads] = useState([]);
+  const { threads, threadrefetch } = useGetAllThreads();
   const [selectedThreadId, setSelectedThreadId] = useState(null);
   const [archivedChats, setArchivedChats] = useState([]);
   const [showArchived, setShowArchived] = useState(false);
@@ -67,7 +68,35 @@ export default function ChatNav({}) {
     }
   }, [onCloseDesktop, mdUp]);
 
+  const handleLatestMessage = (message) => {
+    console.log('Received latest message:', message);
+    setLatestMessages((prevMessages) => ({
+      ...prevMessages,
+      [message.threadId]: message,
+    }));
+  };
   
+  useEffect(() => {
+    socket.on('latestMessage', handleLatestMessage);
+    return () => {
+      socket.off('latestMessage', handleLatestMessage);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    const sorted = sortThreadsByLatestMessage(threads || []);
+    setSortedThreads(sorted);
+    threadrefetch();
+
+  }, [threads, latestMessages]);
+
+  const sortThreadsByLatestMessage = (threads) => {
+    return threads.slice().sort((a, b) => {
+      const aLastMessageTime = new Date(latestMessages[a.id]?.createdAt).getTime();
+      const bLastMessageTime = new Date(latestMessages[b.id]?.createdAt).getTime();
+      return bLastMessageTime - aLastMessageTime;
+    });
+  };
   
   const handleToggleNav = useCallback(() => {
     if (mdUp) {
@@ -97,9 +126,6 @@ export default function ChatNav({}) {
     setShowArchived(prevState => !prevState); 
   };
 
-  
-    
-
   const renderToggleBtn = (
     <IconButton
       onClick={onOpenMobile}
@@ -115,7 +141,7 @@ export default function ChatNav({}) {
         boxShadow: theme.customShadows.primary,
         color: theme.palette.primary.contrastText,
         '&:hover': {
-          bgcolor: theme.palette.primary.darker,
+          bgcolor: theme.palette.primary.dark,
         },
       }}
     >
@@ -123,37 +149,19 @@ export default function ChatNav({}) {
     </IconButton>
   );
 
+  const sortedThreads = sortThreadsByLatestMessage(threads || []);
+
   const renderList = (
     <>
-       {/* {(!threads || threads.length === 0) && (
-      <Typography variant="body2" color="textSecondary">
-        No chat groups available
-      </Typography>
-    )}
-      {threads && threads.map((thread) => (
-        (showArchived ? thread.archived : !thread.archived) && 
-        thread.UserThread.some((userThread) => userThread.userId === user.id)
-        && (
-      <ChatNavItem
-        key={thread.id}
-        collapse={collapseDesktop}
-        thread={thread}
-        selected={thread.id === selectedThreadId}
-        onCloseMobile={onCloseMobile}
-        onClick={handleClick}
-        onArchive={handleArchive}
-      />
-    )))
-    } */}
      {(!threads || threads.length === 0) && (
       <Typography variant="body2" color="textSecondary">
         No chat groups available
       </Typography>
     )}
-    {threads && threads.map((thread) => {
+    {threads && sortedThreads.map((thread) => {
       const userThread = thread.UserThread.find((ut) => ut.userId === user.id);
 
-      if (!userThread) return null; // Skip if there's no UserThread entry for the user
+      if (!userThread) return null; 
 
       const isArchived = userThread.archived;
 
@@ -167,11 +175,12 @@ export default function ChatNav({}) {
             onCloseMobile={onCloseMobile}
             onClick={() => handleClick(thread.id)}
             onArchive={() => handleArchive(thread.id)}
+            latestMessage={latestMessages?.[thread.id]} 
           />
         );
       }
 
-      return null; // Skip threads that don't match the current archive filter
+      return null; 
     })}
     </>
   );

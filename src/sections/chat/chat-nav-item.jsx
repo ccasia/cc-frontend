@@ -25,7 +25,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
+export default function ChatNavItem({ onArchive, selected, collapse, thread, latestMessage }) {
   const { user } = useAuthContext();
   const [anchorEl, setAnchorEl] = useState(null);
   const mdUp = useResponsive('up', 'md');
@@ -36,13 +36,6 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
   const [userThreadData, setUserThreadData] = useState(null);
   const { thread: threadData } = useGetThreadById(thread.id);
 
-  // global thread
-  // useEffect(() => {
-  //   if (!thread.isGroup && thread.UserThread) {
-  //     const otherUserInfo = thread.UserThread.find(userThread => userThread.user.id !== user.id)?.user;
-  //     setOtherUser(otherUserInfo);
-  //   }
-  // }, [thread, user]);
 
   useEffect(() => {
     if (threadData && !threadData.isGroup && threadData.UserThread) {
@@ -64,29 +57,12 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
 
 
   const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget); // Set anchor element to ellipses IconButton
+    setAnchorEl(event.currentTarget); 
   };
 
   const handleMenuClose = () => {
-    setAnchorEl(null); // Close the menu
+    setAnchorEl(null);
   };
-
-  // global thread archive
-  // const handleArchiveClick = async () => {
-  //   try {
-  //     if (thread.archived) {
-  //       await unarchiveThread(thread.id); 
-  //       console.log('unarchviing')
-  //     } else {
-  //       console.log('archiving thread...');
-  //       await archiveThread(thread.id);
-  //     }
-  //     onArchive(thread.id);
-  //     handleMenuClose();
-  //   } catch (error) {
-  //     console.error('Error archiving/unarchiving thread:', error);
-  //   }
-  // };
 
   const handleArchiveClick = async () => {
     try {
@@ -116,6 +92,8 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
     router.push(threadPath);
   }
 
+  console.log('Latest Message 2:', latestMessage);
+  const latestMessageContent = latestMessage?.content;
   return (
     <ListItemButton
       disableGutters
@@ -145,13 +123,13 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
               noWrap: true,
               variant: 'subtitle2',
             }}
-            secondary={thread.description}
+            secondary={latestMessageContent}
             secondaryTypographyProps={{
               noWrap: true,
               component: 'span',
               // variant: conversation.unreadCount ? 'subtitle2' : 'body2',
               // color: conversation.unreadCount ? 'text.primary' : 'text.secondary',
-            }}
+            }}  
           />
 
           <Stack alignItems="flex-end" sx={{ ml: 2, height: 44 }}>
@@ -215,6 +193,7 @@ ChatNavItem.propTypes = {
   collapse: PropTypes.bool,
   onArchive: PropTypes.func.isRequired,
   conversation: PropTypes.object,
+  latestMessage: PropTypes.object,
   onCloseMobile: PropTypes.func,
   selected: PropTypes.bool,
 };

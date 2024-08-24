@@ -15,10 +15,16 @@ const options = {
 // Use SWR to fetch all threads
 export const useGetAllThreads = () => {
   const { data, error, isLoading } = useSWR(endpoints.threads.getAll, fetcher);
+  
+  const threadrefetch = () => {
+    mutate(endpoints.threads.getAll)
+  };
   return {
     threads: data,
     loading: isLoading,
     error,
+    threadrefetch
+  
   };
 };
 

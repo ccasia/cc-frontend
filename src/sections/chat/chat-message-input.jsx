@@ -1,14 +1,10 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
-//  import { useRouter } from 'src/routes/hooks';
-//  import { useAuthContext } from 'src/auth/hooks';
-//  import uuidv4 from 'src/utils/uuidv4';
 
-//  import { sendMessageInThread } from 'src/api/chat';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -23,7 +19,7 @@ export default function ChatMessageInput({
 }) {
   //  const router = useRouter();
 
-  const { socket } = useSocketContext();
+  //  const { socket } = useSocketContext();
 
   const [message, setMessage] = useState('');
 
@@ -44,19 +40,6 @@ export default function ChatMessageInput({
     setMessage(event.target.value);
   }, []);
 
-  // Listen for incoming messages
-  useEffect(() => {
-    const handleIncomingMessage = (data) => {};
-
-    socket?.on('message', handleIncomingMessage);
-    return () => {
-      socket?.off('message', handleIncomingMessage);
-    };
-  }, [socket]);
-
-  // const handleChangeMessage = useCallback((event) => {
-  //   setMessage(event.target.value);
-  // }, []);
 
   return (
     <>
@@ -69,7 +52,6 @@ export default function ChatMessageInput({
           borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
           px: 1,
           minHeight: 56,
-          // height: 56,
           maxHeight: 100,
         }}
       >
@@ -121,7 +103,7 @@ export default function ChatMessageInput({
       </Stack>
 
       {/* <Button onclick={socketMessage}>Send </Button> */}
-      <input type="file" ref={fileRef} style={{ display: 'none' }} />
+      {/* <input type="file" ref={fileRef} style={{ display: 'none' }} /> */}
     </>
   );
 }
