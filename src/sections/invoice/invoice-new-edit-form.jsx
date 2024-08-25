@@ -34,11 +34,11 @@ export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
 
   const loadingSend = useBoolean();
 
-  const shortlistedCreators = creators?.campaign?.pitch.filter(
-    (creator) => creator.status === 'approved'
-  );
+  // const shortlistedCreators = creators?.campaign?.pitch.filter(
+  //   (creator) => creator.status === 'approved'
+  // );
 
-  const creatorList = shortlistedCreators?.map((creator) => ({
+  const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
     id: creator.user.id,
     name: creator.user.name,
     email: creator.user.email,
