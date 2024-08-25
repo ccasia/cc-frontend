@@ -16,8 +16,6 @@ import { fToNow } from 'src/utils/format-time';
 export default function NotificationItem({ notification }) {
   const router = useRouter();
 
-  console.log(notification);
-
   const renderText = (
     <ListItemText
       primary={notification.notification.message}

@@ -58,6 +58,7 @@ export const paths = {
     user: {
       root: `${ROOTS.DASHBOARD}/user`,
       profile: `${ROOTS.DASHBOARD}/user/profile`,
+      myTasks: `${ROOTS.DASHBOARD}/tasks`,
     },
     creator: {
       root: `${ROOTS.DASHBOARD}/creator`,
@@ -65,7 +66,8 @@ export const paths = {
       mediaKit: (id) => `${ROOTS.DASHBOARD}/creator/media-kits/${id}`,
       mediaKitCreator: `${ROOTS.DASHBOARD}/mediakit`,
       mediaKitLists: `${ROOTS.DASHBOARD}/creator/media-kits`,
-      financeCreator: `${ROOTS.DASHBOARD}/finance`,
+      invoiceCreator: `${ROOTS.DASHBOARD}/invoiceCreator`,
+      inbox: `${ROOTS.DASHBOARD}/inbox`,
     },
     landing: {
       creator: `${ROOTS.DASHBOARD}/landing/creator`,
@@ -78,12 +80,12 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/chat`,
       thread: (id) => `${ROOTS.DASHBOARD}/chat/thread/${id}`,
     },
-    finance:{
+    finance: {
       root: `${ROOTS.DASHBOARD}/finance`,
-      invoice:`${ROOTS.DASHBOARD}/invoice`,
-      creatorInvoice:(id)=>`${ROOTS.DASHBOARD}/invoice/creator-list/${id}`,
-      invoiceDetail:(id)=>`${ROOTS.DASHBOARD}/invoice/detail/${id}`,
-      createInvoice :(id) => `${ROOTS.DASHBOARD}/invoice/create/${id}`,
-    }
+      invoice: `${ROOTS.DASHBOARD}/invoice`,
+      creatorInvoice: (id) => `${ROOTS.DASHBOARD}/invoice/creator-list/${id}`,
+      invoiceDetail: (id) => `${ROOTS.DASHBOARD}/invoice/detail/${id}`,
+      createInvoice: (id) => `${ROOTS.DASHBOARD}/invoice/create/${id}`,
+    },
   },
 };

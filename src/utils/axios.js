@@ -44,7 +44,7 @@ export const endpoints = {
     getMessage: (threadId) => `/api/thread/getmessage/${threadId}`,
     archive: (threadId) => `/api/thread/${threadId}/archive`,
     unarchive: (threadId) => `/api/thread/${threadId}/unarchive`,
-    getUnreadCount:(threadId) => `/api/thread/${threadId}/unreadcount`, 
+    getUnreadCount: (threadId) => `/api/thread/${threadId}/unreadcount`,
     markAsSeen: (threadId) => `/api/thread/${threadId}/seen`,
     getTotalCount: '/api/thread/message/totalcount',
   },
@@ -74,6 +74,7 @@ export const endpoints = {
     updateCreator: '/api/creator/update-creator',
     updateMediaKit: '/api/creator/update-media-kit',
     getCreatorFullInfo: (id) => `/api/creator/getCreatorFullInfoById/${id}`,
+    updatePaymentForm: '/api/creator/updatePaymentForm',
   },
   users: {
     newAdmin: '/api/user/newAdmin',
@@ -207,8 +208,8 @@ export const endpoints = {
     root: '/api/role',
   },
   invoice: {
-    getCampaignById:(id) => `/api/campaign/getCampaignByIdInvoice/${id}`,
-    create: '/api/invoice/create', 
+    getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,
+    create: '/api/invoice/create',
     getInvoicesByCampaignId: (id) => `/api/invoice/getInvoicesByCampaignId/${id}`,
     getInvoiceById: (id) => `/api/invoice/${id}`,
   },

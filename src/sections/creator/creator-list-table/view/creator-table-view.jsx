@@ -204,15 +204,11 @@ function CreatorTableView() {
             { name: 'Creators' },
             { name: 'List' },
           ]}
-          // action={<></>}
           sx={{
             mb: { xs: 3, md: 5 },
           }}
         />
 
-        {/* {inviteAdminDialog}
-
-<AdminCreateManager open={openCreateDialog} onClose={handleCloseCreateDialog} /> */}
         <Card>
           <Tabs
             value={filters.status}

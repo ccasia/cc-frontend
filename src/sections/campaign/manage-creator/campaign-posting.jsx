@@ -139,6 +139,9 @@ const CampaignPosting = ({ campaign, timeline, submission, getDependency, fullSu
             <Stack justifyContent="center" alignItems="center" spacing={2}>
               <Image src="/assets/approve.svg" sx={{ width: 250 }} />
               <Typography variant="subtitle2">Your Posting has been approved.</Typography>
+              <Button variant="outlined" size="small">
+                View Invoice
+              </Button>
             </Stack>
           )}
         </Box>

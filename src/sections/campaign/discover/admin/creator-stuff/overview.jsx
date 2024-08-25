@@ -126,12 +126,6 @@ const OverView = ({ campaign }) => {
                 width={60}
                 legend={{ hidden: true }}
               />
-              {/* <SparkLineChart
-                plotType="bar"
-                data={generateRandomNumbers(7)}
-                height={50}
-                width={50}
-              /> */}
             </Box>
           </Stack>
         </Box>

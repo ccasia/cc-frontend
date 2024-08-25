@@ -174,13 +174,7 @@ const CampaignInfo = ({ campaign }) => {
             <ListItemIcon>
               <Iconify icon="octicon:dot-16" />
             </ListItemIcon>
-            <ListItemText primary="Single-line item" />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon>
-              <Iconify icon="octicon:dot-16" />
-            </ListItemIcon>
-            <ListItemText primary="Single-line item" />
+            <ListItemText primary={campaign?.campaignBrief?.objectives} />
           </ListItem>
         </List>
       </Stack>
@@ -351,10 +345,70 @@ const CampaignInfo = ({ campaign }) => {
     </Stack>
   );
 
+  const renderBrandInfo = (
+    <Stack gap={1.5}>
+      <Typography variant="h5">Campaign Brand</Typography>
+      <Box
+        maxWidth={800}
+        display="grid"
+        gridTemplateColumns="repeat(3, 1fr)"
+        component={Card}
+        p={4}
+        mx="auto"
+        gap={2}
+      >
+        <ListItemText
+          primary="Brand Name"
+          secondary={campaign?.company?.name ?? campaign?.brand?.name}
+          primaryTypographyProps={{
+            typography: 'body2',
+            color: 'text.secondary',
+            mb: 0.5,
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+            color: 'text.primary',
+            component: 'span',
+          }}
+        />
+        <ListItemText
+          primary="Brand Email"
+          secondary={campaign?.company?.email ?? campaign?.brand?.email}
+          primaryTypographyProps={{
+            typography: 'body2',
+            color: 'text.secondary',
+            mb: 0.5,
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+            color: 'text.primary',
+            component: 'span',
+          }}
+        />
+        <ListItemText
+          primary="Brand Website"
+          secondary={campaign?.company?.website ?? campaign?.brand?.website}
+          primaryTypographyProps={{
+            typography: 'body2',
+            color: 'text.secondary',
+            mb: 0.5,
+          }}
+          secondaryTypographyProps={{
+            typography: 'subtitle2',
+            color: 'text.primary',
+            component: 'span',
+          }}
+        />
+      </Box>
+    </Stack>
+  );
+
   return (
     <Stack spacing={2} maxWidth={800} mx="auto">
       {renderGallery}
       {renderInformation}
+      <Divider sx={{ borderStyle: 'dashed' }} />
+      {renderBrandInfo}
       <Divider sx={{ borderStyle: 'dashed' }} />
       {renderRequirements}
     </Stack>

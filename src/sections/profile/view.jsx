@@ -46,6 +46,7 @@ import UploadPhoto from './dropzone';
 import AccountSecurity from './security';
 import { Billing } from '../creator/profile/billing';
 import AccountSocialLinks from '../creator/profile/social';
+import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
 
 // import x from '../creator/profile/notification';
@@ -251,26 +252,31 @@ const Profile = () => {
         icon={<Iconify icon="solar:user-id-bold" width={24} />}
       />
 
-      <Tab
+      {/* <Tab
         label="Social"
         value="Social Links"
         icon={<Iconify icon="solar:share-bold" width={24} />}
-      />
+      /> */}
       <Tab
         label="Security"
         value="security"
         icon={<Iconify icon="ic:round-vpn-key" width={24} />}
       />
       <Tab
+        label="Payment Form"
+        value="paymentForm"
+        icon={<Iconify icon="ic:baseline-payment" width={24} />}
+      />
+      {/* <Tab
         value="Billing"
         label="Billing"
         icon={<Iconify icon="solar:bill-list-bold" width={24} />}
-      />
-      <Tab
+      /> */}
+      {/* <Tab
         value="Notifications"
         label="Notifications"
         icon={<Iconify icon="solar:bell-bing-bold" width={24} />}
-      />
+      /> */}
     </Tabs>
   );
 
@@ -292,6 +298,8 @@ const Profile = () => {
   const creatorContents = (
     <>
       {currentTab === 'security' && <AccountSecurity />}
+
+      {currentTab === 'paymentForm' && <PaymentFormProfile user={user} />}
 
       {currentTab === 'general' && <CreatorProfile />}
 

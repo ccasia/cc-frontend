@@ -36,6 +36,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 
 import OverView from '../creator-stuff/overview';
 import Submissions from '../creator-stuff/submissions';
+import TimelineCreator from '../creator-stuff/timeline/view/page';
 import LogisticView from '../creator-stuff/logistics/view/logistic-view';
 
 const CampaignManageCreatorView = ({ id, campaignId }) => {
@@ -311,6 +312,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             <Submissions campaign={campaign} submissions={submissions} creator={data} />
           )}
           {currentTab === 'logistics' && <LogisticView campaign={campaign} creator={data} />}
+          {currentTab === 'timeline' && <TimelineCreator campaign={campaign} creator={data} />}
         </>
       )}
     </Container>

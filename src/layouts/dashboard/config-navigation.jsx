@@ -167,7 +167,7 @@ export function useNavData() {
           {
             roles: ['superadmin', 'CSM'],
             title: 'My Tasks',
-            path: paths.dashboard.creator.mediaKitCreator,
+            path: paths.dashboard.user.myTasks,
             icon: <Iconify icon="hugeicons:task-01" width={25} />,
           },
         ],
@@ -196,9 +196,14 @@ export function useNavData() {
             icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
           },
           {
-            title: 'Finance',
-            path: paths.dashboard.creator.financeCreator,
+            title: 'Invoice',
+            path: paths.dashboard.creator.invoiceCreator,
             icon: <Iconify icon="material-symbols:finance" width={25} />,
+          },
+          {
+            title: 'Inbox',
+            path: paths.dashboard.creator.inbox,
+            icon: <Iconify icon="material-symbols:inbox" width={25} />,
           },
         ],
       },

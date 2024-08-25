@@ -5,7 +5,15 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-export default function RHFDatePicker({ name, helperText, type, label, disabled, ...other }) {
+export default function RHFDatePicker({
+  name,
+  helperText,
+  type,
+  label,
+  disabled,
+  minDate,
+  maxDate,
+}) {
   const { control } = useFormContext();
 
   return (
@@ -26,6 +34,9 @@ export default function RHFDatePicker({ name, helperText, type, label, disabled,
                 helperText: error?.message,
               },
             }}
+            minDate={minDate}
+            maxDate={maxDate}
+            // {...other}
           />
           {/* </DemoContainer> */}
         </LocalizationProvider>
@@ -40,4 +51,6 @@ RHFDatePicker.propTypes = {
   type: PropTypes.string,
   label: PropTypes.string,
   disabled: PropTypes.bool,
+  minDate: PropTypes.string,
+  maxDate: PropTypes.string,
 };

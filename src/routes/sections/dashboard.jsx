@@ -17,7 +17,8 @@ const ManagersPage = lazy(() => import('src/pages/dashboard/admin'));
 const CreatorList = lazy(() => import('src/pages/dashboard/creator/list'));
 const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'));
 const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCards'));
-const FinanceCreator = lazy(() => import('src/pages/dashboard/creator/finance'));
+const InvoiceCreator = lazy(() => import('src/pages/dashboard/creator/invoice'));
+const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
 
 // Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
@@ -69,6 +70,9 @@ const FinanceDiscover = lazy(() => import('src/pages/dashboard/finance/discover'
 const CreatorSelection = lazy(() => import('src/pages/dashboard/finance/creatorList'));
 const InvoicePage = lazy(() => import('src/pages/dashboard/finance/invoiceDetails'));
 const CreateInvoice = lazy(() => import('src/pages/dashboard/finance/createInvoice'));
+
+const AdminTaskPage = lazy(() => import('src/pages/dashboard/admin/tasks'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -144,6 +148,14 @@ export const dashboardRoutes = [
           },
         ],
       },
+      {
+        path: 'tasks',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+            <AdminTaskPage />
+          </RoleBasedGuard>
+        ),
+      },
       // For Finance
       {
         path: 'finance',
@@ -190,26 +202,12 @@ export const dashboardRoutes = [
             ),
           },
         ],
-
-        // element: (
-        //   <RoleBasedGuard roles={['finance']} hasContent>
-        //     <CampaignPage />
-        //   </RoleBasedGuard>
-        // ),
       },
       {
         path: 'mediakit',
         element: (
           <RoleBasedGuard roles={['creator']} hasContent>
             <CreatorMediaKit />
-          </RoleBasedGuard>
-        ),
-      },
-      {
-        path: 'finance',
-        element: (
-          <RoleBasedGuard roles={['creator']} hasContent>
-            <FinanceCreator />
           </RoleBasedGuard>
         ),
       },
@@ -438,6 +436,22 @@ export const dashboardRoutes = [
             element: <ChatView />,
           },
         ],
+      },
+      {
+        path: 'inbox',
+        element: (
+          <RoleBasedGuard roles={['creator']} hasContent>
+            <CreatorInbox />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'invoiceCreator',
+        element: (
+          <RoleBasedGuard roles={['creator']} hasContent>
+            <InvoiceCreator />
+          </RoleBasedGuard>
+        ),
       },
     ],
   },
