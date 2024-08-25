@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <>
       <Helmet>
-        <title>Campaign Page</title>
+        <title>Campaign Invoice</title>
       </Helmet>
 
       <CampaignPage />

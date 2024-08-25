@@ -8,8 +8,7 @@ import { InvoiceDetailsView } from 'src/sections/invoice/view';
 function InvoicePage() {
   const { id } = useParams();
   const data = useGetInvoiceById(id);
-  console.log(data.campaigns);
-  // get invoice by id
+
   return <InvoiceDetailsView data={data.campaigns} />;
 }
 

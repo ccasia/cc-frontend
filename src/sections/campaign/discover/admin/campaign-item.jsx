@@ -124,7 +124,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     <Box
       component={Card}
       onClick={
-        user?.role === 'finance'
+        user?.admin?.role?.name === 'Finance'
           ? () => {
               router.push(paths.dashboard.finance.creatorInvoice(campaign?.id));
             }

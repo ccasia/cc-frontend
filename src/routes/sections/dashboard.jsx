@@ -160,8 +160,7 @@ export const dashboardRoutes = [
       {
         path: 'finance',
         element: (
-          <RoleBasedGuard roles={['finance']} hasContent>
-            {/* <div>hi finance guy</div> */}
+          <RoleBasedGuard roles={['admin']} hasContent>
             <FinanceDiscover />
           </RoleBasedGuard>
         ),
@@ -171,7 +170,7 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['finance']} hasContent>
+              <RoleBasedGuard roles={['admin']} hasContent>
                 <CampaignPage />
               </RoleBasedGuard>
             ),
@@ -180,7 +179,7 @@ export const dashboardRoutes = [
           {
             path: 'create/:id',
             element: (
-              <RoleBasedGuard roles={['finance']} hasContent>
+              <RoleBasedGuard roles={['admin']} hasContent>
                 <CreateInvoice />
               </RoleBasedGuard>
             ),
@@ -188,7 +187,7 @@ export const dashboardRoutes = [
           {
             path: 'creator-list/:id',
             element: (
-              <RoleBasedGuard roles={['finance']} hasContent>
+              <RoleBasedGuard roles={['admin']} hasContent>
                 <CreatorSelection />
               </RoleBasedGuard>
             ),
@@ -196,7 +195,7 @@ export const dashboardRoutes = [
           {
             path: 'detail/:id',
             element: (
-              <RoleBasedGuard roles={['finance']} hasContent>
+              <RoleBasedGuard roles={['admin']} hasContent>
                 <InvoicePage />
               </RoleBasedGuard>
             ),

@@ -54,7 +54,9 @@ export function useNavData() {
   const { user } = useAuthContext();
   const { unreadCount } = useTotalUnreadCount();
 
-  console.log('Unread count from useNavData:', unreadCount);
+  // console.log(user);
+
+  // console.log('Unread count from useNavData:', unreadCount);
   //  console.log("Message counter in NavItem:", msgcounter);
 
   const adminNavigations = useMemo(
@@ -158,12 +160,7 @@ export function useNavData() {
               },
             ],
           },
-          // {
-          //   roles: ['creator'],
-          //   title: 'Media Kit',
-          //   path: paths.dashboard.creator.mediaKitCreator,
-          //   icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
-          // },
+
           {
             roles: ['superadmin', 'CSM'],
             title: 'My Tasks',
@@ -233,15 +230,27 @@ export function useNavData() {
 
   // add finance naviagation
   const navigations = useMemo(
-    () =>
-      // roles => "god" , "normal", "designation", "admin", "creator"
-      // user?.role === 'creator' ? creatorNavigations : adminNavigations,
-      // eslint-disable-next-line no-nested-ternary
-      user?.role === 'creator' || user?.role === 'finance'
-        ? user?.role === 'finance'
-          ? financeNavigations
-          : creatorNavigations
-        : adminNavigations,
+    // roles => "god" , "normal", "designation", "admin", "creator"
+    // user?.role === 'creator' ? creatorNavigations : adminNavigations,
+    // eslint-disable-next-line no-nested-ternary
+    () => {
+      if (user?.role === 'creator') {
+        return creatorNavigations;
+      }
+      if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
+        return financeNavigations;
+      }
+      if (user?.role === 'superadmin') {
+        return adminNavigations;
+      }
+
+      return null;
+    },
+    // user?.role === 'creator' || user?.role === 'finance'
+    //   ? user?.role === 'finance'
+    //     ? financeNavigations
+    //     : creatorNavigations
+    //   : adminNavigations,
     // () => (user?.role === 'creator' ? creatorNavigations : adminNavigations),
 
     [adminNavigations, creatorNavigations, user, financeNavigations]

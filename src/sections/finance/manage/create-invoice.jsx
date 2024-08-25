@@ -16,7 +16,9 @@ import InvoiceNewEditForm from 'src/sections/invoice/invoice-new-edit-form';
 function CreateInvoice() {
   const settings = useSettingsContext();
   const { id } = useParams();
+
   const data = useGetPitchById(id);
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -37,7 +39,7 @@ function CreateInvoice() {
         }}
       />
 
-      <InvoiceNewEditForm id={id} creators={data}  />
+      <InvoiceNewEditForm id={id} creators={data} />
     </Container>
   );
 }

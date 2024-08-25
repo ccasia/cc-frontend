@@ -16,8 +16,6 @@ export const useGetCampaignById = (id) => {
     options
   );
 
-  console.log(data);
-
   const memoizedValue = useMemo(
     () => ({
       campaign: data,

@@ -22,7 +22,7 @@ function CampaignPage() {
         links={[
           { name: 'Dashboard', href: paths.dashboard.finance.root },
           {
-            name: 'invoice',
+            name: 'Invoice',
             href: paths.dashboard.finance.invoice,
           },
         ]}
