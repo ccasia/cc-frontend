@@ -1,12 +1,13 @@
-/* eslint-disable */ 
+/* eslint-disable */
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
+
 import { mutate } from 'swr';
 import { useNavigate } from 'react-router-dom';
 
+
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
-import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -23,9 +24,7 @@ export default function ChatHeaderCompose({ currentUserId }) {
   const navigate = useNavigate();
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState();
-  const [loading, setLoading] = useState(true); 
-  
-
+  const [loading, setLoading] = useState(true);
 
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'superadmin';
@@ -33,20 +32,27 @@ export default function ChatHeaderCompose({ currentUserId }) {
   useEffect(() => {
     async function fetchUsers() {
       try {
-        const response = await axiosInstance.get(endpoints.users.allusers)
-        const filteredContacts = response.data.filter(user => user.id !== currentUserId);
+        const response = await axiosInstance.get(endpoints.users.allusers);
+        const filteredContacts = response.data.filter((user) => user.id !== currentUserId);
         setContacts(filteredContacts);
-        
+        console.log('FIlted contacts', filteredContacts);
+
+        //  console.log('Api Response', response.data) // Assuming response.data contains an array of users
       } catch (error) {
         console.error('Error fetching users:', error);
+        // Handle error fetching users
+      } finally {
+        setLoading(false);
       }
-      finally {
-        setLoading(false); 
-      }
-
     }
     fetchUsers();
   }, [currentUserId]);
+
+  console.log('CUrrent user', currentUserId);
+
+  useEffect(() => {
+    console.log('selectedContact in useEffect:', selectedContact);
+  }, [selectedContact]);
 
   const handleChange = (_event, newValue) => {
     console.log('newValue:', newValue);
@@ -60,6 +66,32 @@ export default function ChatHeaderCompose({ currentUserId }) {
       console.error('Invalid recipient:', recipient);
       return;
     }   
+
+    // try {
+    //   // Check if a thread already exists
+    //   const existingThreadResponse = await axiosInstance.get(endpoints.threads.getAll, {
+
+    //   });
+
+    //   const existingThread = existingThreadResponse.data;
+    //   console.log ("existing thread", existingThreadResponse)
+
+    //   if (existingThread) {
+    //     console.log('Thread already exists.');
+    //   } else {
+    //     // Create a new thread
+    //     const response = await axiosInstance.post(endpoints.threads.create, {
+    //       title: `${recipient.name}`,
+    //       description: '',
+    //       userIds: [currentUserId, recipient.id],
+    //     });
+    //     console.log('Thread created:', response.data);
+    //     // Logic to open the newly created thread
+    //     // e.g., navigate to the chat thread or display the new thread
+    //   }
+    // } catch (error) {
+    //   console.error('Error handling thread creation or retrieval:', error);
+    // }
 
     try {
       const recipientId = recipient.id;
@@ -81,6 +113,9 @@ export default function ChatHeaderCompose({ currentUserId }) {
         isGroup: false,
       });
       console.log('Thread created:', response.data);
+
+      console.log('Recipient ID:', recipientId);
+
       mutate(endpoints.threads.getAll);
       
       navigate(`/dashboard/chat/thread/${response.data.id}`);
@@ -88,13 +123,38 @@ export default function ChatHeaderCompose({ currentUserId }) {
      
       }
       router.push(threadPath);
+
     } catch (error) {
       console.error('Error creating thread:', error);
     }
   };
 
   if (loading) {
-    return <Typography variant="body2">Loading users...</Typography>; 
+    return <Typography variant="body2">Loading users...</Typography>;
+  }
+
+  // useEffect(() => {
+  //   // Listen for new messages
+  //   socket.on('message', (data) => {
+  //     console.log('New message:', data);
+  //     // Handle new messages, e.g., update state or call a callback prop
+  //   });
+
+  //   return () => {
+  //     // Cleanup listener on unmount
+  //     socket.off('message');
+  //   };
+  // }, []);
+
+  // const handleAddRecipients = useCallback(
+  //   (selected) => {
+  //     setSearchRecipients('');
+  //     onAddRecipients(selected);
+  //   },
+  //   [onAddRecipients]
+  // );
+  if (loading) {
+    return <Typography variant="body2">Loading users...</Typography>;
   }
 
   return (
@@ -147,17 +207,14 @@ export default function ChatHeaderCompose({ currentUserId }) {
       //    ))
       //  }
      />
-     
       )}
     </>
-
-  
   );
 }
 
 ChatHeaderCompose.propTypes = {
- // onAddRecipients: PropTypes.func.isRequired,
- currentUserId: PropTypes.string,
+  // onAddRecipients: PropTypes.func.isRequired,
+  currentUserId: PropTypes.string,
 };
 
 

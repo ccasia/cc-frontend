@@ -3,16 +3,9 @@ import { useMemo } from 'react';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
-const useGetCampaigns = (type) => {
-  // const [campaigns, setCampaigns] = useState();
-  // const [endpoint, setEndPoint] = useState();
-
-  const endpoint =
-    type === 'creator'
-      ? endpoints.campaign.getAllCampaigns
-      : endpoints.campaign.getCampaignsByAdminId;
-
-  const { data, isLoading } = useSWR(endpoint, fetcher);
+const useGetCampaignsFinance = (type) => {
+ 
+  const { data, isLoading } = useSWR(endpoints.campaign.getAllCampaigns, fetcher);
 
   const memoizedValue = useMemo(
     () => ({
@@ -69,5 +62,4 @@ const useGetCampaigns = (type) => {
   //   // campaigns,
   // };
 };
-
-export default useGetCampaigns;
+export default useGetCampaignsFinance;

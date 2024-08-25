@@ -16,11 +16,14 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
   const settings = useSettingsContext();
+  const { user } = useAuthContext();
+
   const router = useRouter();
 
   const renderImages = (
@@ -119,9 +122,18 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   return (
     <Box
       component={Card}
-      onClick={() => {
-        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
-      }}
+      onClick={
+        user?.role === 'finance'
+          ? () => {
+              router.push(paths.dashboard.finance.creatorInvoice(campaign?.id));
+            }
+          : () => {
+              router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
+            }
+      }
+      // onClick={() => {
+      //   router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
+      // }}
       sx={{
         cursor: 'pointer',
         transition: '.2s ease',

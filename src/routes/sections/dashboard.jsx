@@ -62,6 +62,13 @@ const BrandEdit = lazy(() => import('src/pages/dashboard/brand/brand-edit'));
 // Landing Page temporary
 const CreatorLists = lazy(() => import('src/pages/dashboard/landing/creator'));
 const BrandLists = lazy(() => import('src/pages/dashboard/landing/brand'));
+
+// Finance
+const CampaignPage = lazy(() => import('src/pages/dashboard/finance/invoice'));
+const FinanceDiscover = lazy(() => import('src/pages/dashboard/finance/discover'));
+const CreatorSelection = lazy(() => import('src/pages/dashboard/finance/creatorList'));
+const InvoicePage = lazy(() => import('src/pages/dashboard/finance/invoiceDetails'));
+const CreateInvoice = lazy(() => import('src/pages/dashboard/finance/createInvoice'));
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -94,6 +101,7 @@ export const dashboardRoutes = [
         ],
       },
       // For admin/superadmin
+      // dashboard/creator
       {
         path: 'creator',
         children: [
@@ -136,7 +144,59 @@ export const dashboardRoutes = [
           },
         ],
       },
-      // For Creator
+      // For Finance
+      {
+        path: 'finance',
+        element: (
+          <RoleBasedGuard roles={['finance']} hasContent>
+            {/* <div>hi finance guy</div> */}
+            <FinanceDiscover />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'invoice',
+        children: [
+          {
+            element: (
+              <RoleBasedGuard roles={['finance']} hasContent>
+                <CampaignPage />
+              </RoleBasedGuard>
+            ),
+            index: true,
+          },
+          {
+            path: 'create/:id',
+            element: (
+              <RoleBasedGuard roles={['finance']} hasContent>
+                <CreateInvoice />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: 'creator-list/:id',
+            element: (
+              <RoleBasedGuard roles={['finance']} hasContent>
+                <CreatorSelection />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: 'detail/:id',
+            element: (
+              <RoleBasedGuard roles={['finance']} hasContent>
+                <InvoicePage />
+              </RoleBasedGuard>
+            ),
+          },
+        ],
+
+        // element: (
+        //   <RoleBasedGuard roles={['finance']} hasContent>
+        //     <CampaignPage />
+        //   </RoleBasedGuard>
+        // ),
+      },
       {
         path: 'mediakit',
         element: (

@@ -1,0 +1,46 @@
+{
+    "id": "cm04jisyq0001f3zc23hlpbzp",
+    "invoiceNumber": "INV-2165",
+    "amount": 10000,
+    "status": "draft",
+    "task": {
+        "price": 10000,
+        "title": "asda",
+        "total": 10000,
+        "service": "Data Analyst",
+        "quantity": 1,
+        "description": "sfasdf"
+    },
+    "bankAcc": {
+        "payTo": "jj",
+        "bankName": "BNP Paribas ",
+        "accountEmail": "support@cultcreative.asia",
+        "accountNumber": "jj"
+    },
+    "invoiceFrom": {
+        "id": "cm00k9cqi0000jt0eeqk0qhhu",
+        "name": "Mohand Alaa",
+        "email": "mond1alaa111@gmail.com",
+        "company": "freelance",
+        "primary": false,
+        "addressType": "Home",
+        "fullAddress": "Kula",
+        "phoneNumber": "12856465"
+    },
+    "invoiceTo": {
+        "id": "1",
+        "name": "Cult Creative",
+        "email": "support@cultcreative.asia",
+        "company": "Cult Creative",
+        "primary": true,
+        "addressType": "Hq",
+        "fullAddress": "4-402, Level 4, The Starling Mall, Lot 4-401 &, 6, Jalan SS 21/37, Damansara Utama, 47400 Petaling Jaya, Selangor",
+        "phoneNumber": "+60 11-5415 5751"
+    },
+    "createdAt": "2024-08-22T00:23:36.212Z",
+    "updatedAt": "2024-08-22T00:24:24.865Z",
+    "dueDate": "2024-08-28T16:00:00.000Z",
+    "createdBy": "cm00aln9j000013z4kiq7xgil",
+    "creatorId": "cm00k9cqi0000jt0eeqk0qhhu",
+    "campaignId": "cm00bkbna000413z488jhdpks"
+}
