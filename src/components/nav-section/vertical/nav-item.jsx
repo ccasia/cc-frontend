@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { forwardRef } from 'react';
 
 import Box from '@mui/material/Box';
+import { Badge } from '@mui/material';
 import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha, styled } from '@mui/material/styles';
@@ -21,6 +22,7 @@ const NavItem = forwardRef(
       title,
       path,
       icon,
+      msgcounter,
       info,
       disabled,
       caption,
@@ -40,6 +42,8 @@ const NavItem = forwardRef(
 
     const { user } = useAuthContext();
 
+    console.log('msgcounter:', msgcounter);
+    
     const renderContent = (
       <StyledNavItem
         ref={ref}
@@ -84,6 +88,10 @@ const NavItem = forwardRef(
           <Box component="span" className="info">
             {info}
           </Box>
+        )}
+
+        {msgcounter && ( 
+          <Badge badgeContent={msgcounter} color="primary" sx={{ ml: 2 }} />
         )}
 
         {hasChild && (
@@ -149,6 +157,7 @@ NavItem.propTypes = {
   active: PropTypes.bool,
   path: PropTypes.string,
   depth: PropTypes.number,
+  msgcounter: PropTypes.number,
   icon: PropTypes.element,
   info: PropTypes.element,
   title: PropTypes.string,

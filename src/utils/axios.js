@@ -42,8 +42,11 @@ export const endpoints = {
     addUser: '/api/thread/adduser',
     sendMessage: '/api/thread/send',
     getMessage: (threadId) => `/api/thread/getmessage/${threadId}`,
-    archive: (threadId) => `/api/thread/threads/${threadId}/archive`,
-    unarchive: (threadId) => `/api/thread/threads/${threadId}/unarchive`,
+    archive: (threadId) => `/api/thread/${threadId}/archive`,
+    unarchive: (threadId) => `/api/thread/${threadId}/unarchive`,
+    getUnreadCount:(threadId) => `/api/thread/${threadId}/unreadcount`, 
+    markAsSeen: (threadId) => `/api/thread/${threadId}/seen`,
+    getTotalCount: '/api/thread/message/totalcount',
   },
   calendar: '/api/calendar',
   auth: {

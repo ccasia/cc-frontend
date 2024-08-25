@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { paths } from 'src/routes/paths';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { useTotalUnreadCount } from 'src/api/chat';
 
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
@@ -49,7 +50,11 @@ const ICONS = {
 
 export function useNavData() {
   const { user } = useAuthContext();
+  const { unreadCount } = useTotalUnreadCount();
 
+  console.log("Unread count from useNavData:", unreadCount);
+  //  console.log("Message counter in NavItem:", msgcounter);
+  
   const adminNavigations = useMemo(
     () => [
       {
@@ -222,12 +227,13 @@ export function useNavData() {
             title: 'Chat',
             path: paths.dashboard.chat.root,
             icon: ICONS.chat,
+            msgcounter: unreadCount > 0 ? unreadCount : undefined,
           },
         ],
       },
     ],
 
-    [navigations]
+    [navigations, unreadCount]
   );
 
   return data;

@@ -81,6 +81,18 @@ export default function NotificationItem({ notification }) {
     </Stack>
   );
 
+  const chatAction = (
+    <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
+      <Button
+        size="small"
+        variant="contained"
+        onClick={() => router.push(paths.dashboard.chat.root)}
+      >
+        View
+      </Button>
+    </Stack>
+  );
+
   return (
     <ListItemButton
       disableRipple
@@ -94,6 +106,7 @@ export default function NotificationItem({ notification }) {
       <Stack sx={{ flexGrow: 1 }}>
         {renderText}
         {['Campaign'].includes(notification?.notification.entity) && friendAction}
+        {['Shortlist'].includes(notification?.notification.entity) && chatAction}
         {/* {notification?.notification.entity === 'Campaign' && friendAction} */}
       </Stack>
     </ListItemButton>

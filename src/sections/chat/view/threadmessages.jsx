@@ -6,14 +6,17 @@ import ChatMessageInput from '../chat-message-input';
 import ChatMessageList from '../chat-message-list';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useAuthContext } from 'src/auth/hooks';
-import { useGetMessagesFromThread } from 'src/api/chat';
+import { markMessagesAsSeen, useTotalUnreadCount, useGetAllThreads } from 'src/api/chat';
 
 
 const ThreadMessages = ({ threadId }) => {
   const { socket } = useSocketContext();
   // const [message, setMessage] = useState([]);
+  const [latestMessages, setLatestMessages] = useState({});
   const [threadMessages, setThreadMessages] = useState({});
   const { user } = useAuthContext();
+  const { triggerRefetch } = useTotalUnreadCount();
+  const { threadrefetch } = useGetAllThreads();
   // const { message, loading, error } = useGetMessagesFromThread(threadId);
  
   useEffect(() => {
@@ -27,18 +30,9 @@ const ThreadMessages = ({ threadId }) => {
   
       // Join the room
       socket.emit('room', threadId);
-      console.log ('user joined', threadId)
-
-      // if (message) {
-      //   setThreadMessages((prevThreadMessages) => ({
-      //     ...prevThreadMessages,
-      //     [threadId]: message,
-      //   }));
-      // }
 
       // Listen for incoming messages
-    socket.on('message', (message) => {
-      console.log("message sent 2", message)
+      socket.on('message', (message) => {
       setThreadMessages((prevThreadMessages) => {
         const { threadId: messageThreadId } = message;
         return {
@@ -46,15 +40,27 @@ const ThreadMessages = ({ threadId }) => {
           [messageThreadId]: [...(prevThreadMessages[messageThreadId] || []), message],
         };
       });
+      if (message.threadId === threadId) {
+        markAsSeen();
+      }
     });
 
-   
-    
+    const markAsSeen = async () => {
+      try {
+        await markMessagesAsSeen(threadId);
+        triggerRefetch();
+      } catch (error) {
+        console.error('Failed to mark messages as seen:', error);
+      }
+    };
+
+    markAsSeen();
     
     // Cleanup on component unmount
     return () => {
       socket.off('message');
       socket.off ('existingMessages');
+      //  socket.off('latestMessage');
       // socket.off('room');
     };
   }, [socket, threadId]);
@@ -62,8 +68,9 @@ const ThreadMessages = ({ threadId }) => {
   const handleSendMessage = useCallback((content) => {
     const { id: senderId, role, name, photoURL } = user;
     const createdAt = new Date().toISOString();
+    threadrefetch
     socket.emit('sendMessage', { senderId, threadId, content, role, name, photoURL, createdAt });
-  }, [socket, threadId, user]);
+  }, [socket, threadId, user, threadrefetch]);
 
 
   const messages = threadMessages[threadId] || [];

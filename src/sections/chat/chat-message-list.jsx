@@ -16,46 +16,15 @@ export default function ChatMessageList({messages}){
   
   
   const { messagesEndRef } = useMessagesScroll(messages);
-  // console.clear();
-  // console.log ('threadss', threadId)
-  // console.log ( 'check', messages)
-  // console.log('messages',threadId, messages)
-  // const slides = messages
-  //   .filter((message) => message.contentType === 'image')
-  //   .map((message) => ({ src: message.body }));
-
-  // const lightbox = useLightBox();
-
+ 
   return (
-    <>
-     <Scrollbar ref={messagesEndRef} sx={{ px: 3, py: 5, height: 1 }}>
+    <Scrollbar ref={messagesEndRef} sx={{ px: 3, py: 5, height: 1 }}>
       <Box>
         {messages.map((message) => (
           <ChatMessageItem key={message.id} message={message} />
         ))}
       </Box>
     </Scrollbar>
-      {/* <Scrollbar ref={messagesEndRef} sx={{ px: 3, py: 5, height: 1 }}>
-        <Box>
-          {messages && messages.map((message) => (
-            <ChatMessageItem
-              key={message.id}
-              message={message}
-
-              // participants={participants}
-              // onOpenLightbox={() => lightbox.onOpen(message.body)}
-            />
-          ))}
-        </Box>
-      </Scrollbar> */}
-
-      {/* <Lightbox
-        index={lightbox.selected}
-
-        open={lightbox.open}
-        close={lightbox.onClose}
-      /> */}
-    </>
   );
 }
 
