@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { lazy } from 'react';
+import React from 'react';
 
 import { Container } from '@mui/material';
 
@@ -9,7 +9,7 @@ import { useSettingsContext } from 'src/components/settings';
 
 import DashboardSuperadmin from './dashboard-superadmin';
 
-const DashboardFinance = lazy(() => import('src/sections/admin/finance/Dashboard'));
+// const DashboardFinance = lazy(() => import('src/sections/admin/finance/Dashboard'));
 
 const DashboardAdmin = () => {
   const settings = useSettingsContext();
