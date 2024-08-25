@@ -179,7 +179,7 @@ export default function SettingsDrawer() {
 
           {renderDirection}
 
-          {renderLayout}
+          {/* {renderLayout} */}
 
           {renderStretch}
 
