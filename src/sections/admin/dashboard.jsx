@@ -15,11 +15,10 @@ const DashboardAdmin = () => {
   const settings = useSettingsContext();
 
   const { user, role, permission } = useAuthContext();
-  console.log(user, role, permission);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      {user?.admin?.role?.name === 'Finance' && <DashboardFinance />}
+      {/* {user?.admin?.role?.name === 'Finance' && <DashboardFinance />} */}
 
       {(user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSM') && (
         <DashboardSuperadmin />
