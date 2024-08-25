@@ -119,7 +119,7 @@ const CampaignListView = () => {
         <CampaignSearch campaigns={campaigns} />
       </Stack>
 
-      <Box display="flex" gap={1} mt={2}>
+      <Box display="flex" gap={1} mt={2} flexWrap="wrap">
         <Button
           size="medium"
           variant={filter ? 'outlined' : 'contained'}
@@ -218,7 +218,7 @@ const CampaignListView = () => {
             ))}
           </Box>
         ) : (
-          <EmptyContent filled title="No Data" sx={{ py: 10 }} />
+          <EmptyContent filled title="No Data" sx={{ py: 10, mt: 2 }} />
         )
       ) : (
         <Skeleton width={500} height={500} />

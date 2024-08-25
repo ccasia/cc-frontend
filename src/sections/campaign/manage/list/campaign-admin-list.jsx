@@ -33,7 +33,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
           p: 2,
         }}
       >
-        {smUp && (
+        {/* {smUp && (
           <Box
             sx={{
               p: 0.5,
@@ -48,7 +48,21 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
               style={{ borderRadius: 10, objectFit: 'cover' }}
             />
           </Box>
-        )}
+        )} */}
+        <Box
+          sx={{
+            p: 0.5,
+            height: 200,
+          }}
+        >
+          <img
+            src={campaign?.campaignBrief?.images[0]}
+            alt="test"
+            width="100%"
+            height="100%"
+            style={{ borderRadius: 10, objectFit: 'cover' }}
+          />
+        </Box>
 
         <Box
           sx={{

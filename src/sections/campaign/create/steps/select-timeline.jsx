@@ -55,31 +55,6 @@ const SelectTimeline = ({
   const existingTimeline = watch('timeline');
   const timelineEndDate = existingTimeline[fields.length - 1]?.endDate;
 
-  // useEffect(() => {
-  //   // Sorted based on dependencies
-  //   const sortedTimeline = (defaultTimelines && topologicalSort(defaultTimelines)) || [];
-
-  //   if (sortedTimeline.length) {
-  //     setValue(
-  //       'timeline',
-  //       sortedTimeline.map((elem) => ({
-  //         timeline_type: { name: elem?.timelineType?.name },
-  //         id: elem?.id,
-  //         duration: elem.duration,
-  //         for: elem?.for,
-  //         dependsOn:
-  //           elem.dependsOn.length < 1
-  //             ? 'Campaign Start Date'
-  //             : elem?.dependsOn[0]?.dependsOnTimeline?.timelineType?.name || '',
-  //         startDate: '',
-  //         endDate: '',
-  //       }))
-  //     );
-  //   } else {
-  //     setValue('timeline[0].dependsOn', 'Campaign Start Date');
-  //   }
-  // }, [setValue, defaultTimelines]);
-
   useEffect(() => {
     if (timelineEndDate) {
       setValue('campaignEndDate', dayjs(timelineEndDate).format('ddd LL'));
@@ -128,23 +103,8 @@ const SelectTimeline = ({
   };
 
   const handleRemove = (index, item) => {
-    // if (index < fields.length - 1) {
-    //   setValue(`timeline[${index + 1}]`, {
-    //     name:
-    //     duration: timelines[index + 1].duration,
-    //     for: timelines[index + 1].for,
-    //   });
-    // }
     remove(index);
   };
-
-  // const handleChange = (e, index) => {
-  //   setValue(`timeline[${index}].timeline_type`, { name: e.target.value });
-  //   // eslint-disable-next-line no-unsafe-optional-chaining
-  //   if (index !== fields?.length - 1) {
-  //     setValue(`timeline[${index + 1}].dependsOn`, e.target.value);
-  //   }
-  // };
 
   useEffect(() => {
     if (endDate && startDate && endDate < startDate) {
@@ -153,148 +113,6 @@ const SelectTimeline = ({
       setDateError(false);
     }
   }, [startDate, endDate]);
-
-  // const handleAdd = (index) => {
-  //   insert(index + 1, {
-  //     timeline_type: { id: '1', name: '' },
-  //     dependsOn: timelines[index]?.timeline_type?.name || '',
-  //     duration: null,
-  //     for: '',
-  //   });
-  //   // if (timelines.length) {
-  //   //   const existingIds = timelines.length && timelines.map((elem) => elem.timeline_type?.id);
-  //   //   const options = data && data.filter((a) => !existingIds?.includes(a?.id));
-  //   //   if (options.length > 0) {
-  //   //     insert(index + 1, {
-  //   //       timeline_type: { id: '', name: '' },
-  //   //       dependsOn: timelines[index]?.timeline_type?.name,
-  //   //       duration: null,
-  //   //       for: '',
-  //   //     });
-  //   //   } else {
-  //   //     insert(index + 1, {
-  //   //       timeline_type: { id: '1', name: 'dawdsadsdasd' },
-  //   //       dependsOn: timelines[index]?.timeline_type?.id,
-  //   //       duration: null,
-  //   //       for: '',
-  //   //     });
-  //   //   }
-  //   // } else {
-  //   //   console.log('asdas');
-  //   // }
-  // };
-
-  // const renderTimelineForm = (
-  //   <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1,fr)', md: 'repeat(1, 1fr)' }} gap={1}>
-  //     <Stack direction="row" justifyContent="space-between">
-  //       <Typography sx={{ textAlign: 'start', mb: 2 }} variant="h6">
-  //         Campaign Timeline
-  //       </Typography>
-  //       <Typography sx={{ textAlign: 'start', mb: 2 }} variant="h6">
-  //         Total days: {dayjs(endDate).diff(dayjs(startDate), 'day') || 0}
-  //       </Typography>
-  //     </Stack>
-  //     {fields.map((item, index) => {
-  //       const existingIds = timelines.length && timelines.map((elem) => elem.timeline_type?.id);
-  //       const options =
-  //         data &&
-  //         data
-  //           .filter((a) => !existingIds?.includes(a?.id))
-  //           .map((elem) => ({ name: elem.name, id: elem.id }));
-  //       return (
-  //         <Box key={item.id}>
-  //           <Stack direction="row" alignItems="center" gap={1}>
-  //             <Avatar
-  //               sx={{
-  //                 width: 14,
-  //                 height: 14,
-  //                 fontSize: 10,
-  //                 bgcolor: (theme) => theme.palette.success.main,
-  //               }}
-  //             >
-  //               {index + 1}
-  //             </Avatar>
-  //             <Stack
-  //               direction={{ xs: 'column', md: 'row' }}
-  //               gap={1}
-  //               alignItems="center"
-  //               flexGrow={1}
-  //             >
-  //               <RHFAutocomplete
-  //                 name={`timeline[${index}].timeline_type`}
-  //                 fullWidth
-  //                 options={options}
-  //                 onChange={(e, val) => handleChange(val, index)}
-  //                 getOptionLabel={(option) => option.name}
-  //                 label="Timeline Type"
-  //                 renderOption={(props, option) => {
-  //                   const { key, ...optionProps } = props;
-  //                   return (
-  //                     <MenuItem key={key} {...optionProps}>
-  //                       {option.name}
-  //                     </MenuItem>
-  //                   );
-  //                 }}
-  //                 sx={{
-  //                   '& .MuiInputBase-root': {
-  //                     cursor: 'not-allowed', // Change cursor to indicate disabled state
-  //                   },
-  //                 }}
-  //                 isOptionEqualToValue={(option, value) => option.id === value.id}
-  //               />
-
-  //               <RHFSelect disabled name={`timeline[${index}].dependsOn`} label="Depends On">
-  //                 {!isLoading &&
-  //                   data.map((elem) => (
-  //                     <MenuItem key={elem?.id} value={elem?.id}>
-  //                       {elem?.name}
-  //                     </MenuItem>
-  //                   ))}
-  //                 <MenuItem value="startDate">Campaign Start Date</MenuItem>
-  //               </RHFSelect>
-  //               <RHFSelect name={`timeline[${index}].for`} label="For">
-  //                 <MenuItem value="admin">Admin</MenuItem>
-  //                 <MenuItem value="creator">Creator</MenuItem>
-  //               </RHFSelect>
-  //               <RHFTextField
-  //                 name={`timeline[${index}].duration`}
-  //                 type="number"
-  //                 label="Duration"
-  //                 placeholder="Eg: 2"
-  //                 InputProps={{
-  //                   endAdornment: <InputAdornment position="start">days</InputAdornment>,
-  //                 }}
-  //                 onChange={(e) => handleDurationChange(index, e.target.value)}
-  //               />
-  //               {/* <RHFTextField
-  //                 name={`timeline[${index}].startDate`}
-  //                 label="Start Date"
-  //                 // value={item.startDate}
-  //                 disabled
-  //               /> */}
-  //               <RHFTextField name={`timeline[${index}].endDate`} label="End Date" disabled />
-  //               <IconButton color="error" onClick={() => handleRemove(index, item)}>
-  //                 <Iconify icon="uil:trash" />
-  //               </IconButton>
-  //             </Stack>
-  //           </Stack>
-  //           <Stack direction="row" alignItems="center" mt={2} gap={1}>
-  //             <Tooltip title={`Add a new row under ${timelines[index]?.timeline_type?.name}`}>
-  //               <IconButton
-  //                 onClick={() => {
-  //                   handleAdd(index);
-  //                 }}
-  //               >
-  //                 <Iconify icon="carbon:add-filled" />
-  //               </IconButton>
-  //             </Tooltip>
-  //             <Divider sx={{ borderStyle: 'dashed', flexGrow: 1 }} />
-  //           </Stack>
-  //         </Box>
-  //       );
-  //     })}
-  //   </Box>
-  // );
 
   const onDragEnd = (result) => {
     if (!result.destination) {
@@ -499,11 +317,7 @@ const SelectTimeline = ({
     >
       <Stack gap={1}>
         <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
-          <RHFDatePicker
-            name="campaignStartDate"
-            label="Campaign Start Date"
-            minDate={new Date()}
-          />
+          <RHFDatePicker name="campaignStartDate" label="Campaign Start Date" minDate={dayjs()} />
           <Iconify
             icon="pepicons-pop:line-x"
             width={20}
