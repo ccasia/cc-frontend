@@ -51,7 +51,7 @@ export const defaultSubmission = [
   },
 ];
 
-const CampaignMyTasks = ({ campaign }) => {
+const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
   const { user } = useAuthContext();
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
 
@@ -178,6 +178,7 @@ const CampaignMyTasks = ({ campaign }) => {
                       fullSubmission={submissions}
                       submission={value(item.type)}
                       getDependency={getDependency}
+                      openLogisticTab={openLogisticTab}
                     />
                   )}
                   {item.value === 'Final Draft' && (
@@ -212,4 +213,5 @@ export default CampaignMyTasks;
 
 CampaignMyTasks.propTypes = {
   campaign: PropTypes.object,
+  openLogisticTab: PropTypes.func,
 };

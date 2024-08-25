@@ -13,6 +13,10 @@ import CampaignLogistics from './campaign-logistics';
 const CampaignDetailItem = ({ campaign }) => {
   const [currentTab, setCurrentTab] = useState('tasks');
 
+  const openLogisticTab = () => {
+    setCurrentTab('logistics');
+  };
+
   return (
     <Stack overflow="auto" gap={2}>
       {/* {renderGallery} */}
@@ -33,7 +37,9 @@ const CampaignDetailItem = ({ campaign }) => {
       </ToggleButtonGroup>
 
       <Box mt={3}>
-        {currentTab === 'tasks' && <CampaignMyTasks campaign={campaign} />}
+        {currentTab === 'tasks' && (
+          <CampaignMyTasks campaign={campaign} openLogisticTab={openLogisticTab} />
+        )}
         {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
         {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />}
         {currentTab === 'logistics' && <CampaignLogistics campaign={campaign} />}

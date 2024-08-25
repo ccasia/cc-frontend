@@ -175,6 +175,9 @@ export const endpoints = {
         create: '/api/campaign/createLogistic',
         changeStatus: '/api/campaign/changeLogisticStatus',
       },
+      creator: {
+        receiveLogistic: '/api/campaign/receiveLogistic',
+      },
     },
   },
   submission: {

@@ -21,3 +21,11 @@ export const changeStatus = async (status, id) => {
 
   return res;
 };
+
+export const confirmItemDelivered = async (id) => {
+  const res = await axiosInstance.patch(endpoints.campaign.logistics.creator.receiveLogistic, {
+    logisticId: id,
+  });
+
+  return res;
+};
