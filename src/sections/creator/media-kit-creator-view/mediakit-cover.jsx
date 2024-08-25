@@ -73,15 +73,15 @@ const MediaKitCover = ({ user }) => {
             alignItems="center"
             spacing={2}
           >
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} alignItems="center">
               <Iconify icon="mingcute:location-fill" />
-              <Typography variant="subtitle2" gutterBottom fontWeight={800}>
+              <Typography variant="subtitle2" fontWeight={800}>
                 Live at {user?.country}
               </Typography>
             </Stack>
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} alignItems="center">
               <Iconify icon="mdi:email" />
-              <Typography variant="subtitle2" gutterBottom fontWeight={800}>
+              <Typography variant="subtitle2" fontWeight={800}>
                 {user?.email}
               </Typography>
             </Stack>

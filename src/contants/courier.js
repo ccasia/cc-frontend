@@ -61,4 +61,7 @@ export const couriers = [
     contact_number: '+603-7787 3888',
     logo_url: 'https://www.ups.com/assets/resources/webcontent/images/ups-logo.svg',
   },
+  {
+    name: 'Other',
+  },
 ];

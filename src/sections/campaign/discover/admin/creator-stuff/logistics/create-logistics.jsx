@@ -38,10 +38,11 @@ const CreateLogistic = ({ form, campaign, creator }) => {
       itemName: '',
       trackingNumber: '',
       courier: '',
+      otherCourier: '',
     },
   });
 
-  const { handleSubmit, reset } = methods;
+  const { handleSubmit, reset, watch } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -57,6 +58,8 @@ const CreateLogistic = ({ form, campaign, creator }) => {
     }
   });
 
+  const val = watch('courier');
+
   return (
     <Dialog open={form.value} onClose={form.onFalse} maxWidth="xs" fullWidth>
       <FormProvider onSubmit={onSubmit} methods={methods}>
@@ -70,15 +73,16 @@ const CreateLogistic = ({ form, campaign, creator }) => {
                 <MenuItem key={index} value={courier.name}>
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Avatar
-                      alt={courier.name}
-                      src={courier.logo_url}
+                      alt={courier?.name}
+                      src={courier?.logo_url}
                       sx={{ width: 30, height: 30 }}
                     />
-                    {courier.name}
+                    {courier?.name}
                   </Stack>
                 </MenuItem>
               ))}
             </RHFSelect>
+            {val === 'Other' && <RHFTextField name="otherCourier" label="Courier" />}
           </Stack>
         </DialogContent>
         <DialogActions>

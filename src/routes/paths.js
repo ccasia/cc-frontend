@@ -65,6 +65,7 @@ export const paths = {
       mediaKit: (id) => `${ROOTS.DASHBOARD}/creator/media-kits/${id}`,
       mediaKitCreator: `${ROOTS.DASHBOARD}/mediakit`,
       mediaKitLists: `${ROOTS.DASHBOARD}/creator/media-kits`,
+      financeCreator: `${ROOTS.DASHBOARD}/finance`,
     },
     landing: {
       creator: `${ROOTS.DASHBOARD}/landing/creator`,

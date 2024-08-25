@@ -129,28 +129,6 @@ const MediaKitCreator = () => {
         <MediaKitSocial currentTab={currentTab} />
       </Card>
 
-      {/* <Box
-        sx={{
-          mt: 5,
-          width: 1,
-          height: 320,
-          borderRadius: 2,
-          bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
-          border: (theme) => `dashed 1px ${theme.palette.divider}`,
-          position: 'relative',
-        }}
-      >
-        <Typography
-          sx={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-          }}
-        >
-          Social
-        </Typography>
-      </Box> */}
       <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} />
     </Container>
   );

@@ -40,7 +40,93 @@ const steps = [
   'Rate your Interests and Industries',
 ];
 
-export const langList = ['English', 'Malay', 'Chinese', 'Tamil', 'All of the above', 'Others'];
+// export const langList = ['English', 'Malay', 'Chinese', 'Tamil', 'All of the above', 'Others'];
+
+export const langList = [
+  'Mandarin Chinese',
+  'Spanish',
+  'English',
+  'Hindi',
+  'Bengali',
+  'Portuguese',
+  'Russian',
+  'Japanese',
+  'Western Punjabi',
+  'Marathi',
+  'Telugu',
+  'Wu Chinese',
+  'Turkish',
+  'Korean',
+  'French',
+  'German',
+  'Vietnamese',
+  'Tamil',
+  'Yue Chinese (Cantonese)',
+  'Urdu',
+  'Javanese',
+  'Italian',
+  'Gujarati',
+  'Thai',
+  'Persian',
+  'Polish',
+  'Pashto',
+  'Kannada',
+  'Malayalam',
+  'Sundanese',
+  'Hausa',
+  'Odia',
+  'Burmese',
+  'Arabic',
+  'Dutch',
+  'Greek',
+  'Hebrew',
+  'Hungarian',
+  'Swedish',
+  'Czech',
+  'Romanian',
+  'Finnish',
+  'Danish',
+  'Norwegian',
+  'Ukrainian',
+  'Amharic',
+  'Somali',
+  'Azerbaijani',
+  'Khmer',
+  'Nepali',
+  'Sinhala',
+  'Zulu',
+  'Xhosa',
+  'Afrikaans',
+  'Haitian Creole',
+  'Mongolian',
+  'Georgian',
+  'Armenian',
+  'Tatar',
+  'Kazakh',
+  'Uzbek',
+  'Tajik',
+  'Kyrgyz',
+  'Turkmen',
+  'Latvian',
+  'Lithuanian',
+  'Estonian',
+  'Macedonian',
+  'Bosnian',
+  'Serbian',
+  'Croatian',
+  'Slovenian',
+  'Albanian',
+  'Maltese',
+  'Icelandic',
+  'Welsh',
+  'Irish',
+  'Scottish Gaelic',
+  'Maori',
+  'Samoan',
+  'Tongan',
+  'Fijian',
+  'Malay',
+];
 
 export const interestsList = [
   'Art',
@@ -89,7 +175,7 @@ export default function CreatorForm({ creator, open, onClose }) {
     location: Yup.string().required('location is required'),
     interests: Yup.array().min(3, 'Choose at least three option'),
     languages: Yup.array().min(1, 'Choose at least one option'),
-    industries: Yup.array().min(3, 'Choose at least three option'),
+    // industries: Yup.array().min(3, 'Choose at least three option'),
     employment: Yup.string().required('pronounce is required'),
     birthDate: Yup.mixed().nullable().required('birthDate date is required'),
     Nationality: Yup.string().required('Nationality is required'),
@@ -105,7 +191,7 @@ export default function CreatorForm({ creator, open, onClose }) {
       Interests: [],
       languages: [],
       instagram: '',
-      industries: [],
+      // industries: [],
       employment: '',
       birthDate: null,
       Nationality: '',
@@ -128,6 +214,7 @@ export default function CreatorForm({ creator, open, onClose }) {
   } = methods;
 
   const nationality = watch('Nationality');
+  const languages = watch('languages');
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -140,9 +227,10 @@ export default function CreatorForm({ creator, open, onClose }) {
   const onSubmit = handleSubmit(async (data) => {
     if (ratingInterst.length < 3) {
       toast.error('Please rate all your interests.');
-    } else if (ratingIndustries.length < 3) {
-      toast.error('Please rate all your industries.');
     }
+    // else if (ratingIndustries.length < 3) {
+    //   toast.error('Please rate all your industries.');
+    // }
 
     const newData = {
       ...data,
@@ -198,6 +286,12 @@ export default function CreatorForm({ creator, open, onClose }) {
     creatorLocation();
   }, [creatorLocation]);
 
+  useEffect(() => {
+    if (languages.includes('All of the above')) {
+      setValue('languages', ['English', 'Malay', 'Chinese', 'Tamil']);
+    }
+  }, [languages, setValue]);
+
   function formComponent() {
     return (
       <DialogContent>
@@ -214,14 +308,13 @@ export default function CreatorForm({ creator, open, onClose }) {
           <RHFAutocomplete
             name="Nationality"
             type="country"
-            // label="Nationality"
             placeholder="Choose your Nationality"
             fullWidth
             options={countries.map((option) => option.label)}
             getOptionLabel={(option) => option}
           />
 
-          <RHFTextField name="location" label="Current location" />
+          <RHFTextField name="location" label="Current location" multiline />
 
           <RHFSelect name="employment" label="Employment Status" multiple={false}>
             <MenuItem value="fulltime">Full-time</MenuItem>
@@ -281,10 +374,13 @@ export default function CreatorForm({ creator, open, onClose }) {
               ))
             }
           />
+          {/* {
+
+          } */}
 
           <RHFAutocomplete
             name="interests"
-            placeholder="Your interests"
+            placeholder="+ Your interests"
             multiple
             freeSolo
             disableCloseOnSelect
@@ -309,7 +405,7 @@ export default function CreatorForm({ creator, open, onClose }) {
             }
           />
 
-          <RHFAutocomplete
+          {/* <RHFAutocomplete
             name="industries"
             placeholder="Favorite industries?"
             multiple
@@ -334,7 +430,7 @@ export default function CreatorForm({ creator, open, onClose }) {
                 />
               ))
             }
-          />
+          /> */}
         </Box>
       </DialogContent>
     );
@@ -355,7 +451,7 @@ export default function CreatorForm({ creator, open, onClose }) {
         <RHFTextField
           name="instagram"
           label="Instagram Username"
-          placeholder="Eg: instagram/yourusername"
+          placeholder="Eg: cristiano"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -369,7 +465,7 @@ export default function CreatorForm({ creator, open, onClose }) {
         <RHFTextField
           name="tiktok"
           label="Tiktok Username"
-          placeholder="Eg: tiktok/yourusername"
+          placeholder="Eg: cristiano"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -399,27 +495,27 @@ export default function CreatorForm({ creator, open, onClose }) {
       }
     };
 
-    const handleChangeIndustries = (elem, val) => {
-      if (!ratingIndustries.some((item) => item.name === elem)) {
-        // If an item with the same name doesn't exist, add it to the array
-        setRatingIndustries((prevRatingIndustry) => [
-          ...prevRatingIndustry,
-          { name: elem, rank: val },
-        ]);
-      } else {
-        // If the item exists, update its rank
-        const updatedRatingIndustry = ratingIndustries.map((item) =>
-          item.name === elem ? { ...item, rank: val } : item
-        );
-        setRatingIndustries(updatedRatingIndustry);
-      }
-    };
+    // const handleChangeIndustries = (elem, val) => {
+    //   if (!ratingIndustries.some((item) => item.name === elem)) {
+    //     // If an item with the same name doesn't exist, add it to the array
+    //     setRatingIndustries((prevRatingIndustry) => [
+    //       ...prevRatingIndustry,
+    //       { name: elem, rank: val },
+    //     ]);
+    //   } else {
+    //     // If the item exists, update its rank
+    //     const updatedRatingIndustry = ratingIndustries.map((item) =>
+    //       item.name === elem ? { ...item, rank: val } : item
+    //     );
+    //     setRatingIndustries(updatedRatingIndustry);
+    //   }
+    // };
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', p: 2, m: 2 }}>
-        <Typography variant="h4">Rate your interests and industries</Typography>
+        {/* <Typography variant="h4">Rate your interests</Typography> */}
         <Box sx={{ display: 'flex', flexDirection: 'column', m: 1 }}>
-          <Typography variant="h6">Rate your Interests </Typography>
+          <Typography variant="h6">Rate your Interests</Typography>
           <Box
             rowGap={3}
             columnGap={5}
@@ -448,7 +544,7 @@ export default function CreatorForm({ creator, open, onClose }) {
               ))}
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', m: 1 }}>
+        {/* <Box sx={{ display: 'flex', flexDirection: 'column', m: 1 }}>
           <Typography variant="h6">Rate your industries</Typography>
           <Box
             rowGap={3}
@@ -477,7 +573,7 @@ export default function CreatorForm({ creator, open, onClose }) {
                 </Stack>
               ))}
           </Box>
-        </Box>
+        </Box> */}
       </Box>
     );
   }
@@ -486,7 +582,6 @@ export default function CreatorForm({ creator, open, onClose }) {
     onSubmit();
     if (!methods.formState.isValid) {
       toast.error('Please fill all the required fields');
-      // enqueueSnackbar('Please fill all the fields');
       setActiveStep((prevActiveStep) => prevActiveStep - 2);
     } else {
       const data = {

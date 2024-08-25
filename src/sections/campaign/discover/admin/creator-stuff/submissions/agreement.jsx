@@ -46,6 +46,9 @@ const Agreement = ({ campaign, submission, creator }) => {
         userId: creator?.user?.id,
         submissionId: submission?.id,
       });
+      mutate(
+        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+      );
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Faileddsadsa', {

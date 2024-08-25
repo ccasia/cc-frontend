@@ -23,6 +23,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
@@ -38,8 +39,9 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
   const dependency = getDependency(submission?.id);
   const { socket } = useSocketContext();
   const [progress, setProgress] = useState(0);
+  const [progressName, setProgressName] = useState('');
   const display = useBoolean();
-  console.log(submission);
+  const { user } = useAuthContext();
 
   const methods = useForm();
 
@@ -103,17 +105,20 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
         if (submission?.id === data.submissionId) {
           setIsProcessing(true);
           setProgress(data.progress);
+          setProgressName(data.name);
 
           if (data.progress === 100) {
-            mutate(endpoints.campaign.creator.getCampaign(campaign?.id));
+            mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
             setIsProcessing(false);
             reset();
+            setProgressName('');
             setPreview('');
             localStorage.removeItem('preview');
           } else if (progress === 0) {
             setIsProcessing(false);
             reset();
             setPreview('');
+            setProgressName('');
             localStorage.removeItem('preview');
           }
         }
@@ -122,7 +127,7 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
     return () => {
       socket.off('progress');
     };
-  }, [socket, submission, reset, progress, campaign]);
+  }, [socket, submission, reset, progress, campaign, user]);
 
   const handleCancel = () => {
     if (isProcessing) {
@@ -146,10 +151,13 @@ const CampaignFirstDraft = ({ campaign, timeline, submission, getDependency, ful
         {submission?.status === 'IN_PROGRESS' && (
           <>
             {isProcessing ? (
-              <>
+              <Stack gap={1}>
+                <Typography variant="caption">{progressName && progressName}</Typography>
                 <LinearProgress variant="determinate" value={progress} />
-                <Button onClick={() => handleCancel()}>Cancel</Button>
-              </>
+                <Button variant="contained" size="small" onClick={() => handleCancel()}>
+                  Cancel
+                </Button>
+              </Stack>
             ) : (
               <FormProvider methods={methods} onSubmit={onSubmit}>
                 <Stack gap={2}>

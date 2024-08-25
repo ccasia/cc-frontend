@@ -89,20 +89,20 @@ const SelectTimeline = ({
   useEffect(() => {
     setValue(
       'timeline',
-      defaultTimelines?.map((elem) => ({
-        timeline_type: { id: elem?.timelineType?.id, name: elem.timelineType.name },
-        id: elem?.id,
-        duration: elem.duration,
-        for: elem?.for,
-        startDate: '',
-        endDate: '',
-      }))
+      defaultTimelines
+        ?.sort((a, b) => a.order - b.order)
+        ?.map((elem) => ({
+          timeline_type: { id: elem?.timelineType?.id, name: elem.timelineType.name },
+          id: elem?.id,
+          duration: elem.duration,
+          for: elem?.for,
+          startDate: '',
+          endDate: '',
+        }))
     );
   }, [defaultTimelines, setValue]);
 
   const timelines = watch('timeline');
-
-  console.log('EXist', timelines);
 
   const updateTimelineDates = useCallback(() => {
     let currentStartDate = dayjs(startDate);
@@ -318,7 +318,6 @@ const SelectTimeline = ({
         name: query,
       });
       mutate(endpoints.campaign.getTimelineType);
-      console.log(data);
       setValue(`timeline[${index}].timeline_type`, { id: res.data.id, name: res.data.name });
       enqueueSnackbar('New Timeline Type Created');
     } catch (error) {
@@ -369,28 +368,13 @@ const SelectTimeline = ({
                       >
                         <Stack direction="row" alignItems="center" gap={3}>
                           <Iconify icon="mingcute:dots-fill" width={20} />
-                          {/* <Avatar
-                          sx={{
-                            width: 14,
-                            height: 14,
-                            fontSize: 10,
-                            bgcolor: (theme) => theme.palette.success.main,
-                          }}
-                        >
-                          {index + 1}
-                        </Avatar> */}
+
                           <Stack
                             direction={{ xs: 'column', md: 'row' }}
                             gap={1}
                             alignItems="center"
                             flexGrow={1}
                           >
-                            {/* <RHFTextField
-                              name={`timeline[${index}].timeline_type.name`}
-                              onChange={(e, val) => handleChange(e, index)}
-                              label="Timeline Type"
-                              placeholder="Eg: Open For Pitch"
-                            /> */}
                             {!isLoading && (
                               <RHFAutocomplete
                                 disabled={!!timelines[index]?.timeline_type?.name}
@@ -469,20 +453,6 @@ const SelectTimeline = ({
                             </IconButton>
                           </Stack>
                         </Stack>
-                        {/* <Stack direction="row" alignItems="center" mt={2} gap={1}>
-                        <Tooltip
-                          title={`Add a new row under ${timelines[index]?.timeline_type?.name}`}
-                        >
-                          <IconButton
-                            onClick={() => {
-                              handleAdd(index);
-                            }}
-                          >
-                            <Iconify icon="carbon:add-filled" />
-                          </IconButton>
-                        </Tooltip>
-                        <Divider sx={{ borderStyle: 'dashed', flexGrow: 1 }} />
-                      </Stack> */}
                       </Box>
                     )}
                   </Draggable>

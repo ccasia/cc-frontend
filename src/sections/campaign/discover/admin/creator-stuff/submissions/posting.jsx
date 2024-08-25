@@ -101,7 +101,7 @@ const Posting = ({ campaign, submission, creator }) => {
               <Stack gap={1.5} alignItems="center">
                 <Image src="/assets/approve.svg" width={200} />
                 <Typography variant="subtitle2" color="text.secondary" sx={{ textAlign: 'center' }}>
-                  First Draft has been reviewed
+                  Posting has been reviewed
                 </Typography>
               </Stack>
             </Box>

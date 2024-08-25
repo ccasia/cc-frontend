@@ -17,6 +17,7 @@ const ManagersPage = lazy(() => import('src/pages/dashboard/admin'));
 const CreatorList = lazy(() => import('src/pages/dashboard/creator/list'));
 const CreatorMediaKit = lazy(() => import('src/pages/dashboard/creator/mediaKit'));
 const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCards'));
+const FinanceCreator = lazy(() => import('src/pages/dashboard/creator/finance'));
 
 // Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
@@ -141,6 +142,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['creator']} hasContent>
             <CreatorMediaKit />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'finance',
+        element: (
+          <RoleBasedGuard roles={['creator']} hasContent>
+            <FinanceCreator />
           </RoleBasedGuard>
         ),
       },

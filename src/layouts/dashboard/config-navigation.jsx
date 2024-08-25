@@ -188,6 +188,11 @@ export function useNavData() {
             path: paths.dashboard.creator.mediaKitCreator,
             icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
           },
+          {
+            title: 'Finance',
+            path: paths.dashboard.creator.financeCreator,
+            icon: <Iconify icon="material-symbols:finance" width={25} />,
+          },
         ],
       },
     ],
