@@ -6,9 +6,9 @@ import { useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
+import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
-import { Avatar, Typography } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 

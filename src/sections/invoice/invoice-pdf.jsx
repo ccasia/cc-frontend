@@ -90,54 +90,54 @@ export default function InvoicePDF({ invoice, currentStatus }) {
   const styles = useStyles();
 
   const bankInfo = () => (
-      <View style={[styles.table, styles.mb40]}>
-        <View>
-          <View style={styles.tableRow}>
-            <View style={styles.tableCell_1}>
-              <Text style={styles.subtitle2}>#</Text>
-            </View>
-
-            <View style={styles.tableCell_2}>
-              <Text style={styles.subtitle2}>Recipent Name</Text>
-            </View>
-
-            <View style={[styles.tableCell_2]}>
-              <Text style={styles.subtitle2}>Bank Name</Text>
-            </View>
-
-            <View style={styles.tableCell_2}>
-              <Text style={styles.subtitle2}>Account Number</Text>
-            </View>
-
-            <View style={styles.tableCell_2}>
-              <Text style={styles.subtitle2}>Recipent Email</Text>
-            </View>
+    <View style={[styles.table, styles.mb40]}>
+      <View>
+        <View style={styles.tableRow}>
+          <View style={styles.tableCell_1}>
+            <Text style={styles.subtitle2}>#</Text>
           </View>
-        </View>
 
-        <View>
-          <View style={styles.tableRow} key={invoice?.id}>
-            <View style={styles.tableCell_1}>
-              <Text>{1}</Text>
-            </View>
+          <View style={styles.tableCell_2}>
+            <Text style={styles.subtitle2}>Recipent Name</Text>
+          </View>
 
-            <View style={styles.tableCell_2}>
-              <Text style={styles.subtitle2}>{invoice?.bankAcc.payTo}</Text>
-            </View>
+          <View style={[styles.tableCell_2]}>
+            <Text style={styles.subtitle2}>Bank Name</Text>
+          </View>
 
-            <View style={[styles.tableCell_2]}>
-              <Text>{invoice?.bankAcc.bankName}</Text>
-            </View>
-            <View style={[styles.tableCell_2]}>
-              <Text>{invoice?.bankAcc.accountNumber}</Text>
-            </View>
-            <View style={[styles.tableCell_2]}>
-              <Text>{invoice?.bankAcc.accountEmail}</Text>
-            </View>
+          <View style={styles.tableCell_2}>
+            <Text style={styles.subtitle2}>Account Number</Text>
+          </View>
+
+          <View style={styles.tableCell_2}>
+            <Text style={styles.subtitle2}>Recipent Email</Text>
           </View>
         </View>
       </View>
-    );
+
+      <View>
+        <View style={styles.tableRow} key={invoice?.id}>
+          <View style={styles.tableCell_1}>
+            <Text>{1}</Text>
+          </View>
+
+          <View style={styles.tableCell_2}>
+            <Text style={styles.subtitle2}>{invoice?.bankAcc.payTo}</Text>
+          </View>
+
+          <View style={[styles.tableCell_2]}>
+            <Text>{invoice?.bankAcc.bankName}</Text>
+          </View>
+          <View style={[styles.tableCell_2]}>
+            <Text>{invoice?.bankAcc.accountNumber}</Text>
+          </View>
+          <View style={[styles.tableCell_2]}>
+            <Text>{invoice?.bankAcc.accountEmail}</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <Document>

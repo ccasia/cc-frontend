@@ -7,6 +7,5 @@ import InvoiceNewEditForm from '../invoice-new-edit-form';
 export default function InvoiceCreateView() {
   const settings = useSettingsContext();
 
-  return <InvoiceNewEditForm  />;
+  return <InvoiceNewEditForm />;
 }
- 

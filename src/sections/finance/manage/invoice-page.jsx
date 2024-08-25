@@ -1,8 +1,9 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
+
+import useGetInvoiceById from 'src/hooks/use-get-invoice';
 
 import { InvoiceDetailsView } from 'src/sections/invoice/view';
-import { useParams } from 'react-router-dom';
-import useGetInvoiceById from 'src/hooks/use-get-invoice';
 
 function InvoicePage() {
   const { id } = useParams();

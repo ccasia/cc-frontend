@@ -41,7 +41,6 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import InvoiceAnalytic from '../invoice-analytic';
 import InvoiceTableRow from '../invoice-table-row';
 import InvoiceTableToolbar from '../invoice-table-toolbar';
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';

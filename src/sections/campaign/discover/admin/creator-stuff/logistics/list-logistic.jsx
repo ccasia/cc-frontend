@@ -67,7 +67,9 @@ const ListLogistics = ({ logistics }) => {
                     <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
                       <Avatar
                         alt={logistic.courier}
-                        src={couriers.find((courier) => courier.name === logistic.courier)?.logo_url}
+                        src={
+                          couriers.find((courier) => courier.name === logistic.courier)?.logo_url
+                        }
                         sx={{ width: 25, height: 25 }}
                       />
                       {logistic.courier}

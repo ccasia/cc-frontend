@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import { forwardRef } from 'react';
 
 import Box from '@mui/material/Box';
-import { Badge } from '@mui/material';
 import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha, styled } from '@mui/material/styles';
@@ -11,6 +10,8 @@ import ListItemButton from '@mui/material/ListItemButton';
 import { RouterLink } from 'src/routes/components';
 
 import { useAuthContext } from 'src/auth/hooks';
+
+import Label from 'src/components/label';
 
 import Iconify from '../../iconify';
 
@@ -42,8 +43,6 @@ const NavItem = forwardRef(
 
     const { user } = useAuthContext();
 
-    console.log('msgcounter:', msgcounter);
-    
     const renderContent = (
       <StyledNavItem
         ref={ref}
@@ -59,7 +58,6 @@ const NavItem = forwardRef(
             {icon}
           </Box>
         )}
-
         {subItem && icon ? (
           <Box component="span" className="icon">
             {icon}
@@ -67,7 +65,6 @@ const NavItem = forwardRef(
         ) : (
           <Box component="span" className="sub-icon" />
         )}
-
         {title && (
           <Box component="span" sx={{ flex: '1 1 auto', minWidth: 0 }}>
             <Box component="span" className="label">
@@ -83,16 +80,14 @@ const NavItem = forwardRef(
             )}
           </Box>
         )}
-
         {info && (
           <Box component="span" className="info">
             {info}
           </Box>
         )}
+        {msgcounter && <Label color="success">{msgcounter}</Label>}
 
-        {msgcounter && ( 
-          <Badge badgeContent={msgcounter} color="primary" sx={{ ml: 2 }} />
-        )}
+        {/* <Badge badgeContent={msgcounter} color="primary" sx={{ ml: 2 }} />} */}
 
         {hasChild && (
           <Iconify

@@ -12,11 +12,12 @@ import { RouterLink } from 'src/routes/components';
 
 import { formatText } from 'src/utils/format-test';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Image from 'src/components/image';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 

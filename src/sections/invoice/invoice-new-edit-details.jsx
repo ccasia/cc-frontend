@@ -69,7 +69,7 @@ export default function InvoiceNewEditDetails() {
       setValue(`items[${index}].price`, 0.0);
       setValue(`items[${index}].total`, 0.0);
     },
-    [setValue, values.items]
+    [setValue]
   );
 
   // const handleChangeQuantity = useCallback(

@@ -46,7 +46,7 @@ export default function NavList({ data, depth, slotProps }) {
         info={data.info}
         roles={data.roles}
         caption={data.caption}
-        msgcounter ={data.msgcounter}
+        msgcounter={data.msgcounter}
         disabled={data.disabled}
         //
         depth={depth}

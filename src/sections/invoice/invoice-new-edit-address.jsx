@@ -1,15 +1,15 @@
-import { useFormContext } from 'react-hook-form';
 import PropTypes from 'prop-types';
+import { useFormContext } from 'react-hook-form';
 
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
-import Iconify from 'src/components/iconify';
-
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+
+import Iconify from 'src/components/iconify';
 
 import { AddressListDialog } from '../address';
 
@@ -125,6 +125,6 @@ export default function InvoiceNewEditAddress({ creators }) {
     </>
   );
 }
-InvoiceNewEditAddress.prototype = {
+InvoiceNewEditAddress.propTypes = {
   creators: PropTypes.array.isRequired,
 };

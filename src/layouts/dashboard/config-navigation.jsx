@@ -54,9 +54,9 @@ export function useNavData() {
   const { user } = useAuthContext();
   const { unreadCount } = useTotalUnreadCount();
 
-  console.log("Unread count from useNavData:", unreadCount);
+  console.log('Unread count from useNavData:', unreadCount);
   //  console.log("Message counter in NavItem:", msgcounter);
-  
+
   const adminNavigations = useMemo(
     () => [
       {
@@ -239,7 +239,7 @@ export function useNavData() {
         : adminNavigations,
     // () => (user?.role === 'creator' ? creatorNavigations : adminNavigations),
 
-    [adminNavigations, creatorNavigations, user]
+    [adminNavigations, creatorNavigations, user, financeNavigations]
   );
 
   const data = useMemo(

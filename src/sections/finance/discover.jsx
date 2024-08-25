@@ -1,10 +1,11 @@
 import React from 'react';
+
 import { Container } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 import { useSettingsContext } from 'src/components/settings';
+import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 function FianaceDiscover() {
   const settings = useSettingsContext();
