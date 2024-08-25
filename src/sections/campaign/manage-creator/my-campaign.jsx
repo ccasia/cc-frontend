@@ -25,7 +25,7 @@ const MyCampaignView = ({ query, setQuery, filteredData, onClick }) => (
       }}
       onChange={(e) => setQuery(e.target.value)}
     />
-    {filteredData.length ? (
+    {filteredData?.length ? (
       <Box
         gap={3}
         display="grid"

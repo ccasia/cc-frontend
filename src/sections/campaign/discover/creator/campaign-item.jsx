@@ -10,11 +10,11 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
 import ListItemText from '@mui/material/ListItemText';
-import { Grid, Chip, Typography, CircularProgress } from '@mui/material';
+import { Grid, Chip, Tooltip, Typography, IconButton, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
@@ -37,7 +37,6 @@ export default function CampaignItem({ campaign, user }) {
   useEffect(() => {
     // Define the handler function
     const handlePitchLoading = (data) => {
-      console.log(data);
       setLoading(true);
 
       if (upload.find((item) => item.campaignId === data.campaignId)) {
@@ -47,7 +46,6 @@ export default function CampaignItem({ campaign, user }) {
               ? {
                   campaignId: data.campaignId,
                   loading: true,
-                  // progress: data.progress && `${Math.floor(data.progress)}%`,
                   progress: Math.floor(data.progress),
                 }
               : item
@@ -59,12 +57,6 @@ export default function CampaignItem({ campaign, user }) {
           { loading: true, campaignId: data.campaignId, progress: Math.floor(data.progress) },
         ]);
       }
-
-      // setPercent((prev) => ({
-      //   ...prev,
-      //   data,
-      // }));
-      // setPercent(`${Math.floor(data.progress)}%`);
     };
 
     const handlePitchSuccess = (data) => {
@@ -84,6 +76,34 @@ export default function CampaignItem({ campaign, user }) {
       socket.off('pitch-uploaded', handlePitchSuccess);
     };
   }, [socket, upload]);
+
+  const saveCampaign = async (campaignId) => {
+    try {
+      const res = await axiosInstance.post(endpoints.campaign.creator.saveCampaign, {
+        campaignId,
+      });
+      mutate(endpoints.campaign.getMatchedCampaign);
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error', {
+        variant: 'error',
+      });
+    }
+  };
+
+  const unSaveCampaign = async (saveCampaignId) => {
+    try {
+      const res = await axiosInstance.delete(
+        endpoints.campaign.creator.unsaveCampaign(saveCampaignId)
+      );
+      mutate(endpoints.campaign.getMatchedCampaign);
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error', {
+        variant: 'error',
+      });
+    }
+  };
 
   const pitch = useMemo(
     () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
@@ -136,48 +156,72 @@ export default function CampaignItem({ campaign, user }) {
   );
 
   const renderTexts = (
-    <ListItemText
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      alignItems="center"
       sx={{
         p: (theme) => theme.spacing(2.5, 2.5, 2, 2.5),
       }}
-      primary={
-        <Link
-          component="a"
-          color="inherit"
-          onClick={() => campaignInfo?.onTrue()}
-          sx={{
-            cursor: 'pointer',
-          }}
-        >
-          {campaign?.name}
-        </Link>
-      }
-      secondary={`by ${campaign?.brand?.name ?? campaign?.company?.name}`}
-      primaryTypographyProps={{
-        noWrap: true,
-        component: 'span',
-        color: 'text.primary',
-        typography: 'subtitle1',
-      }}
-      secondaryTypographyProps={{
-        noWrap: true,
-        color: 'text.disabled',
-        typography: 'caption',
-      }}
-    />
+    >
+      <ListItemText
+        primary={
+          <Link
+            component="a"
+            color="inherit"
+            onClick={() => campaignInfo?.onTrue()}
+            sx={{
+              cursor: 'pointer',
+            }}
+          >
+            {campaign?.name}
+          </Link>
+        }
+        secondary={`by ${campaign?.brand?.name ?? campaign?.company?.name}`}
+        primaryTypographyProps={{
+          noWrap: true,
+          component: 'span',
+          color: 'text.primary',
+          typography: 'subtitle1',
+        }}
+        secondaryTypographyProps={{
+          noWrap: true,
+          color: 'text.disabled',
+          typography: 'caption',
+        }}
+      />
+
+      {campaign?.bookMarkCampaign ? (
+        <Tooltip title="Saved">
+          <IconButton
+            onClick={() => {
+              unSaveCampaign(campaign.bookMarkCampaign.id);
+            }}
+          >
+            <Iconify icon="flowbite:bookmark-solid" width={25} />
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <Tooltip title="Save">
+          <IconButton
+            onClick={() => {
+              saveCampaign(campaign.id);
+            }}
+          >
+            <Iconify icon="mynaui:bookmark" width={25} />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Stack>
   );
 
   const renderInfo = (
     <Stack
       spacing={1.5}
       sx={{
-        // position: 'relative',
         p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
       }}
     >
-      {/* <IconButton onClick={popover.onOpen} sx={{ position: 'absolute', bottom: 20, right: 8 }}>
-        <Iconify icon="eva:more-vertical-fill" />
-      </IconButton> */}
       {pitch && pitch.status === 'pending' && (
         <Label
           color="warning"
@@ -185,7 +229,6 @@ export default function CampaignItem({ campaign, user }) {
             position: 'absolute',
             bottom: 10,
             right: 10,
-            // color: (theme) => theme.palette.text.secondary,
           }}
         >
           Pending
@@ -224,16 +267,6 @@ export default function CampaignItem({ campaign, user }) {
               value={upload.find((item) => item.campaignId === campaign.id).progress}
             />
           ) : (
-            // <LoadingButton
-            //   sx={{ position: 'absolute', bottom: 10, right: 10 }}
-            //   variant="contained"
-            //   size="small"
-            //   startIcon={<Iconify icon="eos-icons:loading" width={20} />}
-            //   // loading={loading}
-            //   disabled
-            // >
-            //   {upload.find((item) => item.campaignId === campaign.id).progress}
-            // </LoadingButton>
             <LoadingButton
               sx={{ position: 'absolute', bottom: 10, right: 10 }}
               variant="contained"
@@ -253,8 +286,8 @@ export default function CampaignItem({ campaign, user }) {
         </Grid>
         <Grid item xs={11}>
           <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
-            {campaign?.campaignBrief?.interests.map((e, index) => (
-              <Stack direction="row" spacing={1} flexWrap="wrap">
+            {campaign?.campaignBrief?.industries.map((e, index) => (
+              <Stack key={index} direction="row" spacing={1} flexWrap="wrap">
                 <Label color="primary">{e}</Label>
               </Stack>
             ))}
@@ -272,38 +305,6 @@ export default function CampaignItem({ campaign, user }) {
           </Typography>
         </Grid>
       </Grid>
-
-      {/* {[
-        {
-          label: campaign?.campaignBrief?.interests.map((e, index) => (
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Label color="primary">{e}</Label>
-            </Stack>
-          )),
-          icon: <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />,
-        },
-
-        {
-          label: (
-            <Typography variant="caption" color="text.disabled">
-              {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
-            </Typography>
-          ),
-          icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} />,
-        },
-      ].map((item, index) => (
-        <Stack
-          key={index}
-          spacing={1}
-          direction="row"
-          alignItems="center"
-          flexWrap="wrap"
-          sx={{ typography: 'body2' }}
-        >
-          {item.icon}
-          {item.label}
-        </Stack>
-      ))} */}
     </Stack>
   );
 

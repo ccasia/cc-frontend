@@ -22,7 +22,7 @@ export const paths = {
   // DASHBOARD
   dashboard: {
     root: ROOTS.DASHBOARD,
-    admins: `${ROOTS.DASHBOARD}/admins`,
+    admins: `${ROOTS.DASHBOARD}/admins`, // /dashboard/admins
     company: {
       root: `${ROOTS.DASHBOARD}/company`,
       manage: `${ROOTS.DASHBOARD}/company/manage`,
@@ -52,7 +52,7 @@ export const paths = {
         manage: `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`,
         detail: (id) => `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${id}`,
       },
-      manageCreator: (campaignId, creatorId) =>
+      manageCreator: (campaignId, creatorId, index) =>
         `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/creator/${creatorId}`,
     },
     user: {
@@ -65,6 +65,7 @@ export const paths = {
       mediaKit: (id) => `${ROOTS.DASHBOARD}/creator/media-kits/${id}`,
       mediaKitCreator: `${ROOTS.DASHBOARD}/mediakit`,
       mediaKitLists: `${ROOTS.DASHBOARD}/creator/media-kits`,
+      financeCreator: `${ROOTS.DASHBOARD}/finance`,
     },
     landing: {
       creator: `${ROOTS.DASHBOARD}/landing/creator`,
@@ -73,7 +74,7 @@ export const paths = {
     calendar: {
       root: `${ROOTS.DASHBOARD}/calendar`,
     },
-    chat: { 
+    chat: {
       root: `${ROOTS.DASHBOARD}/chat`,
       thread: (id) => `${ROOTS.DASHBOARD}/chat/thread/${id}`,
     },

@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { forwardRef } from 'react';
 
 import Box from '@mui/material/Box';
+import { Badge } from '@mui/material';
 import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha, styled } from '@mui/material/styles';
@@ -21,6 +22,7 @@ const NavItem = forwardRef(
       title,
       path,
       icon,
+      msgcounter,
       info,
       disabled,
       caption,
@@ -40,6 +42,8 @@ const NavItem = forwardRef(
 
     const { user } = useAuthContext();
 
+    console.log('msgcounter:', msgcounter);
+    
     const renderContent = (
       <StyledNavItem
         ref={ref}
@@ -86,6 +90,10 @@ const NavItem = forwardRef(
           </Box>
         )}
 
+        {msgcounter && ( 
+          <Badge badgeContent={msgcounter} color="primary" sx={{ ml: 2 }} />
+        )}
+
         {hasChild && (
           <Iconify
             width={16}
@@ -100,10 +108,9 @@ const NavItem = forwardRef(
       return null;
     }
 
-    // Hidden item by role
-    // if (roles && !roles.includes(user?.role)) {
-    //   return null;
-    // }
+    if (user?.role !== 'admin' && roles && !roles.includes(user?.role)) {
+      return null;
+    }
 
     if (hasChild) {
       return renderContent;
@@ -150,6 +157,7 @@ NavItem.propTypes = {
   active: PropTypes.bool,
   path: PropTypes.string,
   depth: PropTypes.number,
+  msgcounter: PropTypes.number,
   icon: PropTypes.element,
   info: PropTypes.element,
   title: PropTypes.string,

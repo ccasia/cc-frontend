@@ -21,7 +21,6 @@ import Typography from '@mui/material/Typography';
 import { Grid, Stack, Avatar, Divider, IconButton, StepContent, ListItemText } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useBrand } from 'src/hooks/zustands/useBrand';
 import { useGetTimeline } from 'src/hooks/use-get-timeline';
 import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
@@ -78,14 +77,12 @@ function CreateCampaignForm() {
   const active = localStorage.getItem('activeStep');
   const modal = useBoolean();
 
-  const { options } = useGetCampaignBrandOption();
+  const { data: options, isLoading: companyLoading } = useGetCampaignBrandOption();
   const [activeStep, setActiveStep] = useState(parseInt(active, 10) || 0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const open = Boolean(anchorEl);
   const [image, setImage] = useState(null);
-  const { brand } = useBrand();
   const [brandState, setBrandState] = useState('');
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
@@ -115,7 +112,8 @@ function CreateCampaignForm() {
 
   const campaignSchema = Yup.object().shape({
     // campaignName: Yup.string().required('Campaign name is required'),
-    campaignInterests: Yup.array().min(3, 'Choose at least three option'),
+    campaignIndustries: Yup.array().min(3, 'Choose at least three option'),
+    // campaignInterests: Yup.array().min(3, 'Choose at least three option'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     // campaignCompany: Yup.string().required('Company name is required'),
     campaignBrand: Yup.object().required('Brand name is required'),
@@ -213,7 +211,8 @@ function CreateCampaignForm() {
         campaignBrand: null,
         campaignStartDate: null,
         campaignEndDate: null,
-        campaignInterests: [],
+        // campaignInterests: [],
+        campaignIndustries: [],
         campaignObjectives: '',
         campaignDescription: '',
         audienceGender: [],
@@ -447,33 +446,34 @@ function CreateCampaignForm() {
           alignItems: 'center',
         }}
       >
-        {options && (
-          <RHFAutocomplete
-            fullWidth
-            name="campaignBrand"
-            placeholder="Brand"
-            options={brandState ? [brandState] : options}
-            getOptionLabel={(option) => option.name}
-            noOptionsText={
-              <Button
-                variant="contained"
-                size="small"
-                fullWidth
-                sx={{ mt: 2 }}
-                onClick={handleOpenCompanyDialog}
-              >
-                Create new brand
-              </Button>
-            }
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            renderOption={(props, option) => (
+        <RHFAutocomplete
+          fullWidth
+          name="campaignBrand"
+          placeholder="Brand"
+          options={!companyLoading && (brandState ? [brandState] : options)}
+          getOptionLabel={(option) => option.name}
+          noOptionsText={
+            <Button
+              variant="contained"
+              size="small"
+              fullWidth
+              sx={{ mt: 2 }}
+              onClick={handleOpenCompanyDialog}
+            >
+              Create new brand
+            </Button>
+          }
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          renderOption={(props, option) =>
+            !companyLoading && (
               <Stack direction="row" spacing={1} p={1} {...props}>
                 <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
                 <ListItemText primary={option.name} />
               </Stack>
-            )}
-          />
-        )}
+            )
+          }
+        />
+
         {/* <Box>
           <Tooltip title="Create brand">
             <IconButton
@@ -530,8 +530,8 @@ function CreateCampaignForm() {
       <RHFDatePicker name="campaignEndDate" label="End Date" /> */}
 
       <RHFAutocomplete
-        name="campaignInterests"
-        placeholder="+ Interests"
+        name="campaignIndustries"
+        placeholder="+ Industries"
         multiple
         freeSolo
         disableCloseOnSelect
@@ -818,8 +818,6 @@ function CreateCampaignForm() {
         preview: URL.createObjectURL(file),
       });
 
-      console.log(newFile);
-
       if (newFile) {
         setValue('agreementFrom', newFile, { shouldValidate: true });
       }
@@ -882,6 +880,7 @@ function CreateCampaignForm() {
   }
 
   const startDate = getValues('campaignStartDate');
+  const campaignStartDate = watch('campaignStartDate');
 
   return (
     <Box
@@ -979,15 +978,27 @@ function CreateCampaignForm() {
                         >
                           Draft
                         </LoadingButton>
-                        <LoadingButton
-                          variant="contained"
-                          color="primary"
-                          onClick={() => onSubmit('SCHEDULED')}
-                          startIcon={<Iconify icon="material-symbols:publish" width={16} />}
-                          loading={isLoading}
-                        >
-                          Schedule on {dayjs(startDate).format('ddd LL')}
-                        </LoadingButton>
+                        {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
+                          <LoadingButton
+                            variant="contained"
+                            color="primary"
+                            onClick={() => onSubmit('ACTIVE')}
+                            startIcon={<Iconify icon="material-symbols:publish" width={16} />}
+                            loading={isLoading}
+                          >
+                            Publish now
+                          </LoadingButton>
+                        ) : (
+                          <LoadingButton
+                            variant="contained"
+                            color="primary"
+                            onClick={() => onSubmit('SCHEDULED')}
+                            startIcon={<Iconify icon="material-symbols:publish" width={16} />}
+                            loading={isLoading}
+                          >
+                            Schedule on {dayjs(startDate).format('ddd LL')}
+                          </LoadingButton>
+                        )}
                       </Stack>
                     ) : (
                       <Button variant="contained" onClick={handleNext}>

@@ -36,20 +36,20 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     >
       <Stack flexGrow={1} sx={{ position: 'relative' }}>
         <Image
-          alt="/test.jpeg"
+          alt={campaign?.name}
           src={campaign?.campaignBrief?.images[0]}
           sx={{ borderRadius: 1, height: 164, width: 1 }}
         />
       </Stack>
       <Stack spacing={0.5}>
         <Image
-          alt="/test.jpeg"
+          alt={campaign?.name}
           src={campaign?.campaignBrief?.images[1]}
           ratio="1/1"
           sx={{ borderRadius: 1, width: 80 }}
         />
         <Image
-          alt="/test.jpeg"
+          alt={campaign?.name}
           src={campaign?.campaignBrief?.images[2]}
           ratio="1/1"
           sx={{ borderRadius: 1, width: 80 }}
@@ -87,70 +87,20 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   );
 
   const renderInfo = (
-    // <Stack
-    //   spacing={1.5}
-    //   sx={{
-    //     position: 'relative',
-    //     p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
-    //   }}
-    // >
-    //   {[
-    //     {
-    //       id: 1,
-    //       label:
-    //         campaign &&
-    //         campaign?.campaignBrief?.interests?.map((e, index) => (
-    //           <Chip key={index} size="small" variant="outlined" label={e} color="error" />
-    //         )),
-    //       icon: <Iconify icon="mdi:company" sx={{ color: 'error.main' }} width={21} />,
-    //     },
-    //     {
-    //       id: 2,
-    //       label: (
-    //         <Typography variant="caption">
-    //           {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} -
-    //             ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
-    //         </Typography>
-    //       ),
-    //       icon: <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} width={21} />,
-    //     },
-    //     // {
-    //     //   id: 3,
-    //     //   label: (
-    //     //     <Chip label={campaign?.status} size="small" color="secondary" variant="outlined" />
-    //     //   ),
-    //     //   icon: <Iconify icon="lets-icons:status" sx={{ color: 'secondary.main' }} width={21} />,
-    //     // },
-    //   ].map((item, index) => (
-    //     <Stack
-    //       key={item.id}
-    //       spacing={1}
-    //       direction="row"
-    //       alignItems="center"
-    //       sx={{ typography: 'body2' }}
-    //     >
-    //       {item.icon}
-    //       {item.label}
-    //     </Stack>
-    //   ))}
-    // </Stack>
     <Stack
       spacing={1.5}
       sx={{
-        // position: 'relative',
         p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
       }}
     >
       <Grid container>
         <Grid item xs={1}>
-          <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />
+          <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />
         </Grid>
         <Grid item xs={11}>
           <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
-            {campaign?.campaignBrief?.interests.map((e, index) => (
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Label color="primary">{e}</Label>
-              </Stack>
+            {campaign?.campaignBrief?.industries.map((e, index) => (
+              <Label color="primary">{e}</Label>
             ))}
           </Stack>
         </Grid>
@@ -158,7 +108,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
       <Grid container>
         <Grid item xs={1}>
-          <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} />
+          <Iconify icon="solar:clock-circle-bold" />
         </Grid>
         <Grid item xs={11}>
           <Typography variant="caption" color="text.disabled">
@@ -220,45 +170,6 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
           }}
         />
       )}
-
-      {/* <Tooltip
-        title={
-          <>
-            <ListItemText
-              primary="Status"
-              secondary={campaign?.status}
-              primaryTypographyProps={{
-                variant: 'caption',
-              }}
-              secondaryTypographyProps={{
-                variant: 'caption',
-                color: 'text.disabled',
-              }}
-            />
-            <ListItemText
-              primary="Stage"
-              secondary={campaign?.stage}
-              primaryTypographyProps={{
-                variant: 'caption',
-              }}
-              secondaryTypographyProps={{
-                variant: 'caption',
-                color: 'text.disabled',
-              }}
-            />
-          </>
-        }
-      >
-        <Iconify
-          icon="material-symbols:info"
-          sx={{
-            position: 'absolute',
-            top: 15,
-            right: 15,
-            zIndex: 300,
-          }}
-        />
-      </Tooltip> */}
 
       {renderImages}
 

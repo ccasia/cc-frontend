@@ -9,6 +9,7 @@ import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
+import { Checkbox, InputAdornment, FormControlLabel } from '@mui/material';
 
 import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -66,7 +67,6 @@ export default function AccountGeneral() {
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
     const formData = new FormData();
 
     const newObj = { ...data, id: user?.id };
@@ -105,6 +105,7 @@ export default function AccountGeneral() {
   );
 
   const country = watch('country');
+  const nationality = watch('country');
 
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -147,17 +148,21 @@ export default function AccountGeneral() {
             >
               <RHFTextField name="name" label="Name" />
               <RHFTextField name="email" label="Email Address" />
-              <RHFTextField name="phoneNumber" label="Phone Number" />
-              <RHFTextField name="address" label="Address" />
 
-              <RHFAutocomplete
-                name="country"
-                type="country"
-                label="Country"
-                placeholder="Choose a country"
-                options={countries.map((option) => option.label)}
-                getOptionLabel={(option) => option}
-              />
+              <Stack>
+                <RHFTextField name="address" label="Address" multiline />
+                <FormControlLabel
+                  control={<Checkbox defaultChecked size="small" />}
+                  label="Same as current location"
+                  onChange={(e, val) => {
+                    if (val) {
+                      setValue('address', user?.creator?.location);
+                    } else {
+                      setValue('address', '');
+                    }
+                  }}
+                />
+              </Stack>
 
               <RHFAutocomplete
                 name="state"
@@ -170,6 +175,27 @@ export default function AccountGeneral() {
                   .flatMap((b) => b)
                   .map((c) => c.name)}
                 getOptionLabel={(option) => option}
+              />
+
+              <RHFAutocomplete
+                name="country"
+                type="country"
+                label="Country"
+                placeholder="Choose a country"
+                options={countries.map((option) => option.label)}
+                getOptionLabel={(option) => option}
+              />
+
+              <RHFTextField
+                name="phoneNumber"
+                label="Phone Number"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      +{countries.filter((a) => a.label === nationality).map((e) => e.phone)}
+                    </InputAdornment>
+                  ),
+                }}
               />
 
               {/* <RHFTextField name="state" label="State/Region" /> */}

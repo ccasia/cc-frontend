@@ -10,12 +10,11 @@ import { varBounce, MotionContainer } from 'src/components/animate';
 
 import { useAuthContext } from '../hooks';
 
-const withPermission = (requiredPermission, module, WrappedComponent) => (props) => {
-  const { permission } = useAuthContext();
-  const { user } = useAuthContext();
+const withPermission = (requiredPermission, WrappedComponent) => (props) => {
+  const { user, permission } = useAuthContext();
 
   const missingPermissions = requiredPermission.filter(
-    (elem) => !permission[module]?.permissions.includes(elem)
+    (elem) => !permission?.map((item) => item.name).includes(elem)
   );
 
   if (user?.role === 'superadmin') {
@@ -24,12 +23,8 @@ const withPermission = (requiredPermission, module, WrappedComponent) => (props)
 
   if (
     isArray(requiredPermission) &&
-    requiredPermission.every((elem) => permission[module]?.permissions.includes(elem))
+    requiredPermission.every((elem) => permission?.map((item) => item.name).includes(elem))
   ) {
-    return <WrappedComponent {...props} />;
-  }
-
-  if (permission[module]?.permissions.includes(requiredPermission)) {
     return <WrappedComponent {...props} />;
   }
 

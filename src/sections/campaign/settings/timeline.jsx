@@ -35,6 +35,7 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
   const [, setQuery] = useState('');
 
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
+
   const errorTimeline = useBoolean();
   const timelineModal = useBoolean();
 
@@ -73,14 +74,16 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
   useEffect(() => {
     if (!defaultTimelineLoading && defaultTimelines.length > 0) {
       reset({
-        timeline: defaultTimelines.map((item) => ({
-          timeline_type: { id: item.timelineType.id, name: item.timelineType.name } || {
-            id: '',
-            name: '',
-          },
-          duration: item.duration || undefined,
-          for: item.for || '',
-        })),
+        timeline: defaultTimelines
+          .sort((a, b) => a.order - b.order)
+          .map((item) => ({
+            timeline_type: { id: item.timelineType.id, name: item.timelineType.name } || {
+              id: '',
+              name: '',
+            },
+            duration: item.duration || undefined,
+            for: item.for || '',
+          })),
       });
     }
   }, [reset, defaultTimelineLoading, defaultTimelines]);
@@ -101,11 +104,6 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
   });
 
   const handleChange = (val, index) => {
-    console.log(val);
-    // if (val.name.toLowerCase.includes('create new')) {
-    //   const extractedName = val.name.split(': ')[1];
-    //   console.log(extractedName);
-    // }
     setValue(`timeline[${index}].timeline_type`, val);
   };
 

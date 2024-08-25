@@ -2,7 +2,6 @@ import useSWR from 'swr';
 import PropTypes from 'prop-types';
 import { useMemo, useEffect, useReducer, useCallback } from 'react';
 
-import { flattenData } from 'src/utils/flatten-array';
 import axios, { fetcher, endpoints } from 'src/utils/axios';
 
 import { AuthContext } from './auth-context';
@@ -68,27 +67,14 @@ export function AuthProvider({ children }) {
 
   const initialize = useCallback(async () => {
     try {
-      // const accessToken = sessionStorage.getItem(STORAGE_KEY);
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-
-      // const response = await axios.get(endpoints.auth.me);
-
-      // if (
-      //   response.status === 200 ||
-      //   (response.status === 202 && isValidToken(response?.data?.accessToken))
-      // )
-
       if (userData && isValidToken(userData.accessToken)) {
-        // setSession(accessToken);
         const { user } = userData;
-        // const { user } = response.data;
 
         dispatch({
           type: 'INITIAL',
           payload: {
             user: {
               ...user,
-              // accessToken,
             },
           },
         });
@@ -125,8 +111,6 @@ export function AuthProvider({ children }) {
 
     const { accessToken, user } = response.data;
 
-    // setSession(accessToken);
-
     dispatch({
       type: 'LOGIN',
       payload: {
@@ -152,15 +136,6 @@ export function AuthProvider({ children }) {
     const { user } = response.data;
 
     return user;
-
-    // dispatch({
-    //   type: 'REGISTER',
-    //   payload: {
-    //     user: {
-    //       ...user,
-    //     },
-    //   },
-    // });
   }, []);
 
   const verify = useCallback(async (token) => {
@@ -194,7 +169,9 @@ export function AuthProvider({ children }) {
 
   const checkAuthenticated = state.user ? 'authenticated' : 'unauthenticated';
 
-  const permission = flattenData(state.user?.admin?.adminPermissionModule);
+  // const permission = flattenData(state.user?.admin?.adminPermissionModule);
+  const role = state?.user?.admin?.role;
+  const permission = state?.user?.admin?.role?.permissions;
 
   const status = state.loading ? 'loading' : checkAuthenticated;
 
@@ -203,6 +180,7 @@ export function AuthProvider({ children }) {
       user: state.user,
       method: 'jwt',
       permission,
+      role,
       loading: status === 'loading',
       authenticated: status === 'authenticated',
       unauthenticated: status === 'unauthenticated',
@@ -212,7 +190,7 @@ export function AuthProvider({ children }) {
       verify,
       logout,
     }),
-    [login, logout, register, verify, state.user, status, permission]
+    [login, logout, register, verify, state.user, status, permission, role]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;

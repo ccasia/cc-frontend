@@ -10,7 +10,9 @@ import {
   Stack,
   Table,
   Paper,
+  Button,
   TableRow,
+  Checkbox,
   TableHead,
   TableCell,
   TableBody,
@@ -24,6 +26,7 @@ import { fNumber } from 'src/utils/format-number';
 
 import Label from 'src/components/label';
 import Chart from 'src/components/chart';
+import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
@@ -46,6 +49,7 @@ const DashboardSuperadmin = () => {
             campaignName: campaign.name,
             campaignTask: task.task,
             dueDate: task.dueDate,
+            status: task.status,
           }))
         );
       })
@@ -123,16 +127,19 @@ const DashboardSuperadmin = () => {
                 <TableRow>
                   <TableCell align="center">{campaign?.name}</TableCell>
                   <TableCell align="center">
-                    {dayjs(campaign?.campaignBrief?.startDate).format('ddd LL')}
+                    <Typography variant="caption" color="text.secondary">
+                      {dayjs(campaign?.campaignBrief?.startDate).format('ddd LL')}
+                    </Typography>
                   </TableCell>
                   <TableCell align="center">
-                    {dayjs(campaign?.campaignBrief?.endDate).format('ddd LL')}
+                    <Typography variant="caption" color="text.secondary">
+                      {dayjs(campaign?.campaignBrief?.endDate).format('ddd LL')}
+                    </Typography>
                   </TableCell>
                   <TableCell align="center">
                     <Label color="success">{campaign?.shortlisted.length}</Label>
                   </TableCell>
                   <TableCell align="center">
-                    {' '}
                     <Label color="success">{campaign?.pitch.length}</Label>
                   </TableCell>
                 </TableRow>
@@ -232,7 +239,7 @@ const DashboardSuperadmin = () => {
           </Stack>
         </Box>
       </Grid>
-      <Grid item xs={12} md={7}>
+      <Grid item xs={12} md={6}>
         <Box
           component={Card}
           p={2}
@@ -244,7 +251,7 @@ const DashboardSuperadmin = () => {
           </Stack>
         </Box>
       </Grid>
-      <Grid item xs={12} md={5}>
+      <Grid item xs={12} md={6}>
         <Box
           component={Card}
           p={2}
@@ -252,48 +259,58 @@ const DashboardSuperadmin = () => {
         >
           <Stack spacing={1}>
             <Typography variant="subtitle2">Tasks</Typography>
-
-            <TableContainer component={Paper}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Task</TableCell>
-                    <TableCell>Campaign</TableCell>
-                    <TableCell>Due</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {taskLists.length &&
-                    taskLists?.map((item, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          <Typography variant="subtitle2">{item.campaignTask}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="subtitle2">{item.campaignName}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption" color="text.secondary">
-                            {dayjs(item.dueDate).format('ddd LL')}
-                          </Typography>
-                        </TableCell>
+            {taskLists.length ? (
+              <>
+                <TableContainer component={Paper}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell />
+                        <TableCell>Task</TableCell>
+                        <TableCell>Campaign</TableCell>
+                        <TableCell>Due</TableCell>
+                        <TableCell>Status</TableCell>
                       </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            {/* <Stack spacing={1}>
-                {taskLists.length &&
-                  taskLists?.map((item) => (
-                    <Stack direction="row" justifyContent="space-between" alignItems="start">
-                      <ListItemText secondary={item.campaignName} primary={item.campaignTask} />
-                      <Typography variant="caption" color="text.secondary">
-                        Due {dayjs(item.dueDate).format('ddd LL')}
-                      </Typography>
-                    </Stack>
-                  ))}
-              </Stack> */}
+                    </TableHead>
+                    <TableBody>
+                      {taskLists.length > 0 &&
+                        taskLists?.slice(0, 4).map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <Checkbox />
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="subtitle2">{item.campaignTask}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="subtitle2">{item.campaignName}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="caption" color="text.secondary">
+                                {dayjs(item.dueDate).format('ddd LL')}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Label>{item.status}</Label>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <Box
+                  sx={{
+                    ml: 'auto',
+                  }}
+                >
+                  <Button size="small" endIcon={<Iconify icon="iconamoon:arrow-right-2-bold" />}>
+                    View all
+                  </Button>
+                </Box>
+              </>
+            ) : (
+              <EmptyContent title="No task" />
+            )}
           </Stack>
         </Box>
       </Grid>

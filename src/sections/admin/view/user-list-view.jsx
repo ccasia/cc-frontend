@@ -129,6 +129,7 @@ export default function UserListView({ admins }) {
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const { data: roles, isLoading } = useGetRoles();
+  const { role } = useAuthContext();
   const buttonLoading = useBoolean();
 
   const handleCloseCreateDialog = () => {
@@ -296,7 +297,11 @@ export default function UserListView({ admins }) {
               <StepContent>
                 <RHFSelect name="role" label="Role">
                   {!isLoading &&
-                    roles.map((role) => <MenuItem value={role.id}>{role.name}</MenuItem>)}
+                    roles.map((item) => (
+                      <MenuItem key={item.id} value={item.id}>
+                        {item.name}
+                      </MenuItem>
+                    ))}
                 </RHFSelect>
 
                 <Stack spacing={0.5} mt={1}>
@@ -490,14 +495,16 @@ export default function UserListView({ admins }) {
             { name: 'List' },
           ]}
           action={
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleClickOpenDialog}
-              startIcon={<Iconify icon="mdi:invite" width={18} />}
-            >
-              Invite admin
-            </Button>
+            role?.name !== 'CSM' && (
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleClickOpenDialog}
+                startIcon={<Iconify icon="mdi:invite" width={18} />}
+              >
+                Invite admin
+              </Button>
+            )
           }
           sx={{
             mb: { xs: 3, md: 5 },

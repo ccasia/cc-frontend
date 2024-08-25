@@ -89,4 +89,4 @@ function CreateBrand() {
   );
 }
 
-export default withPermission(['create', 'read'], 'brand', CreateBrand);
+export default withPermission(['create:client', 'view:client'], CreateBrand);

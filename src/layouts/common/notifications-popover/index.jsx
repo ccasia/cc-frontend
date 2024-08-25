@@ -53,6 +53,7 @@ const TABS = [
 
 export default function NotificationsPopover() {
   const drawer = useBoolean();
+
   const { data, isLoading } = useGetNotificationById();
 
   const smUp = useResponsive('up', 'sm');

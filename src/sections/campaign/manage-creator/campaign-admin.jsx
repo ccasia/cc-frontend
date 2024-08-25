@@ -14,7 +14,7 @@ const CampaignAdmin = ({ campaign }) => (
           <Stack alignItems="start">
             <ListItemText
               primary={elem.admin.user.name}
-              secondary={elem.admin.role.name}
+              secondary={elem.admin.role?.name}
               secondaryTypographyProps={{
                 variant: 'caption',
                 color: 'text.disabled',

@@ -8,51 +8,20 @@ import { Box, Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import CampaignInfo from './campaign-info';
 import CampaignAdmin from './campaign-admin';
 import CampaignMyTasks from './campaign-myTask';
+import CampaignLogistics from './campaign-logistics';
 
 const CampaignDetailItem = ({ campaign }) => {
   const [currentTab, setCurrentTab] = useState('tasks');
-  // const { user } = useAuthContext();
 
-  // const renderGallery = (
-  //   <Box
-  //     display="grid"
-  //     gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-  //     gap={1}
-  //     mt={2}
-  //   >
-  //     <Image
-  //       src={campaign?.campaignBrief?.images[0]}
-  //       alt="test"
-  //       ratio="1/1"
-  //       sx={{ borderRadius: 2, cursor: 'pointer' }}
-  //     />
-  //     <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
-  //       {campaign?.campaignBrief?.images.map((elem, index) => (
-  //         <Image
-  //           key={index}
-  //           src={elem}
-  //           alt="test"
-  //           ratio="1/1"
-  //           sx={{ borderRadius: 2, cursor: 'pointer' }}
-  //         />
-  //       ))}
-  //     </Box>
-  //   </Box>
-  // );
-
-  // const renderTabs = (
-  //   <Tabs value={currentTab} onChange={(e, val) => setCurrentTab(val)} variant="scrollable">
-  //     <Tab value="tasks" label="My Tasks" />
-  //     <Tab value="info" label="Campaign Info" />
-  //     {/* <Tab value="brief" label="Campaign Brief" /> */}
-  //     <Tab value="admin" label="Campaign Admin" />
-  //   </Tabs>
-  // );
+  const openLogisticTab = () => {
+    setCurrentTab('logistics');
+  };
 
   return (
     <Stack overflow="auto" gap={2}>
       {/* {renderGallery} */}
       <ToggleButtonGroup
+        size="small"
         sx={{ mt: 2 }}
         value={currentTab}
         color="info"
@@ -62,14 +31,18 @@ const CampaignDetailItem = ({ campaign }) => {
         fullWidth
       >
         <ToggleButton value="tasks">My Tasks</ToggleButton>
+        <ToggleButton value="logistics">Logistics</ToggleButton>
         <ToggleButton value="info">Campaign Info</ToggleButton>
         <ToggleButton value="admin">Campaign Admin</ToggleButton>
       </ToggleButtonGroup>
-      {/* {renderTabs} */}
+
       <Box mt={3}>
-        {currentTab === 'tasks' && <CampaignMyTasks campaign={campaign} />}
+        {currentTab === 'tasks' && (
+          <CampaignMyTasks campaign={campaign} openLogisticTab={openLogisticTab} />
+        )}
         {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
         {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />}
+        {currentTab === 'logistics' && <CampaignLogistics campaign={campaign} />}
       </Box>
     </Stack>
   );

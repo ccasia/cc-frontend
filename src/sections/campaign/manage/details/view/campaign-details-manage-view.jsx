@@ -213,9 +213,9 @@ const CampaignDetailManageView = ({ id }) => {
         />
 
         <Stack spacing={1}>
-          <Typography variant="subtitle1">Interests</Typography>
+          <Typography variant="subtitle1">Industries</Typography>
           <Stack direction="row" spacing={1}>
-            {campaign?.campaignBrief?.interests.map((interest, index) => (
+            {campaign?.campaignBrief?.industries.map((interest, index) => (
               <Label key={index} color="secondary">
                 {interest}
               </Label>
@@ -622,7 +622,6 @@ const CampaignDetailManageView = ({ id }) => {
               <Stack spacing={2}>
                 {renderCampaignInformation}
                 {campaign?.brand ? renderBrand : renderCompany}
-
                 {renderDosAndDonts}
               </Stack>
             </Grid>
@@ -661,7 +660,7 @@ const CampaignDetailManageView = ({ id }) => {
   );
 };
 
-export default withPermission(['read'], 'campaign', CampaignDetailManageView);
+export default withPermission(['view:campaign'], CampaignDetailManageView);
 
 CampaignDetailManageView.propTypes = {
   id: PropTypes.string,

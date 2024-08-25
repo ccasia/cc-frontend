@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import { ToggleButton, ToggleButtonGroup } from '@mui/material';
 
+import Posting from './posting';
 import Agreement from './agreement';
 import FirstDraft from './firstDraft';
 import FinalDraft from './finalDraft';
@@ -10,23 +11,19 @@ import FinalDraft from './finalDraft';
 const Submissions = ({ campaign, submissions, creator }) => {
   const [currentTab, setCurrentTab] = useState('agreement');
 
-  const agreementSubmission = submissions.find(
+  const agreementSubmission = submissions?.find(
     (item) => item.submissionType.type === 'AGREEMENT_FORM'
   );
 
-  const firstDraftSubmission = submissions.find(
+  const firstDraftSubmission = submissions?.find(
     (item) => item.submissionType.type === 'FIRST_DRAFT'
   );
 
-  const finalDraftSubmission = submissions.find(
+  const finalDraftSubmission = submissions?.find(
     (item) => item.submissionType.type === 'FINAL_DRAFT'
   );
 
-  //   const finalDraftSubmission = submissions.find(
-  //     (item) => item.submissionType.type === 'FINAL_DRAFT'
-  //   );
-
-  //   const posting = submissions.find((item) => item.submissionType.type === 'POSTING');
+  const postingSubmission = submissions?.find((item) => item.submissionType.type === 'POSTING');
 
   const renderTabs = (
     <ToggleButtonGroup
@@ -57,10 +54,9 @@ const Submissions = ({ campaign, submissions, creator }) => {
       {currentTab === 'finalDraft' && firstDraftSubmission && (
         <FinalDraft submission={finalDraftSubmission} campaign={campaign} creator={creator} />
       )}
-
-      {/* {firstDraftSubmission.submissionType.type === 'FIRST_DRAFT' && <FirstDraft />} */}
-      {/* {finalDraftSubmission.submissionType.type === 'FINAL_DRAFT' && <FinalDraft />} */}
-      {/* {posting.submissionType.type === 'POSTING' && <Posting />} */}
+      {currentTab === 'posting' && postingSubmission && (
+        <Posting submission={postingSubmission} campaign={campaign} creator={creator} />
+      )}
     </>
   );
 };

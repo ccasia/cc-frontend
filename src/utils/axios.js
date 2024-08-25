@@ -32,7 +32,6 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
-  //  chat: '/api/chat',
   kanban: '/api/kanban',
   threads: {
     getAll: '/api/thread/threads',
@@ -43,8 +42,11 @@ export const endpoints = {
     addUser: '/api/thread/adduser',
     sendMessage: '/api/thread/send',
     getMessage: (threadId) => `/api/thread/getmessage/${threadId}`,
-    archive: (threadId) => `/api/thread/threads/${threadId}/archive`,
-    unarchive: (threadId) => `/api/thread/threads/${threadId}/unarchive`,
+    archive: (threadId) => `/api/thread/${threadId}/archive`,
+    unarchive: (threadId) => `/api/thread/${threadId}/unarchive`,
+    getUnreadCount:(threadId) => `/api/thread/${threadId}/unreadcount`, 
+    markAsSeen: (threadId) => `/api/thread/${threadId}/seen`,
+    getTotalCount: '/api/thread/message/totalcount',
   },
   calendar: '/api/calendar',
   auth: {
@@ -66,7 +68,7 @@ export const endpoints = {
     checkTokenValidity: '/api/auth/checkTokenValidity',
   },
   creators: {
-    getCreators: '/api/creator/getAll',
+    getCreators: '/api/creator/getAllCreators',
     getCreatorById: '/api/creator/getCreatorByID',
     deleteCreator: '/api/creator/delete',
     updateCreator: '/api/creator/update-creator',
@@ -133,6 +135,7 @@ export const endpoints = {
     getCampaignsByAdminId: '/api/campaign/getAllCampaignsByAdminID',
     getCampaignById: (id) => `/api/campaign/getCampaignById/${id}`,
     getCampaignPitchById: (id) => `/api/campaign/getClientByCampID/${id}`,
+    shortlistCreator: '/api/campaign/shortlistCreator',
     timeline: {
       createNewTimeline: '/api/campaign/createNewTimeline',
       defaultTimeline: '/api/campaign/defaultTimeline',
@@ -158,9 +161,6 @@ export const endpoints = {
     tasks: {
       uploadAgreeementForm: '/api/tasks/uploadAgreementForm',
     },
-    // submission: {
-    //   agreement: '/api/submission/submitAgreement',
-    // },
     changeStatus: (id) => `/api/campaign/changeCampaignStage/${id}`,
     closeCampaign: (id) => `/api/campaign/closeCampaign/${id}`,
     editCampaignInfo: '/api/campaign/editCampaignInfo',
@@ -171,18 +171,31 @@ export const endpoints = {
     creator: {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
       getCampaign: (id) => `/api/campaign/getCampaignForCreatorById/${id}`,
+      saveCampaign: '/api/campaign/saveCampaign',
+      unsaveCampaign: (id) => `/api/campaign/unsaveCampaign/${id}`,
     },
     getCampaignLog: (id) => `/api/campaign/getCampaignLog/${id}`,
+    logistics: {
+      admin: {
+        create: '/api/campaign/createLogistic',
+        changeStatus: '/api/campaign/changeLogisticStatus',
+      },
+      creator: {
+        receiveLogistic: '/api/campaign/receiveLogistic',
+      },
+    },
   },
   submission: {
     root: '/api/submission/',
     creator: {
       agreement: '/api/submission/submitAgreement',
       draftSubmission: '/api/submission/draftSubmission',
+      postSubmission: '/api/submission/postSubmission',
     },
     admin: {
       agreement: '/api/submission/adminManageAgreementSubmission',
       draft: '/api/submission/adminManageDraft',
+      posting: '/api/submission/adminManagePosting',
     },
   },
   notification: {

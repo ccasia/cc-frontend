@@ -1,13 +1,15 @@
+/* eslint-disable no-nested-ternary */
+import useSWR from 'swr';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Stack, Button, Container, Typography } from '@mui/material';
+import { Box, Stack, Button, Skeleton, Container, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -21,12 +23,17 @@ import CampaignList from '../campaign-admin-list';
 
 const CampaignListView = () => {
   const settings = useSettingsContext();
+  const { data, isLoading } = useSWR(endpoints.campaign.getCampaignsByAdminId, fetcher, {
+    revalidateIfStale: true,
+    revalidateOnFocus: true,
+    revalidateOnMount: true,
+  });
+
   const router = useRouter();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(false);
-  // const [anchorEl, setAnchorEl] = React.useState(null);
+
   const [filter, setFilter] = useState('');
-  // const open = Boolean(anchorEl);
 
   const filtered = useMemo(
     () => ({
@@ -39,14 +46,6 @@ const CampaignListView = () => {
     }),
     [campaigns]
   );
-
-  // const handleClick = (event) => {
-  //   setAnchorEl(event.currentTarget);
-  // };
-
-  // const handleClose = () => {
-  //   setAnchorEl(null);
-  // };
 
   const onView = useCallback(
     (id) => {
@@ -74,7 +73,7 @@ const CampaignListView = () => {
         setCampaigns(res?.data);
         setLoading(false);
       } catch (error) {
-        enqueueSnackbar('FAIL', {
+        enqueueSnackbar(error?.message, {
           variant: 'error',
         });
       } finally {
@@ -84,81 +83,10 @@ const CampaignListView = () => {
     getAllCampaigns();
   }, []);
 
-  const filteredData = !filter ? campaigns : campaigns.filter((elem) => elem?.status === filter);
-
-  // const renderFilter = (
-  //   <>
-  //     <Button
-  //       id="basic-button"
-  //       aria-controls={open ? 'basic-menu' : undefined}
-  //       aria-haspopup="true"
-  //       aria-expanded={open ? 'true' : undefined}
-  //       onClick={handleClick}
-  //       startIcon={
-  //         <Iconify
-  //           icon="ep:arrow-down-bold"
-  //           width={12}
-  //           sx={{
-  //             ml: 1,
-  //           }}
-  //         />
-  //       }
-  //     >
-  //       Filter
-  //     </Button>
-
-  //     <Menu
-  //       id="basic-menu"
-  //       anchorEl={anchorEl}
-  //       open={open}
-  //       onClose={handleClose}
-  //       MenuListProps={{
-  //         'aria-labelledby': 'basic-button',
-  //       }}
-  //       onChange={(e, val) => console.log(val)}
-  //     >
-  //       <MenuItem
-  //         onClick={() => {
-  //           setFilter('publish');
-  //           handleClose();
-  //         }}
-  //       >
-  //         Publish
-  //       </MenuItem>
-  //       <MenuItem
-  //         onClick={() => {
-  //           setFilter('draft');
-  //           handleClose();
-  //         }}
-  //       >
-  //         Draft
-  //       </MenuItem>
-  //     </Menu>
-  //   </>
-  // );
-
-  // const renderResultFilter = filter && (
-  //   <Box
-  //     sx={{
-  //       border: (theme) => `solid 1px ${alpha(theme.palette.grey[500], 0.16)}`,
-  //       borderStyle: 'dashed',
-  //       borderRadius: 1,
-  //       p: 1,
-  //     }}
-  //   >
-  //     <Stack direction="row" alignItems="center" spacing={1}>
-  //       <Typography variant="body2">Stage: </Typography>
-
-  //       <Chip
-  //         size="small"
-  //         label={filter}
-  //         onDelete={() => {
-  //           setFilter();
-  //         }}
-  //       />
-  //     </Stack>
-  //   </Box>
-  // );
+  const filteredData = useMemo(
+    () => !isLoading && (!filter ? data : data.filter((elem) => elem?.status === filter)),
+    [isLoading, filter, data]
+  );
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -266,44 +194,34 @@ const CampaignListView = () => {
         </Button>
       </Box>
 
-      {/* <Box display="inline-flex" mt={1}>
-        {renderResultFilter}
-      </Box> */}
-
-      {loading && <Iconify icon="eos-icons:bubble-loading" />}
-
-      {filteredData.length < 1 ? (
-        <Box mt={2}>
-          <EmptyContent
-            filled
-            title="No Data"
+      {!isLoading ? (
+        filteredData.length > 0 ? (
+          <Box
             sx={{
-              py: 10,
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                md: 'repeat(2, 1fr)',
+              },
+              mt: 1,
             }}
-          />
-        </Box>
+          >
+            {filteredData.map((campaign) => (
+              <CampaignList
+                key={campaign?.id}
+                campaign={campaign}
+                onView={() => onView(campaign?.id)}
+                onEdit={() => onEdit(campaign?.id)}
+                onDelete={() => onDelete(campaign?.id)}
+              />
+            ))}
+          </Box>
+        ) : (
+          <EmptyContent filled title="No Data" sx={{ py: 10 }} />
+        )
       ) : (
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: {
-              xs: 'repeat(1, 1fr)',
-              md: 'repeat(2, 1fr)',
-            },
-            mt: 1,
-          }}
-        >
-          {filteredData.map((campaign) => (
-            <CampaignList
-              key={campaign?.id}
-              campaign={campaign}
-              onView={() => onView(campaign?.id)}
-              onEdit={() => onEdit(campaign?.id)}
-              onDelete={() => onDelete(campaign?.id)}
-            />
-          ))}
-        </Box>
+        <Skeleton width={500} height={500} />
       )}
     </Container>
   );

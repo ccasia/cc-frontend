@@ -7,6 +7,7 @@ import Container from '@mui/material/Container';
 import {
   Box,
   Stack,
+  Button,
   Divider,
   IconButton,
   Typography,
@@ -37,8 +38,8 @@ import CampaignSearch from '../campaign-search';
 export default function CampaignListView() {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns('creator');
+  const [filter, setFilter] = useState('');
 
-  // const { user } = useAuthContext();
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
   const { socket } = useSocketContext();
@@ -47,8 +48,6 @@ export default function CampaignListView() {
   useEffect(() => {
     // Define the handler function
     const handlePitchLoading = (data) => {
-      console.log('Loading', data);
-
       if (upload.find((item) => item.campaignId === data.campaignId)) {
         setUpload((prev) =>
           prev.map((item) =>
@@ -67,12 +66,6 @@ export default function CampaignListView() {
           { loading: true, campaignId: data.campaignId, progress: Math.floor(data.progress) },
         ]);
       }
-
-      // setPercent((prev) => ({
-      //   ...prev,
-      //   data,
-      // }));
-      // setPercent(`${Math.floor(data.progress)}%`);
     };
 
     const handlePitchSuccess = (data) => {
@@ -117,11 +110,6 @@ export default function CampaignListView() {
     },
     [search.query]
   );
-
-  // const pitch = useMemo(
-  //   () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
-  //   [campaign, user]
-  // );
 
   const renderUploadProgress = (
     <Box
@@ -182,6 +170,8 @@ export default function CampaignListView() {
     </Box>
   );
 
+  const filteredData = applyFilter({ inputData: campaigns, filter });
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <Typography
@@ -201,9 +191,26 @@ export default function CampaignListView() {
         // hrefItem={(id) => paths.dashboard.tour.details(id)}
       />
 
+      <Stack direction="row" spacing={1} my={1.5}>
+        <Button
+          size="small"
+          variant={filter !== 'saved' && 'contained'}
+          onClick={() => setFilter('all')}
+        >
+          All
+        </Button>
+        <Button
+          size="small"
+          variant={filter === 'saved' ? 'contained' : 'outlined'}
+          onClick={() => setFilter('saved')}
+        >
+          Saved
+        </Button>
+      </Stack>
+
       <Box sx={{ my: 2 }} />
-      {campaigns && campaigns?.length > 0 ? (
-        <CampaignLists campaigns={campaigns} />
+      {filteredData && filteredData?.length > 0 ? (
+        <CampaignLists campaigns={filteredData} />
       ) : (
         <EmptyContent title="No campaign available" />
       )}
@@ -214,6 +221,13 @@ export default function CampaignListView() {
 }
 
 // ----------------------------------------------------------------------
+
+const applyFilter = ({ inputData, filter }) => {
+  if (filter === 'saved') {
+    inputData = inputData?.filter((campaign) => campaign.bookMarkCampaign);
+  }
+  return inputData;
+};
 
 // const applyFilter = ({ inputData, filters, sortBy, dateError }) => {
 //   const { services, destination, startDate, endDate, tourGuides } = filters;
