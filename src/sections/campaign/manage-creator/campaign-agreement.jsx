@@ -8,8 +8,6 @@ import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
-  Paper,
-  alpha,
   Button,
   Dialog,
   Typography,
@@ -91,23 +89,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, getDependency }) =>
   return (
     <Box p={1.5}>
       {submission?.status === 'PENDING_REVIEW' && (
-        <Box
-          component={Paper}
-          position="relative"
-          p={10}
-          sx={{
-            // border: 1,
-            // borderColor: (theme) => theme.palette.text.secondary,
-            bgcolor: (theme) => alpha(theme.palette.success.main, 0.15),
-          }}
-        >
-          <Stack gap={1.5} alignItems="center">
-            <Iconify icon="mdi:tick-circle-outline" color="success.main" width={40} />
-            <Typography variant="subtitle2" color="text.secondary">
-              Your agreement submission is submitted
-            </Typography>
-          </Stack>
-        </Box>
+        <Stack justifyContent="center" alignItems="center" spacing={2}>
+          <Image src="/assets/pending.svg" sx={{ width: 250 }} />
+          <Typography variant="subtitle2">Your agreement is in review.</Typography>
+        </Stack>
       )}
       {submission?.status === 'IN_PROGRESS' && (
         <Stack gap={2}>

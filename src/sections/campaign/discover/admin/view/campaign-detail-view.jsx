@@ -109,11 +109,9 @@ const CampaignDetailView = ({ id }) => {
       {[
         { label: 'Overview', value: 'overview' },
         { label: 'Campaign Content', value: 'campaign-content' },
-        { label: 'Brand', value: 'brand' },
-        { label: 'Creator', value: 'creator' },
-        // { label: 'Shortlisted', value: 'shortlist' },
+        { label: 'Brand Info', value: 'brand' },
+        { label: 'Shortlisted Creator', value: 'creator' },
         { label: 'Pitch Submission', value: 'pitch' },
-        { label: 'Draft submission', value: 'submission' },
       ].map((tab) => (
         <Tab
           key={tab.value}
@@ -133,8 +131,6 @@ const CampaignDetailView = ({ id }) => {
       }
     });
   }, [open]);
-
-  console.log(currentCampaign?.campaignTimeline);
 
   // eslint-disable-next-line no-unused-vars
   const renderReminder = (
@@ -358,34 +354,7 @@ const CampaignDetailView = ({ id }) => {
           </Button>
         }
       />
-      {/* <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <Button
-          startIcon={<Iconify icon="material-symbols:arrow-back-ios" width={12} sx={{ ml: 1 }} />}
-          onClick={() => router.push(paths.dashboard.campaign.view)}
-          sx={{
-            mb: 3,
-          }}
-        >
-          Back
-        </Button>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={
-            <Iconify
-              icon="material-symbols-light:bookmark-manager-outline-rounded"
-              width={19}
-              sx={{ ml: 1 }}
-            />
-          }
-          onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
-          sx={{
-            mb: 3,
-          }}
-        >
-          Manage
-        </Button>
-      </Stack> */}
+
       {renderTabs}
       {currentTab === 'overview' && <CampaignOverview campaign={currentCampaign} />}
       {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
@@ -394,7 +363,7 @@ const CampaignDetailView = ({ id }) => {
       {currentTab === 'brand' && (
         <CampaignDetailBrand brand={currentCampaign?.brand ?? currentCampaign?.company} />
       )}
-      {/* {currentTab === 'shortlisted' && <CampaignDetailContent campaign={currentCampaign} />} */}
+
       {currentTab === 'pitch' && (
         <CampaignDetailPitch
           pitches={currentCampaign?.pitch}

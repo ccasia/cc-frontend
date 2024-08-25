@@ -29,6 +29,7 @@ import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { langList } from 'src/contants/language';
 
 import Iconify from 'src/components/iconify';
 import FormProvider, {
@@ -642,7 +643,16 @@ function CreateCampaignForm() {
           <TextField name="audienceLocation" label="Specify Other Location" variant="outlined" />
         )}
 
-        <RHFMultiSelect
+        <RHFAutocomplete
+          multiple
+          disableCloseOnSelect
+          name="audienceLanguage"
+          label="Audience Language"
+          options={langList}
+          getOptionLabel={(option) => option}
+        />
+
+        {/* <RHFMultiSelect
           name="audienceLanguage"
           label="Audience Language"
           checkbox
@@ -654,7 +664,7 @@ function CreateCampaignForm() {
             { value: 'Tamil', label: 'Tamil' },
             { value: 'Korean', label: 'Korean' },
           ]}
-        />
+        /> */}
 
         <RHFMultiSelect
           name="audienceCreatorPersona"

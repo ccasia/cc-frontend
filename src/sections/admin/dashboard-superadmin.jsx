@@ -12,7 +12,6 @@ import {
   Paper,
   Button,
   TableRow,
-  Checkbox,
   TableHead,
   TableCell,
   TableBody,
@@ -265,7 +264,6 @@ const DashboardSuperadmin = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell />
                         <TableCell>Task</TableCell>
                         <TableCell>Campaign</TableCell>
                         <TableCell>Due</TableCell>
@@ -276,9 +274,6 @@ const DashboardSuperadmin = () => {
                       {taskLists.length > 0 &&
                         taskLists?.slice(0, 4).map((item, index) => (
                           <TableRow key={index}>
-                            <TableCell>
-                              <Checkbox />
-                            </TableCell>
                             <TableCell>
                               <Typography variant="subtitle2">{item.campaignTask}</Typography>
                             </TableCell>

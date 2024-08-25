@@ -2,7 +2,21 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { SparkLineChart } from '@mui/x-charts';
-import { Box, Card, Grid, Stack, Avatar, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  Grid,
+  Stack,
+  Table,
+  Avatar,
+  Button,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableBody,
+  Typography,
+  TableContainer,
+} from '@mui/material';
 
 import Label from 'src/components/label';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -112,6 +126,39 @@ const CampaignOverview = ({ campaign }) => {
             ) : (
               <EmptyContent title={"You haven't shortlisted any creator yet"} />
             )}
+          </Stack>
+        </Box>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <Box component={Card} p={3}>
+          <Stack gap={2}>
+            <Typography variant="subtitle2">Assigned Account Manager</Typography>
+
+            <TableContainer sx={{ borderRadius: 2 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {campaign?.campaignAdmin?.length &&
+                    campaign?.campaignAdmin?.map((elem) => (
+                      <TableRow key={elem?.id}>
+                        <TableCell>{elem?.admin?.user?.name}</TableCell>
+                        <TableCell>{elem?.admin?.user?.email}</TableCell>
+                        <TableCell>
+                          <Button size="small" variant="contained">
+                            Chat
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Stack>
         </Box>
       </Grid>
