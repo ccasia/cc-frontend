@@ -121,7 +121,7 @@ const DashboardSuperadmin = () => {
         <TableBody>
           {!isLoading &&
             campaigns
-              .filter((item) => item.status === 'ACTIVE')
+              ?.filter((item) => item.status === 'ACTIVE')
               .map((campaign) => (
                 <TableRow>
                   <TableCell align="center">{campaign?.name}</TableCell>
