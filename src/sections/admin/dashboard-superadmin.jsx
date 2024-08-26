@@ -258,7 +258,7 @@ const DashboardSuperadmin = () => {
         >
           <Stack spacing={1}>
             <Typography variant="subtitle2">Tasks</Typography>
-            {taskLists.length ? (
+            {taskLists?.length ? (
               <>
                 <TableContainer component={Paper}>
                   <Table size="small">
