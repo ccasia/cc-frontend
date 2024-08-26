@@ -240,7 +240,7 @@ export function useNavData() {
       if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
         return financeNavigations;
       }
-      if (user?.role === 'superadmin') {
+      if (user?.role === 'superadmin' || user?.admin?.role?.name === 'CSM') {
         return adminNavigations;
       }
 
