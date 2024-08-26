@@ -37,7 +37,7 @@ const DashboardSuperadmin = () => {
   const taskLists =
     !isLoading &&
     campaigns
-      .filter((campaign) => campaign.status === 'ACTIVE')
+      ?.filter((campaign) => campaign.status === 'ACTIVE')
       .map((campaign) => {
         const campaignTasks = campaign?.campaignTasks.filter(
           (item) => item.status === 'IN_PROGRESS'
