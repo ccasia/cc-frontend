@@ -161,12 +161,12 @@ export function useNavData() {
             ],
           },
 
-          {
-            roles: ['superadmin', 'CSM'],
-            title: 'My Tasks',
-            path: paths.dashboard.user.myTasks,
-            icon: <Iconify icon="hugeicons:task-01" width={25} />,
-          },
+          // {
+          //   roles: ['superadmin', 'CSM'],
+          //   title: 'My Tasks',
+          //   path: paths.dashboard.user.myTasks,
+          //   icon: <Iconify icon="hugeicons:task-01" width={25} />,
+          // },
         ],
       },
     ],
@@ -276,7 +276,7 @@ export function useNavData() {
             msgcounter: unreadCount > 0 ? unreadCount : undefined,
           },
           {
-            title: 'Kanban',
+            title: 'My Tasks',
             path: paths.dashboard.kanban,
             icon: ICONS.kanban,
           },
