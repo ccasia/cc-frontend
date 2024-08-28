@@ -20,6 +20,9 @@ const MeditKitsCards = lazy(() => import('src/pages/dashboard/creator/mediaKitCa
 const InvoiceCreator = lazy(() => import('src/pages/dashboard/creator/invoice'));
 const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
 
+// APP
+const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
+
 // Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
 const CreateCampaign = lazy(() => import('src/pages/dashboard/campaign/createCampaign'));
@@ -452,6 +455,7 @@ export const dashboardRoutes = [
           </RoleBasedGuard>
         ),
       },
+      { path: 'kanban', element: <KanbanPage /> },
     ],
   },
 ];

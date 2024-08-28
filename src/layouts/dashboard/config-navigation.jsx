@@ -275,6 +275,11 @@ export function useNavData() {
             icon: ICONS.chat,
             msgcounter: unreadCount > 0 ? unreadCount : undefined,
           },
+          {
+            title: 'Kanban',
+            path: paths.dashboard.kanban,
+            icon: ICONS.kanban,
+          },
         ],
       },
     ],

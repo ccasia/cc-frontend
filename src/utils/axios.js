@@ -32,7 +32,16 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
-  kanban: '/api/kanban',
+  kanban: {
+    root: '/api/kanban',
+    createColumn: '/api/kanban/createColumn',
+    deleteColumn: '/api/kanban/deleteColumn',
+    moveColumn: '/api/kanban/moveColumn',
+    updateColumn: '/api/kanban/updateColumn',
+    task: {
+      create: '/api/kanban/createTask',
+    },
+  },
   threads: {
     getAll: '/api/thread/threads',
     single: '/api/thread/single',
