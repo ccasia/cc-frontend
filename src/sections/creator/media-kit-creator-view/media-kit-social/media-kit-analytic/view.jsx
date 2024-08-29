@@ -6,7 +6,8 @@ import Iconify from 'src/components/iconify';
 
 const MediaKitAnalytics = () => (
   <Stack>
-    <Stack direction="row" justifyContent="space-between">
+    <Typography> </Typography>
+    {/* <Stack direction="row" justifyContent="space-between">
       <Stack direction="row" alignItems="center" gap={2}>
         <Iconify icon="bx:stats" width={40} />
 
@@ -22,11 +23,11 @@ const MediaKitAnalytics = () => (
           color: (theme) => theme.palette.grey[600],
         }}
       >
-        <Typography fontWeight={700}>Go to profile</Typography>
-        <Iconify icon="ion:open-outline" />
+        {/* <Typography fontWeight={700}>Go to profile</Typography>
+        <Iconify icon="ion:open-outline" /> 
       </Box>
-    </Stack>
-    <Typography textAlign="center">Coming soon</Typography>
+    </Stack> */}
+    {/* <Typography textAlign="center">Coming soon</Typography> */}
   </Stack>
 );
 

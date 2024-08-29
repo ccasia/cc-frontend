@@ -32,7 +32,7 @@ const CampaignDetailItem = ({ campaign }) => {
       >
         <ToggleButton value="tasks">My Tasks</ToggleButton>
         <ToggleButton value="logistics">Logistics</ToggleButton>
-        <ToggleButton value="info">Campaign Info</ToggleButton>
+        <ToggleButton value="info">Campaign Brief</ToggleButton>
         <ToggleButton value="admin">Campaign Admin</ToggleButton>
       </ToggleButtonGroup>
 

@@ -38,7 +38,7 @@ import FormProvider, {
 const steps = [
   'Fill in your details',
   'Provide your social media information',
-  'Rate your Interests and Industries',
+  // 'Rate your Interests and Industries',
 ];
 
 // export const langList = ['English', 'Malay', 'Chinese', 'Tamil', 'All of the above', 'Others'];
@@ -65,10 +65,18 @@ export default function CreatorForm({ creator, open, onClose }) {
   const [ratingInterst, setRatingInterst] = useState([]);
   const [ratingIndustries, setRatingIndustries] = useState([]);
 
+  // const [employmentValue, setEmploymentValue] = useState('');
+
+  // const handleEmploymentChange = (event) => {
+  //   const selectedValue = event.target.value;
+  //   console.log('Selected employment value:', selectedValue); // Debugging line
+  //   setEmploymentValue(selectedValue);
+  // };
+
   // First step schema
   const firstSchema = Yup.object().shape({
     phone: Yup.string().required('Phone number is required'),
-    pronounce: Yup.string().required('pronounce is required'),
+    pronounce: Yup.string().required('Pronouns are required'),
     location: Yup.string().required('location is required'),
     Interests: Yup.array().min(3, 'Choose at least three option'),
     languages: Yup.array().min(1, 'Choose at least one option'),
@@ -86,13 +94,13 @@ export default function CreatorForm({ creator, open, onClose }) {
 
   const testSchema = Yup.object().shape({
     phone: Yup.string().required('Phone number is required'),
-    pronounce: Yup.string().required('pronounce is required'),
-    location: Yup.string().required('location is required'),
+    pronounce: Yup.string().required('Pronouns are required'),
+    location: Yup.string().required('City/Area is required'),
     interests: Yup.array().min(3, 'Choose at least three option'),
     languages: Yup.array().min(1, 'Choose at least one option'),
     // industries: Yup.array().min(3, 'Choose at least three option'),
-    employment: Yup.string().required('pronounce is required'),
-    birthDate: Yup.mixed().nullable().required('birthDate date is required'),
+    employment: Yup.string().required('Employment status is required'),
+    birthDate: Yup.mixed().nullable().required('Please enter your birth date'),
     Nationality: Yup.string().required('Nationality is required'),
     instagram: Yup.string().required('Please enter your instagram username'),
   });
@@ -140,9 +148,9 @@ export default function CreatorForm({ creator, open, onClose }) {
   };
 
   const onSubmit = handleSubmit(async (data) => {
-    if (ratingInterst.length < 3) {
-      toast.error('Please rate all your interests.');
-    }
+    // if (ratingInterst.length < 3) {
+    //   toast.error('Please rate all your interests.');
+    // }
     // else if (ratingIndustries.length < 3) {
     //   toast.error('Please rate all your industries.');
     // }
@@ -190,8 +198,8 @@ export default function CreatorForm({ creator, open, onClose }) {
         return formComponent();
       case 1:
         return socialMediaForm;
-      case 2:
-        return ratingComponent(newCreator);
+      // case 2:
+      //   return ratingComponent(newCreator);
       default:
         return 'Unknown step';
     }
@@ -223,23 +231,30 @@ export default function CreatorForm({ creator, open, onClose }) {
           <RHFAutocomplete
             name="Nationality"
             type="country"
-            placeholder="Choose your Nationality"
+            placeholder="Nationality"
             fullWidth
             options={countries.map((option) => option.label)}
             getOptionLabel={(option) => option}
           />
 
-          <RHFTextField name="location" label="Current location" multiline />
+          <RHFTextField name="location" label="City/Area" multiline />
 
-          <RHFSelect name="employment" label="Employment Status" multiple={false}>
-            <MenuItem value="fulltime">Full-time</MenuItem>
-            <MenuItem value="freelance">Freelance</MenuItem>
-            <MenuItem value="part_time">Part-time</MenuItem>
-            <MenuItem value="student">Student</MenuItem>
-            <MenuItem value="in_between">In between jobs/transitioning </MenuItem>
-            <MenuItem value="unemployed">Unemployed</MenuItem>
-            <MenuItem value="others ">Others </MenuItem>
+          <RHFSelect name="employment" label="Employment Status" multiple={false} 
+          // onChange={handleEmploymentChange}
+          // value={employmentValue}
+          >
+            <MenuItem value="fulltime">I have a full-time job</MenuItem>
+            <MenuItem value="freelance">I&apos;m a freelancer</MenuItem>
+            <MenuItem value="part_time">I only work part-time</MenuItem>
+            <MenuItem value="student">I&apos;m a student</MenuItem>
+            <MenuItem value="in_between">I&apos;m in between jobs/transitioning </MenuItem>
+            <MenuItem value="unemployed">I&apos;m unemployed</MenuItem>
+            <MenuItem value="others">Others </MenuItem>
           </RHFSelect>
+
+          {/* {employmentValue === "others" && (
+            <RHFTextField name="employmentDetails" label="Please specify" />
+          )} */}
 
           <RHFTextField
             name="phone"
@@ -254,7 +269,7 @@ export default function CreatorForm({ creator, open, onClose }) {
             }}
           />
 
-          <RHFSelect name="pronounce" label="Pronounce" multiple={false}>
+          <RHFSelect name="pronounce" label="Pronouns" multiple={false}>
             <MenuItem value="he/him">He/Him</MenuItem>
             <MenuItem value="she/her">She/Her</MenuItem>
             <MenuItem value="they/them">They/Them</MenuItem>
@@ -265,11 +280,12 @@ export default function CreatorForm({ creator, open, onClose }) {
 
           <RHFAutocomplete
             name="languages"
-            placeholder="+ languages"
+            placeholder="Languages"
             multiple
             freeSolo={false}
             disableCloseOnSelect
-            options={langList.map((option) => option)}
+            options={langList.sort((a, b) => a.localeCompare(b)).map((option) => option)}
+            // options={langList.map((option) => option)}
             getOptionLabel={(option) => option}
             renderOption={(props, option) => (
               <li {...props} key={option}>
@@ -429,7 +445,8 @@ export default function CreatorForm({ creator, open, onClose }) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', p: 2, m: 2 }}>
         {/* <Typography variant="h4">Rate your interests</Typography> */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', m: 1 }}>
+        {/* Afiqs original code */}
+        {/* <Box sx={{ display: 'flex', flexDirection: 'column', m: 1 }}>
           <Typography variant="h6">Rate your Interests</Typography>
           <Box
             rowGap={3}
@@ -458,7 +475,7 @@ export default function CreatorForm({ creator, open, onClose }) {
                 </Stack>
               ))}
           </Box>
-        </Box>
+        </Box> */}
         {/* <Box sx={{ display: 'flex', flexDirection: 'column', m: 1 }}>
           <Typography variant="h6">Rate your industries</Typography>
           <Box
@@ -507,6 +524,9 @@ export default function CreatorForm({ creator, open, onClose }) {
     }
   };
 
+
+  console.log("Submit", onSubmit)
+  console.log("Steps", activeStep)
   return (
     <Dialog
       fullWidth
@@ -587,6 +607,7 @@ export default function CreatorForm({ creator, open, onClose }) {
               <Box sx={{ my: 3 }}>
                 <FormProvider methods={methods} onSubmit={onSubmit}>
                   {getStepContent(activeStep)}
+                  
                 </FormProvider>
               </Box>
             </Paper>
@@ -602,7 +623,7 @@ export default function CreatorForm({ creator, open, onClose }) {
               <Box sx={{ flexGrow: 1 }} />
               {activeStep === steps.length - 1 ? (
                 <Button variant="contained" onClick={onSubmit}>
-                  Submit
+                  Submit 
                 </Button>
               ) : (
                 <Button variant="contained" onClick={handleNext}>

@@ -26,6 +26,7 @@ export default function RHFDatePicker({
           <DatePicker
             label={label}
             disabled={disabled}
+            format="DD/MM/YYYY" 
             {...field}
             slotProps={{
               textField: {

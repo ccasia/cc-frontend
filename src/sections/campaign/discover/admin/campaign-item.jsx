@@ -99,11 +99,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
           <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />
         </Grid>
         <Grid item xs={11}>
-          <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
+          {/* <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
             {campaign?.campaignBrief?.industries.map((e, index) => (
               <Label color="primary">{e}</Label>
             ))}
-          </Stack>
+          </Stack> */}
         </Grid>
       </Grid>
 

@@ -26,7 +26,7 @@ const CampaignInfo = ({ campaign }) => {
         <Iconify icon="mdi:clock" width={18} />
         <Stack>
           <ListItemText
-            primary="Durations"
+            primary="Duration"
             secondary={`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
             primaryTypographyProps={{
               typography: 'body2',
@@ -41,7 +41,7 @@ const CampaignInfo = ({ campaign }) => {
           />
         </Stack>
       </Stack>
-      <Stack direction="row" spacing={1} alignItems="start">
+      {/* <Stack direction="row" spacing={1} alignItems="start">
         <Iconify icon="material-symbols:domain" width={18} />
         <Stack>
           <ListItemText
@@ -65,7 +65,7 @@ const CampaignInfo = ({ campaign }) => {
             }}
           />
         </Stack>
-      </Stack>
+      </Stack> */}
       <Stack direction="row" spacing={1} alignItems="start">
         <Iconify icon="typcn:point-of-interest" width={18} />
         <Stack>
@@ -95,7 +95,7 @@ const CampaignInfo = ({ campaign }) => {
         <Iconify icon="ci:main-component" width={18} />
         <Stack>
           <ListItemText
-            primary="Brand"
+            primary="Client"
             secondary={campaign?.brand?.name ?? campaign?.company?.name}
             primaryTypographyProps={{
               typography: 'body2',
@@ -168,7 +168,7 @@ const CampaignInfo = ({ campaign }) => {
       />
 
       <Stack direction="column">
-        <Typography variant="h5">Objectives</Typography>
+        <Typography variant="h5"> Campaign Objectives</Typography>
         <List>
           <ListItem>
             <ListItemIcon>
@@ -184,40 +184,46 @@ const CampaignInfo = ({ campaign }) => {
           borderStyle: 'dashed',
         }}
       />
-
-      <Stack direction="column">
-        <Typography variant="h5">Campaign Do&apos;s</Typography>
-        <List>
-          {campaign?.campaignBrief?.campaigns_do.map((item, index) => (
-            <ListItem key={index}>
-              <ListItemIcon>
-                <Iconify icon="octicon:dot-16" sx={{ color: 'success.main' }} />
-              </ListItemIcon>
-              <ListItemText primary={item.value} />
-            </ListItem>
-          ))}
-        </List>
-      </Stack>
-
-      <Stack direction="column">
-        <Typography variant="h5">Campaign Dont&apos;s</Typography>
-        <List>
-          {campaign?.campaignBrief?.campaigns_dont.map((item, index) => (
-            <ListItem key={index}>
-              <ListItemIcon>
-                <Iconify icon="octicon:dot-16" sx={{ color: 'error.main' }} />
-              </ListItemIcon>
-              <ListItemText primary={item.value} />
-            </ListItem>
-          ))}
-        </List>
-      </Stack>
     </Stack>
   );
 
-  const renderRequirements = (
+
+  const renderDos = (
+    <>
+    
+    <Stack direction="column">
+      <Typography variant="h5">Campaign Do&apos;s</Typography>
+      <List>
+        {campaign?.campaignBrief?.campaigns_do.map((item, index) => (
+          <ListItem key={index}>
+            <ListItemIcon>
+              <Iconify icon="octicon:dot-16" sx={{ color: 'success.main' }} />
+            </ListItemIcon>
+            <ListItemText primary={item.value} />
+          </ListItem>
+        ))}
+      </List>
+    </Stack>
+    <Stack direction="column">
+      <Typography variant="h5">Campaign Dont&apos;s</Typography>
+      <List>
+        {campaign?.campaignBrief?.campaigns_dont.map((item, index) => (
+          <ListItem key={index}>
+            <ListItemIcon>
+              <Iconify icon="octicon:dot-16" sx={{ color: 'error.main' }} />
+            </ListItemIcon>
+            <ListItemText primary={item.value} />
+          </ListItem>
+        ))}
+      </List>
+    </Stack>
+    </>
+     
+  )
+
+  const renderDetails = (
     <Stack gap={1.5}>
-      <Typography variant="h5">Campaign Requirement</Typography>
+      <Typography variant="h5">Campaign Details</Typography>
       <Box
         maxWidth={800}
         display="grid"
@@ -345,72 +351,17 @@ const CampaignInfo = ({ campaign }) => {
     </Stack>
   );
 
-  const renderBrandInfo = (
-    <Stack gap={1.5}>
-      <Typography variant="h5">Campaign Brand</Typography>
-      <Box
-        maxWidth={800}
-        display="grid"
-        gridTemplateColumns="repeat(3, 1fr)"
-        component={Card}
-        p={4}
-        mx="auto"
-        gap={2}
-      >
-        <ListItemText
-          primary="Brand Name"
-          secondary={campaign?.company?.name ?? campaign?.brand?.name}
-          primaryTypographyProps={{
-            typography: 'body2',
-            color: 'text.secondary',
-            mb: 0.5,
-          }}
-          secondaryTypographyProps={{
-            typography: 'subtitle2',
-            color: 'text.primary',
-            component: 'span',
-          }}
-        />
-        <ListItemText
-          primary="Brand Email"
-          secondary={campaign?.company?.email ?? campaign?.brand?.email}
-          primaryTypographyProps={{
-            typography: 'body2',
-            color: 'text.secondary',
-            mb: 0.5,
-          }}
-          secondaryTypographyProps={{
-            typography: 'subtitle2',
-            color: 'text.primary',
-            component: 'span',
-          }}
-        />
-        <ListItemText
-          primary="Brand Website"
-          secondary={campaign?.company?.website ?? campaign?.brand?.website}
-          primaryTypographyProps={{
-            typography: 'body2',
-            color: 'text.secondary',
-            mb: 0.5,
-          }}
-          secondaryTypographyProps={{
-            typography: 'subtitle2',
-            color: 'text.primary',
-            component: 'span',
-          }}
-        />
-      </Box>
-    </Stack>
-  );
 
   return (
     <Stack spacing={2} maxWidth={800} mx="auto">
       {renderGallery}
       {renderInformation}
+      {/* <Divider sx={{ borderStyle: 'dashed' }} /> */}
+      {renderDetails}
       <Divider sx={{ borderStyle: 'dashed' }} />
-      {renderBrandInfo}
-      <Divider sx={{ borderStyle: 'dashed' }} />
-      {renderRequirements}
+      {renderDos}
+    
+     
     </Stack>
   );
 };
