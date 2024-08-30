@@ -2,10 +2,10 @@ import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 
+import { alpha } from '@mui/material';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import { alpha } from '@mui/material/styles';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -149,22 +149,23 @@ export default function KanbanColumn({ column, tasks, index }) {
             px: 2,
             borderRadius: 2,
             bgcolor: 'background.neutral',
+
             ...(snapshot.isDragging && {
-              bgcolor: (theme) => alpha(theme.palette.grey[500], 0.24),
+              bgcolor: (theme) => alpha(theme.palette.grey[500], 0.2),
             }),
           }}
         >
-          <Stack {...provided.dragHandleProps}>
+          <Stack>
             <KanbanColumnToolBar
               columnName={column?.name}
               onUpdateColumn={handleUpdateColumn}
               onClearColumn={handleClearColumn}
               onDeleteColumn={handleDeleteColumn}
               taskLength={tasks.length}
+              provided={provided}
             />
-
             <Droppable droppableId={column?.id} type="TASK">
-              {(dropProvided) => (
+              {(dropProvided, dropSnapshot) => (
                 <Stack
                   ref={dropProvided.innerRef}
                   {...dropProvided.droppableProps}
@@ -172,6 +173,10 @@ export default function KanbanColumn({ column, tasks, index }) {
                   sx={{
                     py: 3,
                     width: 280,
+                    ...(dropSnapshot.isDraggingOver && {
+                      bgcolor: (theme) => alpha(theme.palette.grey[400], 0.2),
+                      borderRadius: 2,
+                    }),
                   }}
                 >
                   {column?.task.map((item, taskIndex) => (
@@ -188,7 +193,6 @@ export default function KanbanColumn({ column, tasks, index }) {
                 </Stack>
               )}
             </Droppable>
-
             {renderAddTask}
           </Stack>
         </Paper>
@@ -200,5 +204,5 @@ export default function KanbanColumn({ column, tasks, index }) {
 KanbanColumn.propTypes = {
   column: PropTypes.object,
   index: PropTypes.number,
-  tasks: PropTypes.object,
+  tasks: PropTypes.array,
 };

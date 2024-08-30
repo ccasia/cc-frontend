@@ -24,6 +24,7 @@ export default function KanbanColumnToolBar({
   onClearColumn,
   onUpdateColumn,
   taskLength,
+  provided,
 }) {
   const renameRef = useRef(null);
 
@@ -77,6 +78,9 @@ export default function KanbanColumnToolBar({
 
         <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
           <Iconify icon="eva:more-horizontal-fill" />
+        </IconButton>
+        <IconButton {...provided.dragHandleProps}>
+          <Iconify icon="mdi:drag" width={18} />
         </IconButton>
       </Stack>
 
@@ -150,4 +154,5 @@ KanbanColumnToolBar.propTypes = {
   onDeleteColumn: PropTypes.func,
   onUpdateColumn: PropTypes.func,
   taskLength: PropTypes.number,
+  provided: PropTypes.any,
 };

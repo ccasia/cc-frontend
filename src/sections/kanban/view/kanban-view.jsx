@@ -19,10 +19,10 @@ import { KanbanColumnSkeleton } from '../kanban-skeleton';
 export default function KanbanView() {
   const { board, boardLoading, boardEmpty } = useGetBoard();
 
+  console.log('ASDSAD', board);
+
   const onDragEnd = useCallback(
     async ({ destination, source, draggableId, type }) => {
-      console.log(destination);
-      console.log(source);
       try {
         if (!destination) {
           return;
@@ -35,7 +35,6 @@ export default function KanbanView() {
         // Moving column
         if (type === 'COLUMN') {
           const newOrdered = [...board.columns];
-
           const columnToBeMove = board.columns.find((item) => item?.id === draggableId);
           const movedColumn = {
             columnToBeMove,
@@ -47,28 +46,31 @@ export default function KanbanView() {
           newOrdered.splice(destination.index, 0, columnToBeMove);
 
           moveColumn(movedColumn, newOrdered);
+
           return;
         }
 
-        const sourceColumn = board?.columns[source.droppableId];
+        const sourceColumn = board?.columns.find((column) => column?.id === source.droppableId);
 
-        const destinationColumn = board?.columns[destination.droppableId];
+        const destinationColumn = board?.columns.find(
+          (column) => column?.id === destination.droppableId
+        );
 
         // Moving task to same list
         if (sourceColumn.id === destinationColumn.id) {
-          const newTaskIds = [...sourceColumn.taskIds];
+          const newTaskIds = [...sourceColumn.task];
+          const newTaskInfo = newTaskIds.find((item) => item.id === draggableId);
 
           newTaskIds.splice(source.index, 1);
 
-          newTaskIds.splice(destination.index, 0, draggableId);
+          newTaskIds.splice(destination.index, 0, newTaskInfo);
 
-          moveTask({
-            ...board?.columns,
-            [sourceColumn.id]: {
-              ...sourceColumn,
-              taskIds: newTaskIds,
-            },
-          });
+          const data = {
+            columnId: sourceColumn.id,
+            tasks: [...newTaskIds.map((item, index) => ({ ...item, position: index }))],
+          };
+
+          moveTask(data);
 
           console.info('Moving to same list!');
 
@@ -76,27 +78,40 @@ export default function KanbanView() {
         }
 
         // Moving task to different list
-        const sourceTaskIds = [...sourceColumn.taskIds];
-
-        const destinationTaskIds = [...destinationColumn.taskIds];
+        const sourceTasks = [...sourceColumn.task];
+        const destinationTasks = [...destinationColumn.task];
 
         // Remove from source
-        sourceTaskIds.splice(source.index, 1);
+        const removeSource = sourceTasks.splice(source.index, 1);
 
         // Insert into destination
-        destinationTaskIds.splice(destination.index, 0, draggableId);
+        destinationTasks.splice(destination.index, 0, ...removeSource);
 
-        moveTask({
-          ...board?.columns,
-          [sourceColumn.id]: {
-            ...sourceColumn,
-            taskIds: sourceTaskIds,
+        const data = {
+          type: 'differentColumn',
+          sourceColumn: {
+            id: sourceColumn.id,
+            tasks: [...sourceTasks],
           },
-          [destinationColumn.id]: {
-            ...destinationColumn,
-            taskIds: destinationTaskIds,
+          destinationColumn: {
+            id: destinationColumn.id,
+            tasks: destinationTasks,
           },
-        });
+        };
+
+        moveTask(data);
+
+        // moveTask({
+        //   ...board?.columns,
+        //   [sourceColumn.id]: {
+        //     ...sourceColumn,
+        //     taskIds: sourceTaskIds,
+        //   },
+        //   [destinationColumn.id]: {
+        //     ...destinationColumn,
+        //     taskIds: destinationTaskIds,
+        //   },
+        // });
 
         console.info('Moving to different list!');
       } catch (error) {
@@ -144,7 +159,12 @@ export default function KanbanView() {
       )}
 
       {!!board?.columns.length && (
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DragDropContext
+          onDragEnd={onDragEnd}
+          onDragStart={() => {
+            console.log('start');
+          }}
+        >
           <Droppable droppableId="board" type="COLUMN" direction="horizontal">
             {(provided) => (
               <Scrollbar
@@ -165,15 +185,14 @@ export default function KanbanView() {
                   sx={{
                     p: 0.25,
                     height: 1,
-
                     overflowX: 'auto',
                   }}
                 >
                   {board.columns.map((item, index) => (
                     <KanbanColumn
                       index={index}
-                      key={item.id}
-                      column={board.columns[item?.position]}
+                      key={item?.id}
+                      column={board.columns[item.position]}
                       tasks={item?.task}
                     />
                   ))}

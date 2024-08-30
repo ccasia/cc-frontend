@@ -40,6 +40,7 @@ export const endpoints = {
     updateColumn: '/api/kanban/updateColumn',
     task: {
       create: '/api/kanban/createTask',
+      moveTask: '/api/kanban/moveTask',
     },
   },
   threads: {

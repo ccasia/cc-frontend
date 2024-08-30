@@ -138,35 +138,33 @@ export async function updateColumn(columnId, columnName) {
 // ----------------------------------------------------------------------
 
 export async function moveColumn(newOrdered, ordered) {
-  console.log(newOrdered);
   /**
    * Work on server
    */
-  // const data = { newOrdered };
+  const newColumnsOrdered = ordered.map((order, index) => ({
+    ...order,
+    position: index,
+  }));
+
+  mutate(
+    URL,
+    (currentData) => {
+      const { board } = currentData;
+      return {
+        ...currentData,
+        board: {
+          ...board,
+          columns: newColumnsOrdered,
+        },
+      };
+    },
+    false
+  );
+
   await axiosInstance.patch(endpoints.kanban.moveColumn, {
     newPosition: newOrdered.newPosition,
     columnId: newOrdered.columnToBeMove.id,
   });
-
-  // const { data: updatedColumns } = data;
-
-  mutate(endpoints.kanban.root);
-
-  // mutate(
-  //   URL,
-  //   (currentData) => {
-  //     const { board } = currentData;
-
-  //     return {
-  //       ...currentData,
-  //       board: {
-  //         ...board,
-  //         columns: updatedColumns,
-  //       },
-  //     };
-  //   },
-  //   false
-  // );
 }
 
 // ----------------------------------------------------------------------
@@ -345,19 +343,75 @@ export async function moveTask(updateColumns) {
   /**
    * Work in local
    */
+
+  if (updateColumns?.type === 'differentColumn') {
+    // Fix the order
+    // Source Column
+    const newSourceColumn = updateColumns.sourceColumn.tasks.map((item, index) => ({
+      ...item,
+      position: index,
+      columnId: updateColumns.sourceColumn.id,
+    }));
+    // Destination Column
+    const newDestinationColumn = updateColumns.destinationColumn.tasks.map((item, index) => ({
+      ...item,
+      position: index,
+      columnId: updateColumns.destinationColumn.id,
+    }));
+
+    const allTasks = [...newSourceColumn, ...newDestinationColumn];
+
+    mutate(
+      URL,
+      (currentData) => {
+        const { board } = currentData;
+
+        return {
+          ...currentData,
+          board: {
+            ...board,
+            columns: board.columns.map((column) => {
+              if (column.id === updateColumns.sourceColumn.id) {
+                return {
+                  ...column,
+                  task: newSourceColumn,
+                };
+              }
+              if (column.id === updateColumns.destinationColumn.id) {
+                return {
+                  ...column,
+                  task: newDestinationColumn,
+                };
+              }
+              return column;
+            }),
+          },
+        };
+      },
+      false
+    );
+
+    await axiosInstance.patch(endpoints.kanban.task.moveTask, {
+      allTasks,
+      type: 'differentColumn',
+    });
+
+    return;
+  }
+
   mutate(
     URL,
     (currentData) => {
       const { board } = currentData;
 
       // update board.columns
-      const columns = updateColumns;
-
       return {
         ...currentData,
         board: {
           ...board,
-          columns,
+          columns: board.columns.map((column) =>
+            column.id === updateColumns.columnId ? { ...column, task: updateColumns.tasks } : column
+          ),
         },
       };
     },
@@ -368,7 +422,7 @@ export async function moveTask(updateColumns) {
    * Work on server
    */
   // const data = { updateColumns };
-  // await axios.post(endpoints.kanban, data, { params: { endpoint: 'move-task' } });
+  await axiosInstance.patch(endpoints.kanban.task.moveTask, updateColumns);
 }
 
 // ----------------------------------------------------------------------
