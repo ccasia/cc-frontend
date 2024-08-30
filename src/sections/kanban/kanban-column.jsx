@@ -172,7 +172,7 @@ export default function KanbanColumn({ column, tasks, index }) {
                   spacing={2}
                   sx={{
                     py: 3,
-                    width: 280,
+                    minWidth: 280,
                     ...(dropSnapshot.isDraggingOver && {
                       bgcolor: (theme) => alpha(theme.palette.grey[400], 0.2),
                       borderRadius: 2,
