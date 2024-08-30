@@ -35,6 +35,7 @@ export const endpoints = {
   kanban: {
     root: '/api/kanban',
     createColumn: '/api/kanban/createColumn',
+    clearColumn: '/api/kanban/clearColumn',
     deleteColumn: '/api/kanban/deleteColumn',
     moveColumn: '/api/kanban/moveColumn',
     updateColumn: '/api/kanban/updateColumn',

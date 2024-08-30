@@ -141,6 +141,7 @@ export async function moveColumn(newOrdered, ordered) {
   /**
    * Work on server
    */
+
   const newColumnsOrdered = ordered.map((order, index) => ({
     ...order,
     position: index,
@@ -173,8 +174,6 @@ export async function clearColumn(columnId) {
   /**
    * Work on server
    */
-  // const data = { columnId };
-  // await axios.post(endpoints.kanban, data, { params: { endpoint: 'clear-column' } });
 
   /**
    * Work in local
@@ -184,36 +183,20 @@ export async function clearColumn(columnId) {
     (currentData) => {
       const { board } = currentData;
 
-      const { tasks } = board;
-
-      // current column
-      const column = board.columns[columnId];
-
-      // delete tasks in board.tasks
-      column.taskIds.forEach((key) => {
-        delete tasks[key];
-      });
-
-      const columns = {
-        ...board.columns,
-        [column.id]: {
-          ...column,
-          // delete task in column
-          taskIds: [],
-        },
-      };
-
       return {
         ...currentData,
         board: {
           ...board,
-          columns,
-          tasks,
+          columns: board.columns.map((item, index) =>
+            item.id === columnId ? { ...item, task: [] } : item
+          ),
         },
       };
     },
     false
   );
+
+  await axiosInstance.patch(endpoints.kanban.clearColumn, { columnId });
 }
 
 // ----------------------------------------------------------------------

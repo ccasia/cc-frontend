@@ -8,7 +8,6 @@ import Typography from '@mui/material/Typography';
 import { moveTask, moveColumn, useGetBoard } from 'src/api/kanban';
 
 import Scrollbar from 'src/components/scrollbar';
-import EmptyContent from 'src/components/empty-content';
 
 import KanbanColumn from '../kanban-column';
 import KanbanColumnAdd from '../kanban-column-add';
@@ -18,8 +17,6 @@ import { KanbanColumnSkeleton } from '../kanban-skeleton';
 
 export default function KanbanView() {
   const { board, boardLoading, boardEmpty } = useGetBoard();
-
-  console.log('ASDSAD', board);
 
   const onDragEnd = useCallback(
     async ({ destination, source, draggableId, type }) => {
@@ -101,18 +98,6 @@ export default function KanbanView() {
 
         moveTask(data);
 
-        // moveTask({
-        //   ...board?.columns,
-        //   [sourceColumn.id]: {
-        //     ...sourceColumn,
-        //     taskIds: sourceTaskIds,
-        //   },
-        //   [destinationColumn.id]: {
-        //     ...destinationColumn,
-        //     taskIds: destinationTaskIds,
-        //   },
-        // });
-
         console.info('Moving to different list!');
       } catch (error) {
         console.error(error);
@@ -147,7 +132,7 @@ export default function KanbanView() {
 
       {boardLoading && renderSkeleton}
 
-      {boardEmpty && (
+      {/* {boardEmpty && (
         <EmptyContent
           filled
           title="No Data"
@@ -156,7 +141,7 @@ export default function KanbanView() {
             maxHeight: { md: 480 },
           }}
         />
-      )}
+      )} */}
 
       {!!board?.columns.length && (
         <DragDropContext
@@ -206,6 +191,7 @@ export default function KanbanView() {
           </Droppable>
         </DragDropContext>
       )}
+      <KanbanColumnAdd />
     </Container>
   );
 }
