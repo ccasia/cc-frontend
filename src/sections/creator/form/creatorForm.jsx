@@ -19,8 +19,8 @@ import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
+import { Stack, InputAdornment } from '@mui/material';
 import DialogContent from '@mui/material/DialogContent';
-import { Stack, Slider, InputAdornment } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -111,10 +111,9 @@ export default function CreatorForm({ creator, open, onClose }) {
       tiktok: '',
       pronounce: '',
       location: '',
-      Interests: [],
+      interests: [],
       languages: [],
       instagram: '',
-      // industries: [],
       employment: '',
       birthDate: null,
       Nationality: '',
@@ -157,13 +156,13 @@ export default function CreatorForm({ creator, open, onClose }) {
 
     const newData = {
       ...data,
-      interests: ratingInterst,
-      industries: ratingIndustries,
+      // interests: ratingInterst,
+      // industries: ratingIndustries,
     };
 
     try {
-      await axiosInstance.put(endpoints.auth.updateCreator, newData);
-      enqueueSnackbar('Welcome !');
+      const res = await axiosInstance.put(endpoints.auth.updateCreator, newData);
+      enqueueSnackbar(`Welcome ${res.data.name}!`);
 
       onClose();
     } catch (error) {
@@ -239,9 +238,12 @@ export default function CreatorForm({ creator, open, onClose }) {
 
           <RHFTextField name="location" label="City/Area" multiline />
 
-          <RHFSelect name="employment" label="Employment Status" multiple={false} 
-          // onChange={handleEmploymentChange}
-          // value={employmentValue}
+          <RHFSelect
+            name="employment"
+            label="Employment Status"
+            multiple={false}
+            // onChange={handleEmploymentChange}
+            // value={employmentValue}
           >
             <MenuItem value="fulltime">I have a full-time job</MenuItem>
             <MenuItem value="freelance">I&apos;m a freelancer</MenuItem>
@@ -285,7 +287,6 @@ export default function CreatorForm({ creator, open, onClose }) {
             freeSolo={false}
             disableCloseOnSelect
             options={langList.sort((a, b) => a.localeCompare(b)).map((option) => option)}
-            // options={langList.map((option) => option)}
             getOptionLabel={(option) => option}
             renderOption={(props, option) => (
               <li {...props} key={option}>
@@ -305,9 +306,6 @@ export default function CreatorForm({ creator, open, onClose }) {
               ))
             }
           />
-          {/* {
-
-          } */}
 
           <RHFAutocomplete
             name="interests"
@@ -335,33 +333,6 @@ export default function CreatorForm({ creator, open, onClose }) {
               ))
             }
           />
-
-          {/* <RHFAutocomplete
-            name="industries"
-            placeholder="Favorite industries?"
-            multiple
-            freeSolo
-            disableCloseOnSelect
-            options={interestsList.map((option) => option)}
-            getOptionLabel={(option) => option}
-            renderOption={(props, option) => (
-              <li {...props} key={option}>
-                {option}
-              </li>
-            )}
-            renderTags={(selected, getTagProps) =>
-              selected.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option}
-                  label={option}
-                  size="small"
-                  color="info"
-                  variant="soft"
-                />
-              ))
-            }
-          /> */}
         </Box>
       </DialogContent>
     );
@@ -524,9 +495,6 @@ export default function CreatorForm({ creator, open, onClose }) {
     }
   };
 
-
-  console.log("Submit", onSubmit)
-  console.log("Steps", activeStep)
   return (
     <Dialog
       fullWidth
@@ -607,7 +575,6 @@ export default function CreatorForm({ creator, open, onClose }) {
               <Box sx={{ my: 3 }}>
                 <FormProvider methods={methods} onSubmit={onSubmit}>
                   {getStepContent(activeStep)}
-                  
                 </FormProvider>
               </Box>
             </Paper>
@@ -623,7 +590,7 @@ export default function CreatorForm({ creator, open, onClose }) {
               <Box sx={{ flexGrow: 1 }} />
               {activeStep === steps.length - 1 ? (
                 <Button variant="contained" onClick={onSubmit}>
-                  Submit 
+                  Submit
                 </Button>
               ) : (
                 <Button variant="contained" onClick={handleNext}>

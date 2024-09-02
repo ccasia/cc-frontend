@@ -3,7 +3,6 @@ import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
-import { Typography } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';

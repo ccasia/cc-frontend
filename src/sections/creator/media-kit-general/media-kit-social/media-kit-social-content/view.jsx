@@ -1,9 +1,7 @@
 import React from 'react';
 
-import { Box, Stack, Typography } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
 
-import Image from 'src/components/image';
-import Iconify from 'src/components/iconify';
 
 const MediaKitSocialContent = () => (
   <Stack>

@@ -1,8 +1,7 @@
 import React from 'react';
 
-import { Box, Stack, Typography } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
 
 const MediaKitAnalytics = () => (
   <Stack>
