@@ -3,7 +3,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 // import { Link } from 'react-router-dom';
 
-import { Box, Card, Link, Stack, Typography, ListItemText } from '@mui/material';
+import { Box, Card, Stack, Typography, ListItemText } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -15,6 +15,7 @@ import CampaignModal from '../discover/creator/campaign-modal';
 
 const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
   const campaignInfo = useBoolean();
+  console.log(campaign);
 
   const renderImages = (
     <Stack
@@ -26,51 +27,52 @@ const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
     >
       <Stack flexGrow={1} sx={{ position: 'relative' }}>
         <Image
-          alt="/test.jpeg"
+          alt={campaign?.name}
           src={campaign?.campaignBrief?.images[0]}
           sx={{ borderRadius: 1, height: 164, width: 1 }}
         />
       </Stack>
-      <Stack spacing={0.5}>
-        <Image
-          alt="/test.jpeg"
-          src={campaign?.campaignBrief?.images[1]}
-          ratio="1/1"
-          sx={{ borderRadius: 1, width: 80 }}
-        />
-        <Image
-          alt="/test.jpeg"
-          src={campaign?.campaignBrief?.images[2]}
-          ratio="1/1"
-          sx={{ borderRadius: 1, width: 80 }}
-        />
-      </Stack>
+      {campaign?.campaignBrief?.images.length > 1 && (
+        <Stack spacing={0.5}>
+          <Image
+            alt={campaign?.name}
+            src={campaign?.campaignBrief?.images[1]}
+            ratio="1/1"
+            sx={{ borderRadius: 1, width: 80 }}
+          />
+          <Image
+            alt={campaign?.name}
+            src={campaign?.campaignBrief?.images[2]}
+            ratio="1/1"
+            sx={{ borderRadius: 1, width: 80 }}
+          />
+        </Stack>
+      )}
     </Stack>
   );
 
   const renderText = (
-    <ListItemText
+    <Stack
       sx={{
         p: (theme) => theme.spacing(2.5, 2.5, 2, 2.5),
       }}
-      primary={
-        <Link
-          component="a"
-          color="inherit"
-          sx={{
-            cursor: 'pointer',
-          }}
-        >
-          {campaign?.name}
-        </Link>
-      }
-      primaryTypographyProps={{
-        noWrap: true,
-        component: 'a',
-        color: 'text.primary',
-        typography: 'subtitle1',
-      }}
-    />
+    >
+      <ListItemText
+        primary={campaign?.name}
+        secondary={`by ${campaign?.brand?.name ?? campaign?.company?.name}`}
+        primaryTypographyProps={{
+          noWrap: true,
+          component: 'span',
+          color: 'text.primary',
+          typography: 'subtitle1',
+        }}
+        secondaryTypographyProps={{
+          noWrap: true,
+          color: 'text.disabled',
+          typography: 'caption',
+        }}
+      />
+    </Stack>
   );
 
   const renderInfo = (
@@ -83,11 +85,11 @@ const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
     >
       {[
         {
-          label: campaign?.campaignBrief?.industries.map((e, index) => (
-            <Label key={index} variant="filled" size="small" color="primary">
-              {e}
+          label: (
+            <Label variant="filled" size="small" color="primary">
+              {campaign?.campaignBrief?.industries}
             </Label>
-          )),
+          ),
           icon: <Iconify icon="material-symbols:interests-outline-rounded" color="error.main" />,
         },
         {

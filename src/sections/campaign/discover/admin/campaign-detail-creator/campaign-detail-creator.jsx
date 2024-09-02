@@ -34,6 +34,8 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 import UserCard from './user-card';
 
+const steps = ['Select creator', 'Manage agreement'];
+
 const CampaignDetailCreator = ({ campaign }) => {
   // eslint-disable-next-line no-unused-vars
   const [query, setQuery] = useState(null);
@@ -42,6 +44,7 @@ const CampaignDetailCreator = ({ campaign }) => {
   const shortlistedCreators = campaign?.shortlisted;
   const shortlistedCreatorsId = shortlistedCreators?.map((item) => item.userId);
   const modal = useBoolean();
+  const confirmModal = useBoolean();
 
   const methods = useForm({
     defaultValues: {
@@ -85,8 +88,35 @@ const CampaignDetailCreator = ({ campaign }) => {
     }
   });
 
+  const renderConfirmationModal = !!selectedCreator.length && (
+    <Dialog open={confirmModal.value} onClose={confirmModal.onFalse}>
+      <DialogTitle>Confirm to close modal</DialogTitle>
+      <DialogActions>
+        <Button size="small" onClick={confirmModal.onFalse} variant="outlined">
+          Cancel
+        </Button>
+        <Button
+          size="small"
+          onClick={() => {
+            confirmModal.onFalse();
+            modal.onFalse();
+            reset();
+          }}
+          variant="contained"
+        >
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   const renderShortlistFormModal = (
-    <Dialog open={modal.value} onClose={modal.onFalse} maxWidth="xs" fullWidth>
+    <Dialog
+      open={modal.value}
+      onClose={selectedCreator.length ? confirmModal.onTrue : modal.onFalse}
+      maxWidth="xs"
+      fullWidth
+    >
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle>List Creator</DialogTitle>
         <DialogContent>
@@ -127,8 +157,16 @@ const CampaignDetailCreator = ({ campaign }) => {
             />
           </Box>
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={modal.onFalse}>Cancel</Button>
+          <Button
+            onClick={() => {
+              modal.onFalse();
+              reset();
+            }}
+          >
+            Cancel
+          </Button>
 
           <Button type="submit" disabled={!selectedCreator.length}>
             Shortlist {selectedCreator.length > 0 && selectedCreator.length}
@@ -194,6 +232,7 @@ const CampaignDetailCreator = ({ campaign }) => {
         )}
       </Stack>
       {renderShortlistFormModal}
+      {renderConfirmationModal}
     </>
   );
 };

@@ -20,6 +20,7 @@ import Iconify from 'src/components/iconify';
 
 const CampaignInfo = ({ campaign }) => {
   const requirement = campaign?.campaignRequirement;
+
   const renderOverview = (
     <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
       <Stack direction="row" spacing={1} alignItems="start">
@@ -41,43 +42,13 @@ const CampaignInfo = ({ campaign }) => {
           />
         </Stack>
       </Stack>
-      {/* <Stack direction="row" spacing={1} alignItems="start">
-        <Iconify icon="material-symbols:domain" width={18} />
-        <Stack>
-          <ListItemText
-            primary="Industries"
-            secondary={
-              <Stack direction="row" spacing={1}>
-                {campaign?.campaignBrief?.industries.map((value) => (
-                  <Label>{value}</Label>
-                ))}
-              </Stack>
-            }
-            primaryTypographyProps={{
-              typography: 'body2',
-              color: 'text.secondary',
-              mb: 0.5,
-            }}
-            secondaryTypographyProps={{
-              typography: 'subtitle2',
-              color: 'text.primary',
-              component: 'span',
-            }}
-          />
-        </Stack>
-      </Stack> */}
+
       <Stack direction="row" spacing={1} alignItems="start">
         <Iconify icon="typcn:point-of-interest" width={18} />
         <Stack>
           <ListItemText
             primary="Industries"
-            secondary={
-              <Stack direction="row" spacing={1}>
-                {campaign?.campaignBrief?.industries.map((value) => (
-                  <Label>{value}</Label>
-                ))}
-              </Stack>
-            }
+            secondary={<Label>{campaign?.campaignBrief?.industries}</Label>}
             primaryTypographyProps={{
               typography: 'body2',
               color: 'text.secondary',
@@ -113,21 +84,29 @@ const CampaignInfo = ({ campaign }) => {
     </Box>
   );
 
-  const renderGallery = (
-    <Box
-      display="grid"
-      gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-      gap={1}
-      mt={2}
-    >
+  const renderGallery =
+    campaign?.campaignBrief?.images.length < 2 ? (
       <Image
         src={campaign?.campaignBrief?.images[0]}
         alt="test"
-        ratio="1/1"
+        ratio="16/9"
         sx={{ borderRadius: 2, cursor: 'pointer' }}
       />
-      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
-        {campaign?.campaignBrief?.images.map((elem, index) => (
+    ) : (
+      <Box
+        display="grid"
+        gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+        gap={1}
+        mb={5}
+      >
+        <Image
+          src={campaign?.campaignBrief?.images[0]}
+          alt="test"
+          ratio="1/1"
+          sx={{ borderRadius: 2, cursor: 'pointer' }}
+        />
+
+        {campaign?.campaignBrief?.images.slice(1).map((elem, index) => (
           <Image
             key={index}
             src={elem}
@@ -136,9 +115,9 @@ const CampaignInfo = ({ campaign }) => {
             sx={{ borderRadius: 2, cursor: 'pointer' }}
           />
         ))}
+        {/* </Box> */}
       </Box>
-    </Box>
-  );
+    );
 
   const renderInformation = (
     <Stack spacing={5}>
@@ -152,7 +131,7 @@ const CampaignInfo = ({ campaign }) => {
           variant: 'body2',
         }}
       />
-      {/* <Typography variant="h4">{campaign?.name}</Typography> */}
+
       <Divider
         sx={{
           borderStyle: 'dashed',
@@ -187,39 +166,36 @@ const CampaignInfo = ({ campaign }) => {
     </Stack>
   );
 
-
   const renderDos = (
     <>
-    
-    <Stack direction="column">
-      <Typography variant="h5">Campaign Do&apos;s</Typography>
-      <List>
-        {campaign?.campaignBrief?.campaigns_do.map((item, index) => (
-          <ListItem key={index}>
-            <ListItemIcon>
-              <Iconify icon="octicon:dot-16" sx={{ color: 'success.main' }} />
-            </ListItemIcon>
-            <ListItemText primary={item.value} />
-          </ListItem>
-        ))}
-      </List>
-    </Stack>
-    <Stack direction="column">
-      <Typography variant="h5">Campaign Dont&apos;s</Typography>
-      <List>
-        {campaign?.campaignBrief?.campaigns_dont.map((item, index) => (
-          <ListItem key={index}>
-            <ListItemIcon>
-              <Iconify icon="octicon:dot-16" sx={{ color: 'error.main' }} />
-            </ListItemIcon>
-            <ListItemText primary={item.value} />
-          </ListItem>
-        ))}
-      </List>
-    </Stack>
+      <Stack direction="column">
+        <Typography variant="h5">Campaign Do&apos;s</Typography>
+        <List>
+          {campaign?.campaignBrief?.campaigns_do.map((item, index) => (
+            <ListItem key={index}>
+              <ListItemIcon>
+                <Iconify icon="octicon:dot-16" sx={{ color: 'success.main' }} />
+              </ListItemIcon>
+              <ListItemText primary={item.value} />
+            </ListItem>
+          ))}
+        </List>
+      </Stack>
+      <Stack direction="column">
+        <Typography variant="h5">Campaign Dont&apos;s</Typography>
+        <List>
+          {campaign?.campaignBrief?.campaigns_dont.map((item, index) => (
+            <ListItem key={index}>
+              <ListItemIcon>
+                <Iconify icon="octicon:dot-16" sx={{ color: 'error.main' }} />
+              </ListItemIcon>
+              <ListItemText primary={item.value} />
+            </ListItem>
+          ))}
+        </List>
+      </Stack>
     </>
-     
-  )
+  );
 
   const renderDetails = (
     <Stack gap={1.5}>
@@ -236,7 +212,7 @@ const CampaignInfo = ({ campaign }) => {
         <ListItemText
           primary="Age"
           secondary={
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
               {requirement.age.map((value) => (
                 <Label>{value}</Label>
               ))}
@@ -256,7 +232,7 @@ const CampaignInfo = ({ campaign }) => {
         <ListItemText
           primary="Gender"
           secondary={
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
               {requirement.gender.map((value) => (
                 <Label>{value}</Label>
               ))}
@@ -276,7 +252,7 @@ const CampaignInfo = ({ campaign }) => {
         <ListItemText
           primary="Geo Location"
           secondary={
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
               {requirement.geoLocation.map((value) => (
                 <Label>{value}</Label>
               ))}
@@ -296,7 +272,7 @@ const CampaignInfo = ({ campaign }) => {
         <ListItemText
           primary="Languages"
           secondary={
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
               {requirement.language.map((value) => (
                 <Label>{value}</Label>
               ))}
@@ -316,7 +292,7 @@ const CampaignInfo = ({ campaign }) => {
         <ListItemText
           primary="Creator Persona"
           secondary={
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
               {requirement.creator_persona.map((value) => (
                 <Label>{value}</Label>
               ))}
@@ -351,7 +327,6 @@ const CampaignInfo = ({ campaign }) => {
     </Stack>
   );
 
-
   return (
     <Stack spacing={2} maxWidth={800} mx="auto">
       {renderGallery}
@@ -360,8 +335,6 @@ const CampaignInfo = ({ campaign }) => {
       {renderDetails}
       <Divider sx={{ borderStyle: 'dashed' }} />
       {renderDos}
-    
-     
     </Stack>
   );
 };
