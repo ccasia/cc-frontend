@@ -607,21 +607,10 @@ function CreateCampaignForm() {
           label="Audience Creator Persona"
           checkbox
           chip
-          options={[
-            { value: 'lifestyle', label: 'LifeStyle' },
-            { value: 'fashion', label: 'Fashion' },
-            { value: 'beauty', label: 'Beauty' },
-            { value: 'tech', label: 'Tech' },
-            { value: 'sports', label: 'Sports & Fitness' },
-            { value: 'health', label: 'Health & wellness' },
-            { value: 'family', label: 'Family & motherhood' },
-            { value: 'finance', label: 'Finance' },
-            { value: 'education', label: 'Education' },
-            { value: 'music', label: 'Music' },
-            { value: 'gamer', label: 'Gamer' },
-            { value: 'entertainment', label: 'Entertainment' },
-            { value: 'travel', label: 'Travel' },
-          ]}
+          options={interestsLists.map((item) => ({
+            value: item.toLowerCase(),
+            label: item,
+          }))}
         />
 
         <RHFTextField
