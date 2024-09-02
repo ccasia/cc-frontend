@@ -138,20 +138,22 @@ export default function CampaignItem({ campaign, user }) {
           sx={{ borderRadius: 1, height: 164, width: 1 }}
         />
       </Stack>
-      <Stack spacing={0.5}>
-        <Image
-          alt={campaign?.name}
-          src={campaign?.campaignBrief?.images[1]}
-          ratio="1/1"
-          sx={{ borderRadius: 1, width: 80 }}
-        />
-        <Image
-          alt={campaign?.name}
-          src={campaign?.campaignBrief?.images[2]}
-          ratio="1/1"
-          sx={{ borderRadius: 1, width: 80 }}
-        />
-      </Stack>
+      {campaign?.campaignBrief?.images.length > 1 && (
+        <Stack spacing={0.5}>
+          <Image
+            alt={campaign?.name}
+            src={campaign?.campaignBrief?.images[1]}
+            ratio="1/1"
+            sx={{ borderRadius: 1, width: 80 }}
+          />
+          <Image
+            alt={campaign?.name}
+            src={campaign?.campaignBrief?.images[2]}
+            ratio="1/1"
+            sx={{ borderRadius: 1, width: 80 }}
+          />
+        </Stack>
+      )}
     </Stack>
   );
 
@@ -286,11 +288,9 @@ export default function CampaignItem({ campaign, user }) {
         </Grid>
         <Grid item xs={11}>
           <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
-            {campaign?.campaignBrief?.industries.map((e, index) => (
-              <Stack key={index} direction="row" spacing={1} flexWrap="wrap">
-                <Label color="primary">{e}</Label>
-              </Stack>
-            ))}
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Label color="primary">{campaign?.campaignBrief?.industries}</Label>
+            </Stack>
           </Stack>
         </Grid>
       </Grid>
