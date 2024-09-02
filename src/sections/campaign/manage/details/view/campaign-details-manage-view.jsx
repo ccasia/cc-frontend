@@ -215,11 +215,7 @@ const CampaignDetailManageView = ({ id }) => {
         <Stack spacing={1}>
           <Typography variant="subtitle1">Industries</Typography>
           <Stack direction="row" spacing={1}>
-            {campaign?.campaignBrief?.industries.map((interest, index) => (
-              <Label key={index} color="secondary">
-                {interest}
-              </Label>
-            ))}
+            <Label color="secondary">{campaign?.campaignBrief?.industries}</Label>
           </Stack>
         </Stack>
 
@@ -558,7 +554,7 @@ const CampaignDetailManageView = ({ id }) => {
           { name: id },
         ]}
         action={
-          <Stack direction="row" spacing={2}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
             {campaign?.status === 'ACTIVE' && (
               <LoadingButton
                 startIcon={<Iconify icon="ion:close" />}
@@ -575,7 +571,7 @@ const CampaignDetailManageView = ({ id }) => {
                 variant="contained"
                 color="primary"
                 size="small"
-                endIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                startIcon={<Iconify icon="eva:cloud-upload-fill" />}
                 onClick={() => handleChangeStatus('ACTIVE')}
                 loading={loadingButton.value}
               >
@@ -587,7 +583,7 @@ const CampaignDetailManageView = ({ id }) => {
                 variant="contained"
                 color="warning"
                 size="small"
-                endIcon={<Iconify icon="solar:file-text-bold" />}
+                startIcon={<Iconify icon="solar:file-text-bold" />}
                 onClick={() => handleChangeStatus('PAUSED')}
                 loading={loadingButton.value}
               >

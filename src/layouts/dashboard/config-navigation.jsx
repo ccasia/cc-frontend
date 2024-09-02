@@ -197,11 +197,11 @@ export function useNavData() {
             path: paths.dashboard.creator.invoiceCreator,
             icon: <Iconify icon="material-symbols:finance" width={25} />,
           },
-          {
-            title: 'Inbox',
-            path: paths.dashboard.creator.inbox,
-            icon: <Iconify icon="material-symbols:inbox" width={25} />,
-          },
+          // {
+          //   title: 'Inbox',
+          //   path: paths.dashboard.creator.inbox,
+          //   icon: <Iconify icon="material-symbols:inbox" width={25} />,
+          // },
         ],
       },
     ],

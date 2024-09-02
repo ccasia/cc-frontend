@@ -93,7 +93,7 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
               <RHFAutocomplete
                 name="campaignIndustries"
                 placeholder="+ Industries"
-                multiple
+                // multiple
                 freeSolo
                 disableCloseOnSelect
                 options={interestsLists.map((option) => option)}

@@ -28,32 +28,41 @@ import Iconify from 'src/components/iconify';
 
 const CampaignDetailContent = ({ campaign }) => {
   const pdf = useBoolean();
-  const renderGallery = (
-    <Box
-      display="grid"
-      gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-      gap={1}
-      mb={5}
-    >
+
+  const renderGallery =
+    campaign?.campaignBrief?.images.length < 2 ? (
       <Image
         src={campaign?.campaignBrief?.images[0]}
         alt="test"
-        ratio="1/1"
+        ratio="16/9"
         sx={{ borderRadius: 2, cursor: 'pointer' }}
       />
-      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
-        {campaign?.campaignBrief?.images.map((elem, index) => (
-          <Image
-            key={index}
-            src={elem}
-            alt="test"
-            ratio="1/1"
-            sx={{ borderRadius: 2, cursor: 'pointer' }}
-          />
-        ))}
+    ) : (
+      <Box
+        display="grid"
+        gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+        gap={1}
+        mb={5}
+      >
+        <Image
+          src={campaign?.campaignBrief?.images[0]}
+          alt="test"
+          ratio="1/1"
+          sx={{ borderRadius: 2, cursor: 'pointer' }}
+        />
+        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
+          {campaign?.campaignBrief?.images.slice(1).map((elem, index) => (
+            <Image
+              key={index}
+              src={elem}
+              alt="test"
+              ratio="1/1"
+              sx={{ borderRadius: 2, cursor: 'pointer' }}
+            />
+          ))}
+        </Box>
       </Box>
-    </Box>
-  );
+    );
 
   const renderOverview = (
     <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
@@ -241,214 +250,6 @@ const CampaignDetailContent = ({ campaign }) => {
             </TableBody>
           </Table>
         </TableContainer>
-        {/* <Timeline position="alternate">
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {dayjs(campaign?.campaignBrief?.startDate).format('LL')}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>Start Date</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.openForPitch ??
-                campaign?.defaultcampaignTimeline?.openForPitch}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.openForPitch ??
-                  campaign?.defaultcampaignTimeline?.openForPitch
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>Open For Pitch</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.shortlistCreator ??
-                campaign?.defaultcampaignTimeline?.shortlistCreator}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.shortlistCreator ??
-                  campaign?.defaultcampaignTimeline?.shortlistCreator
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>Shortlist Creator</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.firstDraft ??
-                campaign?.defaultcampaignTimeline?.firstDraft}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.firstDraft ??
-                  campaign?.defaultcampaignTimeline?.firstDraft
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>First Draft</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.finalDraft ??
-                campaign?.defaultcampaignTimeline?.finalDraft}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.finalDraft ??
-                  campaign?.defaultcampaignTimeline?.finalDraft
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>Final Draft</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.feedBackFirstDraft ??
-                campaign?.defaultcampaignTimeline?.feedBackFirstDraft}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.feedBackFirstDraft ??
-                  campaign?.defaultcampaignTimeline?.feedBackFirstDraft
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>Feedback First Draft</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.feedBackFinalDraft ??
-                campaign?.defaultcampaignTimeline?.feedBackFinalDraft}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.feedBackFinalDraft ??
-                  campaign?.defaultcampaignTimeline?.feedBackFinalDraft
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>Feedback Final Draft</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.filterPitch ??
-                campaign?.defaultcampaignTimeline?.filterPitch}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.filterPitch ??
-                  campaign?.defaultcampaignTimeline?.filterPitch
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>Filter Pitch</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.agreementSign ??
-                campaign?.defaultcampaignTimeline?.agreementSign}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.agreementSign ??
-                  campaign?.defaultcampaignTimeline?.agreementSign
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>Agreement Sign</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.qc ?? campaign?.defaultcampaignTimeline?.qc}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.qc ?? campaign?.defaultcampaignTimeline?.qc
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>QC</TimelineContent>
-          </TimelineItem>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              {campaign?.customcampaignTimeline?.posting ??
-                campaign?.defaultcampaignTimeline?.posting}{' '}
-              {formatDays(
-                campaign?.customcampaignTimeline?.posting ??
-                  campaign?.defaultcampaignTimeline?.posting
-              )}
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>Posting</TimelineContent>
-          </TimelineItem>
-        </Timeline> */}
-        {/* <Timeline>
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              <Typography variant="caption">
-                {dayjs(campaign?.campaignBrief?.startDate).format('ddd LL')}
-              </Typography>
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>
-              <Typography variant="subtitle2">Campaign Start Date</Typography>
-            </TimelineContent>
-          </TimelineItem>
-          {campaign &&
-            campaign?.campaignTimeline.map((timeline) => (
-              <TimelineItem>
-                <TimelineOppositeContent color="text.secondary">
-                  <Typography variant="caption">
-                    {dayjs(timeline.startDate).format('ddd LL')} -{' '}
-                    {dayjs(timeline.endDate).format('ddd LL')}
-                  </Typography>
-                </TimelineOppositeContent>
-                <TimelineSeparator>
-                  <TimelineDot />
-                  <TimelineConnector />
-                </TimelineSeparator>
-                <TimelineContent>
-                  <Typography variant="subtitle2">{timeline?.name}</Typography>
-                </TimelineContent>
-              </TimelineItem>
-            ))}
-          <TimelineItem>
-            <TimelineOppositeContent color="text.secondary">
-              <Typography variant="caption">
-                {dayjs(campaign?.campaignBrief?.endDate).format('ddd LL')}
-              </Typography>
-            </TimelineOppositeContent>
-            <TimelineSeparator>
-              <TimelineDot />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent>
-              <Typography variant="subtitle2">Campaign End Date</Typography>
-            </TimelineContent>
-          </TimelineItem>
-        </Timeline> */}
       </Stack>
     </Stack>
   );
@@ -457,7 +258,7 @@ const CampaignDetailContent = ({ campaign }) => {
     <>
       {renderGallery}
 
-      <Stack maxWidth={720} mx="auto" spacing={2}>
+      <Stack maxWidth={720} mx="auto" spacing={2} mt={2}>
         {renderInformation}
 
         <Divider

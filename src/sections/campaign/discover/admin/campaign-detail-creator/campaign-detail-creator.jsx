@@ -96,7 +96,7 @@ const CampaignDetailCreator = ({ campaign }) => {
               multiple
               disableCloseOnSelect
               name="creator"
-              options={!isLoading && data}
+              options={!isLoading && data?.filter((item) => item.status === 'active')}
               filterOptions={(option, state) =>
                 option.filter((item) => !shortlistedCreatorsId.includes(item.id))
               }
@@ -130,7 +130,7 @@ const CampaignDetailCreator = ({ campaign }) => {
         <DialogActions>
           <Button onClick={modal.onFalse}>Cancel</Button>
 
-          <Button type="submit">
+          <Button type="submit" disabled={!selectedCreator.length}>
             Shortlist {selectedCreator.length > 0 && selectedCreator.length}
           </Button>
         </DialogActions>

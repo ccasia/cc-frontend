@@ -191,7 +191,7 @@ export default function KanbanView() {
           </Droppable>
         </DragDropContext>
       )}
-      <KanbanColumnAdd />
+      {!!board?.columns.length < 1 && <KanbanColumnAdd />}
     </Container>
   );
 }

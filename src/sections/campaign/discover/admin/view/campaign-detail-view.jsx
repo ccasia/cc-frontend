@@ -108,10 +108,10 @@ const CampaignDetailView = ({ id }) => {
     >
       {[
         { label: 'Overview', value: 'overview' },
-        { label: 'Campaign Content', value: 'campaign-content' },
-        { label: 'Brand Info', value: 'brand' },
+        { label: 'Campaign Brief', value: 'campaign-content' },
+        { label: 'Client Info', value: 'client' },
         { label: 'Shortlisted Creator', value: 'creator' },
-        { label: 'Pitch Submission', value: 'pitch' },
+        { label: 'Pitches', value: 'pitch' },
       ].map((tab) => (
         <Tab
           key={tab.value}
@@ -360,7 +360,7 @@ const CampaignDetailView = ({ id }) => {
       {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
       {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
 
-      {currentTab === 'brand' && (
+      {currentTab === 'client' && (
         <CampaignDetailBrand brand={currentCampaign?.brand ?? currentCampaign?.company} />
       )}
 

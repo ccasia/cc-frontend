@@ -49,8 +49,8 @@ import TimelineTypeModal from './steps/timeline-type-modal';
 // import NotificationReminder from './steps/notification-reminder';
 
 const steps = [
-  'Campaign Information',
-  'Campaign brief form',
+  'General Campaign Information',
+  'Campaign Details',
   'Campaign Images',
   'Timeline',
   'Admin Manager',
@@ -138,7 +138,9 @@ function CreateCampaignForm() {
       .required('Campaign dont is required '),
 
     adminManager: Yup.array().required('Admin Manager is required'),
-    campaignImages: Yup.array().min(3, 'Must have at least 3 items'),
+    campaignImages: Yup.array()
+      .min(1, 'Must have at least 1 image')
+      .max(3, 'Must have at most 3 images'),
     agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
     timeline: Yup.mixed().required(),
     campaignTasksAdmin: Yup.array()
@@ -193,8 +195,8 @@ function CreateCampaignForm() {
 
   const campaignImagesSchema = Yup.object().shape({
     campaignImages: Yup.array()
-      .min(3, 'Must have at least 3 items')
-      .required('Campaign Images ares required'),
+      .min(1, 'Must have at least 1 image')
+      .max(3, 'Must have at most 3 images'),
   });
 
   const campaignAdminSchema = Yup.object().shape({
@@ -437,7 +439,12 @@ function CreateCampaignForm() {
       }}
     >
       <RHFTextField name="campaignTitle" label="Campaign Title" />
-      <RHFTextField name="campaignDescription" label="Campaign Description" multiline />
+      {/* <RHFTextField name="campaignDescription" label="Campaign Description" multiline /> */}
+      <RHFTextField
+        name="campaignDescription"
+        label="let us know more about the campaign"
+        multiline
+      />
 
       <Box
         sx={{
@@ -461,7 +468,7 @@ function CreateCampaignForm() {
               sx={{ mt: 2 }}
               onClick={handleOpenCompanyDialog}
             >
-              Create new brand
+              Create client
             </Button>
           }
           isOptionEqualToValue={(option, value) => option.id === value.id}
@@ -474,50 +481,6 @@ function CreateCampaignForm() {
             )
           }
         />
-
-        {/* <Box>
-          <Tooltip title="Create brand">
-            <IconButton
-              sx={{
-                mx: 1,
-                bgcolor: 'whitesmoke',
-              }}
-              onClick={handleClick}
-              size="small"
-            >
-              <Iconify icon="mingcute:add-line" width={15} />
-            </IconButton>
-          </Tooltip>
-
-          <Menu
-            id="basic-menu"
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleClose}
-            MenuListProps={{
-              'aria-labelledby': 'basic-button',
-            }}
-            anchorOrigin={{
-              vertical: 'center',
-              horizontal: 'left',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-          >
-            <MenuItem
-              onClick={() => {
-                handleOpenCompanyDialog();
-              }}
-            >
-              <Stack direction="row" alignItems="center" gap={1}>
-                <Iconify icon="mdi:invite" />
-                <Typography variant="button">Create Brand</Typography>
-              </Stack>
-            </MenuItem>
-          </Menu>
-        </Box> */}
       </Box>
 
       <RHFSelect name="campaignObjectives" label="Campaign Objectives">
@@ -527,14 +490,11 @@ function CreateCampaignForm() {
         <MenuItem value="Want to drive product awareness">Want to drive product awareness</MenuItem>
       </RHFSelect>
 
-      {/* <RHFDatePicker name="campaignStartDate" label="Start Date" />
-      <RHFDatePicker name="campaignEndDate" label="End Date" /> */}
-
       <RHFAutocomplete
         name="campaignIndustries"
-        placeholder="+ Industries"
-        multiple
-        freeSolo
+        placeholder="Industries"
+        // multiple
+        // freeSolo
         disableCloseOnSelect
         options={interestsLists.map((option) => option)}
         getOptionLabel={(option) => option}
@@ -557,32 +517,8 @@ function CreateCampaignForm() {
         }
       />
 
-      {/* <RHFAutocomplete
-        name="campaignIndustries"
-        placeholder="+ Industries"
-        multiple
-        freeSolo
-        disableCloseOnSelect
-        options={interestsLists.map((option) => option)}
-        getOptionLabel={(option) => option}
-        renderOption={(props, option) => (
-          <li {...props} key={option}>
-            {option}
-          </li>
-        )}
-        renderTags={(selected, getTagProps) =>
-          selected.map((option, index) => (
-            <Chip
-              {...getTagProps({ index })}
-              key={option}
-              label={option}
-              size="small"
-              color="info"
-              variant="soft"
-            />
-          ))
-        }
-      /> */}
+      <RHFTextField name="brandTone" label="Brand Tone" multiline />
+      <RHFTextField name="serviceName" label="Product/Service Name" multiline />
     </Box>
   );
 
