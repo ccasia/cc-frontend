@@ -145,7 +145,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
         {renderGallery}
         <DialogContentText id="alert-dialog-description">{campaign?.description}</DialogContentText>
         <Box mt={2}>
-          <Typography variant="h6">Campaign Requirements</Typography>
+          <Typography variant="h6">Campaign Details</Typography>
           {/* <List> */}
           <Box
             display="grid"

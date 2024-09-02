@@ -7,13 +7,17 @@ import Iconify from 'src/components/iconify';
 
 const MediaKitSocialContent = () => (
   <Stack>
+    <Typography fontWeight={900} textAlign="center">Coming soon!</Typography>
     <Stack direction="row" justifyContent="space-between">
-      <Stack direction="row" alignItems="center" gap={2}>
+    
+      {/* <Stack direction="row" alignItems="center" gap={2}>
+     
         <Iconify icon="skill-icons:instagram" width={40} />
         <Typography variant="body1" fontWeight={600}>
           @John Doe
         </Typography>
       </Stack>
+      
       <Box
         sx={{
           display: 'inline-flex',
@@ -22,6 +26,7 @@ const MediaKitSocialContent = () => (
           color: (theme) => theme.palette.grey[600],
         }}
       >
+       
         <Typography fontWeight={700}>Go to profile</Typography>
         <Iconify icon="ion:open-outline" />
       </Box>
@@ -58,7 +63,7 @@ const MediaKitSocialContent = () => (
           height: { xs: 400, md: 500 },
           borderRadius: 2,
         }}
-      />
+      /> */}
     </Stack>
   </Stack>
 );
