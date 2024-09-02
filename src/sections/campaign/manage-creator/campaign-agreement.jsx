@@ -102,7 +102,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, getDependency }) =>
               <Button
                 variant="contained"
                 startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                href={campaign?.campaignBrief?.agreementFrom}
+                href={campaign?.agreement?.agreementUrl}
                 download="agreementForm.pdf"
                 target="__blank"
                 size="small"

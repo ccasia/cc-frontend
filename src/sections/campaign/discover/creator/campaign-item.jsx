@@ -284,7 +284,7 @@ export default function CampaignItem({ campaign, user }) {
 
       <Grid container>
         <Grid item xs={1}>
-          <Iconify icon="mingcute:location-fill" sx={{ color: 'error.main' }} />
+          <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />
         </Grid>
         <Grid item xs={11}>
           <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
@@ -297,7 +297,7 @@ export default function CampaignItem({ campaign, user }) {
 
       <Grid container>
         <Grid item xs={1}>
-          <Iconify icon="solar:clock-circle-bold" sx={{ color: 'info.main' }} />
+          <Iconify icon="solar:clock-circle-bold" />
         </Grid>
         <Grid item xs={11}>
           <Typography variant="caption" color="text.disabled">

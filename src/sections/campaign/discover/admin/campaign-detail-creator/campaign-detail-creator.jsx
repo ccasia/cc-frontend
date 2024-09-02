@@ -34,7 +34,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 import UserCard from './user-card';
 
-const steps = ['Select creator', 'Manage agreement'];
+// const steps = ['Select creator', 'Manage agreement'];
 
 const CampaignDetailCreator = ({ campaign }) => {
   // eslint-disable-next-line no-unused-vars
@@ -80,6 +80,7 @@ const CampaignDetailCreator = ({ campaign }) => {
       modal.onFalse();
       reset();
       enqueueSnackbar(res?.data?.message);
+      console.log('DONEEEE', res.data.message);
       mutate(endpoints.campaign.getCampaignsByAdminId);
     } catch (error) {
       enqueueSnackbar('Error Shortlist Creato', {

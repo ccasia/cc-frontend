@@ -112,6 +112,8 @@ const CampaignDetailView = ({ id }) => {
         { label: 'Client Info', value: 'client' },
         { label: 'Shortlisted Creator', value: 'creator' },
         { label: 'Pitches', value: 'pitch' },
+        { label: 'Agreements', value: 'agreement' },
+        { label: 'Invoices', value: 'invoices' },
       ].map((tab) => (
         <Tab
           key={tab.value}

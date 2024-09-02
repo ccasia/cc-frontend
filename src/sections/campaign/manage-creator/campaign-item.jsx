@@ -15,7 +15,6 @@ import CampaignModal from '../discover/creator/campaign-modal';
 
 const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
   const campaignInfo = useBoolean();
-  console.log(campaign);
 
   const renderImages = (
     <Stack
@@ -85,12 +84,8 @@ const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
     >
       {[
         {
-          label: (
-            <Label variant="filled" size="small" color="primary">
-              {campaign?.campaignBrief?.industries}
-            </Label>
-          ),
-          icon: <Iconify icon="material-symbols:interests-outline-rounded" color="error.main" />,
+          label: <Label color="primary">{campaign?.campaignBrief?.industries}</Label>,
+          icon: <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />,
         },
         {
           label: (
