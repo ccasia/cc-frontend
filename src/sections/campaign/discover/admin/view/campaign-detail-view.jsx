@@ -361,7 +361,10 @@ const CampaignDetailView = ({ id }) => {
       {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
 
       {currentTab === 'client' && (
-        <CampaignDetailBrand brand={currentCampaign?.brand ?? currentCampaign?.company} />
+        <CampaignDetailBrand
+          brand={currentCampaign?.brand ?? currentCampaign?.company}
+          campaign={currentCampaign}
+        />
       )}
 
       {currentTab === 'pitch' && (

@@ -16,7 +16,6 @@ import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { Grid, Stack, Avatar, Divider, IconButton, StepContent, ListItemText } from '@mui/material';
 
@@ -153,11 +152,13 @@ function CreateCampaignForm() {
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    campaignInterests: Yup.array().min(3, 'Choose at least three option'),
+    campaignIndustries: Yup.string().required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignBrand: Yup.object().required('Brand name is required'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
+    brandTone: Yup.string().required('Brand tone is required'),
+    productName: Yup.string().required('Product or Service name is required.'),
   });
 
   const campaignRequirementSchema = Yup.object().shape({
@@ -168,6 +169,7 @@ function CreateCampaignForm() {
     audienceLocation: Yup.array()
       .min(1, 'At least one option')
       .required('Audience location is required'),
+    othersAudienceLocation: Yup.string().required('Please specify the other geo location'),
     audienceLanguage: Yup.array()
       .min(1, 'At least one option')
       .required('Audience language is required'),
@@ -179,18 +181,16 @@ function CreateCampaignForm() {
       .min(1, 'At least one option')
       .of(
         Yup.object().shape({
-          value: Yup.string().required('This field is required'),
+          value: Yup.string(),
         })
       ),
     campaignDont: Yup.array()
       .min(1, 'At least one option')
       .of(
         Yup.object().shape({
-          value: Yup.string().required('This field is required'),
+          value: Yup.string(),
         })
       ),
-    // campaignDo: Yup.array().min(1, 'At least one option').required('Campaign do is required '),
-    // campaignDont: Yup.array().min(1, 'At least one option').required('Campaign dont is required '),
   });
 
   const campaignImagesSchema = Yup.object().shape({
@@ -214,7 +214,7 @@ function CreateCampaignForm() {
         campaignBrand: null,
         campaignStartDate: null,
         campaignEndDate: null,
-        // campaignInterests: [],
+
         campaignIndustries: [],
         campaignObjectives: '',
         campaignDescription: '',
@@ -238,7 +238,7 @@ function CreateCampaignForm() {
         adminManager: [],
         agreementFrom: null,
         timeline: [{ timeline_type: '', duration: undefined, startDate: '', endDate: '' }],
-        // campaignTasksAdmin: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
+
         campaignTasksAdmin: [],
         campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
       };
@@ -394,7 +394,14 @@ function CreateCampaignForm() {
   const onSubmit = handleSubmit(async (data, stage) => {
     const formData = new FormData();
 
-    const combinedData = { ...data, ...{ campaignStage: stage } };
+    const adjustedData = {
+      ...data,
+      audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
+    };
+
+    delete adjustedData.othersAudienceLocation;
+
+    const combinedData = { ...adjustedData, ...{ campaignStage: stage } };
 
     formData.append('data', JSON.stringify(combinedData));
     formData.append('agreementForm', data.agreementFrom);
@@ -439,7 +446,7 @@ function CreateCampaignForm() {
       }}
     >
       <RHFTextField name="campaignTitle" label="Campaign Title" />
-      {/* <RHFTextField name="campaignDescription" label="Campaign Description" multiline /> */}
+
       <RHFTextField
         name="campaignDescription"
         label="let us know more about the campaign"
@@ -518,7 +525,7 @@ function CreateCampaignForm() {
       />
 
       <RHFTextField name="brandTone" label="Brand Tone" multiline />
-      <RHFTextField name="serviceName" label="Product/Service Name" multiline />
+      <RHFTextField name="productName" label="Product/Service Name" multiline />
     </Box>
   );
 
@@ -534,7 +541,7 @@ function CreateCampaignForm() {
           sm: 'repeat(2, 1fr)',
         }}
       >
-        <Typography variant="h4">Audience Requirements</Typography>
+        <Typography variant="h4">Target Audience</Typography>
         <Box flexGrow={1} />
         <RHFMultiSelect
           name="audienceGender"
@@ -547,6 +554,7 @@ function CreateCampaignForm() {
           ]}
           label="Audience Gender"
         />
+
         <RHFMultiSelect
           name="audienceAge"
           checkbox
@@ -575,8 +583,12 @@ function CreateCampaignForm() {
           ]}
         />
 
-        {audienceGeoLocation === 'Others' && (
-          <TextField name="audienceLocation" label="Specify Other Location" variant="outlined" />
+        {audienceGeoLocation?.includes('Others') && (
+          <RHFTextField
+            name="othersAudienceLocation"
+            label="Specify Other Location"
+            variant="outlined"
+          />
         )}
 
         <RHFAutocomplete
@@ -587,20 +599,6 @@ function CreateCampaignForm() {
           options={langList}
           getOptionLabel={(option) => option}
         />
-
-        {/* <RHFMultiSelect
-          name="audienceLanguage"
-          label="Audience Language"
-          checkbox
-          chip
-          options={[
-            { value: 'Malay', label: 'Malay' },
-            { value: 'English', label: 'English' },
-            { value: 'Chinese', label: 'Chinese' },
-            { value: 'Tamil', label: 'Tamil' },
-            { value: 'Korean', label: 'Korean' },
-          ]}
-        /> */}
 
         <RHFMultiSelect
           name="audienceCreatorPersona"
@@ -628,7 +626,12 @@ function CreateCampaignForm() {
         }}
       />
 
-      <Typography variant="h5">Dos and Don&apos;ts</Typography>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Typography variant="h5">Dos and Don&apos;ts</Typography>
+        <Typography variant="caption" color="text.secondary">
+          ( optional )
+        </Typography>
+      </Stack>
 
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>

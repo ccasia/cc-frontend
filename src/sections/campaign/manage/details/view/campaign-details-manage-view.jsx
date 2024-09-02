@@ -405,7 +405,7 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="Gender"
             secondary={
-              <Stack spacing={1} direction="row">
+              <Stack spacing={1} direction="row" flexWrap="wrap">
                 {campaign?.campaignRequirement?.gender?.map((e, index) => (
                   <Label key={index} color="secondary">
                     {formatText(e)}
@@ -417,7 +417,7 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="Age"
             secondary={
-              <Stack spacing={1} direction="row">
+              <Stack spacing={1} direction="row" flexWrap="wrap">
                 {campaign?.campaignRequirement?.age?.map((e, index) => (
                   <Label key={index} color="secondary">
                     {formatText(e)}
@@ -429,7 +429,7 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="Geo Location"
             secondary={
-              <Stack spacing={1} direction="row">
+              <Stack spacing={1} direction="row" flexWrap="wrap">
                 {campaign?.campaignRequirement?.geoLocation?.map((e, index) => (
                   <Label key={index} color="secondary">
                     {formatText(e)}
@@ -441,7 +441,7 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="Language"
             secondary={
-              <Stack spacing={1} direction="row">
+              <Stack spacing={1} direction="row" flexWrap="wrap">
                 {campaign?.campaignRequirement?.language?.map((e, index) => (
                   <Label key={index} color="secondary">
                     {formatText(e)}
@@ -453,7 +453,7 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="Creator Persona"
             secondary={
-              <Stack spacing={1} direction="row">
+              <Stack spacing={1} direction="row" flexWrap="wrap">
                 {campaign?.campaignRequirement?.creator_persona?.map((e, index) => (
                   <Label key={index} color="secondary">
                     {formatText(e)}

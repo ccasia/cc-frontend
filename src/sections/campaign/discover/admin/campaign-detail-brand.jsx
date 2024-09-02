@@ -6,7 +6,7 @@ import { Box, Grid, Stack, Typography } from '@mui/material';
 import Iconify from 'src/components/iconify';
 import CustomChip from 'src/components/custom-chip/custom-chip';
 
-const CampaignDetailBrand = ({ brand }) => (
+const CampaignDetailBrand = ({ brand, campaign }) => (
   <Grid container spacing={3}>
     <Grid item xs={12} md={8}>
       <Box
@@ -25,23 +25,20 @@ const CampaignDetailBrand = ({ brand }) => (
           <Stack>
             <Typography variant="h4">About</Typography>
             <Typography variant="subtitle2" color="text.secondary">
-              {brand?.description || brand?.about}
+              {brand?.description || brand?.about || '-'}
             </Typography>
           </Stack>
           <Stack>
-            <Typography variant="h4">Objectives</Typography>
-            <Stack direction="row" alignItems="center">
-              <ul>
-                {brand?.objectives &&
-                  brand?.objectives?.map((elem, index) => (
-                    <li key={index}>
-                      <Typography variant="inherit" color="text.secondary">
-                        {elem.value}
-                      </Typography>
-                    </li>
-                  ))}
-              </ul>
-            </Stack>
+            <Typography variant="h4">Brand Tone</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              {campaign?.brandTone || '-'}
+            </Typography>
+          </Stack>
+          <Stack>
+            <Typography variant="h4">Product / Service name</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              {campaign?.productName || '-'}
+            </Typography>
           </Stack>
           <Stack direction="row" spacing={1}>
             {brand?.industries &&
@@ -65,24 +62,23 @@ const CampaignDetailBrand = ({ brand }) => (
             <Iconify icon="ic:baseline-email" />
             <Typography variant="subtitle2">{brand?.email}</Typography>
           </Stack>
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          {/* <Stack direction="row" spacing={1.5} alignItems="center">
             <Iconify icon="ic:baseline-phone" />
             <Typography variant="subtitle2">{brand?.phone}</Typography>
-          </Stack>
+          </Stack> */}
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Iconify icon="iconoir:www" />
             <Typography variant="subtitle2">{brand?.website}</Typography>
           </Stack>
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Iconify icon="mdi:instagram" />
-            <Typography variant="subtitle2">{brand?.instagram}</Typography>
+            <Typography variant="subtitle2">{brand?.instagram ?? '-'}</Typography>
           </Stack>
-          {brand?.tiktok && (
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Iconify icon="ic:baseline-tiktok" />
-              <Typography variant="subtitle2">{brand?.tiktok}</Typography>
-            </Stack>
-          )}
+
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Iconify icon="ic:baseline-tiktok" />
+            <Typography variant="subtitle2">{brand?.tiktok ?? '-'}</Typography>
+          </Stack>
         </Stack>
       </Box>
     </Grid>
@@ -93,4 +89,5 @@ export default CampaignDetailBrand;
 
 CampaignDetailBrand.propTypes = {
   brand: PropTypes.object,
+  campaign: PropTypes.object,
 };

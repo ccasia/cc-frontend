@@ -50,17 +50,17 @@ const CampaignDetailContent = ({ campaign }) => {
           ratio="1/1"
           sx={{ borderRadius: 2, cursor: 'pointer' }}
         />
-        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
-          {campaign?.campaignBrief?.images.slice(1).map((elem, index) => (
-            <Image
-              key={index}
-              src={elem}
-              alt="test"
-              ratio="1/1"
-              sx={{ borderRadius: 2, cursor: 'pointer' }}
-            />
-          ))}
-        </Box>
+        {/* <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}> */}
+        {campaign?.campaignBrief?.images.slice(1).map((elem, index) => (
+          <Image
+            key={index}
+            src={elem}
+            alt="test"
+            ratio="1/1"
+            sx={{ borderRadius: 2, cursor: 'pointer' }}
+          />
+        ))}
+        {/* </Box> */}
       </Box>
     );
 
