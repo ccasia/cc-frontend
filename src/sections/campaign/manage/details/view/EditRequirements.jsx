@@ -19,6 +19,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 
+import { interestsLists } from 'src/sections/campaign/create/form';
+
 export const EditRequirements = ({ open, campaign, onClose }) => {
   const methods = useForm({
     defaultValues: {
@@ -64,14 +66,16 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
         <DialogTitle id="alert-dialog-title">Edit Requirements</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description" p={1.5}>
-            <Box sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'repeat(1, 1fr)',
-                md: 'repeat(2, 1fr)',
-              },
-              gap: 2,
-            }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'repeat(1, 1fr)',
+                  md: 'repeat(2, 1fr)',
+                },
+                gap: 2,
+              }}
+            >
               <RHFMultiSelect
                 name="audienceGender"
                 checkbox
@@ -138,21 +142,28 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                 label="Audience Creator Persona"
                 checkbox
                 chip
-                options={[
-                  { value: 'lifestyle', label: 'LifeStyle' },
-                  { value: 'fashion', label: 'Fashion' },
-                  { value: 'beauty', label: 'Beauty' },
-                  { value: 'tech', label: 'Tech' },
-                  { value: 'sports', label: 'Sports & Fitness' },
-                  { value: 'health', label: 'Health & wellness' },
-                  { value: 'family', label: 'Family & motherhood' },
-                  { value: 'finance', label: 'Finance' },
-                  { value: 'education', label: 'Education' },
-                  { value: 'music', label: 'Music' },
-                  { value: 'gamer', label: 'Gamer' },
-                  { value: 'entertainment', label: 'Entertainment' },
-                  { value: 'travel', label: 'Travel' },
-                ]}
+                options={
+                  interestsLists.map((item) => ({
+                    value: item.toLowerCase(),
+                    label: item,
+                  }))
+
+                  //   [
+                  //   { value: 'lifestyle', label: 'LifeStyle' },
+                  //   { value: 'fashion', label: 'Fashion' },
+                  //   { value: 'beauty', label: 'Beauty' },
+                  //   { value: 'tech', label: 'Tech' },
+                  //   { value: 'sports', label: 'Sports & Fitness' },
+                  //   { value: 'health', label: 'Health & wellness' },
+                  //   { value: 'family', label: 'Family & motherhood' },
+                  //   { value: 'finance', label: 'Finance' },
+                  //   { value: 'education', label: 'Education' },
+                  //   { value: 'music', label: 'Music' },
+                  //   { value: 'gamer', label: 'Gamer' },
+                  //   { value: 'entertainment', label: 'Entertainment' },
+                  //   { value: 'travel', label: 'Travel' },
+                  // ]
+                }
               />
 
               <RHFTextField

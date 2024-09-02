@@ -57,7 +57,7 @@ const steps = [
   'Agreement Form',
 ];
 
-const interestsLists = [
+export const interestsLists = [
   'Art',
   'Beauty',
   'Business',
