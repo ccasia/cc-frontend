@@ -196,6 +196,7 @@ export const endpoints = {
         receiveLogistic: '/api/campaign/receiveLogistic',
       },
     },
+    creatorAgreement: (id) => `/api/campaign/creatorAgreements/${id}`,
   },
   submission: {
     root: '/api/submission/',

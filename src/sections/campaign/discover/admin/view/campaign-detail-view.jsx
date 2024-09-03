@@ -34,6 +34,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CampaignOverview from '../campaign-overview';
+import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
@@ -361,6 +362,7 @@ const CampaignDetailView = ({ id }) => {
       {currentTab === 'overview' && <CampaignOverview campaign={currentCampaign} />}
       {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
       {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
+      {currentTab === 'agreement' && <CampaignAgreements campaign={currentCampaign} />}
 
       {currentTab === 'client' && (
         <CampaignDetailBrand
