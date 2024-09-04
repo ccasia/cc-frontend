@@ -2,8 +2,9 @@
 import React from 'react';
 
 import { deepOrange } from '@mui/material/colors';
-import { Box, Chip, Stack, Avatar, useTheme, Typography } from '@mui/material';
+import { Box, Stack, Avatar, useTheme, Typography } from '@mui/material';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const MediaKitCover = ({ user }) => {
@@ -30,25 +31,27 @@ const MediaKitCover = ({ user }) => {
         >
           {(user &&
             user?.creator?.mediaKit?.interests.map((elem, index) => (
-              <Chip
-                key={index}
-                label={elem}
-                sx={{
-                  borderRadius: 10,
-                  fontWeight: 800,
-                }}
-              />
+              <Label>{elem}</Label>
+              // <Chip
+              //   key={index}
+              //   label={elem}
+              //   sx={{
+              //     borderRadius: 10,
+              //     fontWeight: 800,
+              //   }}
+              // />
             ))) ||
             (user &&
-              user?.creator?.interests.map((elem, index) => (
-                <Chip
-                  key={index}
-                  label={elem?.name}
-                  sx={{
-                    borderRadius: 10,
-                    fontWeight: 800,
-                  }}
-                />
+              user?.creator?.interests?.map((elem, index) => (
+                <Label>{elem?.name}</Label>
+                // <Chip
+                //   key={index}
+                //   label={elem?.name}
+                //   sx={{
+                //     borderRadius: 10,
+                //     fontWeight: 800,
+                //   }}
+                // />
               )))}
         </Stack>
         <Stack gap={2}>

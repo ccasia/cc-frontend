@@ -188,7 +188,6 @@ export default function CampaignListView() {
         results={search.results}
         onSearch={handleSearch}
         campaigns={campaigns}
-        // hrefItem={(id) => paths.dashboard.tour.details(id)}
       />
 
       <Stack direction="row" spacing={1} my={1.5}>
@@ -216,6 +215,8 @@ export default function CampaignListView() {
       )}
 
       {upload.length > 0 && renderUploadProgress}
+
+      {/* {!creator?.isFormCompleted && <CreatorForm dialog={dialog} />} */}
     </Container>
   );
 }

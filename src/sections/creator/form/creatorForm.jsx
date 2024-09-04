@@ -35,13 +35,7 @@ import FormProvider, {
   RHFAutocomplete,
 } from 'src/components/hook-form';
 
-const steps = [
-  'Fill in your details',
-  'Provide your social media information',
-  // 'Rate your Interests and Industries',
-];
-
-// export const langList = ['English', 'Malay', 'Chinese', 'Tamil', 'All of the above', 'Others'];
+const steps = ['Fill in your details', 'Provide your social media information'];
 
 export const interestsList = [
   'Art',
@@ -60,18 +54,11 @@ export const interestsList = [
 ];
 
 export default function CreatorForm({ creator, open, onClose }) {
+  console.log(creator);
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
   const [ratingIndustries, setRatingIndustries] = useState([]);
-
-  // const [employmentValue, setEmploymentValue] = useState('');
-
-  // const handleEmploymentChange = (event) => {
-  //   const selectedValue = event.target.value;
-  //   console.log('Selected employment value:', selectedValue); // Debugging line
-  //   setEmploymentValue(selectedValue);
-  // };
 
   // First step schema
   const firstSchema = Yup.object().shape({
@@ -88,7 +75,6 @@ export default function CreatorForm({ creator, open, onClose }) {
 
   // Second Step Schema
   const secondSchema = Yup.object().shape({
-    // tiktok: Yup.string().required('Please enter your tiktok username'),
     instagram: Yup.string().required('Please enter your instagram username'),
   });
 
@@ -98,7 +84,7 @@ export default function CreatorForm({ creator, open, onClose }) {
     location: Yup.string().required('City/Area is required'),
     interests: Yup.array().min(3, 'Choose at least three option'),
     languages: Yup.array().min(1, 'Choose at least one option'),
-    // industries: Yup.array().min(3, 'Choose at least three option'),
+
     employment: Yup.string().required('Employment status is required'),
     birthDate: Yup.mixed().nullable().required('Please enter your birth date'),
     Nationality: Yup.string().required('Nationality is required'),
@@ -126,14 +112,7 @@ export default function CreatorForm({ creator, open, onClose }) {
     defaultValues,
   });
 
-  const {
-    reset,
-    handleSubmit,
-    watch,
-    getValues,
-    setValue,
-    formState: { errors },
-  } = methods;
+  const { reset, handleSubmit, watch, getValues, setValue } = methods;
 
   const nationality = watch('Nationality');
   const languages = watch('languages');

@@ -140,18 +140,14 @@ export default function CampaignItem({ campaign, user }) {
       </Stack>
       {campaign?.campaignBrief?.images.length > 1 && (
         <Stack spacing={0.5}>
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[1]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 80 }}
-          />
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[2]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 80 }}
-          />
+          {campaign?.campaignBrief?.images?.slice(1).map((image) => (
+            <Image
+              alt={campaign?.name}
+              src={image}
+              ratio="1/1"
+              sx={{ borderRadius: 1, width: 80 }}
+            />
+          ))}
         </Stack>
       )}
     </Stack>
@@ -307,6 +303,12 @@ export default function CampaignItem({ campaign, user }) {
       </Grid>
     </Stack>
   );
+
+  const disabledStyle = {
+    pointerEvents: 'none',
+    opacity: 0.2,
+    position: 'relative',
+  };
 
   return (
     <>

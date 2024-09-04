@@ -5,7 +5,7 @@ import { alpha } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
-import axios, { endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useSettingsContext } from 'src/components/settings';
 
@@ -24,14 +24,14 @@ export default function CreatorView() {
     const getUserRoleAndCheckData = async () => {
       let role;
       try {
-        const response = await axios.get(endpoints.auth.getCurrentUser);
+        const response = await axiosInstance.get(endpoints.auth.getCurrentUser);
         role = response.data?.user.role;
       } catch (error) {
         console.error(error);
       }
       // check if role is creator
       if (role === 'creator') {
-        const response = await axios.get(endpoints.auth.checkCreator);
+        const response = await axiosInstance.get(endpoints.auth.checkCreator);
         setCreator(response.data?.creator);
         const openFormModal = response?.data?.creator?.user?.status === 'Pending';
         setDialogOpen(openFormModal);
@@ -55,6 +55,7 @@ export default function CreatorView() {
           border: (theme) => `dashed 1px ${theme.palette.divider}`,
         }}
       />
+
       <CreatorForm open={dialogOpen} onClose={() => setDialogOpen(false)} creator={creator} />
     </Container>
   );
