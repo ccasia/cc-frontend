@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState } from 'react';
+import { ClimbingBoxLoader } from 'react-spinners';
 
 import {
   Box,
@@ -30,6 +31,7 @@ import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { RHFAutocomplete } from 'src/components/hook-form';
+import { useSettingsContext } from 'src/components/settings';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import UserCard from './user-card';
@@ -45,6 +47,8 @@ const CampaignDetailCreator = ({ campaign }) => {
   const shortlistedCreatorsId = shortlistedCreators?.map((item) => item.userId);
   const modal = useBoolean();
   const confirmModal = useBoolean();
+  const settings = useSettingsContext();
+  const loading = useBoolean();
 
   const methods = useForm({
     defaultValues: {
@@ -76,16 +80,19 @@ const CampaignDetailCreator = ({ campaign }) => {
 
   const onSubmit = handleSubmit(async (value) => {
     try {
+      loading.onTrue();
       const res = await shortlistCreator({ value, campaignId: campaign.id });
       modal.onFalse();
       reset();
       enqueueSnackbar(res?.data?.message);
-      console.log('DONEEEE', res.data.message);
       mutate(endpoints.campaign.getCampaignsByAdminId);
     } catch (error) {
-      enqueueSnackbar('Error Shortlist Creato', {
+      loading.onFalse();
+      enqueueSnackbar('Error Shortlist Creator', {
         variant: 'error',
       });
+    } finally {
+      loading.onFalse();
     }
   });
 
@@ -157,6 +164,15 @@ const CampaignDetailCreator = ({ campaign }) => {
               }}
             />
           </Box>
+          {loading.value && (
+            <ClimbingBoxLoader
+              color={settings.themeMode === 'light' ? 'black' : 'white'}
+              size={18}
+              cssOverride={{
+                marginInline: 'auto',
+              }}
+            />
+          )}
         </DialogContent>
 
         <DialogActions>
