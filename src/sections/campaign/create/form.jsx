@@ -169,7 +169,7 @@ function CreateCampaignForm() {
     audienceLocation: Yup.array()
       .min(1, 'At least one option')
       .required('Audience location is required'),
-    othersAudienceLocation: Yup.string().required('Please specify the other geo location'),
+    othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
       .min(1, 'At least one option')
       .required('Audience language is required'),
@@ -214,7 +214,6 @@ function CreateCampaignForm() {
         campaignBrand: null,
         campaignStartDate: null,
         campaignEndDate: null,
-
         campaignIndustries: [],
         campaignObjectives: '',
         campaignDescription: '',
@@ -238,7 +237,6 @@ function CreateCampaignForm() {
         adminManager: [],
         agreementFrom: null,
         timeline: [{ timeline_type: '', duration: undefined, startDate: '', endDate: '' }],
-
         campaignTasksAdmin: [],
         campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
       };
@@ -282,6 +280,7 @@ function CreateCampaignForm() {
   } = methods;
 
   const values = watch();
+  console.log(values);
 
   // useEffect(() => {
   //   localStorage.setItem('formData', JSON.stringify(values));
