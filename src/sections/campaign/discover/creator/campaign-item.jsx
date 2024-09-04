@@ -22,6 +22,7 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
+import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
@@ -31,6 +32,7 @@ export default function CampaignItem({ campaign, user }) {
   const [open, setOpen] = useState(false);
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
+  const dialog = useBoolean();
 
   const { socket } = useSocketContext();
 
@@ -271,6 +273,7 @@ export default function CampaignItem({ campaign, user }) {
               size="small"
               startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
               onClick={() => setOpen(true)}
+              disabled={!user?.creator?.isFormCompleted}
             >
               Pitch
             </LoadingButton>
@@ -304,12 +307,6 @@ export default function CampaignItem({ campaign, user }) {
     </Stack>
   );
 
-  const disabledStyle = {
-    pointerEvents: 'none',
-    opacity: 0.2,
-    position: 'relative',
-  };
-
   return (
     <>
       <Card sx={{ position: 'relative' }}>
@@ -334,8 +331,10 @@ export default function CampaignItem({ campaign, user }) {
         openForm={() => setOpen(true)}
         campaign={campaign}
         existingPitch={campaignIds}
+        dialog={dialog}
       />
       <CampaignPitchOptionsModal open={open} handleClose={handleClose} campaign={campaign} />
+      <CreatorForm dialog={dialog} />
     </>
   );
 }

@@ -86,6 +86,7 @@ export const endpoints = {
     updateMediaKit: '/api/creator/update-media-kit',
     getCreatorFullInfo: (id) => `/api/creator/getCreatorFullInfoById/${id}`,
     updatePaymentForm: '/api/creator/updatePaymentForm',
+    updateCreatorform: '/api/creator/updateCreatorForm',
   },
   users: {
     newAdmin: '/api/user/newAdmin',

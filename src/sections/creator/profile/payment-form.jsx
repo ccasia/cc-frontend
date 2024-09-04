@@ -14,7 +14,6 @@ import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 const PaymentFormProfile = ({ user }) => {
   const paymentForm = user?.paymentForm;
-  console.log(paymentForm);
 
   const methods = useForm({
     defaultValues: {
