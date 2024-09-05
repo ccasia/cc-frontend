@@ -134,7 +134,10 @@ const CampaignDetailCreator = ({ campaign }) => {
               multiple
               disableCloseOnSelect
               name="creator"
-              options={!isLoading && data?.filter((item) => item.status === 'active')}
+              options={
+                !isLoading &&
+                data?.filter((user) => user.status === 'active' && user?.creator?.isFormCompleted)
+              }
               filterOptions={(option, state) =>
                 option.filter((item) => !shortlistedCreatorsId.includes(item.id))
               }

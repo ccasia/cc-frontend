@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 
-import { Avatar } from '@mui/material';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
+import { Stack, Avatar } from '@mui/material';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
@@ -10,6 +10,8 @@ import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import { countries } from 'src/assets/data';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -53,8 +55,18 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{phoneNumber || 'null'}</TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{admin?.role?.name || 'null'}</TableCell>
-
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{country || 'null'}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          {country && (
+            <Stack direction="row" alignItems="center">
+              <Iconify
+                key={country.label}
+                icon={`circle-flags:${countries.find((item) => item.label === country).code.toLowerCase()}`}
+                sx={{ mr: 1 }}
+              />
+              {country}
+            </Stack>
+          )}
+        </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{admin?.mode || 'null'}</TableCell>
 

@@ -198,6 +198,8 @@ export const endpoints = {
       },
     },
     creatorAgreement: (id) => `/api/campaign/creatorAgreements/${id}`,
+    updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
+    sendAgreement: `/api/campaign/sendAgreement`,
   },
   submission: {
     root: '/api/submission/',
