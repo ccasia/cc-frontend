@@ -47,7 +47,6 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const confirm = useBoolean();
 
   const schema = Yup.object().shape({
-    // pitchVideo: required('Pitch Script is required'),
     pitchVideo: Yup.mixed().required('Pitch video is required'),
   });
 
@@ -253,8 +252,10 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
               onClick={() => {
                 if (watch('pitchVideo')) {
                   confirm.onTrue();
+                  // handleRemove();
                 } else {
                   handleClose();
+                  handleRemove();
                 }
               }}
             >

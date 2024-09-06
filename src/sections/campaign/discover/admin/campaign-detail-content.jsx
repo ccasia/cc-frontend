@@ -275,7 +275,7 @@ const CampaignDetailContent = ({ campaign }) => {
           </Button>
           {pdf.value && (
             <iframe
-              src="https://storage.googleapis.com/app-test-cult-cretive/agreementForm/github-NxTech4021-receipt-2024-07-20.pdf"
+              src="https://storage.googleapis.com/app-test-cult-cretive/creatorAgreements/agreement_template.docx"
               style={{
                 borderRadius: 10,
                 width: '100%',

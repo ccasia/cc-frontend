@@ -30,6 +30,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { RHFSelect } from 'src/components/hook-form';
 import Markdown from 'src/components/markdown/markdown';
@@ -232,9 +233,13 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
             />
             <ListItemText
               primary="Languages"
-              secondary={data?.user?.creator?.languages.map((elem) => (
-                <Chip label={elem} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" gap={1} flexWrap="wrap">
+                  {data?.user?.creator?.languages.map((elem, index) => (
+                    <Label key={index}>{elem}</Label>
+                  ))}
+                </Stack>
+              }
               primaryTypographyProps={{
                 variant: 'subtitle1',
               }}
@@ -268,8 +273,8 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
               primary="Interests"
               secondary={
                 <Stack gap={1} direction="row" flexWrap="wrap">
-                  {data?.user?.creator?.interests.map((elem) => (
-                    <Chip size="small" label={elem?.name} />
+                  {data?.user?.creator?.interests.map((elem, index) => (
+                    <Label key={index}>{elem?.name}</Label>
                   ))}
                 </Stack>
               }
