@@ -32,6 +32,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
@@ -148,7 +149,19 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
       </DialogTitle>
       <DialogContent>
         {renderGallery}
-        <DialogContentText id="alert-dialog-description">{campaign?.description}</DialogContentText>
+        {/* <DialogContentText id="alert-dialog-description">{campaign?.description}</DialogContentText> */}
+        <Box mt={2}>
+          <DialogContentText id="alert-dialog-description">
+            <ListItemText
+              primary="Campaign Description"
+              secondary={campaign?.description}
+              primaryTypographyProps={{
+                variant: 'h6',
+                color: 'white',
+              }}
+            />
+          </DialogContentText>
+        </Box>
         <Box mt={2}>
           <Typography variant="h6">Campaign Details</Typography>
           {/* <List> */}
@@ -160,45 +173,63 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
           >
             <ListItemText
               primary="Gender"
-              secondary={campaign?.campaignRequirement?.gender.map((gender) => (
-                <Chip label={formatText(gender)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.gender.map((gender, index) => (
+                    <Label key={index}>{formatText(gender)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="Age"
-              secondary={campaign?.campaignRequirement?.age.map((age) => (
-                <Chip label={formatText(age)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.age.map((age, index) => (
+                    <Label key={index}>{formatText(age)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="Geo Location"
-              secondary={campaign?.campaignRequirement?.geoLocation.map((location) => (
-                <Chip label={formatText(location)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.geoLocation.map((location, index) => (
+                    <Label key={index}>{formatText(location)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="Language"
-              secondary={campaign?.campaignRequirement?.language.map((language) => (
-                <Chip label={formatText(language)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.language.map((language, index) => (
+                    <Label key={index}>{formatText(language)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="Creator Persona"
-              secondary={campaign?.campaignRequirement?.creator_persona.map((creatorPersona) => (
-                <Chip label={formatText(creatorPersona)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.creator_persona.map((creatorPersona, index) => (
+                    <Label key={index}>{formatText(creatorPersona)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="User Persona"
               secondary={
-                <Chip
-                  label={formatText(campaign?.campaignRequirement?.user_persona)}
-                  size="small"
-                />
+                <Typography variant="subtitle2" color="text.secondary">
+                  {formatText(campaign?.campaignRequirement?.user_persona)}
+                </Typography>
               }
             />
           </Box>
-          {/* </List> */}
         </Box>
       </DialogContent>
       <DialogActions>
@@ -221,6 +252,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                 startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
                 disabled
                 color="warning"
+                size="small"
               >
                 In Review
               </Button>
@@ -234,6 +266,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                   handleClose();
                   openForm();
                 }}
+                size="small"
               >
                 Pitch
               </Button>
@@ -245,6 +278,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                 onClick={() => {
                   dialog.onTrue();
                 }}
+                size="small"
               >
                 Complete Form
               </Button>

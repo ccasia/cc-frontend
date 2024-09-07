@@ -103,6 +103,7 @@ export default function CreatorForm({ creator, open, onClose }) {
       employment: '',
       birthDate: null,
       Nationality: '',
+      otherPronounce: '',
     }),
     []
   );
@@ -116,6 +117,8 @@ export default function CreatorForm({ creator, open, onClose }) {
 
   const nationality = watch('Nationality');
   const languages = watch('languages');
+  const pronounce = watch('pronounce');
+  const otherPronounce = watch('otherPronounce');
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -135,6 +138,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 
     const newData = {
       ...data,
+      pronounce: otherPronounce || pronounce,
       // interests: ratingInterst,
       // industries: ratingIndustries,
     };
@@ -217,13 +221,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 
           <RHFTextField name="location" label="City/Area" multiline />
 
-          <RHFSelect
-            name="employment"
-            label="Employment Status"
-            multiple={false}
-            // onChange={handleEmploymentChange}
-            // value={employmentValue}
-          >
+          <RHFSelect name="employment" label="Employment Status" multiple={false}>
             <MenuItem value="fulltime">I have a full-time job</MenuItem>
             <MenuItem value="freelance">I&apos;m a freelancer</MenuItem>
             <MenuItem value="part_time">I only work part-time</MenuItem>
@@ -232,10 +230,6 @@ export default function CreatorForm({ creator, open, onClose }) {
             <MenuItem value="unemployed">I&apos;m unemployed</MenuItem>
             <MenuItem value="others">Others </MenuItem>
           </RHFSelect>
-
-          {/* {employmentValue === "others" && (
-            <RHFTextField name="employmentDetails" label="Please specify" />
-          )} */}
 
           <RHFTextField
             name="phone"
@@ -256,6 +250,8 @@ export default function CreatorForm({ creator, open, onClose }) {
             <MenuItem value="they/them">They/Them</MenuItem>
             <MenuItem value="others">Others</MenuItem>
           </RHFSelect>
+
+          {pronounce === 'others' && <RHFTextField name="otherPronounce" label="Pronounce" />}
 
           <RHFDatePicker name="birthDate" label="Birth Date" />
 

@@ -159,7 +159,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                           </Box>
                         )}
                         <Typography variant="caption">
-                          Due: {dayjs(getTimeline(item.value)?.endDate).format('ddd LL')}
+                          Due: {dayjs(getTimeline(item.value)?.endDate).format('M MMMM, YYYY')}
                         </Typography>
                       </Stack>
                     }

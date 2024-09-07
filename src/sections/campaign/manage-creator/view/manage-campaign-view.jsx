@@ -35,7 +35,7 @@ const ManageCampaignView = () => {
       }}
     >
       <Tab value="myCampaign" label="My Campaigns" />
-      <Tab value="applied" label="I've Applied" />
+      <Tab value="applied" label="My Applications" />
     </Tabs>
   );
 
