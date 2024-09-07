@@ -60,7 +60,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     return `+${prefix} ${phoneNumber}`;
   };
 
-  const calculateRank = (val) => Math.ceil((val / 5) * 100);
+  // const calculateRank = (val) => Math.ceil((val / 5) * 100);
 
   const renderTabs = (
     <Tabs
@@ -86,7 +86,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         label="Profile"
         icon={<Iconify icon="flowbite:profile-card-outline" width={18} />}
       />
-      <Tab value="overview" label="Overview" />
+      {/* <Tab value="overview" label="Overview" /> */}
       <Tab value="submission" label="Submissions" />
       <Tab value="logistics" label="Logistics" />
       <Tab value="timeline" label="Timeline" />
@@ -158,17 +158,6 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                 >
                   <ListItemText
                     primary={item.name}
-                    // secondary={
-                    //   <Gauge
-                    //     cornerRadius="50%"
-                    //     width={100}
-                    //     height={100}
-                    //     innerRadius="70%"
-                    //     outerRadius="100%"
-                    //     value={calculateRank(item.rank)}
-                    //     text={({ value }) => `${value}%`}
-                    //   />
-                    // }
                     primaryTypographyProps={{
                       variant: 'subtitle2',
                       fontWeight: 800,

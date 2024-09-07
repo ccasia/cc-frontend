@@ -19,6 +19,7 @@ import {
 
 import { endpoints } from 'src/utils/axios';
 
+// eslint-disable-next-line import/extensions
 import { couriers } from 'src/contants/courier.js';
 import { createLogistics } from 'src/api/logistic';
 
