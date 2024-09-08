@@ -60,6 +60,9 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
 
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
 
+  const getDueDate = (name) =>
+    submissions?.find((submission) => submission?.submissionType?.type === name)?.dueDate;
+
   const value = (name) => submissions?.find((item) => item.submissionType.type === name);
 
   const timeline = campaign?.campaignTimeline;
@@ -159,7 +162,8 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                           </Box>
                         )}
                         <Typography variant="caption">
-                          Due: {dayjs(getTimeline(item.value)?.endDate).format('M MMMM, YYYY')}
+                          Due: {dayjs(getDueDate(item.type)).format('D MMMM, YYYY')}
+                          {/* Due: {dayjs(getTimeline(item.value)?.endDate).format('D MMMM, YYYY')} */}
                         </Typography>
                       </Stack>
                     }
