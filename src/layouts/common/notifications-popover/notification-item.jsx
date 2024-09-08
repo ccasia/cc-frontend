@@ -109,8 +109,8 @@ export default function NotificationItem({ notification }) {
       {renderUnReadBadge}
       <Stack sx={{ flexGrow: 1 }}>
         {renderText}
-        {['Campaign'].includes(notification?.notification.entity) && friendAction}
-        {['Shortlist'].includes(notification?.notification.entity) && chatAction}
+        {/* {['Campaign'].includes(notification?.notification.entity) && friendAction} */}
+        {/* {['Shortlist'].includes(notification?.notification.entity) && chatAction} */}
         {/* {notification?.notification.entity === 'Campaign' && friendAction} */}
         {renderOther}
       </Stack>
