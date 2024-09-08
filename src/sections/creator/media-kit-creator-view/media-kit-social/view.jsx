@@ -26,7 +26,7 @@ const MediaKitSocial = ({ currentTab }) => (
         <MediaKitAnalytics />
       </Stack>
     )}
-    {currentTab === 'tiktok'}
+    {currentTab === 'tiktok' }
     {currentTab === 'partnership'}
   </Box>
 );

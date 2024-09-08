@@ -20,7 +20,7 @@ import {
 import { endpoints } from 'src/utils/axios';
 
 import { changeStatus } from 'src/api/logistic';
-import { couriers } from 'src/contants/courier.js';
+import { couriers } from 'src/contants/courier';
 
 import { RHFSelect } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';

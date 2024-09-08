@@ -1,69 +1,86 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Grid, Box, Typography, CircularProgress } from '@mui/material';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { Stack, Typography } from '@mui/material';
+const MediaKitSocialContent = () => {
+  const [socialMediaData, setSocialMediaData] = useState(null);
+  const [creatorData, setCreatorData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    const fetchSocialMediaData = async () => {
+      try {
+        const response = await axiosInstance.get(endpoints.creators.getCreatorCrawlerResult);
+        setSocialMediaData(response.data);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
 
-const MediaKitSocialContent = () => (
-  <Stack>
-    <Typography fontWeight={900} textAlign="center">Coming soon!</Typography>
-    <Stack direction="row" justifyContent="space-between">
-    
-      {/* <Stack direction="row" alignItems="center" gap={2}>
-     
-        <Iconify icon="skill-icons:instagram" width={40} />
-        <Typography variant="body1" fontWeight={600}>
-          @John Doe
-        </Typography>
-      </Stack>
-      
-      <Box
-        sx={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 1,
-          color: (theme) => theme.palette.grey[600],
-        }}
-      >
-       
-        <Typography fontWeight={700}>Go to profile</Typography>
-        <Iconify icon="ion:open-outline" />
-      </Box>
-    </Stack>
-    <Stack direction="row" gap={2} overflow="scroll" mt={5}>
-      <Image
-        src="https://fastly.picsum.photos/id/13/2500/1667.jpg?hmac=SoX9UoHhN8HyklRA4A3vcCWJMVtiBXUg0W4ljWTor7s"
-        sx={{
-          minWidth: { xs: 400, md: 500 },
-          height: { xs: 400, md: 500 },
-          borderRadius: 2,
-        }}
-      />
-      <Image
-        src="https://fastly.picsum.photos/id/21/3008/2008.jpg?hmac=T8DSVNvP-QldCew7WD4jj_S3mWwxZPqdF0CNPksSko4"
-        sx={{
-          minWidth: { xs: 400, md: 500 },
-          height: { xs: 400, md: 500 },
-          borderRadius: 2,
-        }}
-      />
-      <Image
-        src="https://fastly.picsum.photos/id/25/5000/3333.jpg?hmac=yCz9LeSs-i72Ru0YvvpsoECnCTxZjzGde805gWrAHkM"
-        sx={{
-          minWidth: { xs: 400, md: 500 },
-          height: { xs: 400, md: 500 },
-          borderRadius: 2,
-        }}
-      />
-      <Image
-        src="https://fastly.picsum.photos/id/26/4209/2769.jpg?hmac=vcInmowFvPCyKGtV7Vfh7zWcA_Z0kStrPDW3ppP0iGI"
-        sx={{
-          minWidth: { xs: 400, md: 500 },
-          height: { xs: 400, md: 500 },
-          borderRadius: 2,
-        }}
-      /> */}
-    </Stack>
-  </Stack>
-);
+    fetchSocialMediaData();
+  }, []);
+
+  // useEffect(() => {
+  //   const fetchCreatorData = async () => {
+  //     try {
+  //       // First, we need to get the creator's Instagram username
+  //       const creatorResponse = await axiosInstance.get(endpoints.auth.getCurrentUser);
+  //       console.log(creatorResponse);
+  //       const instagramUsername = creatorResponse.data.user.creator.instagram;
+  //       console.log(instagramUsername);
+
+  //       // Now we can make the request to the crawler API
+  //       const response = await axiosInstance.post(endpoints.creators.getCreatorCrawler, {
+  //         identifier: 'cristiano',
+  //         platform: 'Instagram'
+  //       });
+
+  //       console.log(response);
+
+  //       setCreatorData(response.data);
+  //       setLoading(false);
+  //     } catch (err) {
+  //       setError(err.message);
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchCreatorData();
+  // }, []);
+
+  if (loading) {
+    return <CircularProgress />;
+  }
+
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
+
+  return (
+    <Grid container spacing={2}>
+      <Grid item xs={12} sm={4}>
+        <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+          <Typography variant="subtitle2">Engagement Rate</Typography>
+          <Typography variant="h3">{(socialMediaData.instagram.engagement_rate * 100).toFixed(2)} %</Typography>
+        </Box>
+      </Grid>
+      <Grid item xs={12} sm={4}>
+        <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+          <Typography variant="subtitle2">Followers</Typography>
+          <Typography variant="h3">{socialMediaData.instagram.followers}</Typography>
+        </Box>
+      </Grid>
+      <Grid item xs={12} sm={4}>
+        <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+          <Typography variant="subtitle2">Average Likes</Typography>
+          <Typography variant="h3">{socialMediaData.instagram.user_performance.avg_likes_per_post}</Typography>
+        </Box>
+      </Grid>
+    </Grid>
+  );
+};
 
 export default MediaKitSocialContent;

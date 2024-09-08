@@ -21,6 +21,7 @@ import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
 import { Stack, InputAdornment } from '@mui/material';
 import DialogContent from '@mui/material/DialogContent';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -64,6 +65,7 @@ export default function CreatorForm({ creator, open, onClose }) {
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
   const [ratingIndustries, setRatingIndustries] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // const [employmentValue, setEmploymentValue] = useState('');
 
@@ -146,6 +148,28 @@ export default function CreatorForm({ creator, open, onClose }) {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  const fetchSocialMediaData = async (instagramUsername, tiktokUsername) => {
+    try {
+      const instagramData = await axios.post(endpoints.creators.getCreatorCrawler, {
+        identifier: instagramUsername,
+        platform: 'Instagram'
+      });
+
+      const tiktokData = await axios.post(endpoints.creators.getCreatorCrawler, {
+        identifier: tiktokUsername,
+        platform: 'TikTok'
+      });
+
+      return {
+        instagram: instagramData.data.data,
+        tiktok: tiktokData.data.data
+      };
+    } catch (error) {
+      console.error('Error fetching social media data:', error);
+      throw error;
+    }
+  };
+
   const onSubmit = handleSubmit(async (data) => {
     // if (ratingInterst.length < 3) {
     //   toast.error('Please rate all your interests.');
@@ -154,13 +178,17 @@ export default function CreatorForm({ creator, open, onClose }) {
     //   toast.error('Please rate all your industries.');
     // }
 
-    const newData = {
-      ...data,
-      // interests: ratingInterst,
-      // industries: ratingIndustries,
-    };
+    setIsSubmitting(true);
+
+    
 
     try {
+      const socialMediaData = await fetchSocialMediaData(data.instagram, data.tiktok);
+      console.log(socialMediaData);
+      const newData = {
+        ...data,
+        socialMediaData,
+      };
       const res = await axiosInstance.put(endpoints.auth.updateCreator, newData);
       enqueueSnackbar(`Welcome ${res.data.name}!`);
 
@@ -169,6 +197,8 @@ export default function CreatorForm({ creator, open, onClose }) {
       enqueueSnackbar('Something went wrong', {
         variant: 'error',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   });
 
@@ -589,8 +619,16 @@ export default function CreatorForm({ creator, open, onClose }) {
               </Button>
               <Box sx={{ flexGrow: 1 }} />
               {activeStep === steps.length - 1 ? (
-                <Button variant="contained" onClick={onSubmit}>
-                  Submit
+                <Button 
+                  variant="contained" 
+                  onClick={onSubmit} 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    'Submit'
+                  )}
                 </Button>
               ) : (
                 <Button variant="contained" onClick={handleNext}>
