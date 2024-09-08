@@ -26,6 +26,7 @@ import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 
@@ -86,6 +87,7 @@ const CampaignAgreements = ({ campaign }) => {
               <TableCell>Creator&apos;s name</TableCell>
               <TableCell>Creator&apos;s email</TableCell>
               <TableCell>Last update</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Agreement PDF</TableCell>
             </TableRow>
           </TableHead>
@@ -96,6 +98,13 @@ const CampaignAgreements = ({ campaign }) => {
                   <TableCell>{item?.user?.name}</TableCell>
                   <TableCell>{item?.user?.email}</TableCell>
                   <TableCell>{dayjs(item?.updatedAt).format('LLL')}</TableCell>
+                  <TableCell>
+                    {item?.isSent ? (
+                      <Label color="success">Sent</Label>
+                    ) : (
+                      <Label color="warning">Pending</Label>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {smUp ? (
                       <Stack direction="row" gap={1}>
