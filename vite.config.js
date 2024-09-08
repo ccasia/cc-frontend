@@ -42,9 +42,14 @@ export default defineConfig(({ command }) => {
       port: 3030,
     },
     build: {
-      // Add any production-specific build options here
       sourcemap: false,
       minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: isProduction,
+          drop_debugger: isProduction,
+        },
+      },
     },
   };
 });
