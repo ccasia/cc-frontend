@@ -12,9 +12,6 @@ RUN yarn install --frozen-lockfile
 # Copy the rest of the application code
 COPY . .
 
-# Explicitly install terser
-RUN yarn add --dev terser
-
 # Build the application
 RUN yarn build
 
