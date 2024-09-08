@@ -6,21 +6,19 @@ import { useForm } from 'react-hook-form';
 import { Page, pdfjs, Document } from 'react-pdf';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import Link from '@mui/material/Link';
 import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
 import Alert from '@mui/material/Alert';
 // import { Alert, Box } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
+import { useMediaQuery } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
-import { useMediaQuery } from '@mui/material';
-
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -36,13 +34,11 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-
-
 // ----------------------------------------------------------------------
 
 const PdfModal = ({ open, onClose, pdfFile, title }) => {
   const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
+  // const [pageNumber, setPageNumber] = useState(1);
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
   // eslint-disable-next-line no-shadow
@@ -50,18 +46,16 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
     setNumPages(numPages);
   };
 
-  const handlePrevPage = () => {
-    setPageNumber(prevPageNumber => Math.max(prevPageNumber - 1, 1));
-  };
+  // const handlePrevPage = () => {
+  //   setPageNumber((prevPageNumber) => Math.max(prevPageNumber - 1, 1));
+  // };
 
-  const handleNextPage = () => {
-    setPageNumber(prevPageNumber => Math.min(prevPageNumber + 1, numPages));
-  };
-
-  
+  // const handleNextPage = () => {
+  //   setPageNumber((prevPageNumber) => Math.min(prevPageNumber + 1, numPages));
+  // };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" >
+    <Dialog open={open} onClose={onClose} maxWidth="lg">
       <DialogTitle>{title}</DialogTitle>
       {/* <Typography> Pages {pageNumber}/{numPages} </Typography>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
@@ -73,30 +67,31 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
           </Button>
         </div> */}
       {/* <DialogContent dividers> */}
-         <Box sx={{ flexGrow: 1, mt: 2 }}>
-          <Document
-            file={pdfFile}
-            onLoadSuccess={onDocumentLoadSuccess}
-            options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
-          >
-            {Array.from(new Array(numPages), (el, index) => (
-              <div key={index} style={{ marginBottom: '0px' }}>
-                <Page key={`${index}-${isSmallScreen ? '1' : '1.5'}`} 
-                  pageNumber={index + 1} 
-                  // scale={1.5}
-                  scale={isSmallScreen ? -.7 : 1.5}
-                  renderAnnotationLayer={false}
-                  renderTextLayer={false}
-                  style={{ margin: 0, padding: 0, position: 'relative' }} />
-              </div>
-              
-            ))}
-          </Document>
-          </Box>
-         
-       {/* </DialogContent> */}
+      <Box sx={{ flexGrow: 1, mt: 2 }}>
+        <Document
+          file={pdfFile}
+          onLoadSuccess={onDocumentLoadSuccess}
+          options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+        >
+          {Array.from(new Array(numPages), (el, index) => (
+            <div key={index} style={{ marginBottom: '0px' }}>
+              <Page
+                key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
+                pageNumber={index + 1}
+                // scale={1.5}
+                scale={isSmallScreen ? -0.7 : 1.5}
+                renderAnnotationLayer={false}
+                renderTextLayer={false}
+                style={{ margin: 0, padding: 0, position: 'relative' }}
+              />
+            </div>
+          ))}
+        </Document>
+      </Box>
 
-    <Button onClick={onClose}>Close</Button>
+      {/* </DialogContent> */}
+
+      <Button onClick={onClose}>Close</Button>
     </Dialog>
   );
 };
@@ -110,22 +105,22 @@ export default function ModernRegisterView() {
   const [openTermsModal, setOpenTermsModal] = useState(false);
   const [openPrivacyModal, setOpenPrivacyModal] = useState(false);
 
-    // Handlers for opening/closing modals
-    const handleOpenTerms = () => {
-      setOpenTermsModal(true); 
-    };
-  
-    const handleOpenPrivacy = () => {
-      setOpenPrivacyModal(true);  
-    };
-  
-    const handleCloseTerms = () => {
-      setOpenTermsModal(false);  
-    };
-  
-    const handleClosePrivacy = () => {
-      setOpenPrivacyModal(false); 
-    };
+  // Handlers for opening/closing modals
+  const handleOpenTerms = () => {
+    setOpenTermsModal(true);
+  };
+
+  const handleOpenPrivacy = () => {
+    setOpenPrivacyModal(true);
+  };
+
+  const handleCloseTerms = () => {
+    setOpenTermsModal(false);
+  };
+
+  const handleClosePrivacy = () => {
+    setOpenPrivacyModal(false);
+  };
 
   const RegisterSchema = Yup.object().shape({
     name: Yup.string().required('First name required'),
@@ -184,12 +179,12 @@ export default function ModernRegisterView() {
         color: 'text.secondary',
       }}
     >
-        {'By signing up, I agree to '}
-      <Link component="button" color="text.primary" onClick={handleOpenTerms}> 
+      {'By signing up, I agree to '}
+      <Link component="button" color="text.primary" onClick={handleOpenTerms} type="button">
         Terms of Service
       </Link>
       {' and '}
-      <Link underline="always" color="text.primary" onClick={handleOpenPrivacy}>
+      <Link underline="always" color="text.primary" onClick={handleOpenPrivacy} type="button">
         Privacy Policy
       </Link>
       .
@@ -251,7 +246,7 @@ export default function ModernRegisterView() {
       <PdfModal
         open={openTermsModal}
         onClose={handleCloseTerms}
-        pdfFile='/assets/pdf/tnc.pdf'
+        pdfFile="/assets/pdf/tnc.pdf"
         title="Terms and Conditions"
       />
 
@@ -267,8 +262,8 @@ export default function ModernRegisterView() {
 }
 
 PdfModal.propTypes = {
-  open: PropTypes.bool.isRequired,      
-  onClose: PropTypes.func.isRequired,   
-  pdfFile: PropTypes.string.isRequired, 
-  title: PropTypes.string.isRequired,   
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  pdfFile: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
 };
