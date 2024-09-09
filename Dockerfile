@@ -1,5 +1,5 @@
 # Build stage
-FROM node:21-bookworm-slim as build
+FROM node:21-alpine as build
 
 WORKDIR /app
 
