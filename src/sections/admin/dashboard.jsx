@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
-import React from 'react';
+import React, { lazy } from 'react';
 
-import { Container } from '@mui/material';
 import { Container } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -10,7 +9,7 @@ import { useSettingsContext } from 'src/components/settings';
 
 import DashboardSuperadmin from './dashboard-superadmin';
 
-// const DashboardFinance = lazy(() => import('src/sections/admin/finance/Dashboard'));
+const DashboardFinance = lazy(() => import('src/sections/admin/Finance/Dashboard'));
 
 const DashboardAdmin = () => {
   const settings = useSettingsContext();
@@ -20,9 +19,10 @@ const DashboardAdmin = () => {
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       {/* {user?.admin?.role?.name === 'Finance' && <DashboardFinance />} */}
 
-      {(user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSM') && (
+      {/* {(user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSM') && (
         <DashboardSuperadmin />
-      )}
+      )} */}
+
       {user?.admin?.designation === 'Finance' && <DashboardFinance />}
     </Container>
   );

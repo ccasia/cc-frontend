@@ -32,9 +32,10 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
-const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
+const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
   const smUp = useResponsive('down', 'sm');
   const { user } = useAuthContext();
   const router = useRouter();
@@ -74,30 +75,35 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
   };
 
   const renderGallery = (
-    <Box
-      display="grid"
-      gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-      gap={1}
-      p={2}
-    >
-      <Image
-        src={campaign?.campaignBrief?.images[0]}
-        alt="test"
-        ratio="1/1"
-        sx={{ borderRadius: 2, cursor: 'pointer' }}
-      />
-      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}>
-        {campaign?.campaignBrief?.images?.map((elem, index) => (
-          <Image
-            key={index}
-            src={elem}
-            alt="test"
-            ratio="1/1"
-            sx={{ borderRadius: 2, cursor: 'pointer' }}
-          />
-        ))}
-      </Box>
-    </Box>
+    <Stack direction="row" gap={2}>
+      {campaign?.campaignBrief?.images?.map((image) => (
+        <Image src={image} alt="test" ratio="16/9" sx={{ borderRadius: 2, cursor: 'pointer' }} />
+      ))}
+    </Stack>
+    // <Box
+    //   display="grid"
+    //   gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+    //   gap={1}
+    //   p={2}
+    // >
+    //   <Image
+    //     src={campaign?.campaignBrief?.images[0]}
+    //     alt="test"
+    //     ratio="1/1"
+    //     sx={{ borderRadius: 2, cursor: 'pointer' }}
+    //   />
+    //   <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={1}>
+    //     {campaign?.campaignBrief?.images?.slice(1)?.map((elem, index) => (
+    //       <Image
+    //         key={index}
+    //         src={elem}
+    //         alt="test"
+    //         ratio="1/1"
+    //         sx={{ borderRadius: 2, cursor: 'pointer' }}
+    //       />
+    //     ))}
+    //   </Box>
+    // </Box>
   );
 
   return (
@@ -143,7 +149,19 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
       </DialogTitle>
       <DialogContent>
         {renderGallery}
-        <DialogContentText id="alert-dialog-description">{campaign?.description}</DialogContentText>
+        {/* <DialogContentText id="alert-dialog-description">{campaign?.description}</DialogContentText> */}
+        <Box mt={2}>
+          <DialogContentText id="alert-dialog-description">
+            <ListItemText
+              primary="Campaign Description"
+              secondary={campaign?.description}
+              primaryTypographyProps={{
+                variant: 'h6',
+                color: 'white',
+              }}
+            />
+          </DialogContentText>
+        </Box>
         <Box mt={2}>
           <Typography variant="h6">Campaign Details</Typography>
           {/* <List> */}
@@ -155,45 +173,63 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
           >
             <ListItemText
               primary="Gender"
-              secondary={campaign?.campaignRequirement?.gender.map((gender) => (
-                <Chip label={formatText(gender)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.gender.map((gender, index) => (
+                    <Label key={index}>{formatText(gender)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="Age"
-              secondary={campaign?.campaignRequirement?.age.map((age) => (
-                <Chip label={formatText(age)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.age.map((age, index) => (
+                    <Label key={index}>{formatText(age)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="Geo Location"
-              secondary={campaign?.campaignRequirement?.geoLocation.map((location) => (
-                <Chip label={formatText(location)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.geoLocation.map((location, index) => (
+                    <Label key={index}>{formatText(location)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="Language"
-              secondary={campaign?.campaignRequirement?.language.map((language) => (
-                <Chip label={formatText(language)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.language.map((language, index) => (
+                    <Label key={index}>{formatText(language)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="Creator Persona"
-              secondary={campaign?.campaignRequirement?.creator_persona.map((creatorPersona) => (
-                <Chip label={formatText(creatorPersona)} size="small" sx={{ mr: 1 }} />
-              ))}
+              secondary={
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {campaign?.campaignRequirement?.creator_persona.map((creatorPersona, index) => (
+                    <Label key={index}>{formatText(creatorPersona)}</Label>
+                  ))}
+                </Stack>
+              }
             />
             <ListItemText
               primary="User Persona"
               secondary={
-                <Chip
-                  label={formatText(campaign?.campaignRequirement?.user_persona)}
-                  size="small"
-                />
+                <Typography variant="subtitle2" color="text.secondary">
+                  {formatText(campaign?.campaignRequirement?.user_persona)}
+                </Typography>
               }
             />
           </Box>
-          {/* </List> */}
         </Box>
       </DialogContent>
       <DialogActions>
@@ -216,11 +252,12 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
                 startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
                 disabled
                 color="warning"
+                size="small"
               >
                 In Review
               </Button>
             )}
-            {!existingPitch && (
+            {!existingPitch && user?.creator?.isFormCompleted ? (
               <Button
                 autoFocus
                 variant="contained"
@@ -229,48 +266,25 @@ const CampaignModal = ({ open, handleClose, campaign, openForm }) => {
                   handleClose();
                   openForm();
                 }}
+                size="small"
               >
                 Pitch
+              </Button>
+            ) : (
+              <Button
+                autoFocus
+                variant="contained"
+                startIcon={<Iconify icon="fluent:form-20-regular" width={20} />}
+                onClick={() => {
+                  dialog.onTrue();
+                }}
+                size="small"
+              >
+                Complete Form
               </Button>
             )}
           </>
         )}
-        {/* {campaignIds?.includes(campaign.id) ? (
-          isShortlisted?.includes(campaign.id) ? (
-            <Button
-              autoFocus
-              variant="contained"
-              onClick={() => router.push(paths.dashboard.campaign.creator.detail(campaign.id))}
-              // startIcon={<Iconify icon="charm:circle-tick" width={20} />}
-              // color="success"
-              size="small"
-            >
-              Manage
-            </Button>
-          ) : (
-            <Button
-              autoFocus
-              variant="contained"
-              startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-              disabled
-              color="warning"
-            >
-              In Review
-            </Button>
-          )
-        ) : (
-          <Button
-            autoFocus
-            variant="contained"
-            startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-            onClick={() => {
-              handleClose();
-              openForm();
-            }}
-          >
-            Pitch
-          </Button>
-        )} */}
       </DialogActions>
     </Dialog>
   );
@@ -283,4 +297,5 @@ CampaignModal.propTypes = {
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
   openForm: PropTypes.func,
+  dialog: PropTypes.object,
 };

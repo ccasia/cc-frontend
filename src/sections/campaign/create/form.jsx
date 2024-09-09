@@ -3,6 +3,7 @@
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack';
+import { BarLoader } from 'react-spinners';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
@@ -20,8 +21,6 @@ import Typography from '@mui/material/Typography';
 import { Grid, Stack, Avatar, Divider, IconButton, StepContent, ListItemText } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useGetTimeline } from 'src/hooks/use-get-timeline';
-import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
@@ -86,12 +85,9 @@ function CreateCampaignForm() {
   const [brandState, setBrandState] = useState('');
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
-  const { defaultTimeline } = useGetTimeline();
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
-  const [timeline, setTimeline] = useState('defaultTimeline');
   const { admins } = useGetAdmins();
   const { user } = useAuthContext();
-  const timelineType = useGetAllTimelineType();
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -169,7 +165,7 @@ function CreateCampaignForm() {
     audienceLocation: Yup.array()
       .min(1, 'At least one option')
       .required('Audience location is required'),
-    othersAudienceLocation: Yup.string().required('Please specify the other geo location'),
+    othersAudienceLocation: Yup.string(),
     audienceLanguage: Yup.array()
       .min(1, 'At least one option')
       .required('Audience language is required'),
@@ -214,7 +210,6 @@ function CreateCampaignForm() {
         campaignBrand: null,
         campaignStartDate: null,
         campaignEndDate: null,
-
         campaignIndustries: [],
         campaignObjectives: '',
         campaignDescription: '',
@@ -238,7 +233,6 @@ function CreateCampaignForm() {
         adminManager: [],
         agreementFrom: null,
         timeline: [{ timeline_type: '', duration: undefined, startDate: '', endDate: '' }],
-
         campaignTasksAdmin: [],
         campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
       };
@@ -270,7 +264,6 @@ function CreateCampaignForm() {
   });
 
   const {
-    // eslint-disable-next-line no-unused-vars
     handleSubmit,
     getValues,
     control,
@@ -282,10 +275,6 @@ function CreateCampaignForm() {
   } = methods;
 
   const values = watch();
-
-  // useEffect(() => {
-  //   localStorage.setItem('formData', JSON.stringify(values));
-  // }, [values]);
 
   const {
     append: doAppend,
@@ -570,7 +559,7 @@ function CreateCampaignForm() {
 
         <RHFMultiSelect
           name="audienceLocation"
-          label="Audience Geo Location"
+          label="Audience City/Area"
           checkbox
           chip
           options={[
@@ -596,7 +585,7 @@ function CreateCampaignForm() {
           disableCloseOnSelect
           name="audienceLanguage"
           label="Audience Language"
-          options={langList}
+          options={langList.sort()}
           getOptionLabel={(option) => option}
         />
 
@@ -794,19 +783,18 @@ function CreateCampaignForm() {
         return imageUpload;
       case 3:
         return (
-          <SelectTimeline
-            control={control}
-            defaultTimelines={defaultTimelines}
-            getValues={getValues}
-            setValue={setValue}
-            errors={errors}
-            timeline={timeline}
-            setTimeline={setTimeline}
-            timelineMethods={timelineMethods}
-            watch={watch}
-            timelineType={timelineType}
-            modal={modal}
-          />
+          <>
+            {defaultTimelineLoading ? (
+              <BarLoader />
+            ) : (
+              <SelectTimeline
+                defaultTimelines={defaultTimelines}
+                setValue={setValue}
+                timelineMethods={timelineMethods}
+                watch={watch}
+              />
+            )}
+          </>
         );
       case 4:
         return formSelectAdminManager;

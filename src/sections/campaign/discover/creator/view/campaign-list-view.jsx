@@ -22,12 +22,14 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 import { endpoints } from 'src/utils/axios';
 
 import { _tours } from 'src/_mock';
+import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
+import CreatorForm from '../creator-form';
 import CampaignLists from '../campaign-list';
 import CampaignSearch from '../campaign-search';
 
@@ -39,6 +41,8 @@ export default function CampaignListView() {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns('creator');
   const [filter, setFilter] = useState('');
+  const { user } = useAuthContext();
+  const dialog = useBoolean();
 
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
@@ -188,24 +192,35 @@ export default function CampaignListView() {
         results={search.results}
         onSearch={handleSearch}
         campaigns={campaigns}
-        // hrefItem={(id) => paths.dashboard.tour.details(id)}
       />
 
-      <Stack direction="row" spacing={1} my={1.5}>
-        <Button
-          size="small"
-          variant={filter !== 'saved' && 'contained'}
-          onClick={() => setFilter('all')}
-        >
-          All
-        </Button>
-        <Button
-          size="small"
-          variant={filter === 'saved' ? 'contained' : 'outlined'}
-          onClick={() => setFilter('saved')}
-        >
-          Saved
-        </Button>
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <Stack direction="row" spacing={1} my={1.5}>
+          <Button
+            size="small"
+            variant={filter !== 'saved' && 'contained'}
+            onClick={() => setFilter('all')}
+          >
+            All
+          </Button>
+          <Button
+            size="small"
+            variant={filter === 'saved' ? 'contained' : 'outlined'}
+            onClick={() => setFilter('saved')}
+          >
+            Saved
+          </Button>
+        </Stack>
+        {!user?.creator?.isFormCompleted && (
+          <Button
+            size="small"
+            variant="contained"
+            onClick={dialog.onTrue}
+            startIcon={<Iconify icon="fluent:warning-32-filled" color="warning.main" />}
+          >
+            Complete Form
+          </Button>
+        )}
       </Stack>
 
       <Box sx={{ my: 2 }} />
@@ -216,6 +231,8 @@ export default function CampaignListView() {
       )}
 
       {upload.length > 0 && renderUploadProgress}
+
+      {!user?.creator?.isFormCompleted && <CreatorForm dialog={dialog} user={user} />}
     </Container>
   );
 }

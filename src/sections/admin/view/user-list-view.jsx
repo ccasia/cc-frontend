@@ -1,4 +1,5 @@
 import * as yup from 'yup';
+import PropTypes from 'prop-types';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
@@ -9,6 +10,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
+import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
@@ -33,14 +35,8 @@ import {
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useBoolean } from 'src/hooks/use-boolean';
-// eslint-disable-next-line import/no-cycle
-
-import PropTypes from 'prop-types';
-
-import { LoadingButton } from '@mui/lab';
-
 import useGetRoles from 'src/hooks/use-get-roles';
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -242,12 +238,6 @@ export default function UserListView({ admins }) {
   const schema = yup.object().shape({
     email: yup.string().email().required('Email is required'),
     role: yup.string().required('Role is required'),
-    // permission: yup.array().of(
-    //   yup.object().shape({
-    //     module: yup.string().required(),
-    //     permissions: yup.array().required(),
-    //   })
-    // ),
   });
 
   const methods = useForm({
@@ -255,23 +245,12 @@ export default function UserListView({ admins }) {
     defaultValues: {
       role: '',
       email: '',
-      // permission: [
-      //   {
-      //     module: '',
-      //     permissions: [],
-      //   },
-      // ],
     },
   });
 
   const { handleSubmit, watch } = methods;
 
   const r = watch('role');
-
-  // const { fields, append, remove } = useFieldArray({
-  //   control,
-  //   name: 'permission',
-  // });
 
   const onSubmit = handleSubmit(async (data) => {
     try {

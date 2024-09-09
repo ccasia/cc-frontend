@@ -34,6 +34,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CampaignOverview from '../campaign-overview';
+import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
@@ -51,6 +52,7 @@ const CampaignDetailView = ({ id }) => {
   const idd = open ? 'simple-popper' : undefined;
 
   const currentCampaign = campaigns && campaigns.find((campaign) => campaign.id === id);
+  console.log(currentCampaign);
 
   let timeline =
     currentCampaign?.defaultcampaignTimeline || currentCampaign?.customcampaignTimeline;
@@ -87,11 +89,15 @@ const CampaignDetailView = ({ id }) => {
 
   const icons = (tab) => {
     if (tab.value === 'pitch' && currentCampaign?.pitch.length > 0) {
-      return <Label variant="filled">{currentCampaign?.pitch.length}</Label>;
+      return <Label>{currentCampaign?.pitch.length}</Label>;
     }
 
     if (tab.value === 'creator' && currentCampaign?.shortlisted?.length) {
-      return <Label variant="filled">{currentCampaign?.shortlisted?.length}</Label>;
+      return <Label>{currentCampaign?.shortlisted?.length}</Label>;
+    }
+
+    if (tab.value === 'agreement' && currentCampaign?.creatorAgreement?.length) {
+      return <Label>{currentCampaign?.creatorAgreement?.length}</Label>;
     }
 
     return '';
@@ -159,7 +165,7 @@ const CampaignDetailView = ({ id }) => {
             p: 2,
             bgcolor: 'background.paper',
             mb: 1,
-            // mr: 5,
+
             width: {
               xs: 250,
               md: 450,
@@ -361,6 +367,7 @@ const CampaignDetailView = ({ id }) => {
       {currentTab === 'overview' && <CampaignOverview campaign={currentCampaign} />}
       {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
       {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
+      {currentTab === 'agreement' && <CampaignAgreements campaign={currentCampaign} />}
 
       {currentTab === 'client' && (
         <CampaignDetailBrand

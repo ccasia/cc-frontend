@@ -1,4 +1,4 @@
- /* import { memo } from 'react';
+  import { memo } from 'react';
  import ApexChart from 'react-apexcharts';
 
  import { alpha, styled } from '@mui/material/styles';
@@ -60,4 +60,4 @@
    },
  }));
 
- export default memo(Chart); */
+ export default memo(Chart); 

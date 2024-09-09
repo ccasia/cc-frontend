@@ -53,7 +53,15 @@ export const defaultSubmission = [
 
 const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
   const { user } = useAuthContext();
+
+  const agreementStatus = user?.shortlisted?.find(
+    (item) => item?.campaignId === campaign?.id
+  ).isAgreementReady;
+
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
+
+  const getDueDate = (name) =>
+    submissions?.find((submission) => submission?.submissionType?.type === name)?.dueDate;
 
   const value = (name) => submissions?.find((item) => item.submissionType.type === name);
 
@@ -64,7 +72,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
   const getDependency = useCallback(
     (submissionId) => {
       const isDependencyeExist = submissions?.find((item) => item.id === submissionId)
-        .dependentOn[0];
+        ?.dependentOn[0];
       return isDependencyeExist;
     },
     [submissions]
@@ -154,7 +162,8 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                           </Box>
                         )}
                         <Typography variant="caption">
-                          Due: {dayjs(getTimeline(item.value)?.endDate).format('ddd LL')}
+                          Due: {dayjs(getDueDate(item.type)).format('D MMMM, YYYY')}
+                          {/* Due: {dayjs(getTimeline(item.value)?.endDate).format('D MMMM, YYYY')} */}
                         </Typography>
                       </Stack>
                     }
@@ -169,6 +178,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                       timeline={timeline}
                       submission={value(item.type)}
                       getDependency={getDependency}
+                      agreementStatus={agreementStatus}
                     />
                   )}
                   {item.value === 'First Draft' && (

@@ -22,6 +22,7 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
+import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
@@ -31,6 +32,7 @@ export default function CampaignItem({ campaign, user }) {
   const [open, setOpen] = useState(false);
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
+  const dialog = useBoolean();
 
   const { socket } = useSocketContext();
 
@@ -140,18 +142,14 @@ export default function CampaignItem({ campaign, user }) {
       </Stack>
       {campaign?.campaignBrief?.images.length > 1 && (
         <Stack spacing={0.5}>
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[1]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 80 }}
-          />
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[2]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 80 }}
-          />
+          {campaign?.campaignBrief?.images?.slice(1).map((image) => (
+            <Image
+              alt={campaign?.name}
+              src={image}
+              ratio="1/1"
+              sx={{ borderRadius: 1, width: 80 }}
+            />
+          ))}
         </Stack>
       )}
     </Stack>
@@ -275,6 +273,7 @@ export default function CampaignItem({ campaign, user }) {
               size="small"
               startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
               onClick={() => setOpen(true)}
+              disabled={!user?.creator?.isFormCompleted}
             >
               Pitch
             </LoadingButton>
@@ -332,8 +331,10 @@ export default function CampaignItem({ campaign, user }) {
         openForm={() => setOpen(true)}
         campaign={campaign}
         existingPitch={campaignIds}
+        dialog={dialog}
       />
       <CampaignPitchOptionsModal open={open} handleClose={handleClose} campaign={campaign} />
+      <CreatorForm dialog={dialog} user={user} />
     </>
   );
 }

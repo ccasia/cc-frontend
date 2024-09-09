@@ -154,7 +154,7 @@ const CampaignFirstDraft = ({
   return (
     previousSubmission?.status === 'APPROVED' && (
       <Box>
-        {logistics?.every((logistic) => logistic?.status === 'Delivered') ? (
+        {logistics?.every((logistic) => logistic?.status === 'Product_has_been_received') ? (
           <Box>
             {submission?.status === 'PENDING_REVIEW' && (
               <Stack justifyContent="center" alignItems="center" spacing={2}>

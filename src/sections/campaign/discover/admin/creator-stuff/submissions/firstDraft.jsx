@@ -31,7 +31,7 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
 
 const options_changes = [
   'Missing caption requirements',
@@ -50,6 +50,7 @@ const options_changes = [
 ];
 
 const FirstDraft = ({ campaign, submission, creator }) => {
+  console.log(submission);
   const [type, setType] = useState('approve');
   const approve = useBoolean();
   const request = useBoolean();
@@ -59,22 +60,37 @@ const FirstDraft = ({ campaign, submission, creator }) => {
     type: Yup.string(),
   });
 
+  const normalSchema = Yup.object().shape({
+    feedback: Yup.string().required('Comment is required.'),
+    schedule: Yup.object().shape({
+      startDate: Yup.string().required('Start Date is required.'),
+      endDate: Yup.string().required('End Date is required.'),
+    }),
+  });
+
   const methods = useForm({
-    resolver: type === 'request' && yupResolver(requestSchema),
+    resolver: type === 'request' ? yupResolver(requestSchema) : yupResolver(normalSchema),
     defaultValues: {
       feedback: 'Thank you for submitting',
       type: '',
       reasons: [],
+      schedule: {
+        startDate: null,
+        endDate: null,
+      },
     },
   });
 
-  const { handleSubmit, setValue, reset } = methods;
+  const { handleSubmit, setValue, reset, watch } = methods;
+
+  const scheduleStartDate = watch('schedule.startDate');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.patch(endpoints.submission.admin.draft, {
         ...data,
         submissionId: submission.id,
+        userId: creator?.user?.id,
       });
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
@@ -137,30 +153,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
       <Grid container spacing={2}>
         <Grid item xs={12} md={3}>
           <Box component={Paper} p={1.5}>
-            {/* <Stack spacing={1.5}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle2">Due Date</Typography>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {dayjs(submission?.dueDate).format('ddd LL')}
-                </Typography>
-              </Stack>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle2">Status</Typography>
-                <Label>{submission?.status}</Label>
-              </Stack>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle2">Date Submission</Typography>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {dayjs(submission?.updatedAt).format('ddd LL')}
-                </Typography>
-              </Stack>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle2">Review on</Typography>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {dayjs(submission?.updatedAt).format('ddd LL')}
-                </Typography>
-              </Stack>
-            </Stack> */}
             <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
               <Stack spacing={1} justifyContent="space-evenly">
                 <Typography variant="subtitle2">Due Date</Typography>
@@ -211,51 +203,66 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                 {submission?.status === 'PENDING_REVIEW' && (
                   <Box component={Paper} p={1.5}>
                     {type === 'approve' && (
-                      <>
-                        <Typography variant="h6" mb={1} mx={1}>
-                          Approval
-                        </Typography>
-                        <FormProvider methods={methods} onSubmit={onSubmit}>
-                          <Stack gap={2}>
-                            <RHFTextField
-                              name="feedback"
-                              multiline
-                              minRows={5}
-                              placeholder="Comment"
+                      <FormProvider methods={methods} onSubmit={onSubmit}>
+                        <Stack gap={1} mb={2}>
+                          <Typography variant="subtitle1" mb={1} mx={1}>
+                            Schedule This Post
+                          </Typography>
+                          <Stack direction="row" gap={3}>
+                            <RHFDatePicker
+                              name="schedule.startDate"
+                              label="Start Date"
+                              minDate={dayjs()}
                             />
-                            <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                              <Typography
-                                component="a"
-                                onClick={() => {
-                                  setType('request');
-                                  setValue('type', 'request');
-                                  setValue('feedback', '');
-                                }}
-                                sx={{
-                                  color: (theme) => theme.palette.text.secondary,
-                                  cursor: 'pointer',
-                                  textDecoration: 'underline',
-                                  '&:hover': {
-                                    color: (theme) => theme.palette.text.primary,
-                                  },
-                                }}
-                                variant="caption"
-                              >
-                                Request a change
-                              </Typography>
-                              <Button
-                                variant="contained"
-                                size="small"
-                                color="primary"
-                                onClick={approve.onTrue}
-                              >
-                                Approve
-                              </Button>
-                            </Stack>
+                            <RHFDatePicker
+                              name="schedule.endDate"
+                              label="End Date"
+                              minDate={dayjs(scheduleStartDate)}
+                            />
                           </Stack>
-                          {confirmationApproveModal(approve.value, approve.onFalse)}
-                        </FormProvider>
-                      </>
+                        </Stack>
+                        <Typography variant="subtitle1" mb={1} mx={1}>
+                          Comment For Creator
+                        </Typography>
+                        <Stack gap={2}>
+                          <RHFTextField
+                            name="feedback"
+                            multiline
+                            minRows={5}
+                            placeholder="Comment"
+                          />
+                          <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
+                            <Typography
+                              component="a"
+                              onClick={() => {
+                                setType('request');
+                                setValue('type', 'request');
+                                setValue('feedback', '');
+                              }}
+                              sx={{
+                                color: (theme) => theme.palette.text.secondary,
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                                '&:hover': {
+                                  color: (theme) => theme.palette.text.primary,
+                                },
+                              }}
+                              variant="caption"
+                            >
+                              Request a change
+                            </Typography>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              onClick={approve.onTrue}
+                            >
+                              Approve
+                            </Button>
+                          </Stack>
+                        </Stack>
+                        {confirmationApproveModal(approve.value, approve.onFalse)}
+                      </FormProvider>
                     )}
                     {type === 'request' && (
                       <>
@@ -333,135 +340,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
           )}
         </Grid>
       </Grid>
-      {/* {submission?.isReview && (
-        <Card sx={{ p: 2, mb: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2) }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Iconify icon="hugeicons:tick-03" />
-            <Typography variant="caption" color="text.secondary">
-              Reviewed
-            </Typography>
-          </Stack>
-        </Card>
-      )}
-      <Card sx={{ p: 2, mb: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="caption" color="text.secondary">
-            Due date
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {dayjs(submission?.dueDate).format('ddd LL')}
-          </Typography>
-        </Stack>
-      </Card>
-      {submission?.status === 'IN_PROGRESS' && !submission?.content ? (
-        <EmptyContent title="No submission" />
-      ) : (
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <video autoPlay style={{ width: '100%', borderRadius: 10, margin: 'auto' }} controls>
-              <source src={submission?.content} />
-            </video>
-            <Box component={Paper} p={1.5}>
-              <Typography variant="caption" color="text.secondary">
-                Caption
-              </Typography>
-              <Typography variant="subtitle1">{submission?.caption}</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            {submission?.status === 'PENDING_REVIEW' && (
-              <Box component={Paper} p={1.5}>
-                <Typography variant="h6" mb={1} mx={1}>
-                  {type === 'approve' ? 'Approval' : 'Request Changes'}
-                </Typography>
-                <FormProvider methods={methods} onSubmit={onSubmit}>
-                  <Stack gap={2}>
-                    <RHFTextField
-                      name="feedback"
-                      multiline
-                      minRows={5}
-                      placeholder={type === 'approve' ? 'Comment' : 'Reason'}
-                    />
-
-                    {type === 'approve' ? (
-                      <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                        <Typography
-                          component="a"
-                          onClick={() => {
-                            setType('request');
-                            setValue('type', 'request');
-                            setValue('feedback', '');
-                          }}
-                          sx={{
-                            color: (theme) => theme.palette.text.secondary,
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                            '&:hover': {
-                              color: (theme) => theme.palette.text.primary,
-                            },
-                          }}
-                          variant="caption"
-                        >
-                          Request a change
-                        </Typography>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          color="primary"
-                          onClick={approve.onTrue}
-                        >
-                          Approve
-                        </Button>
-                      </Stack>
-                    ) : (
-                      <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                        <Typography
-                          component="a"
-                          onClick={() => {
-                            setType('approve');
-                            setValue('type', 'approve');
-                            setValue('feedback', '');
-                          }}
-                          sx={{
-                            color: (theme) => theme.palette.text.secondary,
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                            '&:hover': {
-                              color: (theme) => theme.palette.text.primary,
-                            },
-                          }}
-                          variant="caption"
-                        >
-                          Back
-                        </Typography>
-                        <Button variant="contained" size="small" onClick={request.onTrue}>
-                          Submit
-                        </Button>
-                      </Stack>
-                    )}
-                  </Stack>
-                  {confirmationApproveModal(approve.value, approve.onFalse)}
-                  {confirmationRequestModal(request.value, request.onFalse)}
-                </FormProvider>
-              </Box>
-            )}
-            {submission?.isReview && (
-              <Box component={Paper} position="relative" p={10}>
-                <Stack gap={1.5} alignItems="center">
-                  <Image src="/assets/approve.svg" />
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{ textAlign: 'center' }}
-                  >
-                    First Draft has been reviewed
-                  </Typography>
-                </Stack>
-              </Box>
-            )}
-          </Grid>
-        </Grid>
-      )} */}
     </Box>
   );
 };

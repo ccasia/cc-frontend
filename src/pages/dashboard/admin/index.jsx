@@ -15,6 +15,7 @@ export default function Page() {
       <Helmet>
         <title>Admin</title>
       </Helmet>
+
       {admins && <UserListView admins={admins} />}
     </>
   );

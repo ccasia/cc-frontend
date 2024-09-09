@@ -27,8 +27,9 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
-const CampaignAgreement = ({ campaign, timeline, submission, getDependency }) => {
+const CampaignAgreement = ({ campaign, timeline, submission, getDependency, agreementStatus }) => {
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const { user } = useAuthContext();
@@ -88,100 +89,109 @@ const CampaignAgreement = ({ campaign, timeline, submission, getDependency }) =>
 
   return (
     <Box p={1.5}>
-      {submission?.status === 'PENDING_REVIEW' && (
-        <Stack justifyContent="center" alignItems="center" spacing={2}>
-          <Image src="/assets/pending.svg" sx={{ width: 250 }} />
-          <Typography variant="subtitle2">Your agreement is in review.</Typography>
-        </Stack>
-      )}
-      {submission?.status === 'IN_PROGRESS' && (
-        <Stack gap={2}>
-          <ListItemText
-            primary="1. Please download and review the Agreement Form."
-            secondary={
-              <Button
-                variant="contained"
-                startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                href={campaign?.agreement?.agreementUrl}
-                download="agreementForm.pdf"
-                target="__blank"
-                size="small"
-              >
-                Download Agreement
-              </Button>
-            }
-            primaryTypographyProps={{
-              variant: 'subtitle2',
-              mb: 1.2,
-            }}
-          />
+      {!agreementStatus ? (
+        <EmptyContent title="Agreement Processing" />
+      ) : (
+        <>
+          {submission?.status === 'PENDING_REVIEW' && (
+            <Stack justifyContent="center" alignItems="center" spacing={2}>
+              <Image src="/assets/pending.svg" sx={{ width: 250 }} />
+              <Typography variant="subtitle2">Your agreement is in review.</Typography>
+            </Stack>
+          )}
 
-          <ListItemText
-            primary="2. Please sign and upload the document here."
-            secondary={
-              <FormProvider methods={methods} onSubmit={onSubmit}>
-                {preview ? (
-                  <iframe
-                    src={preview}
-                    style={{
-                      width: '100%',
-                      height: 400,
-                      border: 0,
-                      borderRadius: 15,
-                    }}
-                    title="PDF Viewer"
-                  />
-                ) : (
-                  <RHFUpload type="pdf" name="agreementForm" onDrop={onDrop} />
-                )}
-
-                <Box
-                  mt={2}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  gap={2}
-                >
-                  {agreementForm && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      color="error"
-                      onClick={() => {
-                        setValue('agreementForm', null);
-                        setPreview('');
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                  <LoadingButton
-                    loading={loading}
+          {submission?.status === 'IN_PROGRESS' && (
+            <Stack gap={2}>
+              <ListItemText
+                primary="1. Please download and review the Agreement Form."
+                secondary={
+                  <Button
                     variant="contained"
+                    startIcon={<Iconify icon="material-symbols:download" width={20} />}
+                    href={campaign?.agreement?.agreementUrl}
+                    download="agreementForm.pdf"
+                    target="__blank"
                     size="small"
-                    disabled={!agreementForm}
-                    sx={{ flexGrow: 1 }}
-                    type="submit"
                   >
-                    Submit
-                  </LoadingButton>
-                </Box>
-              </FormProvider>
-            }
-            primaryTypographyProps={{
-              variant: 'subtitle2',
-              mb: 1.2,
-            }}
-          />
-        </Stack>
+                    Download Agreement
+                  </Button>
+                }
+                primaryTypographyProps={{
+                  variant: 'subtitle2',
+                  mb: 1.2,
+                }}
+              />
+
+              <ListItemText
+                primary="2. Please sign and upload the document here."
+                secondary={
+                  <FormProvider methods={methods} onSubmit={onSubmit}>
+                    {preview ? (
+                      <iframe
+                        src={preview}
+                        style={{
+                          width: '100%',
+                          height: 400,
+                          border: 0,
+                          borderRadius: 15,
+                        }}
+                        title="PDF Viewer"
+                      />
+                    ) : (
+                      <RHFUpload type="pdf" name="agreementForm" onDrop={onDrop} />
+                    )}
+
+                    <Box
+                      mt={2}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      gap={2}
+                    >
+                      {agreementForm && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          color="error"
+                          onClick={() => {
+                            setValue('agreementForm', null);
+                            setPreview('');
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                      <LoadingButton
+                        loading={loading}
+                        variant="contained"
+                        size="small"
+                        disabled={!agreementForm}
+                        sx={{ flexGrow: 1 }}
+                        type="submit"
+                      >
+                        Submit
+                      </LoadingButton>
+                    </Box>
+                  </FormProvider>
+                }
+                primaryTypographyProps={{
+                  variant: 'subtitle2',
+                  mb: 1.2,
+                }}
+              />
+            </Stack>
+          )}
+
+          {submission?.status === 'APPROVED' && (
+            <Stack justifyContent="center" alignItems="center" spacing={2}>
+              <Image src="/assets/approve.svg" sx={{ width: 250 }} />
+              <Typography variant="subtitle2">Your agreement has been approved.</Typography>
+              <Button onClick={display.onTrue}>Preview agreement</Button>
+            </Stack>
+          )}
+        </>
       )}
-      {submission?.status === 'APPROVED' && (
-        <Stack justifyContent="center" alignItems="center" spacing={2}>
-          <Image src="/assets/approve.svg" sx={{ width: 250 }} />
-          <Typography variant="subtitle2">Your agreement has been approved.</Typography>
-          <Button onClick={display.onTrue}>Preview agreement</Button>
-        </Stack>
-      )}
+
       <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
         <DialogTitle>Agreement</DialogTitle>
         <DialogContent>
@@ -211,4 +221,5 @@ CampaignAgreement.propTypes = {
   timeline: PropTypes.object,
   submission: PropTypes.object,
   getDependency: PropTypes.func,
+  agreementStatus: PropTypes.bool,
 };

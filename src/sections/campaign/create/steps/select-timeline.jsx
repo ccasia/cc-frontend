@@ -36,14 +36,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import { RHFSelect, RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
 
-// eslint-disable-next-line react/prop-types
-const SelectTimeline = ({
-  defaultTimelines,
-  setValue,
-  watch,
-  timelineMethods,
-  modal: timelineModal,
-}) => {
+const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods }) => {
   const { data, isLoading } = useGetAllTimelineType();
   const [dateError, setDateError] = useState(false);
   const { fields, remove, move, append } = timelineMethods;
@@ -61,7 +54,7 @@ const SelectTimeline = ({
     }
   }, [setValue, timelineEndDate]);
 
-  useEffect(() => {
+  const values = useCallback(() => {
     setValue(
       'timeline',
       defaultTimelines
@@ -76,6 +69,10 @@ const SelectTimeline = ({
         }))
     );
   }, [defaultTimelines, setValue]);
+
+  useEffect(() => {
+    values();
+  }, [values]);
 
   const timelines = watch('timeline');
 
@@ -151,11 +148,7 @@ const SelectTimeline = ({
         <Typography sx={{ textAlign: 'start' }} variant="h6">
           Campaign Timeline
         </Typography>
-        <Box sx={{ flexGrow: 1, textAlign: 'start' }}>
-          <Button variant="contained" size="small" onClick={modal.onTrue}>
-            Preview
-          </Button>
-        </Box>
+        <Box sx={{ flexGrow: 1, textAlign: 'start' }} />
         <Typography sx={{ textAlign: 'start', mb: 2 }} variant="h6">
           Total days: {dayjs(endDate).diff(dayjs(startDate), 'day') || 0}
         </Typography>
@@ -329,7 +322,6 @@ const SelectTimeline = ({
             }}
           />
           <RHFTextField name="campaignEndDate" disabled />
-          {/* <RHFDatePicker name="campaignEndDate" label="Campaign End Date" /> */}
         </Stack>
         {dateError && (
           <Typography variant="caption" color="red">
@@ -346,7 +338,7 @@ const SelectTimeline = ({
       />
 
       {renderTimelineForm}
-      {renderPreview}
+      {/* {renderPreview} */}
     </Box>
   );
 };

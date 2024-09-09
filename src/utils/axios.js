@@ -86,6 +86,7 @@ export const endpoints = {
     updateMediaKit: '/api/creator/update-media-kit',
     getCreatorFullInfo: (id) => `/api/creator/getCreatorFullInfoById/${id}`,
     updatePaymentForm: '/api/creator/updatePaymentForm',
+    updateCreatorform: '/api/creator/updateCreatorForm',
   },
   users: {
     newAdmin: '/api/user/newAdmin',
@@ -196,6 +197,9 @@ export const endpoints = {
         receiveLogistic: '/api/campaign/receiveLogistic',
       },
     },
+    creatorAgreement: (id) => `/api/campaign/creatorAgreements/${id}`,
+    updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
+    sendAgreement: `/api/campaign/sendAgreement`,
   },
   submission: {
     root: '/api/submission/',

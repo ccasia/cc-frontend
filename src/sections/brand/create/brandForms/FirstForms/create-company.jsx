@@ -221,9 +221,19 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
               <RHFTextField key="companyName" name="companyName" label="Company Name" />
               <RHFTextField key="companyEmail" name="companyEmail" label="Company Email" />
               <RHFTextField key="companyPhone" name="companyPhone" label="Company Phone" />
-              <RHFTextField key="companyAddress" name="companyAddress" label="Company Address" />
+              <RHFTextField
+                key="companyAddress"
+                name="companyAddress"
+                label="Company Address"
+                multiline
+              />
               <RHFTextField key="companyWebsite" name="companyWebsite" label="Company Website" />
-              <RHFTextField key="companyAbout" name="companyAbout" label="Company About" />
+              <RHFTextField
+                key="companyAbout"
+                name="companyAbout"
+                label="Company About"
+                multiline
+              />
               <RHFTextField
                 key="companyRegistrationNumber"
                 name="companyRegistrationNumber"
