@@ -23,7 +23,7 @@ import SocketProvider from './socket/context/socket';
 export default function App() {
   const charAt = `
 
-  ██████████     ██████████        
+  ██████████     ██████████
   ██             ██
   ██             ██ 
   ██             ██

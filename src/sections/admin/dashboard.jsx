@@ -2,6 +2,7 @@
 import React from 'react';
 
 import { Container } from '@mui/material';
+import { Container } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -13,7 +14,6 @@ import DashboardSuperadmin from './dashboard-superadmin';
 
 const DashboardAdmin = () => {
   const settings = useSettingsContext();
-
   const { user, role, permission } = useAuthContext();
 
   return (
@@ -23,6 +23,7 @@ const DashboardAdmin = () => {
       {(user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSM') && (
         <DashboardSuperadmin />
       )}
+      {user?.admin?.designation === 'Finance' && <DashboardFinance />}
     </Container>
   );
 };
