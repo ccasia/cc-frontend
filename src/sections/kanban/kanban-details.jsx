@@ -44,6 +44,7 @@ const MAPPING = {
 export default function KanbanDetails({
   task,
   openDetails,
+  column,
   onCloseDetails,
   //
   onUpdateTask,
@@ -121,6 +122,7 @@ export default function KanbanDetails({
     <KanbanDetailsToolbar
       task={task}
       liked={like.value}
+      column={column}
       taskName={task.name}
       onLike={like.onToggle}
       onDelete={onDeleteTask}
@@ -248,4 +250,5 @@ KanbanDetails.propTypes = {
   onUpdateTask: PropTypes.func,
   openDetails: PropTypes.bool,
   task: PropTypes.object,
+  column: PropTypes.object,
 };

@@ -7,8 +7,8 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import { useSettingsContext } from 'src/components/settings';
 
-// eslint-disable-next-line import/no-unresolved
-const DashboardFinance = lazy(() => import('src/sections/admin/Finance/Dashboard'));
+const DashboardFinance = lazy(() => import('./finance/Dashboard'));
+const DashboardSuperadmin = lazy(() => import('./dashboard-superadmin'));
 
 const DashboardAdmin = () => {
   const settings = useSettingsContext();
@@ -16,12 +16,10 @@ const DashboardAdmin = () => {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      {/* {user?.admin?.role?.name === 'Finance' && <DashboardFinance />} */}
-
       {/* {(user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSM') && (
         <DashboardSuperadmin />
       )} */}
-
+      <DashboardSuperadmin />
       {user?.admin?.designation === 'Finance' && <DashboardFinance />}
     </Container>
   );

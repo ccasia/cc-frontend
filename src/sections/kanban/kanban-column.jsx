@@ -183,6 +183,7 @@ export default function KanbanColumn({ column, tasks, index, status }) {
                     <KanbanTaskItem
                       key={item?.id}
                       index={taskIndex}
+                      column={column}
                       task={item}
                       onUpdateTask={handleUpdateTask}
                       onDeleteTask={() => handleDeleteTask(item?.id)}

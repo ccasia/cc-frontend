@@ -18,14 +18,6 @@ export default function Page() {
 
       {user?.role?.includes('admin') && <DashboardAdmin />}
       {user?.role === 'creator' && <DashboardCreator />}
-
-      {/* <CreatorView /> */}
-
-      {/* {user?.creator?.firstName && (
-        <Typography variant="h1" gutterBottom>
-          Hi, {user?.creator?.firstName}
-        </Typography>
-      )} */}
     </>
   );
 }

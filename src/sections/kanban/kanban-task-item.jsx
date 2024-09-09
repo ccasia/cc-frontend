@@ -16,7 +16,15 @@ import KanbanDetails from './kanban-details';
 
 // ----------------------------------------------------------------------
 
-export default function KanbanTaskItem({ task, index, onDeleteTask, onUpdateTask, sx, ...other }) {
+export default function KanbanTaskItem({
+  task,
+  index,
+  column,
+  onDeleteTask,
+  onUpdateTask,
+  sx,
+  ...other
+}) {
   const theme = useTheme();
 
   const openDetails = useBoolean();
@@ -44,8 +52,6 @@ export default function KanbanTaskItem({ task, index, onDeleteTask, onUpdateTask
       }}
     />
   );
-
-
 
   const renderInfo = (
     <Stack direction="row" alignItems="center">
@@ -129,6 +135,7 @@ export default function KanbanTaskItem({ task, index, onDeleteTask, onUpdateTask
 
       <KanbanDetails
         task={task}
+        column={column}
         openDetails={openDetails.value}
         onCloseDetails={openDetails.onFalse}
         onUpdateTask={onUpdateTask}
@@ -144,5 +151,6 @@ KanbanTaskItem.propTypes = {
   onDeleteTask: PropTypes.func,
   onUpdateTask: PropTypes.func,
   sx: PropTypes.object,
+  column: PropTypes.object,
   task: PropTypes.object,
 };

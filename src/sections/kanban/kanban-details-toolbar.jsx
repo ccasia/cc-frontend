@@ -20,6 +20,7 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 export default function KanbanDetailsToolbar({
   task,
   liked,
+  column,
   onLike,
   taskName,
   onDelete,
@@ -33,7 +34,7 @@ export default function KanbanDetailsToolbar({
 
   const popover = usePopover();
 
-  const [status, setStatus] = useState(taskStatus);
+  const [status, setStatus] = useState(column?.name);
 
   const handleChangeStatus = useCallback(
     (newValue) => {
@@ -136,4 +137,5 @@ KanbanDetailsToolbar.propTypes = {
   onLike: PropTypes.func,
   taskName: PropTypes.string,
   taskStatus: PropTypes.string,
+  column: PropTypes.object,
 };
