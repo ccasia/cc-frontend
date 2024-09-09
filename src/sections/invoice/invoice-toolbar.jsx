@@ -13,6 +13,8 @@ import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import Iconify from 'src/components/iconify';
 
@@ -21,7 +23,7 @@ import InvoicePDF from './invoice-pdf';
 // ----------------------------------------------------------------------
 
 export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, onChangeStatus }) {
-  // const router = useRouter();
+  const router = useRouter();
 
   const view = useBoolean();
 
@@ -39,7 +41,11 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
       >
         <Stack direction="row" spacing={1} flexGrow={1} sx={{ width: 1 }}>
           <Tooltip title="Edit">
-            <IconButton>
+            <IconButton
+              onClick={() => {
+                router.push(paths.dashboard.finance.createInvoice(invoice?.id));
+              }}
+            >
               <Iconify icon="solar:pen-bold" />
             </IconButton>
           </Tooltip>

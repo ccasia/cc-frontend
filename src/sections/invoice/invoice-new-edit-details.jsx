@@ -23,6 +23,8 @@ import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 export default function InvoiceNewEditDetails() {
   const { control, setValue, watch, resetField } = useFormContext();
 
+  console.log(INVOICE_SERVICE_OPTIONS);
+
   const { fields, remove } = useFieldArray({
     control,
     name: 'items',
@@ -30,7 +32,7 @@ export default function InvoiceNewEditDetails() {
 
   const values = watch();
 
-  const totalOnRow = values.items.map((item) => item.price);
+  const totalOnRow = values.items.map((item) => item?.price);
 
   const subTotal = sum(totalOnRow);
 
@@ -184,7 +186,7 @@ export default function InvoiceNewEditDetails() {
 
                 <Divider sx={{ borderStyle: 'dashed' }} />
 
-                {INVOICE_SERVICE_OPTIONS.map((service) => (
+                {[{ id: 1, name: 'Posting on social media', price: 200 }].map((service) => (
                   <MenuItem
                     key={service.id}
                     value={service.name}
@@ -235,7 +237,7 @@ export default function InvoiceNewEditDetails() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>$</Box>
+                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>RM</Box>
                     </InputAdornment>
                   ),
                 }}

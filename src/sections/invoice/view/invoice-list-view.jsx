@@ -70,7 +70,6 @@ const defaultFilters = {
 export default function InvoiceListView({ campId, invoices }) {
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
-  console.log(invoices.campaigns);
   const settings = useSettingsContext();
 
   const router = useRouter();
@@ -195,7 +194,7 @@ export default function InvoiceListView({ campId, invoices }) {
 
   const handleEditRow = useCallback(
     (id) => {
-      router.push(paths.dashboard.invoice.edit(id));
+      router.push(paths.dashboard.finance.createInvoice(id));
     },
     [router]
   );

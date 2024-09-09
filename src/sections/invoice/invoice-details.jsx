@@ -45,44 +45,10 @@ export default function InvoiceDetails({ invoice }) {
     setCurrentStatus(event.target.value);
   }, []);
 
-  console.log(invoice);
+
 
   const renderTotal = (
     <>
-      {/* <StyledTableRow>
-        <TableCell colSpan={3} />
-        <TableCell sx={{ color: 'text.secondary' }}>
-          <Box sx={{ mt: 2 }} />
-          Subtotal
-        </TableCell>
-        <TableCell width={120} sx={{ typography: 'subtitle2' }}>
-          <Box sx={{ mt: 2 }} />
-          {fCurrency(invoice?.subTotal)}
-        </TableCell>
-      </StyledTableRow>
-
-      <StyledTableRow>
-        <TableCell colSpan={3} />
-        <TableCell sx={{ color: 'text.secondary' }}>Shipping</TableCell>
-        <TableCell width={120} sx={{ color: 'error.main', typography: 'body2' }}>
-          {fCurrency(-invoice?.shipping)}
-        </TableCell>
-      </StyledTableRow>
-
-      <StyledTableRow>
-        <TableCell colSpan={3} />
-        <TableCell sx={{ color: 'text.secondary' }}>Discount</TableCell>
-        <TableCell width={120} sx={{ color: 'error.main', typography: 'body2' }}>
-          {fCurrency(-invoice?.discount)}
-        </TableCell>
-      </StyledTableRow>
-
-      <StyledTableRow>
-        <TableCell colSpan={3} />
-        <TableCell sx={{ color: 'text.secondary' }}>Taxes</TableCell>
-        <TableCell width={120}>{fCurrency(invoice?.taxes)}</TableCell>
-      </StyledTableRow> */}
-
       <StyledTableRow>
         <TableCell colSpan={3} />
         <TableCell sx={{ typography: 'subtitle1' }}>Total</TableCell>

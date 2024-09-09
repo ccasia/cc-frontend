@@ -30,7 +30,7 @@ function CreateInvoice() {
             href: paths.dashboard.finance.invoice,
           },
           {
-            name: 'New Invoice',
+            name: 'Edit Invoice',
             href: paths.dashboard.finance.creatorInvoice,
           },
         ]}
@@ -39,7 +39,7 @@ function CreateInvoice() {
         }}
       />
 
-      <InvoiceNewEditForm id={id} creators={data} />
+      <InvoiceNewEditForm id={id} creators={data}  />
     </Container>
   );
 }

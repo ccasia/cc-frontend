@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { get, update } from 'lodash';
 
 import { HOST_API } from 'src/config-global';
 
@@ -222,8 +223,12 @@ export const endpoints = {
   },
   invoice: {
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,
+    updateInvoice : '/api/invoice/update',
     create: '/api/invoice/create',
     getInvoicesByCampaignId: (id) => `/api/invoice/getInvoicesByCampaignId/${id}`,
     getInvoiceById: (id) => `/api/invoice/${id}`,
+    getInvoicesByCreatorAndCampiagn: (creatorId, campaignId) =>
+      `/api/invoice/creator/${creatorId}/campaign/${campaignId}`,
+    updateInvoiceStatus: '/api/invoice/updateStatus',
   },
 };

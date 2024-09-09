@@ -1,5 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { PDFViewer } from '@react-pdf/renderer';
 import { useTheme } from '@emotion/react';
 import React, { useMemo, useState } from 'react';
 
@@ -26,6 +27,9 @@ import { useRouter } from 'src/routes/hooks';
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
+import useGetInvoiceByCreatorAndCampaign from 'src/hooks/use-get-invoice-creator-camp';
+import EmptyContent from 'src/components/empty-content/empty-content';
+import InvoicePDF from 'src/sections/invoice/invoice-pdf';
 
 import { _userAbout } from 'src/_mock';
 import { bgGradient } from 'src/theme/css';
@@ -39,6 +43,7 @@ import Submissions from '../creator-stuff/submissions';
 import TimelineCreator from '../creator-stuff/timeline/view/page';
 import LogisticView from '../creator-stuff/logistics/view/logistic-view';
 
+
 const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const [currentTab, setCurrentTab] = useState('profile');
@@ -47,6 +52,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     id,
     campaignId
   );
+  const { invoice } = useGetInvoiceByCreatorAndCampaign(id, campaignId);
+
+  // use get invoice by campaign id and creator id
   const theme = useTheme();
   const router = useRouter();
 
@@ -62,7 +70,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
   };
 
   const calculateRank = (val) => Math.ceil((val / 5) * 100);
-
+  // new tab for invoice view
   const renderTabs = (
     <Tabs
       value={currentTab}
@@ -89,6 +97,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
       />
       <Tab value="overview" label="Overview" />
       <Tab value="submission" label="Submissions" />
+      <Tab value="invoice" label="Invoice" />
       <Tab value="logistics" label="Logistics" />
       <Tab value="timeline" label="Timeline" />
     </Tabs>
@@ -312,6 +321,17 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             <Submissions campaign={campaign} submissions={submissions} creator={data} />
           )}
           {currentTab === 'logistics' && <LogisticView campaign={campaign} creator={data} />}
+          {currentTab === 'invoice' && invoice ? (
+            <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+              <InvoicePDF invoice={invoice} />
+            </PDFViewer>
+          ) : null}
+          {currentTab === 'invoice' && !invoice ? (
+            <EmptyContent
+              heading="No invoice found"
+              description="This creator has not been invoiced yet."
+            />
+          ) : null}
           {currentTab === 'timeline' && <TimelineCreator campaign={campaign} creator={data} />}
         </>
       )}
