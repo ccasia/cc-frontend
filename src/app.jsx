@@ -19,11 +19,11 @@ import { SnackbarProvider } from './components/snackbar';
 import SocketProvider from './socket/context/socket';
 
 // ----------------------------------------------------------------------
-
+// Test
 export default function App() {
   const charAt = `
 
-  ██████████     ██████████        
+  ██████████     ██████████
   ██             ██
   ██             ██ 
   ██             ██

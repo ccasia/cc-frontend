@@ -50,7 +50,7 @@ const ManageCampaignView = () => {
         links={[
           {
             name: 'Dashboard',
-            href: paths.dashboard.root,
+            href: paths.root,
           },
           { name: 'Campaign', href: paths.dashboard.campaign.creator.manage },
           { name: 'Lists' },
