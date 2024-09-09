@@ -149,24 +149,43 @@ export default function CreatorForm({ creator, open, onClose }) {
   };
 
   const fetchSocialMediaData = async (instagramUsername, tiktokUsername) => {
+    const maxRetries = 3;
+  
+    const makeRequest = async (platform, username) => {
+      for (let retries = 0; retries < maxRetries; retries += 1) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          const response = await axiosInstance.post(endpoints.creators.getCreatorCrawler, {
+            identifier: username,
+            platform,
+          });
+          return response.data.data;
+        } catch (error) {
+          console.error(`Error fetching ${platform} data:`, error.response || error);
+          if (retries === maxRetries - 1) {
+            throw error;
+          }
+          // Wait for 1 second before retrying
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+      throw new Error(`Max retries reached for ${platform}`);
+    };
+  
     try {
-      const instagramData = await axios.post(endpoints.creators.getCreatorCrawler, {
-        identifier: instagramUsername,
-        platform: 'Instagram'
-      });
-
-      const tiktokData = await axios.post(endpoints.creators.getCreatorCrawler, {
-        identifier: tiktokUsername,
-        platform: 'TikTok'
-      });
-
+      const [instagramData, tiktokData] = await Promise.all([
+        makeRequest('Instagram', instagramUsername),
+        makeRequest('TikTok', tiktokUsername),
+      ]);
+  
       return {
-        instagram: instagramData.data.data,
-        tiktok: tiktokData.data.data
+        instagram: instagramData,
+        tiktok: tiktokData,
       };
     } catch (error) {
-      console.error('Error fetching social media data:', error);
-      throw error;
+      console.error('Error fetching social media data:', error.response || error);
+      throw new Error('Failed to fetch social media data. Please try again later.');
     }
   };
 
@@ -194,6 +213,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 
       onClose();
     } catch (error) {
+      console.error('Submission error:', error);
       enqueueSnackbar('Something went wrong', {
         variant: 'error',
       });

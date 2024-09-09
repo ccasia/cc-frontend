@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Box, Typography, CircularProgress, CardMedia, Stack, useTheme } from '@mui/material';
+import { Grid, Box, Typography, CircularProgress, CardMedia, Stack, useTheme, useMediaQuery } from '@mui/material';
 import PropTypes from 'prop-types';
 import { Icon } from '@iconify/react';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { keyframes } from '@emotion/react';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -18,14 +19,34 @@ const formatNumber = (num) => {
   return num.toString();
 };
 
+const typeAnimation = keyframes`
+  from { width: 0; }
+  to { width: 100%; }
+`;
+
 const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const topFiveContents = topContents.slice(0, 5);
 
   return (
-    <Grid container spacing={1}>
-      {topContents.map((content, index) => (
-        <Grid item xs={4} key={index}>
-          <Box sx={{ position: 'relative' }}>
+    <Grid container spacing={isMobile ? 1 : 2}>
+      {topFiveContents.map((content, index) => (
+        <Grid item xs={12} sm={4} key={index}>
+          <Box
+            sx={{
+              position: 'relative',
+              overflow: 'hidden',
+              borderRadius: 1,
+              '&:hover .image': {
+                opacity: 0,
+              },
+              '&:hover .description': {
+                opacity: 1,
+              },
+            }}
+          >
             <CardMedia
               component="img"
               image={content.image_url}
@@ -33,9 +54,43 @@ const TopContentGrid = ({ topContents }) => {
               sx={{
                 aspectRatio: '1 / 1',
                 objectFit: 'cover',
-                borderRadius: 1,
+                transition: 'opacity 0.3s ease-in-out',
               }}
+              className="image"
             />
+            <Box
+              className="description"
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                bgcolor: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                p: isMobile ? 1 : 2,
+                opacity: 0,
+                transition: 'opacity 0.3s ease-in-out',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  textAlign: 'justify',
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 5,
+                  WebkitBoxOrient: 'vertical',
+                  animation: `${typeAnimation} 0.5s steps(40, end)`,
+                  fontSize: isMobile ? '0.75rem' : '0.875rem', // Smaller font size on mobile
+                }}
+              >
+                {content.description}
+              </Typography>
+            </Box>
             <Box
               sx={{
                 position: 'absolute',
@@ -44,19 +99,19 @@ const TopContentGrid = ({ topContents }) => {
                 right: 0,
                 bgcolor: 'rgba(0, 0, 0, 0.6)',
                 color: 'white',
-                p: 1,
+                p: isMobile ? 0.5 : 1,
               }}
             >
               <Stack direction="row" justifyContent="space-around">
                 <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Icon icon="mdi:heart" width={theme.spacing(3.5)} height={theme.spacing(3.5)} />
-                  <Typography variant="caption" sx={{ fontSize: theme.typography.pxToRem(20) }}>
+                  <Icon icon="mdi:heart" width={isMobile ? 16 : 24} height={isMobile ? 16 : 24} />
+                  <Typography variant="caption" sx={{ fontSize: isMobile ? 16 : 14 }}>
                     {formatNumber(content.like)}
                   </Typography>
                 </Stack>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Icon icon="mdi:comment" width={theme.spacing(3.5)} height={theme.spacing(3.5)} />
-                  <Typography variant="caption" sx={{ fontSize: theme.typography.pxToRem(20) }}>
+                  <Icon icon="mdi:comment" width={isMobile ? 16 : 24} height={isMobile ? 16 : 24} />
+                  <Typography variant="caption" sx={{ fontSize: isMobile ? 16 : 14 }}>
                     {formatNumber(content.comment)}
                   </Typography>
                 </Stack>
@@ -81,6 +136,8 @@ const MediaKitSocialContent = () => {
   const [socialMediaData, setSocialMediaData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     const fetchSocialMediaData = async () => {
@@ -133,27 +190,33 @@ const MediaKitSocialContent = () => {
     return <Typography color="error">{error}</Typography>;
   }
 
+  if (!socialMediaData || !socialMediaData.instagram) {
+    return <Typography>No Instagram data available.</Typography>;
+  }
+
   const { instagram } = socialMediaData;
 
   return (
     <Box>
-      <Grid container spacing={2} mb={4}>
+      <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
         <Grid item xs={12} sm={4}>
-          <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            <Typography variant="subtitle2">Followers</Typography>
-            <Typography variant="h2">{formatNumber(instagram.followers)}</Typography>
+          <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>Followers</Typography>
+            <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>{formatNumber(instagram.followers)}</Typography>
           </Box>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            <Typography variant="subtitle2">Engagement Rate</Typography>
-            <Typography variant="h2">{(instagram.engagement_rate * 100).toFixed(1)} %</Typography>
+          <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>Engagement Rate</Typography>
+            <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
+              {Number(instagram.engagement_rate).toFixed(2)}%
+            </Typography>
           </Box>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            <Typography variant="subtitle2">Average Likes</Typography>
-            <Typography variant="h2">
+          <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>Average Likes</Typography>
+            <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
               {instagram.user_performance?.avg_likes_per_post
                 ? formatNumber(instagram.user_performance.avg_likes_per_post)
                 : 'N/A'}
@@ -162,7 +225,7 @@ const MediaKitSocialContent = () => {
         </Grid>
       </Grid>
 
-      <Typography variant="h6" mb={2}>Top Content</Typography>
+      <Typography variant="h6" mb={isMobile ? 1 : 2} sx={{ fontSize: isMobile ? 18 : 20 }}>Top Content</Typography>
       <TopContentGrid topContents={instagram.top_contents || []} />
     </Box>
   );
