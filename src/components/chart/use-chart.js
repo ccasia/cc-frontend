@@ -1,15 +1,16 @@
-import merge from 'lodash/merge';
+ import merge from 'lodash/merge';
 
 import { alpha, useTheme } from '@mui/material/styles';
 
+
 import { useResponsive } from 'src/hooks/use-responsive';
 
-// ----------------------------------------------------------------------
 
 export default function useChart(options) {
   const theme = useTheme();
 
   const smUp = useResponsive('up', 'sm');
+
 
   const LABEL_TOTAL = {
     show: true,
@@ -19,7 +20,6 @@ export default function useChart(options) {
     fontWeight: theme.typography.subtitle2.fontWeight,
     lineHeight: theme.typography.subtitle2.lineHeight,
   };
-
   const LABEL_VALUE = {
     offsetY: 8,
     color: theme.palette.text.primary,
@@ -41,6 +41,19 @@ export default function useChart(options) {
       theme.palette.info.dark,
       theme.palette.info.darker,
     ],
+  
+    // Colors
+    colors: [
+      theme.palette.primary.main,
+      theme.palette.warning.main,
+      theme.palette.info.main,
+      theme.palette.error.main,
+      theme.palette.success.main,
+      theme.palette.warning.dark,
+      theme.palette.success.darker,
+      theme.palette.info.dark,
+      theme.palette.info.darker,
+    ],
 
     // Chart
     chart: {
@@ -50,7 +63,30 @@ export default function useChart(options) {
       foreColor: theme.palette.text.disabled,
       fontFamily: theme.typography.fontFamily,
     },
+    // Chart
+    chart: {
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      // animations: { enabled: false },
+      foreColor: theme.palette.text.disabled,
+      fontFamily: theme.typography.fontFamily,
+    },
 
+    // States
+    states: {
+      hover: {
+        filter: {
+          type: 'lighten',
+          value: 0.04,
+        },
+      },
+      active: {
+        filter: {
+          type: 'darken',
+          value: 0.88,
+        },
+      },
+    },
     // States
     states: {
       hover: {
@@ -78,12 +114,33 @@ export default function useChart(options) {
         stops: [0, 100],
       },
     },
+    // Fill
+    fill: {
+      opacity: 1,
+      gradient: {
+        type: 'vertical',
+        shadeIntensity: 0,
+        opacityFrom: 0.4,
+        opacityTo: 0,
+        stops: [0, 100],
+      },
+    },
 
     // Datalabels
     dataLabels: {
       enabled: false,
     },
+    // Datalabels
+    dataLabels: {
+      enabled: false,
+    },
 
+    // Stroke
+    stroke: {
+      width: 3,
+      curve: 'smooth',
+      lineCap: 'round',
+    },
     // Stroke
     stroke: {
       width: 3,
@@ -101,13 +158,33 @@ export default function useChart(options) {
         },
       },
     },
+    // Grid
+    grid: {
+      strokeDashArray: 3,
+      borderColor: theme.palette.divider,
+      xaxis: {
+        lines: {
+          show: false,
+        },
+      },
+    },
 
     // Xaxis
     xaxis: {
       axisBorder: { show: false },
       axisTicks: { show: false },
     },
+    // Xaxis
+    xaxis: {
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    },
 
+    // Markers
+    markers: {
+      size: 0,
+      strokeColors: theme.palette.background.paper,
+    },
     // Markers
     markers: {
       size: 0,
@@ -121,7 +198,31 @@ export default function useChart(options) {
         show: true,
       },
     },
+    // Tooltip
+    tooltip: {
+      theme: false,
+      x: {
+        show: true,
+      },
+    },
 
+    // Legend
+    legend: {
+      show: true,
+      fontSize: 13,
+      position: 'top',
+      horizontalAlign: 'right',
+      markers: {
+        radius: 12,
+      },
+      fontWeight: 500,
+      itemMargin: {
+        horizontal: 8,
+      },
+      labels: {
+        colors: theme.palette.text.primary,
+      },
+    },
     // Legend
     legend: {
       show: true,
@@ -149,7 +250,26 @@ export default function useChart(options) {
         borderRadiusApplication: 'end',
         borderRadiusWhenStacked: 'last',
       },
+    // plotOptions
+    plotOptions: {
+      // Bar
+      bar: {
+        borderRadius: smUp ? 3 : 1,
+        columnWidth: '28%',
+        borderRadiusApplication: 'end',
+        borderRadiusWhenStacked: 'last',
+      },
 
+      // Pie + Donut
+      pie: {
+        donut: {
+          labels: {
+            show: true,
+            value: LABEL_VALUE,
+            total: LABEL_TOTAL,
+          },
+        },
+      },
       // Pie + Donut
       pie: {
         donut: {
@@ -172,7 +292,26 @@ export default function useChart(options) {
           total: LABEL_TOTAL,
         },
       },
+      // Radialbar
+      radialBar: {
+        track: {
+          strokeWidth: '100%',
+          background: alpha(theme.palette.grey[500], 0.16),
+        },
+        dataLabels: {
+          value: LABEL_VALUE,
+          total: LABEL_TOTAL,
+        },
+      },
 
+      // Radar
+      radar: {
+        polygons: {
+          fill: { colors: ['transparent'] },
+          strokeColors: theme.palette.divider,
+          connectorColors: theme.palette.divider,
+        },
+      },
       // Radar
       radar: {
         polygons: {
@@ -192,7 +331,35 @@ export default function useChart(options) {
         },
       },
     },
+      // polarArea
+      polarArea: {
+        rings: {
+          strokeColor: theme.palette.divider,
+        },
+        spokes: {
+          connectorColors: theme.palette.divider,
+        },
+      },
+    },
 
+    // Responsive
+    responsive: [
+      {
+        // sm
+        breakpoint: theme.breakpoints.values.sm,
+        options: {
+          plotOptions: { bar: { columnWidth: '40%' } },
+        },
+      },
+      {
+        // md
+        breakpoint: theme.breakpoints.values.md,
+        options: {
+          plotOptions: { bar: { columnWidth: '32%' } },
+        },
+      },
+    ],
+  
     // Responsive
     responsive: [
       {
