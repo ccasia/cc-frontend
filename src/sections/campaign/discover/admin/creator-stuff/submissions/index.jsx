@@ -3,10 +3,10 @@ import PropTypes from 'prop-types';
 
 import { ToggleButton, ToggleButtonGroup } from '@mui/material';
 
-import Posting from './posting';
 import Agreement from './agreement';
 import FirstDraft from './firstDraft';
 import FinalDraft from './finalDraft';
+import Posting from './posting/posting';
 
 const Submissions = ({ campaign, submissions, creator }) => {
   const [currentTab, setCurrentTab] = useState('agreement');

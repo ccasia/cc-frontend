@@ -35,7 +35,7 @@ const ManageCampaignView = () => {
       }}
     >
       <Tab value="myCampaign" label="My Campaigns" />
-      <Tab value="applied" label="I've Applied" />
+      <Tab value="applied" label="My Applications" />
     </Tabs>
   );
 
@@ -50,7 +50,7 @@ const ManageCampaignView = () => {
         links={[
           {
             name: 'Dashboard',
-            href: paths.dashboard.root,
+            href: paths.root,
           },
           { name: 'Campaign', href: paths.dashboard.campaign.creator.manage },
           { name: 'Lists' },

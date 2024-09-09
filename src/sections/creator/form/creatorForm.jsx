@@ -36,13 +36,7 @@ import FormProvider, {
   RHFAutocomplete,
 } from 'src/components/hook-form';
 
-const steps = [
-  'Fill in your details',
-  'Provide your social media information',
-  // 'Rate your Interests and Industries',
-];
-
-// export const langList = ['English', 'Malay', 'Chinese', 'Tamil', 'All of the above', 'Others'];
+const steps = ['Fill in your details', 'Provide your social media information'];
 
 export const interestsList = [
   'Art',
@@ -61,6 +55,7 @@ export const interestsList = [
 ];
 
 export default function CreatorForm({ creator, open, onClose }) {
+  console.log(creator);
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
@@ -90,7 +85,6 @@ export default function CreatorForm({ creator, open, onClose }) {
 
   // Second Step Schema
   const secondSchema = Yup.object().shape({
-    // tiktok: Yup.string().required('Please enter your tiktok username'),
     instagram: Yup.string().required('Please enter your instagram username'),
   });
 
@@ -100,7 +94,7 @@ export default function CreatorForm({ creator, open, onClose }) {
     location: Yup.string().required('City/Area is required'),
     interests: Yup.array().min(3, 'Choose at least three option'),
     languages: Yup.array().min(1, 'Choose at least one option'),
-    // industries: Yup.array().min(3, 'Choose at least three option'),
+
     employment: Yup.string().required('Employment status is required'),
     birthDate: Yup.mixed().nullable().required('Please enter your birth date'),
     Nationality: Yup.string().required('Nationality is required'),
@@ -119,6 +113,7 @@ export default function CreatorForm({ creator, open, onClose }) {
       employment: '',
       birthDate: null,
       Nationality: '',
+      otherPronounce: '',
     }),
     []
   );
@@ -128,17 +123,12 @@ export default function CreatorForm({ creator, open, onClose }) {
     defaultValues,
   });
 
-  const {
-    reset,
-    handleSubmit,
-    watch,
-    getValues,
-    setValue,
-    formState: { errors },
-  } = methods;
+  const { reset, handleSubmit, watch, getValues, setValue } = methods;
 
   const nationality = watch('Nationality');
   const languages = watch('languages');
+  const pronounce = watch('pronounce');
+  const otherPronounce = watch('otherPronounce');
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -188,6 +178,7 @@ export default function CreatorForm({ creator, open, onClose }) {
       const newData = {
         ...data,
         socialMediaData,
+        pronounce: otherPronounce || pronounce,
       };
       const res = await axiosInstance.put(endpoints.auth.updateCreator, newData);
       enqueueSnackbar(`Welcome ${res.data.name}!`);
@@ -268,13 +259,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 
           <RHFTextField name="location" label="City/Area" multiline />
 
-          <RHFSelect
-            name="employment"
-            label="Employment Status"
-            multiple={false}
-            // onChange={handleEmploymentChange}
-            // value={employmentValue}
-          >
+          <RHFSelect name="employment" label="Employment Status" multiple={false}>
             <MenuItem value="fulltime">I have a full-time job</MenuItem>
             <MenuItem value="freelance">I&apos;m a freelancer</MenuItem>
             <MenuItem value="part_time">I only work part-time</MenuItem>
@@ -283,10 +268,6 @@ export default function CreatorForm({ creator, open, onClose }) {
             <MenuItem value="unemployed">I&apos;m unemployed</MenuItem>
             <MenuItem value="others">Others </MenuItem>
           </RHFSelect>
-
-          {/* {employmentValue === "others" && (
-            <RHFTextField name="employmentDetails" label="Please specify" />
-          )} */}
 
           <RHFTextField
             name="phone"
@@ -307,6 +288,8 @@ export default function CreatorForm({ creator, open, onClose }) {
             <MenuItem value="they/them">They/Them</MenuItem>
             <MenuItem value="others">Others</MenuItem>
           </RHFSelect>
+
+          {pronounce === 'others' && <RHFTextField name="otherPronounce" label="Pronounce" />}
 
           <RHFDatePicker name="birthDate" label="Birth Date" />
 

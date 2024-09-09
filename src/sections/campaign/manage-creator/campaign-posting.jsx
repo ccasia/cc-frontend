@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -7,6 +8,7 @@ import {
   Box,
   List,
   Stack,
+  Alert,
   Dialog,
   Button,
   ListItem,
@@ -87,6 +89,16 @@ const CampaignPosting = ({ campaign, timeline, submission, getDependency, fullSu
     </Dialog>
   );
 
+  const renderPostingTimeline = (
+    <Alert severity="success">
+      <Typography variant="subtitle1">Draft Approved ! Next Step: Post Your Deliverable</Typography>
+      <Typography variant="subtitle2">
+        You can now post your content between {dayjs(submission?.startDate).format('D MMMM, YYYY')}{' '}
+        and {dayjs(submission?.endDate).format('D MMMM, YYYY')}
+      </Typography>
+    </Alert>
+  );
+
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.post(endpoints.submission.creator.postSubmission, {
@@ -109,11 +121,11 @@ const CampaignPosting = ({ campaign, timeline, submission, getDependency, fullSu
             <Stack justifyContent="center" alignItems="center" spacing={2}>
               <Image src="/assets/pending.svg" sx={{ width: 250 }} />
               <Typography variant="subtitle2">Your Submission is in review.</Typography>
-              {/* <Button onClick={display.onTrue}>Preview Draft</Button> */}
             </Stack>
           )}
           {submission?.status === 'IN_PROGRESS' && (
             <Stack spacing={1}>
+              {renderPostingTimeline}
               <Box>
                 <Button size="small" variant="outlined" onClick={dialog.onTrue}>
                   Show guide

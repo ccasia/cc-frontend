@@ -8,6 +8,7 @@ import { paths } from 'src/routes/paths';
 
 import { useCreator } from 'src/hooks/zustands/useCreator';
 
+import Logo from 'src/components/logo/logo';
 import Iconify from 'src/components/iconify';
 
 const Verify = () => {
@@ -27,7 +28,22 @@ const Verify = () => {
             padding: '20px 0',
           }}
         >
-          <Typography variant="h3">Cult Creative</Typography>
+       <Box display="flex" flexDirection="row" alignItems="center" justifyContent="space-between">
+        <Logo disabledLink sx={{ width: 64, height: 64, paddingRight: 2 }} />
+        <Typography variant="h3">Cult Creative</Typography>
+      </Box>
+      <Box
+          component="img"
+          alt="auth"
+          src="/assets/images/login/cultimage.png"
+          sx={{
+            objectFit: 'cover',
+            width: '500px',
+            height: '300px',
+            marginTop: 4, // Add some spacing from the logo/header
+            marginBottom: 4, // Add some spacing from the Check Email part
+          }}
+        />
 
           <Box
             sx={{
@@ -38,7 +54,7 @@ const Verify = () => {
               <Iconify icon="ic:baseline-email" width={40} />
             </IconButton>
             <Typography variant="h4" gutterBottom>
-              Check your email
+              Check Your Email
             </Typography>
             <Typography variant="p" gutterBottom>
               We sent a sign in link to {email}
@@ -58,3 +74,5 @@ const Verify = () => {
 };
 
 export default Verify;
+
+

@@ -31,7 +31,7 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
 
 const options_changes = [
   'Missing caption requirements',
@@ -64,10 +64,16 @@ const FinalDraft = ({ campaign, submission, creator }) => {
       feedback: 'Thank you for submitting',
       type,
       reasons: [],
+      schedule: {
+        startDate: null,
+        endDate: null,
+      },
     },
   });
 
-  const { handleSubmit, setValue, reset } = methods;
+  const { handleSubmit, setValue, reset, watch } = methods;
+
+  const scheduleStartDate = watch('schedule.startDate');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -173,51 +179,111 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                 {submission?.status === 'PENDING_REVIEW' && (
                   <Box component={Paper} p={1.5}>
                     {type === 'approve' && (
-                      <>
-                        <Typography variant="h6" mb={1} mx={1}>
-                          Approval
-                        </Typography>
-                        <FormProvider methods={methods} onSubmit={onSubmit}>
-                          <Stack gap={2}>
-                            <RHFTextField
-                              name="feedback"
-                              multiline
-                              minRows={5}
-                              placeholder="Comment"
+                      // <>
+                      //   <Typography variant="h6" mb={1} mx={1}>
+                      //     Approval
+                      //   </Typography>
+                      //   <FormProvider methods={methods} onSubmit={onSubmit}>
+                      //     <Stack gap={2}>
+                      //       <RHFTextField
+                      //         name="feedback"
+                      //         multiline
+                      //         minRows={5}
+                      //         placeholder="Comment"
+                      //       />
+                      //       <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
+                      //         <Typography
+                      //           component="a"
+                      //           onClick={() => {
+                      //             setType('request');
+                      //             setValue('type', 'request');
+                      //             setValue('feedback', '');
+                      //           }}
+                      //           sx={{
+                      //             color: (theme) => theme.palette.text.secondary,
+                      //             cursor: 'pointer',
+                      //             textDecoration: 'underline',
+                      //             '&:hover': {
+                      //               color: (theme) => theme.palette.text.primary,
+                      //             },
+                      //           }}
+                      //           variant="caption"
+                      //         >
+                      //           Request a change
+                      //         </Typography>
+                      //         <Button
+                      //           variant="contained"
+                      //           size="small"
+                      //           color="primary"
+                      //           onClick={approve.onTrue}
+                      //         >
+                      //           Approve
+                      //         </Button>
+                      //       </Stack>
+                      //     </Stack>
+                      //     {confirmationApproveModal(approve.value, approve.onFalse)}
+                      //   </FormProvider>
+                      // </>
+                      <FormProvider methods={methods} onSubmit={onSubmit}>
+                        <Stack gap={1} mb={2}>
+                          <Typography variant="subtitle1" mb={1} mx={1}>
+                            Schedule This Post
+                          </Typography>
+                          <Stack direction="row" gap={3}>
+                            <RHFDatePicker
+                              name="schedule.startDate"
+                              label="Start Date"
+                              minDate={dayjs()}
                             />
-                            <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                              <Typography
-                                component="a"
-                                onClick={() => {
-                                  setType('request');
-                                  setValue('type', 'request');
-                                  setValue('feedback', '');
-                                }}
-                                sx={{
-                                  color: (theme) => theme.palette.text.secondary,
-                                  cursor: 'pointer',
-                                  textDecoration: 'underline',
-                                  '&:hover': {
-                                    color: (theme) => theme.palette.text.primary,
-                                  },
-                                }}
-                                variant="caption"
-                              >
-                                Request a change
-                              </Typography>
-                              <Button
-                                variant="contained"
-                                size="small"
-                                color="primary"
-                                onClick={approve.onTrue}
-                              >
-                                Approve
-                              </Button>
-                            </Stack>
+                            <RHFDatePicker
+                              name="schedule.endDate"
+                              label="End Date"
+                              minDate={dayjs(scheduleStartDate)}
+                            />
                           </Stack>
-                          {confirmationApproveModal(approve.value, approve.onFalse)}
-                        </FormProvider>
-                      </>
+                        </Stack>
+                        <Typography variant="subtitle1" mb={1} mx={1}>
+                          Comment For Creator
+                        </Typography>
+                        <Stack gap={2}>
+                          <RHFTextField
+                            name="feedback"
+                            multiline
+                            minRows={5}
+                            placeholder="Comment"
+                          />
+                          <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
+                            <Typography
+                              component="a"
+                              onClick={() => {
+                                setType('request');
+                                setValue('type', 'request');
+                                setValue('feedback', '');
+                              }}
+                              sx={{
+                                color: (theme) => theme.palette.text.secondary,
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                                '&:hover': {
+                                  color: (theme) => theme.palette.text.primary,
+                                },
+                              }}
+                              variant="caption"
+                            >
+                              Request a change
+                            </Typography>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              onClick={approve.onTrue}
+                            >
+                              Approve
+                            </Button>
+                          </Stack>
+                        </Stack>
+                        {confirmationApproveModal(approve.value, approve.onFalse)}
+                      </FormProvider>
                     )}
                     {type === 'request' && (
                       <>

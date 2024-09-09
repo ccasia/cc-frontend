@@ -90,14 +90,6 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
               sm: 'repeat(2, 1fr)',
             }}
           >
-            {/* <RHFSelect name="status" label="Status">
-              {USER_STATUS_OPTIONS.map((status) => (
-                <MenuItem key={status.value} value={status.value}>
-                  {status.label}
-                </MenuItem>
-              ))}
-            </RHFSelect> */}
-
             <RHFTextField name="name" label="Full Name" />
             <RHFTextField name="email" label="Email Address" />
             <RHFTextField

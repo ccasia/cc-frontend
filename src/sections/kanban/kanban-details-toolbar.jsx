@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import { Typography } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
@@ -17,12 +18,14 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 // ----------------------------------------------------------------------
 
 export default function KanbanDetailsToolbar({
+  task,
   liked,
   onLike,
   taskName,
   onDelete,
   taskStatus,
   onCloseDetails,
+  ...other
 }) {
   const smUp = useResponsive('up', 'sm');
 
@@ -66,7 +69,9 @@ export default function KanbanDetailsToolbar({
           {status}
         </Button>
 
-        <Stack direction="row" justifyContent="flex-end" flexGrow={1}>
+        <Typography sx={{ ml: 2 }}>Campaign {task?.submission?.campaign?.name}</Typography>
+
+        {/* <Stack direction="row" justifyContent="flex-end" flexGrow={1}>
           <Tooltip title="Like">
             <IconButton color={liked ? 'default' : 'primary'} onClick={onLike}>
               <Iconify icon="ic:round-thumb-up" />
@@ -82,7 +87,7 @@ export default function KanbanDetailsToolbar({
           <IconButton>
             <Iconify icon="eva:more-vertical-fill" />
           </IconButton>
-        </Stack>
+        </Stack> */}
       </Stack>
 
       <CustomPopover
@@ -91,7 +96,7 @@ export default function KanbanDetailsToolbar({
         arrow="top-right"
         sx={{ width: 140 }}
       >
-        {['To Do', 'In Progress', 'Ready To Test', 'Done'].map((option) => (
+        {other?.status.map((option) => (
           <MenuItem
             key={option}
             selected={status === option}
@@ -124,6 +129,7 @@ export default function KanbanDetailsToolbar({
 }
 
 KanbanDetailsToolbar.propTypes = {
+  task: PropTypes.object,
   liked: PropTypes.bool,
   onCloseDetails: PropTypes.func,
   onDelete: PropTypes.func,

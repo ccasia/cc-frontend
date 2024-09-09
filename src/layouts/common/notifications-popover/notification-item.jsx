@@ -18,32 +18,16 @@ export default function NotificationItem({ notification }) {
 
   const renderText = (
     <ListItemText
-      primary={notification.notification.message}
+      primary={notification.notification?.title}
+      secondary={notification.notification.message}
       primaryTypographyProps={{
         variant: 'subtitle2',
         marginBottom: 0.5,
       }}
-      secondary={
-        <Stack
-          direction="row"
-          alignItems="center"
-          sx={{ typography: 'caption', color: 'text.disabled' }}
-          divider={
-            <Box
-              sx={{
-                width: 2,
-                height: 2,
-                bgcolor: 'currentColor',
-                mx: 0.5,
-                borderRadius: '50%',
-              }}
-            />
-          }
-        >
-          {fToNow(notification.notification.createdAt)}
-          {notification.notification?.entity}
-        </Stack>
-      }
+      secondaryTypographyProps={{
+        variant: 'body2',
+        marginBottom: 0.5,
+      }}
     />
   );
 
@@ -91,6 +75,28 @@ export default function NotificationItem({ notification }) {
     </Stack>
   );
 
+  const renderOther = (
+    <Stack
+      direction="row"
+      alignItems="center"
+      sx={{ typography: 'caption', color: 'text.disabled' }}
+      divider={
+        <Box
+          sx={{
+            width: 2,
+            height: 2,
+            bgcolor: 'currentColor',
+            mx: 0.5,
+            borderRadius: '50%',
+          }}
+        />
+      }
+    >
+      {fToNow(notification.notification.createdAt)}
+      {notification.notification?.entity}
+    </Stack>
+  );
+
   return (
     <ListItemButton
       disableRipple
@@ -103,9 +109,10 @@ export default function NotificationItem({ notification }) {
       {renderUnReadBadge}
       <Stack sx={{ flexGrow: 1 }}>
         {renderText}
-        {['Campaign'].includes(notification?.notification.entity) && friendAction}
-        {['Shortlist'].includes(notification?.notification.entity) && chatAction}
+        {/* {['Campaign'].includes(notification?.notification.entity) && friendAction} */}
+        {/* {['Shortlist'].includes(notification?.notification.entity) && chatAction} */}
         {/* {notification?.notification.entity === 'Campaign' && friendAction} */}
+        {renderOther}
       </Stack>
     </ListItemButton>
   );

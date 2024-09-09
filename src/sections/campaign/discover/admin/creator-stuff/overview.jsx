@@ -21,7 +21,7 @@ const OverView = ({ campaign }) => {
         <Box component={Card} p={3} flexGrow={1}>
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <Stack gap={1}>
-              <Typography variant="subtitle2">Task Completion Rate</Typography>
+              <Typography variant="subtitle2">Submission Rate</Typography>
               <Typography variant="h4">{campaign?.pitch.length}</Typography>
             </Stack>
             <Box>

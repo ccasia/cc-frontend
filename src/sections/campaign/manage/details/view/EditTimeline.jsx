@@ -232,7 +232,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
               <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId="chraraters">
                   {(value) => (
-                    <Box {...value.droppableProps} ref={value.innerRef} overflow="auto">
+                    <Box {...value.droppableProps} ref={value.innerRef} overflow="auto" pt={1}>
                       <Stack gap={3}>
                         {fields.map((item, index) => (
                           <Draggable key={item.id} draggableId={item.id} index={index}>

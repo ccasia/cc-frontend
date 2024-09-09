@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
 import React, { useMemo, useState } from 'react';
 
-import { Gauge } from '@mui/x-charts';
 import {
   Box,
   Tab,
@@ -61,7 +60,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     return `+${prefix} ${phoneNumber}`;
   };
 
-  const calculateRank = (val) => Math.ceil((val / 5) * 100);
+  // const calculateRank = (val) => Math.ceil((val / 5) * 100);
 
   const renderTabs = (
     <Tabs
@@ -87,7 +86,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         label="Profile"
         icon={<Iconify icon="flowbite:profile-card-outline" width={18} />}
       />
-      <Tab value="overview" label="Overview" />
+      {/* <Tab value="overview" label="Overview" /> */}
       <Tab value="submission" label="Submissions" />
       <Tab value="logistics" label="Logistics" />
       <Tab value="timeline" label="Timeline" />
@@ -147,27 +146,24 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
           <Typography variant="h6">Interests</Typography>
 
           {/* List creator interests */}
-          <Stack direction="row" justifyContent="space-evenly" mt={2} flexWrap="wrap">
+          <Stack direction="row" justifyContent="space-evenly" mt={2} flexWrap="wrap" gap={1}>
             {!isLoading &&
               interests?.map((item) => (
-                <ListItemText
-                  primary={item.name}
-                  secondary={
-                    <Gauge
-                      cornerRadius="50%"
-                      width={100}
-                      height={100}
-                      innerRadius="70%"
-                      outerRadius="100%"
-                      value={calculateRank(item.rank)}
-                      text={({ value }) => `${value}%`}
-                    />
-                  }
-                  primaryTypographyProps={{
-                    variant: 'subtitle2',
-                    fontWeight: 800,
-                  }}
-                />
+                <Box
+                  key={item.id}
+                  p={3}
+                  borderRadius={2}
+                  border={1}
+                  sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+                >
+                  <ListItemText
+                    primary={item.name}
+                    primaryTypographyProps={{
+                      variant: 'subtitle2',
+                      fontWeight: 800,
+                    }}
+                  />
+                </Box>
               ))}
           </Stack>
         </Box>

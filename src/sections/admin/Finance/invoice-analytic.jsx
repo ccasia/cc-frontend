@@ -6,19 +6,15 @@ import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
-// import { fCurrency, fShortenNumber } from 'src/utils/format-number';
-
 import Iconify from 'src/components/iconify';
-
-// ----------------------------------------------------------------------
 
 export default function InvoiceAnalytic({ title, total, icon, color, percent, price }) {
   return (
     <Stack
       spacing={2.5}
-      direction="row"
+      direction="row-reverse"
       alignItems="center"
-      justifyContent="center"
+      justifyContent="space-between"
       sx={{ width: 1, minWidth: 200 }}
     >
       <Stack alignItems="center" justifyContent="center" sx={{ position: 'relative' }}>
@@ -47,13 +43,13 @@ export default function InvoiceAnalytic({ title, total, icon, color, percent, pr
         />
       </Stack>
 
-      <Stack spacing={0.5}>
+      <Stack spacing={0.5} alignItems="flex-start">
+        {' '}
+        {/* Align text to the left */}
         <Typography variant="subtitle1">{title}</Typography>
-
         <Box component="span" sx={{ color: 'text.disabled', typography: 'body2' }}>
           {total} invoices
         </Box>
-
         <Typography variant="subtitle2">{price}</Typography>
       </Stack>
     </Stack>
@@ -64,7 +60,7 @@ InvoiceAnalytic.propTypes = {
   color: PropTypes.string,
   icon: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
   percent: PropTypes.number,
-  price: PropTypes.number,
+  price: PropTypes.string,
   title: PropTypes.string,
   total: PropTypes.number,
 };
