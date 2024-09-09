@@ -76,9 +76,9 @@ export default function KanbanColumnToolBar({
           onKeyUp={handleKeyUpUpdateColumn}
         />
 
-        <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+        {/* <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
           <Iconify icon="eva:more-horizontal-fill" />
-        </IconButton>
+        </IconButton> */}
         <IconButton {...provided.dragHandleProps}>
           <Iconify icon="mdi:drag" width={18} />
         </IconButton>

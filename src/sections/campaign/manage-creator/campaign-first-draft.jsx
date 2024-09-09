@@ -97,6 +97,7 @@ const CampaignFirstDraft = ({
         },
       });
       enqueueSnackbar(res.data.message);
+      mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
     } catch (error) {
       enqueueSnackbar('Failed to submit draft', {

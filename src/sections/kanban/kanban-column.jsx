@@ -27,7 +27,7 @@ import KanbanColumnToolBar from './kanban-column-tool-bar';
 
 // ----------------------------------------------------------------------
 
-export default function KanbanColumn({ column, tasks, index }) {
+export default function KanbanColumn({ column, tasks, index, status }) {
   const { enqueueSnackbar } = useSnackbar();
 
   const openAddTask = useBoolean();
@@ -186,6 +186,7 @@ export default function KanbanColumn({ column, tasks, index }) {
                       task={item}
                       onUpdateTask={handleUpdateTask}
                       onDeleteTask={() => handleDeleteTask(item?.id)}
+                      status={status}
                     />
                   ))}
 
@@ -202,6 +203,7 @@ export default function KanbanColumn({ column, tasks, index }) {
 }
 
 KanbanColumn.propTypes = {
+  status: PropTypes.array,
   column: PropTypes.object,
   index: PropTypes.number,
   tasks: PropTypes.array,

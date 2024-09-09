@@ -29,7 +29,7 @@ import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-const CampaignAgreement = ({ campaign, timeline, submission, getDependency, agreementStatus }) => {
+const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) => {
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const { user } = useAuthContext();
@@ -74,6 +74,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, getDependency, agre
         },
       });
       enqueueSnackbar(res?.data?.message);
+      mutate(endpoints.kanban.root);
       mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
       reset();
@@ -220,6 +221,5 @@ CampaignAgreement.propTypes = {
   campaign: PropTypes.object,
   timeline: PropTypes.object,
   submission: PropTypes.object,
-  getDependency: PropTypes.func,
   agreementStatus: PropTypes.bool,
 };

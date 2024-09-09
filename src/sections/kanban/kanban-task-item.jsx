@@ -45,25 +45,7 @@ export default function KanbanTaskItem({ task, index, onDeleteTask, onUpdateTask
     />
   );
 
-  // const renderImg = (
-  //   <Box
-  //     sx={{
-  //       p: theme.spacing(1, 1, 0, 1),
-  //     }}
-  //   >
-  //     <Box
-  //       component="img"
-  //       alt={task.attachments[0]}
-  //       src={task.attachments[0]}
-  //       sx={{
-  //         borderRadius: 1.5,
-  //         ...(openDetails.value && {
-  //           opacity: 0.8,
-  //         }),
-  //       }}
-  //     />
-  //   </Box>
-  // );
+
 
   const renderInfo = (
     <Stack direction="row" alignItems="center">
@@ -137,7 +119,7 @@ export default function KanbanTaskItem({ task, index, onDeleteTask, onUpdateTask
             <Stack spacing={2} sx={{ px: 2, py: 2.5, position: 'relative' }}>
               {renderPriority}
 
-              <Typography variant="subtitle2">{task.name}</Typography>
+              <Typography variant="subtitle2">{task?.name}</Typography>
 
               {renderInfo}
             </Stack>
@@ -151,6 +133,7 @@ export default function KanbanTaskItem({ task, index, onDeleteTask, onUpdateTask
         onCloseDetails={openDetails.onFalse}
         onUpdateTask={onUpdateTask}
         onDeleteTask={onDeleteTask}
+        status={other.status}
       />
     </>
   );

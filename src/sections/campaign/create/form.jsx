@@ -489,8 +489,6 @@ function CreateCampaignForm() {
       <RHFAutocomplete
         name="campaignIndustries"
         placeholder="Industries"
-        // multiple
-        // freeSolo
         disableCloseOnSelect
         options={interestsLists.map((option) => option)}
         getOptionLabel={(option) => option}

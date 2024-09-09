@@ -71,6 +71,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
     brandIntersts: Yup.array().min(3, 'Brand Interests is required'),
     brandIndustries: Yup.array().min(3, 'Brand Industries is required'),
   });
+
   const defaultValues = {
     name: '',
     email: '',
@@ -156,18 +157,6 @@ export default function CreateBrand({ setBrand, open, onClose }) {
                 placeholder="Company"
                 options={companyState ? [companyState] : company?.map((option) => option.name)}
               />
-              {/* <RHFSelect name="companyChoice" label="Company">
-                {companyState ? (
-                  <MenuItem value={companyState}>{companyState}</MenuItem>
-                ) : (
-                  company?.map((option) => (
-                    <MenuItem key={option.name} value={option.name}>
-                      {option.name}
-                    </MenuItem>
-                  ))
-                )}
-              </RHFSelect> */}
-              {/* <Box> */}
               <Box
                 sx={{
                   alignContent: 'center',
