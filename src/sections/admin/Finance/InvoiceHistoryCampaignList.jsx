@@ -3,7 +3,23 @@ import React, { useState } from 'react';
 import { useSnackbar } from 'notistack';
 
 import { useTheme } from '@mui/material/styles';
-import { Box, Table, Paper, Button, Select, MenuItem, TableRow, TextField, TableBody, TableHead, TableCell, Typography, FormControl, TableContainer, InputAdornment } from '@mui/material';
+import {
+  Box,
+  Table,
+  Paper,
+  Button,
+  Select,
+  MenuItem,
+  TableRow,
+  TextField,
+  TableBody,
+  TableHead,
+  TableCell,
+  Typography,
+  FormControl,
+  TableContainer,
+  InputAdornment,
+} from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
@@ -22,7 +38,7 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
     setStatusFilter(e.target.value);
   };
 
-  const handleAmountFilterChange = (e) => { 
+  const handleAmountFilterChange = (e) => {
     setAmountFilter(e.target.value);
   };
 
@@ -31,10 +47,11 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
     return `RM${numericAmount.toLocaleString()}`;
   };
 
-  const filteredData = localData.filter(item => {
-    const matchesQuery = item.campaign.toLowerCase().includes(searchQuery.toLowerCase())
-      || item.creator.toLowerCase().includes(searchQuery.toLowerCase())
-      || item.invoice.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredData = localData.filter((item) => {
+    const matchesQuery =
+      item.campaign.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.invoice.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
 
     // Amount filter logic
@@ -118,27 +135,50 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}><strong>Campaign</strong></TableCell>
-              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}><strong>Creator</strong></TableCell>
-              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}><strong>Invoice ID</strong></TableCell>
-              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}><strong>Date</strong></TableCell>
-              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}><strong>Amount (RM)</strong></TableCell>
-              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}><strong>Status</strong></TableCell>
-              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}><strong>Action</strong></TableCell>
+              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                <strong>Campaign</strong>
+              </TableCell>
+              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                <strong>Creator</strong>
+              </TableCell>
+              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                <strong>Invoice ID</strong>
+              </TableCell>
+              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                <strong>Date</strong>
+              </TableCell>
+              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                <strong>Amount (RM)</strong>
+              </TableCell>
+              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                <strong>Status</strong>
+              </TableCell>
+              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                <strong>Action</strong>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredData.map((item) => (
               <TableRow key={item.id}>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  <Typography variant="body2" sx={{ whiteSpace: 'normal', wordWrap: 'break-word', maxWidth: 250 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ whiteSpace: 'normal', wordWrap: 'break-word', maxWidth: 250 }}
+                  >
                     {item.campaign}
                   </Typography>
                 </TableCell>
-                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>{item.creator}</TableCell>
-                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>{item.invoice}</TableCell>
+                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                  {item.creator}
+                </TableCell>
+                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                  {item.invoice}
+                </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>{item.date}</TableCell>
-                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>{formatAmount(item.amount)}</TableCell>
+                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                  {formatAmount(item.amount)}
+                </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
                   <FormControl fullWidth size="small">
                     <Select
@@ -153,15 +193,15 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                   </FormControl>
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {item.status === 'Overdue' ? (
+                  {item.status === 'Overdue' && (
                     <>
                       <Button
                         variant="outlined"
                         startIcon={<Iconify icon="eva:eye-outline" width={20} />}
                         onClick={() => console.log(`Viewing ${item.invoice}`)}
                         sx={{
-                          color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000', 
-                          borderColor: theme.palette.grey[150], 
+                          color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                          borderColor: theme.palette.grey[150],
                           mr: 1,
                         }}
                       >
@@ -176,18 +216,19 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                         Notify
                       </Button>
                     </>
-                  ) : item.status === 'Pending' ? (
+                  )}
+                  {item.status === 'Pending' && (
                     <>
                       <Button
                         variant="outlined"
                         sx={{
                           color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                          borderColor: theme.palette.grey[150], 
+                          borderColor: theme.palette.grey[150],
                           mr: 1,
                         }}
                         startIcon={<Iconify icon="eva:eye-outline" width={20} />}
                         onClick={() => console.log(`Viewing ${item.invoice}`)}
-                        >
+                      >
                         View
                       </Button>
                       <Button
@@ -199,13 +240,14 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                         Paid
                       </Button>
                     </>
-                  ) : (
+                  )}
+                  {item.status !== 'Overdue' && item.status !== 'Pending' && (
                     <>
                       <Button
                         variant="outlined"
                         sx={{
                           color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                          borderColor: theme.palette.grey[150], 
+                          borderColor: theme.palette.grey[150],
                           mr: 1,
                         }}
                         startIcon={<Iconify icon="eva:eye-outline" width={20} />}

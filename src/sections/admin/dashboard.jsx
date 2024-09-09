@@ -7,8 +7,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import { useSettingsContext } from 'src/components/settings';
 
-import DashboardSuperadmin from './dashboard-superadmin';
-
+// eslint-disable-next-line import/no-unresolved
 const DashboardFinance = lazy(() => import('src/sections/admin/Finance/Dashboard'));
 
 const DashboardAdmin = () => {
