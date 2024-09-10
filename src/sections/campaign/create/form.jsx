@@ -71,6 +71,19 @@ export const interestsLists = [
   'Travel',
 ];
 
+const videoAngle = [
+  'Product Demo/Review',
+  'Service Demo/Review',
+  'Testimonial',
+  'Story Telling',
+  'Organic (soft sell)',
+  'Point Of View (experience with product/service)',
+  'Walkthrough',
+  'Problem vs Solution',
+  'Trends',
+  'Up to cult creative to decide',
+];
+
 function CreateCampaignForm() {
   const { enqueueSnackbar } = useSnackbar();
   const active = localStorage.getItem('activeStep');
@@ -219,6 +232,9 @@ function CreateCampaignForm() {
         audienceLanguage: [],
         audienceCreatorPersona: [],
         audienceUserPersona: '',
+        socialMediaPlatform: [],
+        videoAngle: [],
+
         campaignDo: [
           {
             value: '',
@@ -606,6 +622,31 @@ function CreateCampaignForm() {
 
         {audienceGeoLocation === 'Others' && <Box flexGrow={1} />}
       </Box>
+
+      <Divider
+        sx={{
+          borderStyle: 'dashed',
+        }}
+      />
+
+      <RHFMultiSelect
+        name="socialMediaPlatform"
+        label="Social Media Platform"
+        checkbox
+        chip
+        options={[
+          { value: 'instagram', label: 'Instagram' },
+          { value: 'tiktok', label: 'Tikok' },
+        ]}
+      />
+
+      <RHFMultiSelect
+        name="videoAngle"
+        label="Video Angle"
+        checkbox
+        chip
+        options={videoAngle.map((angle) => ({ value: angle, label: angle }))}
+      />
 
       <Divider
         sx={{

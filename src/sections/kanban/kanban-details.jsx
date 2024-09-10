@@ -19,6 +19,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Scrollbar from 'src/components/scrollbar';
 
 import KanbanDetailsToolbar from './kanban-details-toolbar';
+import KanbanDetailsPriority from './kanban-details-priority';
 import CampaignAgreement from '../campaign/manage-creator/campaign-agreement';
 import CampaignFirstDraft from '../campaign/manage-creator/campaign-first-draft';
 
@@ -142,13 +143,13 @@ export default function KanbanDetails({
     // />
   );
 
-  // const renderPriority = (
-  //   <Stack direction="row" alignItems="center">
-  //     <StyledLabel>Priority</StyledLabel>
+  const renderPriority = (
+    <Stack direction="row" alignItems="center">
+      <StyledLabel>Priority</StyledLabel>
 
-  //     <KanbanDetailsPriority priority={priority} onChangePriority={handleChangePriority} />
-  //   </Stack>
-  // );
+      <KanbanDetailsPriority priority={priority} onChangePriority={handleChangePriority} />
+    </Stack>
+  );
 
   const renderDescription = (
     <Stack direction="row">
@@ -234,7 +235,7 @@ export default function KanbanDetails({
 
           {/* {renderDueDate} */}
 
-          {/* {renderPriority} */}
+          {renderPriority}
           {renderSubmission}
         </Stack>
       </Scrollbar>

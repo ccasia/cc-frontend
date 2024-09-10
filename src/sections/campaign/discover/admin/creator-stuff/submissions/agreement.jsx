@@ -45,6 +45,7 @@ const Agreement = ({ campaign, submission, creator }) => {
         status: 'approve',
         userId: creator?.user?.id,
         submissionId: submission?.id,
+        submission,
       });
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
@@ -66,6 +67,7 @@ const Agreement = ({ campaign, submission, creator }) => {
         campaignTaskId: submission?.campaignTask?.id,
         submissionId: submission?.id,
         feedback: data.feedback,
+        submission,
       });
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`

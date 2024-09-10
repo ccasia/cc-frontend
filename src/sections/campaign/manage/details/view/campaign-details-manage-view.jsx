@@ -160,6 +160,7 @@ const CampaignDetailManageView = ({ id }) => {
   const renderCampaignInformation = (
     <>
       <Box p={2} component={Card} position="relative">
+        <Typography variant="h5">Campaign General Information</Typography>
         <ListItemText
           primary={campaign?.name}
           secondary={campaign?.description}
@@ -379,7 +380,7 @@ const CampaignDetailManageView = ({ id }) => {
   const renderRequirement = (
     <>
       <Box component={Card} p={2}>
-        <Typography variant="h5">Requirements</Typography>
+        <Typography variant="h5">Campaign Requirements</Typography>
         {isEditable && (
           <EditButton
             tooltip="Edit Requirements"
@@ -455,6 +456,30 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="User Persona"
             secondary={formatText(campaign?.campaignRequirement?.user_persona)}
+          />
+          <ListItemText
+            primary="Social Media Platform"
+            secondary={
+              <Stack spacing={1} direction="row" flexWrap="wrap">
+                {campaign?.campaignBrief?.socialMediaPlatform?.map((e, index) => (
+                  <Label key={index} color="secondary">
+                    {formatText(e)}
+                  </Label>
+                )) || null}
+              </Stack>
+            }
+          />
+          <ListItemText
+            primary="Video Angle"
+            secondary={
+              <Stack spacing={1} direction="row" flexWrap="wrap">
+                {campaign?.campaignBrief?.videoAngle?.map((e, index) => (
+                  <Label key={index} color="secondary">
+                    {formatText(e)}
+                  </Label>
+                )) || null}
+              </Stack>
+            }
           />
         </Stack>
       </Box>
