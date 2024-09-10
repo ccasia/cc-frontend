@@ -152,8 +152,6 @@ const MediaKitSocialContent = ({ user }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const { instagram } = user.creator.socialMediaData;
-
-  console.log(instagram)
   
   return (
     <Box>
