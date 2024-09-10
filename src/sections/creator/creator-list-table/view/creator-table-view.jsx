@@ -14,6 +14,8 @@ import Container from '@mui/material/Container';
 import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
+import Slider from '@mui/material/Slider';
+import Typography from '@mui/material/Typography';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -45,9 +47,13 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
+
+import { calculateAge } from 'src/utils/formatTime';
 import CreatorTableRow from '../creator-table-row';
 import CreatorTableToolbar from '../creator-table-toolbar';
 import CreatorTableFilter from '../creator-table-filters-result';
+
+
 
 const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
@@ -63,8 +69,9 @@ const TABLE_HEAD = [
 
 const defaultFilters = {
   name: '',
-  role: [],
   status: 'all',
+  ageRange: [18, 100],
+  pronounce: [],
 };
 
 // ----------------------------------------------------------------------
@@ -76,6 +83,11 @@ function CreatorTableView() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [ageRange, setAgeRange] = useState(defaultFilters.ageRange);
+
+  const handleAgeRangeChange = (newValue) => {
+    setAgeRange(newValue);
+  };
 
   const handleClickOpenCreateDialog = () => {
     setOpenCreateDialog(true);
@@ -118,6 +130,7 @@ function CreatorTableView() {
     inputData: tableData,
     comparator: getComparator(table.order, table.orderBy),
     filters,
+    ageRange
   });
 
   const dataInPage = dataFiltered.slice(
@@ -144,6 +157,7 @@ function CreatorTableView() {
 
   const handleResetFilters = useCallback(() => {
     setFilters(defaultFilters);
+    setAgeRange([18, 100]);
   }, []);
 
   const handleFilterStatus = useCallback(
@@ -245,7 +259,7 @@ function CreatorTableView() {
             ))}
           </Tabs>
 
-          <CreatorTableToolbar filters={filters} onFilters={handleFilters} roleOptions={_roles} />
+          <CreatorTableToolbar filters={filters} onFilters={handleFilters} ageRange={ageRange} onAgeRangeChange={handleAgeRangeChange} pronounceOptions={['he/him', 'she/her', 'they/them', 'others']} />
 
           {canReset && (
             <CreatorTableFilter
@@ -367,8 +381,8 @@ export default withPermission(['list:creator'], CreatorTableView);
 
 // export default CreatorTableView;
 
-function applyFilter({ inputData, comparator, filters }) {
-  const { name, status, role } = filters;
+function applyFilter({ inputData, comparator, filters, ageRange }) {
+  const { name, status } = filters;
 
   const stabilizedThis = inputData?.map((el, index) => [el, index]);
 
@@ -390,9 +404,15 @@ function applyFilter({ inputData, comparator, filters }) {
     inputData = inputData.filter((user) => user.status === status);
   }
 
-  if (role.length) {
-    inputData = inputData.filter((user) => role.includes(user.role));
+  if (filters.pronounce.length) {
+    inputData = inputData.filter((user) => filters.pronounce.includes(user.creator.pronounce));
   }
+
+  // Filter by age range
+  inputData = inputData.filter((user) => {
+    const age = calculateAge(user.creator.birthDate);
+    return age >= ageRange[0] && age <= ageRange[1];
+  });
 
   return inputData;
 }

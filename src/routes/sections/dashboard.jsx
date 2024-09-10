@@ -143,7 +143,8 @@ export const dashboardRoutes = [
                 path: ':id',
                 element: (
                   <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
-                    <CreatorMediaKit />
+          
+                     <CreatorMediaKit />
                   </RoleBasedGuard>
                 ),
               },

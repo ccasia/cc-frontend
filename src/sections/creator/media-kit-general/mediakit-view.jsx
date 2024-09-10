@@ -104,8 +104,11 @@ const MediaKit = ({ id, noBigScreen }) => {
           <Tab value="tiktok" label="Tiktok" icon={<Iconify icon="logos:tiktok-icon" />} />
           <Tab value="partnership" label="Partnerships" />
         </Tabs>
+          {creator && (
 
-        <MediaKitSocial currentTab={currentTab} />
+         
+        <MediaKitSocial currentTab={currentTab} user={creator}/>
+      )}
       </Card>
 
       {/* <Box
@@ -134,4 +137,6 @@ const MediaKit = ({ id, noBigScreen }) => {
   );
 };
 
-export default withPermission(['read'], 'creator', MediaKit);
+export default MediaKit;
+
+// export default withPermission(['read'], 'admin', MediaKit);
