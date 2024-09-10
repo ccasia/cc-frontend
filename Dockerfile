@@ -1,5 +1,11 @@
 FROM node:21-bookworm-slim as development
 
+# RUN apt-get update && \
+#     apt-get install -y \
+#     build-essential \
+#     python3 \
+#     python3-pip
+
 WORKDIR /app
 
 COPY package.json ./

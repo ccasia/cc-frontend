@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack';
 import { BarLoader } from 'react-spinners';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
@@ -791,6 +792,8 @@ function CreateCampaignForm() {
     [setValue]
   );
 
+  const a = watch('agreementFrom');
+
   const formUpload = (
     <Box
       sx={{
@@ -802,13 +805,23 @@ function CreateCampaignForm() {
         p: 3,
       }}
     >
-      <Typography variant="h4">Upload Agreement</Typography>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Typography variant="h5">Upload Template Agreement</Typography>
+        <Typography variant="caption" color="text.secondary">
+          ( Make sure the template agreement has a signature )
+        </Typography>
+      </Stack>
+
       <RHFUpload
-        type="pdf"
+        type="doc"
         name="agreementFrom"
         onDrop={handleDropSingleFile}
         onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
       />
+  
+      <Button variant="outlined" color="error" onClick={() => setValue('agreementFrom', '')}>
+        Remove
+      </Button>
     </Box>
   );
 
