@@ -154,7 +154,6 @@ const MediaKitSocialContent = () => {
     const fetchSocialMediaData = async () => {
       try {
         const response = await axiosInstance.get(endpoints.creators.getCreatorCrawlerResult);
-        console.log(response);
         setSocialMediaData(response.data);
         setLoading(false);
       } catch (err) {
