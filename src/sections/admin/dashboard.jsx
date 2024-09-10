@@ -16,10 +16,9 @@ const DashboardAdmin = () => {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      {/* {(user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSM') && (
+      {(user?.admin?.mode === 'god' || user?.admin?.role?.name === 'CSM') && (
         <DashboardSuperadmin />
-      )} */}
-      <DashboardSuperadmin />
+      )}
       {user?.admin?.designation === 'Finance' && <DashboardFinance />}
     </Container>
   );
