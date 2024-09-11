@@ -13,12 +13,12 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
-import { useMediaQuery } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import InputAdornment from '@mui/material/InputAdornment';
+import { DialogActions, DialogContent, useMediaQuery } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -46,52 +46,38 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
     setNumPages(numPages);
   };
 
-  // const handlePrevPage = () => {
-  //   setPageNumber((prevPageNumber) => Math.max(prevPageNumber - 1, 1));
-  // };
-
-  // const handleNextPage = () => {
-  //   setPageNumber((prevPageNumber) => Math.min(prevPageNumber + 1, numPages));
-  // };
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg">
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullScreen={isSmallScreen}>
       <DialogTitle>{title}</DialogTitle>
-      {/* <Typography> Pages {pageNumber}/{numPages} </Typography>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-          <Button onClick={handlePrevPage} disabled={pageNumber <= 1}>
-            Previous
-          </Button>
-          <Button onClick={handleNextPage} disabled={pageNumber >= numPages}>
-            Next
-          </Button>
-        </div> */}
-      {/* <DialogContent dividers> */}
-      <Box sx={{ flexGrow: 1, mt: 2 }}>
-        <Document
-          file={pdfFile}
-          onLoadSuccess={onDocumentLoadSuccess}
-          options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
-        >
-          {Array.from(new Array(numPages), (el, index) => (
-            <div key={index} style={{ marginBottom: '0px' }}>
-              <Page
-                key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
-                pageNumber={index + 1}
-                // scale={1.5}
-                scale={isSmallScreen ? -0.7 : 1.5}
-                renderAnnotationLayer={false}
-                renderTextLayer={false}
-                style={{ margin: 0, padding: 0, position: 'relative' }}
-              />
-            </div>
-          ))}
-        </Document>
-      </Box>
+
+      <DialogContent>
+        <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
+          <Document
+            file={pdfFile}
+            onLoadSuccess={onDocumentLoadSuccess}
+            options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+          >
+            {Array.from(new Array(numPages), (el, index) => (
+              <div key={index} style={{ marginBottom: '0px' }}>
+                <Page
+                  key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
+                  pageNumber={index + 1}
+                  scale={isSmallScreen ? 0.7 : 1.5}
+                  renderAnnotationLayer={false}
+                  renderTextLayer={false}
+                  style={{ overflow: 'scroll' }}
+                  // style={{ margin: 0, padding: 0, position: 'relative' }}
+                />
+              </div>
+            ))}
+          </Document>
+        </Box>
+      </DialogContent>
 
       {/* </DialogContent> */}
-
-      <Button onClick={onClose}>Close</Button>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
     </Dialog>
   );
 };
