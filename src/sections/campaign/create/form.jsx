@@ -10,7 +10,6 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
 import Step from '@mui/material/Step';
 import Paper from '@mui/material/Paper';
 import { LoadingButton } from '@mui/lab';
@@ -19,7 +18,16 @@ import Stepper from '@mui/material/Stepper';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
-import { Grid, Stack, Avatar, Divider, IconButton, StepContent, ListItemText } from '@mui/material';
+import {
+  Grid,
+  Chip,
+  Stack,
+  Avatar,
+  Divider,
+  IconButton,
+  StepContent,
+  ListItemText,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
@@ -224,7 +232,7 @@ function CreateCampaignForm() {
         campaignBrand: null,
         campaignStartDate: null,
         campaignEndDate: null,
-        campaignIndustries: [],
+        campaignIndustries: null,
         campaignObjectives: '',
         campaignDescription: '',
         audienceGender: [],
@@ -471,8 +479,8 @@ function CreateCampaignForm() {
           fullWidth
           name="campaignBrand"
           placeholder="Brand"
-          options={!companyLoading && (brandState ? [brandState] : options)}
-          getOptionLabel={(option) => option.name}
+          options={!companyLoading ? (brandState ? [brandState] : options) : []}
+          getOptionLabel={(option) => option.name || ''}
           noOptionsText={
             <Button
               variant="contained"
@@ -485,14 +493,21 @@ function CreateCampaignForm() {
             </Button>
           }
           isOptionEqualToValue={(option, value) => option.id === value.id}
-          renderOption={(props, option) =>
-            !companyLoading && (
-              <Stack direction="row" spacing={1} p={1} {...props}>
+          renderOption={(props, option) => {
+            // eslint-disable-next-line react/prop-types
+            const { key, ...optionProps } = props;
+
+            if (!option.id) {
+              return null;
+            }
+
+            return (
+              <Stack component="li" key={key} direction="row" spacing={1} p={1} {...optionProps}>
                 <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
                 <ListItemText primary={option.name} />
               </Stack>
-            )
-          }
+            );
+          }}
         />
       </Box>
 
@@ -507,25 +522,25 @@ function CreateCampaignForm() {
         name="campaignIndustries"
         placeholder="Industries"
         disableCloseOnSelect
-        options={interestsLists.map((option) => option)}
-        getOptionLabel={(option) => option}
-        renderOption={(props, option) => (
-          <li {...props} key={option}>
-            {option}
-          </li>
-        )}
-        renderTags={(selected, getTagProps) =>
-          selected.map((option, index) => (
-            <Chip
-              {...getTagProps({ index })}
-              key={option}
-              label={option}
-              size="small"
-              color="info"
-              variant="soft"
-            />
-          ))
-        }
+        options={interestsLists}
+        // getOptionLabel={(option) => option || ''}
+        // renderOption={(props, option) => (
+        //   <li {...props} key={option}>
+        //     {option}
+        //   </li>
+        // )}
+        // renderTags={(selected, getTagProps) =>
+        //   selected.map((option, index) => (
+        //     <Chip
+        //       {...getTagProps({ index })}
+        //       key={option}
+        //       label={option}
+        //       size="small"
+        //       color="info"
+        //       variant="soft"
+        //     />
+        //   ))
+        // }
       />
 
       <RHFTextField name="brandTone" label="Brand Tone" multiline />
@@ -601,7 +616,7 @@ function CreateCampaignForm() {
           name="audienceLanguage"
           label="Audience Language"
           options={langList.sort()}
-          getOptionLabel={(option) => option}
+          getOptionLabel={(option) => option || ''}
         />
 
         <RHFMultiSelect
@@ -818,7 +833,7 @@ function CreateCampaignForm() {
         onDrop={handleDropSingleFile}
         onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
       />
-  
+
       <Button variant="outlined" color="error" onClick={() => setValue('agreementFrom', '')}>
         Remove
       </Button>
@@ -927,65 +942,65 @@ function CreateCampaignForm() {
             }}
           >
             <Box sx={{ my: 1 }}>
-              <FormProvider methods={methods} onSubmit={onSubmit}>
-                {/* {getStepContent(activeStep)} */}
-                {activeStep === steps.length - 1 && (
-                  <Box sx={{ display: 'flex', m: 2, direction: { xs: 'column', md: 'row' } }}>
-                    <Button
-                      color="inherit"
-                      disabled={activeStep === 0}
-                      onClick={handleBack}
-                      sx={{ mr: 1 }}
-                    >
-                      Back
-                    </Button>
-                    <Box sx={{ flexGrow: 1 }} />
-                    {activeStep === steps.length - 1 ? (
-                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+              {/* <FormProvider methods={methods} onSubmit={onSubmit}> */}
+              {/* {getStepContent(activeStep)} */}
+              {activeStep === steps.length - 1 && (
+                <Box sx={{ display: 'flex', m: 2, direction: { xs: 'column', md: 'row' } }}>
+                  <Button
+                    color="inherit"
+                    disabled={activeStep === 0}
+                    onClick={handleBack}
+                    sx={{ mr: 1 }}
+                  >
+                    Back
+                  </Button>
+                  <Box sx={{ flexGrow: 1 }} />
+                  {activeStep === steps.length - 1 ? (
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+                      <LoadingButton
+                        variant="outlined"
+                        startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
+                      >
+                        Preview
+                      </LoadingButton>
+                      <LoadingButton
+                        variant="outlined"
+                        onClick={() => onSubmit('DRAFT')}
+                        startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
+                        loading={isLoading}
+                      >
+                        Draft
+                      </LoadingButton>
+                      {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
                         <LoadingButton
-                          variant="outlined"
-                          startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
-                        >
-                          Preview
-                        </LoadingButton>
-                        <LoadingButton
-                          variant="outlined"
-                          onClick={() => onSubmit('DRAFT')}
-                          startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
+                          variant="contained"
+                          color="primary"
+                          onClick={() => onSubmit('ACTIVE')}
+                          startIcon={<Iconify icon="material-symbols:publish" width={16} />}
                           loading={isLoading}
                         >
-                          Draft
+                          Publish now
                         </LoadingButton>
-                        {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
-                          <LoadingButton
-                            variant="contained"
-                            color="primary"
-                            onClick={() => onSubmit('ACTIVE')}
-                            startIcon={<Iconify icon="material-symbols:publish" width={16} />}
-                            loading={isLoading}
-                          >
-                            Publish now
-                          </LoadingButton>
-                        ) : (
-                          <LoadingButton
-                            variant="contained"
-                            color="primary"
-                            onClick={() => onSubmit('SCHEDULED')}
-                            startIcon={<Iconify icon="material-symbols:publish" width={16} />}
-                            loading={isLoading}
-                          >
-                            Schedule on {dayjs(startDate).format('ddd LL')}
-                          </LoadingButton>
-                        )}
-                      </Stack>
-                    ) : (
-                      <Button variant="contained" onClick={handleNext}>
-                        Next
-                      </Button>
-                    )}
-                  </Box>
-                )}
-              </FormProvider>
+                      ) : (
+                        <LoadingButton
+                          variant="contained"
+                          color="primary"
+                          onClick={() => onSubmit('SCHEDULED')}
+                          startIcon={<Iconify icon="material-symbols:publish" width={16} />}
+                          loading={isLoading}
+                        >
+                          Schedule on {dayjs(startDate).format('ddd LL')}
+                        </LoadingButton>
+                      )}
+                    </Stack>
+                  ) : (
+                    <Button variant="contained" onClick={handleNext}>
+                      Next
+                    </Button>
+                  )}
+                </Box>
+              )}
+              {/* </FormProvider> */}
             </Box>
           </Paper>
         </Box>

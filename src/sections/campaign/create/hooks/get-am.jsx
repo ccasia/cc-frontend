@@ -8,10 +8,11 @@ export const useGetAdmins = () => {
   const getAdmins = useCallback(async () => {
     try {
       const res = await axiosInstance.get(endpoints.users.getAdmins);
-      console.log(res?.data);
+
       setAdmins(res?.data);
+      return res;
     } catch (error) {
-      console.log(error);
+      return error;
     }
   }, []);
 
