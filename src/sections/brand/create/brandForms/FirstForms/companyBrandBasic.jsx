@@ -17,9 +17,17 @@ import { alpha } from '@mui/material/styles';
 import StepLabel from '@mui/material/StepLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Stack, Tooltip, IconButton, InputAdornment } from '@mui/material';
+import {
+  Stack,
+  Tooltip,
+  IconButton,
+  ListItemText,
+  InputAdornment,
+  LinearProgress,
+} from '@mui/material';
 
 import useGetCompany from 'src/hooks/use-get-company';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -43,6 +51,7 @@ const interestsLists = [
   'Technology',
   'Travel',
 ];
+
 const steps = ['Select or Create Company', 'Fill in Brand Information'];
 
 dayjs.extend(localizedFormat);
@@ -52,6 +61,7 @@ function CompanyBrandBasic() {
   const { companies, getCompany } = useGetCompany();
   const [openCreate, setOpenCreate] = useState();
   const [loading, setLoading] = useState(false);
+  const smUp = useResponsive('up', 'sm');
 
   useEffect(() => {
     getCompany();
@@ -73,7 +83,6 @@ function CompanyBrandBasic() {
     brandTiktok: Yup.string().required('Brand Tiktok is required'),
     brandIndustries: Yup.array().min(3, 'Brand Industries is required'),
     companyId: Yup.object().required('Company is required'),
-    // companyId: Yup.string().required('Company is required'),
   });
 
   const defaultValuesOne = {
@@ -145,6 +154,7 @@ function CompanyBrandBasic() {
         <Button
           variant="outlined"
           color="primary"
+          size="small"
           onClick={() => {
             setOpenCreate(true);
           }}
@@ -364,6 +374,13 @@ function CompanyBrandBasic() {
     }
   }
 
+  const renderStepperMobile = (active) => (
+    <Stack gap={1} p={2}>
+      <ListItemText primary={`Step ${active + 1}`} secondary={steps[active]} />
+      <LinearProgress variant="determinate" value={((active + 1) / steps.length) * 100} />
+    </Stack>
+  );
+
   return (
     <Box
       sx={{
@@ -372,26 +389,30 @@ function CompanyBrandBasic() {
         bgcolor: 'background.paper',
       }}
     >
-      <Stepper
-        sx={{
-          pt: 2,
-          m: 2,
-          my: 5,
-        }}
-        activeStep={activeStep}
-        alternativeLabel
-      >
-        {steps.map((label, index) => {
-          const stepProps = {};
-          const labelProps = {};
-          // labelProps.error = stepError.includes(index) && true;
-          return (
-            <Step key={label} {...stepProps}>
-              <StepLabel {...labelProps}>{label}</StepLabel>
-            </Step>
-          );
-        })}
-      </Stepper>
+      {!smUp ? (
+        renderStepperMobile(activeStep)
+      ) : (
+        <Stepper
+          sx={{
+            pt: 2,
+            m: 2,
+            my: 5,
+          }}
+          activeStep={activeStep}
+          alternativeLabel
+        >
+          {steps.map((label, index) => {
+            const stepProps = {};
+            const labelProps = {};
+            // labelProps.error = stepError.includes(index) && true;
+            return (
+              <Step key={label} {...stepProps}>
+                <StepLabel {...labelProps}>{label}</StepLabel>
+              </Step>
+            );
+          })}
+        </Stepper>
+      )}
 
       {activeStep === steps.length ? (
         <>
@@ -452,7 +473,13 @@ function CompanyBrandBasic() {
             </Box>
           </Paper>
           <Box sx={{ display: 'flex', m: 2 }}>
-            <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
+            <Button
+              color="inherit"
+              disabled={activeStep === 0}
+              onClick={handleBack}
+              sx={{ mr: 1 }}
+              size="small"
+            >
               Back
             </Button>
             <Box sx={{ flexGrow: 1 }} />
@@ -461,7 +488,7 @@ function CompanyBrandBasic() {
                 Submit
               </LoadingButton>
             ) : (
-              <Button variant="contained" onClick={handleNext}>
+              <Button variant="contained" onClick={handleNext} size="small">
                 Next
               </Button>
             )}

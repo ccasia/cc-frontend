@@ -47,7 +47,7 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
     }
   });
 
-  const { options } = useGetCampaignBrandOption();
+  const { data: options, isLoading } = useGetCampaignBrandOption();
 
   const closeDialog = () => onClose('campaignBrand');
 
@@ -62,22 +62,21 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle id="alert-dialog-title">Edit Brand or Company</DialogTitle>
         <DialogContent>
-          <DialogContentText
-            id="alert-dialog-description"
-            p={1.5}
-          >
-            <Box sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'repeat(1, 1fr)',
-              },
-              gap: 2,
-            }}>
+          <DialogContentText id="alert-dialog-description" p={1.5}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'repeat(1, 1fr)',
+                },
+                gap: 2,
+              }}
+            >
               <RHFAutocomplete
                 fullWidth
                 name="campaignBrand"
                 placeholder="Brand"
-                options={options}
+                options={(!isLoading && options) || []}
                 getOptionLabel={(option) => option.name}
                 renderOption={(props, option) => (
                   <Stack direction="row" spacing={1} p={1} {...props}>

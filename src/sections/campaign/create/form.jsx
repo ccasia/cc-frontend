@@ -129,44 +129,57 @@ function CreateCampaignForm() {
   };
 
   const campaignSchema = Yup.object().shape({
-    // campaignName: Yup.string().required('Campaign name is required'),
-    campaignIndustries: Yup.array().min(3, 'Choose at least three option'),
-    // campaignInterests: Yup.array().min(3, 'Choose at least three option'),
+    campaignIndustries: Yup.string().required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
-    // campaignCompany: Yup.string().required('Company name is required'),
     campaignBrand: Yup.object().required('Brand name is required'),
-    campaignStartDate: Yup.mixed().nullable().required('Campaign start date is required'),
-    // campaignEndDate: Yup.mixed().nullable().required('birthDate date is required'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
-    // campaginCoverImage: Yup.string().required('Campaign cover image is required'),
-    // campaignSuccessMetrics: Yup.string().required('Campaign success metrics is required'),
-    audienceAge: Yup.array().required('Audience age is required'),
-    audienceGender: Yup.array().required('Audience Gender is required'),
-    audienceLocation: Yup.array().required('Audience location is required'),
-    audienceLanguage: Yup.array().required('Audience language is required'),
-    audienceCreatorPersona: Yup.array().required('Audience creator persona is required'),
+    brandTone: Yup.string().required('Brand tone is required'),
+    productName: Yup.string().required('Product or Service name is required.'),
+    audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
+    audienceGender: Yup.array()
+      .min(1, 'At least one option')
+      .required('Audience Gender is required'),
+    audienceLocation: Yup.array()
+      .min(1, 'At least one option')
+      .required('Audience location is required'),
+    othersAudienceLocation: Yup.string(),
+    audienceLanguage: Yup.array()
+      .min(1, 'At least one option')
+      .required('Audience language is required'),
+    audienceCreatorPersona: Yup.array()
+      .min(1, 'At least one option')
+      .required('Audience creator persona is required'),
     audienceUserPersona: Yup.string().required('Audience influencer persona is required'),
     campaignDo: Yup.array()
-      .min(1, 'insert at least one option')
-      .required('Campaign do is required '),
+      .min(1, 'At least one option')
+      .of(
+        Yup.object().shape({
+          value: Yup.string(),
+        })
+      ),
     campaignDont: Yup.array()
-      .min(1, 'insert at least one option')
-      .required('Campaign dont is required '),
-
-    adminManager: Yup.array().required('Admin Manager is required'),
+      .min(1, 'At least one option')
+      .of(
+        Yup.object().shape({
+          value: Yup.string(),
+        })
+      ),
     campaignImages: Yup.array()
       .min(1, 'Must have at least 1 image')
       .max(3, 'Must have at most 3 images'),
+    adminManager: Yup.array()
+      .min(1, 'At least One Admin is required')
+      .required('Admin Manager is required'),
     agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
-    timeline: Yup.mixed().required(),
-    campaignTasksAdmin: Yup.array()
-      .min(1)
-      .of(
-        Yup.object().shape({
-          name: Yup.string().required('Name is required'),
-        })
-      ),
+    // timeline: Yup.mixed().required(),
+    // campaignTasksAdmin: Yup.array()
+    //   .min(1)
+    //   .of(
+    //     Yup.object().shape({
+    //       name: Yup.string().required('Name is required'),
+    //     })
+    //   ),
   });
 
   const campaignInformationSchema = Yup.object().shape({
@@ -223,6 +236,10 @@ function CreateCampaignForm() {
       .required('Admin Manager is required'),
   });
 
+  const timelineSchema = Yup.object().shape({
+    campaignStartDate: Yup.string().required('Campaign Start Date is required.'),
+  });
+
   const savedData = localStorage.getItem('formData');
 
   const defaultValues = savedData
@@ -271,11 +288,11 @@ function CreateCampaignForm() {
       case 2:
         return campaignImagesSchema;
       case 3:
-        return undefined;
+        return timelineSchema;
       case 4:
-        return undefined;
-      case 5:
         return campaignAdminSchema;
+      // case 5:
+      //   return undefined;
       default:
         return campaignSchema; // Assuming step 3 is the default or final step
     }
@@ -288,16 +305,8 @@ function CreateCampaignForm() {
     mode: 'onChange',
   });
 
-  const {
-    handleSubmit,
-    getValues,
-    control,
-    setValue,
-    watch,
-    reset,
-    trigger,
-    formState: { errors },
-  } = methods;
+  const { handleSubmit, getValues, control, setValue, watch, reset, trigger, formState: {errors} } = methods;
+  console.log(errors)
 
   const values = watch();
 
@@ -348,11 +357,13 @@ function CreateCampaignForm() {
   }, [brandState, setValue]);
 
   const handleNext = async () => {
-    if (activeStep === 3 || activeStep === 4) {
-      localStorage.setItem('activeStep', activeStep + 1);
-      setActiveStep((prevActiveStep) => prevActiveStep + 1);
-    }
+    // if (activeStep === 3 || activeStep === 4) {
+    //   localStorage.setItem('activeStep', activeStep + 1);
+    //   setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    // }
+
     const result = await trigger();
+
     if (result) {
       localStorage.setItem('activeStep', activeStep + 1);
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -406,6 +417,7 @@ function CreateCampaignForm() {
   }
 
   const onSubmit = handleSubmit(async (data, stage) => {
+    
     const formData = new FormData();
 
     const adjustedData = {
@@ -828,7 +840,7 @@ function CreateCampaignForm() {
       </Stack>
 
       <RHFUpload
-        type="doc"
+        type="pdf"
         name="agreementFrom"
         onDrop={handleDropSingleFile}
         onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
@@ -957,12 +969,12 @@ function CreateCampaignForm() {
                   <Box sx={{ flexGrow: 1 }} />
                   {activeStep === steps.length - 1 ? (
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                      <LoadingButton
+                      {/* <LoadingButton
                         variant="outlined"
                         startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
                       >
                         Preview
-                      </LoadingButton>
+                      </LoadingButton> */}
                       <LoadingButton
                         variant="outlined"
                         onClick={() => onSubmit('DRAFT')}

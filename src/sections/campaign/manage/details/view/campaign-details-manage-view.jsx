@@ -622,7 +622,9 @@ const CampaignDetailManageView = ({ id }) => {
               <Stack spacing={2}>
                 {renderCampaignInformation}
                 {campaign?.brand ? renderBrand : renderCompany}
-                {renderDosAndDonts}
+                {campaign?.campaignBrief?.campaign_do &&
+                  campaign?.campaignBrief?.campaign_dont &&
+                  renderDosAndDonts}
               </Stack>
             </Grid>
             <Grid item xs={12} md={4}>
