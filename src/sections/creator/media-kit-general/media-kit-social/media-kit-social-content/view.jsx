@@ -150,6 +150,7 @@ const MediaKitSocialContent = ({ user }) => {
                 Followers
               </Typography>
               <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
+                {/* <CountUp end={100} /> */}
                 {formatNumber(instagram.followers)}
               </Typography>
             </Box>

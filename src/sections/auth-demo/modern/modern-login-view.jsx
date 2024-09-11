@@ -1,6 +1,7 @@
 import * as Yup from 'yup';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
@@ -12,6 +13,7 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -27,6 +29,7 @@ export default function ModernLoginView() {
   const password = useBoolean();
   const { login } = useAuthContext();
   const [error, setError] = useState();
+  const router = useRouter();
 
   const LoginSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
@@ -50,9 +53,16 @@ export default function ModernLoginView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await login(data.email, data.password, { admin: false });
+      const res = await login(data.email, data.password, { admin: false });
+      if (res?.user?.role === 'creator') {
+        router.push(paths.dashboard.campaign.view);
+      }
+      enqueueSnackbar('Successfully login');
     } catch (err) {
-      setError(err.message);
+      enqueueSnackbar(err.message, {
+        variant: 'error',
+      });
+      // setError(err.message);
     }
   });
 

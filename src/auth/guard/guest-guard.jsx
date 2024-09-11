@@ -24,7 +24,6 @@ GuestGuard.propTypes = {
 
 function Container({ children }) {
   const router = useRouter();
-  
 
   const searchParams = useSearchParams();
 

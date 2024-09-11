@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 
-import { Tab, Box, Card, Tabs, Container } from '@mui/material';
+import { Tab, Box, Card, Tabs, useTheme, Container } from '@mui/material';
 
 import { useGetCreatorByID } from 'src/hooks/use-get-creators';
-
-import withPermission from 'src/auth/guard/withPermissions';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -15,6 +13,7 @@ import MediaKitSocial from './media-kit-social/view';
 // eslint-disable-next-line react/prop-types
 const MediaKit = ({ id, noBigScreen }) => {
   const settings = useSettingsContext();
+  const theme = useTheme();
   const { creator } = useGetCreatorByID(id);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -30,7 +29,7 @@ const MediaKit = ({ id, noBigScreen }) => {
     top: 0,
     left: 0,
     zIndex: 10000,
-    bgcolor: (theme) => theme.palette.grey[900],
+    bgcolor: theme.palette.grey[900],
   };
 
   return (
@@ -42,7 +41,7 @@ const MediaKit = ({ id, noBigScreen }) => {
               ...styleFullScreen,
             }
           : {
-              border: (theme) => `dashed 1px ${theme.palette.divider}`,
+              border: `dashed 1px ${theme.palette.divider}`,
               borderRadius: 2,
               position: 'relative',
             }
@@ -82,12 +81,15 @@ const MediaKit = ({ id, noBigScreen }) => {
           onChange={(e, val) => setCurrentTab(val)}
           variant="fullWidth"
           sx={{
-            border: (theme) => `dashed 1px ${theme.palette.divider}`,
+            border: `dashed 1px ${theme.palette.divider}`,
             borderRadius: 2,
             p: 2,
             [`& .Mui-selected`]: {
-              bgcolor: (theme) => theme.palette.grey[900],
+              bgcolor:
+                settings.themeMode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300],
               borderRadius: 1.5,
+              border: 1,
+              borderColor: theme.palette.divider,
             },
           }}
           TabIndicatorProps={{
@@ -104,11 +106,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           <Tab value="tiktok" label="Tiktok" icon={<Iconify icon="logos:tiktok-icon" />} />
           <Tab value="partnership" label="Partnerships" />
         </Tabs>
-          {creator && (
-
-         
-        <MediaKitSocial currentTab={currentTab} user={creator}/>
-      )}
+        {creator && <MediaKitSocial currentTab={currentTab} user={creator} />}
       </Card>
 
       {/* <Box
