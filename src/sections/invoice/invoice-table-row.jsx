@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
 
 import Link from '@mui/material/Link';
 import Button from '@mui/material/Button';
@@ -24,7 +23,6 @@ import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
@@ -41,23 +39,6 @@ export default function InvoiceTableRow({
 
   const popover = usePopover();
   const { user } = useAuthContext();
-  const [statusState, setStatusState] = useState(status);
-  console.log(user.admin.role.name);
-
-  // "pending" | "paid" | "overdue" | "draft" | "pending_approval" | "pending_payment" | "approved"
-  const clickedbutton = async () => {
-    try {
-      const res = await axiosInstance.patch(endpoints.invoice.updateInvoiceStatus, {
-        invoiceId: row.id,
-        status: 'approved',
-      });
-
-      console.log(res.data);
-      setStatusState('approved');
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   return (
     <>
@@ -125,14 +106,14 @@ export default function InvoiceTableRow({
           <Label
             variant="soft"
             color={
-              (statusState === 'paid' && 'success') ||
-              (statusState === 'pending' && 'warning') ||
-              (statusState === 'overdue' && 'error') ||
-              (statusState === 'approved' && 'success') ||
+              (status === 'paid' && 'success') ||
+              (status === 'pending' && 'warning') ||
+              (status === 'overdue' && 'error') ||
+              (status === 'approved' && 'success') ||
               'default'
             }
           >
-            {statusState}
+            {status}
           </Label>
         </TableCell>
         {user?.admin?.role?.name !== 'CSM' && (
@@ -142,14 +123,6 @@ export default function InvoiceTableRow({
             </IconButton>
           </TableCell>
         )}
-
-        {user?.admin?.role?.name === 'CSM' && statusState !== 'approved' ? (
-          <TableCell align="left" sx={{ px: 1 }}>
-            <Button variant="contained" color="success" onClick={clickedbutton}>
-              Approve
-            </Button>
-          </TableCell>
-        ) : null}
       </TableRow>
 
       <CustomPopover

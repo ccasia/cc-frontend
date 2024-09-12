@@ -40,10 +40,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const { campaigns } = useGetInvoiceById(id);
   const currentInvoice = campaigns;
 
-  console.log(currentInvoice);
-  // const shortlistedCreators = creators?.campaign?.pitch.filter(
-  //   (creator) => creator.status === 'approved'
-  // );
 
   const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
     id: creator.user.id,
@@ -155,7 +151,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
       reset();
       loadingSave.onFalse();
       router.push(paths.dashboard.invoice.root);
-      console.info('DATA', JSON.stringify(data, null, 2));
     } catch (error) {
       console.error(error);
       loadingSave.onFalse();
@@ -172,7 +167,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
       reset();
       loadingSend.onFalse();
       enqueueSnackbar('Invoice Updated Successfully !', { variant: 'success' });
-      console.log('response', response);
     } catch (error) {
       loadingSend.onFalse();
       enqueueSnackbar('Failed to send invoice', { variant: 'error' });

@@ -4,7 +4,6 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
@@ -12,8 +11,6 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { inputBaseClasses } from '@mui/material/InputBase';
 
 import { fCurrency } from 'src/utils/format-number';
-
-import { INVOICE_SERVICE_OPTIONS } from 'src/_mock';
 
 import Iconify from 'src/components/iconify';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
@@ -23,7 +20,6 @@ import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 export default function InvoiceNewEditDetails() {
   const { control, setValue, watch, resetField } = useFormContext();
 
-  console.log(INVOICE_SERVICE_OPTIONS);
 
   const { fields, remove } = useFieldArray({
     control,
@@ -250,14 +246,14 @@ export default function InvoiceNewEditDetails() {
               />
             </Stack>
 
-            <Button
+            {/* <Button
               size="small"
               color="error"
               startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
               onClick={() => handleRemove(index)}
             >
               Remove
-            </Button>
+            </Button> */}
           </Stack>
         ))}
       </Stack>
