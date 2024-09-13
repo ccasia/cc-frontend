@@ -13,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useAuthContext } from 'src/auth/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 import { fDate, fTime } from 'src/utils/format-time';
@@ -21,6 +22,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
+
 
 // ----------------------------------------------------------------------
 
@@ -32,17 +34,11 @@ export default function InvoiceTableRow({
   onEditRow,
   onDeleteRow,
 }) {
-  const {
-    amount,
-    invoiceFrom,
-    invoiceNumber,
-    dueDate,
-    createdAt,
-    status,
-  } = row;
+  const { amount, invoiceFrom, invoiceNumber, dueDate, createdAt, status } = row;
   const confirm = useBoolean();
-  console.log(row);
+
   const popover = usePopover();
+  const { user } = useAuthContext();
 
   return (
     <>
@@ -120,12 +116,13 @@ export default function InvoiceTableRow({
             {status}
           </Label>
         </TableCell>
-
-        <TableCell align="right" sx={{ px: 1 }}>
-          <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-            <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
-        </TableCell>
+        {user?.admin?.role?.name !== 'CSM' && (
+          <TableCell align="right" sx={{ px: 1 }}>
+            <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+              <Iconify icon="eva:more-vertical-fill" />
+            </IconButton>
+          </TableCell>
+        )}
       </TableRow>
 
       <CustomPopover

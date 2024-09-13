@@ -146,7 +146,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
           <Image source="/logo/cult_logo.png" style={{ width: 100, height: 48 }} />
 
           <View style={{ alignItems: 'flex-end', flexDirection: 'column' }}>
-            <Text style={styles.h3}>{currentStatus}</Text>
+            <Text style={styles.h3}>{currentStatus || invoice?.status}</Text>
             <Text style={styles.h2}> {invoice?.invoiceNumber} </Text>
           </View>
         </View>

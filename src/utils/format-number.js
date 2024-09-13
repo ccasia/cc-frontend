@@ -28,8 +28,8 @@ function getLocaleCode() {
   } = getLocales();
 
   return {
-    code: code ?? 'en-US',
-    currency: currency ?? 'USD',
+    code: code ?? 'RM-MY',
+    currency: currency ?? 'MYR',
   };
 }
 

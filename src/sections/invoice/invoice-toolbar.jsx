@@ -6,13 +6,15 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Tooltip from '@mui/material/Tooltip';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 
@@ -20,10 +22,12 @@ import InvoicePDF from './invoice-pdf';
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, onChangeStatus }) {
-  // const router = useRouter();
+export default function InvoiceToolbar({ invoice, currentStatus }) {
+  const router = useRouter();
 
   const view = useBoolean();
+
+  const user = useAuthContext();
 
   // const handleEdit = useCallback(() => {
   //   router.push(paths.dashboard.invoice.edit(invoice?.id));
@@ -38,11 +42,17 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
         sx={{ mb: { xs: 3, md: 5 } }}
       >
         <Stack direction="row" spacing={1} flexGrow={1} sx={{ width: 1 }}>
-          <Tooltip title="Edit">
-            <IconButton>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton>
-          </Tooltip>
+          {user?.user?.role === 'creator' ? null : (
+            <Tooltip title="Edit">
+              <IconButton
+                onClick={() => {
+                  router.push(paths.dashboard.finance.createInvoice(invoice?.id));
+                }}
+              >
+                <Iconify icon="solar:pen-bold" />
+              </IconButton>
+            </Tooltip>
+          )}
 
           <Tooltip title="View">
             <IconButton onClick={view.onTrue}>
@@ -68,13 +78,13 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
             )}
           </PDFDownloadLink>
 
-          <Tooltip title="Print">
+          {/* <Tooltip title="Print">
             <IconButton>
               <Iconify icon="solar:printer-minimalistic-bold" />
             </IconButton>
-          </Tooltip>
+          </Tooltip> */}
 
-          <Tooltip title="Send">
+          {/* <Tooltip title="Send">
             <IconButton>
               <Iconify icon="iconamoon:send-fill" />
             </IconButton>
@@ -84,10 +94,10 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
             <IconButton>
               <Iconify icon="solar:share-bold" />
             </IconButton>
-          </Tooltip>
+          </Tooltip> */}
         </Stack>
 
-        <TextField
+        {/* <TextField
           fullWidth
           select
           label="Status"
@@ -102,7 +112,7 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
               {option.label}
             </MenuItem>
           ))}
-        </TextField>
+        </TextField> */}
       </Stack>
 
       <Dialog fullScreen open={view.value}>
@@ -131,6 +141,4 @@ export default function InvoiceToolbar({ invoice, currentStatus, statusOptions, 
 InvoiceToolbar.propTypes = {
   currentStatus: PropTypes.string,
   invoice: PropTypes.object,
-  onChangeStatus: PropTypes.func,
-  statusOptions: PropTypes.array,
 };

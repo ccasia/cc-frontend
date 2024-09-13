@@ -4,7 +4,6 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
@@ -12,8 +11,6 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { inputBaseClasses } from '@mui/material/InputBase';
 
 import { fCurrency } from 'src/utils/format-number';
-
-import { INVOICE_SERVICE_OPTIONS } from 'src/_mock';
 
 import Iconify from 'src/components/iconify';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
@@ -23,6 +20,7 @@ import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 export default function InvoiceNewEditDetails() {
   const { control, setValue, watch, resetField } = useFormContext();
 
+
   const { fields, remove } = useFieldArray({
     control,
     name: 'items',
@@ -30,7 +28,7 @@ export default function InvoiceNewEditDetails() {
 
   const values = watch();
 
-  const totalOnRow = values.items.map((item) => item.price);
+  const totalOnRow = values.items.map((item) => item?.price);
 
   const subTotal = sum(totalOnRow);
 
@@ -184,7 +182,7 @@ export default function InvoiceNewEditDetails() {
 
                 <Divider sx={{ borderStyle: 'dashed' }} />
 
-                {INVOICE_SERVICE_OPTIONS.map((service) => (
+                {[{ id: 1, name: 'Posting on social media', price: 200 }].map((service) => (
                   <MenuItem
                     key={service.id}
                     value={service.name}
@@ -235,7 +233,7 @@ export default function InvoiceNewEditDetails() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>$</Box>
+                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>RM</Box>
                     </InputAdornment>
                   ),
                 }}
@@ -248,14 +246,14 @@ export default function InvoiceNewEditDetails() {
               />
             </Stack>
 
-            <Button
+            {/* <Button
               size="small"
               color="error"
               startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
               onClick={() => handleRemove(index)}
             >
               Remove
-            </Button>
+            </Button> */}
           </Stack>
         ))}
       </Stack>

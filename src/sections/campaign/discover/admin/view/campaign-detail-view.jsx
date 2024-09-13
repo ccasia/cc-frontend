@@ -40,6 +40,7 @@ import CampaignDetailContent from '../campaign-detail-content';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
+import CampaignInvoicesList from '../campaign-invoices-list';
 
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
@@ -103,6 +104,7 @@ const CampaignDetailView = ({ id }) => {
     return '';
   };
 
+  // important
   const renderTabs = (
     <Tabs
       value={currentTab}
@@ -368,7 +370,7 @@ const CampaignDetailView = ({ id }) => {
       {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
       {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
       {currentTab === 'agreement' && <CampaignAgreements campaign={currentCampaign} />}
-
+      {currentTab === 'invoices' && <CampaignInvoicesList campId={currentCampaign?.id} />}
       {currentTab === 'client' && (
         <CampaignDetailBrand
           brand={currentCampaign?.brand ?? currentCampaign?.company}

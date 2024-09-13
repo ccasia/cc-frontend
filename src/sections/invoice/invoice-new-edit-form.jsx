@@ -13,13 +13,16 @@ import LoadingButton from '@mui/lab/LoadingButton';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { banks } from 'src/contants/bank';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import useGetInvoiceById from 'src/hooks/use-get-invoice';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import { useSnackbar } from 'src/components/snackbar';
 
 import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
@@ -27,16 +30,16 @@ import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
+export default function InvoiceNewEditForm({ id, creators }) {
   const router = useRouter();
+  const { enqueueSnackbar } = useSnackbar();
 
   const loadingSave = useBoolean();
 
   const loadingSend = useBoolean();
+  const { campaigns } = useGetInvoiceById(id);
+  const currentInvoice = campaigns;
 
-  // const shortlistedCreators = creators?.campaign?.pitch.filter(
-  //   (creator) => creator.status === 'approved'
-  // );
 
   const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
     id: creator.user.id,
@@ -91,7 +94,7 @@ export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
     () => ({
       invoiceNumber: currentInvoice?.invoiceNumber || generateRandomInvoiceNumber(),
       createDate: currentInvoice?.createDate || new Date(),
-      dueDate: currentInvoice?.dueDate || null,
+      dueDate: new Date(currentInvoice?.dueDate) || null,
       status: currentInvoice?.status || 'draft',
       invoiceFrom: currentInvoice?.invoiceFrom || null,
       invoiceTo: currentInvoice?.invoiceTo || [
@@ -107,7 +110,7 @@ export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
           addressType: 'Hq',
         },
       ],
-      items: currentInvoice?.items || [
+      items: [currentInvoice?.task] || [
         {
           title: '',
           description: '',
@@ -117,6 +120,12 @@ export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
           total: 0,
         },
       ],
+      bankInfo: currentInvoice?.bankAcc || {
+        bankName: '',
+        payTo: '',
+        accountNumber: '',
+        accountEmail: '',
+      },
       totalAmount: currentInvoice?.totalAmount || 0,
     }),
     [currentInvoice]
@@ -142,7 +151,6 @@ export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
       reset();
       loadingSave.onFalse();
       router.push(paths.dashboard.invoice.root);
-      console.info('DATA', JSON.stringify(data, null, 2));
     } catch (error) {
       console.error(error);
       loadingSave.onFalse();
@@ -151,46 +159,20 @@ export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
 
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
-
     try {
-      const response = axiosInstance.post(endpoints.invoice.create, { ...data, campaignId: id });
+      const response = axiosInstance.patch(endpoints.invoice.updateInvoice, {
+        ...data,
+        invoiceId: id,
+      });
       reset();
       loadingSend.onFalse();
-      // router.push(paths.dashboard.invoice.root);
-      console.log('response', response);
+      enqueueSnackbar('Invoice Updated Successfully !', { variant: 'success' });
     } catch (error) {
-      console.error(error);
       loadingSend.onFalse();
+      enqueueSnackbar('Failed to send invoice', { variant: 'error' });
     }
   });
   const values = watch();
-
-  const banks = [
-    'Affin Bank',
-    'Alliance Bank ',
-    'AmBank (M)',
-    'BNP Paribas ',
-    'Bangkok Bank',
-    'Bank of America  ',
-    'Bank of China',
-    'CIMB Bank',
-    'China Construction Bank',
-    'Citibank',
-    'Deutsche Bank',
-    'HSBC Bank',
-    'Hong Leong Bank',
-    'India International Bank',
-    'J.P. Morgan Chase Bank',
-    'Malayan Banking',
-    'Mizuho Bank',
-    'National Bank of Abu Dhabi',
-    'OCBC Bank',
-    'Public Bank ',
-    'RHB Bank ',
-    'Standard Chartered Bank',
-    'The Bank of Nova Scotia',
-    'United Overseas BankBhd',
-  ];
 
   const bankAccount = () => (
     <Box>
@@ -199,6 +181,22 @@ export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
       </Typography>
       <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} sx={{ p: 3 }}>
         {' '}
+        {/* <RHFTextField
+          required
+          type={'select'}
+          name="bankInfo.bankName"
+          label="Bank Name"
+          fullWidth
+          sx={{ width: 1 / 2 }}
+          value={values.bankInfo?.bankName}
+        >
+
+{banks.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </RHFTextField> */}
         <RHFSelect
           sx={{ width: 1 / 2 }}
           required
@@ -206,13 +204,14 @@ export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
           label="Bank Name"
           InputLabelProps={{ shrink: true }}
           PaperPropsSx={{ textTransform: 'capitalize' }}
+          value={values.bankInfo?.bankName}
         >
           {banks.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
+            <MenuItem key={option} value={option.bank}>
+              {option.bank}
             </MenuItem>
           ))}
-        </RHFSelect>{' '}
+        </RHFSelect>
         <RHFTextField
           label="Recipent Name"
           name="bankInfo.payTo"
@@ -276,7 +275,6 @@ export default function InvoiceNewEditForm({ currentInvoice, id, creators }) {
 }
 
 InvoiceNewEditForm.propTypes = {
-  currentInvoice: PropTypes.object,
   id: PropTypes.string,
   creators: PropTypes.object,
 };

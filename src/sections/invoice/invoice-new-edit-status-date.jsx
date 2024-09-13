@@ -19,7 +19,12 @@ export default function InvoiceNewEditStatusDate() {
       direction={{ xs: 'column', sm: 'row' }}
       sx={{ p: 3, bgcolor: 'background.neutral' }}
     >
-      <RHFTextField name="invoiceNumber" label="Invoice number" value={values.invoiceNumber} />
+      <RHFTextField
+        disabled
+        name="invoiceNumber"
+        label="Invoice number"
+        value={values.invoiceNumber}
+      />
 
       <RHFSelect
         fullWidth
@@ -29,13 +34,13 @@ export default function InvoiceNewEditStatusDate() {
         PaperPropsSx={{ textTransform: 'capitalize' }}
       >
         {[
+          'approved',
           'paid',
           'pending',
           'overdue',
           'draft',
           'pending_approval',
           'pending_payment',
-          'approved',
         ].map((option) => (
           <MenuItem key={option} value={option}>
             {option}
@@ -48,6 +53,7 @@ export default function InvoiceNewEditStatusDate() {
         control={control}
         render={({ field, fieldState: { error } }) => (
           <DatePicker
+          disabled
             label="Date create"
             value={field.value}
             onChange={(newValue) => {

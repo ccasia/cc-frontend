@@ -1,15 +1,19 @@
 import React from 'react';
 
-import { Box, Container, Typography } from '@mui/material';
+import { Container } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
-import Image from 'src/components/image';
+import useGetInvoicesByCreator from 'src/hooks/use-get-invoices-creator';
+
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
+import AppNewInvoice from 'src/sections/invoice/invoice-creator-list';
+
 const Invoice = () => {
   const settings = useSettingsContext();
+  const invoice = useGetInvoicesByCreator();
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -20,20 +24,7 @@ const Invoice = () => {
         }}
       />
 
-      <Box
-        sx={{
-          position: 'absolute',
-          left: '60%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      >
-        <Image src="/assets/development.svg" width={500} />
-
-        <Typography textAlign="center" variant="h5" mt={2}>
-          In Development
-        </Typography>
-      </Box>
+      <AppNewInvoice invoice={invoice?.invoices} />
     </Container>
   );
 };
