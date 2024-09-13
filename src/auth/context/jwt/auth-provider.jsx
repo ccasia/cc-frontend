@@ -120,6 +120,8 @@ export function AuthProvider({ children }) {
         },
       },
     });
+
+    return response?.data;
   }, []);
 
   // REGISTER

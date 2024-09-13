@@ -70,6 +70,8 @@ EditButton.propTypes = {
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading } = useGetCampaignById(id);
 
+  const campaignStartDate = !campaignLoading && campaign?.campaignBrief?.startDate;
+
   const modalConfirm = useBoolean();
 
   const loadingButton = useBoolean();
@@ -93,7 +95,6 @@ const CampaignDetailManageView = ({ id }) => {
     }));
   };
 
-  // const formatDays = (days) => (days === 1 ? 'day' : 'days');
   const isEditable = campaign?.status !== 'ACTIVE';
 
   const handleChangeStatus = async (status) => {
@@ -159,6 +160,7 @@ const CampaignDetailManageView = ({ id }) => {
   const renderCampaignInformation = (
     <>
       <Box p={2} component={Card} position="relative">
+        <Typography variant="h5">Campaign General Information</Typography>
         <ListItemText
           primary={campaign?.name}
           secondary={campaign?.description}
@@ -218,17 +220,6 @@ const CampaignDetailManageView = ({ id }) => {
             <Label color="secondary">{campaign?.campaignBrief?.industries}</Label>
           </Stack>
         </Stack>
-
-        {/* <Stack spacing={1} mt={2}>
-          <Typography variant="subtitle1">Industries</Typography>
-          <Stack direction="row" spacing={1}>
-            {campaign?.campaignBrief?.interests.map((industry, index) => (
-              <Label key={index} color="secondary">
-                {industry}
-              </Label>
-            ))}
-          </Stack>
-        </Stack> */}
       </Box>
 
       <EditCampaignInfo open={open} campaign={campaign} onClose={onClose} />
@@ -389,7 +380,7 @@ const CampaignDetailManageView = ({ id }) => {
   const renderRequirement = (
     <>
       <Box component={Card} p={2}>
-        <Typography variant="h5">Requirements</Typography>
+        <Typography variant="h5">Campaign Requirements</Typography>
         {isEditable && (
           <EditButton
             tooltip="Edit Requirements"
@@ -465,6 +456,30 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="User Persona"
             secondary={formatText(campaign?.campaignRequirement?.user_persona)}
+          />
+          <ListItemText
+            primary="Social Media Platform"
+            secondary={
+              <Stack spacing={1} direction="row" flexWrap="wrap">
+                {campaign?.campaignBrief?.socialMediaPlatform?.map((e, index) => (
+                  <Label key={index} color="secondary">
+                    {formatText(e)}
+                  </Label>
+                )) || null}
+              </Stack>
+            }
+          />
+          <ListItemText
+            primary="Video Angle"
+            secondary={
+              <Stack spacing={1} direction="row" flexWrap="wrap">
+                {campaign?.campaignBrief?.videoAngle?.map((e, index) => (
+                  <Label key={index} color="secondary">
+                    {formatText(e)}
+                  </Label>
+                )) || null}
+              </Stack>
+            }
           />
         </Stack>
       </Box>
@@ -566,18 +581,21 @@ const CampaignDetailManageView = ({ id }) => {
                 End Campaign
               </LoadingButton>
             )}
-            {campaign && campaign?.status === 'PAUSED' && (
-              <LoadingButton
-                variant="contained"
-                color="primary"
-                size="small"
-                startIcon={<Iconify icon="eva:cloud-upload-fill" />}
-                onClick={() => handleChangeStatus('ACTIVE')}
-                loading={loadingButton.value}
-              >
-                Publish
-              </LoadingButton>
-            )}
+            {campaign &&
+              (campaign?.status === 'PAUSED' ||
+                (campaign?.status === 'DRAFT' &&
+                  dayjs(campaignStartDate).isSame(dayjs(), 'D'))) && (
+                <LoadingButton
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                  onClick={() => handleChangeStatus('ACTIVE')}
+                  loading={loadingButton.value}
+                >
+                  Publish
+                </LoadingButton>
+              )}
             {campaign && campaign?.status === 'ACTIVE' && (
               <LoadingButton
                 variant="contained"
@@ -590,20 +608,6 @@ const CampaignDetailManageView = ({ id }) => {
                 Pause
               </LoadingButton>
             )}
-
-            {/* {dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') &&
-              campaign?.status !== 'ACTIVE' && (
-                <LoadingButton
-                  variant="contained"
-                  color="primary"
-                  size="small"
-                  endIcon={<Iconify icon="eva:cloud-upload-fill" />}
-                  onClick={() => handleChangeStatus('ACTIVE')}
-                  loading={loadingButton.value}
-                >
-                  Publish
-                </LoadingButton>
-              )} */}
           </Stack>
         }
         sx={{
@@ -618,7 +622,9 @@ const CampaignDetailManageView = ({ id }) => {
               <Stack spacing={2}>
                 {renderCampaignInformation}
                 {campaign?.brand ? renderBrand : renderCompany}
-                {renderDosAndDonts}
+                {campaign?.campaignBrief?.campaign_do &&
+                  campaign?.campaignBrief?.campaign_dont &&
+                  renderDosAndDonts}
               </Stack>
             </Grid>
             <Grid item xs={12} md={4}>

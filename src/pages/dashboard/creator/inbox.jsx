@@ -11,7 +11,7 @@ export default function Page() {
         <title>Creator Inbox</title>
       </Helmet>
 
-      <CreatorInbox />
+      <CreatorInbox />  
     </>
   );
 }

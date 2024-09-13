@@ -22,17 +22,7 @@ const MediaKitCover = ({ user }) => {
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
           {user?.name}
         </Typography>
-        {/* <Stack direction="row" gap={2}>
-          {user?.creator?.interests.map((elem) => (
-            <Chip
-              label={elem?.name}
-              sx={{
-                borderRadius: 10,
-                fontWeight: 800,
-              }}
-            />
-          ))}
-        </Stack> */}
+
         <Stack gap={2}>
           <Typography
             gutterBottom
@@ -43,20 +33,26 @@ const MediaKitCover = ({ user }) => {
             fontWeight={600}
             color={theme.palette.grey[600]}
           >
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorum, odio sequi aliquid
+            {user?.creator?.mediaKit?.about}
+            {/* Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorum, odio sequi aliquid
             obcaecati esse quidem quas eligendi quos minima voluptates? Hic tempore perferendis
-            velit natus.
+            velit natus. */}
           </Typography>
-          <Stack direction={{ sm: 'row' }} justifyContent="space-evenly" alignItems="center">
-            <Stack direction="row" gap={2}>
+          <Stack
+            direction={{ sm: 'row' }}
+            justifyContent="space-evenly"
+            alignItems="center"
+            spacing={2}
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
               <Iconify icon="mingcute:location-fill" />
-              <Typography variant="subtitle2" gutterBottom fontWeight={800}>
+              <Typography variant="subtitle2" fontWeight={800}>
                 Live at {user?.country}
               </Typography>
             </Stack>
-            <Stack direction="row" gap={2}>
+            <Stack direction="row" spacing={1} alignItems="center">
               <Iconify icon="mdi:email" />
-              <Typography variant="subtitle2" gutterBottom fontWeight={800}>
+              <Typography variant="subtitle2" fontWeight={800}>
                 {user?.email}
               </Typography>
             </Stack>

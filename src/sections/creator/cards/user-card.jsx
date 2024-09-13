@@ -18,6 +18,7 @@ import { _socials } from 'src/_mock';
 import { AvatarShape } from 'src/assets/illustrations';
 
 import Iconify from 'src/components/iconify';
+import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
@@ -29,7 +30,7 @@ export default function UserCard({ user }) {
   const router = useRouter();
 
   return (
-    <Box component="div" onClick={() => router.push(user?.creator?.id)}>
+    <Box component="div" onClick={() => router.push(paths.dashboard.creator.mediaKit(user?.creator?.id))}>
       <Card
         sx={{
           textAlign: 'center',

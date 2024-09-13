@@ -21,6 +21,7 @@ import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
 import { Stack, InputAdornment } from '@mui/material';
 import DialogContent from '@mui/material/DialogContent';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -59,6 +60,15 @@ export default function CreatorForm({ creator, open, onClose }) {
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
   const [ratingIndustries, setRatingIndustries] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // const [employmentValue, setEmploymentValue] = useState('');
+
+  // const handleEmploymentChange = (event) => {
+  //   const selectedValue = event.target.value;
+  //   console.log('Selected employment value:', selectedValue); // Debugging line
+  //   setEmploymentValue(selectedValue);
+  // };
 
   // First step schema
   const firstSchema = Yup.object().shape({
@@ -103,6 +113,7 @@ export default function CreatorForm({ creator, open, onClose }) {
       employment: '',
       birthDate: null,
       Nationality: '',
+      otherPronounce: '',
     }),
     []
   );
@@ -116,6 +127,8 @@ export default function CreatorForm({ creator, open, onClose }) {
 
   const nationality = watch('Nationality');
   const languages = watch('languages');
+  const pronounce = watch('pronounce');
+  const otherPronounce = watch('otherPronounce');
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -123,6 +136,47 @@ export default function CreatorForm({ creator, open, onClose }) {
 
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  const fetchSocialMediaData = async (instagramUsername, tiktokUsername) => {
+    const maxRetries = 3;
+  
+    const makeRequest = async (platform, username) => {
+      for (let retries = 0; retries < maxRetries; retries += 1) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          const response = await axiosInstance.post(endpoints.creators.getCreatorCrawler, {
+            identifier: username,
+            platform,
+          });
+          return response.data.data;
+        } catch (error) {
+          console.error(`Error fetching ${platform} data:`, error.response || error);
+          if (retries === maxRetries - 1) {
+            throw error;
+          }
+          // Wait for 1 second before retrying
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+      throw new Error(`Max retries reached for ${platform}`);
+    };
+  
+    try {
+      const [instagramData, tiktokData] = await Promise.all([
+        makeRequest('Instagram', instagramUsername),
+        makeRequest('TikTok', tiktokUsername),
+      ]);
+  
+      return {
+        instagram: instagramData,
+        tiktok: tiktokData,
+      };
+    } catch (error) {
+      console.error('Error fetching social media data:', error.response || error);
+      throw new Error('Failed to fetch social media data. Please try again later.');
+    }
   };
 
   const onSubmit = handleSubmit(async (data) => {
@@ -133,21 +187,29 @@ export default function CreatorForm({ creator, open, onClose }) {
     //   toast.error('Please rate all your industries.');
     // }
 
-    const newData = {
-      ...data,
-      // interests: ratingInterst,
-      // industries: ratingIndustries,
-    };
+    setIsSubmitting(true);
+
+    
 
     try {
+      const socialMediaData = await fetchSocialMediaData(data.instagram, data.tiktok);
+      console.log(socialMediaData);
+      const newData = {
+        ...data,
+        socialMediaData,
+        pronounce: otherPronounce || pronounce,
+      };
       const res = await axiosInstance.put(endpoints.auth.updateCreator, newData);
       enqueueSnackbar(`Welcome ${res.data.name}!`);
 
       onClose();
     } catch (error) {
+      console.error('Submission error:', error);
       enqueueSnackbar('Something went wrong', {
         variant: 'error',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   });
 
@@ -217,13 +279,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 
           <RHFTextField name="location" label="City/Area" multiline />
 
-          <RHFSelect
-            name="employment"
-            label="Employment Status"
-            multiple={false}
-            // onChange={handleEmploymentChange}
-            // value={employmentValue}
-          >
+          <RHFSelect name="employment" label="Employment Status" multiple={false}>
             <MenuItem value="fulltime">I have a full-time job</MenuItem>
             <MenuItem value="freelance">I&apos;m a freelancer</MenuItem>
             <MenuItem value="part_time">I only work part-time</MenuItem>
@@ -232,10 +288,6 @@ export default function CreatorForm({ creator, open, onClose }) {
             <MenuItem value="unemployed">I&apos;m unemployed</MenuItem>
             <MenuItem value="others">Others </MenuItem>
           </RHFSelect>
-
-          {/* {employmentValue === "others" && (
-            <RHFTextField name="employmentDetails" label="Please specify" />
-          )} */}
 
           <RHFTextField
             name="phone"
@@ -256,6 +308,8 @@ export default function CreatorForm({ creator, open, onClose }) {
             <MenuItem value="they/them">They/Them</MenuItem>
             <MenuItem value="others">Others</MenuItem>
           </RHFSelect>
+
+          {pronounce === 'others' && <RHFTextField name="otherPronounce" label="Pronounce" />}
 
           <RHFDatePicker name="birthDate" label="Birth Date" />
 
@@ -568,8 +622,16 @@ export default function CreatorForm({ creator, open, onClose }) {
               </Button>
               <Box sx={{ flexGrow: 1 }} />
               {activeStep === steps.length - 1 ? (
-                <Button variant="contained" onClick={onSubmit}>
-                  Submit
+                <Button 
+                  variant="contained" 
+                  onClick={onSubmit} 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    'Submit'
+                  )}
                 </Button>
               ) : (
                 <Button variant="contained" onClick={handleNext}>

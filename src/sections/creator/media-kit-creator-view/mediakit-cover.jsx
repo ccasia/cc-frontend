@@ -30,29 +30,8 @@ const MediaKitCover = ({ user }) => {
           }}
         >
           {(user &&
-            user?.creator?.mediaKit?.interests.map((elem, index) => (
-              <Label>{elem}</Label>
-              // <Chip
-              //   key={index}
-              //   label={elem}
-              //   sx={{
-              //     borderRadius: 10,
-              //     fontWeight: 800,
-              //   }}
-              // />
-            ))) ||
-            (user &&
-              user?.creator?.interests?.map((elem, index) => (
-                <Label>{elem?.name}</Label>
-                // <Chip
-                //   key={index}
-                //   label={elem?.name}
-                //   sx={{
-                //     borderRadius: 10,
-                //     fontWeight: 800,
-                //   }}
-                // />
-              )))}
+            user?.creator?.mediaKit?.interests.map((elem, index) => <Label>{elem}</Label>)) ||
+            (user && user?.creator?.interests?.map((elem, index) => <Label>{elem?.name}</Label>))}
         </Stack>
         <Stack gap={2}>
           <Typography

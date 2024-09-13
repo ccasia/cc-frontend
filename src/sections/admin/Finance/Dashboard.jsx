@@ -1,476 +1,102 @@
-/* eslint-disable no-unused-vars */
-import sumBy from 'lodash/sumBy';
-import { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import Card from '@mui/material/Card';
-import Table from '@mui/material/Table';
-import Stack from '@mui/material/Stack';
-import { Divider } from '@mui/material';
-import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
-import Container from '@mui/material/Container';
-import IconButton from '@mui/material/IconButton';
-import { alpha, useTheme } from '@mui/material/styles';
-import TableContainer from '@mui/material/TableContainer';
+import { Grid, Container, Typography } from '@mui/material';
 
-import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
+import FinanceStatistics from './FinanceStatistics';
+import InvoiceHistoryCampaignList from './InvoiceHistoryCampaignList';
 
-import { useBoolean } from 'src/hooks/use-boolean';
-
-import { isAfter, isBetween } from 'src/utils/format-time';
-
-import { _invoices } from 'src/_mock';
-
-import Label from 'src/components/label';
-import Iconify from 'src/components/iconify';
-import Scrollbar from 'src/components/scrollbar';
-import { useSnackbar } from 'src/components/snackbar';
-import { ConfirmDialog } from 'src/components/custom-dialog';
-import { useSettingsContext } from 'src/components/settings';
-import {
-  useTable,
-  getComparator,
-  TableHeadCustom,
-  TableSelectedAction,
-  TablePaginationCustom,
-} from 'src/components/table';
-
-import InvoiceAnalytic from './invoice-analytic';
-// import InvoiceTableRow from '../invoice-table-row';
-// import InvoiceTableToolbar from '../invoice-table-toolbar';
-// import InvoiceTableFiltersResult from '../invoice-table-filters-result';
-
-// ----------------------------------------------------------------------
-
-const TABLE_HEAD = [
-  { id: 'invoiceNumber', label: 'Customer' },
-  { id: 'createDate', label: 'Create' },
-  { id: 'dueDate', label: 'Due' },
-  { id: 'price', label: 'Amount' },
-  { id: 'sent', label: 'Sent', align: 'center' },
-  { id: 'status', label: 'Status' },
-  { id: '' },
+// Dummy data
+const initialData = [
+  { id: 1, campaign: 'Design For The Better', creator: 'Cult Creative Sdn Bhd', invoice: 'INV-1', date: '2024-09-01', amount: '100.00', status: 'Paid' },
+  { id: 2, campaign: 'Campaign 2', creator: 'Creator 2', invoice: 'INV-2', date: '2024-09-02', amount: '1001.00', status: 'Paid' },
+  { id: 3, campaign: 'Campaign 3', creator: 'Creator 3', invoice: 'INV-3', date: '2024-09-03', amount: '2000.00', status: 'Paid' },
+  { id: 4, campaign: 'Campaign 4', creator: 'Creator 4', invoice: 'INV-4', date: '2024-09-04', amount: '5001.00', status: 'Paid' },
+  { id: 5, campaign: 'Campaign 5', creator: 'Creator 5', invoice: 'INV-5', date: '2024-09-05', amount: '10001.00', status: 'Paid' },
+  { id: 6, campaign: 'Campaign 6', creator: 'Creator 6', invoice: 'INV-6', date: '2024-09-06', amount: '24999.00', status: 'Paid' },
+  { id: 7, campaign: 'Campaign 7', creator: 'Creator 7', invoice: 'INV-7', date: '2024-09-07', amount: '30000.00', status: 'Paid' },
 ];
 
-const defaultFilters = {
-  name: '',
-  service: [],
-  status: 'all',
-  startDate: null,
-  endDate: null,
-};
+const Dashboard = () => {
+  const [data, setData] = useState(initialData);
+  const [searchQuery, setSearchQuery] = useState('');
 
-// ----------------------------------------------------------------------
+  // Function to handle data updates
+  const handleDataUpdate = (updatedData) => {
+    setData(updatedData);
+  };
 
-export default function InvoiceListView() {
-  const { enqueueSnackbar } = useSnackbar();
+  // Function to handle search input changes
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+  };
 
-  const theme = useTheme();
+  // Function to calculate statistics from the data
+  const calculateStats = (invoiceData) => {
+    const totalPaidInvoices = invoiceData.filter(item => item.status === 'Paid').length;
+    const totalRevenue = invoiceData
+      .filter(item => item.status === 'Paid')
+      .reduce((acc, item) => acc + parseFloat(item.amount.replace('RM', '').replace(',', '')), 0);
 
-  const settings = useSettingsContext();
+    const pendingInvoices = invoiceData.filter(item => item.status === 'Pending').length;
+    const pendingAmount = invoiceData
+      .filter(item => item.status === 'Pending')
+      .reduce((acc, item) => acc + parseFloat(item.amount.replace('RM', '').replace(',', '')), 0);
 
-  const router = useRouter();
+    const overdueInvoices = invoiceData.filter(item => item.status === 'Overdue').length;
+    const overdueAmount = invoiceData
+      .filter(item => item.status === 'Overdue')
+      .reduce((acc, item) => acc + parseFloat(item.amount.replace('RM', '').replace(',', '')), 0);
 
-  const table = useTable({ defaultOrderBy: 'createDate' });
+    return {
+      totalRevenue,
+      totalPaidInvoices,
+      pendingInvoices,
+      pendingAmount,
+      overdueInvoices,
+      overdueAmount,
+    };
+  };
 
-  const confirm = useBoolean();
+  const stats = calculateStats(data);
 
-  const [tableData, setTableData] = useState(_invoices);
-
-  const [filters, setFilters] = useState(defaultFilters);
-
-  const dateError = isAfter(filters.startDate, filters.endDate);
-
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-    dateError,
-  });
-
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
-
-  const denseHeight = table.dense ? 56 : 56 + 20;
-
-  const canReset =
-    !!filters.name ||
-    !!filters.service.length ||
-    filters.status !== 'all' ||
-    (!!filters.startDate && !!filters.endDate);
-
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
-
-  const getInvoiceLength = (status) => tableData.filter((item) => item.status === status).length;
-
-  const getTotalAmount = (status) =>
-    sumBy(
-      tableData.filter((item) => item.status === status),
-      'totalAmount'
-    );
-
-  const getPercentByStatus = (status) => (getInvoiceLength(status) / tableData.length) * 100;
-
-  const TABS = [
-    { value: 'all', label: 'All', color: 'default', count: tableData.length },
-    {
-      value: 'paid',
-      label: 'Paid',
-      color: 'success',
-      count: getInvoiceLength('paid'),
-    },
-    {
-      value: 'pending',
-      label: 'Pending',
-      color: 'warning',
-      count: getInvoiceLength('pending'),
-    },
-    {
-      value: 'overdue',
-      label: 'Overdue',
-      color: 'error',
-      count: getInvoiceLength('overdue'),
-    },
-    {
-      value: 'draft',
-      label: 'Draft',
-      color: 'default',
-      count: getInvoiceLength('draft'),
-    },
-  ];
-
-  const handleFilters = useCallback(
-    (name, value) => {
-      table.onResetPage();
-      setFilters((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
-    },
-    [table]
-  );
-
-  const handleResetFilters = useCallback(() => {
-    setFilters(defaultFilters);
-  }, []);
-
-  const handleDeleteRow = useCallback(
-    (id) => {
-      const deleteRow = tableData.filter((row) => row.id !== id);
-
-      enqueueSnackbar('Delete success!');
-
-      setTableData(deleteRow);
-
-      table.onUpdatePageDeleteRow(dataInPage.length);
-    },
-    [dataInPage.length, enqueueSnackbar, table, tableData]
-  );
-
-  const handleDeleteRows = useCallback(() => {
-    const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
-
-    enqueueSnackbar('Delete success!');
-
-    setTableData(deleteRows);
-
-    table.onUpdatePageDeleteRows({
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
-    });
-  }, [dataFiltered.length, dataInPage.length, enqueueSnackbar, table, tableData]);
-
-  const handleEditRow = useCallback(
-    (id) => {
-      router.push(paths.dashboard.invoice.edit(id));
-    },
-    [router]
-  );
-
-  const handleViewRow = useCallback(
-    (id) => {
-      router.push(paths.dashboard.invoice.details(id));
-    },
-    [router]
-  );
-
-  const handleFilterStatus = useCallback(
-    (event, newValue) => {
-      handleFilters('status', newValue);
-    },
-    [handleFilters]
+  // Filter data based on search query
+  const filteredData = data.filter(item => 
+    item.campaign.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.invoice.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.date.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.amount.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <>
-      <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-        <Card
-          sx={{
-            mb: { xs: 3, md: 5 },
-          }}
-        >
-          <Scrollbar>
-            <Stack
-              direction="row"
-              divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
-              sx={{ py: 2 }}
-            >
-              <InvoiceAnalytic
-                title="Total"
-                total={tableData.length}
-                percent={100}
-                price={sumBy(tableData, 'totalAmount')}
-                icon="solar:bill-list-bold-duotone"
-                color={theme.palette.info.main}
-              />
+    <Container maxWidth="lg" sx={{ maxHeight: '0vh' }}>
+      <Typography variant="h4" gutterBottom sx={{ mb: 2 }}>
+        Finance Dashboard
+      </Typography>
+      <Grid container spacing={4}>
 
-              <InvoiceAnalytic
-                title="Paid"
-                total={getInvoiceLength('paid')}
-                percent={getPercentByStatus('paid')}
-                price={getTotalAmount('paid')}
-                icon="solar:file-check-bold-duotone"
-                color={theme.palette.success.main}
-              />
+        {/* Finance Statistics */}
+        <Grid item xs={12} md={12}>
+            <FinanceStatistics stats={stats} />
+        </Grid>
 
-              <InvoiceAnalytic
-                title="Pending"
-                total={getInvoiceLength('pending')}
-                percent={getPercentByStatus('pending')}
-                price={getTotalAmount('pending')}
-                icon="solar:sort-by-time-bold-duotone"
-                color={theme.palette.warning.main}
-              />
+        {/* Invoice History and Campaign List */}
+        <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom>
+              Invoice History
+            </Typography>
 
-              <InvoiceAnalytic
-                title="Overdue"
-                total={getInvoiceLength('overdue')}
-                percent={getPercentByStatus('overdue')}
-                price={getTotalAmount('overdue')}
-                icon="solar:bell-bing-bold-duotone"
-                color={theme.palette.error.main}
-              />
-            </Stack>
-          </Scrollbar>
-        </Card>
-
-        <Card>
-          <Tabs
-            value={filters.status}
-            onChange={handleFilterStatus}
-            sx={{
-              px: 2.5,
-              boxShadow: `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
-            }}
-          >
-            {TABS.map((tab) => (
-              <Tab
-                key={tab.value}
-                value={tab.value}
-                label={tab.label}
-                iconPosition="end"
-                icon={
-                  <Label
-                    variant={
-                      ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
-                    }
-                    color={tab.color}
-                  >
-                    {tab.count}
-                  </Label>
-                }
-              />
-            ))}
-          </Tabs>
-
-          {/* <InvoiceTableToolbar
-            filters={filters}
-            onFilters={handleFilters}
-            //
-            dateError={dateError}
-            serviceOptions={INVOICE_SERVICE_OPTIONS.map((option) => option.name)}
-          /> */}
-
-          {/* {canReset && (
-            <InvoiceTableFiltersResult
-              filters={filters}
-              onFilters={handleFilters}
-              //
-              onResetFilters={handleResetFilters}
-              //
-              results={dataFiltered.length}
-              sx={{ p: 2.5, pt: 0 }}
-            />
-          )} */}
-
-          <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-            <TableSelectedAction
-              dense={table.dense}
-              numSelected={table.selected.length}
-              rowCount={dataFiltered.length}
-              onSelectAllRows={(checked) => {
-                table.onSelectAllRows(
-                  checked,
-                  dataFiltered.map((row) => row.id)
-                );
-              }}
-              action={
-                <Stack direction="row">
-                  <Tooltip title="Sent">
-                    <IconButton color="primary">
-                      <Iconify icon="iconamoon:send-fill" />
-                    </IconButton>
-                  </Tooltip>
-
-                  <Tooltip title="Download">
-                    <IconButton color="primary">
-                      <Iconify icon="eva:download-outline" />
-                    </IconButton>
-                  </Tooltip>
-
-                  <Tooltip title="Print">
-                    <IconButton color="primary">
-                      <Iconify icon="solar:printer-minimalistic-bold" />
-                    </IconButton>
-                  </Tooltip>
-
-                  <Tooltip title="Delete">
-                    <IconButton color="primary" onClick={confirm.onTrue}>
-                      <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              }
-            />
-
-            <Scrollbar>
-              <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 800 }}>
-                <TableHeadCustom
-                  order={table.order}
-                  orderBy={table.orderBy}
-                  headLabel={TABLE_HEAD}
-                  rowCount={dataFiltered.length}
-                  numSelected={table.selected.length}
-                  onSort={table.onSort}
-                  onSelectAllRows={(checked) =>
-                    table.onSelectAllRows(
-                      checked,
-                      dataFiltered.map((row) => row.id)
-                    )
-                  }
-                />
-
-                {/* <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => (
-                      <InvoiceTableRow
-                        key={row.id}
-                        row={row}
-                        selected={table.selected.includes(row.id)}
-                        onSelectRow={() => table.onSelectRow(row.id)}
-                        onViewRow={() => handleViewRow(row.id)}
-                        onEditRow={() => handleEditRow(row.id)}
-                        onDeleteRow={() => handleDeleteRow(row.id)}
-                      />
-                    ))}
-
-                  <TableEmptyRows
-                    height={denseHeight}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
-                  />
-
-                  <TableNoData notFound={notFound} />
-                </TableBody> */}
-              </Table>
-            </Scrollbar>
-          </TableContainer>
-
-          <TablePaginationCustom
-            count={dataFiltered.length}
-            page={table.page}
-            rowsPerPage={table.rowsPerPage}
-            onPageChange={table.onChangePage}
-            onRowsPerPageChange={table.onChangeRowsPerPage}
-            //
-            dense={table.dense}
-            onChangeDense={table.onChangeDense}
-          />
-        </Card>
-      </Container>
-
-      <ConfirmDialog
-        open={confirm.value}
-        onClose={confirm.onFalse}
-        title="Delete"
-        content={
-          <>
-            Are you sure want to delete <strong> {table.selected.length} </strong> items?
-          </>
-        }
-        action={
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => {
-              handleDeleteRows();
-              confirm.onFalse();
-            }}
-          >
-            Delete
-          </Button>
-        }
-      />
-    </>
+            <InvoiceHistoryCampaignList 
+              data={filteredData}
+              onDataUpdate={handleDataUpdate}
+              searchQuery={searchQuery}
+              onSearchChange={handleSearchChange}/>
+              
+        </Grid>
+      </Grid>
+    </Container>
   );
-}
+};
 
-// ----------------------------------------------------------------------
-
-function applyFilter({ inputData, comparator, filters, dateError }) {
-  const { name, status, service, startDate, endDate } = filters;
-
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-
-  inputData = stabilizedThis.map((el) => el[0]);
-
-  if (name) {
-    inputData = inputData.filter(
-      (invoice) =>
-        invoice.invoiceNumber.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        invoice.invoiceTo.name.toLowerCase().indexOf(name.toLowerCase()) !== -1
-    );
-  }
-
-  if (status !== 'all') {
-    inputData = inputData.filter((invoice) => invoice.status === status);
-  }
-
-  if (service.length) {
-    inputData = inputData.filter((invoice) =>
-      invoice.items.some((filterItem) => service.includes(filterItem.service))
-    );
-  }
-
-  if (!dateError) {
-    if (startDate && endDate) {
-      inputData = inputData.filter((invoice) => isBetween(invoice.createDate, startDate, endDate));
-    }
-  }
-
-  return inputData;
-}
+export default Dashboard;

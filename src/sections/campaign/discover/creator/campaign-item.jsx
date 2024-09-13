@@ -334,7 +334,7 @@ export default function CampaignItem({ campaign, user }) {
         dialog={dialog}
       />
       <CampaignPitchOptionsModal open={open} handleClose={handleClose} campaign={campaign} />
-      <CreatorForm dialog={dialog} />
+      <CreatorForm dialog={dialog} user={user} />
     </>
   );
 }

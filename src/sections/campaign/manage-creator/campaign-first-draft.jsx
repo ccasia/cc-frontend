@@ -97,6 +97,7 @@ const CampaignFirstDraft = ({
         },
       });
       enqueueSnackbar(res.data.message);
+      mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
     } catch (error) {
       enqueueSnackbar('Failed to submit draft', {
@@ -154,7 +155,7 @@ const CampaignFirstDraft = ({
   return (
     previousSubmission?.status === 'APPROVED' && (
       <Box>
-        {logistics?.every((logistic) => logistic?.status === 'Delivered') ? (
+        {logistics?.every((logistic) => logistic?.status === 'Product_has_been_received') ? (
           <Box>
             {submission?.status === 'PENDING_REVIEW' && (
               <Stack justifyContent="center" alignItems="center" spacing={2}>

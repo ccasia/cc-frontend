@@ -53,6 +53,7 @@ const CampaignDetailView = ({ id }) => {
   const idd = open ? 'simple-popper' : undefined;
 
   const currentCampaign = campaigns && campaigns.find((campaign) => campaign.id === id);
+  console.log(currentCampaign);
 
   let timeline =
     currentCampaign?.defaultcampaignTimeline || currentCampaign?.customcampaignTimeline;
@@ -89,11 +90,15 @@ const CampaignDetailView = ({ id }) => {
 
   const icons = (tab) => {
     if (tab.value === 'pitch' && currentCampaign?.pitch.length > 0) {
-      return <Label variant="filled">{currentCampaign?.pitch.length}</Label>;
+      return <Label>{currentCampaign?.pitch.length}</Label>;
     }
 
     if (tab.value === 'creator' && currentCampaign?.shortlisted?.length) {
-      return <Label variant="filled">{currentCampaign?.shortlisted?.length}</Label>;
+      return <Label>{currentCampaign?.shortlisted?.length}</Label>;
+    }
+
+    if (tab.value === 'agreement' && currentCampaign?.creatorAgreement?.length) {
+      return <Label>{currentCampaign?.creatorAgreement?.length}</Label>;
     }
 
     return '';
@@ -162,7 +167,7 @@ const CampaignDetailView = ({ id }) => {
             p: 2,
             bgcolor: 'background.paper',
             mb: 1,
-            // mr: 5,
+
             width: {
               xs: 250,
               md: 450,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Tab, Box, Card, Tabs, Container } from '@mui/material';
+import { Tab, Box, Card, Tabs, useTheme, Container } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -13,7 +13,7 @@ import MediaKitSocial from './media-kit-social/view';
 
 const MediaKitCreator = () => {
   const settings = useSettingsContext();
-
+  const theme = useTheme();
   const { user } = useAuthContext();
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -34,7 +34,7 @@ const MediaKitCreator = () => {
     top: 0,
     left: 0,
     zIndex: 10000,
-    bgcolor: (theme) => theme.palette.background.paper,
+    bgcolor: theme.palette.background.paper,
   };
 
   return (
@@ -46,7 +46,7 @@ const MediaKitCreator = () => {
               ...styleFullScreen,
             }
           : {
-              border: (theme) => `dashed 1px ${theme.palette.divider}`,
+              border: `dashed 1px ${theme.palette.divider}`,
               borderRadius: 2,
               position: 'relative',
             }
@@ -61,7 +61,7 @@ const MediaKitCreator = () => {
           cursor: 'pointer',
           zIndex: 1000,
           '&:hover': {
-            color: (theme) => theme.palette.grey[400],
+            color: theme.palette.grey[400],
           },
         }}
         onClick={toggle}
@@ -82,7 +82,7 @@ const MediaKitCreator = () => {
           cursor: 'pointer',
           zIndex: 1000,
           '&:hover': {
-            color: (theme) => theme.palette.grey[400],
+            color: theme.palette.grey[400],
           },
         }}
       >
@@ -103,12 +103,15 @@ const MediaKitCreator = () => {
           onChange={(e, val) => setCurrentTab(val)}
           variant="fullWidth"
           sx={{
-            border: (theme) => `dashed 1px ${theme.palette.divider}`,
+            border: `dashed 1px ${theme.palette.divider}`,
             borderRadius: 2,
             p: 2,
             [`& .Mui-selected`]: {
-              bgcolor: (theme) => theme.palette.background.paper,
+              bgcolor:
+                settings.themeMode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300],
               borderRadius: 1.5,
+              border: 1,
+              borderColor: theme.palette.divider,
             },
           }}
           TabIndicatorProps={{

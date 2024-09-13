@@ -45,6 +45,7 @@ const Agreement = ({ campaign, submission, creator }) => {
         status: 'approve',
         userId: creator?.user?.id,
         submissionId: submission?.id,
+        submission,
       });
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
@@ -66,6 +67,7 @@ const Agreement = ({ campaign, submission, creator }) => {
         campaignTaskId: submission?.campaignTask?.id,
         submissionId: submission?.id,
         feedback: data.feedback,
+        submission,
       });
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
@@ -143,10 +145,10 @@ const Agreement = ({ campaign, submission, creator }) => {
           </Box>
         </Grid>
         <Grid item xs={12} md={9}>
-          <Box component={Paper} p={1.5}>
-            {submission?.status === 'IN_PROGRESS' && !submission?.content ? (
-              <EmptyContent title="No submission" />
-            ) : (
+          {submission?.status === 'IN_PROGRESS' && !submission?.content ? (
+            <EmptyContent title="No submission" />
+          ) : (
+            <Box component={Paper} p={1.5}>
               <>
                 <iframe
                   src={submission?.content}
@@ -180,67 +182,10 @@ const Agreement = ({ campaign, submission, creator }) => {
                 )}
                 {renderFeedbackForm}
               </>
-            )}
-          </Box>
+            </Box>
+          )}
         </Grid>
       </Grid>
-      {/* {submission?.isReview && (
-        <Card sx={{ p: 2, mb: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2) }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Iconify icon="hugeicons:tick-03" />
-            <Typography variant="caption" color="text.secondary">
-              Reviewed
-            </Typography>
-          </Stack>
-        </Card>
-      )}
-      <Card sx={{ p: 2, mb: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="caption" color="text.secondary">
-            Due date
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {dayjs(submission?.dueDate).format('ddd LL')}
-          </Typography>
-        </Stack>
-      </Card>
-      {submission?.status === 'IN_PROGRESS' && !submission?.content ? (
-        <EmptyContent title="No submission" />
-      ) : (
-        <>
-          <iframe
-            src={submission?.content}
-            style={{
-              borderRadius: 10,
-              width: '100%',
-              height: 900,
-            }}
-            title="AgreementForm"
-          />
-          {submission.status === 'PENDING_REVIEW' && (
-            <Stack direction="row" gap={1.5} justifyContent="end" mt={2}>
-              <Button
-                onClick={modal.onTrue}
-                size="small"
-                variant="outlined"
-                startIcon={<Iconify icon="mingcute:close-fill" />}
-              >
-                Reject
-              </Button>
-              <Button
-                size="small"
-                onClick={() => handleClick()}
-                variant="contained"
-                color="success"
-                startIcon={<Iconify icon="hugeicons:tick-03" />}
-              >
-                Approve
-              </Button>
-            </Stack>
-          )}
-          {renderFeedbackForm}
-        </>
-      )} */}
     </Box>
   );
 };

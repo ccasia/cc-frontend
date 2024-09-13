@@ -12,7 +12,7 @@ const MyCampaignView = ({ query, setQuery, filteredData, onClick }) => (
   <Box mt={2}>
     <TextField
       value={query}
-      placeholder="Search By Campaign Name"
+      // placeholder="Search By Campaign Name"
       InputProps={{
         startAdornment: (
           <InputAdornment position="start">

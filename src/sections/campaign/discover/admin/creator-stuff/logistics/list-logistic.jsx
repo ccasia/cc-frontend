@@ -20,10 +20,17 @@ import {
 import { endpoints } from 'src/utils/axios';
 
 import { changeStatus } from 'src/api/logistic';
-import { couriers } from 'src/contants/courier.js';
+import { couriers } from 'src/contants/courier';
 
 import { RHFSelect } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
+
+const logisticsStatus = [
+  'Product_is_being_packaged',
+  'Proudct_is_at_delivery_warehouse_in_transit',
+  'Product_is_out_for_delivery',
+  'Product_has_been_received',
+];
 
 const ListLogistics = ({ logistics }) => {
   const methods = useForm({
@@ -84,12 +91,11 @@ const ListLogistics = ({ logistics }) => {
                         value={logistic.status}
                         onChange={(e) => onChange(e.target.value, logistic.id, logistic.campaignId)}
                       >
-                        <MenuItem value="Pending">Pending</MenuItem>
-                        <MenuItem value="Shipping">Shipping</MenuItem>
-                        <MenuItem value="Shipped">Shipped</MenuItem>
-                        <MenuItem value="Pending_Delivery_Confirmation">
-                          Pending Delivery Confirmation
-                        </MenuItem>
+                        {logisticsStatus.map((status, index) => (
+                          <MenuItem key={index} value={status}>
+                            {status.split('_').join(' ')}
+                          </MenuItem>
+                        ))}
                       </RHFSelect>
                     </FormProvider>
                   </TableCell>

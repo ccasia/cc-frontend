@@ -19,7 +19,7 @@ import {
 
 import { endpoints } from 'src/utils/axios';
 
-import { couriers } from 'src/contants/courier.js';
+import { couriers } from 'src/contants/courier';
 import { createLogistics } from 'src/api/logistic';
 
 import FormProvider from 'src/components/hook-form/form-provider';

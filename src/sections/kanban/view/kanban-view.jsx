@@ -16,7 +16,9 @@ import { KanbanColumnSkeleton } from '../kanban-skeleton';
 // ----------------------------------------------------------------------
 
 export default function KanbanView() {
-  const { board, boardLoading, boardEmpty } = useGetBoard();
+  const { board, boardLoading } = useGetBoard();
+
+  const status = board?.columns?.map((column) => column?.name);
 
   const onDragEnd = useCallback(
     async ({ destination, source, draggableId, type }) => {
@@ -179,6 +181,7 @@ export default function KanbanView() {
                       key={item?.id}
                       column={board.columns[item.position]}
                       tasks={item?.task}
+                      status={status}
                     />
                   ))}
 

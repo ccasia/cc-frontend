@@ -4,7 +4,8 @@ import PropTypes from 'prop-types';
 import { Box, Stack } from '@mui/material';
 
 import MediaKitAnalytics from './media-kit-analytic/view';
-import MediaKitSocialContent from './media-kit-social-content/view';
+import MediaKitSocialContentInstagram from './media-kit-social-content/view-instagram';
+import MediaKitSocialContentTiktok from './media-kit-social-content/view-tiktok';
 
 const MediaKitSocial = ({ currentTab }) => (
   <Box
@@ -22,11 +23,15 @@ const MediaKitSocial = ({ currentTab }) => (
     {/* <h1>dawdaw</h1> */}
     {currentTab === 'instagram' && (
       <Stack gap={4}>
-        <MediaKitSocialContent />
+        <MediaKitSocialContentInstagram />
         <MediaKitAnalytics />
       </Stack>
     )}
-    {currentTab === 'tiktok'}
+    {currentTab === 'tiktok' && (
+      <Stack gap={4}>
+        <MediaKitSocialContentTiktok />
+      </Stack>
+    )}
     {currentTab === 'partnership'}
   </Box>
 );

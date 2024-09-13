@@ -124,7 +124,7 @@ const CampaignOverview = ({ campaign }) => {
                 </Stack>
               ))
             ) : (
-              <EmptyContent title={"You haven't shortlisted any creator yet"} />
+              <EmptyContent title="You haven't shortlisted any creator yet" />
             )}
           </Stack>
         </Box>
