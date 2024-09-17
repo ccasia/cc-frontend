@@ -18,6 +18,7 @@ import {
   Dialog,
   Typography,
   DialogTitle,
+  ListItemText,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -147,18 +148,17 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                     : '-'}
                 </Typography>
                 <Typography variant="subtitle2" color="text.secondary">
-                  {submission?.isReview
-                    ? dayjs(submission?.updatedAt).format('ddd LL')
-                    : 'Pending Review'}
+                  {submission?.isReview ? dayjs(submission?.updatedAt).format('ddd LL') : '-'}
                 </Typography>
               </Stack>
             </Box>
           </Box>
         </Grid>
         <Grid item xs={12} md={9}>
-          {submission?.status === 'IN_PROGRESS' && !submission?.content ? (
-            <EmptyContent title="No submission" />
-          ) : (
+          {submission?.status === 'NOT_STARTED' && <EmptyContent title="Not Started" />}
+          {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No Submission" />}
+          {(submission?.status === 'PENDING_REVIEW' ||
+            submission?.status === 'CHANGES_REQUIRED') && (
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <video
@@ -175,55 +175,31 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                   <Typography variant="subtitle1">{submission?.caption}</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12}>
-                {submission?.status === 'PENDING_REVIEW' && (
+              {submission?.status === 'CHANGES_REQUIRED' ? (
+                <Grid item xs={12}>
+                  <Box component={Paper} position="relative" p={10}>
+                    <Stack gap={1.5} alignItems="center">
+                      <Image src="/assets/pending.svg" width={200} />
+                      <ListItemText
+                        primary="Creator has been notified. Awaiting resubmission of the final draft."
+                        sx={{
+                          textAlign: 'center',
+                        }}
+                        primaryTypographyProps={{
+                          variant: 'subtitle2',
+                          // color: 'text.secondary',
+                        }}
+                        secondaryTypographyProps={{
+                          variant: 'caption',
+                        }}
+                      />
+                    </Stack>
+                  </Box>
+                </Grid>
+              ) : (
+                <Grid item xs={12}>
                   <Box component={Paper} p={1.5}>
                     {type === 'approve' && (
-                      // <>
-                      //   <Typography variant="h6" mb={1} mx={1}>
-                      //     Approval
-                      //   </Typography>
-                      //   <FormProvider methods={methods} onSubmit={onSubmit}>
-                      //     <Stack gap={2}>
-                      //       <RHFTextField
-                      //         name="feedback"
-                      //         multiline
-                      //         minRows={5}
-                      //         placeholder="Comment"
-                      //       />
-                      //       <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                      //         <Typography
-                      //           component="a"
-                      //           onClick={() => {
-                      //             setType('request');
-                      //             setValue('type', 'request');
-                      //             setValue('feedback', '');
-                      //           }}
-                      //           sx={{
-                      //             color: (theme) => theme.palette.text.secondary,
-                      //             cursor: 'pointer',
-                      //             textDecoration: 'underline',
-                      //             '&:hover': {
-                      //               color: (theme) => theme.palette.text.primary,
-                      //             },
-                      //           }}
-                      //           variant="caption"
-                      //         >
-                      //           Request a change
-                      //         </Typography>
-                      //         <Button
-                      //           variant="contained"
-                      //           size="small"
-                      //           color="primary"
-                      //           onClick={approve.onTrue}
-                      //         >
-                      //           Approve
-                      //         </Button>
-                      //       </Stack>
-                      //     </Stack>
-                      //     {confirmationApproveModal(approve.value, approve.onFalse)}
-                      //   </FormProvider>
-                      // </>
                       <FormProvider methods={methods} onSubmit={onSubmit}>
                         <Stack gap={1} mb={2}>
                           <Typography variant="subtitle1" mb={1} mx={1}>
@@ -341,23 +317,55 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                       </>
                     )}
                   </Box>
-                )}
-                {submission?.isReview && submission?.status === 'APPROVED' && (
-                  <Box component={Paper} position="relative" p={10}>
-                    <Stack gap={1.5} alignItems="center">
-                      <Image src="/assets/approve.svg" width={200} />
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{ textAlign: 'center' }}
-                      >
-                        First Draft has been reviewed
-                      </Typography>
-                    </Stack>
-                  </Box>
-                )}
-              </Grid>
+                  {submission?.isReview && submission?.status === 'APPROVED' && (
+                    <Box component={Paper} position="relative" p={10}>
+                      <Stack gap={1.5} alignItems="center">
+                        <Image src="/assets/approve.svg" width={200} />
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          sx={{ textAlign: 'center' }}
+                        >
+                          Final Draft has been reviewed
+                        </Typography>
+                      </Stack>
+                    </Box>
+                  )}
+                </Grid>
+              )}
             </Grid>
+          )}
+          {submission?.status === 'APPROVED' && (
+            <Grid item xs={12}>
+              <video autoPlay style={{ width: '100%', borderRadius: 10, margin: 'auto' }} controls>
+                <source src={submission?.content} />
+              </video>
+              <Box component={Paper} p={1.5}>
+                <Typography variant="caption" color="text.secondary">
+                  Caption
+                </Typography>
+                <Typography variant="subtitle1">{submission?.caption}</Typography>
+              </Box>
+            </Grid>
+            // <Box component={Paper} position="relative" p={10}>
+            //   <Stack gap={1.5} alignItems="center">
+            //     <Image src="/assets/approve.svg" width={200} />
+            //     <ListItemText
+            //       primary="Final Draft has been reviewed"
+            //       // secondary="You can view the changes in Final Draft tab."
+            //       sx={{
+            //         textAlign: 'center',
+            //       }}
+            //       primaryTypographyProps={{
+            //         variant: 'subtitle2',
+            //         // color: 'text.secondary',
+            //       }}
+            //       secondaryTypographyProps={{
+            //         variant: 'caption',
+            //       }}
+            //     />
+            //   </Stack>
+            // </Box>
           )}
         </Grid>
       </Grid>

@@ -8,6 +8,7 @@ export default function Page() {
       <Helmet>
         <title>Invoice Details </title>
       </Helmet>
+
       <InvoicePage />
     </>
   );

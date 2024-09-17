@@ -1,20 +1,20 @@
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
-import { Button } from '@mui/material';
+// import { Button } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 
-import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
+// import { paths } from 'src/routes/paths';
+// import { useRouter } from 'src/routes/hooks';
 
 import { fToNow } from 'src/utils/format-time';
 
 // ----------------------------------------------------------------------
 
 export default function NotificationItem({ notification }) {
-  const router = useRouter();
+  // const router = useRouter();
 
   const renderText = (
     <ListItemText
@@ -45,35 +45,35 @@ export default function NotificationItem({ notification }) {
     />
   );
 
-  const friendAction = (
-    <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
-      <Button
-        size="small"
-        variant="contained"
-        onClick={() =>
-          router.push(
-            paths.dashboard.campaign.adminCampaignManageDetail(
-              notification?.notification?.campaignId
-            )
-          )
-        }
-      >
-        View
-      </Button>
-    </Stack>
-  );
+  // const friendAction = (
+  //   <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
+  //     <Button
+  //       size="small"
+  //       variant="contained"
+  //       onClick={() =>
+  //         router.push(
+  //           paths.dashboard.campaign.adminCampaignManageDetail(
+  //             notification?.notification?.campaignId
+  //           )
+  //         )
+  //       }
+  //     >
+  //       View
+  //     </Button>
+  //   </Stack>
+  // );
 
-  const chatAction = (
-    <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
-      <Button
-        size="small"
-        variant="contained"
-        onClick={() => router.push(paths.dashboard.chat.root)}
-      >
-        View
-      </Button>
-    </Stack>
-  );
+  // const chatAction = (
+  //   <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
+  //     <Button
+  //       size="small"
+  //       variant="contained"
+  //       onClick={() => router.push(paths.dashboard.chat.root)}
+  //     >
+  //       View
+  //     </Button>
+  //   </Stack>
+  // );
 
   const renderOther = (
     <Stack

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -23,6 +24,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Image from 'src/components/image';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -39,9 +42,10 @@ const guideSteps = [
   'Submit the link to complete the process.',
 ];
 
-const CampaignPosting = ({ campaign, timeline, submission, getDependency, fullSubmission }) => {
+const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }) => {
   const dependency = getDependency(submission?.id);
   const dialog = useBoolean();
+  const user = useAuthContext();
 
   const previewSubmission = useMemo(() => {
     const finalDraftSubmission = fullSubmission?.find(
@@ -63,7 +67,7 @@ const CampaignPosting = ({ campaign, timeline, submission, getDependency, fullSu
     },
   });
 
-  const { handleSubmit } = methods;
+  const { handleSubmit, reset } = methods;
 
   const renderGuide = (
     <Dialog open={dialog.value} onClose={dialog.onFalse}>
@@ -99,6 +103,22 @@ const CampaignPosting = ({ campaign, timeline, submission, getDependency, fullSu
     </Alert>
   );
 
+  const renderRejectMessage = (
+    <Alert severity="error">
+      <Typography variant="subtitle1">Posting Rejected !</Typography>
+      <ListItemText
+        primary={submission?.feedback?.content}
+        secondary="Please re-post and submit the link again."
+        primaryTypographyProps={{
+          variant: 'subtitle2',
+        }}
+        secondaryTypographyProps={{
+          variant: 'caption',
+        }}
+      />
+    </Alert>
+  );
+
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.post(endpoints.submission.creator.postSubmission, {
@@ -106,10 +126,16 @@ const CampaignPosting = ({ campaign, timeline, submission, getDependency, fullSu
         submissionId: submission?.id,
       });
       enqueueSnackbar(res?.data?.message);
+      mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+      mutate(endpoints.kanban.root);
+      mutate(endpoints.campaign.creator.getCampaign(campaign.id));
+      reset();
     } catch (error) {
       enqueueSnackbar('Error submitting post link', {
         variant: 'error',
       });
+    } finally {
+      mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
     }
   });
 
@@ -156,6 +182,32 @@ const CampaignPosting = ({ campaign, timeline, submission, getDependency, fullSu
               </Button>
             </Stack>
           )}
+          {submission?.status === 'REJECTED' && (
+            <>
+              {renderRejectMessage}
+              <Stack spacing={1} my={1.5}>
+                <Box>
+                  <Button size="small" variant="outlined" onClick={dialog.onTrue}>
+                    Show guide
+                  </Button>
+                </Box>
+                <Box>
+                  <FormProvider methods={methods} onSubmit={onSubmit}>
+                    <Stack spacing={1} alignItems="flex-end">
+                      <RHFTextField
+                        name="postingLink"
+                        label="Posting Link"
+                        placeholder="Paste you posting link"
+                      />
+                      <Button variant="contained" size="small" type="submit">
+                        Submit
+                      </Button>
+                    </Stack>
+                  </FormProvider>
+                </Box>
+              </Stack>
+            </>
+          )}
         </Box>
       )}
       {renderGuide}
@@ -167,7 +219,6 @@ export default CampaignPosting;
 
 CampaignPosting.propTypes = {
   campaign: PropTypes.object,
-  timeline: PropTypes.object,
   submission: PropTypes.object,
   getDependency: PropTypes.func,
   fullSubmission: PropTypes.array,

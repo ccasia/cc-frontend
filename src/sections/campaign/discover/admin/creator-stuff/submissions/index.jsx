@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 
 import { ToggleButton, ToggleButtonGroup } from '@mui/material';
 
+import EmptyContent from 'src/components/empty-content/empty-content';
+
 import Agreement from './agreement';
 import FirstDraft from './firstDraft';
 import FinalDraft from './finalDraft';
@@ -10,6 +12,8 @@ import Posting from './posting/posting';
 
 const Submissions = ({ campaign, submissions, creator }) => {
   const [currentTab, setCurrentTab] = useState('agreement');
+
+  console.log(currentTab);
 
   const agreementSubmission = submissions?.find(
     (item) => item.submissionType.type === 'AGREEMENT_FORM'
@@ -36,8 +40,10 @@ const Submissions = ({ campaign, submissions, creator }) => {
       size="small"
     >
       <ToggleButton value="agreement">Agreement Submission</ToggleButton>
-      <ToggleButton value="firstDraft">First Draft Submission</ToggleButton>
-      <ToggleButton value="finalDraft">Final Draft Submission</ToggleButton>
+      <ToggleButton value="firstDraft">Draft Submission</ToggleButton>
+      {firstDraftSubmission?.status === 'CHANGES_REQUIRED' && (
+        <ToggleButton value="finalDraft">Final Draft Submission</ToggleButton>
+      )}
       <ToggleButton value="posting">Posting</ToggleButton>
     </ToggleButtonGroup>
   );
@@ -45,6 +51,7 @@ const Submissions = ({ campaign, submissions, creator }) => {
   return (
     <>
       {renderTabs}
+      {!currentTab && <EmptyContent title="Click tab above to see content." />}
       {currentTab === 'agreement' && agreementSubmission && (
         <Agreement submission={agreementSubmission} campaign={campaign} creator={creator} />
       )}

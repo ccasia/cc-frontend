@@ -10,6 +10,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import uuidv4 from 'src/utils/uuidv4';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { useGetBoard, createColumn } from 'src/api/kanban';
 
 import Iconify from 'src/components/iconify';
@@ -19,6 +20,7 @@ import Iconify from 'src/components/iconify';
 export default function KanbanColumnAdd() {
   const [columnName, setColumnName] = useState('');
   const { board } = useGetBoard();
+  const { user } = useAuthContext();
 
   const openAddColumn = useBoolean();
 
@@ -53,35 +55,37 @@ export default function KanbanColumnAdd() {
   );
 
   return (
-    <Paper sx={{ minWidth: 280, width: 280 }}>
-      {openAddColumn.value ? (
-        <ClickAwayListener onClickAway={handleCreateColumn}>
-          <TextField
-            autoFocus
+    user?.role !== 'creator' && (
+      <Paper sx={{ minWidth: 280, width: 280 }}>
+        {openAddColumn.value ? (
+          <ClickAwayListener onClickAway={handleCreateColumn}>
+            <TextField
+              autoFocus
+              fullWidth
+              placeholder="New section"
+              value={columnName}
+              onChange={handleChangeName}
+              onKeyUp={handleKeyUpCreateColumn}
+              sx={{
+                [`& .${inputBaseClasses.input}`]: {
+                  typography: 'h6',
+                },
+              }}
+            />
+          </ClickAwayListener>
+        ) : (
+          <Button
             fullWidth
-            placeholder="New section"
-            value={columnName}
-            onChange={handleChangeName}
-            onKeyUp={handleKeyUpCreateColumn}
-            sx={{
-              [`& .${inputBaseClasses.input}`]: {
-                typography: 'h6',
-              },
-            }}
-          />
-        </ClickAwayListener>
-      ) : (
-        <Button
-          fullWidth
-          size="large"
-          color="inherit"
-          variant="outlined"
-          startIcon={<Iconify icon="mingcute:add-line" sx={{ mr: -0.5 }} />}
-          onClick={openAddColumn.onTrue}
-        >
-          Add Section
-        </Button>
-      )}
-    </Paper>
+            size="large"
+            color="inherit"
+            variant="outlined"
+            startIcon={<Iconify icon="mingcute:add-line" sx={{ mr: -0.5 }} />}
+            onClick={openAddColumn.onTrue}
+          >
+            Add Section
+          </Button>
+        )}
+      </Paper>
+    )
   );
 }

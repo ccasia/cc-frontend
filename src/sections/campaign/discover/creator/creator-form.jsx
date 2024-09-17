@@ -37,7 +37,7 @@ const CreatorForm = ({ dialog, user }) => {
     resolver: yupResolver(schema),
     defaultValues: {
       fullName: user?.name || '',
-      address: user?.creator?.address || '',
+      address: user?.creator?.location || '',
       icNumber: user?.paymentForm?.icNumber || '',
       bankName: user?.paymentForm?.bankName || '',
       accountName: user?.name || '',

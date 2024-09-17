@@ -11,6 +11,7 @@ export const useGetSubmissions = (id, campaignId) => {
       revalidateIfStale: true,
       revalidateOnFocus: true,
       revalidateOnMount: true,
+      revalidateOnReconnect: true,
     }
   );
 

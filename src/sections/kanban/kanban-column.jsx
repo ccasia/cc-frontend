@@ -179,7 +179,20 @@ export default function KanbanColumn({ column, tasks, index, status }) {
                     }),
                   }}
                 >
-                  {column?.task.map((item, taskIndex) => (
+                  {column?.task
+                    .filter((item) => item?.submission?.status !== 'NOT_STARTED')
+                    .map((item, taskIndex) => (
+                      <KanbanTaskItem
+                        key={item?.id}
+                        index={taskIndex}
+                        column={column}
+                        task={item}
+                        onUpdateTask={handleUpdateTask}
+                        onDeleteTask={() => handleDeleteTask(item?.id)}
+                        status={status}
+                      />
+                    ))}
+                  {/* {column?.task.map((item, taskIndex) => (
                     <KanbanTaskItem
                       key={item?.id}
                       index={taskIndex}
@@ -189,13 +202,13 @@ export default function KanbanColumn({ column, tasks, index, status }) {
                       onDeleteTask={() => handleDeleteTask(item?.id)}
                       status={status}
                     />
-                  ))}
+                  ))} */}
 
                   {dropProvided.placeholder}
                 </Stack>
               )}
             </Droppable>
-            {renderAddTask}
+            {/* {renderAddTask} */}
           </Stack>
         </Paper>
       )}

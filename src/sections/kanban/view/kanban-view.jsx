@@ -180,7 +180,9 @@ export default function KanbanView() {
                       index={index}
                       key={item?.id}
                       column={board.columns[item.position]}
-                      tasks={item?.task}
+                      tasks={item?.task.filter(
+                        (a) => a?.name !== 'Final Draft' && a?.submission?.status !== 'NOT_STARTED'
+                      )}
                       status={status}
                     />
                   ))}

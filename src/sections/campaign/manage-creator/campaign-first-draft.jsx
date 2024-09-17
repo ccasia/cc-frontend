@@ -10,6 +10,7 @@ import {
   Box,
   Stack,
   Paper,
+  Alert,
   Button,
   Dialog,
   Typography,
@@ -210,33 +211,38 @@ const CampaignFirstDraft = ({
               </>
             )}
             {submission?.status === 'CHANGES_REQUIRED' && (
-              <>
+              <Stack spacing={2}>
                 <Box textAlign="center">
                   {submission && (
                     <video autoPlay controls width="80%" style={{ borderRadius: 10 }}>
                       <source src={submission?.content} />
                     </video>
                   )}
+                  <Box component={Paper} p={1} border={1}>
+                    {submission?.caption}
+                  </Box>
                 </Box>
-                <Box p={2} display="flex" gap={1.5} flexDirection="column">
-                  <Typography variant="subtitle1" sx={{ textDecoration: 'underline' }}>
-                    Changes Required
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-                    {submission?.feedback?.reasons?.length &&
-                      submission?.feedback?.reasons?.map((item, index) => (
-                        <Label key={index}>{item}</Label>
-                      ))}
-                  </Stack>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.secondary"
-                    sx={{ whiteSpace: 'pre-line' }}
-                  >
-                    {submission?.feedback?.content}
-                  </Typography>
-                </Box>
-              </>
+                <Alert severity="warning">
+                  <Box display="flex" gap={1.5} flexDirection="column">
+                    <Typography variant="subtitle2" sx={{ textDecoration: 'underline' }}>
+                      Changes Required
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                      {submission?.feedback?.reasons?.length &&
+                        submission?.feedback?.reasons?.map((item, index) => (
+                          <Label key={index}>{item}</Label>
+                        ))}
+                    </Stack>
+                    <Typography
+                      variant="subtitle1"
+                      color="text.secondary"
+                      sx={{ whiteSpace: 'pre-line' }}
+                    >
+                      {submission?.feedback?.content}
+                    </Typography>
+                  </Box>
+                </Alert>
+              </Stack>
             )}
             {submission?.status === 'APPROVED' && (
               <Stack justifyContent="center" alignItems="center" spacing={2}>

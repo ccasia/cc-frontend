@@ -10,10 +10,12 @@ import {
   Box,
   Stack,
   Paper,
+  Alert,
   Button,
   Dialog,
   Typography,
   DialogTitle,
+  ListItemText,
   DialogContent,
   DialogActions,
   LinearProgress,
@@ -88,6 +90,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
     } catch (error) {
+      console.log(error);
       enqueueSnackbar('Failed to submit draft', {
         variant: 'error',
       });
@@ -104,7 +107,6 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   useEffect(() => {
     if (socket) {
       socket.on('progress', (data) => {
-        console.log(data);
         if (submission?.id === data.submissionId) {
           setIsProcessing(true);
           setProgress(data.progress);
@@ -195,27 +197,34 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
             )}
           </>
         )}
+
         {submission?.status === 'CHANGES_REQUIRED' && (
-          <>
+          <Stack spacing={2}>
             <Box textAlign="center">
-              <Button onClick={display.onTrue}>Preview Draft</Button>
+              <Box textAlign="center">
+                <Button onClick={display.onTrue}>Preview Draft</Button>
+              </Box>
             </Box>
-            <Box p={2} display="flex" gap={1.5} flexDirection="column">
-              <Typography variant="h6">Changes Required</Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-                {submission?.feedback?.reasons?.length > 0 &&
-                  submission?.feedback?.reasons?.map((item, index) => (
-                    <Label key={index}>{item}</Label>
-                  ))}
-              </Stack>
-              <Typography
-                variant="subtitle1"
-                color="text.secondary"
-                sx={{ whiteSpace: 'pre-line' }}
-              >
-                {submission?.feedback?.content}
-              </Typography>
-            </Box>
+            <Alert severity="warning">
+              <Box display="flex" gap={1.5} flexDirection="column">
+                <Typography variant="subtitle2" sx={{ textDecoration: 'underline' }}>
+                  Changes Required
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                  {submission?.feedback?.reasons?.length &&
+                    submission?.feedback?.reasons?.map((item, index) => (
+                      <Label key={index}>{item}</Label>
+                    ))}
+                </Stack>
+                <Typography
+                  variant="subtitle1"
+                  color="text.secondary"
+                  sx={{ whiteSpace: 'pre-line' }}
+                >
+                  {submission?.feedback?.content}
+                </Typography>
+              </Box>
+            </Alert>
             {isProcessing ? (
               <>
                 <LinearProgress variant="determinate" value={progress} />
@@ -254,7 +263,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                 </Stack>
               </FormProvider>
             )}
-          </>
+          </Stack>
         )}
         {submission?.status === 'APPROVED' && (
           <Stack justifyContent="center" alignItems="center" spacing={2}>
@@ -263,6 +272,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
             <Button onClick={display.onTrue}>Preview Draft</Button>
           </Stack>
         )}
+       
         <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
           <DialogTitle>Agreement</DialogTitle>
           <DialogContent>

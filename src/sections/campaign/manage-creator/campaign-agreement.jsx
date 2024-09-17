@@ -8,6 +8,7 @@ import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
+  Alert,
   Button,
   Dialog,
   Typography,
@@ -189,6 +190,94 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               <Typography variant="subtitle2">Your agreement has been approved.</Typography>
               <Button onClick={display.onTrue}>Preview agreement</Button>
             </Stack>
+          )}
+
+          {submission?.status === 'CHANGES_REQUIRED' && (
+            <Box>
+              <Alert severity="warning">
+                <Typography variant="subtitle1">Feedback</Typography>
+                <Typography variant="subtitle2">{submission?.feedback?.content}</Typography>
+              </Alert>
+              <Stack gap={2} mt={2}>
+                <ListItemText
+                  primary="1. Please download and review the Agreement Form."
+                  secondary={
+                    <Button
+                      variant="contained"
+                      startIcon={<Iconify icon="material-symbols:download" width={20} />}
+                      href={campaign?.agreement?.agreementUrl}
+                      download="agreementForm.pdf"
+                      target="__blank"
+                      size="small"
+                    >
+                      Download Agreement
+                    </Button>
+                  }
+                  primaryTypographyProps={{
+                    variant: 'subtitle2',
+                    mb: 1.2,
+                  }}
+                />
+
+                <ListItemText
+                  primary="2. Please sign and upload the document here."
+                  secondary={
+                    <FormProvider methods={methods} onSubmit={onSubmit}>
+                      {preview ? (
+                        <iframe
+                          src={preview}
+                          style={{
+                            width: '100%',
+                            height: 400,
+                            border: 0,
+                            borderRadius: 15,
+                          }}
+                          title="PDF Viewer"
+                        />
+                      ) : (
+                        <RHFUpload type="pdf" name="agreementForm" onDrop={onDrop} />
+                      )}
+
+                      <Box
+                        mt={2}
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        gap={2}
+                      >
+                        {agreementForm && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                              setValue('agreementForm', null);
+                              setPreview('');
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                        <LoadingButton
+                          loading={loading}
+                          variant="contained"
+                          size="small"
+                          disabled={!agreementForm}
+                          sx={{ flexGrow: 1 }}
+                          type="submit"
+                        >
+                          Submit
+                        </LoadingButton>
+                      </Box>
+                    </FormProvider>
+                  }
+                  primaryTypographyProps={{
+                    variant: 'subtitle2',
+                    mb: 1.2,
+                  }}
+                />
+              </Stack>
+            </Box>
           )}
         </>
       )}

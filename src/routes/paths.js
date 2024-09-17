@@ -89,4 +89,7 @@ export const paths = {
       createInvoice: (id) => `${ROOTS.DASHBOARD}/invoice/create/${id}`,
     },
   },
+
+  
+
 };

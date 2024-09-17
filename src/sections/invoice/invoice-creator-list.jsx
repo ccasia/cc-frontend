@@ -60,8 +60,6 @@ export default function AppNewInvoice({ invoice }) {
       </TableContainer>
 
       <Divider sx={{ borderStyle: 'dashed' }} />
-
-     
     </Card>
   );
 }

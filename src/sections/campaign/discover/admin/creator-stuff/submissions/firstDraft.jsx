@@ -27,7 +27,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import Image from 'src/components/image';
 import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -171,18 +170,16 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                     : '-'}
                 </Typography>
                 <Typography variant="subtitle2" color="text.secondary">
-                  {submission?.isReview
-                    ? dayjs(submission?.updatedAt).format('ddd LL')
-                    : 'Pending Review'}
+                  {submission?.isReview ? dayjs(submission?.updatedAt).format('ddd LL') : '-'}
                 </Typography>
               </Stack>
             </Box>
           </Box>
         </Grid>
         <Grid item xs={12} md={9}>
-          {submission?.status === 'IN_PROGRESS' && !submission?.content ? (
-            <EmptyContent title="No submission" />
-          ) : (
+          {submission?.status === 'NOT_STARTED' && <EmptyContent title="Not Started" />}
+          {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No Submission" />}
+          {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <video
@@ -199,8 +196,8 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                   <Typography variant="subtitle1">{submission?.caption}</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12}>
-                {submission?.status === 'PENDING_REVIEW' && (
+              {submission?.status === 'PENDING_REVIEW' && (
+                <Grid item xs={12}>
                   <Box component={Paper} p={1.5}>
                     {type === 'approve' && (
                       <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -320,23 +317,41 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                       </>
                     )}
                   </Box>
-                )}
-                {submission?.isReview && (
-                  <Box component={Paper} position="relative" p={10}>
-                    <Stack gap={1.5} alignItems="center">
-                      <Image src="/assets/approve.svg" width={200} />
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{ textAlign: 'center' }}
-                      >
-                        First Draft has been reviewed
-                      </Typography>
-                    </Stack>
-                  </Box>
-                )}
-              </Grid>
+                </Grid>
+              )}
             </Grid>
+          )}
+          {submission?.status === 'CHANGES_REQUIRED' && (
+            <Grid item xs={12}>
+              <video autoPlay style={{ width: '100%', borderRadius: 10, margin: 'auto' }} controls>
+                <source src={submission?.content} />
+              </video>
+              <Box component={Paper} p={1.5}>
+                <Typography variant="caption" color="text.secondary">
+                  Caption
+                </Typography>
+                <Typography variant="subtitle1">{submission?.caption}</Typography>
+              </Box>
+            </Grid>
+            // <Box component={Paper} position="relative" p={10}>
+            //   <Stack gap={1.5} alignItems="center">
+            //     <Image src="/assets/approve.svg" width={200} />
+            //     <ListItemText
+            //       primary="First Draft has been reviewed"
+            //       secondary="You can view the changes in Final Draft tab."
+            //       sx={{
+            //         textAlign: 'center',
+            //       }}
+            //       primaryTypographyProps={{
+            //         variant: 'subtitle2',
+            //         // color: 'text.secondary',
+            //       }}
+            //       secondaryTypographyProps={{
+            //         variant: 'caption',
+            //       }}
+            //     />
+            //   </Stack>
+            // </Box>
           )}
         </Grid>
       </Grid>

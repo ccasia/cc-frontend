@@ -20,8 +20,10 @@ import Scrollbar from 'src/components/scrollbar';
 
 import KanbanDetailsToolbar from './kanban-details-toolbar';
 import KanbanDetailsPriority from './kanban-details-priority';
+import CampaignPosting from '../campaign/manage-creator/campaign-posting';
 import CampaignAgreement from '../campaign/manage-creator/campaign-agreement';
 import CampaignFirstDraft from '../campaign/manage-creator/campaign-first-draft';
+import CampaignFinalDraft from '../campaign/manage-creator/campaign-final-draft';
 
 // ----------------------------------------------------------------------
 
@@ -180,6 +182,24 @@ export default function KanbanDetails({
       )}
       {task?.name === 'First Draft' && (
         <CampaignFirstDraft
+          campaign={!isLoading && data}
+          timeline={timeline}
+          fullSubmission={submissions}
+          submission={task?.submission}
+          getDependency={getDependency}
+        />
+      )}
+      {task?.name === 'Final Draft' && (
+        <CampaignFinalDraft
+          campaign={!isLoading && data}
+          timeline={timeline}
+          fullSubmission={submissions}
+          submission={task?.submission}
+          getDependency={getDependency}
+        />
+      )}
+      {task?.name === 'Posting' && (
+        <CampaignPosting
           campaign={!isLoading && data}
           timeline={timeline}
           fullSubmission={submissions}

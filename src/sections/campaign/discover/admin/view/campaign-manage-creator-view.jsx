@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import { PDFViewer } from '@react-pdf/renderer';
 import { useTheme } from '@emotion/react';
+import { PDFViewer } from '@react-pdf/renderer';
 import React, { useMemo, useState } from 'react';
 
 import {
@@ -27,8 +27,6 @@ import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoiceByCreatorAndCampaign from 'src/hooks/use-get-invoice-creator-camp';
-import EmptyContent from 'src/components/empty-content/empty-content';
-import InvoicePDF from 'src/sections/invoice/invoice-pdf';
 
 import { _userAbout } from 'src/_mock';
 import { bgGradient } from 'src/theme/css';
@@ -36,12 +34,14 @@ import { countries } from 'src/assets/data';
 
 import Iconify from 'src/components/iconify';
 import { LoadingScreen } from 'src/components/loading-screen';
+import EmptyContent from 'src/components/empty-content/empty-content';
+
+import InvoicePDF from 'src/sections/invoice/invoice-pdf';
 
 import OverView from '../creator-stuff/overview';
 import Submissions from '../creator-stuff/submissions';
 import TimelineCreator from '../creator-stuff/timeline/view/page';
 import LogisticView from '../creator-stuff/logistics/view/logistic-view';
-
 
 const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
@@ -68,9 +68,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     return `+${prefix} ${phoneNumber}`;
   };
 
-
   // const calculateRank = (val) => Math.ceil((val / 5) * 100);
-
 
   const renderTabs = (
     <Tabs
@@ -326,7 +324,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
           ) : null}
           {currentTab === 'invoice' && !invoice ? (
             <EmptyContent
-              heading="No invoice found"
+              title="No invoice found"
               description="This creator has not been invoiced yet."
             />
           ) : null}

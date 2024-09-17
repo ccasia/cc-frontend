@@ -3,8 +3,8 @@ import { Draggable } from '@hello-pangea/dnd';
 
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
+import { ListItemText } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import Typography from '@mui/material/Typography';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -90,7 +90,7 @@ export default function KanbanTaskItem({
 
   return (
     <>
-      <Draggable draggableId={task.id} index={index}>
+      <Draggable draggableId={task.id} index={index} isDragDisabled>
         {(provided, snapshot) => (
           <Paper
             ref={provided.innerRef}
@@ -125,9 +125,17 @@ export default function KanbanTaskItem({
             <Stack spacing={2} sx={{ px: 2, py: 2.5, position: 'relative' }}>
               {renderPriority}
 
-              <Typography variant="subtitle2">{task?.name}</Typography>
+              <ListItemText
+                primary={task?.name}
+                secondary={task?.submission?.campaign?.name}
+                primaryTypographyProps={{
+                  variant: 'subtitle2',
+                }}
+              />
+              {/* <Typography variant="subtitle2">{task?.name}</Typography> */}
+              {/* <Typography variant="subtitle2">{task?.submission?.campaign?.name}</Typography> */}
 
-              {renderInfo}
+              {/* {renderInfo} */}
             </Stack>
           </Paper>
         )}

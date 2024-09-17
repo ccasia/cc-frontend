@@ -1,8 +1,11 @@
+import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import Container from '@mui/material/Container';
 
 import { paths } from 'src/routes/paths';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
@@ -11,9 +14,25 @@ import InvoiceDetails from '../invoice-details';
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceDetailsView({ id , data }) {
+export default function InvoiceDetailsView({ id, data }) {
   const settings = useSettingsContext();
+  const { user } = useAuthContext();
 
+  const renderPathDashboard = useMemo(() => {
+    if (user?.role.includes('admin') && user?.admin?.role?.name.includes('Finance')) {
+      return paths.dashboard.finance.root;
+    }
+
+    return paths.dashboard.root;
+  }, [user]);
+
+  const renderPathInvoice = useMemo(() => {
+    if (user?.role.includes('admin') && user?.admin?.role?.name.includes('Finance')) {
+      return paths.dashboard.finance.invoice;
+    }
+
+    return paths.dashboard.creator.invoiceCreator;
+  }, [user]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -22,11 +41,11 @@ export default function InvoiceDetailsView({ id , data }) {
         links={[
           {
             name: 'Dashboard',
-            href: paths.dashboard.finance.root,
+            href: renderPathDashboard,
           },
           {
             name: 'Invoice',
-            href: paths.dashboard.finance.root,
+            href: renderPathInvoice,
           },
           { name: data?.invoiceNumber },
         ]}

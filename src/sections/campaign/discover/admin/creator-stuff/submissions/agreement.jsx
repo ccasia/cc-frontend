@@ -72,8 +72,11 @@ const Agreement = ({ campaign, submission, creator }) => {
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
       );
+      modal.onFalse();
+      reset();
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
+      console.log(error);
       enqueueSnackbar('Failed', {
         variant: 'error',
       });
@@ -117,7 +120,7 @@ const Agreement = ({ campaign, submission, creator }) => {
     <Box>
       <Grid container spacing={2}>
         <Grid item xs={12} md={3}>
-          <Box component={Paper} p={1.5}>
+          <Box component={Paper} p={1.5} position="sticky" top={80}>
             <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
               <Stack spacing={1} justifyContent="space-evenly">
                 <Typography variant="subtitle2">Due Date</Typography>
@@ -145,9 +148,8 @@ const Agreement = ({ campaign, submission, creator }) => {
           </Box>
         </Grid>
         <Grid item xs={12} md={9}>
-          {submission?.status === 'IN_PROGRESS' && !submission?.content ? (
-            <EmptyContent title="No submission" />
-          ) : (
+          {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No submission" />}
+          {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
             <Box component={Paper} p={1.5}>
               <>
                 <iframe
@@ -184,6 +186,19 @@ const Agreement = ({ campaign, submission, creator }) => {
               </>
             </Box>
           )}
+          {submission?.status === 'CHANGES_REQUIRED' && (
+            <EmptyContent title="Waiting for another submission" />
+          )}
+          {/* {submission?.isReview && submission?.status === 'APPROVED' && (
+            <Box component={Paper} position="relative" p={10}>
+              <Stack gap={1.5} alignItems="center">
+                <Image src="/assets/approve.svg" width={200} />
+                <Typography variant="subtitle2" color="text.secondary" sx={{ textAlign: 'center' }}>
+                  Agreement has been reviewed
+                </Typography>
+              </Stack>
+            </Box>
+          )} */}
         </Grid>
       </Grid>
     </Box>
