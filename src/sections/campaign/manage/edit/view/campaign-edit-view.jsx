@@ -18,8 +18,6 @@ import {
 
 import { paths } from 'src/routes/paths';
 
-import useGetAdmins from 'src/hooks/use-get-admins';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import withPermission from 'src/auth/guard/withPermissions';
@@ -31,6 +29,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 import { RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
 
 import { interestsList } from 'src/sections/creator/form/creatorForm';
+import { useGetAdmins } from 'src/sections/campaign/create/hooks/get-am';
 
 const CampaignEditView = ({ id }) => {
   const settings = useSettingsContext();
@@ -38,7 +37,7 @@ const CampaignEditView = ({ id }) => {
   const [campaign, setCampaign] = useState();
   // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(true);
-  const { admins } = useGetAdmins();
+  const { data: admins } = useGetAdmins();
 
   const methods = useForm({
     defaultValues: {

@@ -41,7 +41,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { _roles, USER_STATUS_OPTIONS } from 'src/_mock';
+import { USER_STATUS_OPTIONS } from 'src/_mock';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -530,7 +530,11 @@ export default function UserListView({ admins }) {
             ))}
           </Tabs>
 
-          <UserTableToolbar filters={filters} onFilters={handleFilters} roleOptions={_roles} />
+          <UserTableToolbar
+            filters={filters}
+            onFilters={handleFilters}
+            roleOptions={!isLoading && roles.map((item) => item.name)}
+          />
 
           {canReset && (
             <UserTableFiltersResult
@@ -657,6 +661,7 @@ UserListView.propTypes = {
 
 function applyFilter({ inputData, comparator, filters }) {
   const { name, status, role } = filters;
+  console.log(inputData);
 
   const stabilizedThis = inputData?.map((el, index) => [el, index]);
 
@@ -679,7 +684,7 @@ function applyFilter({ inputData, comparator, filters }) {
   }
 
   if (role.length) {
-    inputData = inputData.filter((user) => role.includes(user.role));
+    inputData = inputData.filter((user) => role.includes(user?.admin?.role?.name));
   }
 
   return inputData;

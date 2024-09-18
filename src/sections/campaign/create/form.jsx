@@ -108,7 +108,7 @@ function CreateCampaignForm() {
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
-  const { admins } = useGetAdmins();
+  const { data: admins } = useGetAdmins('active');
   const { user } = useAuthContext();
 
   const handleClick = (event) => {
@@ -305,8 +305,16 @@ function CreateCampaignForm() {
     mode: 'onChange',
   });
 
-  const { handleSubmit, getValues, control, setValue, watch, reset, trigger, formState: {errors} } = methods;
-  console.log(errors)
+  const {
+    handleSubmit,
+    getValues,
+    control,
+    setValue,
+    watch,
+    reset,
+    trigger,
+    formState: { errors },
+  } = methods;
 
   const values = watch();
 
@@ -417,7 +425,6 @@ function CreateCampaignForm() {
   }
 
   const onSubmit = handleSubmit(async (data, stage) => {
-    
     const formData = new FormData();
 
     const adjustedData = {

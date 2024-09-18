@@ -10,8 +10,6 @@ export const useGetCampaignBrandOption = () => {
     revalidateOnReconnect: true,
   });
 
-  console.log(data);
-
   const memoizedValue = useMemo(
     () => ({
       data,

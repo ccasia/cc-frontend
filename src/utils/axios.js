@@ -68,7 +68,7 @@ export const endpoints = {
     registerCreator: '/api/auth/registerCreator',
     registerAdmin: '/api/auth/registerAdmin',
     verifyAdmin: '/api/auth/verifyAdmin',
-    updateProfileAdmin: '/api/user/updateProfileAdmin',
+    updateProfileAdmin: '/api/user/admin/profile',
     changePass: '/api/auth/changePassword',
     getCurrentUser: '/api/auth/currentUser',
     checkCreator: '/api/auth/checkCreator',
@@ -91,7 +91,7 @@ export const endpoints = {
     updateCreatorform: '/api/creator/updateCreatorForm',
   },
   users: {
-    newAdmin: '/api/user/newAdmin',
+    newAdmin: '/api/user/admins',
     admins: '/api/user/admins',
     updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
     createAdmin: '/api/user/createAdmin',

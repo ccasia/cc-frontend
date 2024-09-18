@@ -16,8 +16,10 @@ import {
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { langList } from 'src/contants/language';
+
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
 
 import { interestsLists } from 'src/sections/campaign/create/form';
 
@@ -123,19 +125,29 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                 />
               )}
 
-              <RHFMultiSelect
+              <RHFAutocomplete
+                multiple
+                disableCloseOnSelect
+                name="audienceLanguage"
+                label="Audience Language"
+                options={langList.sort()}
+                getOptionLabel={(option) => option || ''}
+              />
+
+              {/* <RHFMultiSelect
                 name="audienceLanguage"
                 label="Audience Language"
                 checkbox
                 chip
-                options={[
-                  { value: 'Malay', label: 'Malay' },
-                  { value: 'English', label: 'English' },
-                  { value: 'Chinese', label: 'Chinese' },
-                  { value: 'Tamil', label: 'Tamil' },
-                  { value: 'Korean', label: 'Korean' },
-                ]}
-              />
+                options={langList.sort()}
+                // options={[
+                //   { value: 'Malay', label: 'Malay' },
+                //   { value: 'English', label: 'English' },
+                //   { value: 'Chinese', label: 'Chinese' },
+                //   { value: 'Tamil', label: 'Tamil' },
+                //   { value: 'Korean', label: 'Korean' },
+                // ]}
+              /> */}
 
               <RHFMultiSelect
                 name="audienceCreatorPersona"
