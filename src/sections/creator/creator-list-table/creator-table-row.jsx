@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-import { Avatar } from '@mui/material';
+import { Avatar, Typography } from '@mui/material';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
@@ -21,7 +21,7 @@ import CreatorQuickForm from './creator-quick-edit';
 
 // ----------------------------------------------------------------------
 
-export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
+export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow, onViewMediaKit, expanded, }) {
   const { name, creator, country, status, photoURL } = row;
 
   const confirm = useBoolean();
@@ -69,6 +69,24 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
           >
             {status}
           </Label>
+        </TableCell>
+
+        <TableCell>
+          <Button
+            variant="contained"
+            color={expanded ? "secondary" : "primary"}
+            onClick={() => onViewMediaKit(row.id)}
+            endIcon={<Iconify icon={expanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />}
+            sx={{
+              '& .MuiButton-label': {
+                fontWeight: 'normal',
+              },
+            }}
+          >
+            <Typography variant="button" sx={{ fontWeight: 'normal' }}>
+              {expanded ? 'Close Media Kit' : 'Media Kit'}
+            </Typography>
+          </Button>
         </TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
@@ -128,4 +146,6 @@ CreatorTableRow.propTypes = {
   onSelectRow: PropTypes.func,
   row: PropTypes.object,
   selected: PropTypes.bool,
+  onViewMediaKit: PropTypes.func,
+  expanded: PropTypes.bool,
 };

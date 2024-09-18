@@ -37,10 +37,9 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
   const defaultValues = {
     name: user?.creator?.mediaKit?.name || user?.name || '',
     about: user?.creator?.mediaKit?.about || user?.about || '',
-    interests:
-      user?.creator?.mediaKit?.interests.map((elem) => elem) ||
-      user?.creator?.interests.map((elem) => elem.name) ||
-      [],
+    interests: user?.creator?.mediaKit?.interests?.map((elem) => elem) || 
+               user?.creator?.interests?.map((elem) => elem.name) || 
+               [],
   };
 
   const methods = useForm({

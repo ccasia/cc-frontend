@@ -1,9 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Grid, Box, Typography, CircularProgress, CardMedia, Stack, useTheme, useMediaQuery } from '@mui/material';
 import PropTypes from 'prop-types';
 import { Icon } from '@iconify/react';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 import { keyframes } from '@emotion/react';
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Grid,
+  Stack,
+  Button,
+  useTheme,
+  CardMedia,
+  Typography,
+  useMediaQuery,
+  CircularProgress,
+  Alert,
+  AlertTitle,
+} from '@mui/material';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -85,6 +97,7 @@ const TopContentGrid = ({ topContents }) => {
                   WebkitLineClamp: 5,
                   WebkitBoxOrient: 'vertical',
                   animation: `${typeAnimation} 0.5s steps(40, end)`,
+                  fontSize: isMobile ? '0.75rem' : '0.875rem', // Smaller font size on mobile
                 }}
               >
                 {content.description}
@@ -133,99 +146,177 @@ TopContentGrid.propTypes = {
 
 const MediaKitSocialContent = () => {
   const [socialMediaData, setSocialMediaData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  useEffect(() => {
-    const fetchSocialMediaData = async () => {
+  const getButtonText = () => {
+    if (loading) return 'Fetching...';
+    return socialMediaData ? 'Refresh Tiktok Data' : 'Fetch Tiktok Data';
+  };
+
+  const fetchExistingSocialMediaData = async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const existingDataResponse = await axiosInstance.get(endpoints.creators.getCreatorSocialMediaData);
+      if (existingDataResponse.data && Object.keys(existingDataResponse.data).length > 0) {
+        setSocialMediaData(existingDataResponse.data);
+      }
+    } catch (err) {
+      console.error('Error fetching existing social media data:', err);
+      setFetchError(err.message || 'Failed to fetch existing social media data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const crawlSocialMediaData = async (instagramUsername, tiktokUsername) => {
+    const crawlPlatform = async (platform, username) => {
+      if (!username) return null;
       try {
-        const response = await axiosInstance.get(endpoints.creators.getCreatorCrawlerResult);
-        setSocialMediaData(response.data);
-        setLoading(false);
+        const response = await axiosInstance.post(endpoints.creators.getCreatorCrawler, {
+          identifier: username,
+          platform,
+        });
+        return response.data;
       } catch (err) {
-        setError(err.message);
-        setLoading(false);
+        console.error(`Error crawling ${platform} data:`, err.response?.data || err.message);
+        return null; // Return null instead of throwing, so we can still process other platforms
       }
     };
 
-    fetchSocialMediaData();
+    const [instagramData, tiktokData] = await Promise.all([
+      crawlPlatform('Instagram', instagramUsername),
+      crawlPlatform('TikTok', tiktokUsername),
+    ]);
+
+    return {
+      instagram: instagramData,
+      tiktok: tiktokData,
+    };
+  };
+
+  const fetchNewSocialMediaData = async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const userResponse = await axiosInstance.get(endpoints.auth.getCurrentUser);
+
+      if (!userResponse.data.user || !userResponse.data.user.creator) {
+        throw new Error('Creator profile not found. Please complete your profile setup.');
+      }
+
+      const { instagram, tiktok } = userResponse.data.user.creator;
+
+      if (!instagram && !tiktok) {
+        throw new Error('No social media usernames found. Please add your Instagram or TikTok username in your profile.');
+      }
+
+      const newSocialMediaData = await crawlSocialMediaData(instagram, tiktok);
+
+      if (!newSocialMediaData.instagram && !newSocialMediaData.tiktok) {
+        throw new Error('Failed to fetch social media data. The service might be temporarily unavailable.');
+      }
+
+      // Update the creator's social media data in the backend
+      await axiosInstance.put(endpoints.auth.updateCreator, {
+        id: userResponse.data.user.id,
+        socialMediaData: newSocialMediaData,
+      });
+
+      setSocialMediaData(newSocialMediaData);
+    } catch (err) {
+      console.error('Error fetching new social media data:', err);
+      setFetchError(err.message || 'Failed to fetch new social media data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExistingSocialMediaData();
   }, []);
-
-  // useEffect(() => {
-  //   const fetchCreatorData = async () => {
-  //     try {
-  //       // First, we need to get the creator's Instagram username
-  //       const creatorResponse = await axiosInstance.get(endpoints.auth.getCurrentUser);
-  //       console.log(creatorResponse);
-  //       const instagramUsername = creatorResponse.data.user.creator.instagram;
-  //       console.log(instagramUsername);
-
-  //       // Now we can make the request to the crawler API
-  //       const response = await axiosInstance.post(endpoints.creators.getCreatorCrawler, {
-  //         identifier: 'cristiano',
-  //         platform: 'Instagram'
-  //       });
-
-  //       console.log(response);
-
-  //       setCreatorData(response.data);
-  //       setLoading(false);
-  //     } catch (err) {
-  //       setError(err.message);
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchCreatorData();
-  // }, []);
 
   if (loading) {
     return <CircularProgress />;
   }
 
-  if (error) {
-    return <Typography color="error">{error}</Typography>;
-  }
+  // if (error) {
+  //   return <Typography color="error">{error}</Typography>;
+  // }
 
-  if (!socialMediaData || !socialMediaData.tiktok) {
-    return <Typography>No Instagram data available.</Typography>;
-  }
-
-  const { tiktok } = socialMediaData;
+  const renderDataOrPlaceholder = (data, placeholder) => data || placeholder;
 
   return (
     <Box>
+      {/* <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+        <Button
+          onClick={fetchNewSocialMediaData}
+          variant="contained"
+          disabled={loading}
+        >
+          {getButtonText()}
+        </Button>
+        {fetchError && (
+          <Alert severity="error" sx={{ flexGrow: 1 }}>
+            <AlertTitle>Error</AlertTitle>
+            {fetchError}
+            {fetchError.includes('service might be temporarily unavailable') && (
+              <span> Please try again later.</span>
+            )}
+          </Alert>
+        )}
+      </Stack> */}
+
       <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
         <Grid item xs={12} sm={4}>
           <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>Followers</Typography>
-            <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>{formatNumber(tiktok.followers)}</Typography>
-          </Box>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>Engagement Rate</Typography>
+            <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>
+              Followers
+            </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {Number(tiktok.engagement_rate).toFixed(2)}%
+              {socialMediaData?.tiktok?.data.followers
+                ? formatNumber(socialMediaData.tiktok.data.followers)
+                : 'No data'}
             </Typography>
           </Box>
         </Grid>
         <Grid item xs={12} sm={4}>
           <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>Average Likes</Typography>
+            <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>
+              Engagement Rate
+            </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {tiktok.user_performance?.avg_likes_per_post
-                ? formatNumber(tiktok.user_performance.avg_likes_per_post)
-                : 'N/A'}
+              {socialMediaData?.tiktok?.data.engagement_rate
+                ? `${Number(socialMediaData.tiktok.data.engagement_rate).toFixed(2)}%`
+                : 'No data'}
+            </Typography>
+          </Box>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>
+              Average Likes
+            </Typography>
+            <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
+              {socialMediaData?.tiktok?.data.user_performance?.avg_likes_per_post
+                ? formatNumber(socialMediaData.tiktok.data.user_performance.avg_likes_per_post)
+                : 'No data'}
             </Typography>
           </Box>
         </Grid>
       </Grid>
 
-      <Typography variant="h6" mb={isMobile ? 1 : 2} sx={{ fontSize: isMobile ? 18 : 20 }}>Top Content</Typography>
-      <TopContentGrid topContents={tiktok.top_contents || []} />
+      <Typography variant="h6" mb={isMobile ? 1 : 2} sx={{ fontSize: isMobile ? 18 : 20 }}>
+        Top Content
+      </Typography>
+      {socialMediaData?.tiktok?.data.top_contents ? (
+        <TopContentGrid topContents={socialMediaData.tiktok.data.top_contents} />
+      ) : (
+        <Typography>No top content data available</Typography>
+      )}
     </Box>
   );
 };

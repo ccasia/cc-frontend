@@ -138,47 +138,6 @@ export default function CreatorForm({ creator, open, onClose }) {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const fetchSocialMediaData = async (instagramUsername, tiktokUsername) => {
-    const maxRetries = 3;
-  
-    const makeRequest = async (platform, username) => {
-      for (let retries = 0; retries < maxRetries; retries += 1) {
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          const response = await axiosInstance.post(endpoints.creators.getCreatorCrawler, {
-            identifier: username,
-            platform,
-          });
-          return response.data.data;
-        } catch (error) {
-          console.error(`Error fetching ${platform} data:`, error.response || error);
-          if (retries === maxRetries - 1) {
-            throw error;
-          }
-          // Wait for 1 second before retrying
-          // eslint-disable-next-line no-await-in-loop
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-      throw new Error(`Max retries reached for ${platform}`);
-    };
-  
-    try {
-      const [instagramData, tiktokData] = await Promise.all([
-        makeRequest('Instagram', instagramUsername),
-        makeRequest('TikTok', tiktokUsername),
-      ]);
-  
-      return {
-        instagram: instagramData,
-        tiktok: tiktokData,
-      };
-    } catch (error) {
-      console.error('Error fetching social media data:', error.response || error);
-      throw new Error('Failed to fetch social media data. Please try again later.');
-    }
-  };
-
   const onSubmit = handleSubmit(async (data) => {
     // if (ratingInterst.length < 3) {
     //   toast.error('Please rate all your interests.');
@@ -189,14 +148,12 @@ export default function CreatorForm({ creator, open, onClose }) {
 
     setIsSubmitting(true);
 
-    
-
     try {
-      const socialMediaData = await fetchSocialMediaData(data.instagram, data.tiktok);
-      console.log(socialMediaData);
+      // const socialMediaData = await fetchSocialMediaData(data.instagram, data.tiktok);
+      // console.log(socialMediaData);
       const newData = {
         ...data,
-        socialMediaData,
+        // socialMediaData,
         pronounce: otherPronounce || pronounce,
       };
       const res = await axiosInstance.put(endpoints.auth.updateCreator, newData);

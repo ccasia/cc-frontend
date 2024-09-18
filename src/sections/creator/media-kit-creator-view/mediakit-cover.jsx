@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
-
+import PropTypes from 'prop-types';
 import { deepOrange } from '@mui/material/colors';
 import { Box, Stack, Avatar, useTheme, Typography } from '@mui/material';
 
@@ -11,15 +11,13 @@ const MediaKitCover = ({ user }) => {
   const theme = useTheme();
 
   return (
-    <Box
-      sx={{
-        p: 5,
-      }}
-    >
+    <Box sx={{ p: 5 }}>
       <Stack direction="column" alignItems="center" gap={2}>
-        <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }}>N</Avatar>
+        <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }}>
+          {user?.name?.[0] || 'N'}
+        </Avatar>
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
-          {user?.creator?.mediaKit?.name || user?.name}
+          {user?.creator?.mediaKit?.name || user?.user.name}
         </Typography>
         <Stack
           direction="row"
@@ -29,9 +27,15 @@ const MediaKitCover = ({ user }) => {
             justifyContent: 'center',
           }}
         >
-          {(user &&
-            user?.creator?.mediaKit?.interests.map((elem, index) => <Label>{elem}</Label>)) ||
-            (user && user?.creator?.interests?.map((elem, index) => <Label>{elem?.name}</Label>))}
+          {user?.creator?.mediaKit?.interests?.map((elem, index) => (
+            <Label key={`mediakit-interest-${index}`}>{elem}</Label>
+          )) || 
+          user?.creator?.interests?.map((elem, index) => (
+            <Label key={`creator-interest-${index}`}>{elem?.name}</Label>
+          )) ||
+          user?.user.creator.interests?.map((elem, index) => (
+            <Label key={`creator-interest-${index}`}>{elem?.name}</Label>
+          ))}
         </Stack>
         <Stack gap={2}>
           <Typography
@@ -47,7 +51,7 @@ const MediaKitCover = ({ user }) => {
               overflowWrap: 'break-word',
             }}
           >
-            {user?.creator?.mediaKit?.about}
+            {user?.creator?.mediaKit?.about || user?.user.creator.mediaKit.about}
           </Typography>
           <Stack
             direction={{ sm: 'row' }}
@@ -58,13 +62,13 @@ const MediaKitCover = ({ user }) => {
             <Stack direction="row" spacing={1} alignItems="center">
               <Iconify icon="mingcute:location-fill" />
               <Typography variant="subtitle2" fontWeight={800}>
-                Live at {user?.country}
+                Live at {user?.country || user?.user.country}
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <Iconify icon="mdi:email" />
               <Typography variant="subtitle2" fontWeight={800}>
-                {user?.email}
+                {user?.email || user?.user.email}
               </Typography>
             </Stack>
           </Stack>
@@ -72,5 +76,25 @@ const MediaKitCover = ({ user }) => {
       </Stack>
     </Box>
   );
+};
+
+MediaKitCover.propTypes = {
+  user: PropTypes.shape({
+    name: PropTypes.string,
+    country: PropTypes.string,
+    email: PropTypes.string,
+    creator: PropTypes.shape({
+      mediaKit: PropTypes.shape({
+        name: PropTypes.string,
+        interests: PropTypes.arrayOf(PropTypes.string),
+        about: PropTypes.string,
+      }),
+      interests: PropTypes.arrayOf(
+        PropTypes.shape({
+          name: PropTypes.string,
+        })
+      ),
+    }),
+  }),
 };
 export default MediaKitCover;

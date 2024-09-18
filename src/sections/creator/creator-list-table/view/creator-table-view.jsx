@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import React from 'react';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
 import { useState, useEffect, useCallback } from 'react';
@@ -14,6 +15,7 @@ import Container from '@mui/material/Container';
 import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
+import { TableRow, TableCell } from '@mui/material';
 import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
 
@@ -53,18 +55,21 @@ import CreatorTableRow from '../creator-table-row';
 import CreatorTableToolbar from '../creator-table-toolbar';
 import CreatorTableFilter from '../creator-table-filters-result';
 
+import MediaKitCreator from 'src/sections/creator/media-kit-creator-view/mediakit-view-by-id';
+
 
 
 const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
-  { id: 'pronounce', label: 'Pronounce', width: 180 },
-  { id: 'tiktok', label: 'Tiktok Account', width: 180 },
-  { id: 'instagram', label: 'Instagram Account', width: 180 },
-  { id: 'country', label: 'Country', width: 180 },
+  { id: 'pronounce', label: 'Pronounce', width: 100 },
+  { id: 'tiktok', label: 'Tiktok Account', width: 120 },
+  { id: 'instagram', label: 'Instagram Account', width: 150 },
+  { id: 'country', label: 'Country', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
-  { id: '', width: 88 },
+  { id: 'mediaKit', label: 'Media Kit', width: 180 },
+  { id: '', label: 'Operation', width: 88 },
 ];
 
 const defaultFilters = {
@@ -84,6 +89,7 @@ function CreatorTableView() {
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [ageRange, setAgeRange] = useState(defaultFilters.ageRange);
+  const [expandedRow, setExpandedRow] = useState(null);
 
   const handleAgeRangeChange = (newValue) => {
     setAgeRange(newValue);
@@ -166,6 +172,7 @@ function CreatorTableView() {
     },
     [handleFilters]
   );
+
   const handleEditRow = useCallback(
     (id) => {
       router.push(paths.dashboard.user.edit(id));
@@ -203,6 +210,10 @@ function CreatorTableView() {
       totalRowsFiltered: dataFiltered.length,
     });
   }, [dataFiltered.length, dataInPage.length, enqueueSnackbar, table, tableData]);
+
+  const handleViewMediaKit = useCallback((id) => {
+    setExpandedRow(expandedRow === id ? null : id);
+  }, [expandedRow]);
 
   useEffect(() => {
     setTableData(creators);
@@ -317,14 +328,24 @@ function CreatorTableView() {
                       table.page * table.rowsPerPage + table.rowsPerPage
                     )
                     .map((row) => (
-                      <CreatorTableRow
-                        key={row.id}
-                        row={row}
-                        selected={table.selected.includes(row.id)}
-                        onSelectRow={() => table.onSelectRow(row.id)}
-                        onDeleteRow={() => handleDeleteRow(row.id)}
-                        onEditRow={() => handleEditRow(row.id)}
-                      />
+                      <React.Fragment key={row.id}>
+                        <CreatorTableRow
+                          row={row}
+                          selected={table.selected.includes(row.id)}
+                          onSelectRow={() => table.onSelectRow(row.id)}
+                          onDeleteRow={() => handleDeleteRow(row.id)}
+                          onEditRow={() => handleEditRow(row.id)}
+                          onViewMediaKit={() => handleViewMediaKit(row.id)}
+                          expanded={expandedRow === row.id}
+                        />
+                        {expandedRow === row.id && (
+                          <TableRow>
+                            <TableCell colSpan={TABLE_HEAD.length} sx={{ py: 3 }}>
+                              <MediaKitCreator creatorId={row.id} />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     ))}
 
                   <TableEmptyRows

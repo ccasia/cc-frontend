@@ -3,6 +3,7 @@
 const ROOTS = {
   AUTH: '/auth',
   DASHBOARD: '/dashboard',
+  PUBLIC: '/public'
 };
 
 // ----------------------------------------------------------------------
@@ -89,7 +90,9 @@ export const paths = {
       createInvoice: (id) => `${ROOTS.DASHBOARD}/invoice/create/${id}`,
     },
   },
-
-  
-
+  public: {
+    creator: {
+      mediaKit: (id) => `${ROOTS.PUBLIC}/media-kits/creator/${id}`,
+    }
+  }
 };
