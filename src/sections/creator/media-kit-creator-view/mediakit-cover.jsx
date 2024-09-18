@@ -51,7 +51,7 @@ const MediaKitCover = ({ user }) => {
               overflowWrap: 'break-word',
             }}
           >
-            {user?.creator?.mediaKit?.about || user?.user.creator.mediaKit.about}
+            {user?.creator?.mediaKit?.about || user?.user?.creator?.mediaKit?.about || 'No about'}
           </Typography>
           <Stack
             direction={{ sm: 'row' }}

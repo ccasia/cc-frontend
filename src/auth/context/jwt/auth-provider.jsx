@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useMemo, useEffect, useReducer, useCallback } from 'react';
 
 import axios, { fetcher, endpoints } from 'src/utils/axios';
+import { useLocation } from 'react-router-dom';
 
 import { AuthContext } from './auth-context';
 import { setSession, isValidToken } from './utils';
@@ -59,9 +60,17 @@ const reducer = (state, action) => {
 // const STORAGE_KEY = 'accessToken';
 
 export function AuthProvider({ children }) {
+
+  const location = useLocation();
+
+  const publicRoutes = ['/public'];
+
+  // Check if the current route is public
+  const isPublicRoute = publicRoutes.some(route => location.pathname.startsWith(route));
+
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const { data: userData } = useSWR(endpoints.auth.me, fetcher);
+  const { data: userData } = useSWR(isPublicRoute ? null : endpoints.auth.me, fetcher);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
