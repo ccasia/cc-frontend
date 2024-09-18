@@ -19,7 +19,6 @@ export default function CreatorTableFilter({
   pronounceOptions,
   ...other
 }) {
-
   const handleRemovePronounce = useCallback(() => {
     onFilters('pronounce', []);
   }, [onFilters]);
@@ -101,6 +100,7 @@ CreatorTableFilter.propTypes = {
   onFilters: PropTypes.func,
   onResetFilters: PropTypes.func,
   results: PropTypes.number,
+  pronounceOptions: PropTypes.array,
 };
 
 // ----------------------------------------------------------------------

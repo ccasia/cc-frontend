@@ -89,6 +89,10 @@ export const paths = {
       invoiceDetail: (id) => `${ROOTS.DASHBOARD}/invoice/detail/${id}`,
       createInvoice: (id) => `${ROOTS.DASHBOARD}/invoice/create/${id}`,
     },
+    roles: {
+      root: `${ROOTS.DASHBOARD}/roles`,
+      manage: (id) => `${ROOTS.DASHBOARD}/roles/manage/${id}`,
+    },
   },
   public: {
     creator: {

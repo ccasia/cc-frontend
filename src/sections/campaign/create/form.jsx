@@ -274,7 +274,17 @@ function CreateCampaignForm() {
         campaignImages: [],
         adminManager: [],
         agreementFrom: null,
-        timeline: [{ timeline_type: '', duration: undefined, startDate: '', endDate: '' }],
+        timeline: [
+          {
+            timeline_type: {},
+            id: '',
+            duration: undefined,
+            for: 'creator',
+            startDate: '',
+            endDate: '',
+            isSubmissionNeeded: false,
+          },
+        ],
         campaignTasksAdmin: [],
         campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
       };
@@ -291,8 +301,7 @@ function CreateCampaignForm() {
         return timelineSchema;
       case 4:
         return campaignAdminSchema;
-      // case 5:
-      //   return undefined;
+
       default:
         return campaignSchema; // Assuming step 3 is the default or final step
     }
@@ -365,11 +374,6 @@ function CreateCampaignForm() {
   }, [brandState, setValue]);
 
   const handleNext = async () => {
-    // if (activeStep === 3 || activeStep === 4) {
-    //   localStorage.setItem('activeStep', activeStep + 1);
-    //   setActiveStep((prevActiveStep) => prevActiveStep + 1);
-    // }
-
     const result = await trigger();
 
     if (result) {

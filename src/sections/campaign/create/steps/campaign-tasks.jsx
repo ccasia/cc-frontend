@@ -40,11 +40,6 @@ const CampaignTaskManagement = ({ methods }) => {
     name: 'campaignTasksAdmin',
   });
 
-  //   const { fields: creatorFields } = useFieldArray({
-  //     control,
-  //     name: 'campaignTasksCreator',
-  //   });
-
   useEffect(() => {
     if (isAdminSameTimeline) {
       setValue(

@@ -9,6 +9,7 @@ import { LoadingButton } from '@mui/lab';
 import { Box, Button, Skeleton, Container, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -20,6 +21,7 @@ import CompanyEditForm from './edit-from';
 const CompanyEditView = ({ id }) => {
   const [company, setCompany] = useState();
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const getCompany = async () => {
@@ -122,7 +124,8 @@ const CompanyEditView = ({ id }) => {
     <Container maxWidth="lg">
       <Button
         startIcon={<Iconify icon="ion:chevron-back" />}
-        href={paths.dashboard.company.discover}
+        onClick={() => router.push(paths.dashboard.company.discover)}
+        // href={paths.dashboard.company.discover}
       >
         Back
       </Button>

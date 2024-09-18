@@ -37,18 +37,37 @@ export default function ClientDetailsContent({ company }) {
 
   const renderContent = (
     <Stack component={Card} spacing={3} sx={{ p: 3 }}>
-      <Typography variant="h4">{formatText(name)}</Typography>
+      {/* <Typography variant="h4">{formatText(name)}</Typography> */}
+      <ListItemText
+        primary="Client's Name"
+        secondary={formatText(name)}
+        primaryTypographyProps={{
+          variant: 'h6',
+        }}
+        secondaryTypographyProps={{
+          variant: 'subtitle1',
+        }}
+      />
 
-      {/* <Markdown children={content} /> */}
+      <ListItemText
+        primary="About"
+        secondary={about || 'None'}
+        primaryTypographyProps={{
+          variant: 'h6',
+        }}
+        secondaryTypographyProps={{
+          variant: 'subtitle1',
+        }}
+      />
 
-      <Stack spacing={1}>
+      {/* <Stack spacing={1}>
         <Typography variant="h6">About</Typography>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="inherit">{about}</Typography>
         </Stack>
-      </Stack>
+      </Stack> */}
 
-      {objectives.length > 0 && (
+      {objectives?.length > 0 && (
         <Stack>
           <Typography variant="h6">Objectives</Typography>
           <Stack direction="row" alignItems="center">
@@ -71,15 +90,15 @@ export default function ClientDetailsContent({ company }) {
         {
           label: 'Date Created',
           value: fDate(createdAt),
-          icon: <Iconify icon="solar:calendar-date-bold" />,
+          icon: <Iconify icon="solar:calendar-date-bold" width={20} />,
         },
         {
           label: 'Registration Number',
           value: registration_number,
-          icon: <Iconify icon="solar:calendar-date-bold" />,
+          icon: <Iconify icon="mdi-id-card" width={20} />,
         },
       ].map((item) => (
-        <Stack key={item.label} spacing={1.5} direction="row">
+        <Stack key={item.label} spacing={1.5} direction="row" alignItems="start">
           {item.icon}
           <ListItemText
             primary={item.label}
@@ -136,7 +155,7 @@ export default function ClientDetailsContent({ company }) {
       <Grid xs={12} md={8}>
         {renderContent}
 
-        {renderBilling}
+        {/* {renderBilling} */}
       </Grid>
 
       <Grid xs={12} md={4}>

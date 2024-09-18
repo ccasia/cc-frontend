@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
-const useGetRoles = () => {
-  const { data, isLoading } = useSWR(endpoints.roles.root, fetcher, {
+const useGetRoles = (id) => {
+  const { data, isLoading } = useSWR(id ? endpoints.roles.get(id) : endpoints.roles.root, fetcher, {
     revalidateOnMount: true,
     revalidateOnFocus: true,
     revalidateOnReconnect: true,

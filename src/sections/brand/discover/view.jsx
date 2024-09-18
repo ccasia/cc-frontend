@@ -31,9 +31,9 @@ function DiscoverBrand() {
   const settings = useSettingsContext();
   const router = useRouter();
 
-  const { companies } = useGetCompany();
+  const { data: companies, isLoading } = useGetCompany();
 
-  const [sortBy, setSortBy] = useState('latest');
+  // const [sortBy, setSortBy] = useState('latest');
 
   const [search, setSearch] = useState('');
 
@@ -42,7 +42,7 @@ function DiscoverBrand() {
   }, []);
 
   const filteredData =
-    companies &&
+    !isLoading &&
     companies.filter((company) => company.name.toLowerCase().indexOf(search.toLowerCase()) !== -1);
 
   return (
@@ -64,16 +64,16 @@ function DiscoverBrand() {
             startIcon={<Iconify icon="ion:create" />}
             onClick={() => router.push(paths.dashboard.company.create)}
           >
-            Create new brand
+            Create New Client
           </Button>
         }
         sx={{
           mb: { xs: 3, md: 5 },
         }}
       />{' '}
-      <Stack mb={3}>
+      <Box mb={3}>
         <TextField
-          placeholder="Search..."
+          placeholder="Search"
           onChange={handleSearch}
           InputProps={{
             startAdornment: (
@@ -82,29 +82,36 @@ function DiscoverBrand() {
               </InputAdornment>
             ),
           }}
+          sx={{
+            minWidth: 250,
+          }}
         >
           Search
         </TextField>
-      </Stack>
-      {companies.length < 1 ? (
-        <Box mt={2}>
-          <EmptyContent
-            filled
-            title="No Data"
-            sx={{
-              py: 10,
-            }}
-          />
-        </Box>
-      ) : (
-        <Stack
-          spacing={2.5}
-          sx={{
-            mb: { xs: 3, md: 5 },
-          }}
-        >
-          <BrandList companies={filteredData} />
-        </Stack>
+      </Box>
+      {!isLoading && (
+        <>
+          {companies.length < 1 ? (
+            <Box mt={2}>
+              <EmptyContent
+                filled
+                title="No Data"
+                sx={{
+                  py: 10,
+                }}
+              />
+            </Box>
+          ) : (
+            <Stack
+              spacing={2.5}
+              sx={{
+                mb: { xs: 3, md: 5 },
+              }}
+            >
+              <BrandList companies={filteredData} />
+            </Stack>
+          )}
+        </>
       )}
     </Container>
   );

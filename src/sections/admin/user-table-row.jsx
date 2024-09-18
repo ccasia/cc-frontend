@@ -52,7 +52,9 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
           />
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{phoneNumber || 'null'}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          {`+${countries.find((item) => item.label === country).phone} ${phoneNumber}` || 'null'}
+        </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{admin?.role?.name || 'null'}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -68,7 +70,7 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
           )}
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{admin?.mode || 'null'}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{admin?.role?.name || 'null'}</TableCell>
 
         <TableCell>
           <Label

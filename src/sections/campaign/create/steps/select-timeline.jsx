@@ -34,7 +34,13 @@ import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import { RHFSelect, RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
+import {
+  RHFSelect,
+  RHFCheckbox,
+  RHFTextField,
+  RHFDatePicker,
+  RHFAutocomplete,
+} from 'src/components/hook-form';
 
 const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods }) => {
   const { data, isLoading } = useGetAllTimelineType();
@@ -258,6 +264,10 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods }) 
                               name={`timeline[${index}].endDate`}
                               label="End Date"
                               disabled
+                            />
+                            <RHFCheckbox
+                              name={`timeline[${index}].isSubmissionNeeded`}
+                              label="Need Submission?"
                             />
                             <IconButton color="error" onClick={() => handleRemove(index, item)}>
                               <Iconify icon="uil:trash" />
