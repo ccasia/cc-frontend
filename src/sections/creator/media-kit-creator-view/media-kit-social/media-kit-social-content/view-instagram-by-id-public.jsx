@@ -147,7 +147,11 @@ TopContentGrid.propTypes = {
 const MediaKitSocialContent = ({ user }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  console.log(user)
+
+  if (!user) {
+    return <CircularProgress />;
+  }
+
   return (
     <Box>
       <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
@@ -157,8 +161,8 @@ const MediaKitSocialContent = ({ user }) => {
               Followers
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {user?.user.creator?.socialMediaData?.instagram?.data.followers
-                ? formatNumber(user?.user.creator?.socialMediaData.instagram.data.followers)
+              {user?.user.creator?.socialMediaData?.instagram?.followers
+                ? formatNumber(user?.user.creator?.socialMediaData.instagram.followers)
                 : 'N/A'}
             </Typography>
           </Box>
@@ -169,8 +173,8 @@ const MediaKitSocialContent = ({ user }) => {
               Engagement Rate
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {user?.user.creator?.socialMediaData?.instagram?.data.engagement_rate
-                ? `${Number(user?.user.creator?.socialMediaData.instagram.data.engagement_rate).toFixed(2)}%`
+              {user?.user.creator?.socialMediaData?.instagram?.engagement_rate
+                ? `${Number(user?.user.creator?.socialMediaData.instagram.engagement_rate).toFixed(2)}%`
                 : 'N/A'}
             </Typography>
           </Box>
@@ -181,8 +185,8 @@ const MediaKitSocialContent = ({ user }) => {
               Average Likes
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {user?.user.creator?.socialMediaData?.instagram?.data.user_performance?.avg_likes_per_post
-                ? formatNumber(user?.user.creator?.socialMediaData.instagram.data.user_performance.avg_likes_per_post)
+              {user?.user.creator?.socialMediaData?.instagram?.avg_likes_per_post
+                ? formatNumber(user?.user.creator?.socialMediaData.instagram.avg_likes_per_post)
                 : 'N/A'}
             </Typography>
           </Box>
@@ -192,8 +196,8 @@ const MediaKitSocialContent = ({ user }) => {
       <Typography variant="h6" mb={isMobile ? 1 : 2} sx={{ fontSize: isMobile ? 18 : 20 }}>
         Top Content
       </Typography>
-      {user?.user.creator?.socialMediaData?.instagram?.data.top_contents ? (
-        <TopContentGrid topContents={user?.user.creator?.socialMediaData.instagram.data.top_contents} />
+      {user?.user.creator?.socialMediaData?.instagram?.top_contents ? (
+        <TopContentGrid topContents={user?.user.creator?.socialMediaData.instagram.top_contents} />
       ) : (
         <Typography>No top content data available</Typography>
       )}

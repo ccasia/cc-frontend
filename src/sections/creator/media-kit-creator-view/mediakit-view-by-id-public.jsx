@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { Tab, Box, Card, Tabs, useTheme, Container } from '@mui/material';
+import { Tab, Box, Card, Tabs, useTheme, Container, CircularProgress, Alert } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -9,17 +9,27 @@ import { useSettingsContext } from 'src/components/settings';
 
 import MediaKitCover from './mediakit-cover';
 import MediaKitSetting from './media-kit-setting';
-import MediaKitSocial from './media-kit-social/view-by-id';
+import MediaKitSocial from './media-kit-social/view-by-id-public';
   
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import useSWR from 'swr';
+
+// Define a fetcher function
+const fetcher = (url) => axiosInstance.get(url).then(res => res.data);
+
 const MediaKitCreator = ({ creatorId }) => {
+
+  const { data: creatorData, error } = useSWR(
+    creatorId ? endpoints.creators.getCreatorFullInfoPublic(creatorId) : null,
+    fetcher
+  );
+
   const settings = useSettingsContext();
   const theme = useTheme();
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [currentTab, setCurrentTab] = useState('instagram');
   const [openSetting, setOpenSetting] = useState(false);
-  const [creatorData, setCreatorData] = useState(null);
 
   const handleClose = () => {
     setOpenSetting(!openSetting);
@@ -38,24 +48,9 @@ const MediaKitCreator = ({ creatorId }) => {
     bgcolor: theme.palette.background.paper,
   };
 
-  console.log(creatorId);
-
-  useEffect(() => {
-    const fetchCreatorData = async () => {
-      try {
-        const response = await axiosInstance.get(endpoints.creators.getCreatorFullInfoPublic(creatorId));
-        setCreatorData(response.data);
-      } catch (error) {
-        console.error('Error fetching creator data:', error);
-      }
-    };
-  
-    if (creatorId) {
-      fetchCreatorData();
-    }
-  }, [creatorId]);
-
-  console.log(creatorData);
+  if (!creatorId) return null;
+  if (error) return <Alert severity="error">Error loading creator data</Alert>;
+  if (!creatorData) return <CircularProgress />;
 
   return (
     <Container
