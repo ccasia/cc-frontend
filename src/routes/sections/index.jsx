@@ -9,6 +9,7 @@ import { mainRoutes } from './main';
 import { authRoutes } from './auth';
 import { adminRoutes } from './admin';
 import { dashboardRoutes } from './dashboard';
+import { publicRoutes } from './public'
 
 // ----------------------------------------------------------------------
 
@@ -29,6 +30,8 @@ export default function Router() {
     ...mainRoutes,
 
     ...adminRoutes,
+
+    ...publicRoutes,
 
     { path: '/auth/verify', element: <Verify /> },
     { path: '/auth/verify/:token', element: <VerifyConfirmation /> },

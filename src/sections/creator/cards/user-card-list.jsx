@@ -25,5 +25,5 @@ export default function UserCardList({ creators }) {
 }
 
 UserCardList.propTypes = {
-  creators: PropTypes.array,
+  creators: PropTypes.array.isRequired,
 };

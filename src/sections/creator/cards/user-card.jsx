@@ -22,6 +22,20 @@ import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
+// Utility function to format numbers
+const formatNumber = (num) => {
+  if (num >= 1000000000) {
+    return `${(num / 1000000000).toFixed(1)}G`;
+  }
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1)}M`;
+  }
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`;
+  }
+  return num.toString();
+};
+
 export default function UserCard({ user }) {
   const theme = useTheme();
 
@@ -118,7 +132,9 @@ export default function UserCard({ user }) {
             <Typography variant="caption" component="div" sx={{ mb: 0.5, color: 'text.secondary' }}>
               Followers
             </Typography>
-            123
+            {user.creator.socialMediaData?.instagram?.data.followers
+                ? formatNumber(user.creator.socialMediaData?.instagram?.data.followers)
+                : 'N/A'}
             {/* {fShortenNumber(totalFollowers)} */}
           </div>
 
@@ -126,15 +142,19 @@ export default function UserCard({ user }) {
             <Typography variant="caption" component="div" sx={{ mb: 0.5, color: 'text.secondary' }}>
               Engagement Rates
             </Typography>
-            123
+            {user.creator.socialMediaData?.instagram?.data.engagement_rate
+                ? `${Number(user.creator.socialMediaData?.instagram?.data.engagement_rate).toFixed(2)} %`
+                : 'N/A'}
             {/* {fShortenNumber(totalFollowing)} */}
           </div>
 
           <div>
             <Typography variant="caption" component="div" sx={{ mb: 0.5, color: 'text.secondary' }}>
-              Total Views
+              Average Likes
             </Typography>
-            123
+            {user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
+                ? formatNumber(user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post)
+                : 'N/A'}
             {/* {fShortenNumber(totalPosts)} */}
           </div>
         </Box>

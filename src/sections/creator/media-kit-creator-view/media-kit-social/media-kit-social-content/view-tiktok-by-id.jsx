@@ -144,132 +144,12 @@ TopContentGrid.propTypes = {
   ).isRequired,
 };
 
-const MediaKitSocialContent = () => {
-  const [socialMediaData, setSocialMediaData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState(null);
+const MediaKitSocialContent = ({ user }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const getButtonText = () => {
-    if (loading) return 'Fetching...';
-    return socialMediaData ? 'Refresh Instagram & Tiktok Data' : 'Fetch Instagram & Tiktok Data';
-  };
-
-  const fetchExistingSocialMediaData = async () => {
-    setLoading(true);
-    setFetchError(null);
-    try {
-      const existingDataResponse = await axiosInstance.get(endpoints.creators.getCreatorSocialMediaData);
-      if (existingDataResponse.data && Object.keys(existingDataResponse.data).length > 0) {
-        setSocialMediaData(existingDataResponse.data);
-      }
-    } catch (err) {
-      console.error('Error fetching existing social media data:', err);
-      setFetchError(err.message || 'Failed to fetch existing social media data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const crawlSocialMediaData = async (instagramUsername, tiktokUsername) => {
-    const crawlPlatform = async (platform, username) => {
-      if (!username) return null;
-      try {
-        const response = await axiosInstance.post(endpoints.creators.getCreatorCrawler, {
-          identifier: username,
-          platform,
-        });
-        return response.data;
-      } catch (err) {
-        console.error(`Error crawling ${platform} data:`, err.response?.data || err.message);
-        return null; // Return null instead of throwing, so we can still process other platforms
-      }
-    };
-
-    const [instagramData, tiktokData] = await Promise.all([
-      crawlPlatform('Instagram', instagramUsername),
-      crawlPlatform('TikTok', tiktokUsername),
-    ]);
-
-    return {
-      instagram: instagramData,
-      tiktok: tiktokData,
-    };
-  };
-
-  const fetchNewSocialMediaData = async () => {
-    setLoading(true);
-    setFetchError(null);
-    try {
-      const userResponse = await axiosInstance.get(endpoints.auth.getCurrentUser);
-
-      if (!userResponse.data.user || !userResponse.data.user.creator) {
-        throw new Error('Creator profile not found. Please complete your profile setup.');
-      }
-
-      const { instagram, tiktok } = userResponse.data.user.creator;
-
-      if (!instagram && !tiktok) {
-        throw new Error('No social media usernames found. Please add your Instagram or TikTok username in your profile.');
-      }
-
-      const newSocialMediaData = await crawlSocialMediaData(instagram, tiktok);
-
-      if (!newSocialMediaData.instagram && !newSocialMediaData.tiktok) {
-        throw new Error('Failed to fetch social media data. The service might be temporarily unavailable.');
-      }
-
-      // Update the creator's social media data in the backend
-      await axiosInstance.put(endpoints.auth.updateCreator, {
-        id: userResponse.data.user.id,
-        socialMediaData: newSocialMediaData,
-      });
-
-      setSocialMediaData(newSocialMediaData);
-    } catch (err) {
-      console.error('Error fetching new social media data:', err);
-      setFetchError(err.message || 'Failed to fetch new social media data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchExistingSocialMediaData();
-  }, []);
-
-  if (loading) {
-    return <CircularProgress />;
-  }
-
-  // if (error) {
-  //   return <Typography color="error">{error}</Typography>;
-  // }
-
-  const renderDataOrPlaceholder = (data, placeholder) => data || placeholder;
-
+  console.log(user)
   return (
     <Box>
-      <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-        <Button
-          onClick={fetchNewSocialMediaData}
-          variant="contained"
-          disabled={loading}
-        >
-          {getButtonText()}
-        </Button>
-        {fetchError && (
-          <Alert severity="error" sx={{ flexGrow: 1 }}>
-            <AlertTitle>Error</AlertTitle>
-            {fetchError}
-            {fetchError.includes('service might be temporarily unavailable') && (
-              <span> Please try again later.</span>
-            )}
-          </Alert>
-        )}
-      </Stack>
-
       <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
         <Grid item xs={12} sm={4}>
           <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
@@ -277,9 +157,9 @@ const MediaKitSocialContent = () => {
               Followers
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {socialMediaData?.instagram?.data.followers
-                ? formatNumber(socialMediaData.instagram.data.followers)
-                : 'No data'}
+              {user?.user.creator?.socialMediaData?.tiktok?.data.followers
+                ? formatNumber(user?.user.creator?.socialMediaData.tiktok.data.followers)
+                : 'N/A'}
             </Typography>
           </Box>
         </Grid>
@@ -289,9 +169,9 @@ const MediaKitSocialContent = () => {
               Engagement Rate
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {socialMediaData?.instagram?.data.engagement_rate
-                ? `${Number(socialMediaData.instagram.data.engagement_rate).toFixed(2)}%`
-                : 'No data'}
+              {user?.user.creator?.socialMediaData?.tiktok?.data.engagement_rate
+                ? `${Number(user?.user.creator?.socialMediaData.tiktok.data.engagement_rate).toFixed(2)}%`
+                : 'N/A'}
             </Typography>
           </Box>
         </Grid>
@@ -301,9 +181,9 @@ const MediaKitSocialContent = () => {
               Average Likes
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {socialMediaData?.instagram?.data.user_performance?.avg_likes_per_post
-                ? formatNumber(socialMediaData.instagram.data.user_performance.avg_likes_per_post)
-                : 'No data'}
+              {user?.user.creator?.socialMediaData?.tiktok?.data.user_performance?.avg_likes_per_post
+                ? formatNumber(user?.user.creator?.socialMediaData.tiktok.data.user_performance.avg_likes_per_post)
+                : 'N/A'}
             </Typography>
           </Box>
         </Grid>
@@ -312,8 +192,8 @@ const MediaKitSocialContent = () => {
       <Typography variant="h6" mb={isMobile ? 1 : 2} sx={{ fontSize: isMobile ? 18 : 20 }}>
         Top Content
       </Typography>
-      {socialMediaData?.instagram?.data.top_contents ? (
-        <TopContentGrid topContents={socialMediaData.instagram.data.top_contents} />
+      {user?.user.creator?.socialMediaData?.tiktok?.data.top_contents ? (
+        <TopContentGrid topContents={user?.user.creator?.socialMediaData.tiktok.data.top_contents} />
       ) : (
         <Typography>No top content data available</Typography>
       )}

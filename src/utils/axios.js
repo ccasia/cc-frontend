@@ -85,9 +85,11 @@ export const endpoints = {
     updateCreator: '/api/creator/update-creator',
     updateMediaKit: '/api/creator/update-media-kit',
     getCreatorFullInfo: (id) => `/api/creator/getCreatorFullInfoById/${id}`,
+    getCreatorFullInfoPublic: (id) => `/api/creator/public/getCreatorFullInfoById/${id}`,
     updatePaymentForm: '/api/creator/updatePaymentForm',
     getCreatorCrawler: '/api/creator/crawl',
-    getCreatorCrawlerResult: '/api/creator/crawl-result',
+    getCreatorSocialMediaData: '/api/creator/getCreatorSocialMediaData',
+    getCreatorSocialMediaDataById: (id) => `/creator/${id}/social-media`,
     updateCreatorform: '/api/creator/updateCreatorForm',
   },
   users: {
