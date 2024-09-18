@@ -84,7 +84,7 @@ const Dashboard = () => {
         {/* Invoice History and Campaign List */}
         <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>
-              Invoice History
+              Invoice History.
             </Typography>
 
             <InvoiceHistoryCampaignList 
