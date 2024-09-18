@@ -9,7 +9,7 @@ import Iconify from 'src/components/iconify';
 
 const MediaKitCover = ({ user }) => {
   const theme = useTheme();
-
+  
   return (
     <Box sx={{ p: 5 }}>
       <Stack direction="column" alignItems="center" gap={2}>

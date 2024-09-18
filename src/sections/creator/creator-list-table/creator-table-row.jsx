@@ -19,9 +19,23 @@ import { ConfirmDialog } from 'src/components/custom-dialog';
 
 import CreatorQuickForm from './creator-quick-edit';
 
+import MediaKitCreator from '../media-kit-creator-view/mediakit-view-by-id';
+
+import { useState } from 'react';
+
 // ----------------------------------------------------------------------
 
-export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow, onViewMediaKit, expanded, }) {
+export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
+  const [openMediaKit, setOpenMediaKit] = useState(false);
+
+  const handleOpenMediaKit = () => {
+    setOpenMediaKit(true);
+  };
+
+  const handleCloseMediaKit = () => {
+    setOpenMediaKit(false);
+  };
+  
   const { name, creator, country, status, photoURL } = row;
 
   const confirm = useBoolean();
@@ -74,17 +88,12 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
         <TableCell>
           <Button
             variant="contained"
-            color={expanded ? "secondary" : "primary"}
-            onClick={() => onViewMediaKit(row.id)}
-            endIcon={<Iconify icon={expanded ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'} />}
-            sx={{
-              '& .MuiButton-label': {
-                fontWeight: 'normal',
-              },
-            }}
+            color="primary"
+            onClick={handleOpenMediaKit}
+            endIcon={<Iconify icon="eva:external-link-fill" />}
           >
             <Typography variant="button" sx={{ fontWeight: 'normal' }}>
-              {expanded ? 'Close Media Kit' : 'Media Kit'}
+              Media Kit
             </Typography>
           </Button>
         </TableCell>
@@ -116,6 +125,12 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
         </TableCell>
       </TableRow>
 
+      <MediaKitCreator 
+        creatorId={row.id} 
+        open={openMediaKit} 
+        onClose={handleCloseMediaKit} 
+      />
+
       <CreatorQuickForm currentUser={row} open={quickEdit.value} onClose={quickEdit.onFalse} />
 
       <ConfirmDialog
@@ -146,6 +161,4 @@ CreatorTableRow.propTypes = {
   onSelectRow: PropTypes.func,
   row: PropTypes.object,
   selected: PropTypes.bool,
-  onViewMediaKit: PropTypes.func,
-  expanded: PropTypes.bool,
 };

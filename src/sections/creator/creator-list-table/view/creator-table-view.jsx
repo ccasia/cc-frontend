@@ -89,7 +89,6 @@ function CreatorTableView() {
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [ageRange, setAgeRange] = useState(defaultFilters.ageRange);
-  const [expandedRow, setExpandedRow] = useState(null);
 
   const handleAgeRangeChange = (newValue) => {
     setAgeRange(newValue);
@@ -211,10 +210,6 @@ function CreatorTableView() {
     });
   }, [dataFiltered.length, dataInPage.length, enqueueSnackbar, table, tableData]);
 
-  const handleViewMediaKit = useCallback((id) => {
-    setExpandedRow(expandedRow === id ? null : id);
-  }, [expandedRow]);
-
   useEffect(() => {
     setTableData(creators);
   }, [creators]);
@@ -328,24 +323,14 @@ function CreatorTableView() {
                       table.page * table.rowsPerPage + table.rowsPerPage
                     )
                     .map((row) => (
-                      <React.Fragment key={row.id}>
-                        <CreatorTableRow
-                          row={row}
-                          selected={table.selected.includes(row.id)}
-                          onSelectRow={() => table.onSelectRow(row.id)}
-                          onDeleteRow={() => handleDeleteRow(row.id)}
-                          onEditRow={() => handleEditRow(row.id)}
-                          onViewMediaKit={() => handleViewMediaKit(row.id)}
-                          expanded={expandedRow === row.id}
-                        />
-                        {expandedRow === row.id && (
-                          <TableRow>
-                            <TableCell colSpan={TABLE_HEAD.length} sx={{ py: 3 }}>
-                              <MediaKitCreator creatorId={row.id} />
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </React.Fragment>
+                      <CreatorTableRow
+                        key={row.id}
+                        row={row}
+                        selected={table.selected.includes(row.id)}
+                        onSelectRow={() => table.onSelectRow(row.id)}
+                        onDeleteRow={() => handleDeleteRow(row.id)}
+                        onEditRow={() => handleEditRow(row.id)}
+                      />
                     ))}
 
                   <TableEmptyRows
