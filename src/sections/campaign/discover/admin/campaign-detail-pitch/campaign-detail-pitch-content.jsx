@@ -65,6 +65,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         });
         enqueueSnackbar(res?.data?.message);
       } catch (error) {
+        console.log(error)
         enqueueSnackbar('error', {
           variant: 'error',
         });

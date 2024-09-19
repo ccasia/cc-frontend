@@ -106,7 +106,7 @@ const CampaignAgreements = ({ campaign }) => {
                       <Label color="warning">Pending</Label>
                     )}
                   </TableCell>
-                  <TableCell>{`RM ${parseFloat(item?.amount.toString())}`}</TableCell>
+                  <TableCell>{`RM ${parseFloat(item?.amount?.toString())}`}</TableCell>
                   <TableCell>
                     {smUp ? (
                       <Stack direction="row" gap={1}>
