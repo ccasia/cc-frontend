@@ -1,9 +1,11 @@
 import dayjs from 'dayjs';
+import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import {
   Box,
@@ -61,7 +63,12 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     return finalDraftSubmission;
   }, [fullSubmission, dependency]);
 
+  const schema = yup.object().shape({
+    postingLink: yup.string().required('Posting Link is required.'),
+  });
+
   const methods = useForm({
+    resolver: yupResolver(schema),
     defaultValues: {
       postingLink: '',
     },

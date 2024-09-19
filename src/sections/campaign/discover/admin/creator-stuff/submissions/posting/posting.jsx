@@ -95,18 +95,13 @@ const Posting = ({ campaign, submission, creator }) => {
           </Box>
         </Grid>
         <Grid item xs={12} md={9}>
-          {submission?.status === 'NOT_STARTED' && <EmptyContent title="No submission" />}
+          {submission?.status === 'NOT_STARTED' && <EmptyContent title="No submission." />}
+          {submission?.status === 'REJECTED' && (
+            <EmptyContent title="Waiting for another submission." />
+          )}
           {submission?.status === 'PENDING_REVIEW' && (
             <>
               <Box component={Paper} p={1.5}>
-                {/* <Box width={400}>
-                <iframe
-                src="https://www.instagram.com/apikoll/p/BxBstXxHKGn"
-                title="Posting"
-                width={400}
-                height={400}
-                />
-                </Box> */}
                 <Button
                   LinkComponent="a"
                   target="__blank"

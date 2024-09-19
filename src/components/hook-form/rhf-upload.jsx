@@ -88,7 +88,12 @@ export function RHFUpload({ name, multiple, type, helperText, ...other }) {
                   type === 'video'
                   ? { 'video/*': [] }
                   : type === 'doc'
-                    ? { "file": []}
+                    ? {
+                        'application/msword': ['.doc'],
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
+                          '.docx',
+                        ],
+                      }
                     : { 'application/pdf': [] }
             }
             file={field.value}

@@ -851,15 +851,17 @@ function CreateCampaignForm() {
       </Stack>
 
       <RHFUpload
-        type="pdf"
+        type="doc"
         name="agreementFrom"
         onDrop={handleDropSingleFile}
         onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
       />
 
-      <Button variant="outlined" color="error" onClick={() => setValue('agreementFrom', '')}>
-        Remove
-      </Button>
+      {a && (
+        <Button variant="outlined" color="error" onClick={() => setValue('agreementFrom', '')}>
+          Remove
+        </Button>
+      )}
     </Box>
   );
 

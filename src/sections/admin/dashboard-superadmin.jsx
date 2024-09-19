@@ -19,6 +19,7 @@ import {
   TableContainer,
 } from '@mui/material';
 
+import useGetCreators from 'src/hooks/use-get-creators';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { fNumber } from 'src/utils/format-number';
@@ -31,6 +32,8 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 const DashboardSuperadmin = () => {
   const { campaigns, isLoading } = useGetCampaigns();
+  const { creators } = useGetCreators();
+
   const theme = useTheme();
   const setting = useSettingsContext();
 
@@ -203,7 +206,7 @@ const DashboardSuperadmin = () => {
           <Stack gap={1}>
             <Typography variant="subtitle2">Total Creator</Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h3">{campaigns?.length}</Typography>
+              <Typography variant="h3">{creators?.length}</Typography>
               <Chart
                 dir="ltr"
                 type="bar"

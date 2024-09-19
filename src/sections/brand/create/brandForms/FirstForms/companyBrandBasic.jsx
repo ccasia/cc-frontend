@@ -173,7 +173,7 @@ function CompanyBrandBasic() {
           placeholder="Select a company"
           freeSolo
           options={
-            companies.length > 0
+            companies?.length > 0
               ? companies.map((item) => ({ name: item?.name, value: item?.id, logo: item?.logo }))
               : []
           }

@@ -5,6 +5,7 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState } from 'react';
 import { ClimbingBoxLoader } from 'react-spinners';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
@@ -19,6 +20,7 @@ import {
   DialogContent,
   DialogActions,
   InputAdornment,
+  DialogContentText,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -99,6 +101,9 @@ const CampaignDetailCreator = ({ campaign }) => {
   const renderConfirmationModal = !!selectedCreator.length && (
     <Dialog open={confirmModal.value} onClose={confirmModal.onFalse}>
       <DialogTitle>Confirm to close modal</DialogTitle>
+      <DialogContent>
+        <DialogContentText>All selected creators will be remove.</DialogContentText>
+      </DialogContent>
       <DialogActions>
         <Button size="small" onClick={confirmModal.onFalse} variant="outlined">
           Cancel
@@ -111,6 +116,7 @@ const CampaignDetailCreator = ({ campaign }) => {
             reset();
           }}
           variant="contained"
+          color="error"
         >
           Confirm
         </Button>
@@ -188,9 +194,9 @@ const CampaignDetailCreator = ({ campaign }) => {
             Cancel
           </Button>
 
-          <Button type="submit" disabled={!selectedCreator.length}>
+          <LoadingButton type="submit" disabled={!selectedCreator.length} loading={loading.value}>
             Shortlist {selectedCreator.length > 0 && selectedCreator.length}
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </FormProvider>
     </Dialog>
