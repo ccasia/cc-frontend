@@ -24,14 +24,13 @@ const CampaignAgreementEdit = ({ dialog, agreement }) => {
 
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
-    //   .moreThan(0, 'Payment Amount must be greater than 0'),
     default: yup.boolean(),
   });
 
   const methods = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      paymentAmount: '',
+      paymentAmount: parseInt(agreement?.amount, 10) || '',
       default: false,
     },
     reValidateMode: 'onChange',
@@ -45,9 +44,9 @@ const CampaignAgreementEdit = ({ dialog, agreement }) => {
     if (isDefault) {
       setValue('paymentAmount', '200');
     } else {
-      setValue('paymentAmount', '');
+      setValue('paymentAmount', agreement?.amount);
     }
-  }, [setValue, isDefault]);
+  }, [setValue, isDefault, agreement]);
 
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
@@ -88,7 +87,6 @@ const CampaignAgreementEdit = ({ dialog, agreement }) => {
           <Button onClick={dialog.onFalse} variant="outlined" size="small" disabled={loading.value}>
             Cancel
           </Button>
-
           <LoadingButton
             type="submit"
             variant="contained"
