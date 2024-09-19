@@ -78,7 +78,7 @@ const TABLE_HEAD = [
   { id: 'phoneNumber', label: 'Phone Number', width: 220 },
   { id: 'designation', label: 'Designation', width: 180 },
   { id: 'country', label: 'Country', width: 100 },
-  { id: 'mode', label: 'Mode', width: 100 },
+  { id: 'role', label: 'Role', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
   { id: '', width: 88 },
 ];

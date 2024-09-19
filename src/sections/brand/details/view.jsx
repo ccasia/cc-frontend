@@ -21,10 +21,10 @@ import JobDetailsContent from './client/client-details-content';
 
 export default function CompanyDetails({ id }) {
   const settings = useSettingsContext();
-  const { companies } = useGetCompany();
+  const { data: companies, isLoading } = useGetCompany();
   const router = useRouter();
 
-  const currentCompany = companies && companies.filter((elem) => elem.id === id)[0];
+  const currentCompany = !isLoading && companies.filter((elem) => elem.id === id)[0];
 
   const [currentTab, setCurrentTab] = useState('details');
 

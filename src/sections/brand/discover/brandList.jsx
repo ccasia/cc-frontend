@@ -15,6 +15,7 @@ import BrandItem from './brandItem';
 
 export default function BrandList({ companies }) {
   const router = useRouter();
+
   const [filterData, setFilterData] = useState();
 
   const handleView = useCallback(

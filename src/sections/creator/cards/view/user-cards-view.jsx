@@ -1,13 +1,18 @@
-import { Box, TextField, InputAdornment } from '@mui/material';
 import { useState } from 'react';
+
 import Container from '@mui/material/Container';
+import { Box, TextField, InputAdornment } from '@mui/material';
+
 import { paths } from 'src/routes/paths';
+
 import useGetCreators from 'src/hooks/use-get-creators';
+
+import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import EmptyContent from 'src/components/empty-content/empty-content';
+
 import UserCardList from '../user-card-list';
-import SearchIcon from '@mui/icons-material/Search';
 
 // ----------------------------------------------------------------------
 
@@ -41,7 +46,8 @@ export default function UserCardsView() {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon />
+                {/* <SearchIcon /> */}
+                <Iconify icon="material-symbols:search" />
               </InputAdornment>
             ),
           }}

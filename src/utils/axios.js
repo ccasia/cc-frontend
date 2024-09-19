@@ -95,7 +95,7 @@ export const endpoints = {
   users: {
     newAdmin: '/api/user/admins',
     admins: '/api/user/admins',
-    updateProfileNewAdmin: '/api/user/updateProfile/newAdmin',
+    updateProfileNewAdmin: '/api/user/admins',
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
     allusers: '/api/users',
@@ -225,6 +225,7 @@ export const endpoints = {
   },
   roles: {
     root: '/api/role',
+    get: (id) => `/api/role/${id}`,
   },
   invoice: {
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,

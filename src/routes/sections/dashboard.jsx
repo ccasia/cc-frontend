@@ -76,6 +76,10 @@ const CreateInvoice = lazy(() => import('src/pages/dashboard/finance/createInvoi
 
 const AdminTaskPage = lazy(() => import('src/pages/dashboard/admin/tasks'));
 
+// Roles
+const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
+const ManageRole = lazy(() => import('src/pages/dashboard/roles/manage-role'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -456,6 +460,19 @@ export const dashboardRoutes = [
         ),
       },
       { path: 'kanban', element: <KanbanPage /> },
+      {
+        path: 'roles',
+        children: [
+          {
+            element: <Roles />,
+            index: true,
+          },
+          {
+            path: 'manage/:id',
+            element: <ManageRole />,
+          },
+        ],
+      },
     ],
   },
 ];

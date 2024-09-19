@@ -160,6 +160,12 @@ export function useNavData() {
               },
             ],
           },
+          {
+            roles: ['superadmin'],
+            title: 'Roles',
+            path: paths.dashboard.roles.root,
+            icon: <Iconify icon="oui:app-users-roles" width={25} />,
+          },
 
           // {
           //   roles: ['superadmin', 'CSM'],

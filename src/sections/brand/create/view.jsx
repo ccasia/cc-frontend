@@ -8,8 +8,6 @@ import Container from '@mui/material/Container';
 
 import { paths } from 'src/routes/paths';
 
-import useGetCompany from 'src/hooks/use-get-company';
-
 import withPermission from 'src/auth/guard/withPermissions';
 
 import { useSettingsContext } from 'src/components/settings';
@@ -18,20 +16,22 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import CompanyBrandForm from './brandForms/companyBrandForm';
 
 const TABS = [
-  { label: 'Company & Brand', value: 'basic', form: <CompanyBrandForm /> },
-  { label: 'Sup Brand', value: 'advanced', form: <h1>supBrand</h1> },
-  { label: 'Sup Sup Brand', value: 'supsupbrand', form: <h1>supSupBrand</h1> },
+  { label: 'Company & Brand', value: 'client', form: <CompanyBrandForm /> },
+  { label: 'Sup Brand', value: 'subClient', form: <h1>supBrand</h1>, disabled: true },
+  { label: 'Sup Sup Brand', value: 'subSubClient', form: <h1>supSupBrand</h1>, disabled: true },
 ];
 
 function CreateBrand() {
-  useGetCompany();
+  // useGetCompany();
   const settings = useSettingsContext();
-  const [currentTab, setCurrentTab] = useState('basic');
+  const [currentTab, setCurrentTab] = useState('client');
 
-  const [scrollableTab, setScrollableTab] = useState('basic');
+  const [scrollableTab, setScrollableTab] = useState('client');
 
   const handleChangeTab = useCallback((event, newValue) => {
-    setCurrentTab(newValue);
+    if (TABS.find((tab) => tab.value !== newValue).disabled) {
+      setCurrentTab(newValue);
+    }
   }, []);
 
   const handleChangeScrollableTab = useCallback((event, newValue) => {
@@ -63,7 +63,13 @@ function CreateBrand() {
           <Stack spacing={2} sx={{ width: 1 }}>
             <Tabs value={currentTab} onChange={handleChangeTab}>
               {TABS.slice(0, 3).map((tab) => (
-                <Tab key={tab.value} value={tab.value} label={tab.label} />
+                <Tab
+                  key={tab.value}
+                  value={tab.value}
+                  label={tab.label}
+                  // disabled={tab.disabled}
+                  sx={{ cursor: tab.disabled && 'not-allowed' }}
+                />
               ))}
             </Tabs>
 

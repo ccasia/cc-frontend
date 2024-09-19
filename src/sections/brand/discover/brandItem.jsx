@@ -10,8 +10,10 @@ import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import {
+  Box,
   Button,
   Dialog,
+  Divider,
   MenuItem,
   Typography,
   DialogTitle,
@@ -36,8 +38,6 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const { user } = useAuthContext();
 
-  // const { title, company, createdAt, candidates, experience, employmentTypes, salary, role } =
-  //   company;
   const {
     about,
     address,
@@ -68,11 +68,10 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
           </IconButton>
         </Stack>
 
-        <Stack sx={{ p: 3, pb: 2 }}>
+        <Stack sx={{ p: 3 }}>
           <Avatar alt={name} src={logo} variant="rounded" sx={{ width: 48, height: 48, mb: 2 }} />
 
           <ListItemText
-            sx={{ mb: 1 }}
             primary={
               <Link component={RouterLink} href={paths.dashboard.root} color="inherit">
                 {name}
@@ -83,13 +82,20 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
               typography: 'subtitle1',
             }}
             secondaryTypographyProps={{
-              mt: 1,
               component: 'span',
               typography: 'caption',
               color: 'text.disabled',
             }}
           />
+        </Stack>
 
+        <Divider
+          sx={{
+            borderStyle: 'dashed',
+          }}
+        />
+
+        <Box sx={{ p: 2 }} display="grid" gridTemplateColumns="repeat(2,1fr)" gap={1.5}>
           <Stack
             spacing={0.5}
             direction="row"
@@ -99,69 +105,16 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
             <Iconify width={16} icon="solar:users-group-rounded-bold" />
             {brand?.length} Brands
           </Stack>
-        </Stack>
-
-        {/* <Box rowGap={1.5} display="grid" gridTemplateColumns="repeat(2, 1fr)" sx={{ p: 3 }}>
           <Stack
             spacing={0.5}
-            flexShrink={0}
             direction="row"
             alignItems="center"
-            sx={{ color: 'text.disabled', minWidth: 0 }}
+            sx={{ color: 'primary.main', typography: 'caption' }}
           >
-            <Iconify icon="mdi:instagram" />
-            <Typography variant="caption" noWrap>
-              nexea
-            </Typography>
+            <Iconify width={16} icon="material-symbols:campaign" />
+            {brand?.length} Campaigns
           </Stack>
-          <Stack
-            spacing={0.5}
-            flexShrink={0}
-            direction="row"
-            alignItems="center"
-            sx={{ color: 'text.disabled', minWidth: 0 }}
-          >
-            <Iconify icon="ic:baseline-tiktok" />
-            <Typography variant="caption" noWrap>
-              nexea
-            </Typography>
-          </Stack>
-        </Box> */}
-
-        {/* <Box rowGap={1.5} display="grid" gridTemplateColumns="repeat(2, 1fr)" sx={{ p: 3 }}>
-          {[
-            {
-              label: experience,
-              icon: <Iconify width={16} icon="carbon:skill-level-basic" sx={{ flexShrink: 0 }} />,
-            },
-            {
-              label: employmentTypes.join(', '),
-              icon: <Iconify width={16} icon="solar:clock-circle-bold" sx={{ flexShrink: 0 }} />,
-            },
-            {
-              label: salary.negotiable ? 'Negotiable' : fData(salary.price),
-              icon: <Iconify width={16} icon="solar:wad-of-money-bold" sx={{ flexShrink: 0 }} />,
-            },
-            {
-              label: role,
-              icon: <Iconify width={16} icon="solar:user-rounded-bold" sx={{ flexShrink: 0 }} />,
-            },
-          ].map((item) => (
-            <Stack
-              key={item.label}
-              spacing={0.5}
-              flexShrink={0}
-              direction="row"
-              alignItems="center"
-              sx={{ color: 'text.disabled', minWidth: 0 }}
-            >
-              {item.icon}
-              <Typography variant="caption" noWrap>
-                {item.label}
-              </Typography>
-            </Stack>
-          ))}
-        </Box> */}
+        </Box>
       </Card>
 
       <CustomPopover
@@ -204,7 +157,7 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
       </CustomPopover>
 
       <Dialog open={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
-        <DialogTitle>Delete {name}</DialogTitle>
+        <DialogTitle>Delete Client {name}</DialogTitle>
         <DialogContent>
           <Typography>
             Are you sure you want to delete this company? This action will remove all brands under
@@ -212,12 +165,17 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button variant="outlined" color="error" onClick={() => setOpenDeleteModal(false)}>
+          <Button
+            size="small"
+            variant="outlined"
+            // color="error"
+            onClick={() => setOpenDeleteModal(false)}
+          >
             Cancel
           </Button>
           <Button
+            size="small"
             variant="contained"
-            color="primary"
             onClick={() => {
               onDelete();
               setOpenDeleteModal(false);

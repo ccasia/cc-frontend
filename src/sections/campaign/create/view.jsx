@@ -22,7 +22,6 @@ function CreateCampaign() {
           { name: 'Create' },
         ]}
       />
-
       <CreateCampaignForm />
     </Container>
   );

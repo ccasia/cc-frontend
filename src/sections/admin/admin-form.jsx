@@ -91,7 +91,6 @@ const AdminForm = () => {
       enqueueSnackbar('You are now verified to use the system!', {
         variant: 'success',
       });
-      // toast.success('You are now verified to use the system!');
     } catch (error) {
       enqueueSnackbar('Please contact our admin', {
         variant: 'error',

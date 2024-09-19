@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -58,14 +58,14 @@ dayjs.extend(localizedFormat);
 
 function CompanyBrandBasic() {
   const [activeStep, setActiveStep] = useState(0);
-  const { companies, getCompany } = useGetCompany();
+  const { data: companies, isLoading } = useGetCompany();
   const [openCreate, setOpenCreate] = useState();
   const [loading, setLoading] = useState(false);
   const smUp = useResponsive('up', 'sm');
 
-  useEffect(() => {
-    getCompany();
-  }, [openCreate, getCompany]);
+  // useEffect(() => {
+  //   getCompany();
+  // }, [openCreate, getCompany]);
 
   // If existing company is selected
   const schemaTwo = Yup.object().shape({

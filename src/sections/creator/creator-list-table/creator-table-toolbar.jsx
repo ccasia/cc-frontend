@@ -3,18 +3,17 @@ import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Popover from '@mui/material/Popover';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import InputAdornment from '@mui/material/InputAdornment';
 import Slider from '@mui/material/Slider';
+import Popover from '@mui/material/Popover';
 import Divider from '@mui/material/Divider';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { Select, InputLabel } from '@mui/material';
+import FormControl from '@mui/material/FormControl';
 import ListItemText from '@mui/material/ListItemText';
+import InputAdornment from '@mui/material/InputAdornment';
 
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
@@ -26,9 +25,8 @@ export default function CreatorTableToolbar({
   onFilters,
   ageRange,
   onAgeRangeChange,
-  pronounceOptions
+  pronounceOptions,
 }) {
-
   const popover = usePopover();
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -121,7 +119,9 @@ export default function CreatorTableToolbar({
           <Divider sx={{ my: 2 }} />
           <Typography gutterBottom>Gender</Typography>
           <FormControl fullWidth>
+            <InputLabel id="gender">Gender</InputLabel>
             <Select
+              labelId="gender"
               multiple
               value={filters.pronounce}
               onChange={(event) => onFilters('pronounce', event.target.value)}
@@ -180,4 +180,5 @@ CreatorTableToolbar.propTypes = {
   onFilters: PropTypes.func,
   ageRange: PropTypes.array,
   onAgeRangeChange: PropTypes.func,
+  pronounceOptions: PropTypes.array,
 };

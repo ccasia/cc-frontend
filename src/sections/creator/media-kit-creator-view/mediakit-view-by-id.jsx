@@ -1,46 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  IconButton, 
-  useTheme, 
-  Container, 
-  Tabs, 
+import useSWR from 'swr';
+import { PropTypes } from 'prop-types';
+import React, { useState } from 'react';
+
+// eslint-disable-next-line import/no-unresolved
+import {
   Tab,
+  Tabs,
+  Slide,
+  Dialog,
   AppBar,
   Toolbar,
+  useTheme,
+  Container,
+  IconButton,
   Typography,
-  Button,
-  Slide,
-  Box,
-  Card,
+  DialogContent,
 } from '@mui/material';
 
-import CloseIcon from '@mui/icons-material/Close';
-import useSWR from 'swr';
-import Iconify from 'src/components/iconify';
-import { useAuthContext } from 'src/auth/hooks';
-import { useSettingsContext } from 'src/components/settings';
-import MediaKitCover from './mediakit-cover';
-import MediaKitSetting from './media-kit-setting';
-import MediaKitSocial from './media-kit-social/view-by-id';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-const fetcher = (url) => axiosInstance.get(url).then(res => res.data);
+import Iconify from 'src/components/iconify';
+import { useSettingsContext } from 'src/components/settings';
 
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+import MediaKitCover from './mediakit-cover';
+import MediaKitSocial from './media-kit-social/view-by-id';
+
+const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
+
+const Transition = React.forwardRef((props, ref) => <Slide direction="up" ref={ref} {...props} />);
 
 const MediaKitCreator = ({ creatorId, open, onClose }) => {
   const settings = useSettingsContext();
   const theme = useTheme();
-  const { user } = useAuthContext();
+  // const { user } = useAuthContext();
   const [isFullScreen, setIsFullScreen] = useState(false);
 
   const [currentTab, setCurrentTab] = useState('instagram');
   const [openSetting, setOpenSetting] = useState(false);
-  
+
   const { data: creatorData, error } = useSWR(
     creatorId ? endpoints.creators.getCreatorFullInfo(creatorId) : null,
     fetcher
@@ -68,21 +65,12 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
   if (!creatorData) return <div>Loading...</div>;
 
   return (
-    <Dialog
-      fullScreen
-      open={open}
-      onClose={onClose}
-      TransitionComponent={Transition}
-    >
+    <Dialog fullScreen open={open} onClose={onClose} TransitionComponent={Transition}>
       <AppBar sx={{ position: 'relative' }}>
         <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={onClose}
-            aria-label="close"
-          >
-            <CloseIcon />
+          <IconButton edge="start" color="inherit" onClick={onClose} aria-label="close">
+            {/* <CloseIcon /> */}
+            <Iconify icon="ic:round-close" />
           </IconButton>
           <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
             Media Kit
@@ -95,7 +83,7 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
       <DialogContent>
         <Container maxWidth={settings.themeStretch ? false : 'lg'}>
           <MediaKitCover user={creatorData} />
-          
+
           <Tabs
             value={currentTab}
             onChange={(e, val) => setCurrentTab(val)}
@@ -129,13 +117,19 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
             <Tab value="partnership" label="Partnerships" />
           </Tabs>
 
-          <MediaKitSocial currentTab={currentTab} creator={creatorData}/>
+          <MediaKitSocial currentTab={currentTab} creator={creatorData} />
         </Container>
       </DialogContent>
-      
+
       {/* <MediaKitSetting open={openSetting} handleClose={() => setOpenSetting(false)} user={creatorData} /> */}
     </Dialog>
   );
 };
 
 export default MediaKitCreator;
+
+MediaKitCreator.propTypes = {
+  creatorId: PropTypes.string,
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+};
