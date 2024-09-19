@@ -88,6 +88,7 @@ const CampaignAgreements = ({ campaign }) => {
               <TableCell>Creator&apos;s email</TableCell>
               <TableCell>Last update</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell>Amount (RM)</TableCell>
               <TableCell>Agreement PDF</TableCell>
             </TableRow>
           </TableHead>
@@ -97,7 +98,7 @@ const CampaignAgreements = ({ campaign }) => {
                 <TableRow key={item.id}>
                   <TableCell>{item?.user?.name}</TableCell>
                   <TableCell>{item?.user?.email}</TableCell>
-                  <TableCell>{dayjs(item?.updatedAt).format('LLL')}</TableCell>
+                  <TableCell>{dayjs(item?.updatedAt).format('LL')}</TableCell>
                   <TableCell>
                     {item?.isSent ? (
                       <Label color="success">Sent</Label>
@@ -105,6 +106,7 @@ const CampaignAgreements = ({ campaign }) => {
                       <Label color="warning">Pending</Label>
                     )}
                   </TableCell>
+                  <TableCell>{`RM ${parseFloat(item?.amount.toString())}`}</TableCell>
                   <TableCell>
                     {smUp ? (
                       <Stack direction="row" gap={1}>

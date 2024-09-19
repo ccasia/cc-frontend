@@ -242,7 +242,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
           </View>
           <View style={[styles.col4, styles.alignRight]}>
             <Text style={styles.subtitle2}>Have a Question?</Text>
-            <Text>support@abcapp.com</Text>
+            <Text>hello@cultcreative.asia</Text>
           </View>
         </View>
       </Page>

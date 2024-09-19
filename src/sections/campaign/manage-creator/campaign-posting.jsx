@@ -22,6 +22,9 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -47,7 +50,11 @@ const guideSteps = [
 const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }) => {
   const dependency = getDependency(submission?.id);
   const dialog = useBoolean();
-  const user = useAuthContext();
+  const { user } = useAuthContext();
+
+  const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
+
+  const router = useRouter();
 
   const previewSubmission = useMemo(() => {
     const finalDraftSubmission = fullSubmission?.find(
@@ -184,7 +191,11 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
             <Stack justifyContent="center" alignItems="center" spacing={2}>
               <Image src="/assets/approve.svg" sx={{ width: 250 }} />
               <Typography variant="subtitle2">Your Posting has been approved.</Typography>
-              <Button variant="outlined" size="small">
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => router.push(paths.dashboard.finance.invoiceDetail(invoiceId))}
+              >
                 View Invoice
               </Button>
             </Stack>

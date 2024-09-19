@@ -45,18 +45,14 @@ export default function InvoiceDetails({ invoice }) {
     setCurrentStatus(event.target.value);
   }, []);
 
-
-
   const renderTotal = (
-    <>
-      <StyledTableRow>
-        <TableCell colSpan={3} />
-        <TableCell sx={{ typography: 'subtitle1' }}>Total</TableCell>
-        <TableCell width={140} sx={{ typography: 'subtitle1' }}>
-          {fCurrency(invoice?.task.price)}
-        </TableCell>
-      </StyledTableRow>
-    </>
+    <StyledTableRow>
+      <TableCell colSpan={3} />
+      <TableCell sx={{ typography: 'subtitle1' }}>Total</TableCell>
+      <TableCell width={140} sx={{ typography: 'subtitle1' }}>
+        {fCurrency(invoice?.task.price)}
+      </TableCell>
+    </StyledTableRow>
   );
 
   const renderFooter = (
@@ -72,7 +68,7 @@ export default function InvoiceDetails({ invoice }) {
       <Grid xs={12} md={3} sx={{ py: 3, textAlign: 'right' }}>
         <Typography variant="subtitle2">Have a Question?</Typography>
 
-        <Typography variant="body2">support@minimals.cc</Typography>
+        <Typography variant="body2">hello@cultcreative.asia</Typography>
       </Grid>
     </Grid>
   );

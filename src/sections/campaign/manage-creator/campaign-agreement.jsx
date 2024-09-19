@@ -188,7 +188,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             <Stack justifyContent="center" alignItems="center" spacing={2}>
               <Image src="/assets/approve.svg" sx={{ width: 250 }} />
               <Typography variant="subtitle2">Your agreement has been approved.</Typography>
-              <Button onClick={display.onTrue}>Preview agreement</Button>
+              <Button onClick={display.onTrue} variant="outlined" size="small">
+                Preview agreement
+              </Button>
             </Stack>
           )}
 

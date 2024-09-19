@@ -248,7 +248,9 @@ const CampaignFirstDraft = ({
               <Stack justifyContent="center" alignItems="center" spacing={2}>
                 <Image src="/assets/approve.svg" sx={{ width: 250 }} />
                 <Typography variant="subtitle2">Your First Draft has been approved.</Typography>
-                <Button onClick={display.onTrue}>Preview Draft</Button>
+                <Button onClick={display.onTrue} variant="outlined" size="small">
+                  Preview Draft
+                </Button>
               </Stack>
             )}
             <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
