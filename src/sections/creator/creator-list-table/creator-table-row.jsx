@@ -1,12 +1,13 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { Avatar, Typography } from '@mui/material';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import { Avatar, Typography } from '@mui/material';
 import ListItemText from '@mui/material/ListItemText';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -18,10 +19,7 @@ import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 
 import CreatorQuickForm from './creator-quick-edit';
-
 import MediaKitCreator from '../media-kit-creator-view/mediakit-view-by-id';
-
-import { useState } from 'react';
 
 // ----------------------------------------------------------------------
 
@@ -35,7 +33,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
   const handleCloseMediaKit = () => {
     setOpenMediaKit(false);
   };
-  
+
   const { name, creator, country, status, photoURL } = row;
 
   const confirm = useBoolean();
@@ -87,10 +85,10 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
 
         <TableCell>
           <Button
-            variant="contained"
-            color="primary"
+            variant="outlined"
             onClick={handleOpenMediaKit}
             endIcon={<Iconify icon="eva:external-link-fill" />}
+            size="small"
           >
             <Typography variant="button" sx={{ fontWeight: 'normal' }}>
               Media Kit
@@ -125,11 +123,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
         </TableCell>
       </TableRow>
 
-      <MediaKitCreator 
-        creatorId={row.id} 
-        open={openMediaKit} 
-        onClose={handleCloseMediaKit} 
-      />
+      <MediaKitCreator creatorId={row.id} open={openMediaKit} onClose={handleCloseMediaKit} />
 
       <CreatorQuickForm currentUser={row} open={quickEdit.value} onClose={quickEdit.onFalse} />
 

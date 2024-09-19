@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Stack } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 
 import MediaKitAnalytics from './media-kit-analytic/view';
-import MediaKitSocialContentInstagram from './media-kit-social-content/view-instagram';
 import MediaKitSocialContentTiktok from './media-kit-social-content/view-tiktok';
+import MediaKitSocialContentInstagram from './media-kit-social-content/view-instagram';
 
-const MediaKitSocial = ({ currentTab }) => (
+const MediaKitSocial = ({ currentTab, data, isLoading }) => (
   <Box
     sx={{
       border: (theme) => `dashed 1px ${theme.palette.divider}`,
@@ -20,16 +20,16 @@ const MediaKitSocial = ({ currentTab }) => (
       },
     }}
   >
-    {/* <h1>dawdaw</h1> */}
+    {isLoading && <Typography>Loading...</Typography>}
     {currentTab === 'instagram' && (
       <Stack gap={4}>
-        <MediaKitSocialContentInstagram />
+        <MediaKitSocialContentInstagram instagram={data?.instagram} />
         <MediaKitAnalytics />
       </Stack>
     )}
     {currentTab === 'tiktok' && (
       <Stack gap={4}>
-        <MediaKitSocialContentTiktok />
+        <MediaKitSocialContentTiktok tiktok={data?.tiktok} />
       </Stack>
     )}
     {currentTab === 'partnership'}
@@ -40,4 +40,6 @@ export default MediaKitSocial;
 
 MediaKitSocial.propTypes = {
   currentTab: PropTypes.string.isRequired,
+  data: PropTypes.object,
+  isLoading: PropTypes.bool,
 };

@@ -21,10 +21,11 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: 700,
+    // width: 700,
+    minWidth: 300,
     bgcolor: 'background.paper',
     boxShadow: 24,
-    p: 3,
+    p: 2,
     borderRadius: 2,
   };
 
@@ -37,9 +38,10 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
   const defaultValues = {
     name: user?.creator?.mediaKit?.name || user?.name || '',
     about: user?.creator?.mediaKit?.about || user?.about || '',
-    interests: user?.creator?.mediaKit?.interests?.map((elem) => elem) || 
-               user?.creator?.interests?.map((elem) => elem.name) || 
-               [],
+    interests:
+      user?.creator?.mediaKit?.interests?.map((elem) => elem) ||
+      user?.creator?.interests?.map((elem) => elem.name) ||
+      [],
   };
 
   const methods = useForm({
@@ -128,24 +130,25 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
           </Stack>
           <Stack direction="row" gap={2} justifyContent="end">
             <Button
-              variant="contained"
-              color="success"
-              sx={{
-                mt: 2,
-              }}
-              type="submit"
-            >
-              Save
-            </Button>
-            <Button
               variant="outlined"
               color="inherit"
               sx={{
                 mt: 2,
               }}
               onClick={handleClose}
+              size="small"
             >
               Cancel
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                mt: 2,
+              }}
+              type="submit"
+              size="small"
+            >
+              Save
             </Button>
           </Stack>
         </FormProvider>

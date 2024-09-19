@@ -1,21 +1,9 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 import { Icon } from '@iconify/react';
 import { keyframes } from '@emotion/react';
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Grid,
-  Stack,
-  Button,
-  useTheme,
-  CardMedia,
-  Typography,
-  useMediaQuery,
-  CircularProgress,
-  Alert,
-  AlertTitle,
-} from '@mui/material';
-import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -144,110 +132,109 @@ TopContentGrid.propTypes = {
   ).isRequired,
 };
 
-const MediaKitSocialContent = () => {
-  const [socialMediaData, setSocialMediaData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [fetchError, setFetchError] = useState(null);
+const MediaKitSocialContent = ({ tiktok }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const getButtonText = () => {
-    if (loading) return 'Fetching...';
-    return socialMediaData ? 'Refresh Tiktok Data' : 'Fetch Tiktok Data';
-  };
+  // const getButtonText = () => {
+  //   if (loading) return 'Fetching...';
+  //   return socialMediaData ? 'Refresh Tiktok Data' : 'Fetch Tiktok Data';
+  // };
 
-  const fetchExistingSocialMediaData = async () => {
-    setLoading(true);
-    setFetchError(null);
-    try {
-      const existingDataResponse = await axiosInstance.get(endpoints.creators.getCreatorSocialMediaData);
-      if (existingDataResponse.data && Object.keys(existingDataResponse.data).length > 0) {
-        setSocialMediaData(existingDataResponse.data);
-      }
-    } catch (err) {
-      console.error('Error fetching existing social media data:', err);
-      setFetchError(err.message || 'Failed to fetch existing social media data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchExistingSocialMediaData = async () => {
+  //   setLoading(true);
+  //   setFetchError(null);
+  //   try {
+  //     const existingDataResponse = await axiosInstance.get(
+  //       endpoints.creators.getCreatorSocialMediaData
+  //     );
+  //     if (existingDataResponse.data && Object.keys(existingDataResponse.data).length > 0) {
+  //       setSocialMediaData(existingDataResponse.data);
+  //     }
+  //   } catch (err) {
+  //     console.error('Error fetching existing social media data:', err);
+  //     setFetchError(err.message || 'Failed to fetch existing social media data');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const crawlSocialMediaData = async (instagramUsername, tiktokUsername) => {
-    const crawlPlatform = async (platform, username) => {
-      if (!username) return null;
-      try {
-        const response = await axiosInstance.post(endpoints.creators.getCreatorCrawler, {
-          identifier: username,
-          platform,
-        });
-        return response.data;
-      } catch (err) {
-        console.error(`Error crawling ${platform} data:`, err.response?.data || err.message);
-        return null; // Return null instead of throwing, so we can still process other platforms
-      }
-    };
+  // const crawlSocialMediaData = async (instagramUsername, tiktokUsername) => {
+  //   const crawlPlatform = async (platform, username) => {
+  //     if (!username) return null;
+  //     try {
+  //       const response = await axiosInstance.post(endpoints.creators.getCreatorCrawler, {
+  //         identifier: username,
+  //         platform,
+  //       });
+  //       return response.data;
+  //     } catch (err) {
+  //       console.error(`Error crawling ${platform} data:`, err.response?.data || err.message);
+  //       return null; // Return null instead of throwing, so we can still process other platforms
+  //     }
+  //   };
 
-    const [instagramData, tiktokData] = await Promise.all([
-      crawlPlatform('Instagram', instagramUsername),
-      crawlPlatform('TikTok', tiktokUsername),
-    ]);
+  //   const [instagramData, tiktokData] = await Promise.all([
+  //     crawlPlatform('Instagram', instagramUsername),
+  //     crawlPlatform('TikTok', tiktokUsername),
+  //   ]);
 
-    return {
-      instagram: instagramData,
-      tiktok: tiktokData,
-    };
-  };
+  //   return {
+  //     instagram: instagramData,
+  //     tiktok: tiktokData,
+  //   };
+  // };
 
-  const fetchNewSocialMediaData = async () => {
-    setLoading(true);
-    setFetchError(null);
-    try {
-      const userResponse = await axiosInstance.get(endpoints.auth.getCurrentUser);
+  // const fetchNewSocialMediaData = async () => {
+  //   setLoading(true);
+  //   setFetchError(null);
+  //   try {
+  //     const userResponse = await axiosInstance.get(endpoints.auth.getCurrentUser);
 
-      if (!userResponse.data.user || !userResponse.data.user.creator) {
-        throw new Error('Creator profile not found. Please complete your profile setup.');
-      }
+  //     if (!userResponse.data.user || !userResponse.data.user.creator) {
+  //       throw new Error('Creator profile not found. Please complete your profile setup.');
+  //     }
 
-      const { instagram, tiktok } = userResponse.data.user.creator;
+  //     const { instagram, tiktok } = userResponse.data.user.creator;
 
-      if (!instagram && !tiktok) {
-        throw new Error('No social media usernames found. Please add your Instagram or TikTok username in your profile.');
-      }
+  //     if (!instagram && !tiktok) {
+  //       throw new Error(
+  //         'No social media usernames found. Please add your Instagram or TikTok username in your profile.'
+  //       );
+  //     }
 
-      const newSocialMediaData = await crawlSocialMediaData(instagram, tiktok);
+  //     const newSocialMediaData = await crawlSocialMediaData(instagram, tiktok);
 
-      if (!newSocialMediaData.instagram && !newSocialMediaData.tiktok) {
-        throw new Error('Failed to fetch social media data. The service might be temporarily unavailable.');
-      }
+  //     if (!newSocialMediaData.instagram && !newSocialMediaData.tiktok) {
+  //       throw new Error(
+  //         'Failed to fetch social media data. The service might be temporarily unavailable.'
+  //       );
+  //     }
 
-      // Update the creator's social media data in the backend
-      await axiosInstance.put(endpoints.auth.updateCreator, {
-        id: userResponse.data.user.id,
-        socialMediaData: newSocialMediaData,
-      });
+  //     // Update the creator's social media data in the backend
+  //     await axiosInstance.put(endpoints.auth.updateCreator, {
+  //       id: userResponse.data.user.id,
+  //       socialMediaData: newSocialMediaData,
+  //     });
 
-      setSocialMediaData(newSocialMediaData);
-    } catch (err) {
-      console.error('Error fetching new social media data:', err);
-      setFetchError(err.message || 'Failed to fetch new social media data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     setSocialMediaData(newSocialMediaData);
+  //   } catch (err) {
+  //     console.error('Error fetching new social media data:', err);
+  //     setFetchError(err.message || 'Failed to fetch new social media data');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchExistingSocialMediaData();
-  }, []);
+  // useEffect(() => {
+  //   fetchExistingSocialMediaData();
+  // }, []);
 
-  if (loading) {
-    return <CircularProgress />;
-  }
-
-  // if (error) {
-  //   return <Typography color="error">{error}</Typography>;
+  // if (loading) {
+  //   return <CircularProgress />;
   // }
 
-  const renderDataOrPlaceholder = (data, placeholder) => data || placeholder;
+  // const renderDataOrPlaceholder = (data, placeholder) => data || placeholder;
 
   return (
     <Box>
@@ -277,9 +264,7 @@ const MediaKitSocialContent = () => {
               Followers
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {socialMediaData?.tiktok?.data.followers
-                ? formatNumber(socialMediaData.tiktok.data.followers)
-                : 'No data'}
+              {tiktok?.data.followers ? formatNumber(tiktok.data.followers) : 'No data'}
             </Typography>
           </Box>
         </Grid>
@@ -289,8 +274,8 @@ const MediaKitSocialContent = () => {
               Engagement Rate
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {socialMediaData?.tiktok?.data.engagement_rate
-                ? `${Number(socialMediaData.tiktok.data.engagement_rate).toFixed(2)}%`
+              {tiktok?.data.engagement_rate
+                ? `${Number(tiktok.data.engagement_rate).toFixed(2)}%`
                 : 'No data'}
             </Typography>
           </Box>
@@ -301,8 +286,8 @@ const MediaKitSocialContent = () => {
               Average Likes
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {socialMediaData?.tiktok?.data.user_performance?.avg_likes_per_post
-                ? formatNumber(socialMediaData.tiktok.data.user_performance.avg_likes_per_post)
+              {tiktok?.data.user_performance?.avg_likes_per_post
+                ? formatNumber(tiktok.data.user_performance.avg_likes_per_post)
                 : 'No data'}
             </Typography>
           </Box>
@@ -312,8 +297,8 @@ const MediaKitSocialContent = () => {
       <Typography variant="h6" mb={isMobile ? 1 : 2} sx={{ fontSize: isMobile ? 18 : 20 }}>
         Top Content
       </Typography>
-      {socialMediaData?.tiktok?.data.top_contents ? (
-        <TopContentGrid topContents={socialMediaData.tiktok.data.top_contents} />
+      {tiktok?.data.top_contents ? (
+        <TopContentGrid topContents={tiktok.data.top_contents} />
       ) : (
         <Typography>No top content data available</Typography>
       )}
@@ -322,3 +307,7 @@ const MediaKitSocialContent = () => {
 };
 
 export default MediaKitSocialContent;
+
+MediaKitSocialContent.propTypes = {
+  tiktok: PropTypes.object,
+};

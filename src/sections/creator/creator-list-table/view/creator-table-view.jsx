@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-import React from 'react';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
 import { useState, useEffect, useCallback } from 'react';
@@ -15,9 +14,6 @@ import Container from '@mui/material/Container';
 import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
-import { TableRow, TableCell } from '@mui/material';
-import Slider from '@mui/material/Slider';
-import Typography from '@mui/material/Typography';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -26,9 +22,10 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCreators from 'src/hooks/use-get-creators';
 import { useCreator } from 'src/hooks/zustands/useCreator';
 
+import { calculateAge } from 'src/utils/formatTime';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { _roles, USER_STATUS_OPTIONS } from 'src/_mock';
+import { USER_STATUS_OPTIONS } from 'src/_mock';
 import withPermission from 'src/auth/guard/withPermissions';
 
 import Label from 'src/components/label';
@@ -49,23 +46,17 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-
-import { calculateAge } from 'src/utils/formatTime';
 import CreatorTableRow from '../creator-table-row';
 import CreatorTableToolbar from '../creator-table-toolbar';
 import CreatorTableFilter from '../creator-table-filters-result';
-
-import MediaKitCreator from 'src/sections/creator/media-kit-creator-view/mediakit-view-by-id';
-
-
 
 const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
   { id: 'pronounce', label: 'Pronounce', width: 100 },
-  { id: 'tiktok', label: 'Tiktok Account', width: 120 },
-  { id: 'instagram', label: 'Instagram Account', width: 150 },
+  { id: 'tiktok', label: 'Tiktok', width: 120 },
+  { id: 'instagram', label: 'Instagram', width: 150 },
   { id: 'country', label: 'Country', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
   { id: 'mediaKit', label: 'Media Kit', width: 180 },
@@ -135,7 +126,7 @@ function CreatorTableView() {
     inputData: tableData,
     comparator: getComparator(table.order, table.orderBy),
     filters,
-    ageRange
+    ageRange,
   });
 
   const dataInPage = dataFiltered.slice(
@@ -265,7 +256,13 @@ function CreatorTableView() {
             ))}
           </Tabs>
 
-          <CreatorTableToolbar filters={filters} onFilters={handleFilters} ageRange={ageRange} onAgeRangeChange={handleAgeRangeChange} pronounceOptions={['he/him', 'she/her', 'they/them', 'others']} />
+          <CreatorTableToolbar
+            filters={filters}
+            onFilters={handleFilters}
+            ageRange={ageRange}
+            onAgeRangeChange={handleAgeRangeChange}
+            pronounceOptions={['he/him', 'she/her', 'they/them', 'others']}
+          />
 
           {canReset && (
             <CreatorTableFilter

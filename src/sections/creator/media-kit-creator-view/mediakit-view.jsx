@@ -1,11 +1,37 @@
-import React, { useState } from 'react';
+import * as yup from 'yup';
+import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
+import React, { useState, useCallback } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
 
-import { Tab, Box, Card, Tabs, useTheme, Container } from '@mui/material';
+import {
+  Tab,
+  Box,
+  Card,
+  Tabs,
+  Stack,
+  Button,
+  Dialog,
+  useTheme,
+  Container,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+} from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { grey } from 'src/theme/palette';
 import { useAuthContext } from 'src/auth/hooks';
+import { useGetSocialMedia, fetchSocialMediaData } from 'src/api/socialMedia';
 
 import Iconify from 'src/components/iconify';
+import { RHFTextField } from 'src/components/hook-form';
 import { useSettingsContext } from 'src/components/settings';
+import FormProvider from 'src/components/hook-form/form-provider';
 
 import MediaKitCover from './mediakit-cover';
 import MediaKitSetting from './media-kit-setting';
@@ -18,7 +44,13 @@ const MediaKitCreator = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [currentTab, setCurrentTab] = useState('instagram');
   const [openSetting, setOpenSetting] = useState(false);
-  console.log(user);
+  const dialog = useBoolean();
+
+  // Function to get existing social media data
+  const { data, isLoading } = useGetSocialMedia();
+
+  const loading = useBoolean();
+
   const handleClose = () => {
     setOpenSetting(!openSetting);
   };
@@ -33,8 +65,59 @@ const MediaKitCreator = () => {
     top: 0,
     left: 0,
     zIndex: 10000,
-    bgcolor: theme.palette.background.paper,
+    bgcolor: theme.palette.mode === 'dark' ? grey[900] : grey[200],
   };
+
+  const fetchNewSocialMediaData = async () => {
+    loading.onTrue();
+    try {
+      await fetchSocialMediaData();
+      enqueueSnackbar('Data is updated');
+    } catch (error) {
+      enqueueSnackbar('Failed to fetch data', {
+        variant: 'error',
+      });
+    } finally {
+      loading.onFalse();
+    }
+  };
+
+  const checkSocialMediaUsername = useCallback(() => {
+    if (!user?.creator?.tiktok || !user?.creator?.instagram) {
+      return true;
+    }
+    return false;
+  }, [user]);
+
+  const schema = yup.object().shape({
+    instagram: yup.string().required('Instagram username is required.'),
+    tiktok: yup.string().required('Tiktok username is required.'),
+  });
+
+  const methods = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      instagram: user?.creator?.instagram || '',
+      tiktok: user?.creator?.tiktok || '',
+    },
+  });
+
+  const { handleSubmit, reset } = methods;
+
+  const onSubmit = handleSubmit(async (value) => {
+    try {
+      const res = await axiosInstance.patch(endpoints.creators.updateCreator, {
+        ...value,
+        id: user.id,
+      });
+      enqueueSnackbar(res?.data?.message);
+      dialog.onFalse();
+      reset();
+      fetchNewSocialMediaData();
+    } catch (error) {
+      enqueueSnackbar(error?.message);
+    }
+  });
 
   return (
     <Container
@@ -73,19 +156,62 @@ const MediaKitCreator = () => {
       </Box>
       <Box
         component="div"
-        onClick={() => setOpenSetting(true)}
         sx={{
           position: 'absolute',
           top: 20,
           left: 20,
           cursor: 'pointer',
           zIndex: 1000,
-          '&:hover': {
-            color: theme.palette.grey[400],
-          },
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 1,
         }}
       >
-        {!isFullScreen && <Iconify icon="uil:setting" />}
+        {!isFullScreen && (
+          <Iconify
+            onClick={() => setOpenSetting(true)}
+            icon="uil:setting"
+            sx={{
+              '&:hover': {
+                color: theme.palette.grey[400],
+              },
+            }}
+          />
+        )}
+        {!isLoading && (!data?.tiktok || !data?.instagram) ? (
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<Iconify icon="carbon:fetch-upload-cloud" />}
+            onClick={() => {
+              const res = checkSocialMediaUsername();
+              if (res) {
+                dialog.onTrue();
+              } else {
+                fetchNewSocialMediaData();
+              }
+            }}
+          >
+            {loading.value ? 'Loading...' : 'Refresh User data'}
+          </Button>
+        ) : (
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<Iconify icon="material-symbols:refresh" />}
+            onClick={() => {
+              const res = checkSocialMediaUsername();
+              if (res) {
+                dialog.onTrue();
+              } else {
+                fetchNewSocialMediaData();
+              }
+            }}
+          >
+            {loading.value ? 'Loading...' : 'Refresh User data'}
+          </Button>
+        )}
       </Box>
       <Card
         sx={{
@@ -128,10 +254,53 @@ const MediaKitCreator = () => {
           <Tab value="partnership" label="Partnerships" />
         </Tabs>
 
-        <MediaKitSocial currentTab={currentTab} />
+        <MediaKitSocial currentTab={currentTab} data={data} isLoading={isLoading} />
       </Card>
 
       <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} />
+
+      <Dialog open={dialog.value} maxWidth="sm" fullWidth>
+        <FormProvider methods={methods} onSubmit={onSubmit}>
+          <DialogTitle>Please complete your profile</DialogTitle>
+          <DialogContent>
+            {/* <DialogContentText>Please complete your profile</DialogContentText> */}
+            <Stack spacing={3} mt={2}>
+              <RHFTextField
+                name="instagram"
+                label="Instagram Username"
+                placeholder="Eg: cristiano"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="mdi:instagram" width={20} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <RHFTextField
+                name="tiktok"
+                label="Tiktok Username"
+                placeholder="Eg: cristiano"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="ic:baseline-tiktok" width={20} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button size="small" variant="outlined" onClick={dialog.onFalse}>
+              Cancel
+            </Button>
+            <Button size="small" variant="contained" type="submit">
+              Save
+            </Button>
+          </DialogActions>
+        </FormProvider>
+      </Dialog>
     </Container>
   );
 };

@@ -1,25 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import useSWR from 'swr';
+import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 
-import { Tab, Box, Card, Tabs, useTheme, Container, CircularProgress, Alert } from '@mui/material';
+import { Tab, Box, Card, Tabs, Alert, useTheme, Container, CircularProgress } from '@mui/material';
 
-import { useAuthContext } from 'src/auth/hooks';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
 import MediaKitCover from './mediakit-cover';
-import MediaKitSetting from './media-kit-setting';
 import MediaKitSocial from './media-kit-social/view-by-id-public';
-  
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
-import useSWR from 'swr';
 
 // Define a fetcher function
-const fetcher = (url) => axiosInstance.get(url).then(res => res.data);
+const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
 
 const MediaKitCreator = ({ creatorId }) => {
-
   const { data: creatorData, error } = useSWR(
     creatorId ? endpoints.creators.getCreatorFullInfoPublic(creatorId) : null,
     fetcher
@@ -128,10 +124,14 @@ const MediaKitCreator = ({ creatorId }) => {
           <Tab value="partnership" label="Partnerships" />
         </Tabs>
 
-        <MediaKitSocial currentTab={currentTab} creator={creatorData}/>
+        <MediaKitSocial currentTab={currentTab} creator={creatorData} />
       </Card>
     </Container>
   );
 };
 
 export default MediaKitCreator;
+
+MediaKitCreator.propTypes = {
+  creatorId: PropTypes.string,
+};

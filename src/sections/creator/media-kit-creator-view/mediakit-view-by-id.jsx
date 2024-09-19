@@ -19,6 +19,8 @@ import {
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { grey } from 'src/theme/palette';
+
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
@@ -65,7 +67,17 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
   if (!creatorData) return <div>Loading...</div>;
 
   return (
-    <Dialog fullScreen open={open} onClose={onClose} TransitionComponent={Transition}>
+    <Dialog
+      fullScreen
+      open={open}
+      onClose={onClose}
+      TransitionComponent={Transition}
+      PaperProps={{
+        sx: {
+          bgcolor: theme.palette.mode === 'dark' ? grey[900] : grey[200],
+        },
+      }}
+    >
       <AppBar sx={{ position: 'relative' }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" onClick={onClose} aria-label="close">
@@ -75,9 +87,6 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
           <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
             Media Kit
           </Typography>
-          {/* <Button color="inherit" onClick={() => setOpenSetting(true)}>
-            Settings
-          </Button> */}
         </Toolbar>
       </AppBar>
       <DialogContent>
@@ -120,8 +129,6 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
           <MediaKitSocial currentTab={currentTab} creator={creatorData} />
         </Container>
       </DialogContent>
-
-      {/* <MediaKitSetting open={openSetting} handleClose={() => setOpenSetting(false)} user={creatorData} /> */}
     </Dialog>
   );
 };

@@ -19,9 +19,11 @@ import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
-import { Stack, InputAdornment } from '@mui/material';
 import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
+import { Stack, Tooltip, IconButton, InputAdornment } from '@mui/material';
+
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -55,12 +57,13 @@ export const interestsList = [
 ];
 
 export default function CreatorForm({ creator, open, onClose }) {
-  console.log(creator);
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
   const [ratingIndustries, setRatingIndustries] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loading = useBoolean();
 
   // const [employmentValue, setEmploymentValue] = useState('');
 
@@ -161,7 +164,6 @@ export default function CreatorForm({ creator, open, onClose }) {
 
       onClose();
     } catch (error) {
-      console.error('Submission error:', error);
       enqueueSnackbar('Something went wrong', {
         variant: 'error',
       });
@@ -175,18 +177,33 @@ export default function CreatorForm({ creator, open, onClose }) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
-          const address = await axios.get(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-          );
-          setValue('location', address.data.display_name);
+          loading.onTrue();
+          try {
+            const address = await axios.get(
+              `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+            );
+            setValue('location', address.data.display_name);
+          } catch (error) {
+            console.log(error);
+            enqueueSnackbar('Error fetch location', {
+              variant: 'error',
+            });
+          } finally {
+            loading.onFalse();
+          }
         },
         (error) => {
           console.error(`Error Code = ${error.code} - ${error.message}`);
+          enqueueSnackbar('Error fetch location', {
+            variant: 'error',
+          });
+          loading.onFalse();
         }
       );
     } else {
       console.log('Geolocation is not supported by this browser.');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setValue]);
 
   function getStepContent(step) {
@@ -234,7 +251,30 @@ export default function CreatorForm({ creator, open, onClose }) {
             getOptionLabel={(option) => option}
           />
 
-          <RHFTextField name="location" label="City/Area" multiline />
+          <RHFTextField
+            name="location"
+            label="City/Area"
+            multiline
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Tooltip title="Get current location">
+                    {!loading.value ? (
+                      <IconButton
+                        onClick={() => {
+                          creatorLocation();
+                        }}
+                      >
+                        <Iconify icon="mdi:location" />
+                      </IconButton>
+                    ) : (
+                      <Iconify icon="eos-icons:bubble-loading" />
+                    )}
+                  </Tooltip>
+                </InputAdornment>
+              ),
+            }}
+          />
 
           <RHFSelect name="employment" label="Employment Status" multiple={false}>
             <MenuItem value="fulltime">I have a full-time job</MenuItem>
@@ -579,16 +619,8 @@ export default function CreatorForm({ creator, open, onClose }) {
               </Button>
               <Box sx={{ flexGrow: 1 }} />
               {activeStep === steps.length - 1 ? (
-                <Button 
-                  variant="contained" 
-                  onClick={onSubmit} 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    'Submit'
-                  )}
+                <Button variant="contained" onClick={onSubmit} disabled={isSubmitting}>
+                  {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Submit'}
                 </Button>
               ) : (
                 <Button variant="contained" onClick={handleNext}>
