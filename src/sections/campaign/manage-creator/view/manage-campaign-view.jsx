@@ -7,6 +7,8 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useGetCampaignByCreatorId } from 'src/hooks/use-get-campaign-based-on-creator-id';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import MyCampaignView from '../my-campaign';
@@ -16,6 +18,7 @@ const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
   const [query, setQuery] = useState('');
   const router = useRouter();
+  const { user } = useAuthContext();
   const { data, isLoading } = useGetCampaignByCreatorId();
 
   const filteredData = useMemo(
@@ -34,8 +37,9 @@ const ManageCampaignView = () => {
         mt: 2,
       }}
     >
-      <Tab value="myCampaign" label="My Campaigns" />
+      <Tab value="myCampaign" label="Active Campaigns" />
       <Tab value="applied" label="My Applications" />
+      <Tab value="completed" label="Completed Campaigns" />
     </Tabs>
   );
 
@@ -62,11 +66,26 @@ const ManageCampaignView = () => {
         <MyCampaignView
           query={query}
           setQuery={setQuery}
-          filteredData={filteredData}
+          // filteredData={filteredData}
+          filteredData={filteredData.filter(
+            (campaign) =>
+              !campaign?.shortlisted?.find((item) => item.userId === user.id).isCampaignDone
+          )}
           onClick={handleClick}
         />
       )}
       {currentTab === 'applied' && <AppliedCampaignView />}
+      {currentTab === 'completed' && !isLoading && (
+        <MyCampaignView
+          query={query}
+          setQuery={setQuery}
+          filteredData={filteredData.filter(
+            (campaign) =>
+              campaign?.shortlisted?.find((item) => item.userId === user.id).isCampaignDone
+          )}
+          onClick={handleClick}
+        />
+      )}
     </Container>
   );
 };
