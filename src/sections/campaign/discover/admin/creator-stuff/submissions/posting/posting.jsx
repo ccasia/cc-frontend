@@ -57,7 +57,7 @@ const Posting = ({ campaign, submission, creator }) => {
       setFeedback('');
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar('Error', {
+      enqueueSnackbar(error?.message, {
         variant: 'error',
       });
     }

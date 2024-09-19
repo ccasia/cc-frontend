@@ -103,8 +103,8 @@ export default function InvoiceDetails({ invoice }) {
               <TableCell>{invoice?.task.title}</TableCell>
 
               <TableCell align="right">{invoice?.task.description}</TableCell>
-              <TableCell align="right">{fCurrency(invoice?.task.price)}</TableCell>
-              <TableCell align="right">{fCurrency(invoice?.task.price)}</TableCell>
+              <TableCell align="right">{fCurrency(invoice?.amount)}</TableCell>
+              <TableCell align="right">{fCurrency(invoice?.amount)}</TableCell>
             </TableRow>
           </TableBody>
         </Table>

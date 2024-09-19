@@ -85,8 +85,6 @@ const useStyles = () =>
 // ----------------------------------------------------------------------
 
 export default function InvoicePDF({ invoice, currentStatus }) {
-  console.log(invoice);
-
   const styles = useStyles();
 
   const bankInfo = () => (
@@ -215,7 +213,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
               </View>
 
               <View style={[styles.tableCell_2]}>
-                <Text>{fCurrency(invoice?.task.price)}</Text>
+                <Text>{fCurrency(invoice?.amount)}</Text>
               </View>
             </View>
 
@@ -227,7 +225,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 <Text style={styles.h4}>Total</Text>
               </View>
               <View style={[styles.tableCell_3, styles.alignRight]}>
-                <Text style={styles.h4}>{fCurrency(invoice?.task.price)}</Text>
+                <Text style={styles.h4}>{fCurrency(invoice?.amount)}</Text>
               </View>
             </View>
           </View>
