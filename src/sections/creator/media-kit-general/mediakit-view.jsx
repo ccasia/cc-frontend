@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 
-import { Tab, Box, Card, Tabs, useTheme, Container } from '@mui/material';
+import { Tab, Box, Card, Tabs, useTheme, Container, CircularProgress } from '@mui/material';
 
-import { useGetCreatorByID } from 'src/hooks/use-get-creators';
+import { useSWRGetCreatorByID } from 'src/hooks/use-get-creators';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -14,9 +14,8 @@ import MediaKitSocial from './media-kit-social/view';
 const MediaKit = ({ id, noBigScreen }) => {
   const settings = useSettingsContext();
   const theme = useTheme();
-  const { creator } = useGetCreatorByID(id);
+  const { creator, isLoading, isError } = useSWRGetCreatorByID(id);
   const [isFullScreen, setIsFullScreen] = useState(false);
-
   const [currentTab, setCurrentTab] = useState('instagram');
 
   const toggle = () => {
@@ -31,6 +30,18 @@ const MediaKit = ({ id, noBigScreen }) => {
     zIndex: 10000,
     bgcolor: theme.palette.grey[900],
   };
+
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return <div>Error loading creator data</div>;
+  }
 
   return (
     <Container
@@ -107,6 +118,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           <Tab value="partnership" label="Partnerships" />
         </Tabs>
         {creator && <MediaKitSocial currentTab={currentTab} user={creator} />}
+        
       </Card>
 
       {/* <Box

@@ -9,6 +9,8 @@ import Iconify from 'src/components/iconify';
 
 const MediaKitCover = ({ user }) => {
   const theme = useTheme();
+  const mediaKitData = user?.creator?.mediaKit || user?.user  || user || {};
+  const { name } = mediaKitData;
   
   return (
     <Box sx={{ p: 5 }}>
@@ -17,7 +19,7 @@ const MediaKitCover = ({ user }) => {
           {user?.name?.[0] || 'N'}
         </Avatar>
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
-          {user?.creator?.mediaKit?.name || user?.user.name}
+            {name}
         </Typography>
         <Stack
           direction="row"

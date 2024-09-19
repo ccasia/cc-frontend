@@ -1,8 +1,11 @@
 import { useEffect, useCallback } from 'react';
-
+import useSWR from 'swr';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useCreator } from './zustands/useCreator';
+
+// Assuming you have a fetcher function defined somewhere
+const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
 
 const useGetCreators = () => {
   const { setCreators, creators } = useCreator();
@@ -40,6 +43,16 @@ export const useGetCreatorByID = (id) => {
   }, [getCreatorByID]);
 
   return { creator };
+};
+
+export const useSWRGetCreatorByID = (id) => {
+  const { data, error, isLoading } = useSWR(id ? `${endpoints.creators.getCreatorById}/${id}` : null, fetcher);
+
+  return {
+    creator: data,
+    isLoading,
+    isError: error
+  };
 };
 
 export default useGetCreators;

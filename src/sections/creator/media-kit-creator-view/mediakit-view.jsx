@@ -16,10 +16,9 @@ const MediaKitCreator = () => {
   const theme = useTheme();
   const { user } = useAuthContext();
   const [isFullScreen, setIsFullScreen] = useState(false);
-
   const [currentTab, setCurrentTab] = useState('instagram');
   const [openSetting, setOpenSetting] = useState(false);
-
+  console.log(user)
   const handleClose = () => {
     setOpenSetting(!openSetting);
   };
