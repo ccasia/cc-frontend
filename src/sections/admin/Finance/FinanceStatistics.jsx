@@ -25,7 +25,7 @@ const FinanceStatistics = ({ stats }) => {
       icon: 'fluent:money-20-filled',
       color: '#4caf50',
       percent: calculatePercent(stats.totalRevenue),
-      price: `RM${formatAmount(stats.totalRevenue.toFixed(2))}`,
+      price: `RM${formatAmount(stats.totalRevenue?.toFixed(2))}`,
     },
     {
       title: 'Pending',
@@ -33,7 +33,7 @@ const FinanceStatistics = ({ stats }) => {
       icon: 'mdi:alert-circle',
       color: '#ff9800',
       percent: calculatePercent(stats.pendingAmount),
-      price: `RM${formatAmount(stats.pendingAmount.toFixed(2))}`,
+      price: `RM${formatAmount(stats.pendingAmount?.toFixed(2))}`,
     },
     {
       title: 'Overdue',
@@ -41,7 +41,7 @@ const FinanceStatistics = ({ stats }) => {
       icon: 'mdi:alarm',
       color: '#d32f2f',
       percent: calculatePercent(stats.overdueAmount),
-      price: `RM${formatAmount(stats.overdueAmount.toFixed(2))}`,
+      price: `RM${formatAmount(stats.overdueAmount?.toFixed(2))}`,
     },
   ];
 

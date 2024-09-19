@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useSnackbar } from 'notistack';
@@ -7,8 +8,8 @@ import {
   Box,
   Table,
   Paper,
-  Button,
   Select,
+  Button,
   MenuItem,
   TableRow,
   TextField,
@@ -43,19 +44,19 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
   };
 
   const formatAmount = (amount) => {
-    const numericAmount = parseFloat(amount.replace(/[^0-9.-]+/g, ''));
+    const numericAmount = parseFloat(amount.toString().replace(/[^0-9.-]+/g, ''));
     return `RM${numericAmount.toLocaleString()}`;
   };
 
-  const filteredData = localData.filter((item) => {
+  const filteredData = localData?.filter((item) => {
     const matchesQuery =
-      item.campaign.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.invoice.toLowerCase().includes(searchQuery.toLowerCase());
+      item.campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
 
     // Amount filter logic
-    const amount = parseFloat(item.amount.replace(/[^0-9.-]+/g, ''));
+    const amount = parseFloat(item.amount.toString().replace(/[^0-9.-]+/g, ''));
     const amountMatches =
       amountFilter === 'All' ||
       (amountFilter === 'RM0 - RM1,000' && amount <= 1000) ||
@@ -166,16 +167,18 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                     variant="body2"
                     sx={{ whiteSpace: 'normal', wordWrap: 'break-word', maxWidth: 250 }}
                   >
-                    {item.campaign}
+                    {item.campaign.name}
                   </Typography>
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {item.creator}
+                  {item.user.name}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {item.invoice}
+                  {item.invoiceNumber}
                 </TableCell>
-                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>{item.date}</TableCell>
+                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                  {dayjs(item.date).format('LL')}
+                </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
                   {formatAmount(item.amount)}
                 </TableCell>
@@ -186,9 +189,9 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                       onChange={(e) => handleStatusChangeInTable(item.id, e.target.value)}
                       sx={{ textAlign: 'center' }}
                     >
-                      <MenuItem value="Paid">Paid</MenuItem>
-                      <MenuItem value="Pending">Pending</MenuItem>
-                      <MenuItem value="Overdue">Overdue</MenuItem>
+                      <MenuItem value="paid">Paid</MenuItem>
+                      <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="overdue">Overdue</MenuItem>
                     </Select>
                   </FormControl>
                 </TableCell>

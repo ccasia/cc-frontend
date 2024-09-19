@@ -229,6 +229,7 @@ export const endpoints = {
     update: (id) => `/api/role/${id}`,
   },
   invoice: {
+    getAll: '/api/invoice/',
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,
     updateInvoice: '/api/invoice/update',
     create: '/api/invoice/create',
