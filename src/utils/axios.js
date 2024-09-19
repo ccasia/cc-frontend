@@ -226,6 +226,7 @@ export const endpoints = {
   roles: {
     root: '/api/role',
     get: (id) => `/api/role/${id}`,
+    update: (id) => `/api/role/${id}`,
   },
   invoice: {
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,

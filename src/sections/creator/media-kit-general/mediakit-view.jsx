@@ -118,7 +118,6 @@ const MediaKit = ({ id, noBigScreen }) => {
           <Tab value="partnership" label="Partnerships" />
         </Tabs>
         {creator && <MediaKitSocial currentTab={currentTab} user={creator} />}
-        
       </Card>
 
       {/* <Box

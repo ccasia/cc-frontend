@@ -9,6 +9,8 @@ import useGetRoles from 'src/hooks/use-get-roles';
 
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
+import RoleDetails from './role-details';
+
 const ManageRoles = ({ id }) => {
   const { data, isLoading } = useGetRoles(id);
 
@@ -22,7 +24,8 @@ const ManageRoles = ({ id }) => {
           { name: id },
         ]}
       />
-      {!isLoading && JSON.stringify(data)}
+
+      {!isLoading && <RoleDetails role={data} />}
     </Container>
   );
 };

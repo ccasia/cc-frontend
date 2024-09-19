@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import PropTypes from 'prop-types';
+
 import { deepOrange } from '@mui/material/colors';
 import { Box, Stack, Avatar, useTheme, Typography } from '@mui/material';
 
@@ -9,9 +10,9 @@ import Iconify from 'src/components/iconify';
 
 const MediaKitCover = ({ user }) => {
   const theme = useTheme();
-  const mediaKitData = user?.creator?.mediaKit || user?.user  || user || {};
+  const mediaKitData = user?.creator?.mediaKit || user?.user || user || {};
   const { name } = mediaKitData;
-  
+
   return (
     <Box sx={{ p: 5 }}>
       <Stack direction="column" alignItems="center" gap={2}>
@@ -19,7 +20,7 @@ const MediaKitCover = ({ user }) => {
           {user?.name?.[0] || 'N'}
         </Avatar>
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
-            {name}
+          {name}
         </Typography>
         <Stack
           direction="row"
@@ -31,13 +32,13 @@ const MediaKitCover = ({ user }) => {
         >
           {user?.creator?.mediaKit?.interests?.map((elem, index) => (
             <Label key={`mediakit-interest-${index}`}>{elem}</Label>
-          )) || 
-          user?.creator?.interests?.map((elem, index) => (
-            <Label key={`creator-interest-${index}`}>{elem?.name}</Label>
           )) ||
-          user?.user.creator.interests?.map((elem, index) => (
-            <Label key={`creator-interest-${index}`}>{elem?.name}</Label>
-          ))}
+            user?.creator?.interests?.map((elem, index) => (
+              <Label key={`creator-interest-${index}`}>{elem?.name}</Label>
+            )) ||
+            user?.user.creator.interests?.map((elem, index) => (
+              <Label key={`creator-interest-${index}`}>{elem?.name}</Label>
+            ))}
         </Stack>
         <Stack gap={2}>
           <Typography

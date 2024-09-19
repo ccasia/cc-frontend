@@ -1,5 +1,6 @@
-import { useEffect, useCallback } from 'react';
 import useSWR from 'swr';
+import { useEffect, useCallback } from 'react';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useCreator } from './zustands/useCreator';
@@ -46,12 +47,15 @@ export const useGetCreatorByID = (id) => {
 };
 
 export const useSWRGetCreatorByID = (id) => {
-  const { data, error, isLoading } = useSWR(id ? `${endpoints.creators.getCreatorById}/${id}` : null, fetcher);
+  const { data, error, isLoading } = useSWR(
+    id ? `${endpoints.creators.getCreatorById}/${id}` : null,
+    fetcher
+  );
 
   return {
     creator: data,
     isLoading,
-    isError: error
+    isError: error,
   };
 };
 

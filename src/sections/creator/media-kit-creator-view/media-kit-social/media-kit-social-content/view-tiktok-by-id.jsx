@@ -1,21 +1,9 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 import { Icon } from '@iconify/react';
 import { keyframes } from '@emotion/react';
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Grid,
-  Stack,
-  Button,
-  useTheme,
-  CardMedia,
-  Typography,
-  useMediaQuery,
-  CircularProgress,
-  Alert,
-  AlertTitle,
-} from '@mui/material';
-import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -151,7 +139,10 @@ const MediaKitSocialContent = ({ user }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // Safely access nested properties
-  const tiktokData = user?.creator?.socialMediaData?.tiktok?.data || user?.user?.creator?.socialMediaData?.tiktok?.data || {};
+  const tiktokData =
+    user?.creator?.socialMediaData?.tiktok?.data ||
+    user?.user?.creator?.socialMediaData?.tiktok?.data ||
+    {};
   const { followers, engagement_rate, user_performance, top_contents } = tiktokData;
 
   return (
@@ -163,9 +154,7 @@ const MediaKitSocialContent = ({ user }) => {
               Followers
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {followers
-                ? formatNumber(followers)
-                : 'N/A'}
+              {followers ? formatNumber(followers) : 'N/A'}
             </Typography>
           </Box>
         </Grid>
@@ -175,9 +164,7 @@ const MediaKitSocialContent = ({ user }) => {
               Engagement Rate
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {engagement_rate
-                ? `${Number(engagement_rate).toFixed(2)}%`
-                : 'N/A'}
+              {engagement_rate ? `${Number(engagement_rate).toFixed(2)}%` : 'N/A'}
             </Typography>
           </Box>
         </Grid>
@@ -203,12 +190,15 @@ const MediaKitSocialContent = ({ user }) => {
 
         if (topContents && topContents.length > 0) {
           return <TopContentGrid topContents={topContents} />;
-        } else {
-          return <Typography>No top content data available</Typography>;
         }
+        return <Typography>No top content data available</Typography>;
       })()}
     </Box>
   );
 };
 
 export default MediaKitSocialContent;
+
+MediaKitSocialContent.propTypes = {
+  user: PropTypes.object,
+};

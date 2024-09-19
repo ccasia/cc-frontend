@@ -1,5 +1,5 @@
 import useSWR from 'swr';
-import { PropTypes } from 'prop-types';
+import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
 // eslint-disable-next-line import/no-unresolved
