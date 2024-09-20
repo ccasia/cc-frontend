@@ -16,7 +16,7 @@ const MediaKitCover = ({ user }) => {
   return (
     <Box sx={{ p: 5 }}>
       <Stack direction="column" alignItems="center" gap={2}>
-        <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }}>
+        <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }} src={user?.photoURL}>
           {user?.name?.[0] || 'N'}
         </Avatar>
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
