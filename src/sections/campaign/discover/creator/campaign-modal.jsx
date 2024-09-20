@@ -44,8 +44,6 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
 
   const existingPitch = user?.pitch && user?.pitch.find((item) => item.campaignId);
 
-  // const campaignIds = user?.pitch && user?.pitch.map((item) => item.campaignId);
-
   const saveCampaign = async (campaignId) => {
     try {
       const res = await axiosInstance.post(endpoints.campaign.creator.saveCampaign, {
@@ -80,30 +78,6 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
         <Image src={image} alt="test" ratio="16/9" sx={{ borderRadius: 2, cursor: 'pointer' }} />
       ))}
     </Stack>
-    // <Box
-    //   display="grid"
-    //   gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-    //   gap={1}
-    //   p={2}
-    // >
-    //   <Image
-    //     src={campaign?.campaignBrief?.images[0]}
-    //     alt="test"
-    //     ratio="1/1"
-    //     sx={{ borderRadius: 2, cursor: 'pointer' }}
-    //   />
-    //   <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={1}>
-    //     {campaign?.campaignBrief?.images?.slice(1)?.map((elem, index) => (
-    //       <Image
-    //         key={index}
-    //         src={elem}
-    //         alt="test"
-    //         ratio="1/1"
-    //         sx={{ borderRadius: 2, cursor: 'pointer' }}
-    //       />
-    //     ))}
-    //   </Box>
-    // </Box>
   );
 
   return (
@@ -149,7 +123,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
       </DialogTitle>
       <DialogContent>
         {renderGallery}
-        {/* <DialogContentText id="alert-dialog-description">{campaign?.description}</DialogContentText> */}
+
         <Box mt={2}>
           <DialogContentText id="alert-dialog-description">
             <ListItemText
@@ -164,7 +138,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
         </Box>
         <Box mt={2}>
           <Typography variant="h6">Campaign Details</Typography>
-          {/* <List> */}
+
           <Box
             display="grid"
             gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
@@ -245,7 +219,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
           </Button>
         ) : (
           <>
-            {existingPitch?.status === 'Pending' && (
+            {existingPitch?.status === 'undecided' && (
               <Button
                 autoFocus
                 variant="contained"
@@ -257,6 +231,36 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                 In Review
               </Button>
             )}
+
+            {!user?.creator?.isFormCompleted && (
+              <Button
+                autoFocus
+                variant="contained"
+                startIcon={<Iconify icon="fluent:form-20-regular" width={20} />}
+                onClick={() => {
+                  dialog.onTrue();
+                }}
+                size="small"
+              >
+                Complete Form
+              </Button>
+            )}
+
+            {!existingPitch && user?.creator?.isFormCompleted && (
+              <Button
+                autoFocus
+                variant="contained"
+                startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+                onClick={() => {
+                  handleClose();
+                  openForm();
+                }}
+                size="small"
+              >
+                Pitch
+              </Button>
+            )}
+            {/* 
             {!existingPitch && user?.creator?.isFormCompleted ? (
               <Button
                 autoFocus
@@ -282,7 +286,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
               >
                 Complete Form
               </Button>
-            )}
+            )} */}
           </>
         )}
       </DialogActions>
