@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 import { alpha, useTheme } from '@mui/material/styles';
 
+import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { formatText } from 'src/utils/format-test';
@@ -18,7 +19,6 @@ import { _socials } from 'src/_mock';
 import { AvatarShape } from 'src/assets/illustrations';
 
 import Iconify from 'src/components/iconify';
-import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
@@ -44,7 +44,10 @@ export default function UserCard({ user }) {
   const router = useRouter();
 
   return (
-    <Box component="div" onClick={() => router.push(paths.dashboard.creator.mediaKit(user?.creator?.id))}>
+    <Box
+      component="div"
+      onClick={() => router.push(paths.dashboard.creator.mediaKit(user?.creator?.id))}
+    >
       <Card
         sx={{
           textAlign: 'center',
@@ -69,7 +72,7 @@ export default function UserCard({ user }) {
 
           <Avatar
             alt={name}
-            src={avatarUrl}
+            src={user?.photoURL}
             sx={{
               width: 64,
               height: 64,
@@ -133,8 +136,8 @@ export default function UserCard({ user }) {
               Followers
             </Typography>
             {user.creator.socialMediaData?.instagram?.data.followers
-                ? formatNumber(user.creator.socialMediaData?.instagram?.data.followers)
-                : 'N/A'}
+              ? formatNumber(user.creator.socialMediaData?.instagram?.data.followers)
+              : 'N/A'}
             {/* {fShortenNumber(totalFollowers)} */}
           </div>
 
@@ -143,8 +146,8 @@ export default function UserCard({ user }) {
               Engagement Rates
             </Typography>
             {user.creator.socialMediaData?.instagram?.data.engagement_rate
-                ? `${Number(user.creator.socialMediaData?.instagram?.data.engagement_rate).toFixed(2)} %`
-                : 'N/A'}
+              ? `${Number(user.creator.socialMediaData?.instagram?.data.engagement_rate).toFixed(2)} %`
+              : 'N/A'}
             {/* {fShortenNumber(totalFollowing)} */}
           </div>
 
@@ -153,8 +156,10 @@ export default function UserCard({ user }) {
               Average Likes
             </Typography>
             {user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
-                ? formatNumber(user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post)
-                : 'N/A'}
+              ? formatNumber(
+                  user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
+                )
+              : 'N/A'}
             {/* {fShortenNumber(totalPosts)} */}
           </div>
         </Box>
