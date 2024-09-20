@@ -47,7 +47,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const confirm = useBoolean();
 
   const schema = Yup.object().shape({
-    pitchVideo: Yup.mixed().required('Pitch video is required'),
+    pitchVideo: Yup.string().required('Pitch video is required'),
   });
 
   const methods = useForm({
@@ -252,7 +252,6 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
               onClick={() => {
                 if (watch('pitchVideo')) {
                   confirm.onTrue();
-                  // handleRemove();
                 } else {
                   handleClose();
                   handleRemove();
