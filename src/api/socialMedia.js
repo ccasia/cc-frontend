@@ -58,7 +58,7 @@ export const fetchSocialMediaData = async () => {
 
   const newSocialMediaData = await crawlSocialMediaData(instagram, tiktok);
 
-  if (!newSocialMediaData) {
+  if (!newSocialMediaData.instagram && !newSocialMediaData.tiktok) {
     return;
   }
 

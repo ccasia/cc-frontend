@@ -193,7 +193,7 @@ const MediaKitCreator = () => {
               }
             }}
           >
-            {loading.value ? 'Loading...' : 'Refresh User data'}
+            {loading.value ? 'Loading...' : 'Refresh User Data'}
           </Button>
         ) : (
           <Button
@@ -209,7 +209,7 @@ const MediaKitCreator = () => {
               }
             }}
           >
-            {loading.value ? 'Loading...' : 'Refresh User data'}
+            {loading.value ? 'Loading...' : 'Refresh User Data'}
           </Button>
         )}
       </Box>
