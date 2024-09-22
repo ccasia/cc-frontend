@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import { m } from 'framer-motion';
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
@@ -21,6 +21,8 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import useGetNotificationById from 'src/hooks/use-get-notification-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -55,6 +57,7 @@ export default function NotificationsPopover() {
   const drawer = useBoolean();
 
   const { data, isLoading } = useGetNotificationById();
+  const { socket } = useSocketContext();
 
   const smUp = useResponsive('up', 'sm');
 
@@ -63,8 +66,6 @@ export default function NotificationsPopover() {
   const handleChangeTab = useCallback((event, newValue) => {
     setCurrentTab(newValue);
   }, []);
-
-  // const [notifications, setNotifications] = useState(_notifications);
 
   const totalUnRead = data?.notifications?.filter((item) => !item.read).length;
   const totalArchive = data?.notifications?.filter((item) => !item.archive).length;
@@ -176,6 +177,16 @@ export default function NotificationsPopover() {
       </List>
     </Scrollbar>
   );
+
+  useEffect(() => {
+    socket.on('notification', () => {
+      mutate(endpoints.notification.root);
+    });
+
+    return () => {
+      socket.off('notification');
+    };
+  }, [socket]);
 
   return (
     <>
