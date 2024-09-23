@@ -173,7 +173,7 @@ const Profile = () => {
               {/* Change later Add more data */}
 
               <Grid item xs={12} sm={6} md={6} lg={6}>
-                <RHFSelect name="designation" label="Designation" disabled>
+                <RHFSelect name="designation" label="Designation">
                   <MenuItem defaultChecked>None</MenuItem>
                   <MenuItem value="CSM">Customer Success Manager</MenuItem>
                   <MenuItem value="Finance">Finance</MenuItem>

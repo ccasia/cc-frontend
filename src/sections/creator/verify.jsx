@@ -29,8 +29,8 @@ const Verify = () => {
           }}
         >
        <Box display="flex" flexDirection="row" alignItems="center" justifyContent="space-between">
-        <Logo disabledLink sx={{ width: 64, height: 64, paddingRight: 2 }} />
-        <Typography variant="h3">Cult Creative</Typography>
+        <Logo disabledLink sx={{ width: 174, height: 64, paddingRight: 2 }} />
+        {/* <Typography variant="h3">Cult Creative</Typography> */}
       </Box>
       <Box
           component="img"
