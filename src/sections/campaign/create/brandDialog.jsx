@@ -8,7 +8,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Menu from '@mui/material/Menu';
-import { Stack } from '@mui/material';
+import { Avatar, ListItemText, Stack } from '@mui/material';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import MenuItem from '@mui/material/MenuItem';
@@ -18,15 +18,15 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-
-import { useCompany } from 'src/hooks/zustands/useCompany';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify/iconify';
 import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import CreateCompany from './companyDialog';
+import { max } from 'lodash';
+import useGetCompany from 'src/hooks/use-get-company';
+import { mutate } from 'swr';
 
 const interestsLists = [
   'Art',
@@ -48,7 +48,8 @@ export default function CreateBrand({ setBrand, open, onClose }) {
   const [companyState, setCompanyState] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const openMenu = Boolean(anchorEl);
-  const { company } = useCompany();
+  // const { company, isLoading } = useCompany();
+  const {data: company, isLoading} = useGetCompany()
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -62,27 +63,22 @@ export default function CreateBrand({ setBrand, open, onClose }) {
     name: Yup.string().required('Name is required'),
     email: Yup.string().email('Must be a valid email').required('Email is required'),
     phone: Yup.string().required('Phone is required'),
-    registration_number: Yup.string().required('Registration Number is required'),
-    address: Yup.string().required('Address is required'),
-    companyChoice: Yup.string().required('Company is required'),
-    brandInstagram: Yup.string().required('Brand Instagram is required'),
-    brandTiktok: Yup.string().required('Brand Tiktok is required'),
-    brandFacebook: Yup.string().required('Brand Facebook is required'),
-    brandIntersts: Yup.array().min(3, 'Brand Interests is required'),
-    brandIndustries: Yup.array().min(3, 'Brand Industries is required'),
+    companyChoice: Yup.object().required('Company is required'),
+    brandInstagram: Yup.string().required('Instagram is required'),
+    brandTiktok: Yup.string().required('Tiktok is required'),
+    brandFacebook: Yup.string().required('Facebook is required'),
+    brandIndustries: Yup.array().min(1, 'At least one Brand Interests is required')
+    .max(3, 'Maximum of three Brand Interests is required').required('BrandIndustries is required'),
   });
 
   const defaultValues = {
     name: '',
     email: '',
     phone: '',
-    registration_number: '',
-    address: '',
-    companyChoice: '',
+    companyChoice: {},
     brandInstagram: '',
     brandTiktok: '',
     brandFacebook: '',
-    brandIntersts: [],
     brandIndustries: [],
   };
 
@@ -101,9 +97,11 @@ export default function CreateBrand({ setBrand, open, onClose }) {
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.post(endpoints.company.createOneBrand, data);
+      console.log(res.data)
       reset();
       onClose();
-      setBrand(data.name);
+      mutate(endpoints.company.getOptions);
+      setBrand("campaignBrand",res?.data?.brand);
       enqueueSnackbar('Brand created successfully', { variant: 'success' });
       console.log(res.status);
     } catch (error) {
@@ -127,7 +125,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
       }}
       fullWidth
     >
-      <DialogTitle>Create Brand</DialogTitle>
+      <DialogTitle>Create Client</DialogTitle>
       <DialogContent>
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <Box
@@ -149,14 +147,33 @@ export default function CreateBrand({ setBrand, open, onClose }) {
                 alignContent: 'center',
               }}
             >
-              {' '}
+              {!isLoading && (
               <RHFAutocomplete
                 fullWidth
                 key="companyChoice"
                 name="companyChoice"
                 placeholder="Company"
-                options={companyState ? [companyState] : company?.map((option) => option.name)}
+                options={companyState ? [companyState] : company}
+                getOptionLabel={(option) => option.name || ''}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option) => {
+                  // eslint-disable-next-line react/prop-types
+                  const { key, ...optionProps } = props;
+      
+                  if (!option.id) {
+                    return null;
+                  }
+      
+                  return (
+                    <Stack component="li" key={key} direction="row" spacing={1} p={1} {...optionProps}>
+                      <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                      <ListItemText primary={option.name} />
+                    </Stack>
+                  );
+                }}
               />
+            )}
+            
               <Box
                 sx={{
                   alignContent: 'center',
@@ -217,38 +234,10 @@ export default function CreateBrand({ setBrand, open, onClose }) {
             </Box>
             <RHFTextField name="email" label="Email" fullWidth />
             <RHFTextField name="phone" label="Phone" />
-            <RHFTextField name="registration_number" label="Registration Number" fullWidth />
-            <RHFTextField name="address" label="Address" />
-            <RHFTextField key="brandInstagram" name="brandInstagram" label="Brand Instagram" />
-            <RHFTextField key="brandTiktok" name="brandTiktok" label="Brand Tiktok" />
-            <RHFTextField key="brandFacebook" name="brandFacebook" label="Brand Facebook" />
-            <RHFAutocomplete
-              key="brandIntersts"
-              name="brandIntersts"
-              placeholder="+ Brand Interests"
-              multiple
-              freeSolo
-              disableCloseOnSelect
-              options={interestsLists.map((option) => option)}
-              getOptionLabel={(option) => option}
-              renderOption={(props, option) => (
-                <li {...props} key={option}>
-                  {option}
-                </li>
-              )}
-              renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option}
-                    label={option}
-                    size="small"
-                    color="info"
-                    variant="soft"
-                  />
-                ))
-              }
-            />
+            <RHFTextField key="brandInstagram" name="brandInstagram" label="Instagram" />
+            <RHFTextField key="brandTiktok" name="brandTiktok" label="Tiktok" />
+            <RHFTextField key="brandFacebook" name="brandFacebook" label="Facebook" />
+            
             <RHFAutocomplete
               key="brandIndustries"
               name="brandIndustries"
