@@ -166,7 +166,11 @@ export function useNavData() {
             path: paths.dashboard.roles.root,
             icon: <Iconify icon="oui:app-users-roles" width={25} />,
           },
-
+          {
+            title: 'Template',
+            path: paths.dashboard.template.root,
+            icon: <Iconify icon="hugeicons:task-01" width={25} />,
+          },
           // {
           //   roles: ['superadmin', 'CSM'],
           //   title: 'My Tasks',

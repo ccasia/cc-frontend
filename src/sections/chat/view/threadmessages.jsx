@@ -1,5 +1,5 @@
-/* eslint-disable */ 
-import React, {useEffect, useState, useCallback} from 'react';
+/* eslint-disable */
+import React, { useEffect, useState, useCallback } from 'react';
 import Stack from '@mui/material/Stack';
 import PropTypes from 'prop-types';
 import ChatMessageInput from '../chat-message-input';
@@ -7,7 +7,6 @@ import ChatMessageList from '../chat-message-list';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useAuthContext } from 'src/auth/hooks';
 import { markMessagesAsSeen, useTotalUnreadCount, useGetAllThreads } from 'src/api/chat';
-
 
 const ThreadMessages = ({ threadId }) => {
   const { socket } = useSocketContext();
@@ -18,21 +17,21 @@ const ThreadMessages = ({ threadId }) => {
   const { triggerRefetch } = useTotalUnreadCount();
   const { threadrefetch } = useGetAllThreads();
   // const { message, loading, error } = useGetMessagesFromThread(threadId);
- 
+
   useEffect(() => {
-     // Listen for existing messages
-     socket.on('existingMessages', ({ threadId, oldMessages }) => {
+    // Listen for existing messages
+    socket?.on('existingMessages', ({ threadId, oldMessages }) => {
       setThreadMessages((prevThreadMessages) => ({
         ...prevThreadMessages,
         [threadId]: oldMessages,
       }));
     });
-  
-      // Join the room
-      socket.emit('room', threadId);
 
-      // Listen for incoming messages
-      socket.on('message', (message) => {
+    // Join the room
+    socket.emit('room', threadId);
+
+    // Listen for incoming messages
+    socket?.on('message', (message) => {
       setThreadMessages((prevThreadMessages) => {
         const { threadId: messageThreadId } = message;
         return {
@@ -55,32 +54,32 @@ const ThreadMessages = ({ threadId }) => {
     };
 
     markAsSeen();
-    
+
     // Cleanup on component unmount
     return () => {
       socket.off('message');
-      socket.off ('existingMessages');
+      socket.off('existingMessages');
       //  socket.off('latestMessage');
       // socket.off('room');
     };
   }, [socket, threadId]);
-  
-  const handleSendMessage = useCallback((content) => {
-    const { id: senderId, role, name, photoURL } = user;
-    const createdAt = new Date().toISOString();
-    threadrefetch
-    socket.emit('sendMessage', { senderId, threadId, content, role, name, photoURL, createdAt });
-  }, [socket, threadId, user, threadrefetch]);
 
+  const handleSendMessage = useCallback(
+    (content) => {
+      const { id: senderId, role, name, photoURL } = user;
+      const createdAt = new Date().toISOString();
+      threadrefetch;
+      socket.emit('sendMessage', { senderId, threadId, content, role, name, photoURL, createdAt });
+    },
+    [socket, threadId, user, threadrefetch]
+  );
 
   const messages = threadMessages[threadId] || [];
 
   return (
-
     <Stack sx={{ width: 1, height: 1, overflow: 'hidden' }}>
       <ChatMessageList messages={messages} />
       <ChatMessageInput threadId={threadId} onSendMessage={handleSendMessage} />
-  
     </Stack>
     // <Stack sx={{ width: 1, height: 1, overflow: 'hidden' }}>
     //   <ChatMessageList
@@ -95,8 +94,7 @@ const ThreadMessages = ({ threadId }) => {
 };
 
 ThreadMessages.propTypes = {
-    threadId: PropTypes.string.isRequired,
-  };
+  threadId: PropTypes.string.isRequired,
+};
 
 export default ThreadMessages;
-

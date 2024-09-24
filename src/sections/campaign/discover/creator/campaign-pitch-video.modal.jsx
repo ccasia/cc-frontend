@@ -163,8 +163,8 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   };
 
   useEffect(() => {
-    socket.on('video-upload', updateProgress);
-    socket.on('video-upload-done', uploadDone);
+    socket?.on('video-upload', updateProgress);
+    socket?.on('video-upload-done', uploadDone);
 
     return () => {
       socket.off('video-upload', updateProgress);

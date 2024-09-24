@@ -116,7 +116,7 @@ const CampaignFirstDraft = ({
 
   useEffect(() => {
     if (socket) {
-      socket.on('progress', (data) => {
+      socket?.on('progress', (data) => {
         if (submission?.id === data.submissionId) {
           setIsProcessing(true);
           setProgress(data.progress);

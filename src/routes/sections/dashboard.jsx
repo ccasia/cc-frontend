@@ -80,6 +80,9 @@ const AdminTaskPage = lazy(() => import('src/pages/dashboard/admin/tasks'));
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
 const ManageRole = lazy(() => import('src/pages/dashboard/roles/manage-role'));
 
+// Template Temp
+const Template = lazy(() => import('src/pages/dashboard/template/view'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -472,6 +475,10 @@ export const dashboardRoutes = [
             element: <ManageRole />,
           },
         ],
+      },
+      {
+        path: 'template',
+        element: <Template />,
       },
     ],
   },

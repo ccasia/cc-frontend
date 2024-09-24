@@ -1,8 +1,8 @@
-/* eslint-disable */ 
+/* eslint-disable */
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 
-import {Box, Button, Stack, Typography, Drawer}  from '@mui/material';
+import { Box, Button, Stack, Typography, Drawer } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
@@ -46,11 +46,10 @@ export default function ChatNav({}) {
   const [archivedChats, setArchivedChats] = useState([]);
   const [showArchived, setShowArchived] = useState(false);
 
-
   const handleClick = () => {
     onSelectThread(threads.id);
   };
-  
+
   const {
     collapseDesktop,
     onCloseDesktop,
@@ -60,7 +59,6 @@ export default function ChatNav({}) {
     onOpenMobile,
     onCloseMobile,
   } = useCollapseNav();
-
 
   useEffect(() => {
     if (!mdUp) {
@@ -75,9 +73,9 @@ export default function ChatNav({}) {
       [message.threadId]: message,
     }));
   };
-  
+
   useEffect(() => {
-    socket.on('latestMessage', handleLatestMessage);
+    socket?.on('latestMessage', handleLatestMessage);
     return () => {
       socket.off('latestMessage', handleLatestMessage);
     };
@@ -87,7 +85,6 @@ export default function ChatNav({}) {
     const sorted = sortThreadsByLatestMessage(threads || []);
     setSortedThreads(sorted);
     threadrefetch();
-
   }, [threads, latestMessages]);
 
   const sortThreadsByLatestMessage = (threads) => {
@@ -97,7 +94,7 @@ export default function ChatNav({}) {
       return bLastMessageTime - aLastMessageTime;
     });
   };
-  
+
   const handleToggleNav = useCallback(() => {
     if (mdUp) {
       onCollapseDesktop();
@@ -113,17 +110,16 @@ export default function ChatNav({}) {
     router.push(paths.dashboard.chat);
   }, [mdUp, onCloseMobile, router]);
 
-  
   const handleArchive = (threadId) => {
     if (archivedChats.includes(threadId)) {
-      setArchivedChats(archivedChats.filter(id => id !== threadId));
+      setArchivedChats(archivedChats.filter((id) => id !== threadId));
     } else {
       setArchivedChats([...archivedChats, threadId]);
     }
   };
 
   const handleToggleArchive = () => {
-    setShowArchived(prevState => !prevState); 
+    setShowArchived((prevState) => !prevState);
   };
 
   const renderToggleBtn = (
@@ -153,39 +149,39 @@ export default function ChatNav({}) {
 
   const renderList = (
     <>
-     {(!threads || threads.length === 0) && (
-      <Typography variant="body2" color="textSecondary">
-        No chat groups available
-      </Typography>
-    )}
-    {threads && sortedThreads.map((thread) => {
-      const userThread = thread.UserThread.find((ut) => ut.userId === user.id);
+      {(!threads || threads.length === 0) && (
+        <Typography variant="body2" color="textSecondary">
+          No chat groups available
+        </Typography>
+      )}
+      {threads &&
+        sortedThreads.map((thread) => {
+          const userThread = thread.UserThread.find((ut) => ut.userId === user.id);
 
-      if (!userThread) return null; 
+          if (!userThread) return null;
 
-      const isArchived = userThread.archived;
+          const isArchived = userThread.archived;
 
-      if ((showArchived && isArchived) || (!showArchived && !isArchived)) {
-        return (
-          <ChatNavItem
-            key={thread.id}
-            collapse={collapseDesktop}
-            thread={thread}
-            selected={thread.id === selectedThreadId}
-            onCloseMobile={onCloseMobile}
-            onClick={() => handleClick(thread.id)}
-            onArchive={() => handleArchive(thread.id)}
-            latestMessage={latestMessages?.[thread.id]} 
-          />
-        );
-      }
+          if ((showArchived && isArchived) || (!showArchived && !isArchived)) {
+            return (
+              <ChatNavItem
+                key={thread.id}
+                collapse={collapseDesktop}
+                thread={thread}
+                selected={thread.id === selectedThreadId}
+                onCloseMobile={onCloseMobile}
+                onClick={() => handleClick(thread.id)}
+                onArchive={() => handleArchive(thread.id)}
+                latestMessage={latestMessages?.[thread.id]}
+              />
+            );
+          }
 
-      return null; 
-    })}
+          return null;
+        })}
     </>
   );
 
-  
   const renderContent = (
     <>
       <Stack direction="row" alignItems="center" justifyContent="center" sx={{ p: 2.5, pb: 0 }}>
@@ -207,25 +203,26 @@ export default function ChatNav({}) {
             {/* <Iconify width={24} icon="solar:user-plus-bold" /> */}
           </IconButton>
         )}
-      
       </Stack>
 
       {/* <Box sx={{ p: 2.5, pt: 0 }}>{!collapseDesktop && renderSearchInput}</Box> */}
-      
+
       {/* Archive Button  */}
-      <Button 
-      sx={{ p:1, mt: 4 }} 
-      variant="text" 
-      startIcon = { <Icon icon="ic:outline-archive" />} 
-      onClick= {handleToggleArchive}
-      > 
-       {showArchived ? 'Back' : 'Archived Chats'}
+      <Button
+        sx={{ p: 1, mt: 4 }}
+        variant="text"
+        startIcon={<Icon icon="ic:outline-archive" />}
+        onClick={handleToggleArchive}
+      >
+        {showArchived ? 'Back' : 'Archived Chats'}
       </Button>
 
-      <Stack direction="column" alignItems="center" justifyContent="center" sx={{ p: 2.5, pb: 0, mt: 2, }}> 
-
-
-      </Stack>
+      <Stack
+        direction="column"
+        alignItems="center"
+        justifyContent="center"
+        sx={{ p: 2.5, pb: 0, mt: 2 }}
+      ></Stack>
       <Scrollbar sx={{ pb: 1 }}>
         {renderList}
         {/* {searchContacts.query && renderListResults}
