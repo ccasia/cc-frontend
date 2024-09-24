@@ -80,7 +80,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
 
   useEffect(() => {
     const socket = io();
-    socket.on('draft', () => {
+    socket?.on('draft', () => {
       mutate(endpoints.campaign.draft.getFirstDraftForCreator(campaign.id));
     });
   }, [campaign]);

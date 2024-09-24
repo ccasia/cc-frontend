@@ -3,7 +3,7 @@
 const ROOTS = {
   AUTH: '/auth',
   DASHBOARD: '/dashboard',
-  PUBLIC: '/public'
+  PUBLIC: '/public',
 };
 
 // ----------------------------------------------------------------------
@@ -93,10 +93,14 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/roles`,
       manage: (id) => `${ROOTS.DASHBOARD}/roles/manage/${id}`,
     },
+    template: {
+      root: `${ROOTS.DASHBOARD}/template`,
+    },
   },
+
   public: {
     creator: {
       mediaKit: (id) => `${ROOTS.PUBLIC}/media-kits/creator/${id}`,
-    }
-  }
+    },
+  },
 };

@@ -179,12 +179,12 @@ export default function NotificationsPopover() {
   );
 
   useEffect(() => {
-    socket.on('notification', () => {
+    socket?.on('notification', () => {
       mutate(endpoints.notification.root);
     });
 
     return () => {
-      socket.off('notification');
+      socket?.off('notification');
     };
   }, [socket]);
 
