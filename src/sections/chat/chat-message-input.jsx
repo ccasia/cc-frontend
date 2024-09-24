@@ -25,21 +25,25 @@ export default function ChatMessageInput({
 
   const handleSendMessage = useCallback(
     (event) => {
-      if (event.type === 'click' && message.trim() !== '') {
-        console.log('message sent', message);
-        onSendMessage(message);
-        setMessage('');
+      if (event.type === 'click' || (event.type === 'keyup' && event.key === 'Enter' && !event.shiftKey)) {
+        if (message.trim() !== '') {
+          console.log('message sent:', message);
+          onSendMessage(message);
+          setMessage('');
+        }
+      } else if (event.type === 'keyup' && event.key === 'Enter' && event.shiftKey) {
+        event.preventDefault(); 
+        setMessage((prevMessage) => prevMessage); 
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [message, onSendMessage]
   );
+  
 
   // Handle message input change
   const handleChangeMessage = useCallback((event) => {
     setMessage(event.target.value);
   }, []);
-
 
   return (
     <>

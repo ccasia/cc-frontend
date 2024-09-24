@@ -66,7 +66,7 @@ const Profile = () => {
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
-    designation: Yup.string().required('Address is required'),
+    designation: Yup.string()
   });
 
   const defaultValues = {
