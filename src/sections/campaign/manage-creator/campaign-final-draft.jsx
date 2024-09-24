@@ -128,7 +128,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
       });
     }
     return () => {
-      socket.off('progress');
+      socket?.off('progress');
     };
   }, [socket, submission, reset, progress, campaign, user]);
 

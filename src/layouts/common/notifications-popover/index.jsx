@@ -184,7 +184,7 @@ export default function NotificationsPopover() {
     });
 
     return () => {
-      socket.off('notification');
+      socket?.off('notification');
     };
   }, [socket]);
 

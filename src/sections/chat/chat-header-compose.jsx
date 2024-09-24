@@ -141,7 +141,7 @@ export default function ChatHeaderCompose({ currentUserId }) {
 
   //   return () => {
   //     // Cleanup listener on unmount
-  //     socket.off('message');
+  //     socket?.off('message');
   //   };
   // }, []);
 

@@ -77,7 +77,7 @@ export default function ChatNav({}) {
   useEffect(() => {
     socket?.on('latestMessage', handleLatestMessage);
     return () => {
-      socket.off('latestMessage', handleLatestMessage);
+      socket?.off('latestMessage', handleLatestMessage);
     };
   }, [socket]);
 

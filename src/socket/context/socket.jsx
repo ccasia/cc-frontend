@@ -17,6 +17,7 @@ const SocketProvider = ({ children }) => {
     const socketConnection = io('https://cultcreative.famin.cloud', {
       transports: ['websocket'],
       secure: true,
+      reconnection: true,
     });
 
     socketConnection.on('connect', () => {

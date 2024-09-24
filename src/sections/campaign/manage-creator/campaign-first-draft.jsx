@@ -140,7 +140,7 @@ const CampaignFirstDraft = ({
       });
     }
     return () => {
-      socket.off('progress');
+      socket?.off('progress');
     };
   }, [socket, submission, reset, progress, campaign, user]);
 

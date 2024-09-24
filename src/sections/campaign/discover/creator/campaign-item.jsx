@@ -74,8 +74,8 @@ export default function CampaignItem({ campaign, user }) {
 
     // Clean-up function
     return () => {
-      socket.off('pitch-loading', handlePitchLoading);
-      socket.off('pitch-uploaded', handlePitchSuccess);
+      socket?.off('pitch-loading', handlePitchLoading);
+      socket?.off('pitch-uploaded', handlePitchSuccess);
     };
   }, [socket, upload]);
 

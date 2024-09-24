@@ -57,10 +57,10 @@ const ThreadMessages = ({ threadId }) => {
 
     // Cleanup on component unmount
     return () => {
-      socket.off('message');
-      socket.off('existingMessages');
-      //  socket.off('latestMessage');
-      // socket.off('room');
+      socket?.off('message');
+      socket?.off('existingMessages');
+      //  socket?.off('latestMessage');
+      // socket?.off('room');
     };
   }, [socket, threadId]);
 

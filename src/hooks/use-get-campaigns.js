@@ -60,7 +60,7 @@ const useGetCampaigns = (type) => {
   //   });
 
   //   return () => {
-  //     socket.off('campaignStatus');
+  //     socket?.off('campaignStatus');
   //     socket.close();
   //   };
   // }, [campaigns, getCampaigns]);

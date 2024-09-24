@@ -84,8 +84,8 @@ export default function CampaignListView() {
 
     // Clean-up function
     return () => {
-      socket.off('pitch-loading', handlePitchLoading);
-      socket.off('pitch-uploaded', handlePitchSuccess);
+      socket?.off('pitch-loading', handlePitchLoading);
+      socket?.off('pitch-uploaded', handlePitchSuccess);
     };
   }, [socket, upload]);
 
