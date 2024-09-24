@@ -1,6 +1,6 @@
 // socket.js
 import { io } from 'socket.io-client';
 
-const socket = io('https://cultcreative.famin.cloud');
+const socket = io();
 
 export default socket;

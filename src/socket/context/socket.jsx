@@ -14,7 +14,10 @@ const SocketProvider = ({ children }) => {
   useEffect(() => {
     // I used this for my connection - Zawad
     //  const socketConnection = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
-    const socketConnection = io();
+    const socketConnection = io('https://cultcreative.famin.cloud', {
+      transports: ['websocket'],
+      secure: true,
+    });
 
     socketConnection.on('connect', () => {
       console.log('Connected');
