@@ -146,7 +146,7 @@ const CampaignFirstDraft = ({
 
   const handleCancel = () => {
     if (isProcessing) {
-      socket.emit('cancel-processing', { submissionId: submission.id });
+      socket?.emit('cancel-processing', { submissionId: submission.id });
       setIsProcessing(false);
       setProgress(0);
       localStorage.removeItem('preview');

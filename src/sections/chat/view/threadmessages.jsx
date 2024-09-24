@@ -28,7 +28,7 @@ const ThreadMessages = ({ threadId }) => {
     });
 
     // Join the room
-    socket.emit('room', threadId);
+    socket?.emit('room', threadId);
 
     // Listen for incoming messages
     socket?.on('message', (message) => {
@@ -69,7 +69,7 @@ const ThreadMessages = ({ threadId }) => {
       const { id: senderId, role, name, photoURL } = user;
       const createdAt = new Date().toISOString();
       threadrefetch;
-      socket.emit('sendMessage', { senderId, threadId, content, role, name, photoURL, createdAt });
+      socket?.emit('sendMessage', { senderId, threadId, content, role, name, photoURL, createdAt });
     },
     [socket, threadId, user, threadrefetch]
   );
