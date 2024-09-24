@@ -14,7 +14,7 @@ const SocketProvider = ({ children }) => {
   useEffect(() => {
     // I used this for my connection - Zawad
     //  const socketConnection = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
-    const socketConnection = io('http://localhost:3002', {
+    const socketConnection = io('http://localhost:3001', {
       reconnection: true,
     });
 
