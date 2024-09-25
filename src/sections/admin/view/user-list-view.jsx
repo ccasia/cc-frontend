@@ -120,12 +120,12 @@ const defaultFilters = {
 // ----------------------------------------------------------------------
 
 export default function UserListView({ admins }) {
-  const { user } = useAuthContext();
+  const { user, role } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const { data: roles, isLoading } = useGetRoles();
-  const { role } = useAuthContext();
+
   const buttonLoading = useBoolean();
 
   const handleCloseCreateDialog = () => {
@@ -474,7 +474,7 @@ export default function UserListView({ admins }) {
             { name: 'List' },
           ]}
           action={
-            role?.name !== 'CSM' && (
+            user?.role === 'superadmin' && (
               <Button
                 variant="contained"
                 size="small"

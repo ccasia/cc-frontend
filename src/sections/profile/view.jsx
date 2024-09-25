@@ -18,7 +18,6 @@ import {
   Stack,
   alpha,
   Avatar,
-  Button,
   MenuItem,
   Container,
   Typography,
@@ -66,7 +65,7 @@ const Profile = () => {
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
-    designation: Yup.string()
+    designation: Yup.string(),
   });
 
   const defaultValues = {
@@ -109,7 +108,7 @@ const Profile = () => {
       );
       mutate(endpoints.notification.root);
       enqueueSnackbar('Successfully updated profile.');
-
+      mutate(endpoints.auth.me);
       // toast.success('Successfully updated profile.');
     } catch (error) {
       enqueueSnackbar('Error in updating profile', { variant: 'error' });
@@ -134,9 +133,15 @@ const Profile = () => {
           <Typography display="block" color={theme.palette.grey['600']} sx={{ fontSize: 12 }}>
             Allowed *.jpeg, *.jpg, *.png, *.gif max size of 3 Mb
           </Typography>
-          <Button color="error" sx={{ mt: 3, width: '100%' }}>
+          {/* <Button
+            color="error"
+            sx={{ mt: 3, width: '100%' }}
+            onClick={() => {
+              setImage(null);
+            }}
+          >
             Delete
-          </Button>
+          </Button> */}
         </Stack>
       </Card>
     </Grid>

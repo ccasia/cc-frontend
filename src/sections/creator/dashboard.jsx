@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
-import axios, { endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useSettingsContext } from 'src/components/settings';
 
@@ -18,26 +18,38 @@ export default function CreatorView() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creator, setCreator] = useState({});
 
-  useEffect(() => {
-    const getUserRoleAndCheckData = async () => {
-      let role;
-      try {
-        const response = await axios.get(endpoints.auth.getCurrentUser);
-        role = response.data?.user.role;
-      } catch (error) {
-        console.error(error);
-      }
-      // check if role is creator
-      if (role === 'creator') {
-        const response = await axios.get(endpoints.auth.checkCreator);
-        setCreator(response.data?.creator);
-        const openFormModal = response?.data?.creator?.user?.status === 'pending';
-        setDialogOpen(openFormModal);
-      }
-    };
-
-    getUserRoleAndCheckData();
+  const statusCheck = useCallback(async () => {
+    const res = await axiosInstance.get(endpoints.auth.checkCreator);
+    if (res?.data?.creator?.user?.status?.includes('pending')) {
+      setDialogOpen(true);
+    }
+    setCreator(res?.data?.creator);
   }, []);
+
+  // useEffect(() => {
+  //   const getUserRoleAndCheckData = async () => {
+  //     let role;
+  //     try {
+  //       const response = await axios.get(endpoints.auth.getCurrentUser);
+  //       role = response.data?.user.role;
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //     // check if role is creator
+  //     if (role === 'creator') {
+  //       const response = await axios.get(endpoints.auth.checkCreator);
+  //       setCreator(response.data?.creator);
+  //       const openFormModal = response?.data?.creator?.user?.status === 'pending';
+  //       setDialogOpen(openFormModal);
+  //     }
+  //   };
+
+  //   getUserRoleAndCheckData();
+  // }, []);
+
+  useEffect(() => {
+    statusCheck();
+  }, [statusCheck]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>

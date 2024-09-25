@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
@@ -20,26 +20,34 @@ export default function CreatorView() {
 
   // Get user role if creator send request to backend to check if the data is complete
 
-  useEffect(() => {
-    const getUserRoleAndCheckData = async () => {
-      let role;
-      try {
-        const response = await axiosInstance.get(endpoints.auth.getCurrentUser);
-        role = response.data?.user.role;
-      } catch (error) {
-        console.error(error);
-      }
-      // check if role is creator
-      if (role === 'creator') {
-        const response = await axiosInstance.get(endpoints.auth.checkCreator);
-        setCreator(response.data?.creator);
-        const openFormModal = response?.data?.creator?.user?.status === 'Pending';
-        setDialogOpen(openFormModal);
-      }
-    };
-
-    getUserRoleAndCheckData();
+  const roleCheck = useCallback(async () => {
+    const res = await axiosInstance.get(endpoints.auth.checkCreator);
+    console.log(res);
+    setCreator(res?.data?.creator);
   }, []);
+
+  useEffect(() => {
+    roleCheck();
+    // const getUserRoleAndCheckData = async () => {
+    //   let role;
+    //   try {
+    //     const response = await axiosInstance.get(endpoints.auth.getCurrentUser);
+    //     role = response.data?.user.role;
+    //   } catch (error) {
+    //     console.error(error);
+    //   }
+
+    //   // check if role is creator
+    //   if (role === 'creator') {
+    //     const response = await axiosInstance.get(endpoints.auth.checkCreator);
+    //     setCreator(response.data?.creator);
+    //     const openFormModal = response?.data?.creator?.user?.status === 'Pending';
+    //     setDialogOpen(openFormModal);
+    //   }
+    // };
+
+    // getUserRoleAndCheckData();
+  }, [roleCheck]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
