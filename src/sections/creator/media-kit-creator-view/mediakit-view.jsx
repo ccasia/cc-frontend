@@ -219,6 +219,7 @@ const MediaKitCreator = () => {
           border: 'none',
           boxShadow: 'none',
           bgcolor: 'transparent',
+          mt: 4
         }}
       >
         <MediaKitCover user={user} />

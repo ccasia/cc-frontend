@@ -1,9 +1,9 @@
 /* eslint-disable react/prop-types */
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import { deepOrange } from '@mui/material/colors';
-import { Box, Stack, Avatar, useTheme, Typography } from '@mui/material';
+import { Box, Stack, Avatar, Typography, alpha, Container, useTheme, useMediaQuery } from '@mui/material';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -13,14 +13,67 @@ const MediaKitCover = ({ user }) => {
   const mediaKitData = user?.creator?.mediaKit || user?.user || user || {};
   const { name } = mediaKitData;
 
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const encodedBackgroundUrl = useMemo(() => {
+    if (user?.photoBackgroundURL) {
+      // Split the URL at the last '/'
+      const parts = user.photoBackgroundURL.split('/');
+      // Encode only the filename part
+      const encodedFilename = encodeURIComponent(parts.pop());
+      // Join the URL back together
+      return [...parts, encodedFilename].join('/');
+    }
+    return null;
+  }, [user?.photoBackgroundURL]);
+
   return (
-    <Box sx={{ p: 5 }}>
-      <Stack direction="column" alignItems="center" gap={2}>
-        <Avatar sx={{ bgcolor: deepOrange[500], width: 150, height: 150 }} src={user?.photoURL}>
-          {user?.name?.[0] || 'N'}
-        </Avatar>
+    <Box sx={{ pt: 5, pl: 0, pr: 0, pb: 5 }}>
+      <Stack direction="column" alignItems="center" gap={1}>
+        <Box
+          key={user?.photoBackgroundURL}
+          sx={{
+            position: 'relative',
+            paddingTop: '25%', // 
+            width: '100%',
+            backgroundImage: encodedBackgroundUrl ? `url("${encodedBackgroundUrl}")` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundColor: theme.palette.background.default, // Fallback color
+            borderRadius: '1rem',
+            mb: '85px', // Adjusted to accommodate the avatar
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              borderRadius: '1rem',
+              // backgroundColor: alpha(theme.palette.background.default, 0.2),
+            },
+          }}
+        >
+          <Avatar
+            sx={{
+              bgcolor: deepOrange[500],
+              width: 170,
+              height: 170,
+              border: `6px solid ${theme.palette.background.paper}`,
+              position: 'absolute',
+              bottom: 0,
+              left: '50%',
+              transform: 'translate(-50%, 50%)',
+              boxShadow: theme.shadows[3],
+            }}
+            src={user?.photoURL}
+          >
+            {user?.name?.[0] || 'N'}
+          </Avatar>
+        </Box>
         <Typography variant="h2" color={theme.palette.text.primary} fontWeight={800}>
-          {name}
+          {name || user?.name}
         </Typography>
         <Stack
           direction="row"
@@ -30,15 +83,24 @@ const MediaKitCover = ({ user }) => {
             justifyContent: 'center',
           }}
         >
-          {user?.creator?.mediaKit?.interests?.map((elem, index) => (
-            <Label key={`mediakit-interest-${index}`}>{elem}</Label>
-          )) ||
-            user?.creator?.interests?.map((elem, index) => (
-              <Label key={`creator-interest-${index}`}>{elem?.name}</Label>
-            )) ||
-            user?.user.creator.interests?.map((elem, index) => (
-              <Label key={`creator-interest-${index}`}>{elem?.name}</Label>
-            ))}
+          {(() => {
+            const interestsToUse =
+              (user?.creator?.interests && user?.creator?.interests.length > 0)
+                ? user.creator.interests
+                : (user?.creator?.mediaKit?.interests ??
+                  user?.user?.creator?.interests ??
+                  []);
+
+            const result = interestsToUse.map((elem, index) => {
+              return (
+                <Label key={`interest-${index}`}>
+                  {typeof elem === 'string' ? elem : elem?.name ?? 'Unnamed Interest'}
+                </Label>
+              );
+            });
+
+            return result.length > 0 ? result : "No Interests";
+          })()}
         </Stack>
         <Stack gap={2}>
           <Typography

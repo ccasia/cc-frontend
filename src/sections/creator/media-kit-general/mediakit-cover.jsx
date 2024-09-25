@@ -3,6 +3,7 @@ import React from 'react';
 
 import { deepOrange } from '@mui/material/colors';
 import { Box, Stack, Avatar, useTheme, Typography } from '@mui/material';
+import Label from 'src/components/label';
 
 import Iconify from 'src/components/iconify';
 
@@ -38,6 +39,34 @@ const MediaKitCover = ({ user }) => {
             obcaecati esse quidem quas eligendi quos minima voluptates? Hic tempore perferendis
             velit natus. */}
           </Typography>
+          <Stack
+            direction="row"
+            gap={2}
+            flexWrap="wrap"
+            sx={{
+              justifyContent: 'center',
+            }}
+          >
+            {(() => {
+              const interestsToUse =
+                (user?.creator?.interests && user?.creator?.interests.length > 0)
+                  ? user.creator.interests
+                  : (user?.creator?.mediaKit?.interests ??
+                    user?.user?.creator?.interests ??
+                    []);
+
+              const result = interestsToUse.map((elem, index) => {
+                console.log('Element:', elem);
+                return (
+                  <Label key={`interest-${index}`}>
+                    {typeof elem === 'string' ? elem : elem?.name ?? 'Unnamed Interest'}
+                  </Label>
+                );
+              });
+
+              return result.length > 0 ? result : "No Interests";
+            })()}
+          </Stack>
           <Stack
             direction={{ sm: 'row' }}
             justifyContent="space-evenly"
