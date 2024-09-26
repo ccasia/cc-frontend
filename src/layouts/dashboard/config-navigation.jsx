@@ -59,12 +59,12 @@ export function useNavData() {
   const [unreadMessageCount, setUnreadMessageCount] = useState(null);
 
   useEffect(() => {
-    socket.on('messageCount', (data) => {
+    socket?.on('messageCount', (data) => {
       setUnreadMessageCount(data.count);
     });
 
     return () => {
-      socket.off('messageCount');
+      socket?.off('messageCount');
     };
   }, [socket]);
 
