@@ -192,6 +192,7 @@ export default function AccountGeneral() {
       reader.readAsDataURL(file);
     });
   };
+  
 
   const handleCrop = () => {
     if (croppieRef.current) {
@@ -204,7 +205,11 @@ export default function AccountGeneral() {
       }).then((blob) => {
         const newPreviewUrl = URL.createObjectURL(blob);
         setPreviewUrl(newPreviewUrl);
-        setValue('photoBackgroundURL', blob, { shouldValidate: true });
+        
+        const fileName = selectedFile ? selectedFile.name : 'background.png';
+        const newFile = new File([blob], fileName, { type: 'image/png' });
+        
+        setValue('photoBackgroundURL', newFile, { shouldValidate: true });
         setOpenCropDialog(false);
       });
     }
@@ -218,6 +223,9 @@ export default function AccountGeneral() {
     formData.append('image', data?.photoURL);
     formData.append('backgroundImage', data?.photoBackgroundURL);
     formData.append('data', JSON.stringify(newObj));
+
+    console.log('Form data:', Object.fromEntries(formData));
+    console.log('Background image file:', data?.photoBackgroundURL);
 
     console.log('Form data:', Object.fromEntries(formData));
 
@@ -267,21 +275,6 @@ export default function AccountGeneral() {
     },
     [setSelectedFile, setOpenCropDialog]
   );
-
-  // const handleDropBackground = useCallback(
-  //   (acceptedFiles) => {
-  //     const file = acceptedFiles[0];
-
-  //     const newFile = Object.assign(file, {
-  //       preview: URL.createObjectURL(file),
-  //     });
-
-  //     if (file) {
-  //       setValue('photoBackgroundURL', newFile, { shouldValidate: true });
-  //     }
-  //   },
-  //   [setValue]
-  // );
 
   const country = watch('country');
   const nationality = watch('country');
