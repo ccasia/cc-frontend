@@ -93,18 +93,18 @@ export default function ChatMessageItem({ message }) {
           bgcolor: 'primary.lighter',
         }),
         ...(isAdmin && {
-          bgcolor: '#efc800',
+          bgcolor: '#128c7e',
           color: 'black',
         }),
         ...(isSprAdmin && {
-          bgcolor: ' #FFC300 ',
+          bgcolor: ' #128c7e ',
           color: 'black',
         }),
       }}
     >
-      <Typography
+      <Typography 
         variant="inherit"
-        textTransform="capitalize"
+        // textTransform="capitalize"
         sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
       >
         {body}
