@@ -87,24 +87,50 @@ export default function AccountGeneral() {
   } = methods;
 
   useEffect(() => {
-    if (imageDataUrl && croppieContainerRef.current && !croppieRef.current) {
-      console.log('Initializing Croppie with imageDataUrl');
-      croppieRef.current = new Croppie(croppieContainerRef.current, {
-        viewport: { width: 400, height: 100, type: 'square' },
-        boundary: { width: 450, height: 150 },
-        showZoomer: true,
-        enableOrientation: true
-      });
-      croppieRef.current.bind({ url: imageDataUrl });
+    if (!openCropDialog) {
+      if (croppieRef.current) {
+        console.log('Cleaning up Croppie on dialog close');
+        try {
+          croppieRef.current.destroy();
+        } catch (error) {
+          console.error('Error cleaning up Croppie on dialog close:', error);
+        }
+        croppieRef.current = null;
+      }
+      setImageDataUrl(null);
     }
-  
+  }, [openCropDialog]);
+
+  useEffect(() => {
+    console.log('useEffect triggered', { openCropDialog, imageDataUrl, croppieContainerRef: !!croppieContainerRef.current, croppieRef: !!croppieRef.current });
+    if (openCropDialog && imageDataUrl && croppieContainerRef.current && !croppieRef.current) {
+      console.log('Initializing Croppie with imageDataUrl');
+      setTimeout(() => {
+        try {
+          croppieRef.current = new Croppie(croppieContainerRef.current, {
+            viewport: { width: 396, height: 199, type: 'square' },
+            boundary: { width: 500, height: 300 },
+            showZoomer: true,
+            enableOrientation: true,
+            enableResize: false,
+            enableExif: true,
+            mouseWheelZoom: 'ctrl'
+          });
+          croppieRef.current.bind({
+            url: imageDataUrl,
+            zoom: 0
+          });
+          console.log('Croppie initialized successfully');
+        } catch (error) {
+          console.error('Error initializing Croppie:', error);
+        }
+      }, 0);
+    }
+
     return () => {
       if (croppieRef.current) {
         console.log('Cleaning up Croppie');
         try {
-          // Attempt to remove Croppie-generated elements manually
-          const elements = croppieContainerRef.current?.querySelectorAll('.cr-boundary, .cr-slider-wrap, .cr-viewport');
-          elements?.forEach(el => el.remove());
           croppieRef.current.destroy();
         } catch (error) {
           console.error('Error cleaning up Croppie:', error);
@@ -112,23 +138,7 @@ export default function AccountGeneral() {
         croppieRef.current = null;
       }
     };
-  }, [imageDataUrl]);
-
-  useEffect(() => {
-    return () => {
-      if (croppieRef.current) {
-        console.log('Component unmounting, cleaning up Croppie');
-        try {
-          const elements = croppieContainerRef.current?.querySelectorAll('.cr-boundary, .cr-slider-wrap, .cr-viewport');
-          elements?.forEach(el => el.remove());
-          croppieRef.current.destroy();
-        } catch (error) {
-          console.error('Error cleaning up Croppie on component unmount:', error);
-        }
-        croppieRef.current = null;
-      }
-    };
-  }, []);
+  }, [openCropDialog, imageDataUrl]);
 
   useEffect(() => {
     if (openCropDialog && selectedFile) {
@@ -136,7 +146,7 @@ export default function AccountGeneral() {
       setIsLoading(true);
       const reader = new FileReader();
       reader.onload = (e) => {
-        console.log('FileReader onload');
+        console.log('FileReader onload', e.target.result.substring(0, 50) + '...');
         setIsLoading(false);
         setImageDataUrl(e.target.result);
       };
@@ -144,13 +154,54 @@ export default function AccountGeneral() {
     }
 
     return () => {
+      console.log('Cleanup: setting imageDataUrl to null');
       setImageDataUrl(null);
     };
   }, [openCropDialog, selectedFile]);
 
+  const scaleImage = (file, maxWidth, maxHeight) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width *= maxHeight / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(resolve, 'image/png', 1);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleCrop = () => {
     if (croppieRef.current) {
-      croppieRef.current.result('blob').then((blob) => {
+      croppieRef.current.result({
+        type: 'blob',
+        size: { width: 1584, height: 396 },
+        format: 'png',
+        quality: 1,
+        circle: false
+      }).then((blob) => {
         const newPreviewUrl = URL.createObjectURL(blob);
         setPreviewUrl(newPreviewUrl);
         setValue('photoBackgroundURL', blob, { shouldValidate: true });
@@ -201,11 +252,16 @@ export default function AccountGeneral() {
   );
 
   const handleDropBackground = useCallback(
-    (acceptedFiles) => {
+    async (acceptedFiles) => {
       const file = acceptedFiles[0];
       console.log('File selected', file);
       if (file) {
-        setSelectedFile(file);
+        if (croppieRef.current) {
+          croppieRef.current.destroy();
+          croppieRef.current = null;
+        }
+        const scaledBlob = await scaleImage(file, 1584, 396);
+        setSelectedFile(new File([scaledBlob], file.name, { type: 'image/png' }));
         setOpenCropDialog(true);
       }
     },
@@ -367,41 +423,57 @@ export default function AccountGeneral() {
         </Grid>
       </Grid>
       <Dialog
-  open={openCropDialog}
-  onClose={() => {
-    setOpenCropDialog(false);
-    setImageDataUrl(null);
-    if (croppieRef.current) {
-      console.log('Cleaning up Croppie on dialog close');
-      try {
-        // Attempt to remove Croppie-generated elements manually
-        const elements = croppieContainerRef.current?.querySelectorAll('.cr-boundary, .cr-slider-wrap, .cr-viewport');
-        elements?.forEach(el => el.remove());
-        croppieRef.current.destroy();
-      } catch (error) {
-        console.error('Error cleaning up Croppie on dialog close:', error);
-      }
-      croppieRef.current = null;
-    }
-  }}
-  maxWidth="md"
-  fullWidth
->
-        <DialogTitle>Crop Image</DialogTitle>
-        <DialogContent>
-          <Box sx={{ width: '100%', height: 400, overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        open={openCropDialog}
+        onClose={() => {
+          setOpenCropDialog(false);
+          setImageDataUrl(null);
+          if (croppieRef.current) {
+            console.log('Cleaning up Croppie on dialog close');
+            try {
+              const elements = croppieContainerRef.current?.querySelectorAll('.cr-boundary, .cr-slider-wrap, .cr-viewport');
+              elements?.forEach(el => el.remove());
+              croppieRef.current.destroy();
+            } catch (error) {
+              console.error('Error cleaning up Croppie on dialog close:', error);
+            }
+            croppieRef.current = null;
+          }
+        }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            width: '100%',
+            maxWidth: '800px', // Adjust this value as needed
+            height: 'auto',
+            maxHeight: '80vh',
+            m: 2,
+          },
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
+          Crop Image
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+          <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
             {isLoading ? (
-              <CircularProgress />
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                <CircularProgress />
+              </Box>
             ) : (
-              <div ref={croppieContainerRef} style={{ width: '100%', height: '100%' }}>
-                {!croppieRef.current && 'Croppie not initialized'}
-              </div>
+              <Box sx={{ flexGrow: 1, width: '100%', height: '100%', minHeight: '400px' }}>
+                <div ref={croppieContainerRef} style={{ width: '100%', height: '100%' }} />
+              </Box>
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenCropDialog(false)}>Cancel</Button>
-          <Button onClick={handleCrop}>Crop and Save</Button>
+        <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', py: 2, px: 3 }}>
+          <Button onClick={() => setOpenCropDialog(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleCrop} variant="contained">
+            Crop and Save
+          </Button>
         </DialogActions>
       </Dialog>
     </FormProvider>
