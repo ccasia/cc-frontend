@@ -12,6 +12,11 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import { Checkbox, InputAdornment, FormControlLabel } from '@mui/material';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
+import { Tabs, Tab } from '@mui/material';
+import Slider from '@mui/material/Slider';
+
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -39,6 +44,10 @@ export default function AccountGeneral() {
   // Hooks
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.only('xs'));
+  const isMd = useMediaQuery(theme.breakpoints.only('md'));
+  const isLg = useMediaQuery(theme.breakpoints.up('lg'));
 
   // State
   const [openCropDialog, setOpenCropDialog] = useState(false);
@@ -46,6 +55,9 @@ export default function AccountGeneral() {
   const [previewUrl, setPreviewUrl] = useState(user?.photoBackgroundURL || null);
   const [isLoading, setIsLoading] = useState(false);
   const [imageDataUrl, setImageDataUrl] = useState(null);
+  const [activeTab, setActiveTab] = useState(0);
+  const [zoom, setZoom] = useState(0);
+  const [maxZoom, setMaxZoom] = useState(1.5);
 
   const croppieRef = useRef(null);
   const croppieContainerRef = useRef(null);
@@ -79,6 +91,20 @@ export default function AccountGeneral() {
     defaultValues,
   });
 
+  const getViewportSize = () => {
+    if (isXs) return { width: 300, height: 75 };
+    if (isMd) return { width: 600, height: 150 };
+    if (isLg) return { width: 796, height: 198 };
+    return { width: 400, height: 100 }; // Default size for sm
+  };
+
+  const getBoundarySize = () => {
+    if (isXs) return { width: 320, height: 150 };
+    if (isMd) return { width: 620, height: 250 };
+    if (isLg) return { width: 796, height: 300 };
+    return { width: 420, height: 200 }; // Default size for sm
+  };
+
   const {
     setValue,
     handleSubmit,
@@ -107,10 +133,14 @@ export default function AccountGeneral() {
       console.log('Initializing Croppie with imageDataUrl');
       setTimeout(() => {
         try {
+
+          const viewport = getViewportSize();
+          const boundary = getBoundarySize();
+
           croppieRef.current = new Croppie(croppieContainerRef.current, {
-            viewport: { width: 396, height: 199, type: 'square' },
-            boundary: { width: 500, height: 300 },
-            showZoomer: true,
+            viewport: { ...viewport, type: 'square' },
+            boundary: boundary,
+            showZoomer: false,
             enableOrientation: true,
             enableResize: false,
             enableExif: true,
@@ -118,7 +148,12 @@ export default function AccountGeneral() {
           });
           croppieRef.current.bind({
             url: imageDataUrl,
-            zoom: 0
+            zoom: 0 // Use the zoom state here
+          }).then(() => {
+            // Get the maximum zoom level
+            const newMaxZoom = croppieRef.current._currentZoom;
+            setMaxZoom(newMaxZoom);
+            setZoom(0); // Reset zoom to minimum
           });
           console.log('Croppie initialized successfully');
         } catch (error) {
@@ -138,7 +173,16 @@ export default function AccountGeneral() {
         croppieRef.current = null;
       }
     };
-  }, [openCropDialog, imageDataUrl]);
+  }, [openCropDialog, imageDataUrl, isXs, isMd, isLg]);
+
+  const handleZoomChange = (event, newValue) => {
+    setZoom(newValue);
+    if (croppieRef.current) {
+      // Reverse the zoom calculation
+      const scaledZoom = maxZoom - (newValue * (maxZoom - 1));
+      croppieRef.current.setZoom(scaledZoom);
+    }
+  };
 
   useEffect(() => {
     if (openCropDialog && selectedFile) {
@@ -192,7 +236,7 @@ export default function AccountGeneral() {
       reader.readAsDataURL(file);
     });
   };
-  
+
 
   const handleCrop = () => {
     if (croppieRef.current) {
@@ -205,14 +249,18 @@ export default function AccountGeneral() {
       }).then((blob) => {
         const newPreviewUrl = URL.createObjectURL(blob);
         setPreviewUrl(newPreviewUrl);
-        
+
         const fileName = selectedFile ? selectedFile.name : 'background.png';
         const newFile = new File([blob], fileName, { type: 'image/png' });
-        
+
         setValue('photoBackgroundURL', newFile, { shouldValidate: true });
         setOpenCropDialog(false);
       });
     }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
   };
 
   const onSubmit = handleSubmit(async (data) => {
@@ -223,11 +271,6 @@ export default function AccountGeneral() {
     formData.append('image', data?.photoURL);
     formData.append('backgroundImage', data?.photoBackgroundURL);
     formData.append('data', JSON.stringify(newObj));
-
-    console.log('Form data:', Object.fromEntries(formData));
-    console.log('Background image file:', data?.photoBackgroundURL);
-
-    console.log('Form data:', Object.fromEntries(formData));
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -437,38 +480,71 @@ export default function AccountGeneral() {
         PaperProps={{
           sx: {
             width: '100%',
-            maxWidth: '800px', // Adjust this value as needed
+            maxWidth: '800px',
             height: 'auto',
             maxHeight: '80vh',
             m: 2,
+            display: 'flex',
+            flexDirection: 'column',
           },
         }}
       >
         <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
-          Crop Image
+          Edit Image
         </DialogTitle>
-        <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
-          <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {isLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <Box sx={{ flexGrow: 1, width: '100%', height: '100%', minHeight: '400px' }}>
-                <div ref={croppieContainerRef} style={{ width: '100%', height: '100%' }} />
+        <DialogContent sx={{ p: 0, overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+            {activeTab === 0 && (
+              <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {isLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                    <CircularProgress />
+                  </Box>
+                ) : (
+                  <Box sx={{ flexGrow: 1, width: '100%', height: '100%', minHeight: '198px' }}>
+                    <div ref={croppieContainerRef} style={{ width: '100%', height: '100%' }} />
+                  </Box>
+                )}
               </Box>
             )}
+            {activeTab === 1 && <Box>Filters functionality coming soon</Box>}
+            {activeTab === 2 && <Box>Adjust functionality coming soon</Box>}
           </Box>
+          <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              aria-label="image editing tabs"
+              variant="fullWidth"
+            >
+              <Tab label="Crop" />
+              <Tab label="Filters" disabled />
+              <Tab label="Adjust" disabled />
+            </Tabs>
+          </Box>
+          {activeTab === 0 && (
+            <Box sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
+              <Typography gutterBottom>Zoom</Typography>
+              <Slider
+                value={zoom}
+                onChange={handleZoomChange}
+                aria-labelledby="zoom-slider"
+                min={0}
+                max={1}
+                step={0.01}
+              />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', py: 2, px: 3 }}>
           <Button onClick={() => setOpenCropDialog(false)} color="inherit">
             Cancel
           </Button>
           <Button onClick={handleCrop} variant="contained">
-            Crop and Save
+            Apply and Save
           </Button>
         </DialogActions>
       </Dialog>
     </FormProvider>
-  );
-}
+  )
+};
