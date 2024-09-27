@@ -1,45 +1,49 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
-
+import { useState, useCallback, useRef } from 'react';
 import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
-
-//  import useSocketContext from 'src/socket/hooks/useSocketContext';
-
+import Box from '@mui/material/Box';
 import Iconify from 'src/components/iconify';
+import EmojiPicker from 'emoji-picker-react';
 
 // ----------------------------------------------------------------------
 
-//  const socket = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
-
-export default function ChatMessageInput({
-  disabled,
-  onSendMessage,
-}) {
-  //  const router = useRouter();
-
-  //  const { socket } = useSocketContext();
-
+export default function ChatMessageInput({ disabled, onSendMessage }) {
   const [message, setMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const inputRef = useRef(null); // Reference to the input field
 
-  const handleSendMessage = useCallback(
-    (event) => {
-      if (event.type === 'click' && message.trim() !== '') {
-        console.log('message sent', message);
-        onSendMessage(message);
-        setMessage('');
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    },
-    [message, onSendMessage]
-  );
+  const handleSendMessage = useCallback(() => {
+    const trimmedMessage = message.trim(); // Remove unnecessary spaces
+    if (trimmedMessage !== '') {
+      onSendMessage(trimmedMessage);
+      setMessage(''); // Clear the message after sending
+    }
+  }, [message, onSendMessage]);
 
-  // Handle message input change
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault(); // Prevent default Enter behavior
+      handleSendMessage(); // Send the message
+    }
+  };
+
   const handleChangeMessage = useCallback((event) => {
     setMessage(event.target.value);
   }, []);
 
+  const toggleEmojiPicker = () => {
+    setShowEmojiPicker((prev) => !prev);
+  };
+
+  const handleEmojiSelect = (emojiData) => {
+    setMessage((prev) => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+
+    // Refocus the input field after selecting an emoji
+    inputRef.current.focus();
+  };
 
   return (
     <>
@@ -55,38 +59,35 @@ export default function ChatMessageInput({
           maxHeight: 100,
         }}
       >
-        <IconButton sx={{ alignSelf: 'center' }}>
+        <IconButton onClick={toggleEmojiPicker} sx={{ alignSelf: 'center' }}>
           <Iconify icon="eva:smiling-face-fill" />
         </IconButton>
+
+        {showEmojiPicker && (
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: '60px',
+              left: '10px',
+              bgcolor: 'background.paper',
+              boxShadow: 3,
+              borderRadius: 1,
+              p: 1,
+              zIndex: 1000,
+            }}
+          >
+            <EmojiPicker onEmojiClick={handleEmojiSelect} />
+          </Box>
+        )}
+
         <InputBase
           multiline
           value={message}
-          onKeyUp={handleSendMessage}
+          onKeyDown={handleKeyDown} // Handles sending the message only on Enter
           onChange={handleChangeMessage}
           placeholder="Type a message"
           disabled={disabled}
-          // startAdornment={
-          //   <IconButton>
-          //     <Iconify icon="eva:smiling-face-fill" />
-          //   </IconButton>
-          // }
-          // endAdornment={
-          //   <Stack direction="row" sx={{ flexShrink: 0 }}>
-          //     {/* <IconButton onClick={handleAttach}>
-          //     <Iconify icon="solar:gallery-add-bold" />
-          //   </IconButton>
-          //   <IconButton onClick={handleAttach}>
-          //     <Iconify icon="eva:attach-2-fill" />
-          //   </IconButton> */}
-          //     {/* <IconButton>
-          //     <Iconify icon="solar:microphone-bold" />
-          //   </IconButton> */}
-
-          //     <IconButton onClick={handleSendMessage}>
-          //       <Iconify icon="tabler:send" width={18} />
-          //     </IconButton>
-          //   </Stack>
-          // }
+          inputRef={inputRef} // Attach the ref to the input field
           sx={{
             maxHeight: 100,
             flexGrow: 1,
@@ -98,9 +99,6 @@ export default function ChatMessageInput({
           <Iconify icon="tabler:send" width={18} />
         </IconButton>
       </Stack>
-
-      {/* <Button onclick={socketMessage}>Send </Button> */}
-      {/* <input type="file" ref={fileRef} style={{ display: 'none' }} /> */}
     </>
   );
 }
