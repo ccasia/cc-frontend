@@ -16,16 +16,17 @@ const MediaKitCover = ({ user }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const encodedBackgroundUrl = useMemo(() => {
-    if (user?.photoBackgroundURL) {
+    const backgroundURL = user?.photoBackgroundURL || user?.user?.photoBackgroundURL;
+    if (backgroundURL) {
       // Split the URL at the last '/'
-      const parts = user.photoBackgroundURL.split('/');
+      const parts = backgroundURL.split('/');
       // Encode only the filename part
       const encodedFilename = encodeURIComponent(parts.pop());
       // Join the URL back together
       return [...parts, encodedFilename].join('/');
     }
     return null;
-  }, [user?.photoBackgroundURL]);
+  }, [user?.photoBackgroundURL, user?.user?.photoBackgroundURL]);
 
   return (
     <Box sx={{ pt: 5, pl: 0, pr: 0, pb: 5 }}>
@@ -67,7 +68,7 @@ const MediaKitCover = ({ user }) => {
               transform: 'translate(-50%, 50%)',
               boxShadow: theme.shadows[3],
             }}
-            src={user?.photoURL}
+            src={user?.photoURL || user?.user?.photoURL}
           >
             {user?.name?.[0] || 'N'}
           </Avatar>

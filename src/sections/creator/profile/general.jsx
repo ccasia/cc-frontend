@@ -510,18 +510,6 @@ export default function AccountGeneral() {
             {activeTab === 1 && <Box>Filters functionality coming soon</Box>}
             {activeTab === 2 && <Box>Adjust functionality coming soon</Box>}
           </Box>
-          <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              aria-label="image editing tabs"
-              variant="fullWidth"
-            >
-              <Tab label="Crop" />
-              <Tab label="Filters" disabled />
-              <Tab label="Adjust" disabled />
-            </Tabs>
-          </Box>
           {activeTab === 0 && (
             <Box sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
               <Typography gutterBottom>Zoom</Typography>
