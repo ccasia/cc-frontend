@@ -92,7 +92,6 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
       <DialogContent>
         <Container maxWidth={settings.themeStretch ? false : 'lg'}>
           <MediaKitCover user={creatorData} />
-
           <Tabs
             value={currentTab}
             onChange={(e, val) => setCurrentTab(val)}
