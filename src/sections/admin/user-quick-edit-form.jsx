@@ -146,7 +146,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
             >
               <RHFSelect name="status" label="Status">
                 {USER_STATUS_OPTIONS.map((status) => (
-                  <MenuItem key={status.value} value={status.value}>
+                  <MenuItem key={status.id} value={status.value}>
                     {status.label}
                   </MenuItem>
                 ))}

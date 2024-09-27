@@ -69,13 +69,13 @@ export default function CampaignItem({ campaign, user }) {
     };
 
     // Attach the event listener
-    socket.on('pitch-loading', handlePitchLoading);
-    socket.on('pitch-uploaded', handlePitchSuccess);
+    socket?.on('pitch-loading', handlePitchLoading);
+    socket?.on('pitch-uploaded', handlePitchSuccess);
 
     // Clean-up function
     return () => {
-      socket.off('pitch-loading', handlePitchLoading);
-      socket.off('pitch-uploaded', handlePitchSuccess);
+      socket?.off('pitch-loading', handlePitchLoading);
+      socket?.off('pitch-uploaded', handlePitchSuccess);
     };
   }, [socket, upload]);
 

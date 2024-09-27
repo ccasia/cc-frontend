@@ -15,23 +15,25 @@ const options = {
 // Use SWR to fetch all threads
 export const useGetAllThreads = () => {
   const { data, error, isLoading } = useSWR(endpoints.threads.getAll, fetcher);
-  
+
   const threadrefetch = () => {
-    mutate(endpoints.threads.getAll)
+    mutate(endpoints.threads.getAll);
   };
   return {
     threads: data,
     loading: isLoading,
     error,
-    threadrefetch
-  
+    threadrefetch,
   };
 };
 
 // Use SWR to fetch messages from a specific thread
 export const useGetMessagesFromThread = (threadId) => {
-  const { data, error, isLoading } = useSWR(threadId ? endpoints.threads.getMessage(threadId) : null, fetcher);
-  
+  const { data, error, isLoading } = useSWR(
+    threadId ? endpoints.threads.getMessage(threadId) : null,
+    fetcher
+  );
+
   return {
     message: data,
     loading: isLoading,
@@ -47,7 +49,7 @@ export const createThread = async (title, description, userIds) => {
     return response.data;
   } catch (error) {
     console.error('Error creating thread:', error);
-    throw error; 
+    throw error;
   }
 };
 
@@ -56,7 +58,7 @@ export const archiveThread = async (threadId) => {
   try {
     const response = await axios.put(endpoints.threads.archive(threadId));
     mutate(endpoints.threads.getAll);
-    return response.data.archived; 
+    return response.data.archived;
   } catch (error) {
     console.error(`Error archiving thread with ID ${threadId}:`, error);
     throw error;
@@ -68,16 +70,18 @@ export const unarchiveThread = async (threadId) => {
   try {
     const response = await axios.put(endpoints.threads.unarchive(threadId));
     mutate(endpoints.threads.getAll);
-    return response.data.archived; 
+    return response.data.archived;
   } catch (error) {
     console.error(`Error unarchiving thread with ID ${threadId}:`, error);
     throw error;
   }
 };
 
-
 export const useGetThreadById = (threadId) => {
-  const { data, error, isLoading } = useSWR(threadId ? endpoints.threads.getId(threadId) : null, fetcher);
+  const { data, error, isLoading } = useSWR(
+    threadId ? endpoints.threads.getId(threadId) : null,
+    fetcher
+  );
 
   return {
     thread: data,
@@ -95,7 +99,7 @@ export const addUserToThread = async (threadId, userId) => {
 // Send a message in a thread
 export const sendMessageInThread = async (threadId, content) => {
   const response = await axios.post(endpoints.threads.sendMessage, { threadId, content });
-  
+
   mutate(endpoints.threads.getMessage(threadId));
   return response.data;
 };
@@ -103,8 +107,11 @@ export const sendMessageInThread = async (threadId, content) => {
 // Function to get unread message count
 
 export const useGetUnreadMessageCount = (threadId) => {
-  const { data, error, isLoading } = useSWR(threadId ? endpoints.threads.getUnreadCount(threadId) : null, fetcher);
-  
+  const { data, error, isLoading } = useSWR(
+    threadId ? endpoints.threads.getUnreadCount(threadId) : null,
+    fetcher
+  );
+
   return {
     unreadCount: data ? data.unreadCount : 0,
     loading: isLoading,
@@ -113,19 +120,28 @@ export const useGetUnreadMessageCount = (threadId) => {
 };
 
 export const useTotalUnreadCount = () => {
-  const { data, error } = useSWR(endpoints.threads.getTotalCount, fetcher)
-    // revalidateOnFocus: true, // Re-fetches data when window is focused
-    // refreshInterval: 30000,  // Optionally, re-fetch every 30 seconds
- 
-    const triggerRefetch = () => {
-      mutate(endpoints.threads.getTotalCount);
-    };
-  return {
-    unreadCount: data?.unreadCount ?? 0,
-    isLoading: !error && !data,
-    isError: error,
-    triggerRefetch,
+  const { data, error } = useSWR(endpoints.threads.getTotalCount, fetcher, {
+    revalidateOnReconnect: true,
+    revalidateOnMount: true,
+    revalidateOnFocus: true,
+    revalidateIfStale: true,
+  });
+
+  const triggerRefetch = () => {
+    mutate(endpoints.threads.getTotalCount);
   };
+
+  const memoizedValue = useMemo(
+    () => ({
+      unreadCount: data?.unreadCount ?? 0,
+      isLoading: !error && !data,
+      isError: error,
+      triggerRefetch,
+    }),
+    [data, error]
+  );
+
+  return memoizedValue;
 };
 
 // Function to mark messages as seen
@@ -134,9 +150,8 @@ export const markMessagesAsSeen = async (threadId, triggerTotalUnreadRefetch) =>
     const response = await axios.put(endpoints.threads.markAsSeen(threadId));
     mutate(endpoints.threads.getUnreadCount(threadId));
 
-     
-     // Trigger refetch for the total unread count
-     if (triggerTotalUnreadRefetch) {
+    // Trigger refetch for the total unread count
+    if (triggerTotalUnreadRefetch) {
       triggerTotalUnreadRefetch();
     }
     return response.data.message;
@@ -145,9 +160,6 @@ export const markMessagesAsSeen = async (threadId, triggerTotalUnreadRefetch) =>
     throw error;
   }
 };
-
-
-
 
 export function useGetContacts() {
   const URL = [endpoints.chat, { params: { endpoint: 'contacts' } }];
@@ -171,4 +183,3 @@ export function useGetContacts() {
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
-

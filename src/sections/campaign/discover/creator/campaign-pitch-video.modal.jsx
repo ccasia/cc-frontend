@@ -158,17 +158,17 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
     }
     setSource(undefined);
     setValue('pitchVideo', null);
-    socket.off('video-upload', updateProgress);
-    socket.off('video-upload-done', uploadDone);
+    socket?.off('video-upload', updateProgress);
+    socket?.off('video-upload-done', uploadDone);
   };
 
   useEffect(() => {
-    socket.on('video-upload', updateProgress);
-    socket.on('video-upload-done', uploadDone);
+    socket?.on('video-upload', updateProgress);
+    socket?.on('video-upload-done', uploadDone);
 
     return () => {
-      socket.off('video-upload', updateProgress);
-      socket.off('video-upload-done', uploadDone);
+      socket?.off('video-upload', updateProgress);
+      socket?.off('video-upload-done', uploadDone);
     };
   }, [socket]);
 

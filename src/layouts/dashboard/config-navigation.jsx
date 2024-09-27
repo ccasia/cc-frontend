@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import { paths } from 'src/routes/paths';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useTotalUnreadCount } from 'src/api/chat';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
@@ -54,10 +55,22 @@ export function useNavData() {
   const { user } = useAuthContext();
   const { unreadCount } = useTotalUnreadCount();
 
-  // console.log(user);
+  const { socket } = useSocketContext();
+  const [unreadMessageCount, setUnreadMessageCount] = useState(null);
 
-  // console.log('Unread count from useNavData:', unreadCount);
-  //  console.log("Message counter in NavItem:", msgcounter);
+  useEffect(() => {
+    socket?.on('messageCount', (data) => {
+      setUnreadMessageCount(data.count);
+    });
+
+    return () => {
+      socket?.off('messageCount');
+    };
+  }, [socket]);
+
+  // useEffect(() => {
+  //   setUnreadMessageCount(unreadCount);
+  // }, [unreadCount]);
 
   const adminNavigations = useMemo(
     () => [
@@ -166,7 +179,11 @@ export function useNavData() {
             path: paths.dashboard.roles.root,
             icon: <Iconify icon="oui:app-users-roles" width={25} />,
           },
-
+          {
+            title: 'Template',
+            path: paths.dashboard.template.root,
+            icon: <Iconify icon="hugeicons:task-01" width={25} />,
+          },
           // {
           //   roles: ['superadmin', 'CSM'],
           //   title: 'My Tasks',
@@ -278,7 +295,7 @@ export function useNavData() {
             title: 'Chat',
             path: paths.dashboard.chat.root,
             icon: ICONS.chat,
-            msgcounter: unreadCount > 0 ? unreadCount : undefined,
+            msgcounter: unreadMessageCount || (unreadCount > 0 && unreadCount),
           },
           {
             title: 'My Tasks',
@@ -289,7 +306,7 @@ export function useNavData() {
       },
     ],
 
-    [navigations, unreadCount]
+    [navigations, unreadMessageCount, unreadCount]
   );
 
   return data;

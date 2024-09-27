@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
+import { paths } from 'src/routes/paths';
 import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -99,6 +100,7 @@ export default function JwtLoginView() {
     try {
       const res = await axiosInstance.post(endpoints.auth.resendToken, { token });
       enqueueSnackbar(res.data.message);
+      router.push(paths.auth.jwt.adminLogin);
     } catch (error) {
       enqueueSnackbar(error, { variant: 'error' });
     } finally {
@@ -149,7 +151,7 @@ export default function JwtLoginView() {
       {isTokenValid && (
         <LoadingButton
           fullWidth
-          color="inherit"
+          color="error"
           size="medium"
           variant="outlined"
           onClick={sendNewToken}

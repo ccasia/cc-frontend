@@ -105,7 +105,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
 
   useEffect(() => {
     if (socket) {
-      socket.on('progress', (data) => {
+      socket?.on('progress', (data) => {
         if (submission?.id === data.submissionId) {
           setIsProcessing(true);
           setProgress(data.progress);
@@ -128,13 +128,13 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
       });
     }
     return () => {
-      socket.off('progress');
+      socket?.off('progress');
     };
   }, [socket, submission, reset, progress, campaign, user]);
 
   const handleCancel = () => {
     if (isProcessing) {
-      socket.emit('cancel-processing', { submissionId: submission.id });
+      socket?.emit('cancel-processing', { submissionId: submission.id });
       setIsProcessing(false);
       setProgress(0);
       localStorage.removeItem('preview');

@@ -9,7 +9,6 @@ import NavList from './nav-list';
 // ----------------------------------------------------------------------
 
 function NavSectionVertical({ data, slotProps, ...other }) {
-  console.log(data);
   return (
     <Stack component="nav" id="nav-section-vertical" {...other}>
       {data.map((group, index) => (

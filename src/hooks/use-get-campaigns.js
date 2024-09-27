@@ -54,13 +54,13 @@ const useGetCampaigns = (type) => {
   // useEffect(() => {
   //   const socket = io();
 
-  //   socket.on('campaignStatus', (value) => {
+  //   socket?.on('campaignStatus', (value) => {
   //     getCampaigns();
   //     enqueueSnackbar(`${value.name} is now ${value.status}`);
   //   });
 
   //   return () => {
-  //     socket.off('campaignStatus');
+  //     socket?.off('campaignStatus');
   //     socket.close();
   //   };
   // }, [campaigns, getCampaigns]);

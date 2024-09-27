@@ -865,6 +865,25 @@ function CreateCampaignForm() {
     </Box>
   );
 
+  // const formUpload = (
+  //   <>
+  //     <PDFEditor file="/Agreement_Template_CC.pdf" />
+  //     {/* <PDFViewer
+  //       style={{
+  //         width: '100%',
+  //         height: '80vh',
+  //       }}
+  //     >
+  //       <AgreementTemplate />
+  //     </PDFViewer>
+  //     <ReactSignatureCanvas
+  //       penColor="black"
+  //       backgroundColor="white"
+  //       canvasProps={{ width: 500, height: 200, className: 'sigCanvas' }}
+  //     /> */}
+  //   </>
+  // );
+
   function getStepContent(step) {
     switch (step) {
       case 0:
