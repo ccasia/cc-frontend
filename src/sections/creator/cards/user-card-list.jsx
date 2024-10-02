@@ -17,7 +17,7 @@ export default function UserCardList({ creators }) {
         md: 'repeat(3, 1fr)',
       }}
     >
-      {creators.map((user) => (
+      {creators?.map((user) => (
         <UserCard key={user.id} user={user} />
       ))}
     </Box>

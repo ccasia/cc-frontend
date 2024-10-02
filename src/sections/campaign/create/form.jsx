@@ -2,12 +2,20 @@
 /* eslint-disable no-unused-vars */
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
-import { useSnackbar } from 'notistack';
 import { BarLoader } from 'react-spinners';
+import 'react-pdf/dist/Page/TextLayer.css';
+import { enqueueSnackbar } from 'notistack';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
+// import { rgb, PDFDocument, StandardFonts } from 'pdf-lib';
+
+import PropTypes from 'prop-types';
+import { PDFDocument } from 'pdf-lib';
+import { pdf } from '@react-pdf/renderer';
+import { Page, Document } from 'react-pdf';
 
 import Box from '@mui/material/Box';
 import Step from '@mui/material/Step';
@@ -22,14 +30,22 @@ import {
   Grid,
   Chip,
   Stack,
+  Alert,
   Avatar,
+  Dialog,
   Divider,
   IconButton,
   StepContent,
+  DialogTitle,
   ListItemText,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetTemplate } from 'src/hooks/use-get-template';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
@@ -37,8 +53,11 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { langList } from 'src/contants/language';
+import AgreementTemplate from 'src/template/agreement';
 
 import Iconify from 'src/components/iconify';
+import PDFEditor from 'src/components/pdf/pdf-editor';
+// import PdfViewer from 'src/components/pdf/pdf-viewer';
 import FormProvider, {
   RHFUpload,
   RHFSelect,
@@ -94,7 +113,6 @@ const videoAngle = [
 ];
 
 function CreateCampaignForm() {
-  const { enqueueSnackbar } = useSnackbar();
   const active = localStorage.getItem('activeStep');
   const modal = useBoolean();
 
@@ -110,6 +128,39 @@ function CreateCampaignForm() {
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const { data: admins } = useGetAdmins('active');
   const { user } = useAuthContext();
+  // const [pdf, setPdf] = useState();
+  const [pages, setPages] = useState(0);
+  const pdfModal = useBoolean();
+
+  // useEffect(() => {
+  //   const ha = async () => {
+  //     const response = await fetch('/Agreement_Template_CC.pdf').then((res) => res.arrayBuffer());
+  //     const pdfDoc = await PDFDocument.load(response);
+
+  //     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  //     const hu = pdfDoc.getPages();
+  //     const firstPage = hu[1];
+  //     const { width, height } = firstPage.getSize();
+
+  //     firstPage.drawText('Afiq', {
+  //       x: 100,
+  //       y: 250,
+  //       // size: 50,
+  //       font: helveticaFont,
+  //       color: rgb(0.95, 0.1, 0.1),
+  //       // rotate: degrees(-45),
+  //     });
+
+  //     const pdfBytes = await pdfDoc.save();
+  //     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  //     const blobUrl = URL.createObjectURL(blob);
+  //     setPages(pdfDoc.getPageCount());
+  //     setPdf(response);
+  //   };
+
+  //   ha();
+  // }, []);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -832,38 +883,39 @@ function CreateCampaignForm() {
 
   const a = watch('agreementFrom');
 
-  const formUpload = (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignContent: 'center',
-        gap: 3,
-        p: 3,
-      }}
-    >
-      <Stack direction="row" spacing={1} alignItems="center">
-        <Typography variant="h5">Upload Template Agreement</Typography>
-        <Typography variant="caption" color="text.secondary">
-          ( Make sure the template agreement has a signature )
-        </Typography>
-      </Stack>
+  // const formUpload = (
+  //   // <Box
+  //   //   sx={{
+  //   //     display: 'flex',
+  //   //     flexDirection: 'column',
+  //   //     justifyContent: 'center',
+  //   //     alignContent: 'center',
+  //   //     gap: 3,
+  //   //     p: 3,
+  //   //   }}
+  //   // >
+  //   //   <Stack direction="row" spacing={1} alignItems="center">
+  //   //     <Typography variant="h5">Upload Template Agreement</Typography>
+  //   //     <Typography variant="caption" color="text.secondary">
+  //   //       ( Make sure the template agreement has a signature )
+  //   //     </Typography>
+  //   //   </Stack>
 
-      <RHFUpload
-        type="doc"
-        name="agreementFrom"
-        onDrop={handleDropSingleFile}
-        onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
-      />
+  //   //   <RHFUpload
+  //   //     type="doc"
+  //   //     name="agreementFrom"
+  //   //     onDrop={handleDropSingleFile}
+  //   //     onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
+  //   //   />
 
-      {a && (
-        <Button variant="outlined" color="error" onClick={() => setValue('agreementFrom', '')}>
-          Remove
-        </Button>
-      )}
-    </Box>
-  );
+  //   //   {a && (
+  //   //     <Button variant="outlined" color="error" onClick={() => setValue('agreementFrom', '')}>
+  //   //       Remove
+  //   //     </Button>
+  //   //   )}
+  //   // </Box>
+  //   <>{pdf && <PdfViewer file={pdf} totalPages={pages} pageNumber={1} scale={1.5} />}</>
+  // );
 
   // const formUpload = (
   //   <>
@@ -910,7 +962,7 @@ function CreateCampaignForm() {
       case 4:
         return formSelectAdminManager;
       case 5:
-        return formUpload;
+        return <FormUpload userId={user.id} user={user} modal={pdfModal} />;
       default:
         return 'Unknown step';
     }
@@ -986,8 +1038,6 @@ function CreateCampaignForm() {
             }}
           >
             <Box sx={{ my: 1 }}>
-              {/* <FormProvider methods={methods} onSubmit={onSubmit}> */}
-              {/* {getStepContent(activeStep)} */}
               {activeStep === steps.length - 1 && (
                 <Box sx={{ display: 'flex', m: 2, direction: { xs: 'column', md: 'row' } }}>
                   <Button
@@ -1001,12 +1051,6 @@ function CreateCampaignForm() {
                   <Box sx={{ flexGrow: 1 }} />
                   {activeStep === steps.length - 1 ? (
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                      {/* <LoadingButton
-                        variant="outlined"
-                        startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
-                      >
-                        Preview
-                      </LoadingButton> */}
                       <LoadingButton
                         variant="outlined"
                         onClick={() => onSubmit('DRAFT')}
@@ -1055,7 +1099,300 @@ function CreateCampaignForm() {
         setBrand={setBrandState}
       />
       <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
+      <PDFEditorModal open={pdfModal.value} onClose={pdfModal.onFalse} user={user} />
     </Box>
   );
 }
 export default CreateCampaignForm;
+
+const FormUpload = ({ userId, user, modal }) => {
+  const { data, isLoading: templateLoading, error } = useGetTemplate(userId);
+  // const [url, setUrl] = useState('');
+
+  useEffect(() => {
+    const fetchh = async () => {
+      try {
+        const dataa = await fetch(data?.template?.url);
+        console.log(dataa);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchh();
+  }, [data]);
+
+  return (
+    <>
+      {templateLoading && (
+        <Box display="flex" justifyContent="center">
+          <CircularProgress size={30} />
+        </Box>
+      )}
+      {!templateLoading && !data && (
+        <>
+          <Alert severity="warning" variant="outlined">
+            Template Not found
+          </Alert>
+
+          <Box textAlign="center" my={4}>
+            <Button
+              size="medium"
+              variant="contained"
+              onClick={modal.onTrue}
+              startIcon={<Iconify icon="icon-park-outline:agreement" width={20} />}
+            >
+              Generate a new Agreement Template
+            </Button>
+          </Box>
+        </>
+      )}
+      {!templateLoading && data && (
+        <>
+          <Alert severity="success" variant="outlined">
+            Template found
+          </Alert>
+          {/* <Box>
+            <iframe src={data?.template?.url} title="asd" />
+          </Box> */}
+
+          <Document
+            file="https://storage.googleapis.com/app-test-cult-cretive/agreementTemplate/Afiqqqq_template.pdf"
+            onSourceError={(e) => console.log(e)}
+          >
+            <Page pageNumber={1} />
+          </Document>
+        </>
+      )}
+    </>
+  );
+};
+
+FormUpload.propTypes = {
+  userId: PropTypes.string,
+  user: PropTypes.object,
+  modal: PropTypes.object,
+};
+
+const stepsPDF = ['Fill in missing information', 'Digital Signature'];
+
+const PDFEditorModal = ({ open, onClose, user }) => {
+  const [activeStep, setActiveStep] = useState(0);
+  const [url, setURL] = useState('');
+  const loadingProcess = useBoolean();
+  const [file, setFile] = useState('');
+  const [signURL, setSignURL] = useState('');
+  const [annotations, setAnnotations] = useState([]);
+  const loading = useBoolean();
+
+  const smDown = useResponsive('down', 'sm');
+
+  const schema = Yup.object().shape({
+    name: Yup.string().required('Name is required'),
+    icNumber: Yup.string().required('IC Number is required.'),
+  });
+
+  const methods = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      name: user?.name || '',
+      icNumber: '',
+    },
+    reValidateMode: 'onChange',
+    mode: 'onChange',
+  });
+
+  const { handleSubmit, getValues } = methods;
+
+  const { name, icNumber } = getValues();
+
+  const processPdf = async () => {
+    const blob = await pdf(
+      <AgreementTemplate ADMIN_IC_NUMBER={icNumber} ADMIN_NAME={name} />
+    ).toBlob();
+
+    const pdfUrl = URL.createObjectURL(blob);
+
+    return pdfUrl;
+  };
+
+  const handleNext = async () => {
+    if (activeStep !== stepsPDF.length - 1) {
+      if (name && icNumber) {
+        console.log('Das');
+        try {
+          loadingProcess.onTrue();
+          const test = await processPdf();
+          setURL(test);
+          setActiveStep(activeStep + 1);
+        } catch (error) {
+          console.log(error);
+        } finally {
+          loadingProcess.onFalse();
+        }
+      }
+    }
+  };
+
+  const handlePrev = () => {
+    if (activeStep !== 0) {
+      setActiveStep(activeStep - 1);
+    }
+  };
+
+  const downloadPdf = async () => {
+    try {
+      const existingPdfBytes = await fetch(url).then((res) => res.arrayBuffer());
+
+      const image = await fetch(signURL).then((res) => res.arrayBuffer());
+
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+      const jpgImage = await pdfDoc.embedPng(image);
+
+      // Add annotations to the PDF
+      annotations.forEach((annotation) => {
+        const page = pdfDoc.getPages()[annotation.page - 1];
+
+        page.drawImage(jpgImage, {
+          x: annotation.x,
+          y: page.getHeight() - annotation.y - annotation.height,
+          width: annotation.width,
+          height: annotation.height,
+        });
+      });
+
+      const pdfBytes = await pdfDoc.save();
+
+      // Create a blob and trigger the download
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const signImage = new Blob([image], { type: 'image/png' });
+      return { blob, signImage };
+    } catch (error) {
+      throw new Error(error);
+    }
+    // const urll = URL.createObjectURL(blob);
+    // const a = document.createElement('a');
+    // a.href = urll;
+    // a.download = 'annotated.pdf';
+    // document.body.appendChild(a);
+    // a.click();
+    // document.body.removeChild(a);
+    // URL.revokeObjectURL(url); // Clean up the URL object
+  };
+
+  const onSubmit = handleSubmit(async () => {
+    try {
+      loading.onTrue();
+      const { blob, signImage } = await downloadPdf();
+      const formData = new FormData();
+      formData.append('data', user);
+      formData.append('signedAgreement', blob);
+      formData.append('signatureImage', signImage);
+
+      const res = await axiosInstance.post(
+        endpoints.campaign.agreementTemplate(user.id),
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multiple/form-data',
+          },
+        }
+      );
+      enqueueSnackbar(res?.data?.message);
+      onClose();
+    } catch (error) {
+      console.log(error);
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      loading.onFalse();
+    }
+  });
+
+  return (
+    <Dialog open={open} maxWidth="md" fullWidth fullScreen={smDown}>
+      <FormProvider methods={methods}>
+        <DialogTitle>Agreement Generator</DialogTitle>
+        <DialogContent>
+          <Box>
+            <Stepper activeStep={activeStep}>
+              {stepsPDF.map((label, index) => {
+                const stepProps = {};
+                const labelProps = {};
+                return (
+                  <Step key={label} {...stepProps}>
+                    <StepLabel {...labelProps}>{label}</StepLabel>
+                  </Step>
+                );
+              })}
+            </Stepper>
+            <Box mt={4}>
+              {activeStep === 0 && (
+                <Stack gap={1.5} py={2}>
+                  <RHFTextField name="name" label="Name" />
+                  <RHFTextField name="icNumber" label="IC Number" />
+                </Stack>
+              )}
+              {activeStep === 1 && (
+                <Box>
+                  <PDFEditor
+                    file={url}
+                    annotations={annotations}
+                    setAnnotations={setAnnotations}
+                    setSignURL={setSignURL}
+                    signURL={signURL}
+                  />
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          {activeStep === 0 ? (
+            <Button onClick={onClose} variant="outlined" size="small" color="error">
+              Cancel
+            </Button>
+          ) : (
+            <Button onClick={handlePrev} variant="outlined" size="small">
+              Back
+            </Button>
+          )}
+
+          {activeStep === stepsPDF.length - 1 ? (
+            <LoadingButton color="success" size="small" onClick={onSubmit} loading={loading.value}>
+              Save
+            </LoadingButton>
+          ) : (
+            <LoadingButton onClick={handleNext} loading={loadingProcess.value}>
+              Next
+            </LoadingButton>
+          )}
+        </DialogActions>
+      </FormProvider>
+    </Dialog>
+  );
+};
+
+PDFEditorModal.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  user: PropTypes.object,
+};
+
+function blobToArrayBuffer(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      resolve(reader.result);
+    };
+
+    reader.onerror = () => {
+      reject(new Error('Error reading the Blob as ArrayBuffer'));
+    };
+
+    reader.readAsArrayBuffer(blob);
+  });
+}
