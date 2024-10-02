@@ -206,23 +206,42 @@ export default function ChatNav({}) {
       </Stack>
 
       {/* <Box sx={{ p: 2.5, pt: 0 }}>{!collapseDesktop && renderSearchInput}</Box> */}
+  
 
-      {/* Archive Button  */}
-      <Button
-        sx={{ p: 1, mt: 4 }}
-        variant="text"
-        startIcon={<Icon icon="ic:outline-archive" />}
-        onClick={handleToggleArchive}
-      >
-        {showArchived ? 'Back' : 'Archived Chats'}
-      </Button>
+  {/* Archive Button */}
+  <Button
+  sx={{
+    p: collapseDesktop ? 1 : 2,
+    mt: 4,
+    justifyContent: 'center', 
+    display: 'flex', 
+    alignItems: 'center', 
+    width: collapseDesktop ? 'auto' : '100%',
+    transition: theme.transitions.create('width', {
+      duration: theme.transitions.duration.shorter,
+    }),
+    ...(collapseDesktop && {
+      minWidth: 0,
+      borderRadius: '50%',
+      '& .MuiButton-startIcon': {
+        margin: 0,
+      },
+      '&:hover': {
+        bgcolor: theme.palette.action.hover,
+        borderRadius: '50%',
+      },
+    }),
+  }}
+  variant="text"
+  startIcon={<Icon icon="ic:outline-archive" />}
+  onClick={handleToggleArchive}
+>
+  {!collapseDesktop && (showArchived ? 'Back' : 'Archived Chats')}
+</Button>
 
-      <Stack
-        direction="column"
-        alignItems="center"
-        justifyContent="center"
-        sx={{ p: 2.5, pb: 0, mt: 2 }}
-      ></Stack>
+
+      <Stack direction="column" alignItems="center" justifyContent="center" sx={{ p: 2.5, pb: 0, mt: 2, }}> 
+      </Stack>
       <Scrollbar sx={{ pb: 1 }}>
         {renderList}
         {/* {searchContacts.query && renderListResults}
