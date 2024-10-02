@@ -9,6 +9,7 @@ import useGetCreators from 'src/hooks/use-get-creators';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
@@ -18,10 +19,10 @@ import UserCardList from '../user-card-list';
 
 export default function UserCardsView() {
   const settings = useSettingsContext();
-  const { creators } = useGetCreators();
+  const { data: creators, isLoading } = useGetCreators();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredCreators = creators.filter((creator) =>
+  const filteredCreators = creators?.filter((creator) =>
     creator.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -54,7 +55,14 @@ export default function UserCardsView() {
         />
       </Box>
 
-      {filteredCreators.length < 1 ? (
+      {isLoading && (
+        <LoadingScreen />
+        // <Box>
+        //   <CircularProgress />
+        // </Box>
+      )}
+
+      {!isLoading && filteredCreators?.length < 1 ? (
         <Box>
           <EmptyContent
             filled
@@ -67,6 +75,19 @@ export default function UserCardsView() {
       ) : (
         <UserCardList creators={filteredCreators} />
       )}
+      {/* {filteredCreators?.length < 1 ? (
+        <Box>
+          <EmptyContent
+            filled
+            title="No Creators Found"
+            sx={{
+              py: 10,
+            }}
+          />
+        </Box>
+      ) : (
+        <UserCardList creators={filteredCreators} />
+      )} */}
     </Container>
   );
 }

@@ -106,7 +106,7 @@ export default function ChatNavAccount() {
                 sx: { textTransform: 'capitalize' },
               }}
             >
-              {['online', 'alway', 'busy', 'offline'].map((option) => (
+              {['online', 'away', 'busy', 'offline'].map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>

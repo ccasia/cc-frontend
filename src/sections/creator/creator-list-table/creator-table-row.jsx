@@ -97,29 +97,39 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
         </TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
-          {useCheckPermission(['update:creator']) && (
-            <Tooltip title="Quick Edit" placement="top" arrow>
-              <IconButton
-                color={quickEdit.value ? 'inherit' : 'default'}
-                onClick={quickEdit.onTrue}
-              >
-                <Iconify icon="solar:pen-bold" />
-              </IconButton>
-            </Tooltip>
-          )}
-          {useCheckPermission(['delete:creator']) && (
-            <Tooltip title="Delete" placement="top" arrow>
-              <IconButton
-                onClick={() => {
+          <Tooltip title="Quick Edit" placement="top" arrow>
+            <IconButton
+              color={quickEdit.value ? 'inherit' : 'default'}
+              onClick={quickEdit.onTrue}
+              disabled={!useCheckPermission(['update:client'])}
+            >
+              <Iconify icon="solar:pen-bold" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip
+            title={
+              !useCheckPermission(['delete:creator']) ? 'You do not have permission' : ' Delete'
+            }
+            placement="top"
+            arrow
+          >
+            <IconButton
+              onClick={() => {
+                // eslint-disable-next-line react-hooks/rules-of-hooks
+                if (useCheckPermission(['delete:creator'])) {
                   confirm.onTrue();
                   popover.onClose();
-                }}
-                sx={{ color: 'error.main' }}
-              >
-                <Iconify icon="solar:trash-bin-trash-bold" />
-              </IconButton>
-            </Tooltip>
-          )}
+                }
+              }}
+              sx={{
+                color: 'error.main',
+              }}
+              // disabled={!useCheckPermission(['delete:creator'])}
+            >
+              <Iconify icon="solar:trash-bin-trash-bold" />
+            </IconButton>
+          </Tooltip>
         </TableCell>
       </TableRow>
 
