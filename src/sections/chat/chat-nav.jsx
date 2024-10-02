@@ -2,7 +2,7 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 
-import { Box, Button, Stack, Typography, Drawer } from '@mui/material';
+import { Box, Button, Stack, Typography, Drawer, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
@@ -191,13 +191,11 @@ export default function ChatNav({}) {
             <Box sx={{ flexGrow: 1 }} />
           </>
         )}
-
         <IconButton onClick={handleToggleNav}>
           <Iconify
             icon={collapseDesktop ? 'eva:arrow-ios-forward-fill' : 'eva:arrow-ios-back-fill'}
           />
         </IconButton>
-
         {!collapseDesktop && (
           <IconButton onClick={handleClickCompose}>
             {/* <Iconify width={24} icon="solar:user-plus-bold" /> */}
@@ -206,42 +204,56 @@ export default function ChatNav({}) {
       </Stack>
 
       {/* <Box sx={{ p: 2.5, pt: 0 }}>{!collapseDesktop && renderSearchInput}</Box> */}
-  
 
-  {/* Archive Button */}
-  <Button
-  sx={{
-    p: collapseDesktop ? 1 : 2,
-    mt: 4,
-    justifyContent: 'center', 
-    display: 'flex', 
-    alignItems: 'center', 
-    width: collapseDesktop ? 'auto' : '100%',
-    transition: theme.transitions.create('width', {
-      duration: theme.transitions.duration.shorter,
-    }),
-    ...(collapseDesktop && {
-      minWidth: 0,
-      borderRadius: '50%',
-      '& .MuiButton-startIcon': {
-        margin: 0,
-      },
-      '&:hover': {
-        bgcolor: theme.palette.action.hover,
-        borderRadius: '50%',
-      },
-    }),
-  }}
-  variant="text"
-  startIcon={<Icon icon="ic:outline-archive" />}
-  onClick={handleToggleArchive}
->
-  {!collapseDesktop && (showArchived ? 'Back' : 'Archived Chats')}
-</Button>
+      {/* Archive Button */}
+      <Box
+        sx={{
+          mt: 4,
+          textAlign: 'center',
+        }}
+      >
+        {!collapseDesktop ? (
+          <Button
+            fullWidth
+            sx={{
+              p: collapseDesktop ? 1 : 2,
+              width: collapseDesktop ? 'auto' : '100%',
+              transition: theme.transitions.create('width', {
+                duration: theme.transitions.duration.shorter,
+              }),
+              ...(collapseDesktop && {
+                minWidth: 0,
+                borderRadius: '50%',
+                '& .MuiButton-startIcon': {
+                  margin: 0,
+                },
+                '&:hover': {
+                  bgcolor: theme.palette.action.hover,
+                  borderRadius: '50%',
+                },
+              }),
+            }}
+            variant="text"
+            startIcon={<Icon icon="ic:outline-archive" />}
+            onClick={handleToggleArchive}
+          >
+            {showArchived ? 'Back' : 'Archived Chats'}
+          </Button>
+        ) : (
+          <Tooltip title="Archived Chats">
+            <IconButton>
+              <Icon icon="ic:outline-archive" />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
 
-
-      <Stack direction="column" alignItems="center" justifyContent="center" sx={{ p: 2.5, pb: 0, mt: 2, }}> 
-      </Stack>
+      {/* <Stack
+        direction="column"
+        alignItems="center"
+        justifyContent="center"
+        sx={{ p: 2.5, pb: 0, mt: 2 }}
+      ></Stack> */}
       <Scrollbar sx={{ pb: 1 }}>
         {renderList}
         {/* {searchContacts.query && renderListResults}
