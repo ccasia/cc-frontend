@@ -70,6 +70,8 @@ import CreateBrand from './brandDialog';
 import { useGetAdmins } from './hooks/get-am';
 import SelectTimeline from './steps/select-timeline';
 import TimelineTypeModal from './steps/timeline-type-modal';
+import useGetCompany from 'src/hooks/use-get-company';
+import useGetBrand from 'src/hooks/use-get-brand';
 // import CampaignTaskManagement from './steps/campaign-tasks';
 
 // import NotificationReminder from './steps/notification-reminder';
@@ -82,7 +84,6 @@ const steps = [
   'Admin Manager',
   'Agreement Form',
 ];
-
 export const interestsLists = [
   'Art',
   'Beauty',
@@ -116,7 +117,7 @@ function CreateCampaignForm() {
   const active = localStorage.getItem('activeStep');
   const modal = useBoolean();
 
-  const { data: options, isLoading: companyLoading } = useGetCampaignBrandOption();
+  const { data: options, companyLoading } = useGetCampaignBrandOption();
   const [activeStep, setActiveStep] = useState(parseInt(active, 10) || 0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -161,6 +162,9 @@ function CreateCampaignForm() {
 
   //   ha();
   // }, []);
+
+  
+ 
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -368,10 +372,10 @@ function CreateCampaignForm() {
   const {
     handleSubmit,
     getValues,
+    reset,
     control,
     setValue,
     watch,
-    reset,
     trigger,
     formState: { errors },
   } = methods;
@@ -523,6 +527,7 @@ function CreateCampaignForm() {
     }
   });
 
+
   const formFirstStep = (
     <Box
       gap={2}
@@ -549,6 +554,8 @@ function CreateCampaignForm() {
           alignItems: 'center',
         }}
       >
+        
+        {!companyLoading&&(
         <RHFAutocomplete
           fullWidth
           name="campaignBrand"
@@ -583,6 +590,7 @@ function CreateCampaignForm() {
             );
           }}
         />
+      )}
       </Box>
 
       <RHFSelect name="campaignObjectives" label="Campaign Objectives">
@@ -1096,7 +1104,7 @@ function CreateCampaignForm() {
       <CreateBrand
         open={openCompanyDialog}
         onClose={handleCloseCompanyDialog}
-        setBrand={setBrandState}
+        setBrand={setValue}
       />
       <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
       <PDFEditorModal open={pdfModal.value} onClose={pdfModal.onFalse} user={user} />

@@ -15,6 +15,7 @@ import DialogContent from '@mui/material/DialogContent';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import { mutate } from 'swr';
 
 
 
@@ -26,15 +27,12 @@ export default function CreateCompany({ setCompany,currentUser, open, onClose })
     email: Yup.string().email('Must be a valid email').required('Email is required'),
     phone: Yup.string().required('Phone is required'),
     website: Yup.string().required('Website is required'),
-    registration_number: Yup.string().required('Registration Number is required'),
-    address: Yup.string().required('Address is required'),
+    
   });
   const defaultValues = {
     name: '',
     email: '',
     phone: '',
-    registration_number: '',
-    address: '',
     website: '',
   };
 
@@ -54,9 +52,9 @@ export default function CreateCompany({ setCompany,currentUser, open, onClose })
       const res = await axiosInstance.post(endpoints.company.createOneCompany, data);
       reset();
       onClose();
-      setCompany(data.name);
+      mutate(endpoints.company.getAll);
+      setCompany(res?.data?.company);
       enqueueSnackbar('Company created successfully', { variant: 'success' });
-      console.log(res.data);
     } catch (error) {
       console.log(error);
     }
@@ -87,15 +85,13 @@ export default function CreateCompany({ setCompany,currentUser, open, onClose })
             <RHFTextField name="name" label="Name" fullWidth />
             <RHFTextField name="email" label="Email" fullWidth />
             <RHFTextField name="phone" label="Phone" />
-            <RHFTextField name="registration_number" label="Registration Number" fullWidth />
-            <RHFTextField name="address" label="Address" />
             <RHFTextField name="website" label="Website" fullWidth />
           </Box>
           <DialogActions>
             <Button onClick={onClose}>Cancel</Button>
             <LoadingButton
               type="submit"
-              variant="contained"
+              variant="contained" 
               loading={isSubmitting}
               loadingPosition="start"
               color="primary"
