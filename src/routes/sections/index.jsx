@@ -8,8 +8,8 @@ import VerifyConfirmation from 'src/sections/creator/verifyConfirmation';
 import { mainRoutes } from './main';
 import { authRoutes } from './auth';
 import { adminRoutes } from './admin';
-import { dashboardRoutes } from './dashboard';
 import { publicRoutes } from './public'
+import { dashboardRoutes } from './dashboard';
 
 // ----------------------------------------------------------------------
 

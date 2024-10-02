@@ -1,21 +1,9 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 import { Icon } from '@iconify/react';
 import { keyframes } from '@emotion/react';
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Grid,
-  Stack,
-  Button,
-  useTheme,
-  CardMedia,
-  Typography,
-  useMediaQuery,
-  CircularProgress,
-  Alert,
-  AlertTitle,
-} from '@mui/material';
-import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -147,7 +135,7 @@ TopContentGrid.propTypes = {
 const MediaKitSocialContent = ({ user }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  console.log(user)
+  console.log(user);
   return (
     <Box>
       <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
@@ -202,3 +190,7 @@ const MediaKitSocialContent = ({ user }) => {
 };
 
 export default MediaKitSocialContent;
+
+MediaKitSocialContent.propTypes = {
+  user: PropTypes.object,
+};

@@ -1,9 +1,9 @@
 /* eslint-disable react/prop-types */
-import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 
 import { deepOrange } from '@mui/material/colors';
-import { Box, Stack, Avatar, Typography, alpha, Container, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Stack, Avatar, useTheme, Typography, useMediaQuery } from '@mui/material';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -92,13 +92,11 @@ const MediaKitCover = ({ user }) => {
                   user?.user?.creator?.interests ??
                   []);
 
-            const result = interestsToUse.map((elem, index) => {
-              return (
+            const result = interestsToUse.map((elem, index) => (
                 <Label key={`interest-${index}`}>
                   {typeof elem === 'string' ? elem : elem?.name ?? 'Unnamed Interest'}
                 </Label>
-              );
-            });
+              ));
 
             return result.length > 0 ? result : "No Interests";
           })()}

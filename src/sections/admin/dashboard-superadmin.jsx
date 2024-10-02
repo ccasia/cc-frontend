@@ -126,7 +126,7 @@ const DashboardSuperadmin = () => {
             campaigns
               ?.filter((item) => item.status === 'ACTIVE')
               .map((campaign) => (
-                <TableRow>
+                <TableRow key={campaign.id}>
                   <TableCell align="center">{campaign?.name}</TableCell>
                   <TableCell align="center">
                     <Typography variant="caption" color="text.secondary">

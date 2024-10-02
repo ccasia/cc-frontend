@@ -1,22 +1,30 @@
 import * as Yup from 'yup';
-import { useCallback, useState, useRef, useEffect } from 'react';
+import 'croppie/croppie.css';
+import Croppie from 'croppie';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import Slider from '@mui/material/Slider';
 import Grid from '@mui/material/Unstable_Grid2';
+import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { Checkbox, InputAdornment, FormControlLabel } from '@mui/material';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
-import CircularProgress from '@mui/material/CircularProgress';
-import { Tabs, Tab } from '@mui/material';
-import Slider from '@mui/material/Slider';
-
-import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import CircularProgress from '@mui/material/CircularProgress';
+import {
+  Dialog,
+  Button,
+  Checkbox,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  FormControlLabel,
+} from '@mui/material';
 
 import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -26,21 +34,16 @@ import { useAuthContext } from 'src/auth/hooks';
 import { regions } from 'src/assets/data/regions';
 
 import { useSnackbar } from 'src/components/snackbar';
+import RHFUploadSquare from 'src/components/hook-form/rhf-upload-square';
 import FormProvider, {
   RHFTextField,
   RHFUploadAvatar,
-  RHFAutocomplete
+  RHFAutocomplete,
 } from 'src/components/hook-form';
-
-import RHFUploadSquare from 'src/components/hook-form/rhf-upload-square';
-
-import 'croppie/croppie.css';
-import Croppie from 'croppie';
 
 // ----------------------------------------------------------------------
 
 export default function AccountGeneral() {
-
   // Hooks
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
@@ -91,19 +94,19 @@ export default function AccountGeneral() {
     defaultValues,
   });
 
-  const getViewportSize = () => {
+  const getViewportSize = useCallback(() => {
     if (isXs) return { width: 300, height: 75 };
     if (isMd) return { width: 600, height: 150 };
     if (isLg) return { width: 796, height: 198 };
     return { width: 400, height: 100 }; // Default size for sm
-  };
+  }, [isLg, isMd, isXs]);
 
-  const getBoundarySize = () => {
+  const getBoundarySize = useCallback(() => {
     if (isXs) return { width: 320, height: 150 };
     if (isMd) return { width: 620, height: 250 };
     if (isLg) return { width: 796, height: 300 };
     return { width: 420, height: 200 }; // Default size for sm
-  };
+  }, [isLg, isMd, isXs]);
 
   const {
     setValue,
@@ -128,33 +131,39 @@ export default function AccountGeneral() {
   }, [openCropDialog]);
 
   useEffect(() => {
-    console.log('useEffect triggered', { openCropDialog, imageDataUrl, croppieContainerRef: !!croppieContainerRef.current, croppieRef: !!croppieRef.current });
+    console.log('useEffect triggered', {
+      openCropDialog,
+      imageDataUrl,
+      croppieContainerRef: !!croppieContainerRef.current,
+      croppieRef: !!croppieRef.current,
+    });
     if (openCropDialog && imageDataUrl && croppieContainerRef.current && !croppieRef.current) {
       console.log('Initializing Croppie with imageDataUrl');
       setTimeout(() => {
         try {
-
           const viewport = getViewportSize();
           const boundary = getBoundarySize();
 
           croppieRef.current = new Croppie(croppieContainerRef.current, {
             viewport: { ...viewport, type: 'square' },
-            boundary: boundary,
+            boundary,
             showZoomer: false,
             enableOrientation: true,
             enableResize: false,
             enableExif: true,
-            mouseWheelZoom: 'ctrl'
+            mouseWheelZoom: 'ctrl',
           });
-          croppieRef.current.bind({
-            url: imageDataUrl,
-            zoom: 0 // Use the zoom state here
-          }).then(() => {
-            // Get the maximum zoom level
-            const newMaxZoom = croppieRef.current._currentZoom;
-            setMaxZoom(newMaxZoom);
-            setZoom(0); // Reset zoom to minimum
-          });
+          croppieRef.current
+            .bind({
+              url: imageDataUrl,
+              zoom: 0, // Use the zoom state here
+            })
+            .then(() => {
+              // Get the maximum zoom level
+              const newMaxZoom = croppieRef.current._currentZoom;
+              setMaxZoom(newMaxZoom);
+              setZoom(0); // Reset zoom to minimum
+            });
           console.log('Croppie initialized successfully');
         } catch (error) {
           console.error('Error initializing Croppie:', error);
@@ -173,13 +182,13 @@ export default function AccountGeneral() {
         croppieRef.current = null;
       }
     };
-  }, [openCropDialog, imageDataUrl, isXs, isMd, isLg]);
+  }, [openCropDialog, imageDataUrl, isXs, isMd, isLg, getBoundarySize, getViewportSize]);
 
   const handleZoomChange = (event, newValue) => {
     setZoom(newValue);
     if (croppieRef.current) {
       // Reverse the zoom calculation
-      const scaledZoom = maxZoom - (newValue * (maxZoom - 1));
+      const scaledZoom = maxZoom - newValue * (maxZoom - 1);
       croppieRef.current.setZoom(scaledZoom);
     }
   };
@@ -190,7 +199,7 @@ export default function AccountGeneral() {
       setIsLoading(true);
       const reader = new FileReader();
       reader.onload = (e) => {
-        console.log('FileReader onload', e.target.result.substring(0, 50) + '...');
+        console.log('FileReader onload', `${e.target.result.substring(0, 50)}...`);
         setIsLoading(false);
         setImageDataUrl(e.target.result);
       };
@@ -203,26 +212,24 @@ export default function AccountGeneral() {
     };
   }, [openCropDialog, selectedFile]);
 
-  const scaleImage = (file, maxWidth, maxHeight) => {
-    return new Promise((resolve) => {
+  const scaleImage = (file, maxWidth, maxHeight) =>
+    new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
+          let { width } = img;
+          let { height } = img;
 
           if (width > height) {
             if (width > maxWidth) {
               height *= maxWidth / width;
               width = maxWidth;
             }
-          } else {
-            if (height > maxHeight) {
-              width *= maxHeight / height;
-              height = maxHeight;
-            }
+          } else if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
           }
 
           canvas.width = width;
@@ -235,27 +242,27 @@ export default function AccountGeneral() {
       };
       reader.readAsDataURL(file);
     });
-  };
-
 
   const handleCrop = () => {
     if (croppieRef.current) {
-      croppieRef.current.result({
-        type: 'blob',
-        size: { width: 1584, height: 396 },
-        format: 'png',
-        quality: 1,
-        circle: false
-      }).then((blob) => {
-        const newPreviewUrl = URL.createObjectURL(blob);
-        setPreviewUrl(newPreviewUrl);
+      croppieRef.current
+        .result({
+          type: 'blob',
+          size: { width: 1584, height: 396 },
+          format: 'png',
+          quality: 1,
+          circle: false,
+        })
+        .then((blob) => {
+          const newPreviewUrl = URL.createObjectURL(blob);
+          setPreviewUrl(newPreviewUrl);
 
-        const fileName = selectedFile ? selectedFile.name : 'background.png';
-        const newFile = new File([blob], fileName, { type: 'image/png' });
+          const fileName = selectedFile ? selectedFile.name : 'background.png';
+          const newFile = new File([blob], fileName, { type: 'image/png' });
 
-        setValue('photoBackgroundURL', newFile, { shouldValidate: true });
-        setOpenCropDialog(false);
-      });
+          setValue('photoBackgroundURL', newFile, { shouldValidate: true });
+          setOpenCropDialog(false);
+        });
     }
   };
 
@@ -466,8 +473,10 @@ export default function AccountGeneral() {
           if (croppieRef.current) {
             console.log('Cleaning up Croppie on dialog close');
             try {
-              const elements = croppieContainerRef.current?.querySelectorAll('.cr-boundary, .cr-slider-wrap, .cr-viewport');
-              elements?.forEach(el => el.remove());
+              const elements = croppieContainerRef.current?.querySelectorAll(
+                '.cr-boundary, .cr-slider-wrap, .cr-viewport'
+              );
+              elements?.forEach((el) => el.remove());
               croppieRef.current.destroy();
             } catch (error) {
               console.error('Error cleaning up Croppie on dialog close:', error);
@@ -492,12 +501,21 @@ export default function AccountGeneral() {
         <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
           Edit Image
         </DialogTitle>
-        <DialogContent sx={{ p: 0, overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <DialogContent
+          sx={{ p: 0, overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' }}
+        >
           <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
             {activeTab === 0 && (
               <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
                 {isLoading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                    }}
+                  >
                     <CircularProgress />
                   </Box>
                 ) : (
@@ -534,5 +552,5 @@ export default function AccountGeneral() {
         </DialogActions>
       </Dialog>
     </FormProvider>
-  )
-};
+  );
+}

@@ -70,8 +70,6 @@ import CreateBrand from './brandDialog';
 import { useGetAdmins } from './hooks/get-am';
 import SelectTimeline from './steps/select-timeline';
 import TimelineTypeModal from './steps/timeline-type-modal';
-import useGetCompany from 'src/hooks/use-get-company';
-import useGetBrand from 'src/hooks/use-get-brand';
 // import CampaignTaskManagement from './steps/campaign-tasks';
 
 // import NotificationReminder from './steps/notification-reminder';

@@ -19,31 +19,30 @@ RHFUploadSquare.propTypes = {
 
 export default function RHFUploadSquare({ name, helperText, previewUrl, ...other }) {
   const { control } = useFormContext();
+  const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections } = useDropzone({
+    multiple: false,
+    ...other,
+    // onDrop: (acceptedFiles) => {
+    //   if (acceptedFiles.length > 0) {
+    //     field.onChange(acceptedFiles[0]);
+    //     if (other.onDrop) {
+    //       other.onDrop(acceptedFiles);
+    //     }
+    //   }
+    // },
+  });
 
   return (
     <Controller
       name={name}
       control={control}
       render={({ field, fieldState: { error } }) => {
-        const checkError = !!error && !field.value;
-
-        const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections } =
-          useDropzone({
-            multiple: false,
-            ...other
-            // onDrop: (acceptedFiles) => {
-            //   if (acceptedFiles.length > 0) {
-            //     field.onChange(acceptedFiles[0]);
-            //     if (other.onDrop) {
-            //       other.onDrop(acceptedFiles);
-            //     }
-            //   }
-            // },
-          });
+        // const checkError = !!error && !field.value;
 
         const hasFile = !!field.value || !!previewUrl;
         const hasError = isDragReject || !!error;
-        const imgUrl = previewUrl || (typeof field.value === 'string' ? field.value : field.value?.preview);
+        const imgUrl =
+          previewUrl || (typeof field.value === 'string' ? field.value : field.value?.preview);
 
         const renderPreview = hasFile && (
           <Image

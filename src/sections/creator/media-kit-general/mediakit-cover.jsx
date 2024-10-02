@@ -3,8 +3,8 @@ import React, {useMemo} from 'react';
 
 import { deepOrange } from '@mui/material/colors';
 import { Box, Stack, Avatar, useTheme, Typography } from '@mui/material';
-import Label from 'src/components/label';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const MediaKitCover = ({ user }) => {

@@ -6,6 +6,7 @@ import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 
 import { useAuthContext } from 'src/auth/hooks';
+
 import Label from 'src/components/label';
 
 // ----------------------------------------------------------------------
