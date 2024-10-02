@@ -79,16 +79,17 @@ export default function ChatMessageItem({ message }) {
           bgcolor: 'primary.lighter',
         }),
         ...(isAdmin && {
-          bgcolor: '#efc800',
+          bgcolor: '#128c7e',
           color: 'black',
         }),
         ...(isSprAdmin && {
+//           bgcolor: ' #128c7e ',
           bgcolor: '#FFC300',
           color: 'black',
         }),
       }}
     >
-      <Typography
+      <Typography 
         variant="inherit"
         textTransform="none"
         sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
