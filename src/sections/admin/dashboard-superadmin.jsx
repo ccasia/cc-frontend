@@ -32,7 +32,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 const DashboardSuperadmin = () => {
   const { campaigns, isLoading } = useGetCampaigns();
-  const { creators } = useGetCreators();
+  const { data: creators } = useGetCreators();
 
   const theme = useTheme();
   const setting = useSettingsContext();

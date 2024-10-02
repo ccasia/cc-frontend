@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import dayjs from 'dayjs';
 import { Page, Text, View, Font, Link, Image, Document, StyleSheet } from '@react-pdf/renderer';
 
 Font.register({
@@ -104,6 +105,9 @@ export default function AgreementTemplate({
   AGREEMENT_ENDDATE,
   NOW_DATE,
   VERSION_NUMBER,
+  ADMIN_IC_NUMBER,
+  ADMIN_NAME,
+  SIGNATURE,
 }) {
   return (
     <Document pageLayout="singlePage">
@@ -278,18 +282,19 @@ export default function AgreementTemplate({
               }}
             >
               <Text>Signature of</Text>
+
               <View>
                 <View style={styles.signatureChild}>
                   <Text>Name: </Text>
-                  <Text>Norlina Esa</Text>
+                  <Text>{ADMIN_NAME}</Text>
                 </View>
                 <View style={styles.signatureChild}>
                   <Text>NRIC: </Text>
-                  <Text>850717-56-5000</Text>
+                  <Text>{ADMIN_IC_NUMBER}</Text>
                 </View>
                 <View style={styles.signatureChild}>
                   <Text>Date: </Text>
-                  <Text>{NOW_DATE}</Text>
+                  <Text>{dayjs().format('LL')}</Text>
                 </View>
               </View>
             </View>

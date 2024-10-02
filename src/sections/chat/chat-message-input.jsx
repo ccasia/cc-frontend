@@ -1,62 +1,77 @@
 import PropTypes from 'prop-types';
-import { EmojiPicker, Emoji } from 'react-emoji-search';
-import { useState, useCallback } from 'react';
-
+import { useState, useCallback, useRef } from 'react';
 import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
-
-//  import useSocketContext from 'src/socket/hooks/useSocketContext';
-
+import Box from '@mui/material/Box';
 import Iconify from 'src/components/iconify';
+import EmojiPicker from 'emoji-picker-react';
 
 // ----------------------------------------------------------------------
 
-//  const socket = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
-
-export default function ChatMessageInput({
-  disabled,
-  onSendMessage,
-}) {
-  //  const router = useRouter();
-
-  //  const { socket } = useSocketContext();
-
+export default function ChatMessageInput({ disabled, onSendMessage }) {
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
 
-  const isEmoji = (char) => 
-     char.length === 1 && char !== ' ' // Single-length characters are typically emojis
-  ;
-  const handleEmojiClick = (emoji) => {
-    setMessage(prevMessage => prevMessage + emoji); // Append emoji to the message
-    setShowEmojiPicker(false); // Hide emoji picker after selection
-  };
+//   const isEmoji = (char) => 
+//      char.length === 1 && char !== ' ' // Single-length characters are typically emojis
+//   ;
+//   const handleEmojiClick = (emoji) => {
+//     setMessage(prevMessage => prevMessage + emoji); // Append emoji to the message
+//     setShowEmojiPicker(false); // Hide emoji picker after selection
+//   };
   
-  const handleSendMessage = useCallback(
-    (event) => {
-      if (event.type === 'click' || (event.type === 'keyup' && event.key === 'Enter' && !event.shiftKey)) {
-        if (message.trim() !== '') {
-          console.log('message sent:', message);
-          onSendMessage(message);
-          setMessage('');
-        }
-      } else if (event.type === 'keyup' && event.key === 'Enter' && event.shiftKey) {
-        event.preventDefault(); 
-        setMessage((prevMessage) => prevMessage); 
-      }
-    },
-    [message, onSendMessage]
-  );
+//   const handleSendMessage = useCallback(
+//     (event) => {
+//       if (event.type === 'click' || (event.type === 'keyup' && event.key === 'Enter' && !event.shiftKey)) {
+//         if (message.trim() !== '') {
+//           console.log('message sent:', message);
+//           onSendMessage(message);
+//           setMessage('');
+//         }
+//       } else if (event.type === 'keyup' && event.key === 'Enter' && event.shiftKey) {
+//         event.preventDefault(); 
+//         setMessage((prevMessage) => prevMessage); 
+//       }
+//     },
+//     [message, onSendMessage]
+//   );
   
 
-  // Handle message input change
+  const inputRef = useRef(null); // Reference to the input field
+
+  const handleSendMessage = useCallback(() => {
+    const trimmedMessage = message.trim(); // Remove unnecessary spaces
+    if (trimmedMessage !== '') {
+      onSendMessage(trimmedMessage);
+      setMessage(''); // Clear the message after sending
+    }
+  }, [message, onSendMessage]);
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault(); // Prevent default Enter behavior
+      handleSendMessage(); // Send the message
+    }
+  };
+
   const handleChangeMessage = useCallback((event) => {
     setMessage(event.target.value);
   }, []);
 
-  
+  const toggleEmojiPicker = () => {
+    setShowEmojiPicker((prev) => !prev);
+  };
+
+  const handleEmojiSelect = (emojiData) => {
+    setMessage((prev) => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+
+    // Refocus the input field after selecting an emoji
+    inputRef.current.focus();
+  };
+
   return (
     <>
       <Stack
@@ -71,64 +86,65 @@ export default function ChatMessageInput({
           maxHeight: 100,
         }}
       >
+
         {/* <IconButton sx={{ alignSelf: 'center' }}>
           <Iconify icon="eva:smiling-face-fill" />
 
         </IconButton> */}
 
-        <IconButton onClick={() => setShowEmojiPicker((prev) => !prev)} sx={{ alignSelf: 'center' }}>
+//         <IconButton onClick={() => setShowEmojiPicker((prev) => !prev)} sx={{ alignSelf: 'center' }}>
+//           <Iconify icon="eva:smiling-face-fill" />
+//         </IconButton>
+
+//         {/* Emoji Picker */}
+//         {showEmojiPicker && (
+//           <div
+//           style={{
+//             position: 'absolute',
+//             bottom: 60,
+//             width: '400px', 
+//             height: '250px', 
+//             overflowY: 'auto', 
+//             backgroundColor: '#fff', 
+//             border: '1px solid #ddd',
+//             borderRadius: '8px',
+//             zIndex: 1000,
+//             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', 
+//           }}
+//         >
+//           <EmojiPicker onEmojiClick={handleEmojiClick} emojiSize={24} emojiSpacing={8} />
+//         </div>
+//         )}
+      
+
+        <IconButton onClick={toggleEmojiPicker} sx={{ alignSelf: 'center' }}>
           <Iconify icon="eva:smiling-face-fill" />
         </IconButton>
 
-        {/* Emoji Picker */}
         {showEmojiPicker && (
-          <div
-          style={{
-            position: 'absolute',
-            bottom: 60,
-            width: '400px', 
-            height: '250px', 
-            overflowY: 'auto', 
-            backgroundColor: '#fff', 
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            zIndex: 1000,
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', 
-          }}
-        >
-          <EmojiPicker onEmojiClick={handleEmojiClick} emojiSize={24} emojiSpacing={8} />
-        </div>
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: '60px',
+              left: '10px',
+              bgcolor: 'background.paper',
+              boxShadow: 3,
+              borderRadius: 1,
+              p: 1,
+              zIndex: 1000,
+            }}
+          >
+            <EmojiPicker onEmojiClick={handleEmojiSelect} />
+          </Box>
         )}
-      
         <InputBase
           multiline
           value={message}
-          onKeyUp={handleSendMessage}
+          onKeyDown={handleKeyDown} // Handles sending the message only on Enter
           onChange={handleChangeMessage}
           placeholder="Type a message"
           disabled={disabled}
-          // startAdornment={
-          //   <IconButton>
-          //     <Iconify icon="eva:smiling-face-fill" />
-          //   </IconButton>
-          // }
-          // endAdornment={
-          //   <Stack direction="row" sx={{ flexShrink: 0 }}>
-          //     {/* <IconButton onClick={handleAttach}>
-          //     <Iconify icon="solar:gallery-add-bold" />
-          //   </IconButton>
-          //   <IconButton onClick={handleAttach}>
-          //     <Iconify icon="eva:attach-2-fill" />
-          //   </IconButton> */}
-          //     {/* <IconButton>
-          //     <Iconify icon="solar:microphone-bold" />
-          //   </IconButton> */}
-
-          //     <IconButton onClick={handleSendMessage}>
-          //       <Iconify icon="tabler:send" width={18} />
-          //     </IconButton>
-          //   </Stack>
-          // }
+          inputRef={inputRef} // Attach the ref to the input field
           sx={{
             maxHeight: 100,
             flexGrow: 1,
@@ -140,9 +156,6 @@ export default function ChatMessageInput({
           <Iconify icon="tabler:send" width={18} />
         </IconButton>
       </Stack>
-
-      {/* <Button onclick={socketMessage}>Send </Button> */}
-      {/* <input type="file" ref={fileRef} style={{ display: 'none' }} /> */}
     </>
   );
 }

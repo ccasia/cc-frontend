@@ -15,7 +15,7 @@ import TableContainer from '@mui/material/TableContainer';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { fCurrency } from 'src/utils/format-number';
+// import { fCurrency } from 'src/utils/format-number';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -97,7 +97,7 @@ function AppNewInvoiceRow({ row }) {
         <TableCell>{row.campaign}</TableCell>
         <TableCell>{dayjs(row.issued).format('DD MMM YYYY')}</TableCell>
 
-        <TableCell>{fCurrency(row.price)}</TableCell>
+        <TableCell>{`RM ${new Intl.NumberFormat('en-MY', { minimumFractionDigits: 0 }).format(row.price)}`}</TableCell>
 
         <TableCell>
           <Label

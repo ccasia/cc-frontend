@@ -1,4 +1,4 @@
-FROM node:21-bookworm-slim as development
+FROM node:18-alpine as development
 
 # RUN apt-get update && \
 #     apt-get install -y \
@@ -8,7 +8,7 @@ FROM node:21-bookworm-slim as development
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json yarn.lock ./
 
 RUN yarn install
 
