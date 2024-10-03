@@ -9,6 +9,7 @@ import {
   Stack,
   Button,
   Divider,
+  Backdrop,
   IconButton,
   Typography,
   ListItemText,
@@ -43,6 +44,7 @@ export default function CampaignListView() {
   const [filter, setFilter] = useState('');
   const { user } = useAuthContext();
   const dialog = useBoolean();
+  const backdrop = useBoolean(!user?.creator?.isFormCompleted);
 
   const load = useBoolean();
   const [upload, setUpload] = useState([]);
@@ -211,7 +213,51 @@ export default function CampaignListView() {
             Saved
           </Button>
         </Stack>
-        {!user?.creator?.isFormCompleted && (
+
+        <Backdrop
+          open={backdrop.value}
+          sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          // onClick={backdrop.onFalse}
+        >
+          <Box
+            sx={{
+              bgcolor: (theme) => theme.palette.background.paper,
+              borderRadius: 2,
+              p: 4,
+              pb: 2,
+              width: 600,
+              position: 'relative',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'inline-block',
+                position: 'absolute',
+                top: 20,
+                right: 20,
+              }}
+            >
+              <IconButton onClick={backdrop.onFalse}>
+                <Iconify icon="mingcute:close-fill" />
+              </IconButton>
+            </Box>
+            <ListItemText
+              primary="Complete Your Profile Before Making a Pitch"
+              secondary="Before you can submit a pitch for this campaign, please complete your profile form. This ensures we have all the necessary information for your submission. Click below to finish filling out your form and get ready to pitch!"
+              primaryTypographyProps={{
+                variant: 'subtitle1',
+              }}
+              secondaryTypographyProps={{
+                variant: 'subtitle2',
+              }}
+              sx={{
+                my: 3,
+              }}
+            />
+            <CreatorForm dialog={dialog} user={user} display backdrop={backdrop} />
+          </Box>
+        </Backdrop>
+        {/* {!user?.creator?.isFormCompleted && (
           <Button
             size="small"
             variant="contained"
@@ -220,7 +266,7 @@ export default function CampaignListView() {
           >
             Complete Form
           </Button>
-        )}
+        )} */}
       </Stack>
 
       <Box sx={{ my: 2 }} />

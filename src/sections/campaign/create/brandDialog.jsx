@@ -1,33 +1,25 @@
 import * as Yup from 'yup';
 import { mutate } from 'swr';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
-import Menu from '@mui/material/Menu';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import MenuItem from '@mui/material/MenuItem';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
+import { InputAdornment } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import { Stack, Avatar, ListItemText } from '@mui/material';
-
-import useGetCompany from 'src/hooks/use-get-company';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import Iconify from 'src/components/iconify/iconify';
+import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
-
-import CreateCompany from './companyDialog';
 
 const interestsLists = [
   'Art',
@@ -44,30 +36,14 @@ const interestsLists = [
   'Technology',
   'Travel',
 ];
-export default function CreateBrand({ setBrand, open, onClose }) {
-  const [openCompany, setOpenCompany] = useState(false);
-  const [companyState, setCompanyState] = useState('');
-  const [anchorEl, setAnchorEl] = useState(null);
-  const openMenu = Boolean(anchorEl);
-  // const { company, isLoading } = useCompany();
-  const { data: company, isLoading } = useGetCompany();
-
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
+export default function CreateBrand({ setBrand, open, onClose, brandName, client }) {
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().email('Must be a valid email').required('Email is required'),
     phone: Yup.string().required('Phone is required'),
-    companyChoice: Yup.object().required('Company is required'),
     brandInstagram: Yup.string().required('Instagram is required'),
-    brandTiktok: Yup.string().required('Tiktok is required'),
-    brandFacebook: Yup.string().required('Facebook is required'),
+    brandTiktok: Yup.string(),
+    brandFacebook: Yup.string(),
     brandIndustries: Yup.array()
       .min(1, 'At least one Brand Interests is required')
       .max(3, 'Maximum of three Brand Interests is required')
@@ -75,10 +51,10 @@ export default function CreateBrand({ setBrand, open, onClose }) {
   });
 
   const defaultValues = {
-    name: '',
+    name: brandName || '',
     email: '',
     phone: '',
-    companyChoice: {},
+    client: client || {},
     brandInstagram: '',
     brandTiktok: '',
     brandFacebook: '',
@@ -100,24 +76,29 @@ export default function CreateBrand({ setBrand, open, onClose }) {
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.post(endpoints.company.createOneBrand, data);
-      console.log(res.data);
       reset();
       onClose();
       mutate(endpoints.company.getOptions);
-      setBrand('campaignBrand', res?.data?.brand);
-      enqueueSnackbar('Brand created successfully', { variant: 'success' });
-      console.log(res.status);
+      setBrand(res?.data?.brand);
+      enqueueSnackbar(res?.data?.message, { variant: 'success' });
     } catch (error) {
-      console.log(error);
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
     }
   });
 
   useEffect(() => {
-    if (companyState !== '') {
-      setValue('companyChoice', companyState);
+    if (brandName) {
+      setValue('name', brandName);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyState]);
+  }, [brandName, setValue]);
+
+  useEffect(() => {
+    if (client) {
+      setValue('client', client);
+    }
+  }, [client, setValue]);
 
   return (
     <Dialog
@@ -128,7 +109,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
       }}
       fullWidth
     >
-      <DialogTitle>Create Client</DialogTitle>
+      <DialogTitle>Create Brand for {client?.name}</DialogTitle>
       <DialogContent>
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <Box
@@ -142,7 +123,7 @@ export default function CreateBrand({ setBrand, open, onClose }) {
             }}
           >
             <RHFTextField name="name" label="Name" fullWidth />
-            <Box
+            {/* <Box
               sx={{
                 display: 'flex',
                 flexDirection: 'row',
@@ -227,26 +208,45 @@ export default function CreateBrand({ setBrand, open, onClose }) {
                   </MenuItem>
                 </Menu>
               </Box>
-              {/* <Button
-                  variant="contained"
-                  sx={{
-                    width: '90%',
-                    height: '90%',
-                    mx: 1,
-                  }}
-                  onClick={() => {
-                    setOpenCompany(true);
-                  }}
-                >
-                  Create Company
-                </Button> */}
-              {/* </Box> */}
-            </Box>
+            </Box> */}
             <RHFTextField name="email" label="Email" fullWidth />
             <RHFTextField name="phone" label="Phone" />
-            <RHFTextField key="brandInstagram" name="brandInstagram" label="Instagram" />
-            <RHFTextField key="brandTiktok" name="brandTiktok" label="Tiktok" />
-            <RHFTextField key="brandFacebook" name="brandFacebook" label="Facebook" />
+            <RHFTextField
+              key="brandInstagram"
+              name="brandInstagram"
+              label="Instagram"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="mdi:instagram" width={20} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <RHFTextField
+              key="brandTiktok"
+              name="brandTiktok"
+              label="Tiktok"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="ic:baseline-tiktok" width={20} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <RHFTextField
+              key="brandFacebook"
+              name="brandFacebook"
+              label="Facebook"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="mage:facebook" width={20} />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
             <RHFAutocomplete
               key="brandIndustries"
@@ -277,27 +277,15 @@ export default function CreateBrand({ setBrand, open, onClose }) {
             />
           </Box>
           <DialogActions>
-            <Button onClick={onClose}>Cancel</Button>
-            <LoadingButton
-              type="submit"
-              variant="contained"
-              loading={isSubmitting}
-              loadingPosition="start"
-              startIcon
-              color="primary"
-            >
+            <Button size="small" onClick={onClose}>
+              Cancel
+            </Button>
+            <LoadingButton size="small" type="submit" variant="contained" loading={isSubmitting}>
               Create
             </LoadingButton>
           </DialogActions>
         </FormProvider>
       </DialogContent>
-      <CreateCompany
-        open={openCompany}
-        onClose={() => {
-          setOpenCompany(false);
-        }}
-        setCompany={setCompanyState}
-      />
     </Dialog>
   );
 }
@@ -306,4 +294,6 @@ CreateBrand.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   setBrand: PropTypes.func,
+  brandName: PropTypes.string,
+  client: PropTypes.string,
 };

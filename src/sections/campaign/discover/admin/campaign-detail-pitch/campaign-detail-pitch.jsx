@@ -28,7 +28,6 @@ import MediaKitModal from '../media-kit-modal';
 import CampaignDetailPitchContent from './campaign-detail-pitch-content';
 
 const CampaignDetailPitch = ({ pitches, timelines }) => {
-  console.log(pitches)
   const smUp = useResponsive('up', 'sm');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [search, setSearch] = useState();
@@ -37,7 +36,6 @@ const CampaignDetailPitch = ({ pitches, timelines }) => {
   const router = useRouter();
   const theme = useTheme();
   const drawer = useBoolean();
-  // const [currentTab, setCurrentTab] = useState(null);
 
   const filteredPitches = useMemo(
     () =>

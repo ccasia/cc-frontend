@@ -53,7 +53,6 @@ const CampaignDetailView = ({ id }) => {
   const idd = open ? 'simple-popper' : undefined;
 
   const currentCampaign = campaigns && campaigns.find((campaign) => campaign.id === id);
-  console.log(currentCampaign);
 
   let timeline =
     currentCampaign?.defaultcampaignTimeline || currentCampaign?.customcampaignTimeline;

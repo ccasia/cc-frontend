@@ -91,13 +91,6 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
     dialog.onFalse();
   };
 
-  // const loadSignature = (sign) => {
-  //   if (sign) {
-  //     console.log('Loading saved signature:', sign);
-  //     signRef.current?.fromDataURL(sign);
-  //   }
-  // };
-
   const handleMouseEnter = () => {
     setIsHovered(true);
   };
@@ -107,7 +100,7 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
   };
 
   return (
-    <Box overflow="hidden">
+    <Box>
       <Box
         zIndex={3}
         p={1.5}
@@ -194,13 +187,18 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
         </Stack>
       </Box>
 
-      <Box overflow="auto" position="relative" height={400}>
+      <Box
+        sx={{
+          overflow: 'auto',
+        }}
+        height={400}
+      >
         <Box
           sx={{
             scale,
-            height: 1,
             transformOrigin: 'top left',
             width: `${100 / scale}%`,
+
             textAlign: 'center',
           }}
         >
@@ -395,7 +393,8 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
           </Box>
         </Box>
       </Box>
-      <Dialog open={dialog.value} onClose={dialog.onFalse}>
+
+      <Dialog open={dialog.value} onClose={dialog.onFalse} maxWidth="sm">
         <DialogTitle>Digital Signature</DialogTitle>
         <DialogContent>
           <Box>

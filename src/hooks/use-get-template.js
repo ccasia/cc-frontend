@@ -8,6 +8,7 @@ export const useGetTemplate = (id) => {
     revalidateIfStale: true,
     revalidateOnMount: true,
     revalidateOnReconnect: true,
+    revalidateOnFocus: true,
   });
 
   const memoizedValue = useMemo(() => ({ data, isLoading, error }), [data, isLoading, error]);

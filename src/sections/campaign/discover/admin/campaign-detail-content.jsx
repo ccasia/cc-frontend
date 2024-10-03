@@ -1,6 +1,9 @@
-import React from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { Page, pdfjs, Document } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
 import {
   Box,
@@ -12,6 +15,7 @@ import {
   Divider,
   ListItem,
   TableRow,
+  Collapse,
   TableHead,
   TableCell,
   TableBody,
@@ -26,8 +30,14 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
+
 const CampaignDetailContent = ({ campaign }) => {
   const pdf = useBoolean();
+  const [pages, setPages] = useState();
 
   const renderGallery =
     campaign?.campaignBrief?.images.length < 2 ? (
@@ -181,39 +191,45 @@ const CampaignDetailContent = ({ campaign }) => {
         }}
       />
 
-      <Stack direction="column">
-        <Typography variant="h5">Campaign Do&apos;s</Typography>
-        <List>
-          {campaign?.campaignBrief?.campaigns_do.map((item, index) => (
-            <ListItem key={index}>
-              <ListItemIcon>
-                <Iconify icon="octicon:dot-16" sx={{ color: 'success.main' }} />
-              </ListItemIcon>
-              <ListItemText primary={item.value} />
-            </ListItem>
-          ))}
-        </List>
-      </Stack>
+      {campaign?.campaignBrief?.campaigns_do?.length < 1 && (
+        <Stack direction="column">
+          <Typography variant="h5">Campaign Do&apos;s</Typography>
+          <List>
+            {campaign?.campaignBrief?.campaigns_do.map((item, index) => (
+              <ListItem key={index}>
+                <ListItemIcon>
+                  <Iconify icon="octicon:dot-16" sx={{ color: 'success.main' }} />
+                </ListItemIcon>
+                <ListItemText primary={item.value} />
+              </ListItem>
+            ))}
+          </List>
+        </Stack>
+      )}
 
-      <Stack direction="column">
-        <Typography variant="h5">Campaign Dont&apos;s</Typography>
-        <List>
-          {campaign?.campaignBrief?.campaigns_dont.map((item, index) => (
-            <ListItem key={index}>
-              <ListItemIcon>
-                <Iconify icon="octicon:dot-16" sx={{ color: 'error.main' }} />
-              </ListItemIcon>
-              <ListItemText primary={item.value} />
-            </ListItem>
-          ))}
-        </List>
-      </Stack>
+      {campaign?.campaignBrief?.campaigns_dont.length < 1 && (
+        <>
+          <Stack direction="column">
+            <Typography variant="h5">Campaign Dont&apos;s</Typography>
+            <List>
+              {campaign?.campaignBrief?.campaigns_dont.map((item, index) => (
+                <ListItem key={index}>
+                  <ListItemIcon>
+                    <Iconify icon="octicon:dot-16" sx={{ color: 'error.main' }} />
+                  </ListItemIcon>
+                  <ListItemText primary={item.value} />
+                </ListItem>
+              ))}
+            </List>
+          </Stack>
 
-      <Divider
-        sx={{
-          borderStyle: 'dashed',
-        }}
-      />
+          <Divider
+            sx={{
+              borderStyle: 'dashed',
+            }}
+          />
+        </>
+      )}
 
       <Stack>
         <Typography variant="h5">Campaign timeline</Typography>
@@ -273,17 +289,36 @@ const CampaignDetailContent = ({ campaign }) => {
           <Button variant="contained" onClick={pdf.onToggle}>
             {pdf.value ? 'Collapse' : 'View'}
           </Button>
-          {pdf.value && (
-            <iframe
-              src="https://storage.googleapis.com/cultcreative-dev-team-bucket/creatorAgreements/agreement_template.docx"
-              style={{
-                borderRadius: 10,
-                width: '100%',
-                height: 900,
-              }}
-              title="PDF Viewer"
-            />
-          )}
+          <Collapse in={pdf.value}>
+            <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
+              <Box
+                sx={{
+                  display: 'inline-block',
+                }}
+              >
+                {campaign?.campaignBrief?.agreementFrom && (
+                  <Document
+                    file={campaign?.campaignBrief?.agreementFrom}
+                    onLoadSuccess={({ numPages }) => setPages(numPages)}
+                    renderMode="canvas"
+                  >
+                    <Stack spacing={2}>
+                      {pages &&
+                        Array.from({ length: pages }, (_, index) => (
+                          <Page
+                            key={index}
+                            pageIndex={index}
+                            pageNumber={index + 1}
+                            scale={1}
+                            renderTextLayer={false}
+                          />
+                        ))}
+                    </Stack>
+                  </Document>
+                )}
+              </Box>
+            </Box>
+          </Collapse>
         </Stack>
       </Stack>
     </>

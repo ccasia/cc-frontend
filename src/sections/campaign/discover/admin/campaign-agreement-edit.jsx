@@ -1,10 +1,12 @@
+import dayjs from 'dayjs';
 import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { pdf } from '@react-pdf/renderer';
 import { enqueueSnackbar } from 'notistack';
 import { SyncLoader } from 'react-spinners';
+import React, { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -14,13 +16,18 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+import AgreementTemplate from 'src/template/agreement';
+
 import { useSettingsContext } from 'src/components/settings';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFCheckbox, RHFTextField } from 'src/components/hook-form';
 
-const CampaignAgreementEdit = ({ dialog, agreement }) => {
+const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
+  const { user } = useAuthContext();
+  const [test, setTest] = useState('');
 
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
@@ -50,10 +57,39 @@ const CampaignAgreementEdit = ({ dialog, agreement }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
+
     try {
-      await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, {
-        ...data,
-        ...agreement,
+      const blob = await pdf(
+        <AgreementTemplate
+          DATE={dayjs().format('LL')}
+          IC_NUMBER={agreement?.user?.paymentForm?.icNumber}
+          FREELANCER_FULL_NAME={agreement?.user?.name}
+          ADDRESS={agreement?.user?.creator?.address}
+          ccEmail="hello@cultcreative.com"
+          ccPhoneNumber="123123123"
+          effectiveDate={dayjs(campaign?.campaignBrief?.startDate).format('LL')}
+          creatorPayment={data.paymentAmount.toString()}
+          CREATOR_NAME={agreement?.user?.name}
+          CREATOR_ACCOUNT_NUMBER={agreement?.user?.paymentForm?.bankAccountNumber}
+          CREATOR_BANK_NAME={agreement?.user?.paymentForm?.bankName}
+          AGREEMENT_ENDDATE={dayjs(campaign?.campaignBrief?.endDate).format('LL')}
+          NOW_DATE={dayjs().format('LL')}
+          VERSION_NUMBER="V1"
+          ADMIN_IC_NUMBER={user?.agreementTemplate?.adminICNumber}
+          ADMIN_NAME={user?.agreementTemplate?.adminName}
+          SIGNATURE={user?.agreementTemplate?.signURL}
+        />
+      ).toBlob();
+
+      const formData = new FormData();
+
+      formData.append('agreementForm', blob);
+      formData.append('data', JSON.stringify({ ...data, ...agreement }));
+
+      await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, formData, {
+        headers: {
+          Accept: 'multipart/form-data',
+        },
       });
       enqueueSnackbar('Success');
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
@@ -109,4 +145,5 @@ export default CampaignAgreementEdit;
 CampaignAgreementEdit.propTypes = {
   dialog: PropTypes.object,
   agreement: PropTypes.object,
+  campaign: PropTypes.object,
 };

@@ -2,20 +2,19 @@
 /* eslint-disable no-unused-vars */
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
+import { mutate } from 'swr';
+import PropTypes from 'prop-types';
+import { PDFDocument } from 'pdf-lib';
+import { pdf } from '@react-pdf/renderer';
 import { BarLoader } from 'react-spinners';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { enqueueSnackbar } from 'notistack';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { Page, pdfjs, Document } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { useState, useEffect, useCallback } from 'react';
-// import { rgb, PDFDocument, StandardFonts } from 'pdf-lib';
-
-import PropTypes from 'prop-types';
-import { PDFDocument } from 'pdf-lib';
-import { pdf } from '@react-pdf/renderer';
-import { Page, Document } from 'react-pdf';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Step from '@mui/material/Step';
@@ -31,13 +30,11 @@ import {
   Chip,
   Stack,
   Alert,
-  Avatar,
   Dialog,
   Divider,
   IconButton,
   StepContent,
   DialogTitle,
-  ListItemText,
   DialogContent,
   DialogActions,
   CircularProgress,
@@ -57,7 +54,6 @@ import AgreementTemplate from 'src/template/agreement';
 
 import Iconify from 'src/components/iconify';
 import PDFEditor from 'src/components/pdf/pdf-editor';
-// import PdfViewer from 'src/components/pdf/pdf-viewer';
 import FormProvider, {
   RHFUpload,
   RHFSelect,
@@ -67,14 +63,19 @@ import FormProvider, {
 } from 'src/components/hook-form';
 
 import CreateBrand from './brandDialog';
+import CreateCompany from './companyDialog';
 import { useGetAdmins } from './hooks/get-am';
+import SelectBrand from './steps/select-brand';
 import SelectTimeline from './steps/select-timeline';
 import TimelineTypeModal from './steps/timeline-type-modal';
-// import CampaignTaskManagement from './steps/campaign-tasks';
 
-// import NotificationReminder from './steps/notification-reminder';
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 const steps = [
+  'Select Client or Brand',
   'General Campaign Information',
   'Campaign Details',
   'Campaign Images',
@@ -82,6 +83,7 @@ const steps = [
   'Admin Manager',
   'Agreement Form',
 ];
+
 export const interestsLists = [
   'Art',
   'Beauty',
@@ -113,9 +115,14 @@ const videoAngle = [
 
 function CreateCampaignForm() {
   const active = localStorage.getItem('activeStep');
+  const { data: options, companyLoading } = useGetCampaignBrandOption();
+  const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
+  const { data: admins } = useGetAdmins('active');
+  const { user } = useAuthContext();
+  const openCompany = useBoolean();
+  const openBrand = useBoolean();
   const modal = useBoolean();
 
-  const { data: options, companyLoading } = useGetCampaignBrandOption();
   const [activeStep, setActiveStep] = useState(parseInt(active, 10) || 0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -124,45 +131,9 @@ function CreateCampaignForm() {
   const [brandState, setBrandState] = useState('');
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
-  const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
-  const { data: admins } = useGetAdmins('active');
-  const { user } = useAuthContext();
-  // const [pdf, setPdf] = useState();
   const [pages, setPages] = useState(0);
+
   const pdfModal = useBoolean();
-
-  // useEffect(() => {
-  //   const ha = async () => {
-  //     const response = await fetch('/Agreement_Template_CC.pdf').then((res) => res.arrayBuffer());
-  //     const pdfDoc = await PDFDocument.load(response);
-
-  //     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-  //     const hu = pdfDoc.getPages();
-  //     const firstPage = hu[1];
-  //     const { width, height } = firstPage.getSize();
-
-  //     firstPage.drawText('Afiq', {
-  //       x: 100,
-  //       y: 250,
-  //       // size: 50,
-  //       font: helveticaFont,
-  //       color: rgb(0.95, 0.1, 0.1),
-  //       // rotate: degrees(-45),
-  //     });
-
-  //     const pdfBytes = await pdfDoc.save();
-  //     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-  //     const blobUrl = URL.createObjectURL(blob);
-  //     setPages(pdfDoc.getPageCount());
-  //     setPdf(response);
-  //   };
-
-  //   ha();
-  // }, []);
-
-  
- 
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -184,7 +155,6 @@ function CreateCampaignForm() {
   const campaignSchema = Yup.object().shape({
     campaignIndustries: Yup.string().required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
-    campaignBrand: Yup.object().required('Brand name is required'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
@@ -224,21 +194,11 @@ function CreateCampaignForm() {
     adminManager: Yup.array()
       .min(1, 'At least One Admin is required')
       .required('Admin Manager is required'),
-    agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
-    // timeline: Yup.mixed().required(),
-    // campaignTasksAdmin: Yup.array()
-    //   .min(1)
-    //   .of(
-    //     Yup.object().shape({
-    //       name: Yup.string().required('Name is required'),
-    //     })
-    //   ),
   });
 
   const campaignInformationSchema = Yup.object().shape({
     campaignIndustries: Yup.string().required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
-    campaignBrand: Yup.object().required('Brand name is required'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
@@ -293,12 +253,45 @@ function CreateCampaignForm() {
     campaignStartDate: Yup.string().required('Campaign Start Date is required.'),
   });
 
+  const clientSchema = Yup.object().shape({
+    client: Yup.object().required('Client is required.'),
+    hasBrand: Yup.bool(),
+    campaignBrand: Yup.object()
+      .nullable()
+      .when('hasBrand', {
+        is: true,
+        then: (s) => s.required('Brand is required.'),
+        otherwise: (s) => s,
+      }),
+  });
+
+  const getSchemaForStep = (step) => {
+    switch (step) {
+      case 0:
+        return clientSchema;
+      case 1:
+        return campaignInformationSchema;
+      case 2:
+        return campaignRequirementSchema;
+      case 3:
+        return campaignImagesSchema;
+      case 4:
+        return timelineSchema;
+      case 5:
+        return campaignAdminSchema;
+      default:
+        return campaignSchema; // Assuming step 3 is the default or final step
+    }
+  };
+
   const savedData = localStorage.getItem('formData');
 
   const defaultValues = savedData
     ? JSON.parse(savedData)
     : {
+        hasBrand: false,
         campaignTitle: '',
+        client: null,
         campaignBrand: null,
         campaignStartDate: null,
         campaignEndDate: null,
@@ -341,24 +334,6 @@ function CreateCampaignForm() {
         campaignTasksAdmin: [],
         campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
       };
-
-  const getSchemaForStep = (step) => {
-    switch (step) {
-      case 0:
-        return campaignInformationSchema;
-      case 1:
-        return campaignRequirementSchema;
-      case 2:
-        return campaignImagesSchema;
-      case 3:
-        return timelineSchema;
-      case 4:
-        return campaignAdminSchema;
-
-      default:
-        return campaignSchema; // Assuming step 3 is the default or final step
-    }
-  };
 
   const methods = useForm({
     resolver: yupResolver(getSchemaForStep(activeStep)),
@@ -428,6 +403,7 @@ function CreateCampaignForm() {
 
   const handleNext = async () => {
     const result = await trigger();
+    console.log(errors);
 
     if (result) {
       localStorage.setItem('activeStep', activeStep + 1);
@@ -494,13 +470,12 @@ function CreateCampaignForm() {
     const combinedData = { ...adjustedData, ...{ campaignStage: stage } };
 
     formData.append('data', JSON.stringify(combinedData));
-    formData.append('agreementForm', data.agreementFrom);
+    // formData.append('agreementForm', data.agreementFrom);
 
     // eslint-disable-next-line guard-for-in, no-restricted-syntax
     for (const i in data.campaignImages) {
       formData.append('campaignImages', data.campaignImages[i]);
     }
-    // formData.append('campaignImage', data.campaignImages[0]);
 
     try {
       setIsLoading(true);
@@ -525,7 +500,6 @@ function CreateCampaignForm() {
     }
   });
 
-
   const formFirstStep = (
     <Box
       gap={2}
@@ -544,7 +518,7 @@ function CreateCampaignForm() {
         multiline
       />
 
-      <Box
+      {/* <Box
         sx={{
           display: 'flex',
           flexDirection: 'row',
@@ -552,44 +526,43 @@ function CreateCampaignForm() {
           alignItems: 'center',
         }}
       >
-        
-        {!companyLoading&&(
-        <RHFAutocomplete
-          fullWidth
-          name="campaignBrand"
-          placeholder="Brand"
-          options={!companyLoading ? (brandState ? [brandState] : options) : []}
-          getOptionLabel={(option) => option.name || ''}
-          noOptionsText={
-            <Button
-              variant="contained"
-              size="small"
-              fullWidth
-              sx={{ mt: 2 }}
-              onClick={handleOpenCompanyDialog}
-            >
-              Create client
-            </Button>
-          }
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          renderOption={(props, option) => {
-            // eslint-disable-next-line react/prop-types
-            const { key, ...optionProps } = props;
-
-            if (!option.id) {
-              return null;
+        {!companyLoading && (
+          <RHFAutocomplete
+            fullWidth
+            name="campaignBrand"
+            placeholder="Brand"
+            options={!companyLoading ? (brandState ? [brandState] : options) : []}
+            getOptionLabel={(option) => option.name || ''}
+            noOptionsText={
+              <Button
+                variant="contained"
+                size="small"
+                fullWidth
+                sx={{ mt: 2 }}
+                onClick={handleOpenCompanyDialog}
+              >
+                Create client
+              </Button>
             }
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderOption={(props, option) => {
+              // eslint-disable-next-line react/prop-types
+              const { key, ...optionProps } = props;
 
-            return (
-              <Stack component="li" key={key} direction="row" spacing={1} p={1} {...optionProps}>
-                <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
-                <ListItemText primary={option.name} />
-              </Stack>
-            );
-          }}
-        />
-      )}
-      </Box>
+              if (!option.id) {
+                return null;
+              }
+
+              return (
+                <Stack component="li" key={key} direction="row" spacing={1} p={1} {...optionProps}>
+                  <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                  <ListItemText primary={option.name} />
+                </Stack>
+              );
+            }}
+          />
+        )}
+      </Box> */}
 
       <RHFSelect name="campaignObjectives" label="Campaign Objectives">
         <MenuItem value="I'm launching a new product">I&apos;m launching a new product</MenuItem>
@@ -923,34 +896,17 @@ function CreateCampaignForm() {
   //   <>{pdf && <PdfViewer file={pdf} totalPages={pages} pageNumber={1} scale={1.5} />}</>
   // );
 
-  // const formUpload = (
-  //   <>
-  //     <PDFEditor file="/Agreement_Template_CC.pdf" />
-  //     {/* <PDFViewer
-  //       style={{
-  //         width: '100%',
-  //         height: '80vh',
-  //       }}
-  //     >
-  //       <AgreementTemplate />
-  //     </PDFViewer>
-  //     <ReactSignatureCanvas
-  //       penColor="black"
-  //       backgroundColor="white"
-  //       canvasProps={{ width: 500, height: 200, className: 'sigCanvas' }}
-  //     /> */}
-  //   </>
-  // );
-
   function getStepContent(step) {
     switch (step) {
       case 0:
-        return formFirstStep;
+        return <SelectBrand openCompany={openCompany} openBrand={openBrand} />;
       case 1:
-        return formSecondStep;
+        return formFirstStep;
       case 2:
-        return imageUpload;
+        return formSecondStep;
       case 3:
+        return imageUpload;
+      case 4:
         return (
           <>
             {defaultTimelineLoading ? (
@@ -965,10 +921,12 @@ function CreateCampaignForm() {
             )}
           </>
         );
-      case 4:
-        return formSelectAdminManager;
       case 5:
-        return <FormUpload userId={user.id} user={user} modal={pdfModal} />;
+        return formSelectAdminManager;
+      case 6:
+        return (
+          <FormUpload userId={user.id} user={user} modal={pdfModal} setAgreementForm={setValue} />
+        );
       default:
         return 'Unknown step';
     }
@@ -994,7 +952,6 @@ function CreateCampaignForm() {
             m: 1,
           }}
           activeStep={activeStep}
-          // alternativeLabel
           orientation="vertical"
         >
           {steps.map((label, index) => {
@@ -1099,11 +1056,39 @@ function CreateCampaignForm() {
           </Paper>
         </Box>
       </FormProvider>
-      <CreateBrand
+
+      {/* Modal */}
+      {/* <CreateBrand
         open={openCompanyDialog}
         onClose={handleCloseCompanyDialog}
         setBrand={setValue}
+      /> */}
+
+      <CreateBrand
+        open={openBrand.value}
+        onClose={() => {
+          if (getValues('campaignBrand')?.inputValue) {
+            setValue('campaignBrand', null);
+          }
+          openBrand.onFalse();
+        }}
+        brandName={getValues('campaignBrand')?.inputValue}
+        setBrand={(e) => setValue('campaignBrand', e)}
+        client={getValues('client')}
       />
+
+      <CreateCompany
+        open={openCompany.value}
+        onClose={() => {
+          if (getValues('client')?.inputValue) {
+            setValue('client', null);
+          }
+          openCompany.onFalse();
+        }}
+        companyName={getValues('client')?.inputValue}
+        setCompany={(e) => setValue('client', e)}
+      />
+
       <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
       <PDFEditorModal open={pdfModal.value} onClose={pdfModal.onFalse} user={user} />
     </Box>
@@ -1111,22 +1096,19 @@ function CreateCampaignForm() {
 }
 export default CreateCampaignForm;
 
-const FormUpload = ({ userId, user, modal }) => {
+const FormUpload = ({ userId, modal, setAgreementForm }) => {
   const { data, isLoading: templateLoading, error } = useGetTemplate(userId);
-  // const [url, setUrl] = useState('');
+  const [pages, setPages] = useState();
 
   useEffect(() => {
-    const fetchh = async () => {
-      try {
-        const dataa = await fetch(data?.template?.url);
-        console.log(dataa);
-      } catch (err) {
-        console.log(err);
-      }
-    };
+    if (!templateLoading && data) {
+      setAgreementForm('agreementForm', data?.template?.url);
+    }
+  }, [data, setAgreementForm, templateLoading]);
 
-    fetchh();
-  }, [data]);
+  const refreshPdf = () => {
+    mutate(endpoints.agreementTemplate.byId(userId));
+  };
 
   return (
     <>
@@ -1135,6 +1117,7 @@ const FormUpload = ({ userId, user, modal }) => {
           <CircularProgress size={30} />
         </Box>
       )}
+
       {!templateLoading && !data && (
         <>
           <Alert severity="warning" variant="outlined">
@@ -1153,21 +1136,59 @@ const FormUpload = ({ userId, user, modal }) => {
           </Box>
         </>
       )}
+
       {!templateLoading && data && (
         <>
           <Alert severity="success" variant="outlined">
             Template found
           </Alert>
-          {/* <Box>
-            <iframe src={data?.template?.url} title="asd" />
+
+          <Box
+            my={2}
+            sx={{
+              display: 'flex',
+              gap: 1,
+              justifyContent: 'end',
+            }}
+          >
+            <Button size="small" variant="contained" onClick={refreshPdf}>
+              Refresh
+            </Button>
+            <Button size="small" variant="contained" onClick={modal.onTrue}>
+              Regenerate agreement template
+            </Button>
+          </Box>
+
+          {/* <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
+            <PDFViewer width="100%" height={500}>
+              <AgreementTemplate
+                ADMIN_IC_NUMBER={data?.template?.adminICNumber}
+                ADMIN_NAME={data?.template?.adminName}
+                SIGNATURE={data?.template?.signURL}
+              />
+            </PDFViewer>
           </Box> */}
 
-          <Document
-            file="https://storage.googleapis.com/app-test-cult-cretive/agreementTemplate/Afiqqqq_template.pdf"
-            onSourceError={(e) => console.log(e)}
-          >
-            <Page pageNumber={1} />
-          </Document>
+          <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
+            <Box
+              sx={{
+                display: 'inline-block',
+              }}
+            >
+              <Document
+                file={data?.template?.url}
+                onLoadSuccess={({ numPages }) => setPages(numPages)}
+              >
+                <Stack spacing={2}>
+                  {Array(pages)
+                    .fill()
+                    .map((_, index) => (
+                      <Page key={index} pageIndex={index} pageNumber={index + 1} scale={1} />
+                    ))}
+                </Stack>
+              </Document>
+            </Box>
+          </Box>
         </>
       )}
     </>
@@ -1176,8 +1197,8 @@ const FormUpload = ({ userId, user, modal }) => {
 
 FormUpload.propTypes = {
   userId: PropTypes.string,
-  user: PropTypes.object,
   modal: PropTypes.object,
+  setAgreementForm: PropTypes.func,
 };
 
 const stepsPDF = ['Fill in missing information', 'Digital Signature'];
@@ -1190,6 +1211,7 @@ const PDFEditorModal = ({ open, onClose, user }) => {
   const [signURL, setSignURL] = useState('');
   const [annotations, setAnnotations] = useState([]);
   const loading = useBoolean();
+  const signRef = useRef(null);
 
   const smDown = useResponsive('down', 'sm');
 
@@ -1208,9 +1230,9 @@ const PDFEditorModal = ({ open, onClose, user }) => {
     mode: 'onChange',
   });
 
-  const { handleSubmit, getValues } = methods;
+  const { handleSubmit, watch } = methods;
 
-  const { name, icNumber } = getValues();
+  const { name, icNumber } = watch();
 
   const processPdf = async () => {
     const blob = await pdf(
@@ -1225,7 +1247,6 @@ const PDFEditorModal = ({ open, onClose, user }) => {
   const handleNext = async () => {
     if (activeStep !== stepsPDF.length - 1) {
       if (name && icNumber) {
-        console.log('Das');
         try {
           loadingProcess.onTrue();
           const test = await processPdf();
@@ -1287,14 +1308,18 @@ const PDFEditorModal = ({ open, onClose, user }) => {
     // URL.revokeObjectURL(url); // Clean up the URL object
   };
 
-  const onSubmit = handleSubmit(async () => {
+  const onSubmit = handleSubmit(async (data) => {
     try {
       loading.onTrue();
-      const { blob, signImage } = await downloadPdf();
+      const { blob: agreementBlob, signImage } = await downloadPdf();
+      // const urll = signRef.current.getTrimmedCanvas().toDataURL('image/png');
+      const response = await fetch(signURL);
+      const blob = await response.blob();
+
       const formData = new FormData();
-      formData.append('data', user);
-      formData.append('signedAgreement', blob);
-      formData.append('signatureImage', signImage);
+      formData.append('data', JSON.stringify({ ...user, ...data }));
+      formData.append('signedAgreement', agreementBlob);
+      formData.append('signatureImage', blob);
 
       const res = await axiosInstance.post(
         endpoints.campaign.agreementTemplate(user.id),
@@ -1308,7 +1333,6 @@ const PDFEditorModal = ({ open, onClose, user }) => {
       enqueueSnackbar(res?.data?.message);
       onClose();
     } catch (error) {
-      console.log(error);
       enqueueSnackbar(error?.message, {
         variant: 'error',
       });
@@ -1343,6 +1367,42 @@ const PDFEditorModal = ({ open, onClose, user }) => {
               )}
               {activeStep === 1 && (
                 <Box>
+                  {/* <Box
+                    p={5}
+                    position="relative"
+                    sx={{
+                      border: 1,
+                      borderRadius: 2,
+                    }}
+                  >
+                    <ReactSignatureCanvas
+                      ref={signRef}
+                      penColor="black"
+                      canvasProps={{
+                        style: {
+                          backgroundColor: 'white',
+                          width: '100%',
+                          cursor: 'crosshair',
+                        },
+                      }}
+                    />
+
+                    <Typography
+                      variant="h3"
+                      color="text.secondary"
+                      sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%,-50%)',
+                        opacity: 0.2,
+                        userSelect: 'none',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      Sign Here
+                    </Typography>
+                  </Box> */}
                   <PDFEditor
                     file={url}
                     annotations={annotations}
@@ -1350,6 +1410,7 @@ const PDFEditorModal = ({ open, onClose, user }) => {
                     setSignURL={setSignURL}
                     signURL={signURL}
                   />
+                  <Button onClick={() => signRef.current.clear()}>Clear</Button>
                 </Box>
               )}
             </Box>
@@ -1386,19 +1447,3 @@ PDFEditorModal.propTypes = {
   onClose: PropTypes.func,
   user: PropTypes.object,
 };
-
-function blobToArrayBuffer(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      resolve(reader.result);
-    };
-
-    reader.onerror = () => {
-      reject(new Error('Error reading the Blob as ArrayBuffer'));
-    };
-
-    reader.readAsArrayBuffer(blob);
-  });
-}

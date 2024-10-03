@@ -48,10 +48,12 @@ const AgreementDialog = ({ open, onClose, url }) => (
 
 const CampaignAgreements = ({ campaign }) => {
   const { data, isLoading } = useGetAgreements(campaign?.id);
+
   const dialog = useBoolean();
   const editDialog = useBoolean();
   const [selectedUrl, setSelectedUrl] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState(null);
+
   const smUp = useResponsive('up', 'sm');
 
   const handleViewAgreement = (url) => {
@@ -168,7 +170,11 @@ const CampaignAgreements = ({ campaign }) => {
         </Table>
       </TableContainer>
       <AgreementDialog open={dialog.value} onClose={dialog.onFalse} url={selectedUrl} />
-      <CampaignAgreementEdit dialog={editDialog} agreement={selectedAgreement} />
+      <CampaignAgreementEdit
+        dialog={editDialog}
+        agreement={selectedAgreement}
+        campaign={campaign}
+      />
     </Box>
   );
 };
