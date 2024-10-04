@@ -19,7 +19,7 @@ const SocketProvider = ({ children }) => {
     //   reconnect: true,
     //   // path: '/socket.io/',
     // });
-    const socketConnection = io('http://localhost', {
+    const socketConnection = io({
       path: '/socket.io',
     });
 
