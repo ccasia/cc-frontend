@@ -12,16 +12,11 @@ const SocketProvider = ({ children }) => {
   const { user } = useAuthContext();
 
   useEffect(() => {
-    // I used this for my connection - Zawad
-
     const socketConnection = io({
-      transports: ['polling'],
-      reconnect: true,
-      // path: '/socket.io/',
-    });
-    // const socketConnection = io({
-    //   reconnection: true,
-    // });
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      path: '/socket.io/'
+    });;
 
     socketConnection.on('connect', () => {
       console.log('Connected');
