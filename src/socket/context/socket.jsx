@@ -19,9 +19,7 @@ const SocketProvider = ({ children }) => {
     //   reconnect: true,
     //   // path: '/socket.io/',
     // });
-    const socketConnection = io({
-      path: '/socket.io',
-    });
+    const socketConnection = io();
 
     socketConnection.on('connect', () => {
       console.log('Connected');
