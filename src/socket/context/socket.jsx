@@ -14,17 +14,14 @@ const SocketProvider = ({ children }) => {
   useEffect(() => {
     // I used this for my connection - Zawad
 
-    const socketConnection = io({
-      transports: ['polling'],
-      reconnect: true,
-      // path: '/socket.io/',
-    });
     // const socketConnection = io({
-    //   reconnectionAttempts: 10, // Try to reconnect 10 times
-    //   reconnectionDelay: 1000, // Wait 1 second before the first attempt
-    //   reconnectionDelayMax: 5000, // Wait up to 5 seconds for additional attempts
-    //   timeout: 20000,
+    //   transports: ['polling'],
+    //   reconnect: true,
+    //   // path: '/socket.io/',
     // });
+    const socketConnection = io('http://localhost', {
+      path: '/socket.io',
+    });
 
     socketConnection.on('connect', () => {
       console.log('Connected');
