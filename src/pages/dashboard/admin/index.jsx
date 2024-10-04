@@ -18,7 +18,7 @@ export default function Page() {
         <title>Admin</title>
       </Helmet>
       {isLoading && <LoadingScreen />}
-      {!isLoading && admins.length && <UserListView admins={admins} />}
+      {!isLoading && <UserListView admins={admins} />}
     </>
   );
 }
