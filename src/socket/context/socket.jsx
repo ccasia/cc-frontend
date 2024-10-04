@@ -14,12 +14,14 @@ const SocketProvider = ({ children }) => {
   useEffect(() => {
     // I used this for my connection - Zawad
 
+    const socketConnection = io({
+      transports: ['polling'],
+      reconnect: true,
+      // path: '/socket.io/',
+    });
     // const socketConnection = io({
-    //   transports: ['polling'],
-    //   reconnect: true,
-    //   // path: '/socket.io/',
+    //   reconnection: true,
     // });
-    const socketConnection = io();
 
     socketConnection.on('connect', () => {
       console.log('Connected');
