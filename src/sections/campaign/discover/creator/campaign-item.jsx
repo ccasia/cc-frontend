@@ -6,11 +6,10 @@ import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
 
 import Link from '@mui/material/Link';
-import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
 import ListItemText from '@mui/material/ListItemText';
-import { Grid, Chip, Tooltip, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Box, Grid, Card, Tooltip, Typography, IconButton, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -191,27 +190,61 @@ export default function CampaignItem({ campaign, user }) {
         }}
       />
 
-      {campaign?.bookMarkCampaign ? (
-        <Tooltip title="Saved">
-          <IconButton
-            onClick={() => {
-              unSaveCampaign(campaign.bookMarkCampaign.id);
+      <Stack direction="row">
+        <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+          <CircularProgress
+            variant="determinate"
+            value={Math.round(campaign?.percentageMatch)}
+            thickness={5}
+            sx={{
+              ' .MuiCircularProgress-circle': {
+                stroke: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.common.white
+                    : theme.palette.common.black,
+                strokeLinecap: 'round',
+              },
+            }}
+          />
+          <Box
+            sx={{
+              top: 0,
+              left: 0,
+              bottom: 0,
+              right: 0,
+              position: 'absolute',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <Iconify icon="flowbite:bookmark-solid" width={25} />
-          </IconButton>
-        </Tooltip>
-      ) : (
-        <Tooltip title="Save">
-          <IconButton
-            onClick={() => {
-              saveCampaign(campaign.id);
-            }}
-          >
-            <Iconify icon="mynaui:bookmark" width={25} />
-          </IconButton>
-        </Tooltip>
-      )}
+            <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
+              {`${Math.round(campaign?.percentageMatch)}%`}
+            </Typography>
+          </Box>
+        </Box>
+        {campaign?.bookMarkCampaign ? (
+          <Tooltip title="Saved">
+            <IconButton
+              onClick={() => {
+                unSaveCampaign(campaign.bookMarkCampaign.id);
+              }}
+            >
+              <Iconify icon="flowbite:bookmark-solid" width={25} />
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Tooltip title="Save">
+            <IconButton
+              onClick={() => {
+                saveCampaign(campaign.id);
+              }}
+            >
+              <Iconify icon="mynaui:bookmark" width={25} />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Stack>
     </Stack>
   );
 
@@ -316,13 +349,13 @@ export default function CampaignItem({ campaign, user }) {
 
         {renderInfo}
 
-        <Chip
+        {/* <Chip
           sx={{ position: 'absolute', top: 10, left: 10 }}
           variant="filled"
           color="success"
           size="small"
           label={`${Math.ceil(campaign?.percentageMatch)} % Match`}
-        />
+        /> */}
       </Card>
 
       <CampaignModal

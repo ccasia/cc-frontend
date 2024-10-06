@@ -13,14 +13,14 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import { Tab, Tabs, Select, InputLabel, FormControl, InputAdornment } from '@mui/material';
+import { Tab, Tabs, Stack, Select, InputLabel, FormControl, InputAdornment } from '@mui/material';
 
 import useGetRoles from 'src/hooks/use-get-roles';
 import { editAdmin } from 'src/hooks/use-get-admins-for-superadmin';
 
 import { countries } from 'src/assets/data';
-import { USER_STATUS_OPTIONS } from 'src/_mock';
 
+import Iconify from 'src/components/iconify';
 import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 // eslint-disable-next-line import/no-cycle
@@ -28,8 +28,25 @@ import { MODULE_ITEMS } from './view/user-list-view';
 
 // ----------------------------------------------------------------------
 
+const ADMIN_STATUS = [
+  {
+    label: 'Banned',
+    value: 'banned',
+    color: 'error',
+  },
+  {
+    label: 'Active',
+    value: 'active',
+    color: 'success',
+  },
+  {
+    label: 'Pending',
+    value: 'pending',
+    color: 'warning',
+  },
+];
+
 function UserQuickEditForm({ currentUser, open, onClose }) {
-  // const { admin } = currentUser;
   const { data: roles, isLoading } = useGetRoles();
 
   const [currentTab, setCurrentTab] = useState('profile');
@@ -40,7 +57,6 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
     phoneNumber: Yup.string().required('Phone number is required'),
     country: Yup.string().required('Country is required'),
     role: Yup.string().required('Role is required'),
-    // designation: Yup.string().required('Designation is required'),
     mode: Yup.string().required('Mode is required'),
   });
 
@@ -52,7 +68,6 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
       country: currentUser?.country || '',
       status: currentUser?.status,
       role: currentUser?.admin?.role?.id,
-      // designation: currentUser?.admin?.designation || '',
       mode: currentUser?.admin?.mode || '',
       // permission: (admin?.adminPermissionModule &&
       //   Object.values(flattenData(admin?.adminPermissionModule))) || [
@@ -75,13 +90,14 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
     watch,
     handleSubmit,
     control,
-    formState: { isSubmitting, errors },
+    formState: { isSubmitting, errors, isDirty },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       editAdmin({ ...data, userId: currentUser?.id });
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // await new Promise((resolve) => setTimeout(resolve, 500));
+      // mutate(endpoints.users.admins);
       reset();
       onClose();
 
@@ -116,7 +132,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
       open={open}
       onClose={onClose}
       PaperProps={{
-        sx: { maxWidth: 720 },
+        sx: { maxWidth: 720, position: 'relative' },
       }}
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -144,10 +160,24 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
                 sm: 'repeat(2, 1fr)',
               }}
             >
-              <RHFSelect name="status" label="Status">
-                {USER_STATUS_OPTIONS.map((status) => (
+              <RHFSelect
+                name="status"
+                label="Status"
+                size="small"
+                sx={{
+                  position: 'absolute',
+                  top: 20,
+                  right: 20,
+                  minWidth: 150,
+                  width: 150,
+                }}
+              >
+                {ADMIN_STATUS.map((status) => (
                   <MenuItem key={status.id} value={status.value}>
-                    {status.label}
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Iconify icon="octicon:dot-16" color={`${status.color}.main`} />
+                      {status.label}
+                    </Stack>
                   </MenuItem>
                 ))}
               </RHFSelect>
@@ -287,7 +317,12 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
             Cancel
           </Button>
 
-          <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+          <LoadingButton
+            type="submit"
+            variant="contained"
+            loading={isSubmitting}
+            disabled={!isDirty}
+          >
             Update
           </LoadingButton>
         </DialogActions>

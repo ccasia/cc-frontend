@@ -78,28 +78,6 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
     const values = getValues();
     setValue('status', 'approved');
 
-    // const blob = await pdf(
-    //   <AgreementTemplate
-    //     DATE={dayjs().format('LL')}
-    //     IC_NUMBER={creator?.paymentForm?.icNumber}
-    //     FREELANCER_FULL_NAME={creator?.name}
-    //     ADDRESS={creator?.creator?.address}
-    //     ccEmail="hello@cultcreative.com"
-    //     ccPhoneNumber={123123123}
-    //     effectiveDate={dayjs().format('LL')}
-    //     creatorPayment={}
-    //     // CREATOR_NAME={}
-    //     // CREATOR_ACCOUNT_NUMBER={}
-    //     // CREATOR_BANK_NAME={}
-    //     // AGREEMENT_ENDDATE={}
-    //     // NOW_DATE={}
-    //     // VERSION_NUMBER={}
-    //     // ADMIN_IC_NUMBER={}
-    //     // ADMIN_NAME={}
-    //     // SIGNATURE={}
-    //   />
-    // ).toBlob();
-
     try {
       const res = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
         ...values,

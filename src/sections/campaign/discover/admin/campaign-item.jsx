@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import ListItemText from '@mui/material/ListItemText';
-import { Box, Card, Chip, Grid, Typography } from '@mui/material';
+import { Box, Card, Chip, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -96,18 +96,39 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
       }}
     >
-      <Grid container>
+      <Stack direction="row" alignItems="center" spacing={1.5}>
+        <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />
+        <Label color="primary">{campaign?.campaignBrief?.industries}</Label>
+      </Stack>
+
+      <Stack direction="row" alignItems="center" spacing={1.5}>
+        <Iconify icon="solar:clock-circle-bold" />
+        <Typography variant="caption" color="text.secondary">
+          {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
+        </Typography>
+      </Stack>
+      {/* <Grid
+        container
+        sx={{
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Grid item xs={1}>
           <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />
         </Grid>
         <Grid item xs={11}>
-          <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
-            <Label color="primary">{campaign?.campaignBrief?.industries}</Label>
-          </Stack>
+          <Label color="primary">{campaign?.campaignBrief?.industries}</Label>
         </Grid>
-      </Grid>
+      </Grid> */}
 
-      <Grid container>
+      {/* <Grid
+        container
+        sx={{
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Grid item xs={1}>
           <Iconify icon="solar:clock-circle-bold" />
         </Grid>
@@ -116,7 +137,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
           </Typography>
         </Grid>
-      </Grid>
+      </Grid> */}
     </Stack>
   );
 

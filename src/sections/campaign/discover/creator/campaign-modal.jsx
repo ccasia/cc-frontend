@@ -42,7 +42,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
 
   const isShortlisted = user?.shortlisted && user?.shortlisted.map((item) => item.campaignId);
 
-  const existingPitch = user?.pitch && user?.pitch.find((item) => item.campaignId);
+  const existingPitch = user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id);
 
   const saveCampaign = async (campaignId) => {
     try {
