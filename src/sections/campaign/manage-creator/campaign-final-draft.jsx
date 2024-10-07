@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogActions,
   LinearProgress,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -58,6 +59,16 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   const handleDrop = useCallback(
     (acceptedFiles) => {
       const file = acceptedFiles[0];
+
+      if (file.type !== 'video/mp4') {
+        enqueueSnackbar(
+          'Currently, only MP4 video format is supported. Please upload your video in MP4 format.',
+          {
+            variant: 'warning',
+          }
+        );
+        return;
+      }
 
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
@@ -154,12 +165,60 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
         {submission?.status === 'IN_PROGRESS' && (
           <>
             {isProcessing ? (
-              <Stack gap={1}>
-                <Typography variant="caption">{progressName && progressName}</Typography>
-                <LinearProgress variant="determinate" value={progress} />
-                <Button variant="contained" size="small" onClick={() => handleCancel()}>
-                  Cancel
-                </Button>
+              // <Stack gap={1}>
+              //   <Typography variant="caption">{progressName && progressName}</Typography>
+              //   <LinearProgress variant="determinate" value={progress} />
+              //   <Button variant="contained" size="small" onClick={() => handleCancel()}>
+              //     Cancel
+              //   </Button>
+              // </Stack>
+              <Stack justifyContent="center" alignItems="center" gap={1}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                  }}
+                >
+                  <CircularProgress
+                    variant="determinate"
+                    thickness={5}
+                    value={progress}
+                    size={200}
+                    sx={{
+                      ' .MuiCircularProgress-circle': {
+                        stroke: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.common.white
+                            : theme.palette.common.black,
+                        strokeLinecap: 'round',
+                      },
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      top: 0,
+                      left: 0,
+                      bottom: 0,
+                      right: 0,
+                      position: 'absolute',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography variant="h3" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
+                      {`${Math.round(progress)}%`}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Stack gap={1}>
+                  <Typography variant="caption">{progressName && progressName}</Typography>
+                  {/* <LinearProgress variant="determinate" value={progress} /> */}
+
+                  <Button variant="contained" size="small" onClick={() => handleCancel()}>
+                    Cancel
+                  </Button>
+                </Stack>
               </Stack>
             ) : (
               <FormProvider methods={methods} onSubmit={onSubmit}>
