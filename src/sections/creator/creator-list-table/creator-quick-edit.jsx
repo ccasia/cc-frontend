@@ -93,18 +93,27 @@ export default function CeatorQuickForm({ currentUser, open, onClose }) {
               sm: 'repeat(2, 1fr)',
             }}
           >
-            <RHFSelect name="status" label="Status">
+            <RHFSelect
+              name="status"
+              label="Status"
+              sx={{
+                position: 'absolute',
+                top: 20,
+                right: 20,
+                minWidth: 150,
+                width: 150,
+              }}
+              size="small"
+            >
               {USER_STATUS_OPTIONS.map((status) => (
                 <MenuItem key={status.value} value={status.value}>
                   {status.label}
                 </MenuItem>
               ))}
             </RHFSelect>
-
             <RHFTextField name="name" label="Full Name" />
             <RHFTextField name="email" label="Email Address" />
             <RHFTextField name="phoneNumber" label="Phone Number" />
-
             <RHFAutocomplete
               name="country"
               type="country"
@@ -118,11 +127,11 @@ export default function CeatorQuickForm({ currentUser, open, onClose }) {
         </DialogContent>
 
         <DialogActions>
-          <Button variant="outlined" onClick={onClose}>
+          <Button variant="outlined" onClick={onClose} size="small">
             Cancel
           </Button>
 
-          <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+          <LoadingButton type="submit" variant="contained" loading={isSubmitting} size="small">
             Update
           </LoadingButton>
         </DialogActions>
