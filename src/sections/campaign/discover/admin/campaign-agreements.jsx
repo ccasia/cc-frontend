@@ -155,10 +155,10 @@ const CampaignAgreements = ({ campaign }) => {
                         <IconButton onClick={() => handleViewAgreement(item?.agreementUrl)}>
                           <Iconify icon="hugeicons:view" />
                         </IconButton>
-                        <IconButton color="warning">
+                        <IconButton color="warning" onClick={() => handleEditAgreement(item)}>
                           <Iconify icon="iconamoon:edit-light" />
                         </IconButton>
-                        <IconButton color="primary">
+                        <IconButton color="primary" onClick={() => handleSendAgreement(item)}>
                           <Iconify icon="bx:send" />
                         </IconButton>
                       </Stack>
