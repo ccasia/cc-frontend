@@ -7,11 +7,15 @@ import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import InputAdornment from '@mui/material/InputAdornment';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
 export default function CampaignSearch({ campaigns }) {
+  const router = useRouter();
   return (
     <>
       {campaigns && (
@@ -35,9 +39,15 @@ export default function CampaignSearch({ campaigns }) {
             />
           )}
           renderOption={(props, option) => (
-            <Box {...props}>
+            <Box
+              {...props}
+              component="div"
+              onClick={() =>
+                router.push(paths.dashboard.campaign.adminCampaignManageDetail(option?.id))
+              }
+            >
               <Avatar
-                alt="dawd"
+                alt="Campaign Image"
                 src={option?.campaignBrief?.images[0]}
                 variant="rounded"
                 sx={{

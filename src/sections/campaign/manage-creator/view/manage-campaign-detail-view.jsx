@@ -26,7 +26,7 @@ const ManageCampaignDetailView = ({ id }) => {
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Campaign', href: paths.dashboard.campaign.creator.manage },
-          { name: id },
+          { name: data?.name },
         ]}
       />
       {!isLoading && <CampaignDetailItem campaign={data} />}

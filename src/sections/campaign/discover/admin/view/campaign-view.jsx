@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from 'react';
 
-import Autocomplete from '@mui/material/Autocomplete';
 import {
   Box,
   Menu,
   Stack,
-  Button,
   Avatar,
+  Button,
   MenuItem,
   Container,
   TextField,
+  Autocomplete,
   ListItemText,
   InputAdornment,
 } from '@mui/material';
@@ -68,11 +68,11 @@ const CampaignView = () => {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Campaign"
+        heading="Campaigns"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           {
-            name: 'Campaign',
+            name: 'Campaigns',
             href: paths.dashboard.campaign.root,
           },
           { name: 'List' },
@@ -85,8 +85,24 @@ const CampaignView = () => {
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         {campaigns && (
           <Autocomplete
-            options={campaigns.filter((campaign) => campaign?.status === 'active')}
-            getOptionLabel={(option) => option?.name}
+            freeSolo
+            sx={{ width: { xs: 1, sm: 260 } }}
+            options={campaigns}
+            getOptionLabel={(option) => option.name}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Search..."
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="eva:search-fill" sx={{ ml: 1, color: 'text.disabled' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
             renderOption={(props, option) => (
               <Box
                 {...props}
@@ -96,7 +112,7 @@ const CampaignView = () => {
                 }
               >
                 <Avatar
-                  alt="dawd"
+                  alt="Campaign Image"
                   src={option?.campaignBrief?.images[0]}
                   variant="rounded"
                   sx={{
@@ -113,23 +129,6 @@ const CampaignView = () => {
                 />
               </Box>
             )}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Search"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Iconify icon="material-symbols:search" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            )}
-            sx={{
-              width: 250,
-            }}
           />
         )}
 

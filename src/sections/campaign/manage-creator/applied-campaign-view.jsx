@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 
 import { Box, TextField, InputAdornment } from '@mui/material';
 
-import useGetCampaignPitch from 'src/hooks/use-get-campaign-pitch';
+import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -14,17 +14,31 @@ import CampaignItem from '../discover/creator/campaign-item';
 // import CampaignItem from './campaign-item';
 
 const AppliedCampaignView = () => {
-  const { data, isLoading } = useGetCampaignPitch();
+  // const { data, isLoading } = useGetCampaignPitch();
+  const { campaigns: data, isLoading } = useGetCampaigns('creator');
   const [query, setQuery] = useState('');
   const { user } = useAuthContext();
+
+  const filteredCampaigns = useMemo(
+    () =>
+      !isLoading &&
+      data?.filter((campaign) =>
+        campaign?.pitch.some((item) => item?.userId === user?.id && item?.status === 'undecided')
+      ),
+    [isLoading, data, user]
+  );
 
   const filteredData = useMemo(
     () =>
       query
-        ? data?.filter((elem) => elem.campaign.name.toLowerCase()?.includes(query.toLowerCase()))
-        : data,
-    [data, query]
+        ? filteredCampaigns?.filter((elem) =>
+            elem.campaign.name.toLowerCase()?.includes(query.toLowerCase())
+          )
+        : filteredCampaigns,
+    [filteredCampaigns, query]
   );
+
+  console.log(filteredData);
 
   return (
     <Box mt={2}>
@@ -57,7 +71,7 @@ const AppliedCampaignView = () => {
           {filteredData.map((elem) => (
             <CampaignItem
               key={elem.campaign?.id}
-              campaign={elem.campaign}
+              campaign={elem}
               pitchStatus={elem.status}
               user={user}
               // onClick={() => onClick(campaign?.id)}

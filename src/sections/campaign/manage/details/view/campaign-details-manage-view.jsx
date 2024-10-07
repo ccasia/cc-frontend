@@ -601,8 +601,8 @@ const CampaignDetailManageView = ({ id }) => {
             name: 'Campaign',
             href: paths.dashboard.campaign.manage,
           },
-          { name: 'Detail' },
-          { name: id },
+          { name: 'Edit' },
+          { name: campaign?.name },
         ]}
         action={
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>

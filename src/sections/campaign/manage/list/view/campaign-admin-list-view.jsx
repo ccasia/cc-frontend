@@ -91,11 +91,11 @@ const CampaignListView = () => {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="List"
+        heading="Campaigns"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           {
-            name: 'Campaign',
+            name: 'Campaigns',
             href: paths.dashboard.campaign.root,
           },
           { name: 'List' },

@@ -74,8 +74,14 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
 
   const renderGallery = (
     <Stack direction="row" gap={2}>
-      {campaign?.campaignBrief?.images?.map((image) => (
-        <Image src={image} alt="test" ratio="16/9" sx={{ borderRadius: 2, cursor: 'pointer' }} />
+      {campaign?.campaignBrief?.images?.map((image, index) => (
+        <Image
+          key={index}
+          src={image}
+          alt="test"
+          ratio="16/9"
+          sx={{ borderRadius: 2, cursor: 'pointer' }}
+        />
       ))}
     </Stack>
   );
