@@ -43,6 +43,8 @@ export default function UserCard({ user }) {
 
   const router = useRouter();
 
+  console.log(user)
+
   return (
     <Box
       component="div"
@@ -94,8 +96,11 @@ export default function UserCard({ user }) {
           <Box
             sx={{
               width: '100%',
-              height: 200,
+              height: 100,
               bgcolor: theme.palette.grey[400],
+              backgroundImage: `url(${user.photoBackgroundURL})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
             }}
           />
         </Box>
@@ -157,8 +162,8 @@ export default function UserCard({ user }) {
             </Typography>
             {user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
               ? formatNumber(
-                  user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
-                )
+                user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
+              )
               : 'N/A'}
             {/* {fShortenNumber(totalPosts)} */}
           </div>

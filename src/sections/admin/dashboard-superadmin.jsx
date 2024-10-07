@@ -32,7 +32,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 const DashboardSuperadmin = () => {
   const { campaigns, isLoading } = useGetCampaigns();
-  const { creators } = useGetCreators();
+  const { data: creators } = useGetCreators();
 
   const theme = useTheme();
   const setting = useSettingsContext();
@@ -126,7 +126,7 @@ const DashboardSuperadmin = () => {
             campaigns
               ?.filter((item) => item.status === 'ACTIVE')
               .map((campaign) => (
-                <TableRow>
+                <TableRow key={campaign.id}>
                   <TableCell align="center">{campaign?.name}</TableCell>
                   <TableCell align="center">
                     <Typography variant="caption" color="text.secondary">

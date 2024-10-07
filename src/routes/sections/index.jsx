@@ -8,8 +8,8 @@ import VerifyConfirmation from 'src/sections/creator/verifyConfirmation';
 import { mainRoutes } from './main';
 import { authRoutes } from './auth';
 import { adminRoutes } from './admin';
+import { publicRoutes } from './public';
 import { dashboardRoutes } from './dashboard';
-import { publicRoutes } from './public'
 
 // ----------------------------------------------------------------------
 
@@ -38,6 +38,7 @@ export default function Router() {
     // No match 404
     { path: '*', element: <Navigate to="/404" replace /> },
     { path: '/adminInvite', element: <Navigate to="/404" replace /> },
+
     // { path: '/calendar', element: <Calendar /> },
   ]);
 }

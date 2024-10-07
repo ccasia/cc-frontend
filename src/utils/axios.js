@@ -5,6 +5,7 @@ import { HOST_API } from 'src/config-global';
 // ----------------------------------------------------------------------
 
 const axiosInstance = axios.create({ baseURL: HOST_API });
+
 axiosInstance.defaults.withCredentials = true;
 
 axiosInstance.interceptors.request.use((request) => {
@@ -133,6 +134,7 @@ export const endpoints = {
     brandDetail: (id) => `/api/company/getBrand/${id}`,
     editBrand: '/api/company/editBrand',
     getOptions: '/api/company/getOptions',
+    getBrandsByClientId: (id) => `/api/company/getBrands/${id}`,
   },
   event: {
     list: '/api/event/',
@@ -204,6 +206,7 @@ export const endpoints = {
     creatorAgreement: (id) => `/api/campaign/creatorAgreements/${id}`,
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
     sendAgreement: `/api/campaign/sendAgreement`,
+    agreementTemplate: (id) => `/api/campaign/template/${id}`,
   },
   submission: {
     root: '/api/submission/',
@@ -239,5 +242,8 @@ export const endpoints = {
       `/api/invoice/creator/${creatorId}/campaign/${campaignId}`,
     updateInvoiceStatus: '/api/invoice/updateStatus',
     getInvoicesByCreator: '/api/invoice/creator',
+  },
+  agreementTemplate: {
+    byId: (id) => `/api/campaign/template/${id}`,
   },
 };

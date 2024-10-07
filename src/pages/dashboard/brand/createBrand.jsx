@@ -14,7 +14,7 @@ export default function Page() {
   return (
     <>
       <Helmet>
-        <title>Create Brand</title>
+        <title>Create Client</title>
       </Helmet>
 
       <CreateBrand />

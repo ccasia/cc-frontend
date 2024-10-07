@@ -3,6 +3,7 @@ import { mutate } from 'swr';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
+import { Page, Document } from 'react-pdf';
 import { RiseLoader } from 'react-spinners';
 import { enqueueSnackbar } from 'notistack';
 
@@ -69,6 +70,7 @@ EditButton.propTypes = {
 
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading } = useGetCampaignById(id);
+  const [pages, setPages] = useState();
 
   const campaignStartDate = !campaignLoading && campaign?.campaignBrief?.startDate;
 
@@ -555,6 +557,40 @@ const CampaignDetailManageView = ({ id }) => {
     </Dialog>
   );
 
+  const renderAgreementTemplate = (
+    <Box component={Card} p={2}>
+      <Typography variant="h5">Agreement Template</Typography>
+      <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
+        <Box
+          sx={{
+            display: 'inline-block',
+          }}
+        >
+          {campaign?.campaignBrief?.agreementFrom && (
+            <Document
+              file={campaign?.campaignBrief?.agreementFrom}
+              onLoadSuccess={({ numPages }) => setPages(numPages)}
+              renderMode="canvas"
+            >
+              <Stack spacing={2}>
+                {pages &&
+                  Array.from({ length: pages }, (_, index) => (
+                    <Page
+                      key={index}
+                      pageIndex={index}
+                      pageNumber={index + 1}
+                      scale={1}
+                      renderTextLayer={false}
+                    />
+                  ))}
+              </Stack>
+            </Document>
+          )}
+        </Box>
+      </Box>
+    </Box>
+  );
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -625,6 +661,7 @@ const CampaignDetailManageView = ({ id }) => {
                 {campaign?.campaignBrief?.campaign_do &&
                   campaign?.campaignBrief?.campaign_dont &&
                   renderDosAndDonts}
+                {renderAgreementTemplate}
               </Stack>
             </Grid>
             <Grid item xs={12} md={4}>
@@ -642,21 +679,6 @@ const CampaignDetailManageView = ({ id }) => {
         )}
       </Grid>
 
-      {/* {campaign?.status === 'active' && campaign?.stage === 'publish' && (
-        <LoadingButton
-          sx={{
-            position: 'fixed',
-            bottom: 10,
-            right: 10,
-          }}
-          startIcon={<Iconify icon="ion:close" />}
-          variant="outlined"
-          color="error"
-          onClick={closeCampaign}
-        >
-          Close Campaign
-        </LoadingButton>
-      )} */}
       {confirmationModal}
     </Container>
   );

@@ -18,7 +18,7 @@ export default function ChatMessageList({messages}){
   const { messagesEndRef } = useMessagesScroll(messages);
  
   return (
-    <Scrollbar ref={messagesEndRef} sx={{ px: 3, py: 5, height: 1 }}>
+    <Scrollbar ref={messagesEndRef} sx={{ px: 3, py: 0.1, height: 1 }}>
       <Box>
         {messages.map((message) => (
           <ChatMessageItem key={message.id} message={message} />

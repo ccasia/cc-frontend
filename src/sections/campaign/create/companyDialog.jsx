@@ -1,4 +1,6 @@
 import * as Yup from 'yup';
+import { mutate } from 'swr';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -16,25 +18,18 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
-
-
-export default function CreateCompany({ setCompany,currentUser, open, onClose }) {
-
-
+export default function CreateCompany({ setCompany, open, onClose, companyName }) {
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string().email('Must be a valid email').required('Email is required'),
     phone: Yup.string().required('Phone is required'),
     website: Yup.string().required('Website is required'),
-    registration_number: Yup.string().required('Registration Number is required'),
-    address: Yup.string().required('Address is required'),
   });
+
   const defaultValues = {
-    name: '',
+    name: companyName || '',
     email: '',
     phone: '',
-    registration_number: '',
-    address: '',
     website: '',
   };
 
@@ -46,21 +41,30 @@ export default function CreateCompany({ setCompany,currentUser, open, onClose })
   const {
     reset,
     handleSubmit,
+    setValue,
     formState: { isSubmitting },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.post(endpoints.company.createOneCompany, data);
+      mutate(endpoints.company.getAll);
+      setCompany(res?.data?.company);
       reset();
       onClose();
-      setCompany(data.name);
       enqueueSnackbar('Company created successfully', { variant: 'success' });
-      console.log(res.data);
     } catch (error) {
-      console.log(error);
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
     }
   });
+
+  useEffect(() => {
+    if (companyName) {
+      setValue('name', companyName);
+    }
+  }, [companyName, setValue]);
 
   return (
     <Dialog
@@ -71,7 +75,7 @@ export default function CreateCompany({ setCompany,currentUser, open, onClose })
       }}
       fullWidth
     >
-      <DialogTitle>Create Company</DialogTitle>
+      <DialogTitle>Create Client</DialogTitle>
       <DialogContent>
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <Box
@@ -87,18 +91,18 @@ export default function CreateCompany({ setCompany,currentUser, open, onClose })
             <RHFTextField name="name" label="Name" fullWidth />
             <RHFTextField name="email" label="Email" fullWidth />
             <RHFTextField name="phone" label="Phone" />
-            <RHFTextField name="registration_number" label="Registration Number" fullWidth />
-            <RHFTextField name="address" label="Address" />
             <RHFTextField name="website" label="Website" fullWidth />
           </Box>
           <DialogActions>
-            <Button onClick={onClose}>Cancel</Button>
+            <Button size="small" onClick={onClose}>
+              Cancel
+            </Button>
             <LoadingButton
+              size="small"
               type="submit"
               variant="contained"
               loading={isSubmitting}
               loadingPosition="start"
-              color="primary"
             >
               Create
             </LoadingButton>
@@ -110,8 +114,8 @@ export default function CreateCompany({ setCompany,currentUser, open, onClose })
 }
 
 CreateCompany.propTypes = {
-  currentUser: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
   setCompany: PropTypes.func,
+  companyName: PropTypes.string,
 };

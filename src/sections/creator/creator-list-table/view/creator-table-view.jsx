@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import { mutate } from 'swr';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
 import { useState, useEffect, useCallback } from 'react';
@@ -11,21 +12,21 @@ import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 import Container from '@mui/material/Container';
-import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
+import { TableRow, TableBody, TableCell, LinearProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCreators from 'src/hooks/use-get-creators';
-import { useCreator } from 'src/hooks/zustands/useCreator';
 
 import { calculateAge } from 'src/utils/formatTime';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { USER_STATUS_OPTIONS } from 'src/_mock';
+import { useAuthContext } from 'src/auth/hooks';
 import withPermission from 'src/auth/guard/withPermissions';
 
 import Label from 'src/components/label';
@@ -73,13 +74,13 @@ const defaultFilters = {
 // ----------------------------------------------------------------------
 
 function CreatorTableView() {
-  useGetCreators();
-  const { creators } = useCreator();
+  const { data: creators, isLoading } = useGetCreators();
   const { enqueueSnackbar } = useSnackbar();
   const [anchorEl, setAnchorEl] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [ageRange, setAgeRange] = useState(defaultFilters.ageRange);
+  const { user: admin } = useAuthContext();
 
   const handleAgeRangeChange = (newValue) => {
     setAgeRange(newValue);
@@ -129,7 +130,7 @@ function CreatorTableView() {
     ageRange,
   });
 
-  const dataInPage = dataFiltered.slice(
+  const dataInPage = dataFiltered?.slice(
     table.page * table.rowsPerPage,
     table.page * table.rowsPerPage + table.rowsPerPage
   );
@@ -138,7 +139,7 @@ function CreatorTableView() {
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = (!dataFiltered?.length && canReset) || !dataFiltered?.length;
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -176,7 +177,8 @@ function CreatorTableView() {
         await axiosInstance.delete(`${endpoints.creators.deleteCreator}/${id}`);
         const deleteRows = tableData.filter((row) => row.id !== id);
         confirm.onFalse();
-        setTableData(deleteRows);
+        mutate(endpoints.creators.getCreators);
+        // setTableData(deleteRows);
         enqueueSnackbar('Successfully deleted Creator');
       } catch (error) {
         enqueueSnackbar('Error delete Creator', { variant: 'error' });
@@ -192,18 +194,20 @@ function CreatorTableView() {
     const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
 
     enqueueSnackbar('Delete success!');
-
-    setTableData(deleteRows);
+    mutate(endpoints.creators.getCreators);
+    // setTableData(deleteRows);
 
     table.onUpdatePageDeleteRows({
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
+      totalRowsInPage: dataInPage?.length,
+      totalRowsFiltered: dataFiltered?.length,
     });
-  }, [dataFiltered.length, dataInPage.length, enqueueSnackbar, table, tableData]);
+  }, [dataFiltered?.length, dataInPage?.length, enqueueSnackbar, table, tableData]);
 
   useEffect(() => {
-    setTableData(creators);
-  }, [creators]);
+    if (!isLoading) {
+      setTableData(creators);
+    }
+  }, [creators, isLoading]);
 
   return (
     <>
@@ -248,8 +252,8 @@ function CreatorTableView() {
                     }
                   >
                     {['active', 'pending', 'banned', 'rejected'].includes(tab.value)
-                      ? tableData.filter((user) => user.status === tab.value).length
-                      : tableData.length}
+                      ? tableData?.filter((user) => user.status === tab.value).length
+                      : tableData?.length}
                   </Label>
                 }
               />
@@ -280,11 +284,11 @@ function CreatorTableView() {
             <TableSelectedAction
               dense={table.dense}
               numSelected={table.selected.length}
-              rowCount={dataFiltered.length}
+              rowCount={dataFiltered?.length}
               onSelectAllRows={(checked) =>
                 table.onSelectAllRows(
                   checked,
-                  dataFiltered.map((row) => row.id)
+                  dataFiltered?.map((row) => row.id)
                 )
               }
               action={
@@ -299,50 +303,68 @@ function CreatorTableView() {
             <Scrollbar>
               <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
                 <TableHeadCustom
+                  user={admin}
                   order={table.order}
                   orderBy={table.orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={dataFiltered.length}
+                  rowCount={dataFiltered?.length}
                   numSelected={table.selected.length}
                   onSort={table.onSort}
                   onSelectAllRows={(checked) =>
                     table.onSelectAllRows(
                       checked,
-                      dataFiltered.map((row) => row.id)
+                      dataFiltered?.map((row) => row.id)
                     )
                   }
                 />
+                {/* {isLoading && (
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                    }}
+                  >
+                    <LinearProgress />
+                  </Box>
+                )} */}
 
                 <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => (
-                      <CreatorTableRow
-                        key={row.id}
-                        row={row}
-                        selected={table.selected.includes(row.id)}
-                        onSelectRow={() => table.onSelectRow(row.id)}
-                        onDeleteRow={() => handleDeleteRow(row.id)}
-                        onEditRow={() => handleEditRow(row.id)}
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={TABLE_HEAD.length + 1} align="center">
+                        <LinearProgress />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <>
+                      {dataFiltered
+                        ?.slice(
+                          table.page * table.rowsPerPage,
+                          table.page * table.rowsPerPage + table.rowsPerPage
+                        )
+                        .map((row) => (
+                          <CreatorTableRow
+                            key={row.id}
+                            row={row}
+                            selected={table.selected.includes(row.id)}
+                            onSelectRow={() => table.onSelectRow(row.id)}
+                            onDeleteRow={() => handleDeleteRow(row.id)}
+                            onEditRow={() => handleEditRow(row.id)}
+                          />
+                        ))}
+                      <TableEmptyRows
+                        height={denseHeight}
+                        emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered?.length)}
                       />
-                    ))}
-
-                  <TableEmptyRows
-                    height={denseHeight}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
-                  />
-
-                  <TableNoData notFound={notFound} />
+                      <TableNoData notFound={notFound} />
+                    </>
+                  )}
                 </TableBody>
               </Table>
             </Scrollbar>
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={dataFiltered?.length}
             page={table.page}
             rowsPerPage={table.rowsPerPage}
             onPageChange={table.onChangePage}
@@ -398,21 +420,21 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
   inputData = stabilizedThis?.map((el) => el[0]);
 
   if (name) {
-    inputData = inputData.filter(
+    inputData = inputData?.filter(
       (user) => user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((user) => user.status === status);
+    inputData = inputData?.filter((user) => user.status === status);
   }
 
   if (filters.pronounce.length) {
-    inputData = inputData.filter((user) => filters.pronounce.includes(user.creator.pronounce));
+    inputData = inputData?.filter((user) => filters.pronounce.includes(user.creator.pronounce));
   }
 
   // Filter by age range
-  inputData = inputData.filter((user) => {
+  inputData = inputData?.filter((user) => {
     const age = calculateAge(user.creator.birthDate);
     return age >= ageRange[0] && age <= ageRange[1];
   });

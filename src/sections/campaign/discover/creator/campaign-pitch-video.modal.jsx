@@ -59,6 +59,8 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   const { handleSubmit, setValue, watch } = methods;
 
+  const a = watch('pitchVideo');
+
   const onSubmit = handleSubmit(async (data) => {
     try {
       setLoading(true);
@@ -266,7 +268,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
               startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
               type="submit"
               loading={loading}
-              disabled={progress.some((elem) => elem.campaignId === campaign.id)}
+              disabled={progress.some((elem) => elem.campaignId === campaign.id) || !a}
             >
               Pitch
             </LoadingButton>

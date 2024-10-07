@@ -38,6 +38,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 const CampaignDetailPitchContent = ({ data, timelines }) => {
   const modal = useBoolean();
+
   const methods = useForm({
     defaultValues: {
       status: data?.status || '',
@@ -65,7 +66,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         });
         enqueueSnackbar(res?.data?.message);
       } catch (error) {
-        console.log(error)
+        console.log(error);
         enqueueSnackbar('error', {
           variant: 'error',
         });
@@ -85,7 +86,6 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
       enqueueSnackbar(res?.data?.message);
       modal.onFalse();
     } catch (error) {
-      console.log(error);
       enqueueSnackbar('error', {
         variant: 'error',
       });

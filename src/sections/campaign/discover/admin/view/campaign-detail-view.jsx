@@ -36,11 +36,11 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 import CampaignOverview from '../campaign-overview';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
+import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
-import CampaignInvoicesList from '../campaign-invoices-list';
 
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
@@ -53,7 +53,6 @@ const CampaignDetailView = ({ id }) => {
   const idd = open ? 'simple-popper' : undefined;
 
   const currentCampaign = campaigns && campaigns.find((campaign) => campaign.id === id);
-  console.log(currentCampaign);
 
   let timeline =
     currentCampaign?.defaultcampaignTimeline || currentCampaign?.customcampaignTimeline;

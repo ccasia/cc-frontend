@@ -63,7 +63,10 @@ export default function Upload({
           >
             browse
           </Box>
-          thorough your machine
+          thorough your machine.
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Upload a video that does not exceed 5 minutes.
         </Typography>
       </Stack>
     </Stack>

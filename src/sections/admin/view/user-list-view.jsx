@@ -120,7 +120,7 @@ const defaultFilters = {
 // ----------------------------------------------------------------------
 
 export default function UserListView({ admins }) {
-  const { user, role } = useAuthContext();
+  const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);

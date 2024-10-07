@@ -6,8 +6,10 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
+  Stack,
   Button,
   Dialog,
   Typography,
@@ -16,6 +18,8 @@ import {
   DialogContent,
 } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { banks } from 'src/contants/bank';
@@ -23,7 +27,7 @@ import { banks } from 'src/contants/bank';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
-const CreatorForm = ({ dialog, user }) => {
+const CreatorForm = ({ dialog, user, display, backdrop }) => {
   const schema = yup.object().shape({
     fullName: yup.string().required('Full name is required'),
     address: yup.string().required('Address is required'),
@@ -32,6 +36,8 @@ const CreatorForm = ({ dialog, user }) => {
     accountName: yup.string().required('Account Name is required'),
     accountNumber: yup.string().required('Account Number is required'),
   });
+
+  const loading = useBoolean();
 
   const methods = useForm({
     resolver: yupResolver(schema),
@@ -49,21 +55,66 @@ const CreatorForm = ({ dialog, user }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
+      loading.onTrue();
       const res = await axiosInstance.patch(endpoints.creators.updateCreatorform, {
         ...data,
         userId: user?.id,
       });
       enqueueSnackbar(res?.data?.message);
       dialog.onFalse();
+      backdrop.onFalse();
       mutate(endpoints.auth.me);
     } catch (error) {
       enqueueSnackbar('error', {
         variant: 'error',
       });
+    } finally {
+      loading.onFalse();
     }
   });
 
-  return (
+  return display ? (
+    <FormProvider methods={methods} onSubmit={onSubmit}>
+      <Box
+        display="grid"
+        gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+        gap={1}
+        mt={2}
+      >
+        <RHFTextField name="fullName" label="Full name" />
+        <RHFTextField name="address" label="Address" multiline />
+        <RHFTextField name="icNumber" label="IC/Passport Number" />
+      </Box>
+      <Box sx={{ mt: 2 }}>
+        <Typography variant="subtitle1">Bank Details</Typography>
+        <Box
+          display="grid"
+          gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+          gap={1}
+          mt={2}
+        >
+          <RHFAutocomplete
+            label="Choose a bank"
+            name="bankName"
+            options={banks.map((item) => item.bank)}
+            getOptionLabel={(option) => option}
+          />
+          {/* <RHFTextField name="bankName" label="Bank name" /> */}
+          <RHFTextField name="accountName" label="Name on Account" />
+          <RHFTextField name="accountNumber" label="Account Number" />
+        </Box>
+      </Box>
+
+      <Stack direction="row" alignItems="center" justifyContent="end" spacing={1} mt={2}>
+        <Button size="small" variant="outlined" onClick={backdrop.onFalse}>
+          Later
+        </Button>
+        <LoadingButton size="small" variant="contained" type="submit" loading={loading.value}>
+          Submit
+        </LoadingButton>
+      </Stack>
+    </FormProvider>
+  ) : (
     <Dialog open={dialog.value} onClose={dialog.onFalse} maxWidth="sm" fullWidth>
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle>Complete this form</DialogTitle>
@@ -102,9 +153,9 @@ const CreatorForm = ({ dialog, user }) => {
           <Button size="small" variant="outlined" onClick={dialog.onFalse}>
             Close
           </Button>
-          <Button size="small" variant="contained" type="submit">
+          <LoadingButton size="small" variant="contained" type="submit" loading={loading.value}>
             Submit
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </FormProvider>
     </Dialog>
@@ -116,4 +167,6 @@ export default CreatorForm;
 CreatorForm.propTypes = {
   dialog: PropTypes.object,
   user: PropTypes.object,
+  display: PropTypes.bool,
+  backdrop: PropTypes.object,
 };

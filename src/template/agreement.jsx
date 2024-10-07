@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import dayjs from 'dayjs';
 import { Page, Text, View, Font, Link, Image, Document, StyleSheet } from '@react-pdf/renderer';
 
 Font.register({
@@ -16,7 +17,7 @@ Font.register({
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
-    backgroundColor: '#E4E4E4',
+    backgroundColor: '#F4F4F4',
     padding: 40,
     fontFamily: 'EB Garamond',
     position: 'relative',
@@ -103,7 +104,10 @@ export default function AgreementTemplate({
   CREATOR_BANK_NAME,
   AGREEMENT_ENDDATE,
   NOW_DATE,
-  VERSION_NUMBER,
+  VERSION_NUMBER = 'V1',
+  ADMIN_IC_NUMBER,
+  ADMIN_NAME,
+  SIGNATURE,
 }) {
   return (
     <Document pageLayout="singlePage">
@@ -273,23 +277,35 @@ export default function AgreementTemplate({
             <View
               style={{
                 display: 'flex',
-                gap: 100,
+                gap: SIGNATURE ? 15 : 100,
                 fontSize: 12,
               }}
             >
-              <Text>Signature of</Text>
+              <View>
+                <Text>Signature of</Text>
+                {SIGNATURE && (
+                  <Image
+                    src={SIGNATURE}
+                    style={{
+                      width: 150,
+                      marginTop: 10,
+                    }}
+                  />
+                )}
+              </View>
+
               <View>
                 <View style={styles.signatureChild}>
                   <Text>Name: </Text>
-                  <Text>Norlina Esa</Text>
+                  <Text>{ADMIN_NAME}</Text>
                 </View>
                 <View style={styles.signatureChild}>
                   <Text>NRIC: </Text>
-                  <Text>850717-56-5000</Text>
+                  <Text>{ADMIN_IC_NUMBER}</Text>
                 </View>
                 <View style={styles.signatureChild}>
                   <Text>Date: </Text>
-                  <Text>{NOW_DATE}</Text>
+                  <Text>{dayjs().format('LL')}</Text>
                 </View>
               </View>
             </View>

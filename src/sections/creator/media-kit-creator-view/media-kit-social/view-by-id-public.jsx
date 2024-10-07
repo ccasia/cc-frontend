@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import { Box, Stack } from '@mui/material';
 
 import MediaKitAnalytics from './media-kit-analytic/view';
-import MediaKitSocialContentInstagram from './media-kit-social-content/view-instagram-by-id-public';
 import MediaKitSocialContentTiktok from './media-kit-social-content/view-tiktok-by-id-public';
+import MediaKitSocialContentInstagram from './media-kit-social-content/view-instagram-by-id-public';
 
 const MediaKitSocial = ({ currentTab, creator }) => (
   <Box
@@ -29,7 +29,7 @@ const MediaKitSocial = ({ currentTab, creator }) => (
     )}
     {currentTab === 'tiktok' && (
       <Stack gap={4}>
-        <MediaKitSocialContentTiktok user={creator}/>
+        <MediaKitSocialContentTiktok user={creator} />
       </Stack>
     )}
     {currentTab === 'partnership'}
@@ -40,4 +40,5 @@ export default MediaKitSocial;
 
 MediaKitSocial.propTypes = {
   currentTab: PropTypes.string.isRequired,
+  creator: PropTypes.object,
 };
