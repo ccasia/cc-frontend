@@ -636,13 +636,12 @@ const CampaignDetailManageView = ({ id }) => {
             {campaign?.status === 'SCHEDULED' &&
               dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') && (
                 <LoadingButton
-                  startIcon={<Iconify icon="ion:close" />}
-                  variant="outlined"
-                  color="error"
-                  onClick={modalConfirm.onTrue}
+                  variant="contained"
+                  color="success"
+                  onClick={() => handleChangeStatus('ACTIVE')}
                   size="small"
                 >
-                  End Campaign
+                  Start Campaign
                 </LoadingButton>
               )}
             {campaign &&
