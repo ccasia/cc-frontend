@@ -198,7 +198,7 @@ export default function NotificationsPopover() {
         color={drawer.value ? 'primary' : 'default'}
         onClick={drawer.onTrue}
       >
-        <Badge badgeContent={totalUnRead < 20 ? totalUnRead : `20+`} color="error">
+        <Badge badgeContent={!isLoading && (totalUnRead < 20 ? totalUnRead : `20+`)} color="error">
           <Iconify icon="solar:bell-bing-bold-duotone" width={24} />
         </Badge>
       </IconButton>

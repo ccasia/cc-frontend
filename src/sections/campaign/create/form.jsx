@@ -1203,7 +1203,7 @@ FormUpload.propTypes = {
 
 const stepsPDF = ['Fill in missing information', 'Digital Signature'];
 
-const PDFEditorModal = ({ open, onClose, user }) => {
+export const PDFEditorModal = ({ open, onClose, user, campaignId }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [url, setURL] = useState('');
   const loadingProcess = useBoolean();
@@ -1317,7 +1317,7 @@ const PDFEditorModal = ({ open, onClose, user }) => {
       const blob = await response.blob();
 
       const formData = new FormData();
-      formData.append('data', JSON.stringify({ ...user, ...data }));
+      formData.append('data', JSON.stringify({ ...user, ...data, campaignId }));
       formData.append('signedAgreement', agreementBlob);
       formData.append('signatureImage', blob);
 
@@ -1446,4 +1446,5 @@ PDFEditorModal.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   user: PropTypes.object,
+  campaignId: PropTypes.string,
 };

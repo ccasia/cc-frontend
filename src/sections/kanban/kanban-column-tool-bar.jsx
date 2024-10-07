@@ -75,7 +75,6 @@ export default function KanbanColumnToolBar({
           onChange={handleChangeName}
           onKeyUp={handleKeyUpUpdateColumn}
         />
-
         {/* <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
           <Iconify icon="eva:more-horizontal-fill" />
         </IconButton> */}

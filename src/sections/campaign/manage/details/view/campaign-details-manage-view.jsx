@@ -52,6 +52,7 @@ import { EditDosAndDonts } from './EditDosAndDonts';
 import { EditCampaignInfo } from './EditCampaignInfo';
 import { EditRequirements } from './EditRequirements';
 import { EditBrandOrCompany } from './EditBrandOrCompany';
+import EditAgreementTemplate from './EditAgreementTemplate';
 
 const EditButton = ({ tooltip, onClick }) => (
   <Stack direction="row" spacing={1} position="absolute" top={10} right={10} alignItems="center">
@@ -88,6 +89,7 @@ const CampaignDetailManageView = ({ id }) => {
     dosAndDonts: false,
     campaignRequirements: false,
     timeline: false,
+    campaignAgreement: false,
   });
 
   const onClose = (data) => {
@@ -558,37 +560,51 @@ const CampaignDetailManageView = ({ id }) => {
   );
 
   const renderAgreementTemplate = (
-    <Box component={Card} p={2}>
-      <Typography variant="h5">Agreement Template</Typography>
-      <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
-        <Box
-          sx={{
-            display: 'inline-block',
-          }}
-        >
-          {campaign?.campaignBrief?.agreementFrom && (
-            <Document
-              file={campaign?.campaignBrief?.agreementFrom}
-              onLoadSuccess={({ numPages }) => setPages(numPages)}
-              renderMode="canvas"
-            >
-              <Stack spacing={2}>
-                {pages &&
-                  Array.from({ length: pages }, (_, index) => (
-                    <Page
-                      key={index}
-                      pageIndex={index}
-                      pageNumber={index + 1}
-                      scale={1}
-                      renderTextLayer={false}
-                    />
-                  ))}
-              </Stack>
-            </Document>
-          )}
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Agreement Template</Typography>
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Agreement Template"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignAgreement: true,
+              }))
+            }
+          />
+        )}
+        <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
+          <Box
+            sx={{
+              display: 'inline-block',
+            }}
+          >
+            {campaign?.campaignBrief?.agreementFrom && (
+              <Document
+                file={campaign?.campaignBrief?.agreementFrom}
+                onLoadSuccess={({ numPages }) => setPages(numPages)}
+                renderMode="canvas"
+              >
+                <Stack spacing={2}>
+                  {pages &&
+                    Array.from({ length: pages }, (_, index) => (
+                      <Page
+                        key={index}
+                        pageIndex={index}
+                        pageNumber={index + 1}
+                        scale={1}
+                        renderTextLayer={false}
+                      />
+                    ))}
+                </Stack>
+              </Document>
+            )}
+          </Box>
         </Box>
       </Box>
-    </Box>
+      {isEditable && <EditAgreementTemplate open={open} campaign={campaign} onClose={onClose} />}
+    </>
   );
 
   return (
