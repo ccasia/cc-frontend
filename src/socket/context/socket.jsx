@@ -14,15 +14,36 @@ const SocketProvider = ({ children }) => {
   useEffect(() => {
     // I used this for my connection - Zawad
     //  const socketConnection = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
-    const socketConnection = io('http://localhost:3002');
+
+    const socketConnection = io('https://cultcreative.famin.cloud', {
+      path: '/socket.io/',
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
     socketConnection.on('connect', () => {
       console.log('Connected');
       setSocket(socketConnection);
       setOnline(true);
+
+      if (user?.id) {
+        socketConnection.emit('register', user.id);
+      }
     });
 
-    socketConnection.emit('register', user?.id);
+    // socketConnection.emit('register', user?.id);
+
+    socketConnection.on('connect_error', (error) => {
+      console.error('Connection error:', error);
+      setOnline(false);
+    });
+
+    socketConnection.on('disconnect', (reason) => {
+      console.log('Disconnected:', reason);
+      setOnline(false);
+    });
 
     return () => {
       socketConnection.disconnect();
