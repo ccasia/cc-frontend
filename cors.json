@@ -1,6 +1,10 @@
 [
   {
-    "origin": ["http://localhost", "https://app.cultcreativeasia.com"],
+    "origin": [
+      "http://localhost",
+      "https://app.cultcreativeasia.com",
+      "https://cultcreative.famin.cloud"
+    ],
     "method": ["GET"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type"]

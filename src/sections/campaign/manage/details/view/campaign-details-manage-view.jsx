@@ -633,6 +633,18 @@ const CampaignDetailManageView = ({ id }) => {
                 End Campaign
               </LoadingButton>
             )}
+            {campaign?.status === 'SCHEDULED' &&
+              dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') && (
+                <LoadingButton
+                  startIcon={<Iconify icon="ion:close" />}
+                  variant="outlined"
+                  color="error"
+                  onClick={modalConfirm.onTrue}
+                  size="small"
+                >
+                  End Campaign
+                </LoadingButton>
+              )}
             {campaign &&
               (campaign?.status === 'PAUSED' ||
                 (campaign?.status === 'DRAFT' &&
