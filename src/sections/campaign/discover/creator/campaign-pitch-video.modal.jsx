@@ -88,15 +88,15 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   const handleDropSingleFile = async (e) => {
     if (e) {
-      if (e[0].type !== 'video/mp4') {
-        enqueueSnackbar(
-          'Currently, only MP4 video format is supported. Please upload your video in MP4 format.',
-          {
-            variant: 'warning',
-          }
-        );
-        return;
-      }
+      // if (e[0].type !== 'video/mp4') {
+      //   enqueueSnackbar(
+      //     'Currently, only MP4 video format is supported. Please upload your video in MP4 format.',
+      //     {
+      //       variant: 'warning',
+      //     }
+      //   );
+      //   return;
+      // }
       const url = URL.createObjectURL(e[0]);
 
       // Create a video element to read the duration

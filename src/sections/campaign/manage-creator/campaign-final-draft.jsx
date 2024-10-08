@@ -60,15 +60,15 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
     (acceptedFiles) => {
       const file = acceptedFiles[0];
 
-      if (file.type !== 'video/mp4') {
-        enqueueSnackbar(
-          'Currently, only MP4 video format is supported. Please upload your video in MP4 format.',
-          {
-            variant: 'warning',
-          }
-        );
-        return;
-      }
+      // if (file.type !== 'video/mp4') {
+      //   enqueueSnackbar(
+      //     'Currently, only MP4 video format is supported. Please upload your video in MP4 format.',
+      //     {
+      //       variant: 'warning',
+      //     }
+      //   );
+      //   return;
+      // }
 
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
