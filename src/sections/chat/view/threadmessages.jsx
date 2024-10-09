@@ -81,15 +81,6 @@ const ThreadMessages = ({ threadId }) => {
       <ChatMessageList messages={messages} />
       <ChatMessageInput threadId={threadId} onSendMessage={handleSendMessage} />
     </Stack>
-    // <Stack sx={{ width: 1, height: 1, overflow: 'hidden' }}>
-    //   <ChatMessageList
-    //     threadId={threadId}
-    //   />
-
-    //   <ChatMessageInput
-    //     threadId={threadId}
-    //   />
-    // </Stack>
   );
 };
 

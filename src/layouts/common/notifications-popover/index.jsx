@@ -7,6 +7,7 @@ import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import List from '@mui/material/List';
+import { alpha } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
@@ -124,7 +125,21 @@ export default function NotificationsPopover() {
   );
 
   const renderTabs = (
-    <Tabs value={currentTab} onChange={handleChangeTab}>
+    <Tabs
+      value={currentTab}
+      onChange={handleChangeTab}
+      variant="fullWidth"
+      sx={{
+        '& .MuiTabs-indicator': {
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          borderRadius: 1,
+          zIndex: -10000,
+          bgcolor: (theme) => alpha(theme.palette.background.default, 1),
+        },
+      }}
+    >
       {TABS.map((tab) => (
         <Tab
           key={tab.value}
@@ -147,11 +162,11 @@ export default function NotificationsPopover() {
                 data?.notifications.filter((notification) => notification.archive).length}
             </Label>
           }
-          sx={{
-            '&:not(:last-of-type)': {
-              mr: 3,
-            },
-          }}
+          // sx={{
+          //   '&:not(:last-of-type)': {
+          //     mr: 3,
+          //   },
+          // }}
         />
       ))}
     </Tabs>
@@ -218,14 +233,14 @@ export default function NotificationsPopover() {
 
         <Divider />
 
-        <Stack
+        {/* <Stack
           direction="row"
           alignItems="center"
           justifyContent="space-between"
-          sx={{ pl: 2.5, pr: 1 }}
+          // sx={{ pl: 2.5, pr: 1 }}
         >
-          {renderTabs}
-        </Stack>
+        </Stack> */}
+        <Box sx={{ p: 0.5 }}>{renderTabs}</Box>
 
         <Divider />
 

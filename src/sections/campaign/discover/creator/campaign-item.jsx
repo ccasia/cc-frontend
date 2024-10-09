@@ -9,7 +9,7 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
 import ListItemText from '@mui/material/ListItemText';
-import { Box, Grid, Card, Tooltip, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Grid, Card, Tooltip, Typography, IconButton, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -190,39 +190,48 @@ export default function CampaignItem({ campaign, user }) {
         }}
       />
 
-      <Stack direction="row">
-        <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-          <CircularProgress
-            variant="determinate"
-            value={Math.round(campaign?.percentageMatch)}
-            thickness={5}
-            sx={{
-              ' .MuiCircularProgress-circle': {
-                stroke: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? theme.palette.common.white
-                    : theme.palette.common.black,
-                strokeLinecap: 'round',
-              },
-            }}
-          />
-          <Box
-            sx={{
-              top: 0,
-              left: 0,
-              bottom: 0,
-              right: 0,
-              position: 'absolute',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
+      <Stack direction="row" alignItems="center">
+        <Label color="info">
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="caption">Match</Typography>
+            <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 10 }}>
               {`${Math.round(campaign?.percentageMatch)}%`}
             </Typography>
-          </Box>
-        </Box>
+            {/* <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+              <CircularProgress
+                variant="determinate"
+                value={Math.round(campaign?.percentageMatch)}
+                size="20px"
+                sx={{
+                  ' .MuiCircularProgress-circle': {
+                    stroke: (theme) =>
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.common.white
+                        : theme.palette.common.black,
+                    strokeLinecap: 'round',
+                  },
+                }}
+              />
+              <Box
+                sx={{
+                  top: 0,
+                  left: 0,
+                  bottom: 0,
+                  right: 0,
+                  position: 'absolute',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 10 }}>
+                  {`${Math.round(campaign?.percentageMatch)}%`}
+                </Typography>
+              </Box>
+            </Box> */}
+          </Stack>
+        </Label>
+
         {campaign?.bookMarkCampaign ? (
           <Tooltip title="Saved">
             <IconButton
