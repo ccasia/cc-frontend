@@ -54,7 +54,6 @@ export default function KanbanDetails({
   onDeleteTask,
   ...other
 }) {
-  const [priority, setPriority] = useState(task?.priority);
 
   const { user } = useAuthContext();
 
@@ -111,10 +110,6 @@ export default function KanbanDetails({
     setTaskDescription(event.target.value);
   }, []);
 
-  const handleChangePriority = useCallback((newValue) => {
-    setPriority(newValue);
-  }, []);
-
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === task?.submission?.campaignId
   )?.isAgreementReady;
@@ -143,14 +138,6 @@ export default function KanbanDetails({
     //   onChange={handleChangeTaskName}
     //   onKeyUp={handleUpdateTask}
     // />
-  );
-
-  const renderPriority = (
-    <Stack direction="row" alignItems="center">
-      <StyledLabel>Priority</StyledLabel>
-
-      <KanbanDetailsPriority priority={priority} onChangePriority={handleChangePriority} />
-    </Stack>
   );
 
   const renderDescription = (
@@ -254,8 +241,7 @@ export default function KanbanDetails({
           {/* {renderLabel} */}
 
           {/* {renderDueDate} */}
-
-          {renderPriority}
+          
           {renderSubmission}
         </Stack>
       </Scrollbar>
