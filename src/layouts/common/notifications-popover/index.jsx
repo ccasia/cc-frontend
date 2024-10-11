@@ -137,6 +137,7 @@ export default function NotificationsPopover() {
           borderRadius: 1,
           zIndex: -10000,
           bgcolor: (theme) => alpha(theme.palette.background.default, 1),
+          transition: 'all .3s ease-in-out',
         },
       }}
     >

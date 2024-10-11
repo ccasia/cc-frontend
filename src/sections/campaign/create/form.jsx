@@ -123,7 +123,7 @@ function CreateCampaignForm() {
   const openBrand = useBoolean();
   const modal = useBoolean();
 
-  const [activeStep, setActiveStep] = useState(parseInt(active, 10) || 0);
+  const [activeStep, setActiveStep] = useState(0 || parseInt(active, 10));
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -286,54 +286,52 @@ function CreateCampaignForm() {
 
   const savedData = localStorage.getItem('formData');
 
-  const defaultValues = savedData
-    ? JSON.parse(savedData)
-    : {
-        hasBrand: false,
-        campaignTitle: '',
-        client: null,
-        campaignBrand: null,
-        campaignStartDate: null,
-        campaignEndDate: null,
-        campaignIndustries: null,
-        campaignObjectives: '',
-        campaignDescription: '',
-        audienceGender: [],
-        audienceAge: [],
-        audienceLocation: [],
-        audienceLanguage: [],
-        audienceCreatorPersona: [],
-        audienceUserPersona: '',
-        socialMediaPlatform: [],
-        videoAngle: [],
+  const defaultValues = savedData ?? {
+    hasBrand: false,
+    campaignTitle: '',
+    client: null,
+    campaignBrand: null,
+    campaignStartDate: null,
+    campaignEndDate: null,
+    campaignIndustries: null,
+    campaignObjectives: '',
+    campaignDescription: '',
+    audienceGender: [],
+    audienceAge: [],
+    audienceLocation: [],
+    audienceLanguage: [],
+    audienceCreatorPersona: [],
+    audienceUserPersona: '',
+    socialMediaPlatform: [],
+    videoAngle: [],
 
-        campaignDo: [
-          {
-            value: '',
-          },
-        ],
-        campaignDont: [
-          {
-            value: '',
-          },
-        ],
-        campaignImages: [],
-        adminManager: [],
-        agreementFrom: null,
-        timeline: [
-          {
-            timeline_type: {},
-            id: '',
-            duration: undefined,
-            for: 'creator',
-            startDate: '',
-            endDate: '',
-            isSubmissionNeeded: false,
-          },
-        ],
-        campaignTasksAdmin: [],
-        campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
-      };
+    campaignDo: [
+      {
+        value: '',
+      },
+    ],
+    campaignDont: [
+      {
+        value: '',
+      },
+    ],
+    campaignImages: [],
+    adminManager: [],
+    agreementFrom: null,
+    timeline: [
+      {
+        timeline_type: {},
+        id: '',
+        duration: undefined,
+        for: 'creator',
+        startDate: '',
+        endDate: '',
+        isSubmissionNeeded: false,
+      },
+    ],
+    campaignTasksAdmin: [],
+    campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
+  };
 
   const methods = useForm({
     resolver: yupResolver(getSchemaForStep(activeStep)),
@@ -354,6 +352,26 @@ function CreateCampaignForm() {
   } = methods;
 
   const values = watch();
+
+  useEffect(() => {
+    const data = JSON.stringify(values);
+
+    localStorage.setItem('formData', data);
+  }, [values]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+
+      e.returnValue = ''; // Required for Chrome to show the alert
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   const {
     append: doAppend,
@@ -794,10 +812,18 @@ function CreateCampaignForm() {
         name="adminManager"
         multiple
         placeholder="Admin Manager"
-        options={(admins && admins.map((admin) => ({ id: admin?.id, name: admin?.name }))) || []}
+        options={
+          (admins &&
+            admins.map((admin) => ({
+              id: admin?.id,
+              name: admin?.name,
+              role: admin?.admin?.role?.name,
+            }))) ||
+          []
+        }
         freeSolo
         isOptionEqualToValue={(option, value) => option.id === value.id}
-        getOptionLabel={(option) => (option?.id === user?.id ? 'Me' : option?.name || '')}
+        getOptionLabel={(option) => `${option.name} - ${option.role}`}
         renderTags={(selected, getTagProps) =>
           selected.map((option, index) => (
             <Chip
@@ -1090,14 +1116,19 @@ function CreateCampaignForm() {
       />
 
       <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
-      <PDFEditorModal open={pdfModal.value} onClose={pdfModal.onFalse} user={user} />
+      <PDFEditorModal
+        open={pdfModal.value}
+        onClose={pdfModal.onFalse}
+        user={user}
+        setAgreementForm={setValue}
+      />
     </Box>
   );
 }
 export default CreateCampaignForm;
 
 const FormUpload = ({ userId, modal, setAgreementForm }) => {
-  const { data, isLoading: templateLoading, error } = useGetTemplate(userId);
+  const { data, isLoading: templateLoading } = useGetTemplate(userId);
   const [pages, setPages] = useState();
 
   useEffect(() => {
@@ -1203,7 +1234,7 @@ FormUpload.propTypes = {
 
 const stepsPDF = ['Fill in missing information', 'Digital Signature'];
 
-export const PDFEditorModal = ({ open, onClose, user, campaignId }) => {
+export const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [url, setURL] = useState('');
   const loadingProcess = useBoolean();
@@ -1312,7 +1343,7 @@ export const PDFEditorModal = ({ open, onClose, user, campaignId }) => {
     try {
       loading.onTrue();
       const { blob: agreementBlob, signImage } = await downloadPdf();
-      // const urll = signRef.current.getTrimmedCanvas().toDataURL('image/png');
+
       const response = await fetch(signURL);
       const blob = await response.blob();
 
@@ -1330,6 +1361,7 @@ export const PDFEditorModal = ({ open, onClose, user, campaignId }) => {
           },
         }
       );
+      setAgreementForm('agreementFrom', res?.data?.templateURL);
       enqueueSnackbar(res?.data?.message);
       onClose();
     } catch (error) {
@@ -1447,4 +1479,5 @@ PDFEditorModal.propTypes = {
   onClose: PropTypes.func,
   user: PropTypes.object,
   campaignId: PropTypes.string,
+  setAgreementForm: PropTypes.func,
 };

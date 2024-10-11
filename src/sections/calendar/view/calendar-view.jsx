@@ -177,7 +177,6 @@ export default function CalendarView() {
               eventClick={onClickEvent}
               height={smUp ? 720 : 'auto'}
               eventDrop={(arg) => {
-                // alert(JSON.stringify(arg));
                 onDropEvent(arg, updateEvent);
               }}
               eventResize={(arg) => {

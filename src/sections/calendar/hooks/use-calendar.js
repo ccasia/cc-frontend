@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
@@ -7,9 +7,12 @@ import { fTimestamp } from 'src/utils/format-time';
 // ----------------------------------------------------------------------
 
 export default function useCalendar() {
-  const calendarRef = useRef(null);
+  const [calendarRef] = useState(useRef(null));
+  const [calendarEl, setCalendarEl] = useState(calendarRef.current);
 
-  const calendarEl = calendarRef.current;
+  useEffect(() => {
+    setCalendarEl(calendarRef.current);
+  }, [calendarRef]);
 
   const smUp = useResponsive('up', 'sm');
 
