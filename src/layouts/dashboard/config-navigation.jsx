@@ -1,3 +1,4 @@
+import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
 
 import { paths } from 'src/routes/paths';
@@ -60,6 +61,12 @@ export function useNavData() {
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
+      enqueueSnackbar(`${data.count} new messages from ${data.name}.`, {
+        anchorOrigin: {
+          vertical: 'bottom',
+          horizontal: 'left',
+        },
+      });
       setUnreadMessageCount(data.count);
     });
 
