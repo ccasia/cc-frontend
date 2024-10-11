@@ -98,6 +98,7 @@ export const interestsLists = [
   'Sports',
   'Technology',
   'Travel',
+  'Entertainment',
 ];
 
 const videoAngle = [

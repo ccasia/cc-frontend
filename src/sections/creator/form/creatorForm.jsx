@@ -54,6 +54,7 @@ export const interestsList = [
   'Sports',
   'Technology',
   'Travel',
+  'Entertainment',
 ];
 
 export default function CreatorForm({ creator, open, onClose }) {
