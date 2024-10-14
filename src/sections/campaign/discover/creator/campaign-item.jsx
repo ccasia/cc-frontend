@@ -24,6 +24,7 @@ import Iconify from 'src/components/iconify';
 import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
+import Carousel from 'src/components/carousel/carousel';
 
 // ----------------------------------------------------------------------
 
@@ -195,6 +196,8 @@ export default function CampaignItem({ campaign, user }) {
       )}
     </Stack>
   );
+
+  // const renderImages = <Carousel images={campaign?.campaignBrief?.images} />;
 
   const renderTexts = (
     <Stack
