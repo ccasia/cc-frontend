@@ -242,7 +242,9 @@ export default function CampaignItem({ campaign, user }) {
             <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 10 }}>
               {`${Math.round(campaign?.percentageMatch)}%`}
             </Typography>
-            {/* <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+          </Stack>
+        </Label>
+        {/* <Box sx={{ position: 'relative', display: 'inline-flex' }}>
               <CircularProgress
                 variant="determinate"
                 value={Math.round(campaign?.percentageMatch)}
@@ -274,8 +276,6 @@ export default function CampaignItem({ campaign, user }) {
                 </Typography>
               </Box>
             </Box> */}
-          </Stack>
-        </Label>
 
         {campaign?.bookMarkCampaign ? (
           <Tooltip title="Saved">

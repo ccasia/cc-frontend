@@ -131,7 +131,15 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                 </IconButton>
               </Tooltip>
             )}
-            <Chip label={`${Math.ceil(campaign?.percentageMatch)}% Match`} color="primary" />
+            <Label color="info">
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography variant="caption">Match</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 10 }}>
+                  {`${Math.round(campaign?.percentageMatch)}%`}
+                </Typography>
+              </Stack>
+            </Label>
+            {/* <Chip label={`${Math.ceil(campaign?.percentageMatch)}% Match`} color="primary" /> */}
           </Stack>
         </Box>
       </DialogTitle>
