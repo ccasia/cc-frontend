@@ -1,24 +1,31 @@
 /* eslint-disable no-nested-ternary */
-import React from 'react';
+import React, { useState } from 'react';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
 import { enqueueSnackbar } from 'notistack';
+import CircularProgress from '@mui/material/CircularProgress';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import CloseIcon from '@mui/icons-material/Close';
+import LinearProgress from '@mui/material/LinearProgress';
 
 import {
   Box,
   Chip,
   Stack,
-  Dialog,
   Button,
   Tooltip,
   Typography,
   IconButton,
-  DialogTitle,
-  ListItemText,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
+  Grid,
+  Tabs,
+  Tab,
+  Avatar,
+  Paper,
+  Divider
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -32,12 +39,13 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import Carousel from 'src/components/carousel/carousel';
+import Masonry from '@mui/lab/Masonry';
+import ImageList from '@mui/material/ImageList';
+import ImageListItem from '@mui/material/ImageListItem';
 
 const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
-  const smUp = useResponsive('down', 'sm');
+  const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuthContext();
   const router = useRouter();
 
@@ -73,246 +81,366 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
     }
   };
 
-  // const renderGallery = (
-  //   <Stack direction="row" gap={2}>
-  //     <Carousel images={campaign?.campaignBrief?.images} />
-  //     {/* {campaign?.campaignBrief?.images?.map((image, index) => (
-  //       <Image
-  //         key={index}
-  //         src={image}
-  //         alt="test"
-  //         ratio="16/9"
-  //         sx={{ borderRadius: 2, cursor: 'pointer' }}
-  //       />
-  //     ))} */}
-  //   </Stack>
-  // );
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [fullImageOpen, setFullImageOpen] = useState(false);
+  const images = campaign?.campaignBrief?.images || [];
 
-  const renderGallery = (
-    <Box>
-      <Carousel images={campaign?.campaignBrief?.images} />
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : images.length - 1));
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex < images.length - 1 ? prevIndex + 1 : 0));
+  };
+
+  const handleImageClick = () => {
+    setFullImageOpen(true);
+  };
+
+  const handleFullImageClose = () => {
+    setFullImageOpen(false);
+  };
+
+  const renderContent = (
+    <Box sx={{ p: 3, pt: 4 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Avatar 
+            src={campaign?.company?.logo} 
+            alt={campaign?.company?.name} 
+            sx={{ width: 64, height: 64 }}
+          />
+          <Box>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 'bold',
+                mb: 0.5
+              }}
+            >
+              {campaign?.name}
+            </Typography>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: 'text.secondary'
+              }}
+            >
+              by {campaign?.company?.name}
+            </Typography>
+          </Box>
+        </Stack>
+        <Box sx={{ width: '30%', maxWidth: 200 }}>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            Profile match: <Box component="span" sx={{ color: 'success.main', fontWeight: 'bold' }}>{Math.min(Math.round(campaign?.percentageMatch), 100)}%</Box>
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={Math.min(Math.round(campaign?.percentageMatch), 100)}
+            sx={{
+              mt: 0.5,
+              height: 4,
+              borderRadius: 1,
+              bgcolor: 'success.lighter',
+              '& .MuiLinearProgress-bar': {
+                borderRadius: 1,
+                bgcolor: 'success.main',
+              },
+            }}
+          />
+        </Box>
+      </Stack>
+
+      <Box sx={{ position: 'relative', height: 400, mb: 3 }}>
+        <Image
+          src={images[currentImageIndex]}
+          alt={`Campaign image ${currentImageIndex + 1}`}
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            borderRadius: 2,
+            cursor: 'pointer',
+          }}
+          onClick={handleImageClick}
+        />
+        {images.length > 1 && (
+          <>
+            <IconButton
+              onClick={handlePrevImage}
+              sx={{
+                position: 'absolute',
+                left: 16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                bgcolor: 'rgba(0, 0, 0, 0.5)',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.7)',
+                },
+              }}
+            >
+              <ArrowBackIosNewIcon />
+            </IconButton>
+            <IconButton
+              onClick={handleNextImage}
+              sx={{
+                position: 'absolute',
+                right: 16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                bgcolor: 'rgba(0, 0, 0, 0.5)',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.7)',
+                },
+              }}
+            >
+              <ArrowForwardIosIcon />
+            </IconButton>
+          </>
+        )}
+      </Box>
+      
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Stack spacing={3}>
+            <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+              <Typography variant="h6" gutterBottom color="primary">Campaign Description</Typography>
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                {campaign?.description}
+              </Typography>
+            </Paper>
+            
+            <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+              <Typography variant="h6" gutterBottom color="primary">User Persona</Typography>
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                {formatText(campaign?.campaignRequirement?.user_persona)}
+              </Typography>
+            </Paper>
+          </Stack>
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+            <Typography variant="h6" gutterBottom color="primary">Campaign Requirements</Typography>
+            <Grid container spacing={2}>
+              {[
+                { label: 'Gender', data: campaign?.campaignRequirement?.gender, icon: 'mdi:gender-male-female' },
+                { label: 'Age', data: campaign?.campaignRequirement?.age, icon: 'mdi:account-outline' },
+              ].map((item, index) => (
+                <Grid item xs={6} key={index}>
+                  <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+                    <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                      <Iconify icon={item.icon} width={20} height={20} />
+                      <Typography variant="subtitle2">{item.label}</Typography>
+                    </Stack>
+                    <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                      {item.data?.map((value, idx) => (
+                        <Chip key={idx} label={formatText(value)} size="small" />
+                      ))}
+                    </Stack>
+                  </Paper>
+                </Grid>
+              ))}
+              <Grid item xs={6} sx={{ display: 'flex' }}>
+                <Paper variant="outlined" sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                    <Iconify icon="mdi:map-marker-outline" width={20} height={20} />
+                    <Typography variant="subtitle2">Geo Location</Typography>
+                  </Stack>
+                  <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ flexGrow: 1 }}>
+                    {campaign?.campaignRequirement?.geoLocation?.map((value, idx) => (
+                      <Chip key={idx} label={formatText(value)} size="small" />
+                    ))}
+                  </Stack>
+                </Paper>
+              </Grid>
+              <Grid item xs={6} sx={{ display: 'flex' }}>
+                <Paper variant="outlined" sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                    <Iconify icon="mdi:translate" width={20} height={20} />
+                    <Typography variant="subtitle2">Language</Typography>
+                  </Stack>
+                  <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ flexGrow: 1 }}>
+                    {campaign?.campaignRequirement?.language?.map((value, idx) => (
+                      <Chip key={idx} label={formatText(value)} size="small" />
+                    ))}
+                  </Stack>
+                </Paper>
+              </Grid>
+              <Grid item xs={12}>
+                <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                    <Iconify icon="mdi:account-star-outline" width={20} height={20} />
+                    <Typography variant="subtitle2">Creator Persona</Typography>
+                  </Stack>
+                  <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                    {campaign?.campaignRequirement?.creator_persona?.map((value, idx) => (
+                      <Chip key={idx} label={formatText(value)} size="small" />
+                    ))}
+                  </Stack>
+                </Paper>
+              </Grid>
+            </Grid>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 
-  return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" fullScreen={smUp}>
-      <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <ListItemText
-            primary={campaign?.name}
-            secondary={`by ${campaign?.company?.name || campaign?.brand?.name}`}
-            primaryTypographyProps={{
-              mt: 1,
-              noWrap: true,
-              component: 'span',
-              color: 'text.primary',
-              typography: 'h5',
-            }}
-          />
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            {campaign?.bookMarkCampaign ? (
-              <Tooltip title="Saved">
-                <IconButton
-                  onClick={() => {
-                    unSaveCampaign(campaign?.bookMarkCampaign.id);
-                  }}
-                >
-                  <Iconify icon="flowbite:bookmark-solid" width={25} />
-                </IconButton>
-              </Tooltip>
-            ) : (
-              <Tooltip title="Save">
-                <IconButton
-                  onClick={() => {
-                    saveCampaign(campaign?.id);
-                  }}
-                >
-                  <Iconify icon="mynaui:bookmark" width={25} />
-                </IconButton>
-              </Tooltip>
-            )}
-            <Label color="info">
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="caption">Match</Typography>
-                <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 10 }}>
-                  {`${Math.round(campaign?.percentageMatch)}%`}
-                </Typography>
-              </Stack>
-            </Label>
-            {/* <Chip label={`${Math.ceil(campaign?.percentageMatch)}% Match`} color="primary" /> */}
-          </Stack>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        {renderGallery}
-
-        <Box mt={2}>
-          <DialogContentText id="alert-dialog-description">
-            <ListItemText
-              primary="Campaign Description"
-              secondary={campaign?.description}
-              primaryTypographyProps={{
-                variant: 'h6',
-                color: 'white',
-              }}
-            />
-          </DialogContentText>
-        </Box>
-        <Box mt={2}>
-          <Typography variant="h6">Campaign Details</Typography>
-
-          <Box
-            display="grid"
-            gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
-            gap={2}
-            mt={1}
-          >
-            <ListItemText
-              primary="Gender"
-              secondary={
-                <Stack direction="row" flexWrap="wrap" gap={1}>
-                  {campaign?.campaignRequirement?.gender.map((gender, index) => (
-                    <Label key={index}>{formatText(gender)}</Label>
-                  ))}
-                </Stack>
-              }
-            />
-            <ListItemText
-              primary="Age"
-              secondary={
-                <Stack direction="row" flexWrap="wrap" gap={1}>
-                  {campaign?.campaignRequirement?.age.map((age, index) => (
-                    <Label key={index}>{formatText(age)}</Label>
-                  ))}
-                </Stack>
-              }
-            />
-            <ListItemText
-              primary="Geo Location"
-              secondary={
-                <Stack direction="row" flexWrap="wrap" gap={1}>
-                  {campaign?.campaignRequirement?.geoLocation.map((location, index) => (
-                    <Label key={index}>{formatText(location)}</Label>
-                  ))}
-                </Stack>
-              }
-            />
-            <ListItemText
-              primary="Language"
-              secondary={
-                <Stack direction="row" flexWrap="wrap" gap={1}>
-                  {campaign?.campaignRequirement?.language.map((language, index) => (
-                    <Label key={index}>{formatText(language)}</Label>
-                  ))}
-                </Stack>
-              }
-            />
-            <ListItemText
-              primary="Creator Persona"
-              secondary={
-                <Stack direction="row" flexWrap="wrap" gap={1}>
-                  {campaign?.campaignRequirement?.creator_persona.map((creatorPersona, index) => (
-                    <Label key={index}>{formatText(creatorPersona)}</Label>
-                  ))}
-                </Stack>
-              }
-            />
-            <ListItemText
-              primary="User Persona"
-              secondary={
-                <Typography variant="subtitle2" color="text.secondary">
-                  {formatText(campaign?.campaignRequirement?.user_persona)}
-                </Typography>
-              }
-            />
-          </Box>
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Close</Button>
+  const renderActions = (
+    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+      <Button
+        variant="outlined"
+        startIcon={<Iconify icon={campaign?.bookMarkCampaign ? "mdi:bookmark" : "mdi:bookmark-outline"} />}
+        onClick={() => campaign?.bookMarkCampaign ? unSaveCampaign(campaign?.bookMarkCampaign.id) : saveCampaign(campaign?.id)}
+      >
+        {campaign?.bookMarkCampaign ? "Unsave" : "Save"}
+      </Button>
+      <Stack direction="row" spacing={2}>
+        <Button variant="outlined" onClick={handleClose}>Close</Button>
         {isShortlisted?.includes(campaign.id) ? (
           <Button
-            autoFocus
             variant="contained"
             onClick={() => router.push(paths.dashboard.campaign.creator.detail(campaign.id))}
-            size="small"
           >
-            Manage
+            Manage Campaign
           </Button>
         ) : (
           <>
             {existingPitch?.status === 'undecided' && (
               <Button
-                autoFocus
                 variant="contained"
-                startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+                startIcon={<Iconify icon="mdi:clock-outline" width={20} />}
                 disabled
                 color="warning"
-                size="small"
               >
-                In Review
+                Pitch In Review
               </Button>
             )}
-
             {!user?.creator?.isFormCompleted && (
               <Button
-                autoFocus
                 variant="contained"
-                startIcon={<Iconify icon="fluent:form-20-regular" width={20} />}
-                onClick={() => {
-                  dialog.onTrue();
-                }}
-                size="small"
+                startIcon={<Iconify icon="mdi:form-select" width={20} />}
+                onClick={() => dialog.onTrue()}
               >
-                Complete Form
+                Complete Profile
               </Button>
             )}
-
             {!existingPitch && user?.creator?.isFormCompleted && (
               <Button
-                autoFocus
                 variant="contained"
-                startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+                startIcon={<Iconify icon="mdi:send" width={20} />}
                 onClick={() => {
                   handleClose();
                   openForm();
                 }}
-                size="small"
               >
                 Pitch
               </Button>
             )}
-            {/* 
-            {!existingPitch && user?.creator?.isFormCompleted ? (
-              <Button
-                autoFocus
-                variant="contained"
-                startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-                onClick={() => {
-                  handleClose();
-                  openForm();
-                }}
-                size="small"
-              >
-                Pitch
-              </Button>
-            ) : (
-              <Button
-                autoFocus
-                variant="contained"
-                startIcon={<Iconify icon="fluent:form-20-regular" width={20} />}
-                onClick={() => {
-                  dialog.onTrue();
-                }}
-                size="small"
-              >
-                Complete Form
-              </Button>
-            )} */}
           </>
         )}
-      </DialogActions>
+      </Stack>
+    </Stack>
+  );
+
+  const renderFullSizeImage = (
+    <Dialog
+      open={fullImageOpen}
+      onClose={handleFullImageClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+        },
+      }}
+    >
+      <DialogContent sx={{ p: 0, position: 'relative', height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Image
+            src={images[currentImageIndex] || '/path/to/default/image.jpg'}
+            alt={`Full size campaign image ${currentImageIndex + 1}`}
+            sx={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+            }}
+          />
+        </Box>
+        <IconButton
+          onClick={handleFullImageClose}
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            color: 'text.primary',
+            bgcolor: 'background.paper',
+            '&:hover': { bgcolor: 'action.hover' },
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        {images.length > 1 && (
+          <>
+            <IconButton
+              onClick={handlePrevImage}
+              sx={{
+                position: 'absolute',
+                left: 16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'text.primary',
+                bgcolor: 'background.paper',
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <ArrowBackIosNewIcon />
+            </IconButton>
+            <IconButton
+              onClick={handleNextImage}
+              sx={{
+                position: 'absolute',
+                right: 16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'text.primary',
+                bgcolor: 'background.paper',
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <ArrowForwardIosIcon />
+            </IconButton>
+          </>
+        )}
+      </DialogContent>
     </Dialog>
+  );
+
+  return (
+    <>
+      <Dialog 
+        open={open} 
+        onClose={handleClose} 
+        fullWidth 
+        maxWidth="md"
+        PaperProps={{ 
+          sx: { 
+            borderRadius: 3,
+            overflow: 'hidden',
+          } 
+        }}
+      >
+        <DialogContent sx={{ p: 0 }}>
+          {renderContent}
+        </DialogContent>
+        {renderActions}
+      </Dialog>
+      {renderFullSizeImage}
+    </>
   );
 };
 
