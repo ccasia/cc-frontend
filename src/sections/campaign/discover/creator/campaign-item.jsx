@@ -9,7 +9,7 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
 import ListItemText from '@mui/material/ListItemText';
-import { Grid, Card, Tooltip, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Grid, Card, Tooltip, Typography, IconButton, CircularProgress, Avatar, Box, Chip, Button } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -25,6 +25,12 @@ import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
+import { alpha } from '@mui/material/styles';
+import { Divider } from '@mui/material';
+
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
+
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, user }) {
@@ -34,6 +40,7 @@ export default function CampaignItem({ campaign, user }) {
   const dialog = useBoolean();
 
   const { socket } = useSocketContext();
+  const router = useRouter();
 
   useEffect(() => {
     // Define the handler function
@@ -124,247 +131,299 @@ export default function CampaignItem({ campaign, user }) {
 
   const campaignInfo = useBoolean();
 
-  const renderImages = (
-    <Stack
-      spacing={0.5}
-      direction="row"
-      sx={{
-        p: (theme) => theme.spacing(1, 1, 0, 1),
-      }}
-    >
-      <Stack flexGrow={1} sx={{ position: 'relative' }}>
-        <Image
-          alt={campaign?.name}
-          src={campaign?.campaignBrief?.images[0]}
-          sx={{ borderRadius: 1, height: 164, width: 1 }}
-        />
-      </Stack>
-      {campaign?.campaignBrief?.images.length > 1 && (
-        <Stack spacing={0.5}>
-          {campaign?.campaignBrief?.images?.slice(1).map((image) => (
-            <Image
-              alt={campaign?.name}
-              src={image}
-              ratio="1/1"
-              sx={{ borderRadius: 1, width: 80 }}
+  const handleCardClick = () => {
+    campaignInfo.onTrue();
+  };
+
+  const renderImage = (
+    <Box sx={{ position: 'relative', p: 1.5 }}>
+      <Box sx={{ position: 'relative', height: 180, overflow: 'hidden', borderRadius: 1 }}>
+        {campaign?.campaignBrief?.images.length > 1 ? (
+          <Grid container spacing={1} sx={{ height: '100%' }}>
+            <Grid item xs={8} sx={{ height: '100%' }}>
+              <Image
+                alt={campaign?.name}
+                src={campaign?.campaignBrief?.images[0]}
+                sx={{
+                  height: '100%',
+                  width: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                }}
+              />
+            </Grid>
+            <Grid item xs={4} sx={{ height: '100%' }}>
+              <Stack spacing={1} sx={{ height: '100%' }}>
+                {campaign?.campaignBrief?.images.slice(1, 3).map((image, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      height: 'calc(50% - 4px)',
+                      overflow: 'hidden',
+                      borderRadius: 1,
+                      position: 'relative',
+                    }}
+                  >
+                    <Image
+                      alt={`${campaign?.name} ${index + 2}`}
+                      src={image}
+                      sx={{
+                        height: '100%',
+                        width: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center',
+                      }}
+                    />
+                    {campaign?.campaignBrief?.images.length > 3 && index === 1 && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          color: 'white',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        +{campaign?.campaignBrief?.images.length - 3}
+                      </Box>
+                    )}
+                  </Box>
+                ))}
+              </Stack>
+            </Grid>
+          </Grid>
+        ) : (
+          <Image
+            alt={campaign?.name}
+            src={campaign?.campaignBrief?.images[0]}
+            sx={{
+              height: '100%',
+              width: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+            }}
+          />
+        )}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            borderRadius: '16px',
+            padding: '4px 12px 4px 4px',
+            display: 'flex',
+            alignItems: 'center',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Box position="relative" display="inline-flex" sx={{ mr: 1.5 }}>
+            <CircularProgress
+              variant="determinate"
+              value={Math.min(Math.round(campaign?.percentageMatch), 100)}
+              size={32}
+              thickness={4}
+              sx={{ color: 'success.main' }}
             />
-          ))}
-        </Stack>
-      )}
-    </Stack>
+            <Box
+              sx={{
+                top: 0,
+                left: 0,
+                bottom: 0,
+                right: 0,
+                position: 'absolute',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography variant="caption" component="div" color="success.main" fontWeight="bold" fontSize={10}>
+                {`${Math.min(Math.round(campaign?.percentageMatch), 100)}%`}
+              </Typography>
+            </Box>
+          </Box>
+          <Typography variant="body2" color="success.main" fontWeight="bold">
+            Match
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
   );
 
-  const renderTexts = (
-    <Stack
-      direction="row"
-      justifyContent="space-between"
-      alignItems="center"
-      sx={{
-        p: (theme) => theme.spacing(2.5, 2.5, 2, 2.5),
-      }}
+  const renderCampaignInfo = (
+    <Stack 
+      direction="row" 
+      justifyContent="space-between" 
+      alignItems="flex-start" 
+      sx={{ p: 2, pb: 1.5 }}
     >
-      <ListItemText
-        primary={
-          <Link
-            component="a"
-            color="inherit"
-            onClick={() => campaignInfo?.onTrue()}
+      <Stack spacing={0.5} sx={{ flexGrow: 1, mr: 1 }}>
+        <Box
+          onClick={(e) => {
+            e.stopPropagation();
+            campaignInfo.onTrue();
+          }}
+          sx={{
+            cursor: 'pointer',
+            '&:hover': { 
+              '& > .campaign-title': {
+                color: 'primary.main',
+                textDecoration: 'underline',
+              },
+            },
+            zIndex: 2,
+            position: 'relative',
+          }}
+        >
+          <Typography
+            variant="h6"
+            className="campaign-title"
             sx={{
-              cursor: 'pointer',
+              fontWeight: 'bold',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
             }}
           >
             {campaign?.name}
-          </Link>
-        }
-        secondary={`by ${campaign?.brand?.name ?? campaign?.company?.name}`}
-        primaryTypographyProps={{
-          noWrap: true,
-          component: 'span',
-          color: 'text.primary',
-          typography: 'subtitle1',
-        }}
-        secondaryTypographyProps={{
-          noWrap: true,
-          color: 'text.disabled',
-          typography: 'caption',
-        }}
-      />
-
-      <Stack direction="row" alignItems="center">
-        <Label color="info">
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="caption">Match</Typography>
-            <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 10 }}>
-              {`${Math.round(campaign?.percentageMatch)}%`}
-            </Typography>
-            {/* <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-              <CircularProgress
-                variant="determinate"
-                value={Math.round(campaign?.percentageMatch)}
-                size="20px"
-                sx={{
-                  ' .MuiCircularProgress-circle': {
-                    stroke: (theme) =>
-                      theme.palette.mode === 'dark'
-                        ? theme.palette.common.white
-                        : theme.palette.common.black,
-                    strokeLinecap: 'round',
-                  },
-                }}
-              />
-              <Box
-                sx={{
-                  top: 0,
-                  left: 0,
-                  bottom: 0,
-                  right: 0,
-                  position: 'absolute',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 10 }}>
-                  {`${Math.round(campaign?.percentageMatch)}%`}
-                </Typography>
-              </Box>
-            </Box> */}
+          </Typography>
+        </Box>
+        <Stack spacing={0.8}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Iconify icon="mdi:office-building" width={14} height={14} sx={{ color: 'text.primary' }} />
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'medium' }} noWrap>
+                {campaign?.brand?.name ?? campaign?.company?.name}
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" width={14} sx={{ color: 'text.primary' }} />
+              <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
+                {campaign?.campaignBrief?.industries}
+              </Typography>
+            </Stack>
           </Stack>
-        </Label>
-
-        {campaign?.bookMarkCampaign ? (
-          <Tooltip title="Saved">
-            <IconButton
-              onClick={() => {
-                unSaveCampaign(campaign.bookMarkCampaign.id);
-              }}
-            >
-              <Iconify icon="flowbite:bookmark-solid" width={25} />
-            </IconButton>
-          </Tooltip>
-        ) : (
-          <Tooltip title="Save">
-            <IconButton
-              onClick={() => {
-                saveCampaign(campaign.id);
-              }}
-            >
-              <Iconify icon="mynaui:bookmark" width={25} />
-            </IconButton>
-          </Tooltip>
-        )}
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Iconify icon="mdi:clock" width={14} sx={{ color: 'info.main' }} />
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              {`${dayjs(campaign?.campaignBrief?.startDate).format('MMM D')} - ${dayjs(campaign?.campaignBrief?.endDate).format('MMM D, YYYY')}`}
+            </Typography>
+          </Stack>
+        </Stack>
       </Stack>
+      <Tooltip title={campaign?.bookMarkCampaign ? "Unsave" : "Save"}>
+        <IconButton 
+          onClick={(e) => {
+            e.stopPropagation();
+            campaign?.bookMarkCampaign ? unSaveCampaign(campaign.bookMarkCampaign.id) : saveCampaign(campaign.id);
+          }}
+          sx={{ 
+            p: 0.5, 
+            zIndex: 3,
+            color: campaign?.bookMarkCampaign ? 'primary.main' : 'text.secondary',
+            '&:hover': {
+              color: 'primary.main',
+            },
+          }}
+        >
+          <Iconify icon={campaign?.bookMarkCampaign ? "mdi:bookmark" : "mdi:bookmark-outline"} width={20} />
+        </IconButton>
+      </Tooltip>
     </Stack>
   );
 
-  const renderInfo = (
-    <Stack
-      spacing={1.5}
-      sx={{
-        p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
-      }}
-    >
+  const renderAction = (
+    <Box sx={{ px: 2, pb: 2, position: 'relative', zIndex: 2 }}>
       {pitch && pitch.status === 'pending' && (
-        <Label
-          color="warning"
-          sx={{
-            position: 'absolute',
-            bottom: 10,
-            right: 10,
-          }}
-        >
-          Pending
-        </Label>
+        <Chip label="Pending" color="warning" size="small" sx={{ width: '100%', height: 36 }} />
       )}
       {pitch && pitch.status !== 'approved' && pitch.status !== 'pending' && (
-        <Label
-          sx={{
-            position: 'absolute',
-            bottom: 10,
-            right: 10,
-            color: (theme) => theme.palette.text.secondary,
-          }}
-        >
-          In Review
-        </Label>
+        <Chip label="In Review" color="info" size="small" sx={{ width: '100%', height: 36 }} />
       )}
       {shortlisted && (
-        <Label
-          sx={{
-            position: 'absolute',
-            bottom: 10,
-            right: 10,
-          }}
-          color="success"
-        >
-          Approved
-        </Label>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Chip 
+            icon={<Iconify icon="mdi:check-circle" />}
+            label="Approved" 
+            color="success" 
+            size="small" 
+            sx={{ 
+              flexGrow: 1,
+              height: 36,
+              '& .MuiChip-label': {
+                fontWeight: 'bold'
+              }
+            }} 
+          />
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => router.push(paths.dashboard.campaign.creator.detail(campaign.id))}
+            sx={{ height: 36 }}
+          >
+            Manage
+          </Button>
+        </Stack>
       )}
       {!shortlisted && !pitch && (
         <>
           {upload.find((item) => item.campaignId === campaign.id)?.loading ? (
-            <CircularProgress
-              sx={{ position: 'absolute', bottom: 10, right: 10 }}
-              variant="determinate"
-              value={upload.find((item) => item.campaignId === campaign.id).progress}
-            />
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <CircularProgress
+                variant="determinate"
+                value={upload.find((item) => item.campaignId === campaign.id).progress}
+                size={24}
+              />
+            </Box>
           ) : (
-            <LoadingButton
-              sx={{ position: 'absolute', bottom: 10, right: 10 }}
+            <Button
               variant="contained"
               size="small"
-              startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+              startIcon={<Iconify icon="mdi:send" width={18} />}
               onClick={() => setOpen(true)}
               disabled={!user?.creator?.isFormCompleted}
+              fullWidth
+              sx={{ height: 36 }}
             >
               Pitch
-            </LoadingButton>
+            </Button>
           )}
         </>
       )}
-
-      <Grid container>
-        <Grid item xs={1}>
-          <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />
-        </Grid>
-        <Grid item xs={11}>
-          <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Label color="primary">{campaign?.campaignBrief?.industries}</Label>
-            </Stack>
-          </Stack>
-        </Grid>
-      </Grid>
-
-      <Grid container>
-        <Grid item xs={1}>
-          <Iconify icon="solar:clock-circle-bold" />
-        </Grid>
-        <Grid item xs={11}>
-          <Typography variant="caption" color="text.disabled">
-            {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
-          </Typography>
-        </Grid>
-      </Grid>
-    </Stack>
+    </Box>
   );
 
   return (
     <>
-      <Card sx={{ position: 'relative' }}>
-        {renderImages}
-
-        {renderTexts}
-
-        {renderInfo}
-
-        {/* <Chip
-          sx={{ position: 'absolute', top: 10, left: 10 }}
-          variant="filled"
-          color="success"
-          size="small"
-          label={`${Math.ceil(campaign?.percentageMatch)} % Match`}
-        /> */}
+      <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
+        {renderImage}
+        {renderCampaignInfo}
+        <Divider sx={{ my: 1 }} />
+        {renderAction}
+    
+        <Box
+          onClick={handleCardClick}
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            cursor: 'pointer',
+            zIndex: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+            },
+          }}
+        />
       </Card>
 
       <CampaignModal
