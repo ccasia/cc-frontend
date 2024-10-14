@@ -94,6 +94,33 @@ export function useNavData() {
         subheader: 'Management',
         items: [
           {
+            roles: ['superadmin', 'CSM', 'Growth', 'BD'],
+            title: 'Campaign',
+            path: paths.dashboard.campaign.root,
+            icon: <Iconify icon="material-symbols:explore-outline" width={25} />,
+            children: [
+              {
+                title: 'Manage Campaign',
+                path: paths.dashboard.campaign.view,
+              },
+              {
+                roles: ['superadmin', 'CSM'],
+                title: 'Create Campaign',
+                path: paths.dashboard.campaign.create,
+              },
+              {
+                roles: ['superadmin', 'CSM'],
+                title: 'Edit Campaign',
+                path: paths.dashboard.campaign.manage,
+              },
+              {
+                roles: ['superadmin'],
+                title: 'Settings',
+                path: paths.dashboard.campaign.settings,
+              },
+            ],
+          },
+          {
             roles: ['superadmin', 'CSM'],
             title: 'Admin',
             path: paths.dashboard.admins,
@@ -150,33 +177,6 @@ export function useNavData() {
               {
                 title: 'Create',
                 path: paths.dashboard.company.create,
-              },
-            ],
-          },
-          {
-            roles: ['superadmin', 'CSM', 'Growth', 'BD'],
-            title: 'Campaign',
-            path: paths.dashboard.campaign.root,
-            icon: <Iconify icon="material-symbols:explore-outline" width={25} />,
-            children: [
-              {
-                title: 'Manage Campaign',
-                path: paths.dashboard.campaign.view,
-              },
-              {
-                roles: ['superadmin', 'CSM'],
-                title: 'Create Campaign',
-                path: paths.dashboard.campaign.create,
-              },
-              {
-                roles: ['superadmin', 'CSM'],
-                title: 'Edit Campaign',
-                path: paths.dashboard.campaign.manage,
-              },
-              {
-                roles: ['superadmin'],
-                title: 'Settings',
-                path: paths.dashboard.campaign.settings,
               },
             ],
           },
@@ -294,15 +294,15 @@ export function useNavData() {
       {
         items: [
           {
-            title: 'Calendar',
-            path: paths.dashboard.calendar.root,
-            icon: ICONS.calendar,
-          },
-          {
             title: 'Chat',
             path: paths.dashboard.chat.root,
             icon: ICONS.chat,
             msgcounter: unreadMessageCount || (unreadCount > 0 && unreadCount),
+          },
+          {
+            title: 'Calendar',
+            path: paths.dashboard.calendar.root,
+            icon: ICONS.calendar,
           },
           {
             title: 'My Tasks',
