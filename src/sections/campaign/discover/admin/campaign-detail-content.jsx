@@ -29,6 +29,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import Carousel from 'src/components/carousel/carousel';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -39,40 +40,46 @@ const CampaignDetailContent = ({ campaign }) => {
   const pdf = useBoolean();
   const [pages, setPages] = useState();
 
-  const renderGallery =
-    campaign?.campaignBrief?.images.length < 2 ? (
-      <Image
-        src={campaign?.campaignBrief?.images[0]}
-        alt="test"
-        ratio="16/9"
-        sx={{ borderRadius: 2, cursor: 'pointer' }}
-      />
-    ) : (
-      <Box
-        display="grid"
-        gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-        gap={1}
-        mb={5}
-      >
-        <Image
-          src={campaign?.campaignBrief?.images[0]}
-          alt="test"
-          ratio="1/1"
-          sx={{ borderRadius: 2, cursor: 'pointer' }}
-        />
-        {/* <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}> */}
-        {campaign?.campaignBrief?.images.slice(1).map((elem, index) => (
-          <Image
-            key={index}
-            src={elem}
-            alt="test"
-            ratio="1/1"
-            sx={{ borderRadius: 2, cursor: 'pointer' }}
-          />
-        ))}
-        {/* </Box> */}
-      </Box>
-    );
+  const renderGallery = (
+    <Box>
+      <Carousel images={campaign?.campaignBrief?.images} />
+    </Box>
+  );
+
+  // const renderGallery =
+  //   campaign?.campaignBrief?.images.length < 2 ? (
+  //     <Image
+  //       src={campaign?.campaignBrief?.images[0]}
+  //       alt="test"
+  //       ratio="16/9"
+  //       sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //     />
+  //   ) : (
+  //     <Box
+  //       display="grid"
+  //       gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+  //       gap={1}
+  //       mb={5}
+  //     >
+  //       <Image
+  //         src={campaign?.campaignBrief?.images[0]}
+  //         alt="test"
+  //         ratio="1/1"
+  //         sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //       />
+  //       {/* <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}> */}
+  //       {campaign?.campaignBrief?.images.slice(1).map((elem, index) => (
+  //         <Image
+  //           key={index}
+  //           src={elem}
+  //           alt="test"
+  //           ratio="1/1"
+  //           sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //         />
+  //       ))}
+  //       {/* </Box> */}
+  //     </Box>
+  //   );
 
   const renderOverview = (
     <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>

@@ -6,11 +6,23 @@ import Pagination, { paginationClasses } from '@mui/material/Pagination';
 import { useAuthContext } from 'src/auth/hooks';
 
 import CampaignItem from './campaign-item';
+import { useState } from 'react';
 
 // ----------------------------------------------------------------------
 
 export default function CampaignLists({ campaigns }) {
   const { user } = useAuthContext();
+
+  const [page, setPage] = useState(1);
+  const MAX_ITEM = 9;
+
+  const handleChange = (event, value) => {
+    setPage(value);
+  };
+
+  const indexOfLastItem = page * MAX_ITEM;
+  const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
+
   return (
     <>
       <Box
@@ -22,14 +34,19 @@ export default function CampaignLists({ campaigns }) {
           md: 'repeat(3, 1fr)',
         }}
       >
-        {campaigns.map((campaign) => (
+        {campaigns?.slice(indexOfFirstItem, indexOfLastItem)?.map((campaign) => (
           <CampaignItem key={campaign.id} campaign={campaign} user={user} />
         ))}
+        {/* {campaigns.map((campaign) => (
+          <CampaignItem key={campaign.id} campaign={campaign} user={user} />
+        ))} */}
       </Box>
 
-      {campaigns.length > 8 && (
+      {campaigns?.length > 9 && (
         <Pagination
-          count={8}
+          count={Math.ceil(campaigns.length / MAX_ITEM)}
+          page={page}
+          onChange={handleChange}
           sx={{
             mt: 8,
             [`& .${paginationClasses.ul}`]: {

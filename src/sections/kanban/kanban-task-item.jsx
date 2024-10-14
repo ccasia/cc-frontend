@@ -29,30 +29,6 @@ export default function KanbanTaskItem({
 
   const openDetails = useBoolean();
 
-  const renderPriority = (
-    <Iconify
-      icon={
-        (task.priority === 'low' && 'solar:double-alt-arrow-down-bold-duotone') ||
-        (task.priority === 'medium' && 'solar:double-alt-arrow-right-bold-duotone') ||
-        'solar:double-alt-arrow-up-bold-duotone'
-      }
-      sx={{
-        position: 'absolute',
-        top: 4,
-        right: 4,
-        ...(task.priority === 'low' && {
-          color: 'info.main',
-        }),
-        ...(task.priority === 'medium' && {
-          color: 'warning.main',
-        }),
-        ...(task.priority === 'height' && {
-          color: 'error.main',
-        }),
-      }}
-    />
-  );
-
   const renderInfo = (
     <Stack direction="row" alignItems="center">
       <Stack
@@ -123,7 +99,6 @@ export default function KanbanTaskItem({
           >
             {/* {!!task.attachments.length && renderImg} */}
             <Stack spacing={2} sx={{ px: 2, py: 2.5, position: 'relative' }}>
-              {renderPriority}
 
               <ListItemText
                 primary={task?.name}

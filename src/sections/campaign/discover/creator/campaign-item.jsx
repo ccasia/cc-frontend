@@ -131,6 +131,36 @@ export default function CampaignItem({ campaign, user }) {
 
   const campaignInfo = useBoolean();
 
+  // const renderImages = (
+  //   <Stack
+  //     spacing={0.5}
+  //     direction="row"
+  //     sx={{
+  //       p: (theme) => theme.spacing(1, 1, 0, 1),
+  //     }}
+  //   >
+  //     <Stack flexGrow={1} sx={{ position: 'relative' }}>
+  //       <Image
+  //         alt={campaign?.name}
+  //         src={campaign?.campaignBrief?.images[0]}
+  //         sx={{ borderRadius: 1, height: 164, width: 1 }}
+  //       />
+  //     </Stack>
+  //     {campaign?.campaignBrief?.images.length > 1 && (
+  //       <Stack spacing={0.5}>
+  //         {campaign?.campaignBrief?.images?.slice(1).map((image) => (
+  //           <Image
+  //             alt={campaign?.name}
+  //             src={image}
+  //             ratio="1/1"
+  //             sx={{ borderRadius: 1, width: 80 }}
+  //           />
+  //         ))}
+  //       </Stack>
+  //     )}
+  //   </Stack>
+  // );
+
   const handleCardClick = () => {
     campaignInfo.onTrue();
   };

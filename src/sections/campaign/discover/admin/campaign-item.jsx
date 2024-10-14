@@ -35,14 +35,22 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         p: (theme) => theme.spacing(1, 1, 0, 1),
       }}
     >
-      <Stack flexGrow={1} sx={{ position: 'relative' }}>
+      <Stack flexGrow={1} direction="row" gap={1}>
         <Image
           alt={campaign?.name}
           src={campaign?.campaignBrief?.images[0]}
           sx={{ borderRadius: 1, height: 164, width: 1 }}
         />
+        {campaign?.campaignBrief?.images.length === 2 && (
+          <Image
+            alt={campaign?.name}
+            src={campaign?.campaignBrief?.images[1]}
+            ratio="1/1"
+            sx={{ borderRadius: 1, width: 1, height: 164 }}
+          />
+        )}
       </Stack>
-      {campaign?.campaignBrief?.images.length > 1 && (
+      {campaign?.campaignBrief?.images.length === 3 && (
         <Stack spacing={0.5}>
           <Image
             alt={campaign?.name}

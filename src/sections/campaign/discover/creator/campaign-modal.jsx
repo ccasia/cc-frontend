@@ -81,6 +81,21 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
     }
   };
 
+  // const renderGallery = (
+  //   <Stack direction="row" gap={2}>
+  //     <Carousel images={campaign?.campaignBrief?.images} />
+  //     {/* {campaign?.campaignBrief?.images?.map((image, index) => (
+  //       <Image
+  //         key={index}
+  //         src={image}
+  //         alt="test"
+  //         ratio="16/9"
+  //         sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //       />
+  //     ))} */}
+  //   </Stack>
+  // );
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const images = campaign?.campaignBrief?.images || [];
