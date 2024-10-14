@@ -202,47 +202,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
       >
         All creators
       </Button>
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <Button
-          startIcon={<Iconify icon="ic:round-navigate-before" width={20} sx={{ ml: 1 }} />}
-          onClick={() =>
-            router.push(
-              paths.dashboard.campaign.manageCreator(
-                campaignId,
-                shortlistedCreators[
-                  currentIndex === 0 ? (shortlistedCreators?.length ?? 0) - 1 : currentIndex - 1
-                ].userId
-              )
-            )
-          }
-          sx={{
-            mb: 3,
-          }}
-        >
-          Prev creator
-        </Button>
-
-        {shortlistedCreators.length > 0 && (
-          <Button
-            endIcon={<Iconify icon="ic:round-navigate-next" width={20} sx={{ mr: 1 }} />}
-            onClick={() =>
-              router.push(
-                paths.dashboard.campaign.manageCreator(
-                  campaignId,
-                  shortlistedCreators[
-                    currentIndex === (shortlistedCreators?.length ?? 0) - 1 ? 0 : currentIndex + 1
-                  ].userId
-                )
-              )
-            }
-            sx={{
-              mb: 3,
-            }}
-          >
-            Next creator
-          </Button>
-        )}
-      </Stack>
+      
 
       {isLoading && <LoadingScreen />}
 

@@ -67,7 +67,7 @@ const PaymentFormProfile = ({ user }) => {
             type="number"
             label="Body Measurement"
             InputProps={{
-              endAdornment: <InputAdornment position="start">inch</InputAdornment>,
+              endAdornment: <InputAdornment position="start">cm</InputAdornment>,
             }}
           />
           <Stack spacing={1}>
