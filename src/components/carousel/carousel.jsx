@@ -26,7 +26,7 @@ const Carousel = ({ images, height }) => {
     >
       <Box
         sx={{
-          display: 'inline-flex',
+          display: 'flex',
           transform: `translateX(-${curImage * 100}%)`,
           transition: 'all .5s ease-in-out',
         }}

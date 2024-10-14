@@ -34,6 +34,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+import Carousel from 'src/components/carousel/carousel';
 
 const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
   const smUp = useResponsive('down', 'sm');
@@ -72,18 +73,25 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
     }
   };
 
+  // const renderGallery = (
+  //   <Stack direction="row" gap={2}>
+  //     <Carousel images={campaign?.campaignBrief?.images} />
+  //     {/* {campaign?.campaignBrief?.images?.map((image, index) => (
+  //       <Image
+  //         key={index}
+  //         src={image}
+  //         alt="test"
+  //         ratio="16/9"
+  //         sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //       />
+  //     ))} */}
+  //   </Stack>
+  // );
+
   const renderGallery = (
-    <Stack direction="row" gap={2}>
-      {campaign?.campaignBrief?.images?.map((image, index) => (
-        <Image
-          key={index}
-          src={image}
-          alt="test"
-          ratio="16/9"
-          sx={{ borderRadius: 2, cursor: 'pointer' }}
-        />
-      ))}
-    </Stack>
+    <Box>
+      <Carousel images={campaign?.campaignBrief?.images} />
+    </Box>
   );
 
   return (
