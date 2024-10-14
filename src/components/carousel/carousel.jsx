@@ -3,10 +3,9 @@ import PropTypes from 'prop-types';
 
 import { Box, IconButton } from '@mui/material';
 
-import Image from '../image';
 import Iconify from '../iconify';
 
-const Carousel = ({ images }) => {
+const Carousel = ({ images, height }) => {
   const [curImage, setCurImage] = useState(0);
 
   const handleNext = () => {
@@ -18,7 +17,13 @@ const Carousel = ({ images }) => {
   };
 
   return (
-    <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        overflow: 'hidden',
+      }}
+    >
       <Box
         sx={{
           display: 'inline-flex',
@@ -35,7 +40,16 @@ const Carousel = ({ images }) => {
               height: 300,
             }}
           >
-            <Image src={img} alt={`Carousel image ${idx}`} width={1} height={1} />
+            <Box
+              component="img"
+              src={img}
+              alt="Example"
+              sx={{
+                width: 1,
+                height: 1,
+                objectFit: 'contain',
+              }}
+            />
           </Box>
         ))}
       </Box>
@@ -87,4 +101,5 @@ export default Carousel;
 
 Carousel.propTypes = {
   images: PropTypes.array,
+  height: PropTypes.number,
 };
