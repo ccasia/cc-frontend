@@ -34,6 +34,7 @@ const interestsLists = [
   'Sports',
   'Technology',
   'Travel',
+  'Entertainment',
 ];
 
 export const EditCampaignInfo = ({ open, campaign, onClose }) => {

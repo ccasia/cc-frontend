@@ -50,6 +50,7 @@ const interestsLists = [
   'Sports',
   'Technology',
   'Travel',
+  'Entertainment',
 ];
 
 const steps = ['Select or Create Company', 'Fill in Brand Information'];

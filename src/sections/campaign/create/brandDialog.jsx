@@ -35,7 +35,9 @@ const interestsLists = [
   'Sports',
   'Technology',
   'Travel',
+  'Entertainment',
 ];
+
 export default function CreateBrand({ setBrand, open, onClose, brandName, client }) {
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),

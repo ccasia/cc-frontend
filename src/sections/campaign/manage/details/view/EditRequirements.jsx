@@ -174,6 +174,7 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                   //   { value: 'gamer', label: 'Gamer' },
                   //   { value: 'entertainment', label: 'Entertainment' },
                   //   { value: 'travel', label: 'Travel' },
+                  //   { value: 'entertainment', label: 'Entertainment' },
                   // ]
                 }
               />
