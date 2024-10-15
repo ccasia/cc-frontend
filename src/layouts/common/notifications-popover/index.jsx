@@ -136,7 +136,10 @@ export default function NotificationsPopover() {
           display: 'block',
           borderRadius: 1,
           zIndex: -10000,
-          bgcolor: (theme) => alpha(theme.palette.background.default, 1),
+          bgcolor: (theme) =>
+            theme.palette.mode === 'dark'
+              ? alpha(theme.palette.grey[900], 1)
+              : alpha(theme.palette.grey[300], 1),
           transition: 'all .3s ease-in-out',
         },
       }}

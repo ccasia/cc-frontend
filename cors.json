@@ -3,7 +3,7 @@
     "origin": [
       "http://localhost",
       "https://app.cultcreativeasia.com",
-      "https://cultcreative.famin.cloud"
+      "https://staging.cultcreativeasia.com"
     ],
     "method": ["GET"],
     "maxAgeSeconds": 3600,
