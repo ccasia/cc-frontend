@@ -55,6 +55,7 @@ import EditCampaignImages from './EditCampaignImages';
 import { EditBrandOrCompany } from './EditBrandOrCompany';
 import EditAgreementTemplate from './EditAgreementTemplate';
 import Carousel from 'src/components/carousel/carousel';
+import { useAuthContext } from 'src/auth/hooks';
 
 const EditButton = ({ tooltip, onClick }) => (
   <Stack direction="row" spacing={1} position="absolute" top={10} right={10} alignItems="center">
@@ -82,6 +83,7 @@ EditButton.propTypes = {
 
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading } = useGetCampaignById(id);
+
   const [pages, setPages] = useState();
 
   const campaignStartDate = !campaignLoading && campaign?.campaignBrief?.startDate;
@@ -109,6 +111,10 @@ const CampaignDetailManageView = ({ id }) => {
       ...prev,
       [data]: false,
     }));
+  };
+
+  const refreshPdf = () => {
+    mutate(endpoints.campaign.getCampaignById(id));
   };
 
   const isEditable = campaign?.status !== 'ACTIVE';
@@ -592,6 +598,21 @@ const CampaignDetailManageView = ({ id }) => {
     <>
       <Box component={Card} p={2}>
         <Typography variant="h5">Agreement Template</Typography>
+        {campaign.status !== 'ACTIVE' && (
+          <Tooltip title="Refresh">
+            <IconButton
+              sx={{
+                position: 'absolute',
+                top: 10,
+                right: 50,
+                border: 1,
+              }}
+              onClick={() => refreshPdf()}
+            >
+              <Iconify icon="material-symbols:refresh" />
+            </IconButton>
+          </Tooltip>
+        )}
         {isEditable && (
           <EditButton
             tooltip="Edit Agreement Template"
@@ -603,6 +624,7 @@ const CampaignDetailManageView = ({ id }) => {
             }
           />
         )}
+
         <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
           <Box
             sx={{

@@ -1191,16 +1191,6 @@ const FormUpload = ({ userId, modal, setAgreementForm }) => {
             </Button>
           </Box>
 
-          {/* <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
-            <PDFViewer width="100%" height={500}>
-              <AgreementTemplate
-                ADMIN_IC_NUMBER={data?.template?.adminICNumber}
-                ADMIN_NAME={data?.template?.adminName}
-                SIGNATURE={data?.template?.signURL}
-              />
-            </PDFViewer>
-          </Box> */}
-
           <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
             <Box
               sx={{
@@ -1239,7 +1229,6 @@ export const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementFo
   const [activeStep, setActiveStep] = useState(0);
   const [url, setURL] = useState('');
   const loadingProcess = useBoolean();
-  const [file, setFile] = useState('');
   const [signURL, setSignURL] = useState('');
   const [annotations, setAnnotations] = useState([]);
   const loading = useBoolean();
@@ -1362,7 +1351,9 @@ export const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementFo
           },
         }
       );
-      setAgreementForm('agreementFrom', res?.data?.templateURL);
+      if (setAgreementForm) {
+        setAgreementForm('agreementFrom', res?.data?.templateURL);
+      }
       enqueueSnackbar(res?.data?.message);
       onClose();
     } catch (error) {
