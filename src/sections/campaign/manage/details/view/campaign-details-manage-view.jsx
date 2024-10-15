@@ -598,7 +598,7 @@ const CampaignDetailManageView = ({ id }) => {
     <>
       <Box component={Card} p={2}>
         <Typography variant="h5">Agreement Template</Typography>
-        {campaign.status !== 'ACTIVE' && (
+        {campaign?.status !== 'ACTIVE' && (
           <Tooltip title="Refresh">
             <IconButton
               sx={{
