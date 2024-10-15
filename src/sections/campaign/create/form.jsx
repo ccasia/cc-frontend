@@ -115,7 +115,7 @@ const videoAngle = [
 ];
 
 function CreateCampaignForm() {
-  const active = localStorage.getItem('activeStep');
+  // const active = localStorage.getItem('activeStep');
   const { data: options, companyLoading } = useGetCampaignBrandOption();
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const { data: admins } = useGetAdmins('active');
@@ -124,7 +124,7 @@ function CreateCampaignForm() {
   const openBrand = useBoolean();
   const modal = useBoolean();
 
-  const [activeStep, setActiveStep] = useState(0 || parseInt(active, 10));
+  const [activeStep, setActiveStep] = useState(0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -287,7 +287,7 @@ function CreateCampaignForm() {
 
   const savedData = localStorage.getItem('formData');
 
-  const defaultValues = savedData ?? {
+  const defaultValues = {
     hasBrand: false,
     campaignTitle: '',
     client: null,
@@ -634,8 +634,10 @@ function CreateCampaignForm() {
       >
         <Typography variant="h4">Target Audience</Typography>
         <Box flexGrow={1} />
+
         <RHFMultiSelect
           name="audienceGender"
+          label="Audience Gender"
           checkbox
           chip
           options={[
@@ -643,7 +645,6 @@ function CreateCampaignForm() {
             { value: 'male', label: 'Male' },
             { value: 'nonbinary', label: 'Non-Binary' },
           ]}
-          label="Audience Gender"
         />
 
         <RHFMultiSelect
