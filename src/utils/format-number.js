@@ -63,7 +63,6 @@ export function fShortenNumber(inputValue) {
   return fm.replace(/[A-Z]/g, (match) => match.toLowerCase());
 }
 
-
 export function fCurrency(inputValue) {
   const { code, currency } = getLocaleCode();
 

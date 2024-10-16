@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { Page, View, Text, Font, Image, Document, StyleSheet } from '@react-pdf/renderer';
 
 import { fDate } from 'src/utils/format-time';
-import { fCurrency } from 'src/utils/format-number';
 
 // ----------------------------------------------------------------------
 
@@ -213,7 +212,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
               </View>
 
               <View style={[styles.tableCell_2]}>
-                <Text>{fCurrency(invoice?.amount)}</Text>
+                <Text>{`RM${invoice?.amount}`}</Text>
               </View>
             </View>
 
@@ -225,7 +224,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 <Text style={styles.h4}>Total</Text>
               </View>
               <View style={[styles.tableCell_3, styles.alignRight]}>
-                <Text style={styles.h4}>{fCurrency(invoice?.amount)}</Text>
+                <Text style={styles.h4}>{`RM${invoice?.amount}`}</Text>
               </View>
             </View>
           </View>

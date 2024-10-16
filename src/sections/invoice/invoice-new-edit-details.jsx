@@ -10,15 +10,12 @@ import Typography from '@mui/material/Typography';
 import InputAdornment from '@mui/material/InputAdornment';
 import { inputBaseClasses } from '@mui/material/InputBase';
 
-import { fCurrency } from 'src/utils/format-number';
-
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
 export default function InvoiceNewEditDetails() {
   const { control, setValue, watch, resetField } = useFormContext();
-
 
   const { fields, remove } = useFieldArray({
     control,
@@ -48,9 +45,9 @@ export default function InvoiceNewEditDetails() {
   //   });
   // };
 
-  const handleRemove = (index) => {
-    remove(index);
-  };
+  // const handleRemove = (index) => {
+  //   remove(index);
+  // };
 
   const handleClearService = useCallback(
     (index) => {
@@ -133,7 +130,7 @@ export default function InvoiceNewEditDetails() {
 
       <Stack direction="row" sx={{ typography: 'subtitle1' }}>
         <Box>Total</Box>
-        <Box sx={{ width: 160 }}>{fCurrency(totalAmount) || '-'}</Box>
+        <Box sx={{ width: 160 }}>{`RM${totalAmount}` || '-'}</Box>
       </Stack>
     </Stack>
   );
