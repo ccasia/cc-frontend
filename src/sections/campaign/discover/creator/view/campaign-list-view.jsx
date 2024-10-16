@@ -200,7 +200,7 @@ export default function CampaignListView() {
         <Stack direction="row" spacing={1} my={1.5}>
           <Button
             size="small"
-            variant={filter !== 'saved' && 'contained'}
+            variant={filter === 'all' ? 'contained' : 'outlined'}
             onClick={() => setFilter('all')}
           >
             All
@@ -211,6 +211,14 @@ export default function CampaignListView() {
             onClick={() => setFilter('saved')}
           >
             Saved
+          </Button>
+          <Button
+            size="small"
+            color="warning"
+            variant={filter === 'draft' ? 'contained' : 'outlined'}
+            onClick={() => setFilter('draft')}
+          >
+            Draft
           </Button>
         </Stack>
 
@@ -288,6 +296,12 @@ export default function CampaignListView() {
 const applyFilter = ({ inputData, filter }) => {
   if (filter === 'saved') {
     inputData = inputData?.filter((campaign) => campaign.bookMarkCampaign);
+  }
+
+  if (filter === 'draft') {
+    inputData = inputData?.filter((campaign) =>
+      campaign.pitch?.some((elem) => elem.status === 'draft')
+    );
   }
   return inputData;
 };

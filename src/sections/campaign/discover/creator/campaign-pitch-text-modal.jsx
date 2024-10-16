@@ -1,6 +1,7 @@
-import React from 'react';
 import * as Yup from 'yup';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 import 'react-quill/dist/quill.snow.css';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -13,6 +14,8 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import { RHFEditor } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -20,6 +23,13 @@ import FormProvider from 'src/components/hook-form/form-provider';
 const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
   const smUp = useResponsive('sm', 'down');
   const modal = useBoolean();
+  const dialog = useBoolean();
+  const { user } = useAuthContext();
+
+  const pitch = useMemo(
+    () => campaign?.pitch?.find((elem) => elem.userId === user?.id),
+    [campaign, user]
+  );
 
   const schema = Yup.object().shape({
     content: Yup.string().required('Pitch Script is required'),
@@ -30,11 +40,12 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
     reValidateMode: 'onChange',
     resolver: yupResolver(schema),
     defaultValues: {
-      content: '',
+      content: pitch?.content || '',
     },
   });
 
-  const { handleSubmit, reset } = methods;
+  const { handleSubmit, reset, watch } = methods;
+  const value = watch('content');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -43,6 +54,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
         ...data,
       });
       enqueueSnackbar(res?.data?.message);
+      mutate(endpoints.campaign.getMatchedCampaign);
       handleClose();
     } catch (error) {
       enqueueSnackbar(error?.message, {
@@ -50,6 +62,24 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
       });
     }
   });
+
+  const saveAsDraft = async () => {
+    try {
+      const res = await axiosInstance.post(endpoints.campaign.pitch.draft, {
+        content: value,
+        userId: user?.id,
+        campaignId: campaign?.id,
+      });
+      enqueueSnackbar(res?.data?.message);
+      mutate(endpoints.campaign.getMatchedCampaign);
+      dialog.onFalse();
+      handleClose();
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    }
+  };
 
   const modalConfirmation = (
     <Dialog open={modal.value} onClose={modal.onFalse}>
@@ -75,25 +105,84 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
     </Dialog>
   );
 
+  const modalClosePitch = (
+    <Dialog open={dialog.value} fullWidth maxWidth="xs" onClose={dialog.onFalse}>
+      <DialogTitle>Unsaved Changes</DialogTitle>
+      <DialogContent>
+        You have unsaved changes. Would you like to save your draft before closing, or discard it?
+      </DialogContent>
+      <DialogActions>
+        <Button
+          autoFocus
+          variant="outlined"
+          size="small"
+          onClick={() => {
+            dialog.onFalse();
+            handleClose();
+            reset();
+          }}
+        >
+          Discard Draft
+        </Button>
+        <Button variant="contained" size="small" onClick={saveAsDraft}>
+          Save Draft
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md" fullScreen={smUp}>
+    <Dialog
+      open={open}
+      onClose={() => {
+        if (value && value !== pitch?.content) {
+          dialog.onTrue();
+        } else {
+          handleClose();
+        }
+      }}
+      fullWidth
+      maxWidth="md"
+      fullScreen={smUp}
+    >
       <FormProvider methods={methods}>
         <DialogTitle>Start Pitching Your Text !</DialogTitle>
         <Box p={2}>
           <RHFEditor simple name="content" />
         </Box>
         <DialogActions>
-          <Button onClick={handleClose}>Close</Button>
+          <Button
+            onClick={() => {
+              if (value && value !== pitch?.content) {
+                dialog.onTrue();
+              } else {
+                handleClose();
+              }
+            }}
+            size="small"
+          >
+            Close
+          </Button>
+
+          {value && value !== pitch?.content && (
+            <Button variant="outlined" size="small" onClick={saveAsDraft}>
+              Save as draft
+            </Button>
+          )}
+
           <Button
             autoFocus
             variant="contained"
-            startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
+            startIcon={<Iconify icon="ph:paper-plane-tilt-bold" />}
             onClick={modal.onTrue}
+            size="small"
+            disabled={!value || value === pitch?.content}
           >
             Pitch
           </Button>
         </DialogActions>
         {modalConfirmation}
+        {modalClosePitch}
       </FormProvider>
     </Dialog>
   );

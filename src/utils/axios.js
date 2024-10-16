@@ -165,6 +165,7 @@ export const endpoints = {
       createSingleTimelineType: `/api/campaign/createSingleTimelineType`,
     },
     pitch: {
+      draft: '/api/campaign/draftPitch',
       root: '/api/campaign/pitch',
       approve: '/api/campaign/approvepitch',
       reject: '/api/campaign/rejectPitch',

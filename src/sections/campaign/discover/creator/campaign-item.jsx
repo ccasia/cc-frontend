@@ -9,7 +9,15 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
 import ListItemText from '@mui/material/ListItemText';
-import { Grid, Card, Tooltip, Typography, IconButton, CircularProgress } from '@mui/material';
+import {
+  Grid,
+  Card,
+  Tooltip,
+  Typography,
+  IconButton,
+  CircularProgress,
+  Button,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -33,6 +41,8 @@ export default function CampaignItem({ campaign, user }) {
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
   const dialog = useBoolean();
+  const text = useBoolean();
+  const video = useBoolean();
 
   const { socket } = useSocketContext();
 
@@ -107,8 +117,13 @@ export default function CampaignItem({ campaign, user }) {
     }
   };
 
+  // const pitch = useMemo(
+  //   () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
+  //   [campaign, user]
+  // );
+
   const pitch = useMemo(
-    () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
+    () => campaign?.pitch?.find((elem) => elem.userId === user?.id),
     [campaign, user]
   );
 
@@ -321,18 +336,36 @@ export default function CampaignItem({ campaign, user }) {
           Pending
         </Label>
       )}
-      {pitch && pitch.status !== 'approved' && pitch.status !== 'pending' && (
-        <Label
-          sx={{
-            position: 'absolute',
-            bottom: 10,
-            right: 10,
-            color: (theme) => theme.palette.text.secondary,
+      {pitch && pitch.status === 'draft' && (
+        <Button
+          sx={{ position: 'absolute', bottom: 10, right: 10 }}
+          size="small"
+          variant="outlined"
+          color="warning"
+          onClick={() => {
+            if (pitch?.type === 'text') {
+              text.onTrue();
+            }
           }}
         >
-          In Review
-        </Label>
+          Draft
+        </Button>
       )}
+      {pitch &&
+        pitch.status !== 'approved' &&
+        pitch.status !== 'pending' &&
+        pitch.status !== 'draft' && (
+          <Label
+            sx={{
+              position: 'absolute',
+              bottom: 10,
+              right: 10,
+              color: (theme) => theme.palette.text.secondary,
+            }}
+          >
+            In Review
+          </Label>
+        )}
       {shortlisted && (
         <Label
           sx={{
@@ -420,7 +453,13 @@ export default function CampaignItem({ campaign, user }) {
         existingPitch={campaignIds}
         dialog={dialog}
       />
-      <CampaignPitchOptionsModal open={open} handleClose={handleClose} campaign={campaign} />
+      <CampaignPitchOptionsModal
+        open={open}
+        handleClose={handleClose}
+        campaign={campaign}
+        text={text}
+        video={video}
+      />
       <CreatorForm dialog={dialog} user={user} />
     </>
   );
