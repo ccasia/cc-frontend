@@ -15,13 +15,14 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
+import { createFilterOptions } from '@mui/material/Autocomplete';
 import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
-const CampaignFilter = ({ open, onOpen, onClose, brands, filters, onFilters, reset }) => {
-  const { options } = useGetCampaignBrandOption();
+const CampaignFilter = ({ open, onClose, filters, onFilters, reset }) => {
+  const { data: options, isLoading } = useGetCampaignBrandOption();
 
   const handleFilterStatus = useCallback(
     (e) => {
@@ -31,11 +32,15 @@ const CampaignFilter = ({ open, onOpen, onClose, brands, filters, onFilters, res
   );
 
   const handleFilterBrand = useCallback(
-    (e) => {
-      onFilters('brands', e);
+    (e, newValue) => {
+      onFilters('brands', newValue);
     },
     [onFilters]
   );
+
+  const filterOptions = createFilterOptions({
+    stringify: (option) => option.name,
+  })
 
   const renderHead = (
     <Stack
@@ -75,14 +80,20 @@ const CampaignFilter = ({ open, onOpen, onClose, brands, filters, onFilters, res
 
   const renderBrand = (
     <Stack>
-      <Typography variant="h6">Brand</Typography>
-      {options && (
+      <Typography variant="h6" mb={1.5}>Brand</Typography>
+      {isLoading ? (
+        <Typography>Loading...</Typography>
+      ) : (
+        options && (
         <Autocomplete
           multiple
-          options={options}
-          getOptionLabel={(option) => option?.name}
+          options={options || []}
+          getOptionLabel={(option) => option?.name || ''}
           value={filters.brands}
-          onChange={(event, newValue) => handleFilterBrand(newValue)}
+          onChange={handleFilterBrand}
+          filterOptions={filterOptions}
+          filterSelectedOptions
+          isOptionEqualToValue={(option, value) => option?.id === value?.id}
           renderTags={(value, getTagProps) =>
             value.map((option, index) => {
               const { key, ...tagProps } = getTagProps({ index });
@@ -97,9 +108,18 @@ const CampaignFilter = ({ open, onOpen, onClose, brands, filters, onFilters, res
               );
             })
           }
-          renderInput={(props) => <TextField {...props} label="Brand" />}
+          renderInput={(props) => (
+            <TextField {...props} 
+            label="Search Brands" 
+            onChange={(event) => {
+              const inputValue = event.target.value;
+              filterOptions({ inputValue});
+            }} 
+            />
+         )}
         />
-      )}
+      )
+    )}
     </Stack>
   );
 
@@ -134,9 +154,7 @@ export default CampaignFilter;
 
 CampaignFilter.propTypes = {
   open: PropTypes.bool,
-  onOpen: PropTypes.func,
   onClose: PropTypes.func,
-  brands: PropTypes.array,
   onFilters: PropTypes.func,
   filters: PropTypes.object,
   reset: PropTypes.func,
