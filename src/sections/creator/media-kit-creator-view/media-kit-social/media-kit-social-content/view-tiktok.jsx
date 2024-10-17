@@ -1,9 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Icon } from '@iconify/react';
 import { keyframes } from '@emotion/react';
 
-import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Chip,
+  Stack,
+  useTheme,
+  CardMedia,
+  Typography,
+  IconButton,
+  useMediaQuery,
+} from '@mui/material';
+
+import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -30,6 +41,8 @@ const TopContentGrid = ({ topContents }) => {
 
   const topFiveContents = topContents.slice(0, 5);
 
+  console.log(topFiveContents);
+
   return (
     <Grid container spacing={isMobile ? 1 : 2}>
       {topFiveContents.map((content, index) => (
@@ -39,9 +52,9 @@ const TopContentGrid = ({ topContents }) => {
               position: 'relative',
               overflow: 'hidden',
               borderRadius: 1,
-              '&:hover .image': {
-                opacity: 0,
-              },
+              // '&:hover .image': {
+              //   opacity: 0,
+              // },
               '&:hover .description': {
                 opacity: 1,
               },
@@ -52,13 +65,14 @@ const TopContentGrid = ({ topContents }) => {
               image={content.image_url}
               alt={`Top content ${index + 1}`}
               sx={{
-                aspectRatio: '1 / 1',
-                objectFit: 'cover',
+                // aspectRatio: '1 / 1',
+                objectFit: 'contain',
                 transition: 'opacity 0.3s ease-in-out',
+                borderRadius: 3,
               }}
               className="image"
             />
-            <Box
+            {/* <Box
               className="description"
               sx={{
                 position: 'absolute',
@@ -74,6 +88,15 @@ const TopContentGrid = ({ topContents }) => {
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
+                borderRadius: 3,
+              }}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = content?.content_url;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link); // Clean u
               }}
             >
               <Typography
@@ -91,6 +114,7 @@ const TopContentGrid = ({ topContents }) => {
                 {content.description}
               </Typography>
             </Box>
+
             <Box
               sx={{
                 position: 'absolute',
@@ -100,6 +124,7 @@ const TopContentGrid = ({ topContents }) => {
                 bgcolor: 'rgba(0, 0, 0, 0.6)',
                 color: 'white',
                 p: isMobile ? 0.5 : 1,
+                borderRadius: '0 0 24px 24px',
               }}
             >
               <Stack direction="row" justifyContent="space-around">
@@ -116,6 +141,77 @@ const TopContentGrid = ({ topContents }) => {
                   </Typography>
                 </Stack>
               </Stack>
+            </Box> */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                width: '100%',
+                // height: 85,
+                // bgcolor: 'rgba(0, 0, 0, 1)',
+                color: 'white',
+                p: isMobile ? 0.5 : 1,
+                borderRadius: '0 0 24px 24px',
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 5,
+                  WebkitBoxOrient: 'vertical',
+                  animation: `${typeAnimation} 0.5s steps(40, end)`,
+                  fontSize: isMobile ? '0.75rem' : '0.875rem', // Smaller font size on mobile
+                  mb: 1,
+                }}
+              >
+                {`${content.description.slice(0, 50)}...`}
+              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Chip
+                  label={formatNumber(content?.like)}
+                  icon={<Iconify icon="raphael:fave" width={20} />}
+                  color="info"
+                  sx={{
+                    fontWeight: 900,
+                  }}
+                />
+                <Chip
+                  label={formatNumber(content?.comment)}
+                  icon={<Iconify icon="material-symbols:comment" width={20} />}
+                  color="info"
+                  sx={{
+                    fontWeight: 900,
+                  }}
+                />
+              </Stack>
+            </Box>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 10,
+                right: 10,
+                borderRadius: '0 0 24px 24px',
+              }}
+            >
+              <IconButton
+                sx={{
+                  color: 'black',
+                  bgcolor: 'white',
+                }}
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = content?.content_url;
+                  link.target = '_blank';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+              >
+                <Iconify icon="akar-icons:link-out" />
+              </IconButton>
             </Box>
           </Box>
         </Grid>

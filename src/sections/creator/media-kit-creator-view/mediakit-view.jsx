@@ -26,6 +26,7 @@ import { useGetSocialMedia, fetchSocialMediaData } from 'src/api/socialMedia';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
 
 import MediaKitSetting from './media-kit-setting';
 import MediaKitSocial from './media-kit-social/view';
@@ -334,7 +335,10 @@ const MediaKitCreator = () => {
           : {
               borderRadius: 1,
               position: 'relative',
-              boxShadow: 2,
+              boxShadow:
+                theme.palette.mode === 'light'
+                  ? 'rgba(9, 30, 66, 0.25) 0px 1px 1px, rgba(9, 30, 66, 0.13) 0px 0px 2px 2px;'
+                  : 'rgba(255, 255, 255, 0.10) 0px 1px 1px, rgba(255, 255, 255, 0.08) 0px 0px 2px 2px',
               p: 2,
             }
       }
@@ -360,6 +364,7 @@ const MediaKitCreator = () => {
           Edit Profile
         </Button>
       </Stack>
+
       <Stack my={2}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="h3" fontWeight="bold">
@@ -381,6 +386,7 @@ const MediaKitCreator = () => {
           </Typography>
         </Stack>
       </Stack>
+
       <Stack direction="row" alignItems="center" spacing={1} my={2.5}>
         {user?.creator?.interests.map((interest) => (
           <Label key={interest?.id}>{interest.name.toUpperCase()}</Label>
@@ -403,7 +409,7 @@ const MediaKitCreator = () => {
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Iconify icon="ic:sharp-people-alt" width={40} />
+            <AvatarIcon icon="ic:sharp-people-alt" />
             <Stack>
               <Typography variant="caption" color="text.secondary" fontWeight={600}>
                 FOLLOWERS
@@ -425,7 +431,7 @@ const MediaKitCreator = () => {
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Iconify icon="solar:chart-bold" width={40} />
+            <AvatarIcon icon="solar:chart-bold" />
             <Stack>
               <Typography variant="caption" color="text.secondary" fontWeight={600}>
                 ENGAGEMENT RATE
@@ -447,7 +453,8 @@ const MediaKitCreator = () => {
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Iconify icon="raphael:fave" width={40} />
+            <AvatarIcon icon="raphael:fave" />
+
             <Stack>
               <Typography variant="caption" color="text.secondary" fontWeight={600}>
                 AVERAGE LIKES
@@ -475,7 +482,7 @@ const MediaKitCreator = () => {
           sx={
             currentTab === 'instagram' && {
               border: 2,
-              color: '#1340FF',
+              color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
             }
           }
           onClick={() => setCurrentTab('instagram')}
@@ -488,7 +495,7 @@ const MediaKitCreator = () => {
           sx={
             currentTab === 'tiktok' && {
               border: 2,
-              color: '#1340FF',
+              color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
             }
           }
           onClick={() => setCurrentTab('tiktok')}
@@ -501,7 +508,7 @@ const MediaKitCreator = () => {
           sx={
             currentTab === 'partnerships' && {
               border: 2,
-              color: '#1340FF',
+              color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
             }
           }
           onClick={() => setCurrentTab('partnerships')}

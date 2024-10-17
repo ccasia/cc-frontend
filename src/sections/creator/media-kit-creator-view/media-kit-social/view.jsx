@@ -10,10 +10,9 @@ import MediaKitSocialContentInstagram from './media-kit-social-content/view-inst
 const MediaKitSocial = ({ currentTab, data, isLoading }) => (
   <Box
     sx={{
-      border: (theme) => `dashed 1px ${theme.palette.divider}`,
+      // border: (theme) => `dashed 1px ${theme.palette.divider}`,
       borderRadius: 2,
-      my: 5,
-      p: 2,
+      // my: 5,
       [`& .Mui-selected`]: {
         bgcolor: (theme) => theme.palette.background.paper,
         borderRadius: 1.5,
