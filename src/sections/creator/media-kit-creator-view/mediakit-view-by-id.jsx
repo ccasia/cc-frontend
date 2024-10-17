@@ -40,11 +40,10 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
   const [currentTab, setCurrentTab] = useState('instagram');
   const [openSetting, setOpenSetting] = useState(false);
 
-  const {
-    data: creatorData,
-    error,
-    isLoading,
-  } = useSWR(creatorId ? endpoints.creators.getCreatorFullInfo(creatorId) : null, fetcher);
+  const { data: creatorData } = useSWR(
+    creatorId ? endpoints.creators.getCreatorFullInfo(creatorId) : null,
+    fetcher
+  );
 
   const handleClose = () => {
     setOpenSetting(!openSetting);

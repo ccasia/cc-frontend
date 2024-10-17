@@ -422,7 +422,6 @@ function CreateCampaignForm() {
 
   const handleNext = async () => {
     const result = await trigger();
-    console.log(errors);
 
     if (result) {
       localStorage.setItem('activeStep', activeStep + 1);
@@ -1392,42 +1391,6 @@ export const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementFo
               )}
               {activeStep === 1 && (
                 <Box>
-                  {/* <Box
-                    p={5}
-                    position="relative"
-                    sx={{
-                      border: 1,
-                      borderRadius: 2,
-                    }}
-                  >
-                    <ReactSignatureCanvas
-                      ref={signRef}
-                      penColor="black"
-                      canvasProps={{
-                        style: {
-                          backgroundColor: 'white',
-                          width: '100%',
-                          cursor: 'crosshair',
-                        },
-                      }}
-                    />
-
-                    <Typography
-                      variant="h3"
-                      color="text.secondary"
-                      sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%,-50%)',
-                        opacity: 0.2,
-                        userSelect: 'none',
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      Sign Here
-                    </Typography>
-                  </Box> */}
                   <PDFEditor
                     file={url}
                     annotations={annotations}

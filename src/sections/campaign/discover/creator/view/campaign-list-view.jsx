@@ -176,7 +176,7 @@ export default function CampaignListView() {
     </Box>
   );
 
-  const filteredData = applyFilter({ inputData: campaigns, filter });
+  const filteredData = applyFilter({ inputData: campaigns, filter, user });
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -293,16 +293,17 @@ export default function CampaignListView() {
 
 // ----------------------------------------------------------------------
 
-const applyFilter = ({ inputData, filter }) => {
+const applyFilter = ({ inputData, filter, user }) => {
   if (filter === 'saved') {
     inputData = inputData?.filter((campaign) => campaign.bookMarkCampaign);
   }
 
   if (filter === 'draft') {
     inputData = inputData?.filter((campaign) =>
-      campaign.pitch?.some((elem) => elem.status === 'draft')
+      campaign.pitch?.some((elem) => elem?.userId === user?.id && elem?.status === 'draft')
     );
   }
+
   return inputData;
 };
 

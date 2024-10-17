@@ -6,7 +6,7 @@ import { keyframes } from '@emotion/react';
 import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
 
 // Utility function to format numbers
-const formatNumber = (num) => {
+export const formatNumber = (num) => {
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -252,7 +252,7 @@ const MediaKitSocialContent = ({ instagram }) => {
         )}
       </Stack> */}
 
-      <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
+      {/* <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
         <Grid item xs={12} sm={4}>
           <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>
@@ -291,7 +291,7 @@ const MediaKitSocialContent = ({ instagram }) => {
 
       <Typography variant="h6" mb={isMobile ? 1 : 2} sx={{ fontSize: isMobile ? 18 : 20 }}>
         Top Content
-      </Typography>
+      </Typography> */}
       {instagram?.data.top_contents ? (
         <TopContentGrid topContents={instagram.data.top_contents} />
       ) : (
