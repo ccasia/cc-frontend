@@ -1,4 +1,5 @@
 import React from 'react';
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { keyframes } from '@emotion/react';
 
@@ -44,9 +45,34 @@ const TopContentGrid = ({ topContents }) => {
   console.log(topFiveContents);
 
   return (
-    <Grid container spacing={isMobile ? 1 : 2}>
+    <Grid
+      container
+      spacing={isMobile ? 1 : 2}
+      component={m.div}
+      variants={{
+        hidden: { opacity: 0 },
+        show: {
+          opacity: 1,
+          transition: {
+            staggerChildren: 0.2, // Delay between each child
+          },
+        },
+      }}
+      animate="show"
+      initial="hidden"
+    >
       {topFiveContents.map((content, index) => (
-        <Grid item xs={12} sm={4} key={index}>
+        <Grid
+          item
+          xs={12}
+          sm={4}
+          key={index}
+          component={m.div}
+          variants={{
+            hidden: { opacity: 0, y: 50 },
+            show: { opacity: 1, y: 0 },
+          }}
+        >
           <Box
             sx={{
               position: 'relative',
@@ -148,8 +174,6 @@ const TopContentGrid = ({ topContents }) => {
                 bottom: 0,
                 left: 0,
                 width: '100%',
-                // height: 85,
-                // bgcolor: 'rgba(0, 0, 0, 1)',
                 color: 'white',
                 p: isMobile ? 0.5 : 1,
                 borderRadius: '0 0 24px 24px',

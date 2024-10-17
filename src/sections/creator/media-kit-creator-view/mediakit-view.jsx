@@ -1,4 +1,5 @@
 import * as yup from 'yup';
+import { m } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -414,7 +415,17 @@ const MediaKitCreator = () => {
               <Typography variant="caption" color="text.secondary" fontWeight={600}>
                 FOLLOWERS
               </Typography>
-              <Typography variant="h3">
+              <Typography
+                variant="h3"
+                key={currentTab}
+                component={m.div}
+                initial={{ scale: 0.5 }}
+                animate={{ scale: 1 }}
+                transition={{
+                  duration: 1,
+                  type: 'spring',
+                }}
+              >
                 {socialMediaAnalytics.followers
                   ? formatNumber(socialMediaAnalytics.followers)
                   : 'No data'}
@@ -436,7 +447,17 @@ const MediaKitCreator = () => {
               <Typography variant="caption" color="text.secondary" fontWeight={600}>
                 ENGAGEMENT RATE
               </Typography>
-              <Typography variant="h3">
+              <Typography
+                variant="h3"
+                key={currentTab}
+                component={m.div}
+                initial={{ scale: 0.5 }}
+                animate={{ scale: 1 }}
+                transition={{
+                  duration: 1,
+                  type: 'spring',
+                }}
+              >
                 {socialMediaAnalytics.engagement_rate
                   ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
                   : 'No data'}
@@ -459,7 +480,17 @@ const MediaKitCreator = () => {
               <Typography variant="caption" color="text.secondary" fontWeight={600}>
                 AVERAGE LIKES
               </Typography>
-              <Typography variant="h3">
+              <Typography
+                variant="h3"
+                key={currentTab}
+                component={m.div}
+                initial={{ scale: 0.5 }}
+                animate={{ scale: 1 }}
+                transition={{
+                  duration: 1,
+                  type: 'spring',
+                }}
+              >
                 {socialMediaAnalytics.averageLikes
                   ? formatNumber(socialMediaAnalytics.averageLikes)
                   : 'No data'}
