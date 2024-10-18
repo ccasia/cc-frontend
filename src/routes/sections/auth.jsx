@@ -24,6 +24,9 @@ const ForgotPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic
 const VerifyClassicPage = lazy(() => import('src/pages/auth-demo/classic/verify'));
 const NewPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic/new-password'));
 
+const NewLoginPage = lazy(() => import('src/pages/auth-demo/new-login'));
+const NewRegisterPage = lazy(() => import('src/pages/auth-demo/new-register'));
+
 const authAdmin = {
   path: 'jwt',
   element: (
@@ -80,7 +83,8 @@ const authCreator = {
       element: (
         <GuestGuard>
           <AuthModernLayout>
-            <CreatorLogin />
+            <NewLoginPage />
+            {/* <CreatorLogin /> */}
           </AuthModernLayout>
         </GuestGuard>
       ),
@@ -90,7 +94,8 @@ const authCreator = {
       element: (
         <GuestGuard>
           <AuthModernLayout title="Cult Creative">
-            <CreatorRegister />
+            <NewRegisterPage />
+            {/* <CreatorRegister /> */}
           </AuthModernLayout>
         </GuestGuard>
       ),

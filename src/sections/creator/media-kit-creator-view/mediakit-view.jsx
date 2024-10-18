@@ -373,15 +373,15 @@ const MediaKitCreator = () => {
           </Typography>
           <Iconify icon="material-symbols:verified" color="info.main" width={20} />
         </Stack>
-        <Stack direction="row" alignItems="center" spacing={2}>
+        <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="body2" color="text.secondary">
             {user?.creator?.pronounce}
           </Typography>
-          .
+          <Iconify icon="mdi:dot" color="text.secondary" />
           <Typography variant="body2" color="text.secondary">
             {user?.country}
           </Typography>
-          .
+          <Iconify icon="mdi:dot" color="text.secondary" />
           <Typography variant="body2" color="text.secondary">
             {user?.email}
           </Typography>
