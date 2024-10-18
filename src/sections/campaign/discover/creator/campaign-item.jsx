@@ -9,7 +9,14 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
 import ListItemText from '@mui/material/ListItemText';
-import { Grid, Card, Tooltip, Typography, IconButton, CircularProgress, Avatar, Box, Chip, Button } from '@mui/material';
+import {
+  Grid,
+  Card,
+  Tooltip,
+  Typography,
+  IconButton,
+  CircularProgress, Avatar, Box, Chip, Button,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -38,6 +45,8 @@ export default function CampaignItem({ campaign, user }) {
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
   const dialog = useBoolean();
+  const text = useBoolean();
+  const video = useBoolean();
 
   const { socket } = useSocketContext();
   const router = useRouter();
@@ -110,8 +119,13 @@ export default function CampaignItem({ campaign, user }) {
     }
   };
 
+  // const pitch = useMemo(
+  //   () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
+  //   [campaign, user]
+  // );
+
   const pitch = useMemo(
-    () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
+    () => campaign?.pitch?.find((elem) => elem.userId === user?.id),
     [campaign, user]
   );
 
@@ -447,7 +461,13 @@ export default function CampaignItem({ campaign, user }) {
         existingPitch={campaignIds}
         dialog={dialog}
       />
-      <CampaignPitchOptionsModal open={open} handleClose={handleClose} campaign={campaign} />
+      <CampaignPitchOptionsModal
+        open={open}
+        handleClose={handleClose}
+        campaign={campaign}
+        text={text}
+        video={video}
+      />
       <CreatorForm dialog={dialog} user={user} />
     </>
   );

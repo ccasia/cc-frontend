@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 
 import { Box, Stack, Dialog, Button, Typography } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import Iconify from 'src/components/iconify';
@@ -11,11 +10,8 @@ import Iconify from 'src/components/iconify';
 import CampaignPitchTextModal from './campaign-pitch-text-modal';
 import CampaignPitchVideoModal from './campaign-pitch-video.modal';
 
-const CampaignPitchOptionsModal = ({ open, handleClose, campaign }) => {
+const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video }) => {
   const smUp = useResponsive('sm', 'down');
-
-  const text = useBoolean();
-  const video = useBoolean();
 
   return (
     <>
@@ -104,4 +100,6 @@ CampaignPitchOptionsModal.propTypes = {
   open: PropTypes.bool,
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
+  text: PropTypes.func,
+  video: PropTypes.func,
 };

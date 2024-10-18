@@ -78,6 +78,8 @@ export const endpoints = {
     verifyCreator: '/api/auth/verifyCreator',
     resendToken: '/api/auth/resendVerifyToken',
     checkTokenValidity: '/api/auth/checkTokenValidity',
+    forgetPassword: '/api/user/forget-password',
+    checkToken: (token) => `/api/user/forget-password-token/${token}`,
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',
@@ -100,6 +102,7 @@ export const endpoints = {
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
     allusers: '/api/users',
+    changePassword: '/api/user/changePassword',
   },
   mail: {
     list: '/api/mail/list',
@@ -162,6 +165,7 @@ export const endpoints = {
       createSingleTimelineType: `/api/campaign/createSingleTimelineType`,
     },
     pitch: {
+      draft: '/api/campaign/draftPitch',
       root: '/api/campaign/pitch',
       approve: '/api/campaign/approvepitch',
       reject: '/api/campaign/rejectPitch',

@@ -1,5 +1,6 @@
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
@@ -8,7 +9,10 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { PasswordIcon } from 'src/assets/icons';
 
@@ -18,6 +22,8 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 // ----------------------------------------------------------------------
 
 export default function ClassicForgotPasswordView() {
+  const router = useRouter();
+
   const ForgotPasswordSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
   });
@@ -38,10 +44,12 @@ export default function ClassicForgotPasswordView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      console.info('DATA', data);
+      const res = await axiosInstance.post(endpoints.auth.forgetPassword, data);
+      enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      console.error(error);
+      enqueueSnackbar(error, {
+        variant: 'error',
+      });
     }
   });
 

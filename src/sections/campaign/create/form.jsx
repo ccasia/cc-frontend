@@ -115,7 +115,7 @@ const videoAngle = [
 ];
 
 function CreateCampaignForm() {
-  const active = localStorage.getItem('activeStep');
+  // const active = localStorage.getItem('activeStep');
   const { data: options, companyLoading } = useGetCampaignBrandOption();
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const { data: admins } = useGetAdmins('active');
@@ -124,7 +124,7 @@ function CreateCampaignForm() {
   const openBrand = useBoolean();
   const modal = useBoolean();
 
-  const [activeStep, setActiveStep] = useState(0 || parseInt(active, 10));
+  const [activeStep, setActiveStep] = useState(0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -287,7 +287,7 @@ function CreateCampaignForm() {
 
   const savedData = localStorage.getItem('formData');
 
-  const defaultValues = savedData ?? {
+  const defaultValues = {
     hasBrand: false,
     campaignTitle: '',
     client: null,
@@ -422,7 +422,6 @@ function CreateCampaignForm() {
 
   const handleNext = async () => {
     const result = await trigger();
-    console.log(errors);
 
     if (result) {
       localStorage.setItem('activeStep', activeStep + 1);
@@ -634,8 +633,10 @@ function CreateCampaignForm() {
       >
         <Typography variant="h4">Target Audience</Typography>
         <Box flexGrow={1} />
+
         <RHFMultiSelect
           name="audienceGender"
+          label="Audience Gender"
           checkbox
           chip
           options={[
@@ -643,7 +644,6 @@ function CreateCampaignForm() {
             { value: 'male', label: 'Male' },
             { value: 'nonbinary', label: 'Non-Binary' },
           ]}
-          label="Audience Gender"
         />
 
         <RHFMultiSelect
@@ -1391,42 +1391,6 @@ export const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementFo
               )}
               {activeStep === 1 && (
                 <Box>
-                  {/* <Box
-                    p={5}
-                    position="relative"
-                    sx={{
-                      border: 1,
-                      borderRadius: 2,
-                    }}
-                  >
-                    <ReactSignatureCanvas
-                      ref={signRef}
-                      penColor="black"
-                      canvasProps={{
-                        style: {
-                          backgroundColor: 'white',
-                          width: '100%',
-                          cursor: 'crosshair',
-                        },
-                      }}
-                    />
-
-                    <Typography
-                      variant="h3"
-                      color="text.secondary"
-                      sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%,-50%)',
-                        opacity: 0.2,
-                        userSelect: 'none',
-                        pointerEvents: 'none',
-                      }}
-                    >
-                      Sign Here
-                    </Typography>
-                  </Box> */}
                   <PDFEditor
                     file={url}
                     annotations={annotations}
