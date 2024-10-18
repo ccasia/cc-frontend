@@ -75,10 +75,6 @@ export function useNavData() {
     };
   }, [socket]);
 
-  // useEffect(() => {
-  //   setUnreadMessageCount(unreadCount);
-  // }, [unreadCount]);
-
   const adminNavigations = useMemo(
     () => [
       {
@@ -218,6 +214,11 @@ export function useNavData() {
             icon: <Iconify icon="material-symbols:assignment" width={25} />,
           },
           {
+            title: 'My Tasks',
+            path: paths.dashboard.kanban,
+            icon: ICONS.kanban,
+          },
+          {
             title: 'Media Kit',
             path: paths.dashboard.creator.mediaKitCreator,
             icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
@@ -288,8 +289,15 @@ export function useNavData() {
   const data = useMemo(
     () => [
       {
-        subheader: 'Cult Creative',
+        items: [
+          {
+            title: 'Overview',
+            path: paths.dashboard.overview.root,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+          },
+        ],
       },
+
       ...navigations,
       {
         items: [
@@ -303,11 +311,6 @@ export function useNavData() {
             title: 'Calendar',
             path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,
-          },
-          {
-            title: 'My Tasks',
-            path: paths.dashboard.kanban,
-            icon: ICONS.kanban,
           },
         ],
       },

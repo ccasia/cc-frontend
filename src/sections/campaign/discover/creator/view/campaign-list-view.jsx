@@ -180,14 +180,28 @@ export default function CampaignListView() {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <Typography
+      <ListItemText
+        primary="Discover Campaigns ✨"
+        secondary="Here are the top campaigns that fit your profile!"
+        primaryTypographyProps={{
+          variant: 'h3',
+        }}
+        secondaryTypographyProps={{
+          variant: 'body1',
+          color: 'text.secondary',
+        }}
+        sx={{
+          mb: 3,
+        }}
+      />
+      {/* <Typography
         variant="h3"
         sx={{
           mb: 3,
         }}
       >
-        Discover
-      </Typography>
+        Discover Campaigns ✨
+      </Typography> */}
 
       <CampaignSearch
         query={search.query}
