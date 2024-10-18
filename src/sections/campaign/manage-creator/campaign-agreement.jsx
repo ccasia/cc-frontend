@@ -89,6 +89,41 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     }
   });
 
+  const handleDownload = async (url) => {
+    try {
+      const response = await fetch(url);
+      const contentType = response.headers.get('content-type');
+      const blob = await response.blob();
+      const filename = 'agreementForm.pdf';
+
+      // For browsers that support the download attribute
+      if ('download' in document.createElement('a')) {
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(link.href);
+      } 
+      // For IE10+
+      else if (navigator.msSaveBlob) {
+        navigator.msSaveBlob(blob, filename);
+      } 
+      // Fallback - open in new window
+      else {
+        const newWindow = window.open(url, '_blank');
+        if (!newWindow) {
+          enqueueSnackbar('Please allow popups for this website to download the file.', { variant: 'warning' });
+        }
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      enqueueSnackbar('Download failed. Please try again.', { variant: 'error' });
+    }
+  };
+
   return (
     <Box p={1.5}>
       {!agreementStatus ? (
@@ -110,9 +145,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   <Button
                     variant="contained"
                     startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                    href={campaign?.agreement?.agreementUrl}
-                    download="agreementForm.pdf"
-                    target="__blank"
+                    onClick={() => handleDownload(campaign?.agreement?.agreementUrl)}
                     size="small"
                   >
                     Download Agreement

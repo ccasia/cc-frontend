@@ -43,7 +43,6 @@ export default function CampaignItem({ campaign, user }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Define the handler function
     const handlePitchLoading = (data) => {
       setLoading(true);
 
@@ -74,11 +73,9 @@ export default function CampaignItem({ campaign, user }) {
       setLoading(false);
     };
 
-    // Attach the event listener
     socket?.on('pitch-loading', handlePitchLoading);
     socket?.on('pitch-uploaded', handlePitchSuccess);
 
-    // Clean-up function
     return () => {
       socket?.off('pitch-loading', handlePitchLoading);
       socket?.off('pitch-uploaded', handlePitchSuccess);
@@ -346,7 +343,23 @@ export default function CampaignItem({ campaign, user }) {
         <Chip label="Pending" color="warning" size="small" sx={{ width: '100%', height: 36 }} />
       )}
       {pitch && pitch.status !== 'approved' && pitch.status !== 'pending' && (
-        <Chip label="In Review" color="info" size="small" sx={{ width: '100%', height: 36 }} />
+        <Chip 
+          icon={<Iconify icon="mdi:clock" />}
+          label="In Review" 
+          color="warning" 
+          size="small" 
+          sx={{ 
+            width: '100%', 
+            height: 36,
+            '& .MuiChip-label': {
+              fontWeight: 'bold',
+              color: 'white'
+            },
+            '& .MuiChip-icon': {
+              color: 'white'
+            }
+          }} 
+        />
       )}
       {shortlisted && (
         <Stack direction="row" spacing={1} alignItems="center">
