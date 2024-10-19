@@ -187,18 +187,6 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
               }}
               src={data?.user?.photoURL}
             />
-            <Button
-              startIcon={<Iconify icon="lucide:edit" />}
-              variant="outlined"
-              sx={{
-                boxShadow: 1,
-              }}
-              onClick={() => {
-                setOpenSetting(true);
-              }}
-            >
-              Edit Profile
-            </Button>
           </Stack>
 
           <Stack my={2}>
