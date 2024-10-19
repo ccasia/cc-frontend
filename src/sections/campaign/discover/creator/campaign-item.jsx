@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-expressions */
+/* eslint-disable no-unsafe-optional-chaining */
 /* eslint-disable no-nested-ternary */
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
@@ -5,18 +7,22 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
 
-import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
-import { LoadingButton } from '@mui/lab';
-import ListItemText from '@mui/material/ListItemText';
 import {
+  Box,
   Grid,
   Card,
+  Chip,
+  Button,
+  Divider,
   Tooltip,
   Typography,
   IconButton,
-  CircularProgress, Avatar, Box, Chip, Button,
+  CircularProgress,
 } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -25,18 +31,11 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
-
-import { alpha } from '@mui/material/styles';
-import { Divider } from '@mui/material';
-
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
@@ -254,7 +253,13 @@ export default function CampaignItem({ campaign, user }) {
                 justifyContent: 'center',
               }}
             >
-              <Typography variant="caption" component="div" color="success.main" fontWeight="bold" fontSize={10}>
+              <Typography
+                variant="caption"
+                component="div"
+                color="success.main"
+                fontWeight="bold"
+                fontSize={10}
+              >
                 {`${Math.min(Math.round(campaign?.percentageMatch), 100)}%`}
               </Typography>
             </Box>
@@ -268,10 +273,10 @@ export default function CampaignItem({ campaign, user }) {
   );
 
   const renderCampaignInfo = (
-    <Stack 
-      direction="row" 
-      justifyContent="space-between" 
-      alignItems="flex-start" 
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      alignItems="flex-start"
       sx={{ p: 2, pb: 1.5 }}
     >
       <Stack spacing={0.5} sx={{ flexGrow: 1, mr: 1 }}>
@@ -282,7 +287,7 @@ export default function CampaignItem({ campaign, user }) {
           }}
           sx={{
             cursor: 'pointer',
-            '&:hover': { 
+            '&:hover': {
               '& > .campaign-title': {
                 color: 'primary.main',
                 textDecoration: 'underline',
@@ -310,13 +315,26 @@ export default function CampaignItem({ campaign, user }) {
         <Stack spacing={0.8}>
           <Stack direction="row" spacing={2} alignItems="center">
             <Stack direction="row" spacing={0.5} alignItems="center">
-              <Iconify icon="mdi:office-building" width={14} height={14} sx={{ color: 'text.primary' }} />
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'medium' }} noWrap>
+              <Iconify
+                icon="mdi:office-building"
+                width={14}
+                height={14}
+                sx={{ color: 'text.primary' }}
+              />
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', fontWeight: 'medium' }}
+                noWrap
+              >
                 {campaign?.brand?.name ?? campaign?.company?.name}
               </Typography>
             </Stack>
             <Stack direction="row" spacing={0.5} alignItems="center">
-              <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" width={14} sx={{ color: 'text.primary' }} />
+              <Iconify
+                icon="streamline:industry-innovation-and-infrastructure-solid"
+                width={14}
+                sx={{ color: 'text.primary' }}
+              />
               <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
                 {campaign?.campaignBrief?.industries}
               </Typography>
@@ -330,14 +348,16 @@ export default function CampaignItem({ campaign, user }) {
           </Stack>
         </Stack>
       </Stack>
-      <Tooltip title={campaign?.bookMarkCampaign ? "Unsave" : "Save"}>
-        <IconButton 
+      <Tooltip title={campaign?.bookMarkCampaign ? 'Unsave' : 'Save'}>
+        <IconButton
           onClick={(e) => {
             e.stopPropagation();
-            campaign?.bookMarkCampaign ? unSaveCampaign(campaign.bookMarkCampaign.id) : saveCampaign(campaign.id);
+            campaign?.bookMarkCampaign
+              ? unSaveCampaign(campaign.bookMarkCampaign.id)
+              : saveCampaign(campaign.id);
           }}
-          sx={{ 
-            p: 0.5, 
+          sx={{
+            p: 0.5,
             zIndex: 3,
             color: campaign?.bookMarkCampaign ? 'primary.main' : 'text.secondary',
             '&:hover': {
@@ -345,7 +365,10 @@ export default function CampaignItem({ campaign, user }) {
             },
           }}
         >
-          <Iconify icon={campaign?.bookMarkCampaign ? "mdi:bookmark" : "mdi:bookmark-outline"} width={20} />
+          <Iconify
+            icon={campaign?.bookMarkCampaign ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
+            width={20}
+          />
         </IconButton>
       </Tooltip>
     </Stack>
@@ -356,39 +379,57 @@ export default function CampaignItem({ campaign, user }) {
       {pitch && pitch.status === 'pending' && (
         <Chip label="Pending" color="warning" size="small" sx={{ width: '100%', height: 36 }} />
       )}
-      {pitch && pitch.status !== 'approved' && pitch.status !== 'pending' && (
-        <Chip 
-          icon={<Iconify icon="mdi:clock" />}
-          label="In Review" 
-          color="warning" 
-          size="small" 
-          sx={{ 
-            width: '100%', 
-            height: 36,
-            '& .MuiChip-label': {
-              fontWeight: 'bold',
-              color: 'white'
-            },
-            '& .MuiChip-icon': {
-              color: 'white'
+      {pitch && pitch.status === 'draft' && (
+        <Button
+          fullWidth
+          startIcon={<Iconify icon="carbon:license-draft" width={18} />}
+          variant="contained"
+          color="warning"
+          onClick={() => {
+            if (pitch?.type === 'text') {
+              text.onTrue();
             }
-          }} 
-        />
+          }}
+        >
+          Draft
+        </Button>
       )}
+      {pitch &&
+        pitch.status !== 'approved' &&
+        pitch.status !== 'pending' &&
+        pitch.status !== 'draft' && (
+          <Chip
+            icon={<Iconify icon="mdi:clock" />}
+            label="In Review"
+            color="warning"
+            size="small"
+            sx={{
+              width: '100%',
+              height: 36,
+              '& .MuiChip-label': {
+                fontWeight: 'bold',
+                color: 'white',
+              },
+              '& .MuiChip-icon': {
+                color: 'white',
+              },
+            }}
+          />
+        )}
       {shortlisted && (
         <Stack direction="row" spacing={1} alignItems="center">
-          <Chip 
+          <Chip
             icon={<Iconify icon="mdi:check-circle" />}
-            label="Approved" 
-            color="success" 
-            size="small" 
-            sx={{ 
+            label="Approved"
+            color="success"
+            size="small"
+            sx={{
               flexGrow: 1,
               height: 36,
               '& .MuiChip-label': {
-                fontWeight: 'bold'
-              }
-            }} 
+                fontWeight: 'bold',
+              },
+            }}
           />
           <Button
             variant="contained"
@@ -430,12 +471,20 @@ export default function CampaignItem({ campaign, user }) {
 
   return (
     <>
-      <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' }}>
+      <Card
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
         {renderImage}
         {renderCampaignInfo}
         <Divider sx={{ my: 1 }} />
         {renderAction}
-    
+
         <Box
           onClick={handleCardClick}
           sx={{
