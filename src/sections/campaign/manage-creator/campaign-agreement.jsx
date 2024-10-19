@@ -310,7 +310,7 @@ export default CampaignAgreement;
 
 CampaignAgreement.propTypes = {
   campaign: PropTypes.object,
-  timeline: PropTypes.object,
+  timeline: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   submission: PropTypes.object,
   agreementStatus: PropTypes.bool,
 };

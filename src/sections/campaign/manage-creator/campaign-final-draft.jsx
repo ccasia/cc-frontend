@@ -17,7 +17,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  LinearProgress,
   CircularProgress,
 } from '@mui/material';
 
@@ -284,10 +283,54 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
               </Box>
             </Alert>
             {isProcessing ? (
-              <>
-                <LinearProgress variant="determinate" value={progress} />
-                <Button onClick={() => handleCancel()}>Cancel</Button>
-              </>
+              <Stack justifyContent="center" alignItems="center" gap={1}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                  }}
+                >
+                  <CircularProgress
+                    variant="determinate"
+                    thickness={5}
+                    value={progress}
+                    size={200}
+                    sx={{
+                      ' .MuiCircularProgress-circle': {
+                        stroke: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.common.white
+                            : theme.palette.common.black,
+                        strokeLinecap: 'round',
+                      },
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      top: 0,
+                      left: 0,
+                      bottom: 0,
+                      right: 0,
+                      position: 'absolute',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography variant="h3" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
+                      {`${Math.round(progress)}%`}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Stack gap={1}>
+                  <Typography variant="caption">{progressName && progressName}</Typography>
+                  {/* <LinearProgress variant="determinate" value={progress} /> */}
+
+                  <Button variant="contained" size="small" onClick={() => handleCancel()}>
+                    Cancel
+                  </Button>
+                </Stack>
+              </Stack>
             ) : (
               <FormProvider methods={methods} onSubmit={onSubmit}>
                 <Stack gap={2}>
@@ -334,7 +377,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
         )}
 
         <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
-          <DialogTitle>Agreement</DialogTitle>
+          <DialogTitle>Final Draft Video</DialogTitle>
           <DialogContent>
             <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
               <source src={submission?.content} />
@@ -363,7 +406,7 @@ export default CampaignFinalDraft;
 
 CampaignFinalDraft.propTypes = {
   campaign: PropTypes.object,
-  timeline: PropTypes.object,
+  timeline: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   submission: PropTypes.object,
   getDependency: PropTypes.func,
   fullSubmission: PropTypes.array,

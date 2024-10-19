@@ -111,7 +111,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
             }
 
             return (
-              <TimelineItem>
+              <TimelineItem key={index}>
                 <TimelineSeparator>
                   <Label sx={{ mt: 0.5 }}>{index + 1}</Label>
                   <TimelineConnector />

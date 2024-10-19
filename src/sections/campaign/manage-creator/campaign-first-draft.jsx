@@ -305,7 +305,7 @@ const CampaignFirstDraft = ({
               </Stack>
             )}
             <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
-              <DialogTitle>Agreement</DialogTitle>
+              <DialogTitle>First Draft Video</DialogTitle>
               <DialogContent>
                 <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
                   <source src={submission?.content} />
@@ -363,7 +363,7 @@ export default CampaignFirstDraft;
 
 CampaignFirstDraft.propTypes = {
   campaign: PropTypes.object,
-  timeline: PropTypes.object,
+  timeline: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   submission: PropTypes.object,
   getDependency: PropTypes.func,
   fullSubmission: PropTypes.array,
