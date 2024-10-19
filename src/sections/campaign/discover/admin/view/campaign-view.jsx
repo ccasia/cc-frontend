@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 
 import {
   Box,
-  Menu,
   Stack,
   Avatar,
   Button,
@@ -19,6 +18,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
+import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -36,16 +36,10 @@ const defaultFilters = {
 const CampaignView = () => {
   const settings = useSettingsContext();
   const { campaigns } = useGetCampaigns();
+  const { data: brandOptions } = useGetCampaignBrandOption();
+  
   const router = useRouter();
-
-  const [anchorEl, setAnchorEl] = useState(null);
   const [filters, setFilters] = useState(defaultFilters);
-
-  const open = Boolean(anchorEl);
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
 
   const openFilters = useBoolean();
 
@@ -135,19 +129,6 @@ const CampaignView = () => {
         <Button onClick={openFilters.onTrue} endIcon={<Iconify icon="ic:round-filter-list" />}>
           Filter
         </Button>
-
-        <Menu
-          id="basic-menu"
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-          MenuListProps={{
-            'aria-labelledby': 'basic-button',
-          }}
-        >
-          <MenuItem>Active</MenuItem>
-          <MenuItem>Past</MenuItem>
-        </Menu>
       </Stack>
 
       {dataFiltered && dataFiltered.length > 0 ? (
@@ -163,6 +144,7 @@ const CampaignView = () => {
         filters={filters}
         onFilters={handleFilters}
         reset={handleResetFitlers}
+        brands={brandOptions}
       />
     </Container>
   );
