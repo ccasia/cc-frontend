@@ -35,7 +35,7 @@ const MediaKitCover = ({ user }) => {
           key={user?.photoBackgroundURL}
           sx={{
             position: 'relative',
-            paddingTop: '25%', // 
+            paddingTop: '25%', //
             width: '100%',
             backgroundImage: encodedBackgroundUrl ? `url("${encodedBackgroundUrl}")` : 'none',
             backgroundSize: 'cover',
@@ -86,19 +86,17 @@ const MediaKitCover = ({ user }) => {
         >
           {(() => {
             const interestsToUse =
-              (user?.creator?.interests && user?.creator?.interests.length > 0)
+              user?.creator?.interests && user?.creator?.interests.length > 0
                 ? user.creator.interests
-                : (user?.creator?.mediaKit?.interests ??
-                  user?.user?.creator?.interests ??
-                  []);
+                : (user?.creator?.mediaKit?.interests ?? user?.user?.creator?.interests ?? []);
 
             const result = interestsToUse.map((elem, index) => (
-                <Label key={`interest-${index}`}>
-                  {typeof elem === 'string' ? elem : elem?.name ?? 'Unnamed Interest'}
-                </Label>
-              ));
+              <Label key={`interest-${index}`}>
+                {typeof elem === 'string' ? elem : (elem?.name ?? 'Unnamed Interest')}
+              </Label>
+            ));
 
-            return result.length > 0 ? result : "No Interests";
+            return result.length > 0 ? result : 'No Interests';
           })()}
         </Stack>
         <Stack gap={2}>

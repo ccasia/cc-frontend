@@ -102,7 +102,14 @@ const Overview = () => {
 
           <Divider />
 
-          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
             <Typography
               variant="subtitle2"
               color="text.secondary"

@@ -76,6 +76,8 @@ const TopContentGrid = ({ topContents }) => {
               position: 'relative',
               overflow: 'hidden',
               borderRadius: 1,
+              // bgcolor: 'red',
+              height: 1,
             }}
           >
             <CardMedia
@@ -83,9 +85,10 @@ const TopContentGrid = ({ topContents }) => {
               image={content.image_url}
               alt={`Top content ${index + 1}`}
               sx={{
-                objectFit: 'contain',
+                objectFit: 'cover',
                 transition: 'opacity 0.3s ease-in-out',
                 borderRadius: 3,
+                height: 1,
               }}
               className="image"
             />
@@ -164,11 +167,9 @@ const TopContentGrid = ({ topContents }) => {
             <Box
               sx={{
                 position: 'absolute',
-                bottom: 0,
-                left: 0,
+                bottom: { xs: 10, md: 0 },
+                left: 10,
                 width: '100%',
-                // height: 85,
-                // bgcolor: 'rgba(0, 0, 0, 1)',
                 color: 'white',
                 p: isMobile ? 0.5 : 1,
                 borderRadius: '0 0 24px 24px',
@@ -186,7 +187,7 @@ const TopContentGrid = ({ topContents }) => {
                   mb: 1,
                 }}
               >
-                {`${content.description.slice(0, 50)}...`}
+                {`${content?.description?.slice(0, 50)}...`}
               </Typography>
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Chip
