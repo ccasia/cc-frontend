@@ -289,8 +289,13 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
         <DialogTitle>You have a uploaded video</DialogTitle>
         <DialogContent>Confirm to remove ?</DialogContent>
         <DialogActions>
-          <Button onClick={confirm.onFalse}>Cancel</Button>
+          <Button onClick={confirm.onFalse} size="small" variant="outlined">
+            Cancel
+          </Button>
           <Button
+            variant="contained"
+            size="small"
+            color="error"
             onClick={() => {
               setValue('pitchVideo', null);
               setSource('');
