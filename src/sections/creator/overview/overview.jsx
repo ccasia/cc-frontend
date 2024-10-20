@@ -41,7 +41,7 @@ const Overview = () => {
             <Image src="/assets/icons/overview/total_campaigns.svg" />
             <ListItemText
               primary="TOTAL CAMPAIGNS"
-              secondary="8"
+              secondary={data?.length}
               primaryTypographyProps={{
                 variant: 'subtitle2',
                 color: 'text.secondary',

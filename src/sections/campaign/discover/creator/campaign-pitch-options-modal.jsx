@@ -100,6 +100,6 @@ CampaignPitchOptionsModal.propTypes = {
   open: PropTypes.bool,
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
-  text: PropTypes.func,
-  video: PropTypes.func,
+  text: PropTypes.object,
+  video: PropTypes.object,
 };

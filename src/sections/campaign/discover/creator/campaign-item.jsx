@@ -394,10 +394,21 @@ export default function CampaignItem({ campaign, user }) {
           Draft
         </Button>
       )}
+      {pitch && pitch.status === 'rejected' && (
+        <Button
+          fullWidth
+          startIcon={<Iconify icon="raphael:no" width={18} />}
+          variant="contained"
+          color="error"
+        >
+          Rejected
+        </Button>
+      )}
       {pitch &&
         pitch.status !== 'approved' &&
         pitch.status !== 'pending' &&
-        pitch.status !== 'draft' && (
+        pitch.status !== 'draft' &&
+        pitch.status !== 'rejected' && (
           <Chip
             icon={<Iconify icon="mdi:clock" />}
             label="In Review"

@@ -23,7 +23,11 @@ const AppliedCampaignView = () => {
     () =>
       !isLoading &&
       data?.filter((campaign) =>
-        campaign?.pitch.some((item) => item?.userId === user?.id && item?.status === 'undecided')
+        campaign?.pitch.some(
+          (item) =>
+            item?.userId === user?.id &&
+            (item?.status === 'undecided' || item?.status === 'rejected')
+        )
       ),
     [isLoading, data, user]
   );
@@ -37,8 +41,6 @@ const AppliedCampaignView = () => {
         : filteredCampaigns,
     [filteredCampaigns, query]
   );
-
-  console.log(filteredData);
 
   return (
     <Box mt={2}>

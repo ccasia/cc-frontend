@@ -1,37 +1,30 @@
 /* eslint-disable no-nested-ternary */
-import React, { useState } from 'react';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 import 'react-quill/dist/quill.snow.css';
 import { enqueueSnackbar } from 'notistack';
-import CircularProgress from '@mui/material/CircularProgress';
+
+import Dialog from '@mui/material/Dialog';
+import CloseIcon from '@mui/icons-material/Close';
+import DialogContent from '@mui/material/DialogContent';
+import LinearProgress from '@mui/material/LinearProgress';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import CloseIcon from '@mui/icons-material/Close';
-import LinearProgress from '@mui/material/LinearProgress';
-
 import {
   Box,
   Chip,
+  Grid,
   Stack,
+  Paper,
   Button,
-  Tooltip,
+  Avatar,
   Typography,
   IconButton,
-  Grid,
-  Tabs,
-  Tab,
-  Avatar,
-  Paper,
-  Divider
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-
-import { useResponsive } from 'src/hooks/use-responsive';
 
 import { formatText } from 'src/utils/format-test';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -40,12 +33,10 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-import Masonry from '@mui/lab/Masonry';
-import ImageList from '@mui/material/ImageList';
-import ImageListItem from '@mui/material/ImageListItem';
+import Carousel from 'src/components/carousel/carousel';
 
 const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
-  const [activeTab, setActiveTab] = useState(0);
+  // const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuthContext();
   const router = useRouter();
 
@@ -105,25 +96,25 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
     <Box sx={{ p: 3, pt: 4 }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <Stack direction="row" alignItems="center" spacing={2}>
-          <Avatar 
-            src={campaign?.company?.logo} 
-            alt={campaign?.company?.name} 
+          <Avatar
+            src={campaign?.company?.logo}
+            alt={campaign?.company?.name}
             sx={{ width: 64, height: 64 }}
           />
           <Box>
-            <Typography 
-              variant="h5" 
-              sx={{ 
+            <Typography
+              variant="h5"
+              sx={{
                 fontWeight: 'bold',
-                mb: 0.5
+                mb: 0.5,
               }}
             >
               {campaign?.name}
             </Typography>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: 'text.secondary'
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
               }}
             >
               by {campaign?.company?.name}
@@ -132,7 +123,10 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
         </Stack>
         <Box sx={{ width: '30%', maxWidth: 200 }}>
           <Typography variant="caption" color="text.secondary" noWrap>
-            Profile match: <Box component="span" sx={{ color: 'success.main', fontWeight: 'bold' }}>{Math.min(Math.round(campaign?.percentageMatch), 100)}%</Box>
+            Profile match:{' '}
+            <Box component="span" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+              {Math.min(Math.round(campaign?.percentageMatch), 100)}%
+            </Box>
           </Typography>
           <LinearProgress
             variant="determinate"
@@ -150,8 +144,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
           />
         </Box>
       </Stack>
-
-      <Box sx={{ position: 'relative', height: 400, mb: 3 }}>
+      {/* <Box sx={{ position: 'relative', height: 400, mb: 3 }}>
         <Image
           src={images[currentImageIndex]}
           alt={`Campaign image ${currentImageIndex + 1}`}
@@ -200,34 +193,51 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
             </IconButton>
           </>
         )}
+      </Box> */}
+      <Box sx={{ mb: 3 }}>
+        <Carousel images={campaign?.campaignBrief?.images} />
       </Box>
-      
+
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Stack spacing={3}>
             <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom color="primary">Campaign Description</Typography>
+              <Typography variant="h6" gutterBottom color="primary">
+                Campaign Description
+              </Typography>
               <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
                 {campaign?.description}
               </Typography>
             </Paper>
-            
+
             <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom color="primary">User Persona</Typography>
+              <Typography variant="h6" gutterBottom color="primary">
+                User Persona
+              </Typography>
               <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
                 {formatText(campaign?.campaignRequirement?.user_persona)}
               </Typography>
             </Paper>
           </Stack>
         </Grid>
-        
+
         <Grid item xs={12} md={6}>
           <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom color="primary">Campaign Requirements</Typography>
+            <Typography variant="h6" gutterBottom color="primary">
+              Campaign Requirements
+            </Typography>
             <Grid container spacing={2}>
               {[
-                { label: 'Gender', data: campaign?.campaignRequirement?.gender, icon: 'mdi:gender-male-female' },
-                { label: 'Age', data: campaign?.campaignRequirement?.age, icon: 'mdi:account-outline' },
+                {
+                  label: 'Gender',
+                  data: campaign?.campaignRequirement?.gender,
+                  icon: 'mdi:gender-male-female',
+                },
+                {
+                  label: 'Age',
+                  data: campaign?.campaignRequirement?.age,
+                  icon: 'mdi:account-outline',
+                },
               ].map((item, index) => (
                 <Grid item xs={6} key={index}>
                   <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
@@ -244,7 +254,10 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                 </Grid>
               ))}
               <Grid item xs={6} sx={{ display: 'flex' }}>
-                <Paper variant="outlined" sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Paper
+                  variant="outlined"
+                  sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}
+                >
                   <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                     <Iconify icon="mdi:map-marker-outline" width={20} height={20} />
                     <Typography variant="subtitle2">Geo Location</Typography>
@@ -257,7 +270,10 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                 </Paper>
               </Grid>
               <Grid item xs={6} sx={{ display: 'flex' }}>
-                <Paper variant="outlined" sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Paper
+                  variant="outlined"
+                  sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}
+                >
                   <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                     <Iconify icon="mdi:translate" width={20} height={20} />
                     <Typography variant="subtitle2">Language</Typography>
@@ -290,16 +306,29 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
   );
 
   const renderActions = (
-    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      alignItems="center"
+      sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}
+    >
       <Button
         variant="outlined"
-        startIcon={<Iconify icon={campaign?.bookMarkCampaign ? "mdi:bookmark" : "mdi:bookmark-outline"} />}
-        onClick={() => campaign?.bookMarkCampaign ? unSaveCampaign(campaign?.bookMarkCampaign.id) : saveCampaign(campaign?.id)}
+        startIcon={
+          <Iconify icon={campaign?.bookMarkCampaign ? 'mdi:bookmark' : 'mdi:bookmark-outline'} />
+        }
+        onClick={() =>
+          campaign?.bookMarkCampaign
+            ? unSaveCampaign(campaign?.bookMarkCampaign.id)
+            : saveCampaign(campaign?.id)
+        }
       >
-        {campaign?.bookMarkCampaign ? "Unsave" : "Save"}
+        {campaign?.bookMarkCampaign ? 'Unsave' : 'Save'}
       </Button>
       <Stack direction="row" spacing={2}>
-        <Button variant="outlined" onClick={handleClose}>Close</Button>
+        <Button variant="outlined" onClick={handleClose}>
+          Close
+        </Button>
         {isShortlisted?.includes(campaign.id) ? (
           <Button
             variant="contained"
@@ -359,8 +388,26 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
         },
       }}
     >
-      <DialogContent sx={{ p: 0, position: 'relative', height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <DialogContent
+        sx={{
+          p: 0,
+          position: 'relative',
+          height: '80vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <Image
             src={images[currentImageIndex] || '/path/to/default/image.jpg'}
             alt={`Full size campaign image ${currentImageIndex + 1}`}
@@ -422,21 +469,19 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
 
   return (
     <>
-      <Dialog 
-        open={open} 
-        onClose={handleClose} 
-        fullWidth 
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        fullWidth
         maxWidth="md"
-        PaperProps={{ 
-          sx: { 
+        PaperProps={{
+          sx: {
             borderRadius: 3,
             overflow: 'hidden',
-          } 
+          },
         }}
       >
-        <DialogContent sx={{ p: 0 }}>
-          {renderContent}
-        </DialogContent>
+        <DialogContent sx={{ p: 0 }}>{renderContent}</DialogContent>
         {renderActions}
       </Dialog>
       {renderFullSizeImage}
