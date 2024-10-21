@@ -108,7 +108,7 @@ const UploadPitch = ({
   );
 
   const renderUploading = (
-    <Stack justifyContent="center" alignItems="center" gap={1}>
+    <Stack justifyContent="center" alignItems="center" gap={1} alignSelf="center">
       <Box
         sx={{
           position: 'relative',
@@ -159,12 +159,12 @@ const UploadPitch = ({
     <Box
       sx={{
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: { xs: 'column', sm: 'row' },
         border: 1,
         gap: 2,
         borderColor: grey[300],
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: { xs: 'flex-start', sm: 'center' },
         minHeight: 250,
         borderRadius: 2,
         p: 2,
@@ -174,8 +174,9 @@ const UploadPitch = ({
         <Box
           sx={{
             height: 300,
-            width: 300,
+            width: 250,
             flexGrow: 1,
+            alignSelf: 'center',
           }}
         >
           <Box
@@ -227,7 +228,7 @@ const UploadPitch = ({
     <Controller
       name={name}
       control={control}
-      render={({ field }) => (
+      render={() => (
         <>
           {source ? renderPreview : renderPlaceholder}
           {helperText && (
