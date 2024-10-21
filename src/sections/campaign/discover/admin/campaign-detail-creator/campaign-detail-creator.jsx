@@ -29,6 +29,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { endpoints } from 'src/utils/axios';
 
 import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -37,20 +38,22 @@ import { useSettingsContext } from 'src/components/settings';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import UserCard from './user-card';
-
-// const steps = ['Select creator', 'Manage agreement'];
+import CampaignAgreementEdit from '../campaign-agreement-edit';
 
 const CampaignDetailCreator = ({ campaign }) => {
-  // eslint-disable-next-line no-unused-vars
   const [query, setQuery] = useState(null);
   const { data, isLoading } = useGetAllCreators();
+  const { data: agreements, isLoading: loadingAgreements } = useGetAgreements(campaign?.id);
   const smUp = useResponsive('up', 'sm');
   const shortlistedCreators = campaign?.shortlisted;
   const shortlistedCreatorsId = shortlistedCreators?.map((item) => item.userId);
   const modal = useBoolean();
   const confirmModal = useBoolean();
+  const editDialog = useBoolean();
   const settings = useSettingsContext();
   const loading = useBoolean();
+  const [selectedAgreement, setSelectedAgreement] = useState(null);
+  
 
   const methods = useForm({
     defaultValues: {
@@ -80,6 +83,24 @@ const CampaignDetailCreator = ({ campaign }) => {
 
   const selectedCreator = watch('creator');
 
+  const creatorsWithAgreements = useMemo(() => {
+    if (!agreements || !campaign?.shortlisted) return campaign?.shortlisted;
+
+    const agreementsMap = agreements.reduce((acc, agreement) => {
+      acc[agreement.userId] = {
+        isSent: agreement.isSent,
+        status: agreement.status,
+      };
+      return acc;
+    }, {});
+
+    return campaign.shortlisted.map(creator => ({
+      ...creator,
+      isSent: agreementsMap[creator.userId]?.isSent || false,
+      agreementStatus: agreementsMap[creator.userId]?.status || 'NOT_SENT',
+    }));
+  }, [agreements, campaign]);
+
   const onSubmit = handleSubmit(async (value) => {
     try {
       loading.onTrue();
@@ -97,6 +118,18 @@ const CampaignDetailCreator = ({ campaign }) => {
       loading.onFalse();
     }
   });
+
+  const handleEditAgreement = (creator) => {
+    const agreement = agreements.find(a => a.userId === creator.userId);
+    
+    if (!agreement || agreement.isSent) {
+      enqueueSnackbar('No editable agreement found for this creator', { variant: 'info' });
+      return;
+    }
+  
+    setSelectedAgreement(agreement);
+    editDialog.onTrue();
+  };
 
   const renderConfirmationModal = !!selectedCreator.length && (
     <Dialog open={confirmModal.value} onClose={confirmModal.onFalse}>
@@ -150,7 +183,6 @@ const CampaignDetailCreator = ({ campaign }) => {
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(option, value) => option.id === value.id}
               renderOption={(props, option, { selected }) => {
-                // eslint-disable-next-line react/prop-types
                 const { key, ...optionProps } = props;
                 return (
                   <Box key={key} component="div" {...optionProps}>
@@ -245,8 +277,15 @@ const CampaignDetailCreator = ({ campaign }) => {
               }}
               gap={2}
             >
-              {filteredData.map((elem, index) => (
-                <UserCard key={elem?.id} creator={elem?.user} campaignId={campaign?.id} />
+              {creatorsWithAgreements.map((elem) => (
+                <UserCard 
+                  key={elem?.id} 
+                  creator={elem?.user} 
+                  campaignId={campaign?.id} 
+                  isSent={elem.isSent}
+                  onEditAgreement={() => handleEditAgreement(elem)}
+                  agreementStatus={elem.agreementStatus}
+                />
               ))}
             </Box>
             {filteredData?.length < 1 && (
@@ -259,6 +298,11 @@ const CampaignDetailCreator = ({ campaign }) => {
       </Stack>
       {renderShortlistFormModal}
       {renderConfirmationModal}
+      <CampaignAgreementEdit
+        dialog={editDialog}
+        agreement={selectedAgreement}
+        campaign={campaign}
+      />
     </>
   );
 };
