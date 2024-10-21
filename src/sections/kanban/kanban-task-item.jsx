@@ -99,7 +99,6 @@ export default function KanbanTaskItem({
           >
             {/* {!!task.attachments.length && renderImg} */}
             <Stack spacing={2} sx={{ px: 2, py: 2.5, position: 'relative' }}>
-
               <ListItemText
                 primary={task?.name}
                 secondary={task?.submission?.campaign?.name}

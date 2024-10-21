@@ -97,69 +97,72 @@ const CampaignAgreements = ({ campaign }) => {
           <TableBody>
             {!isLoading &&
               data.map((item) => {
+                // eslint-disable-next-line no-restricted-globals
                 const isAmountValid = !isNaN(parseFloat(item?.amount?.toString()));
                 return (
-                <TableRow key={item.id}>
-                  <TableCell>{item?.user?.name}</TableCell>
-                  <TableCell>{item?.user?.email}</TableCell>
-                  <TableCell>{dayjs(item?.updatedAt).format('LL')}</TableCell>
-                  <TableCell>
-                    {item?.isSent ? (
-                      <Label color="success">Sent</Label>
-                    ) : (
-                      <Label color="warning">Pending</Label>
-                    )}
-                  </TableCell>
-                  <TableCell>{isAmountValid ? `RM ${parseFloat(item?.amount?.toString())}` : 'Not set'}</TableCell>
-                  <TableCell>
-                    {smUp ? (
-                      <Stack direction="row" gap={1}>
-                        <Button
-                          onClick={() => handleViewAgreement(item?.agreementUrl)}
-                          size="small"
-                          variant="outlined"
-                          startIcon={<Iconify icon="hugeicons:view" />}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          onClick={() => handleEditAgreement(item)}
-                          size="small"
-                          variant="outlined"
-                          startIcon={<Iconify icon="iconamoon:edit-light" />}
-                        >
-                          Payment Amount
-                        </Button>
-                        <Button
-                          onClick={() => handleSendAgreement(item)}
-                          size="small"
-                          variant="outlined"
-                          startIcon={<Iconify icon="bx:send" />}
-                          color={item.isSent ? 'warning' : 'primary'}
-                          disabled={!isAmountValid}
-                        >
-                          {item.isSent ? 'Resend' : 'Send'}
-                        </Button>
-                      </Stack>
-                    ) : (
-                      <Stack direction="row" gap={1}>
-                        <IconButton onClick={() => handleViewAgreement(item?.agreementUrl)}>
-                          <Iconify icon="hugeicons:view" />
-                        </IconButton>
-                        <IconButton color="warning" onClick={() => handleEditAgreement(item)}>
-                          <Iconify icon="iconamoon:edit-light" />
-                        </IconButton>
-                        <IconButton 
-                          color={item.isSent ? 'warning' : 'primary'}
-                          onClick={() => handleSendAgreement(item)}
-                          disabled={!isAmountValid}
-                        >
-                          <Iconify icon="bx:send" />
-                        </IconButton>
-                      </Stack>
-                    )}
-                  </TableCell>
-                </TableRow>
+                  <TableRow key={item.id}>
+                    <TableCell>{item?.user?.name}</TableCell>
+                    <TableCell>{item?.user?.email}</TableCell>
+                    <TableCell>{dayjs(item?.updatedAt).format('LL')}</TableCell>
+                    <TableCell>
+                      {item?.isSent ? (
+                        <Label color="success">Sent</Label>
+                      ) : (
+                        <Label color="warning">Pending</Label>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isAmountValid ? `RM ${parseFloat(item?.amount?.toString())}` : 'Not set'}
+                    </TableCell>
+                    <TableCell>
+                      {smUp ? (
+                        <Stack direction="row" gap={1}>
+                          <Button
+                            onClick={() => handleViewAgreement(item?.agreementUrl)}
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Iconify icon="hugeicons:view" />}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            onClick={() => handleEditAgreement(item)}
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Iconify icon="iconamoon:edit-light" />}
+                          >
+                            Payment Amount
+                          </Button>
+                          <Button
+                            onClick={() => handleSendAgreement(item)}
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Iconify icon="bx:send" />}
+                            color={item.isSent ? 'warning' : 'primary'}
+                            disabled={!isAmountValid}
+                          >
+                            {item.isSent ? 'Resend' : 'Send'}
+                          </Button>
+                        </Stack>
+                      ) : (
+                        <Stack direction="row" gap={1}>
+                          <IconButton onClick={() => handleViewAgreement(item?.agreementUrl)}>
+                            <Iconify icon="hugeicons:view" />
+                          </IconButton>
+                          <IconButton color="warning" onClick={() => handleEditAgreement(item)}>
+                            <Iconify icon="iconamoon:edit-light" />
+                          </IconButton>
+                          <IconButton
+                            color={item.isSent ? 'warning' : 'primary'}
+                            onClick={() => handleSendAgreement(item)}
+                            disabled={!isAmountValid}
+                          >
+                            <Iconify icon="bx:send" />
+                          </IconButton>
+                        </Stack>
+                      )}
+                    </TableCell>
+                  </TableRow>
                 );
               })}
           </TableBody>

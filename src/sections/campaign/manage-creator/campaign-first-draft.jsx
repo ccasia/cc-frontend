@@ -134,6 +134,8 @@ const CampaignFirstDraft = ({
 
           if (data.progress === 100) {
             mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+
+            mutate(endpoints.kanban.root);
             setIsProcessing(false);
             reset();
             setProgressName('');
