@@ -87,7 +87,7 @@ export function useNavData() {
         ],
       },
       {
-        subheader: 'Management',
+        // subheader: 'Management',
         items: [
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD'],
@@ -204,6 +204,15 @@ export function useNavData() {
       {
         items: [
           {
+            title: 'Overview',
+            path: paths.dashboard.overview.root,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+          },
+        ],
+      },
+      {
+        items: [
+          {
             title: 'Discover',
             path: paths.dashboard.campaign.view,
             icon: <Iconify icon="iconamoon:discover" width={25} />,
@@ -288,15 +297,15 @@ export function useNavData() {
 
   const data = useMemo(
     () => [
-      {
-        items: [
-          {
-            title: 'Overview',
-            path: paths.dashboard.overview.root,
-            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
-          },
-        ],
-      },
+      // {
+      //   items: [
+      //     {
+      //       title: 'Overview',
+      //       path: paths.dashboard.overview.root,
+      //       icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+      //     },
+      //   ],
+      // },
 
       ...navigations,
       {

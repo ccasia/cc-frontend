@@ -2,6 +2,7 @@ import { memo } from 'react';
 import PropTypes from 'prop-types';
 
 import Stack from '@mui/material/Stack';
+import { Divider } from '@mui/material';
 
 import NavList from './nav-list';
 
@@ -38,6 +39,12 @@ function Group({ items, slotProps }) {
       {items?.map((list) => (
         <NavList key={list.title} data={list} depth={1} slotProps={slotProps} />
       ))}
+      <Divider
+        sx={{
+          mb: 2,
+          mt: 1,
+        }}
+      />
     </>
   );
 }
