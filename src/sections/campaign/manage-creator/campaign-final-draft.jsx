@@ -55,6 +55,8 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   const [progress, setProgress] = useState(0);
   const display = useBoolean();
 
+  console.log(submission?.feedback);
+
   const { user } = useAuthContext();
 
   const methods = useForm();
