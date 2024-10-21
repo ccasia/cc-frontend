@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import React from 'react';
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
@@ -22,17 +23,42 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function UserCard({ creator, campaignId }) {
+export default function UserCard({ creator, campaignId, isSent, onEditAgreement }) {
   const theme = useTheme();
   const router = useRouter();
+
+  const handleCardClick = () => {
+    if (isSent) {
+      router.push(paths.dashboard.campaign.manageCreator(campaignId, creator?.id));
+    } else {
+      onEditAgreement();
+    }
+  };
 
   return (
     <Box
       component="div"
-      onClick={() => {
-        router.push(paths.dashboard.campaign.manageCreator(campaignId, creator?.id));
-      }}
+      onClick={handleCardClick}
+      sx={{ position: 'relative', cursor: 'pointer' }}
     >
+      {!isSent && (
+      <Typography
+        variant="caption"
+        sx={{
+          position: 'absolute',
+          top: 10,
+          left: 10,
+          backgroundColor: theme.palette.warning.main,
+          color: 'white',
+          padding: '3.5px 8px',
+          borderRadius: 1,
+          zIndex: 10,
+        }}
+      >
+        PENDING AGREEMENT
+      </Typography>
+    )}
+
       <Card
         sx={{
           textAlign: 'center',
@@ -143,4 +169,6 @@ export default function UserCard({ creator, campaignId }) {
 UserCard.propTypes = {
   creator: PropTypes.object,
   campaignId: PropTypes.string,
+  isSent: PropTypes.bool,
+  onEditAgreement: PropTypes.func, // Add this line
 };
