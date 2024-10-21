@@ -340,18 +340,27 @@ const CampaignFirstDraft = ({
             <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
               <DialogTitle>First Draft Video</DialogTitle>
               <DialogContent>
-                <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
-                  <source src={submission?.content} />
-                </video>
-                <Box
-                  component={Paper}
-                  p={1.5}
-                  my={1}
-                  sx={{
-                    bgcolor: (theme) => theme.palette.background.default,
-                  }}
-                >
-                  <Typography>{submission?.caption}</Typography>
+                <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                  <Box
+                    component="video"
+                    autoPlay
+                    controls
+                    sx={{
+                      maxHeight: '60vh',
+                      width: { xs: '70vw', sm: 'auto' },
+                      borderRadius: 2,
+                      boxShadow: 3,
+                    }}
+                  >
+                    <source src={submission?.content} />
+                  </Box>
+
+                  <Box component={Paper} p={1.5} width={1}>
+                    <Typography variant="caption" color="text.secondary">
+                      Caption
+                    </Typography>
+                    <Typography variant="subtitle1">{submission?.caption}</Typography>
+                  </Box>
                 </Box>
               </DialogContent>
               <DialogActions>

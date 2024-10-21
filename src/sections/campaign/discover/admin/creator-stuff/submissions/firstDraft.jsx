@@ -365,13 +365,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                   >
                     <source src={submission?.content} />
                   </Box>
-                  {/* <video
-                  autoPlay
-                  style={{ width: '100%', borderRadius: 10, margin: 'auto' }}
-                  controls
-                >
-                  <source src={submission?.content} />
-                </video> */}
+
                   <Box component={Paper} p={1.5} width={1}>
                     <Typography variant="caption" color="text.secondary">
                       Caption
@@ -413,7 +407,21 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                             placeholder="Comment"
                           />
                           <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                            <Typography
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              sx={{
+                                boxShadow: 2,
+                              }}
+                              onClick={() => {
+                                setType('request');
+                                setValue('type', 'request');
+                                setValue('feedback', '');
+                              }}
+                            >
+                              Request a change
+                            </Button>
+                            {/* <Typography
                               component="a"
                               onClick={() => {
                                 setType('request');
@@ -431,7 +439,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                               variant="caption"
                             >
                               Request a change
-                            </Typography>
+                            </Typography> */}
                             <Button
                               variant="contained"
                               size="small"

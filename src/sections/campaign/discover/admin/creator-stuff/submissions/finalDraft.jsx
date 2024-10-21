@@ -139,7 +139,15 @@ const FinalDraft = ({ campaign, submission, creator }) => {
         <Button onClick={onclose} variant="outlined" size="small">
           Cancel
         </Button>
-        <LoadingButton onClick={onSubmit} variant="contained" size="small" loading={isSubmitting}>
+        <LoadingButton
+          onClick={() => {
+            setValue('type', 'approve');
+            onSubmit();
+          }}
+          variant="contained"
+          size="small"
+          loading={isSubmitting}
+        >
           Confirm
         </LoadingButton>
       </DialogActions>
@@ -156,7 +164,15 @@ const FinalDraft = ({ campaign, submission, creator }) => {
         <Button onClick={onclose} variant="outlined" size="small">
           Cancel
         </Button>
-        <LoadingButton onClick={onSubmit} variant="contained" size="small" loading={isSubmitting}>
+        <LoadingButton
+          onClick={() => {
+            setValue('type', 'request');
+            onSubmit();
+          }}
+          variant="contained"
+          size="small"
+          loading={isSubmitting}
+        >
           Confirm
         </LoadingButton>
       </DialogActions>
