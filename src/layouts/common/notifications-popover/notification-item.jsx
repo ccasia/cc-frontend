@@ -14,6 +14,21 @@ import { useAuthContext } from 'src/auth/hooks';
 import { fToNow } from 'src/utils/format-time';
 
 // ----------------------------------------------------------------------
+// Entity types
+// Live 
+// Campaign
+// User
+// Pitch
+// Shortlist
+// Timeline
+// Feedback
+// Draft
+// Post
+// Logistic
+// Invoice
+// Metrcis
+// Agreement
+// Chat
 
 export default function NotificationItem({ notification }) {
   const { user } = useAuthContext();
@@ -58,8 +73,8 @@ export default function NotificationItem({ notification }) {
     } else if (entity === 'Campaign') {  // This is for Agreement Approval 
       // link = `/dashboard/campaign/discover/detail/${campaignId}`; 
       link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`; 
-    } else if (entity === 'FirstDraft') {
-      link = `/dashboard/campaign/first-draft/${campaignId}`; // Adjust this route as needed
+    }  else if (entity === 'Live' && user.role === 'admin') {
+      link = `/dashboard/campaign/discover/detail/${campaignId}`; // Adjust this route as needed
     }
 
     router.push(link); 
