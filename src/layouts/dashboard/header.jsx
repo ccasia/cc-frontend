@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 
+import { Card } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -12,15 +13,14 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { bgBlur } from 'src/theme/css';
 
 import Logo from 'src/components/logo';
+// import ContactsPopover from '../common/contacts-popover';
 import SvgColor from 'src/components/svg-color';
 import { useSettingsContext } from 'src/components/settings';
 
 import { NAV, HEADER } from '../config-layout';
-import SettingsButton from '../common/settings-button';
 import AccountPopover from '../common/account-popover';
-// import ContactsPopover from '../common/contacts-popover';
-// import LanguagePopover from '../common/language-popover';
 import NotificationsPopover from '../common/notifications-popover';
+// import LanguagePopover from '../common/language-popover';
 
 // ----------------------------------------------------------------------
 
@@ -38,6 +38,21 @@ export default function Header({ onOpenNav, isOnline }) {
   const offset = useOffSetTop(HEADER.H_DESKTOP);
 
   const offsetTop = offset && !isNavHorizontal;
+
+  const renderHeader = (
+    <Card
+      sx={{
+        p: 1,
+        minWidth: 90,
+      }}
+    >
+      <Stack direction="row" alignItems="center" justifyContent="space-around">
+        {/* <Iconify icon="mdi:bell-outline" width={18} /> */}
+        <NotificationsPopover />
+        <AccountPopover isOnline={isOnline} />
+      </Stack>
+    </Card>
+  );
 
   const renderContent = (
     <>
@@ -58,15 +73,12 @@ export default function Header({ onOpenNav, isOnline }) {
         justifyContent="flex-end"
         spacing={{ xs: 0.5, sm: 1 }}
       >
-        {/* <LanguagePopover /> */}
+        {renderHeader}
+        {/* <NotificationsPopover /> */}
 
-        <NotificationsPopover />
+        {/* <SettingsButton /> */}
 
-        {/* <ContactsPopover /> */}
-
-        <SettingsButton />
-
-        <AccountPopover isOnline={isOnline} />
+        {/* <AccountPopover isOnline={isOnline} /> */}
       </Stack>
     </>
   );
@@ -100,7 +112,6 @@ export default function Header({ onOpenNav, isOnline }) {
         }),
       }}
     >
-      {/* <Alert /> */}
       <Toolbar
         sx={{
           height: 1,

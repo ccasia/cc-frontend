@@ -17,8 +17,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  LinearProgress,
   CircularProgress,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -32,6 +33,16 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
+import Timeline from '@mui/lab/Timeline';
+import TimelineItem from '@mui/lab/TimelineItem';
+import TimelineSeparator from '@mui/lab/TimelineSeparator';
+import TimelineConnector from '@mui/lab/TimelineConnector';
+import TimelineContent from '@mui/lab/TimelineContent';
+import TimelineDot from '@mui/lab/TimelineDot';
+import TimelineOppositeContent, {
+  timelineOppositeContentClasses,
+} from '@mui/lab/TimelineOppositeContent';
+import dayjs from 'dayjs';
 
 const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, fullSubmission }) => {
   // eslint-disable-next-line no-unused-vars
@@ -43,6 +54,8 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   const { socket } = useSocketContext();
   const [progress, setProgress] = useState(0);
   const display = useBoolean();
+
+  console.log(submission?.feedback);
 
   const { user } = useAuthContext();
 
@@ -151,6 +164,9 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
       localStorage.removeItem('preview');
     }
   };
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     previewSubmission?.status === 'CHANGES_REQUIRED' && (
@@ -264,36 +280,156 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
               </Box>
             </Box>
             <Alert severity="warning">
-              <Box display="flex" gap={1.5} flexDirection="column">
-                <Typography variant="subtitle2" sx={{ textDecoration: 'underline' }}>
-                  Changes Required
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-                  {submission?.feedback?.reasons?.length &&
-                    submission?.feedback?.reasons?.map((item, index) => (
-                      <Label key={index}>{item}</Label>
-                    ))}
-                </Stack>
-                <Typography
-                  variant="subtitle1"
-                  color="text.secondary"
-                  sx={{ whiteSpace: 'pre-line' }}
-                >
-                  {submission?.feedback?.content}
-                </Typography>
-              </Box>
+              <Typography variant="subtitle2" sx={{ textDecoration: 'underline', mb: 2 }}>
+                Changes Required
+              </Typography>
+              <Timeline
+                sx={{
+                  [`& .${timelineOppositeContentClasses.root}`]: {
+                    flex: 0.2,
+                  },
+                  [theme.breakpoints.down('sm')]: {
+                    padding: 0,
+                  },
+                }}
+              >
+                {submission?.feedback?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((feedback, index) => (
+                  <TimelineItem 
+                    key={index}
+                    sx={{
+                      [theme.breakpoints.down('sm')]: {
+                        flexDirection: 'column',
+                        '&::before': {
+                          display: 'none',
+                        },
+                      },
+                    }}
+                  >
+                    <TimelineOppositeContent 
+                      color="textSecondary"
+                      sx={{
+                        [theme.breakpoints.down('sm')]: {
+                          padding: '6px 16px',
+                        },
+                      }}
+                    >
+                      <Typography 
+                        variant="caption"  
+                        sx={{ 
+                          fontWeight: index === 0 ? 'bold' : 'normal',
+                          opacity: index === 0 ? 1 : 0.7 
+                        }}
+                      >
+                        {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
+                      </Typography>
+                    </TimelineOppositeContent>
+                    <TimelineSeparator>
+                      <TimelineDot />
+                      {index !== submission.feedback.length - 1 && <TimelineConnector />}
+                    </TimelineSeparator>
+                    <TimelineContent
+                      sx={{
+                        [theme.breakpoints.down('sm')]: {
+                          padding: '6px 16px 16px',
+                        },
+                      }}
+                    >
+                      <Typography 
+                        variant="subtitle1" 
+                        color="text.secondary" 
+                        sx={{ 
+                          whiteSpace: 'pre-line',
+                          fontWeight: index === 0 ? 'bold' : 'normal',
+                          opacity: index === 0 ? 1 : 0.7  
+                        }}
+                      >
+                        {feedback.content}
+                      </Typography>
+                      <Stack 
+                        direction="row" 
+                        spacing={1} 
+                        flexWrap="wrap" 
+                        alignItems="center" 
+                        mt={1}
+                        sx={{
+                          [theme.breakpoints.down('sm')]: {
+                            mt: 0.5,
+                          },
+                        }}
+                      >
+                        {feedback.reasons?.map((item, idx) => (
+                          <Label 
+                            key={idx}
+                            sx={{ 
+                              fontWeight: index === 0 ? 'bold' : 'normal',
+                              opacity: index === 0 ? 1 : 0.7,
+                              [theme.breakpoints.down('sm')]: {
+                                fontSize: '0.75rem',
+                                padding: '2px 4px',
+                              },
+                            }}
+                          >
+                            {item}
+                          </Label>
+                        ))}
+                      </Stack>
+                    </TimelineContent>
+                  </TimelineItem>
+                ))}
+              </Timeline>
             </Alert>
             {isProcessing ? (
-              <>
-                <LinearProgress variant="determinate" value={progress} />
-                <Button onClick={() => handleCancel()}>Cancel</Button>
-              </>
+              <Stack justifyContent="center" alignItems="center" gap={1}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                  }}
+                >
+                  <CircularProgress
+                    variant="determinate"
+                    thickness={5}
+                    value={progress}
+                    size={200}
+                    sx={{
+                      ' .MuiCircularProgress-circle': {
+                        stroke: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.common.white
+                            : theme.palette.common.black,
+                        strokeLinecap: 'round',
+                      },
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      top: 0,
+                      left: 0,
+                      bottom: 0,
+                      right: 0,
+                      position: 'absolute',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography variant="h3" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
+                      {`${Math.round(progress)}%`}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Stack gap={1}>
+                  <Typography variant="caption">{progressName && progressName}</Typography>
+                  <Button variant="contained" size="small" onClick={() => handleCancel()}>
+                    Cancel
+                  </Button>
+                </Stack>
+              </Stack>
             ) : (
               <FormProvider methods={methods} onSubmit={onSubmit}>
                 <Stack gap={2}>
                   {localStorage.getItem('preview') ? (
                     <Box>
-                      {/* // eslint-disable-next-line jsx-a11y/media-has-caption */}
                       <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
                         <source src={localStorage.getItem('preview')} />
                       </video>
@@ -334,7 +470,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
         )}
 
         <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
-          <DialogTitle>Agreement</DialogTitle>
+          <DialogTitle>Final Draft Video</DialogTitle>
           <DialogContent>
             <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
               <source src={submission?.content} />
@@ -363,7 +499,7 @@ export default CampaignFinalDraft;
 
 CampaignFinalDraft.propTypes = {
   campaign: PropTypes.object,
-  timeline: PropTypes.object,
+  timeline: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   submission: PropTypes.object,
   getDependency: PropTypes.func,
   fullSubmission: PropTypes.array,

@@ -75,23 +75,19 @@ export function useNavData() {
     };
   }, [socket]);
 
-  // useEffect(() => {
-  //   setUnreadMessageCount(unreadCount);
-  // }, [unreadCount]);
-
   const adminNavigations = useMemo(
     () => [
       {
         items: [
           {
-            title: 'Dashboard',
+            title: 'Overview',
             path: paths.dashboard.root,
-            icon: ICONS.dashboard,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
           },
         ],
       },
       {
-        subheader: 'Management',
+        // subheader: 'Management',
         items: [
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD'],
@@ -208,6 +204,15 @@ export function useNavData() {
       {
         items: [
           {
+            title: 'Overview',
+            path: paths.dashboard.overview.root,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+          },
+        ],
+      },
+      {
+        items: [
+          {
             title: 'Discover',
             path: paths.dashboard.campaign.view,
             icon: <Iconify icon="iconamoon:discover" width={25} />,
@@ -216,6 +221,11 @@ export function useNavData() {
             title: 'My Campaigns',
             path: paths.dashboard.campaign.creator.manage,
             icon: <Iconify icon="material-symbols:assignment" width={25} />,
+          },
+          {
+            title: 'My Tasks',
+            path: paths.dashboard.kanban,
+            icon: ICONS.kanban,
           },
           {
             title: 'Media Kit',
@@ -287,9 +297,16 @@ export function useNavData() {
 
   const data = useMemo(
     () => [
-      {
-        subheader: 'Cult Creative',
-      },
+      // {
+      //   items: [
+      //     {
+      //       title: 'Overview',
+      //       path: paths.dashboard.overview.root,
+      //       icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+      //     },
+      //   ],
+      // },
+
       ...navigations,
       {
         items: [
@@ -303,11 +320,6 @@ export function useNavData() {
             title: 'Calendar',
             path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,
-          },
-          {
-            title: 'My Tasks',
-            path: paths.dashboard.kanban,
-            icon: ICONS.kanban,
           },
         ],
       },

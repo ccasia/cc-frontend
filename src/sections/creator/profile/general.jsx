@@ -8,23 +8,12 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Slider from '@mui/material/Slider';
 import Grid from '@mui/material/Unstable_Grid2';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import CircularProgress from '@mui/material/CircularProgress';
-import {
-  Dialog,
-  Button,
-  Checkbox,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  InputAdornment,
-  FormControlLabel,
-} from '@mui/material';
+import { Checkbox, InputAdornment, FormControlLabel } from '@mui/material';
 
 import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -34,7 +23,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import { regions } from 'src/assets/data/regions';
 
 import { useSnackbar } from 'src/components/snackbar';
-import RHFUploadSquare from 'src/components/hook-form/rhf-upload-square';
 import FormProvider, {
   RHFTextField,
   RHFUploadAvatar,
@@ -55,10 +43,10 @@ export default function AccountGeneral() {
   // State
   const [openCropDialog, setOpenCropDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(user?.photoBackgroundURL || null);
+  // const [previewUrl, setPreviewUrl] = useState(user?.photoBackgroundURL || null);
   const [isLoading, setIsLoading] = useState(false);
   const [imageDataUrl, setImageDataUrl] = useState(null);
-  const [activeTab, setActiveTab] = useState(0);
+  // const [activeTab, setActiveTab] = useState(0);
   const [zoom, setZoom] = useState(0);
   const [maxZoom, setMaxZoom] = useState(1.5);
 
@@ -112,7 +100,7 @@ export default function AccountGeneral() {
     setValue,
     handleSubmit,
     watch,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = methods;
 
   useEffect(() => {
@@ -184,14 +172,14 @@ export default function AccountGeneral() {
     };
   }, [openCropDialog, imageDataUrl, isXs, isMd, isLg, getBoundarySize, getViewportSize]);
 
-  const handleZoomChange = (event, newValue) => {
-    setZoom(newValue);
-    if (croppieRef.current) {
-      // Reverse the zoom calculation
-      const scaledZoom = maxZoom - newValue * (maxZoom - 1);
-      croppieRef.current.setZoom(scaledZoom);
-    }
-  };
+  // const handleZoomChange = (event, newValue) => {
+  //   setZoom(newValue);
+  //   if (croppieRef.current) {
+  //     // Reverse the zoom calculation
+  //     const scaledZoom = maxZoom - newValue * (maxZoom - 1);
+  //     croppieRef.current.setZoom(scaledZoom);
+  //   }
+  // };
 
   useEffect(() => {
     if (openCropDialog && selectedFile) {
@@ -212,63 +200,63 @@ export default function AccountGeneral() {
     };
   }, [openCropDialog, selectedFile]);
 
-  const scaleImage = (file, maxWidth, maxHeight) =>
-    new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let { width } = img;
-          let { height } = img;
+  // const scaleImage = (file, maxWidth, maxHeight) =>
+  //   new Promise((resolve) => {
+  //     const reader = new FileReader();
+  //     reader.onload = (e) => {
+  //       const img = new Image();
+  //       img.onload = () => {
+  //         const canvas = document.createElement('canvas');
+  //         let { width } = img;
+  //         let { height } = img;
 
-          if (width > height) {
-            if (width > maxWidth) {
-              height *= maxWidth / width;
-              width = maxWidth;
-            }
-          } else if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
+  //         if (width > height) {
+  //           if (width > maxWidth) {
+  //             height *= maxWidth / width;
+  //             width = maxWidth;
+  //           }
+  //         } else if (height > maxHeight) {
+  //           width *= maxHeight / height;
+  //           height = maxHeight;
+  //         }
 
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob(resolve, 'image/png', 1);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
+  //         canvas.width = width;
+  //         canvas.height = height;
+  //         const ctx = canvas.getContext('2d');
+  //         ctx.drawImage(img, 0, 0, width, height);
+  //         canvas.toBlob(resolve, 'image/png', 1);
+  //       };
+  //       img.src = e.target.result;
+  //     };
+  //     reader.readAsDataURL(file);
+  //   });
 
-  const handleCrop = () => {
-    if (croppieRef.current) {
-      croppieRef.current
-        .result({
-          type: 'blob',
-          size: { width: 1584, height: 396 },
-          format: 'png',
-          quality: 1,
-          circle: false,
-        })
-        .then((blob) => {
-          const newPreviewUrl = URL.createObjectURL(blob);
-          setPreviewUrl(newPreviewUrl);
+  // const handleCrop = () => {
+  //   if (croppieRef.current) {
+  //     croppieRef.current
+  //       .result({
+  //         type: 'blob',
+  //         size: { width: 1584, height: 396 },
+  //         format: 'png',
+  //         quality: 1,
+  //         circle: false,
+  //       })
+  //       .then((blob) => {
+  //         const newPreviewUrl = URL.createObjectURL(blob);
+  //         setPreviewUrl(newPreviewUrl);
 
-          const fileName = selectedFile ? selectedFile.name : 'background.png';
-          const newFile = new File([blob], fileName, { type: 'image/png' });
+  //         const fileName = selectedFile ? selectedFile.name : 'background.png';
+  //         const newFile = new File([blob], fileName, { type: 'image/png' });
 
-          setValue('photoBackgroundURL', newFile, { shouldValidate: true });
-          setOpenCropDialog(false);
-        });
-    }
-  };
+  //         setValue('photoBackgroundURL', newFile, { shouldValidate: true });
+  //         setOpenCropDialog(false);
+  //       });
+  //   }
+  // };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
+  // const handleTabChange = (event, newValue) => {
+  //   setActiveTab(newValue);
+  // };
 
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
@@ -309,22 +297,22 @@ export default function AccountGeneral() {
     [setValue]
   );
 
-  const handleDropBackground = useCallback(
-    async (acceptedFiles) => {
-      const file = acceptedFiles[0];
-      console.log('File selected', file);
-      if (file) {
-        if (croppieRef.current) {
-          croppieRef.current.destroy();
-          croppieRef.current = null;
-        }
-        const scaledBlob = await scaleImage(file, 1584, 396);
-        setSelectedFile(new File([scaledBlob], file.name, { type: 'image/png' }));
-        setOpenCropDialog(true);
-      }
-    },
-    [setSelectedFile, setOpenCropDialog]
-  );
+  // const handleDropBackground = useCallback(
+  //   async (acceptedFiles) => {
+  //     const file = acceptedFiles[0];
+  //     console.log('File selected', file);
+  //     if (file) {
+  //       if (croppieRef.current) {
+  //         croppieRef.current.destroy();
+  //         croppieRef.current = null;
+  //       }
+  //       const scaledBlob = await scaleImage(file, 1584, 396);
+  //       setSelectedFile(new File([scaledBlob], file.name, { type: 'image/png' }));
+  //       setOpenCropDialog(true);
+  //     }
+  //   },
+  //   [setSelectedFile, setOpenCropDialog]
+  // );
 
   const country = watch('country');
   const nationality = watch('country');
@@ -357,7 +345,7 @@ export default function AccountGeneral() {
                 </Typography>
               }
             />
-            <Box sx={{ mt: 5 }}>
+            {/* <Box sx={{ mt: 5 }}>
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 Background Picture
               </Typography>
@@ -383,7 +371,7 @@ export default function AccountGeneral() {
                   </Typography>
                 }
               />
-            </Box>
+            </Box> */}
           </Card>
         </Grid>
 
@@ -458,14 +446,20 @@ export default function AccountGeneral() {
             <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
               <RHFTextField name="about" multiline rows={7} label="About" />
 
-              <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+              <LoadingButton
+                type="submit"
+                variant="contained"
+                loading={isSubmitting}
+                size="small"
+                disabled={!isDirty}
+              >
                 Save Changes
               </LoadingButton>
             </Stack>
           </Card>
         </Grid>
       </Grid>
-      <Dialog
+      {/* <Dialog
         open={openCropDialog}
         onClose={() => {
           setOpenCropDialog(false);
@@ -550,7 +544,7 @@ export default function AccountGeneral() {
             Apply and Save
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
     </FormProvider>
   );
 }

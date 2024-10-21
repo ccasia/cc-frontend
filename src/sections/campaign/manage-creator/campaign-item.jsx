@@ -140,4 +140,3 @@ CampaignItem.propTypes = {
   pitchStatus: PropTypes.string,
   type: PropTypes.string,
 };
-

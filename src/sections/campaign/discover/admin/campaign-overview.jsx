@@ -1,9 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { useAuthContext } from 'src/auth/hooks';
-import axiosInstance from 'src/utils/axios';
-import { endpoints } from 'src/utils/axios';
 
 import { SparkLineChart } from '@mui/x-charts';
 import {
@@ -21,8 +18,11 @@ import {
   TableBody,
   Typography,
   TableContainer,
-  Chip,
 } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -45,7 +45,11 @@ const CampaignOverview = ({ campaign }) => {
       const response = await axiosInstance.get(endpoints.threads.getAll);
       const existingThread = response.data.find((thread) => {
         const userIdsInThread = thread.UserThread.map((userThread) => userThread.userId);
-        return userIdsInThread.includes(user.id) && userIdsInThread.includes(admin.user.id) && !thread.isGroup;
+        return (
+          userIdsInThread.includes(user.id) &&
+          userIdsInThread.includes(admin.user.id) &&
+          !thread.isGroup
+        );
       });
 
       if (existingThread) {
@@ -212,8 +216,8 @@ const CampaignOverview = ({ campaign }) => {
                                 You
                               </Button>
                             ) : (
-                              <Button 
-                                size="small" 
+                              <Button
+                                size="small"
                                 variant="contained"
                                 onClick={() => handleChatClick(elem.admin)}
                               >

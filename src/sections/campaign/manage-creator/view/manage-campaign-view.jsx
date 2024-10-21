@@ -26,6 +26,8 @@ const ManageCampaignView = () => {
       sx={{
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'stretch', sm: 'center' },
         bgcolor: 'background.paper',
         borderRadius: 2,
         boxShadow: '0 0 0 1px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05)', 
@@ -40,7 +42,6 @@ const ManageCampaignView = () => {
         display: 'flex', 
         flexDirection: { xs: 'column', sm: 'row' },
         alignItems: { xs: 'stretch', sm: 'center' }, 
-        flexGrow: 1,
         mb: { xs: 2, sm: 0 }
       }}>
         {['myCampaign', 'applied', 'completed'].map((tab) => (
@@ -68,7 +69,7 @@ const ManageCampaignView = () => {
           </Button>
         ))}
       </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Box
           sx={{
             display: 'flex',
@@ -77,8 +78,7 @@ const ManageCampaignView = () => {
             borderColor: 'divider',
             borderRadius: 1,
             height: 42,
-            width: '100%',
-            maxWidth: { xs: '100%', sm: 280 },
+            width: { xs: '100%', sm: 250 },
           }}
         >
           <Iconify 
@@ -88,7 +88,7 @@ const ManageCampaignView = () => {
           <InputBase
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search By Campaign Name"
+            placeholder="Search"
             sx={{ flex: 1 }}
           />
         </Box>

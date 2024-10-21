@@ -7,7 +7,7 @@ import 'react-quill/dist/quill.snow.css';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -88,16 +88,9 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   const handleDropSingleFile = async (e) => {
     if (e) {
-      // if (e[0].type !== 'video/mp4') {
-      //   enqueueSnackbar(
-      //     'Currently, only MP4 video format is supported. Please upload your video in MP4 format.',
-      //     {
-      //       variant: 'warning',
-      //     }
-      //   );
-      //   return;
-      // }
       const url = URL.createObjectURL(e[0]);
+
+      console.log(url);
 
       // Create a video element to read the duration
       const videoElement = document.createElement('video');
@@ -133,7 +126,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
             setValue('pitchVideo', data.publicUrl);
           }
 
-          setSource(data.publicUrl);
+          // setSource(data.publicUrl);
         } catch (error) {
           if (axios.isCancel(error)) {
             console.log('Request canceled:', error.message);
@@ -162,6 +155,15 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
     setProgress((prev) => prev.filter((item) => item.campaignId !== data.campaignId));
   };
 
+  const updateVideo = useCallback(
+    (data) => {
+      setProgress((prev) => prev.filter((item) => item.campaignId !== data.campaignId));
+      setSource(data.video);
+      setValue('pitchVideo', data.video);
+    },
+    [setValue]
+  );
+
   const handleRemove = () => {
     if (sources.current) {
       sources.current.cancel('Cancel');
@@ -175,13 +177,15 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   useEffect(() => {
     socket?.on('video-upload', updateProgress);
-    socket?.on('video-upload-done', uploadDone);
+    socket?.on('video-upload-done', updateVideo);
+    // socket?.on('pitchVideo', updateVideo);
 
     return () => {
       socket?.off('video-upload', updateProgress);
-      socket?.off('video-upload-done', uploadDone);
+      socket?.off('video-upload-done', updateVideo);
+      // socket?.off('pitchVideo', updateVideo);
     };
-  }, [socket]);
+  }, [socket, updateVideo]);
 
   return (
     <>
@@ -289,8 +293,13 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
         <DialogTitle>You have a uploaded video</DialogTitle>
         <DialogContent>Confirm to remove ?</DialogContent>
         <DialogActions>
-          <Button onClick={confirm.onFalse}>Cancel</Button>
+          <Button onClick={confirm.onFalse} size="small" variant="outlined">
+            Cancel
+          </Button>
           <Button
+            variant="contained"
+            size="small"
+            color="error"
             onClick={() => {
               setValue('pitchVideo', null);
               setSource('');

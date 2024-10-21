@@ -33,6 +33,9 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
+  overview: {
+    root: (userId) => `/api/user/overview/${userId}`,
+  },
   kanban: {
     root: '/api/kanban',
     createColumn: '/api/kanban/createColumn',

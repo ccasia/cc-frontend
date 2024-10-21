@@ -96,8 +96,10 @@ export const paths = {
     template: {
       root: `${ROOTS.DASHBOARD}/template`,
     },
+    overview: {
+      root: `${ROOTS.DASHBOARD}/overview`,
+    },
   },
-
   public: {
     creator: {
       mediaKit: (id) => `${ROOTS.PUBLIC}/media-kits/creator/${id}`,

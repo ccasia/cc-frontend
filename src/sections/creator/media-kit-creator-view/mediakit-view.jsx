@@ -352,18 +352,41 @@ const MediaKitCreator = () => {
           }}
           src={user?.photoURL}
         />
-        <Button
-          startIcon={<Iconify icon="lucide:edit" />}
-          variant="outlined"
+        <Box
           sx={{
-            boxShadow: 1,
-          }}
-          onClick={() => {
-            setOpenSetting(true);
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
           }}
         >
-          Edit Profile
-        </Button>
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<Iconify icon="material-symbols:refresh" />}
+            onClick={() => {
+              const res = checkSocialMediaUsername();
+              if (res) {
+                dialog.onTrue();
+              } else {
+                fetchNewSocialMediaData();
+              }
+            }}
+          >
+            {loading.value ? 'Loading...' : 'Refresh'}
+          </Button>
+          <Button
+            startIcon={<Iconify icon="lucide:edit" />}
+            variant="outlined"
+            sx={{
+              boxShadow: 1,
+            }}
+            onClick={() => {
+              setOpenSetting(true);
+            }}
+          >
+            Edit Profile
+          </Button>
+        </Box>
       </Stack>
 
       <Stack my={2}>
@@ -373,15 +396,15 @@ const MediaKitCreator = () => {
           </Typography>
           <Iconify icon="material-symbols:verified" color="info.main" width={20} />
         </Stack>
-        <Stack direction="row" alignItems="center" spacing={2}>
+        <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="body2" color="text.secondary">
             {user?.creator?.pronounce}
           </Typography>
-          .
+          <Iconify icon="mdi:dot" color="text.secondary" />
           <Typography variant="body2" color="text.secondary">
             {user?.country}
           </Typography>
-          .
+          <Iconify icon="mdi:dot" color="text.secondary" />
           <Typography variant="body2" color="text.secondary">
             {user?.email}
           </Typography>

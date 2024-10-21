@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { Box } from '@mui/material';
+import { Box, Grid } from '@mui/material';
 
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
@@ -18,7 +18,11 @@ const AppliedCampaignView = ({ searchQuery }) => {
     () =>
       !isLoading &&
       data?.filter((campaign) =>
-        campaign?.pitch.some((item) => item?.userId === user?.id && item?.status === 'undecided')
+        campaign?.pitch?.some(
+          (item) =>
+            item?.userId === user?.id &&
+            (item?.status === 'undecided' || item?.status === 'rejected')
+        )
       ),
     [isLoading, data, user]
   );
@@ -26,8 +30,8 @@ const AppliedCampaignView = ({ searchQuery }) => {
   const filteredData = useMemo(
     () =>
       searchQuery
-        ? filteredCampaigns?.filter((campaign) =>
-            campaign.name.toLowerCase()?.includes(searchQuery.toLowerCase())
+        ? filteredCampaigns?.filter((elem) =>
+            elem.name.toLowerCase()?.includes(searchQuery.toLowerCase())
           )
         : filteredCampaigns,
     [filteredCampaigns, searchQuery]
@@ -36,26 +40,18 @@ const AppliedCampaignView = ({ searchQuery }) => {
   return (
     <Box mt={2}>
       {!isLoading && filteredData?.length ? (
-        <Box
-          gap={2}
-          display="grid"
-          gridTemplateColumns={{
-            xs: 'repeat(1, 1fr)',
-            sm: 'repeat(2, 1fr)',
-            md: 'repeat(3, 1fr)',
-          }}
-        >
+        <Grid container spacing={3}>
           {filteredData.map((campaign) => (
-            <CampaignItem
-              key={campaign.id}
-              campaign={campaign}
-              pitchStatus={campaign.pitch.find(item => item.userId === user.id)?.status}
-              user={user}
-            />
+            <Grid item xs={12} sm={6} md={4} key={campaign.id}>
+              <CampaignItem
+                campaign={campaign}
+                pitchStatus={campaign.pitch.find(item => item.userId === user.id)?.status}
+              />
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       ) : (
-        <EmptyContent title={`No campaign ${searchQuery && searchQuery} found.`} />
+        <EmptyContent title={`No pending applications ${searchQuery ? `for "${searchQuery}"` : ''} found.`} />
       )}
     </Box>
   );

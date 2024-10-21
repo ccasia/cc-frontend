@@ -22,7 +22,23 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
+  Modal,
+  Divider,
+  IconButton,
+  Avatar,
+  Chip,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import CommentIcon from '@mui/icons-material/Comment';
+import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
+import Timeline from '@mui/lab/Timeline';
+import TimelineItem from '@mui/lab/TimelineItem';
+import TimelineSeparator from '@mui/lab/TimelineSeparator';
+import TimelineConnector from '@mui/lab/TimelineConnector';
+import TimelineContent from '@mui/lab/TimelineContent';
+import TimelineDot from '@mui/lab/TimelineDot';
+import TimelineOppositeContent from '@mui/lab/TimelineOppositeContent';
+import { blue } from '@mui/material/colors';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -54,6 +70,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
   const [type, setType] = useState('approve');
   const approve = useBoolean();
   const request = useBoolean();
+  const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -125,11 +142,24 @@ const FinalDraft = ({ campaign, submission, creator }) => {
     </Dialog>
   );
 
+  const handleOpenFeedbackModal = () => setOpenFeedbackModal(true);
+  const handleCloseFeedbackModal = () => setOpenFeedbackModal(false);
+
+  // Sort feedback by date, most recent first
+  const sortedFeedback = React.useMemo(() => {
+    if (submission?.feedback) {
+      return [...submission.feedback].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+    }
+    return [];
+  }, [submission?.feedback]);
+
   return (
     <Box>
       <Grid container spacing={2}>
         <Grid item xs={12} md={3}>
-          <Box component={Paper} p={1.5}>
+          <Box component={Paper} p={1.5} sx={{ mb: { xs: 2, md: 0 } }}>
             <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
               <Stack spacing={1} justifyContent="space-evenly">
                 <Typography variant="subtitle2">Due Date</Typography>
@@ -152,6 +182,105 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                 </Typography>
               </Stack>
             </Box>
+            
+            {/* New centered button for opening the modal */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button onClick={handleOpenFeedbackModal} variant="outlined" size="small">
+                View Feedback History
+              </Button>
+            </Box>
+
+            {/* Feedback History Modal */}
+            <Modal
+              open={openFeedbackModal}
+              onClose={handleCloseFeedbackModal}
+              aria-labelledby="feedback-history-modal"
+              aria-describedby="feedback-history-description"
+            >
+              <Box sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: { xs: '95%', sm: '90%' },
+                maxWidth: 600,
+                maxHeight: '90vh',
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                boxShadow: 24,
+                p: 0,
+                overflow: 'hidden',
+              }}>
+                <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider' }}>
+                  <Typography id="feedback-history-modal" variant="h6" component="h2">
+                    Feedback History
+                  </Typography>
+                  <IconButton onClick={handleCloseFeedbackModal} size="small">
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+                <Box sx={{ p: { xs: 2, sm: 3 }, maxHeight: 'calc(90vh - 60px)', overflowY: 'auto' }}>
+                  {sortedFeedback.length > 0 ? (
+                    <Timeline position="right" sx={{ 
+                      [`& .MuiTimelineItem-root:before`]: {
+                        flex: 0,
+                        padding: 0,
+                      }
+                    }}>
+                      {sortedFeedback.map((feedback, index) => (
+                        <TimelineItem key={index}>
+                          <TimelineOppositeContent sx={{ 
+                            display: { xs: 'none', sm: 'block' },
+                            flex: { sm: 0.2 },
+                          }} color="text.secondary">
+                            {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
+                          </TimelineOppositeContent>
+                          <TimelineSeparator>
+                            <TimelineDot 
+                              sx={{ 
+                                bgcolor: feedback.type === 'COMMENT' ? 'primary.main' : blue[700]
+                              }}
+                            >
+                              {feedback.type === 'COMMENT' ? <CommentIcon /> : <ChangeCircleIcon />}
+                            </TimelineDot>
+                            {index < sortedFeedback.length - 1 && <TimelineConnector />}
+                          </TimelineSeparator>
+                          <TimelineContent sx={{ py: '12px', px: 2 }}>
+                            <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                {feedback.type === 'COMMENT' ? 'Comment' : 'Change Request'}
+                              </Typography>
+                              <Typography variant="body2" sx={{ mb: 1 }}>{feedback.content}</Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 1 }}>
+                                {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
+                              </Typography>
+                              {feedback.reasons && feedback.reasons.length > 0 && (
+                                <Box sx={{ mt: 1 }}>
+                                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Reasons for changes:</Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                    {feedback.reasons.map((reason, idx) => (
+                                      <Chip
+                                        key={idx}
+                                        label={reason}
+                                        size="small"
+                                        color="primary"
+                                        variant="outlined"
+                                      />
+                                    ))}
+                                  </Box>
+                                </Box>
+                              )}
+                            </Paper>
+                          </TimelineContent>
+                        </TimelineItem>
+                      ))}
+                    </Timeline>
+                  ) : (
+                    <Typography>No feedback history available.</Typography>
+                  )}
+                </Box>
+              </Box>
+            </Modal>
           </Box>
         </Grid>
         <Grid item xs={12} md={9}>
@@ -161,13 +290,15 @@ const FinalDraft = ({ campaign, submission, creator }) => {
             submission?.status === 'CHANGES_REQUIRED') && (
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <video
-                  autoPlay
-                  style={{ width: '100%', borderRadius: 10, margin: 'auto' }}
-                  controls
-                >
-                  <source src={submission?.content} />
-                </video>
+                <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+                  <video
+                    autoPlay
+                    style={{ width: '100%', height: 'auto', borderRadius: 10, margin: 'auto' }}
+                    controls
+                  >
+                    <source src={submission?.content} />
+                  </video>
+                </Box>
                 <Box component={Paper} p={1.5}>
                   <Typography variant="caption" color="text.secondary">
                     Caption
@@ -369,137 +500,6 @@ const FinalDraft = ({ campaign, submission, creator }) => {
           )}
         </Grid>
       </Grid>
-      {/* {submission?.isReview && (
-        <Card sx={{ p: 2, mb: 2, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2) }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Iconify icon="hugeicons:tick-03" />
-            <Typography variant="caption" color="text.secondary">
-              Reviewed
-            </Typography>
-          </Stack>
-        </Card>
-      )}
-      <Card sx={{ p: 2, mb: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="caption" color="text.secondary">
-            Due date
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {dayjs(submission?.dueDate).format('ddd LL')}
-          </Typography>
-        </Stack>
-      </Card>
-
-      {submission?.status === 'IN_PROGRESS' && !submission?.content ? (
-        <EmptyContent title="No submission" />
-      ) : (
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <video autoPlay style={{ width: '100%', borderRadius: 10, margin: 'auto' }} controls>
-              <source src={submission?.content} />
-            </video>
-            <Box component={Paper} p={1.5}>
-              <Typography variant="caption" color="text.secondary">
-                Caption
-              </Typography>
-              <Typography variant="subtitle1">{submission?.caption}</Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            {submission?.status === 'PENDING_REVIEW' && (
-              <Box component={Paper} p={1.5}>
-                <Typography variant="h6" mb={1} mx={1}>
-                  {type === 'approve' ? 'Approval' : 'Request Changes'}
-                </Typography>
-                <FormProvider methods={methods} onSubmit={onSubmit}>
-                  <Stack gap={2}>
-                    <RHFTextField
-                      name="feedback"
-                      multiline
-                      minRows={5}
-                      placeholder={type === 'approve' ? 'Comment' : 'Reason'}
-                    />
-
-                    {type === 'approve' ? (
-                      <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                        <Typography
-                          component="a"
-                          onClick={() => {
-                            setType('request');
-                            setValue('type', 'request');
-                            setValue('feedback', '');
-                          }}
-                          sx={{
-                            color: (theme) => theme.palette.text.secondary,
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                            '&:hover': {
-                              color: (theme) => theme.palette.text.primary,
-                            },
-                          }}
-                          variant="caption"
-                        >
-                          Request a change
-                        </Typography>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          color="primary"
-                          onClick={approve.onTrue}
-                        >
-                          Approve
-                        </Button>
-                      </Stack>
-                    ) : (
-                      <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                        <Typography
-                          component="a"
-                          onClick={() => {
-                            setType('approve');
-                            setValue('type', 'approve');
-                            setValue('feedback', '');
-                          }}
-                          sx={{
-                            color: (theme) => theme.palette.text.secondary,
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                            '&:hover': {
-                              color: (theme) => theme.palette.text.primary,
-                            },
-                          }}
-                          variant="caption"
-                        >
-                          Back
-                        </Typography>
-                        <Button variant="contained" size="small" onClick={request.onTrue}>
-                          Submit
-                        </Button>
-                      </Stack>
-                    )}
-                  </Stack>
-                  {confirmationApproveModal(approve.value, approve.onFalse)}
-                  {confirmationRequestModal(request.value, request.onFalse)}
-                </FormProvider>
-              </Box>
-            )}
-            {submission?.isReview && (
-              <Box component={Paper} position="relative" p={10}>
-                <Stack gap={1.5} alignItems="center">
-   
-                  <Image src="/assets/approve.svg" />
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{ textAlign: 'center' }}
-                  >
-                    Final Draft has been reviewed
-                  </Typography>
-                </Stack>
-              </Box>
-            )}
-          </Grid>
-        </Grid>
-      )} */}
     </Box>
   );
 };

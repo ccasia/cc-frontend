@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useRef, useState, useEffect, useCallback } from 'react';
 
+import { Box } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Popover from '@mui/material/Popover';
 
@@ -38,7 +39,25 @@ export default function NavList({ data, depth, slotProps }) {
   }, []);
 
   return (
-    <>
+    <Box
+      sx={{
+        position: 'relative',
+      }}
+    >
+      {/* {active && (
+        <Box
+          sx={{
+            width: 8,
+            height: 24,
+            bgcolor: 'blue',
+            position: 'absolute',
+            left: -12,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            borderRadius: 2,
+          }}
+        />
+      )} */}
       <NavItem
         ref={navRef}
         open={openMenu}
@@ -90,7 +109,7 @@ export default function NavList({ data, depth, slotProps }) {
           <NavSubList data={data.children} depth={depth} slotProps={slotProps} />
         </Popover>
       )}
-    </>
+    </Box>
   );
 }
 

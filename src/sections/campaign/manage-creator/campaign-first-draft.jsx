@@ -279,8 +279,8 @@ const CampaignFirstDraft = ({
                       Changes Required
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-                      {submission?.feedback?.reasons?.length &&
-                        submission?.feedback?.reasons?.map((item, index) => (
+                      {submission?.feedback[0]?.reasons?.length &&
+                        submission?.feedback[0]?.reasons?.map((item, index) => (
                           <Label key={index}>{item}</Label>
                         ))}
                     </Stack>
@@ -289,7 +289,7 @@ const CampaignFirstDraft = ({
                       color="text.secondary"
                       sx={{ whiteSpace: 'pre-line' }}
                     >
-                      {submission?.feedback?.content}
+                      {submission?.feedback[0]?.content}
                     </Typography>
                   </Box>
                 </Alert>
@@ -305,7 +305,7 @@ const CampaignFirstDraft = ({
               </Stack>
             )}
             <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
-              <DialogTitle>Agreement</DialogTitle>
+              <DialogTitle>First Draft Video</DialogTitle>
               <DialogContent>
                 <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
                   <source src={submission?.content} />
@@ -363,7 +363,7 @@ export default CampaignFirstDraft;
 
 CampaignFirstDraft.propTypes = {
   campaign: PropTypes.object,
-  timeline: PropTypes.object,
+  timeline: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   submission: PropTypes.object,
   getDependency: PropTypes.func,
   fullSubmission: PropTypes.array,

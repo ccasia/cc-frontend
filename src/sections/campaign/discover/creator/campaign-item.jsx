@@ -260,7 +260,7 @@ export default function CampaignItem({ campaign, user }) {
           boxShadow: '0 1px 2px rgba(0,0,0,0.05)', 
           mb: -0.5,
           '&:hover': { 
-            borderColor: theme.palette.primary.main,
+            borderColor: '#1340ff',
             transform: 'translateY(-2px)',
           },
         }}
