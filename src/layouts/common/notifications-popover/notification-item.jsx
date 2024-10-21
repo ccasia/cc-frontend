@@ -1,21 +1,70 @@
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
-// import { Button } from '@mui/material';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 
 // import { paths } from 'src/routes/paths';
-// import { useRouter } from 'src/routes/hooks';
+import { useRouter } from 'src/routes/hooks';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { fToNow } from 'src/utils/format-time';
 
 // ----------------------------------------------------------------------
 
 export default function NotificationItem({ notification }) {
-  // const router = useRouter();
+  const { user } = useAuthContext();
+  const router = useRouter(); 
 
+  const handleViewClick = () => {
+    const entity = notification.notification?.entity;
+    const campaignId = notification.notification?.campaignId; 
+    const pitchId = notification.notification?.pitchId;
+    const creatorId = notification.notification?.creatorId;
+    const adminId = notification.notification?.adminId;
+
+    console.log("User", user)
+    console.log ("Notification", notification.notification?.campaignId)
+    console.log ("Noti", notification.notification)
+    console.log ("Noti user", notification.notification?.userId)
+    // Determine the route based on the entity type
+    let link;
+    if (entity === 'Pitch') {
+      if (user.role === 'admin') {
+        link = `/dashboard/campaign/discover/detail/${campaignId}`; // Admin route
+      } else {
+        link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`; // Creator route
+      }
+    } else if (entity === 'Shortlist') {
+      // link = `/dashboard/campaign/details/${campaignId}`;
+      link= `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+    } else if (entity === 'Agreement') {
+      if (user.role === 'admin') {
+        link = `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`; // Admin route
+      } else {
+        link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`; // Creator route
+      }
+    } else if (entity === 'Draft') {
+      //  link = `/campaign/discover/detail/${campaignId}/creator/${userId}`; 
+      link= `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+    } else if (entity === 'Post') {
+      //  link = `/dashboard/campaign/details/${campaignId}`;
+      link= `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`
+    } else if (entity === 'Chat') {
+      link = `/dashboard/chat/details/${campaignId}`; 
+    } else if (entity === 'Campaign') {  // This is for Agreement Approval 
+      // link = `/dashboard/campaign/discover/detail/${campaignId}`; 
+      link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`; 
+    } else if (entity === 'FirstDraft') {
+      link = `/dashboard/campaign/first-draft/${campaignId}`; // Adjust this route as needed
+    }
+
+    router.push(link); 
+  
+  };
   const renderText = (
     <ListItemText
       primary={notification.notification?.title}
@@ -29,6 +78,12 @@ export default function NotificationItem({ notification }) {
         marginBottom: 0.5,
       }}
     />
+  );
+
+  const renderViewButton = (
+    <Button onClick={handleViewClick} variant="outlined" size="small">
+      View
+    </Button>
   );
 
   const renderUnReadBadge = !notification.read && (
@@ -45,35 +100,6 @@ export default function NotificationItem({ notification }) {
     />
   );
 
-  // const friendAction = (
-  //   <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
-  //     <Button
-  //       size="small"
-  //       variant="contained"
-  //       onClick={() =>
-  //         router.push(
-  //           paths.dashboard.campaign.adminCampaignManageDetail(
-  //             notification?.notification?.campaignId
-  //           )
-  //         )
-  //       }
-  //     >
-  //       View
-  //     </Button>
-  //   </Stack>
-  // );
-
-  // const chatAction = (
-  //   <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
-  //     <Button
-  //       size="small"
-  //       variant="contained"
-  //       onClick={() => router.push(paths.dashboard.chat.root)}
-  //     >
-  //       View
-  //     </Button>
-  //   </Stack>
-  // );
 
   const renderOther = (
     <Stack
@@ -112,6 +138,7 @@ export default function NotificationItem({ notification }) {
         {/* {['Campaign'].includes(notification?.notification.entity) && friendAction} */}
         {/* {['Shortlist'].includes(notification?.notification.entity) && chatAction} */}
         {/* {notification?.notification.entity === 'Campaign' && friendAction} */}
+        {renderViewButton}
         {renderOther}
       </Stack>
     </ListItemButton>
