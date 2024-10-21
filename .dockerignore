@@ -1,0 +1,10 @@
+# cc-backend
+# docker-compose.yml
+# node_modules
+
+node_modules
+.git
+Dockerfile
+.dockerignore
+build
+dist

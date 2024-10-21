@@ -1,0 +1,48 @@
+{
+  "creator": {
+    "id": "62cf330b-2d98-44db-877c-a3153d86668f",
+    "email": "afiqnrzm@hotmail.com",
+    "password": "$2a$10$NJTRxXvzNT7KsEMDWHBRKedAik1nAl0.kZaWSCiFJhEzEMJ5/q2qW",
+    "createdAt": "2024-06-27T05:46:57.790Z",
+    "name": "Afiq danial",
+    "photoURL": null,
+    "country": "Malaysia",
+    "phoneNumber": "174890307",
+    "role": "creator",
+    "updatedAt": "2024-06-27T05:49:15.404Z",
+    "status": "active",
+    "eventId": null,
+    "creator": {
+      "id": "clxwudwg3000213rbipmunr3a",
+      "pronounce": "he/him",
+      "nationality": "Malaysia",
+      "location": "Subang",
+      "birthDate": "2024-06-25T16:00:00.000Z",
+      "instagram": "afiq",
+      "tiktok": "afiq",
+      "employment": "fulltime",
+      "languages": ["English", "Malay", "Mandarin"],
+      "userId": "62cf330b-2d98-44db-877c-a3153d86668f"
+    },
+    "ShortListedCreator": [
+      {
+        "id": "clxwvj3if000c13rbskybf7gs",
+        "shortlisted_date": "2024-06-27T06:18:59.847Z",
+        "creatorId": "62cf330b-2d98-44db-877c-a3153d86668f",
+        "campaignId": "clxvjutib0001129x9nfp3u5s"
+      },
+      {
+        "id": "cly42e3pl0001alayyzyecy3b",
+        "shortlisted_date": "2024-07-02T07:05:27.369Z",
+        "creatorId": "62cf330b-2d98-44db-877c-a3153d86668f",
+        "campaignId": "cly1an05d000112y9kg76gdpx"
+      },
+      {
+        "id": "cly7gxia80009kbzvnj3kipze",
+        "shortlisted_date": "2024-07-04T16:15:45.872Z",
+        "creatorId": "62cf330b-2d98-44db-877c-a3153d86668f",
+        "campaignId": "clxx0ufrn000m13rb0b1jrk0s"
+      }
+    ]
+  }
+}
