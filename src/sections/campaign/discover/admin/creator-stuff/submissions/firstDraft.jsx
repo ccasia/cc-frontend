@@ -21,6 +21,9 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
+  Modal,
+  IconButton,
+  Chip,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -31,6 +34,17 @@ import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
+import CloseIcon from '@mui/icons-material/Close';
+import CommentIcon from '@mui/icons-material/Comment';
+import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
+import Timeline from '@mui/lab/Timeline';
+import TimelineItem from '@mui/lab/TimelineItem';
+import TimelineSeparator from '@mui/lab/TimelineSeparator';
+import TimelineConnector from '@mui/lab/TimelineConnector';
+import TimelineContent from '@mui/lab/TimelineContent';
+import TimelineDot from '@mui/lab/TimelineDot';
+import TimelineOppositeContent from '@mui/lab/TimelineOppositeContent';
+import { blue } from '@mui/material/colors';
 
 const options_changes = [
   'Missing caption requirements',
@@ -53,6 +67,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
   const [type, setType] = useState('approve');
   const approve = useBoolean();
   const request = useBoolean();
+  const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -147,6 +162,19 @@ const FirstDraft = ({ campaign, submission, creator }) => {
     </Dialog>
   );
 
+  const handleOpenFeedbackModal = () => setOpenFeedbackModal(true);
+  const handleCloseFeedbackModal = () => setOpenFeedbackModal(false);
+
+  // Sort feedback by date, most recent first
+  const sortedFeedback = React.useMemo(() => {
+    if (submission?.feedback) {
+      return [...submission.feedback].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+    }
+    return [];
+  }, [submission?.feedback]);
+
   return (
     <Box>
       <Grid container spacing={2}>
@@ -174,6 +202,93 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                 </Typography>
               </Stack>
             </Box>
+            {/* New centered button for opening the modal */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button onClick={handleOpenFeedbackModal} variant="outlined" size="small">
+                View Feedback History
+              </Button>
+            </Box>
+
+            {/* Feedback History Modal */}
+            <Modal
+              open={openFeedbackModal}
+              onClose={handleCloseFeedbackModal}
+              aria-labelledby="feedback-history-modal"
+              aria-describedby="feedback-history-description"
+            >
+              <Box sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '90%',
+                maxWidth: 600,
+                maxHeight: '90vh',
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                boxShadow: 24,
+                p: 0,
+                overflow: 'hidden',
+              }}>
+                <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider' }}>
+                  <Typography id="feedback-history-modal" variant="h6" component="h2">
+                    Feedback History
+                  </Typography>
+                  <IconButton onClick={handleCloseFeedbackModal} size="small">
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+                <Box sx={{ p: 3, maxHeight: 'calc(90vh - 60px)', overflowY: 'auto' }}>
+                  {sortedFeedback.length > 0 ? (
+                    <Timeline position="alternate">
+                      {sortedFeedback.map((feedback, index) => (
+                        <TimelineItem key={index}>
+                          <TimelineOppositeContent color="text.secondary">
+                            {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
+                          </TimelineOppositeContent>
+                          <TimelineSeparator>
+                            <TimelineDot 
+                              sx={{ 
+                                bgcolor: feedback.type === 'COMMENT' ? 'primary.main' : blue[700]
+                              }}
+                            >
+                              {feedback.type === 'COMMENT' ? <CommentIcon /> : <ChangeCircleIcon />}
+                            </TimelineDot>
+                            {index < sortedFeedback.length - 1 && <TimelineConnector />}
+                          </TimelineSeparator>
+                          <TimelineContent>
+                            <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
+                              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                {feedback.type === 'COMMENT' ? 'Comment' : 'Change Request'}
+                              </Typography>
+                              <Typography variant="body2" sx={{ mb: 2 }}>{feedback.content}</Typography>
+                              {feedback.reasons && feedback.reasons.length > 0 && (
+                                <Box sx={{ mt: 1 }}>
+                                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Reasons for changes:</Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                    {feedback.reasons.map((reason, idx) => (
+                                      <Chip
+                                        key={idx}
+                                        label={reason}
+                                        size="small"
+                                        color="primary"
+                                        variant="outlined"
+                                      />
+                                    ))}
+                                  </Box>
+                                </Box>
+                              )}
+                            </Paper>
+                          </TimelineContent>
+                        </TimelineItem>
+                      ))}
+                    </Timeline>
+                  ) : (
+                    <Typography>No feedback history available.</Typography>
+                  )}
+                </Box>
+              </Box>
+            </Modal>
           </Box>
         </Grid>
         <Grid item xs={12} md={9}>

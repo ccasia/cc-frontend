@@ -31,6 +31,16 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
+import Timeline from '@mui/lab/Timeline';
+import TimelineItem from '@mui/lab/TimelineItem';
+import TimelineSeparator from '@mui/lab/TimelineSeparator';
+import TimelineConnector from '@mui/lab/TimelineConnector';
+import TimelineContent from '@mui/lab/TimelineContent';
+import TimelineDot from '@mui/lab/TimelineDot';
+import TimelineOppositeContent, {
+  timelineOppositeContentClasses,
+} from '@mui/lab/TimelineOppositeContent';
+import dayjs from 'dayjs';
 
 const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, fullSubmission }) => {
   // eslint-disable-next-line no-unused-vars
@@ -263,24 +273,62 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
               </Box>
             </Box>
             <Alert severity="warning">
-              <Box display="flex" gap={1.5} flexDirection="column">
-                <Typography variant="subtitle2" sx={{ textDecoration: 'underline' }}>
-                  Changes Required
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-                  {submission?.feedback?.reasons?.length &&
-                    submission?.feedback?.reasons?.map((item, index) => (
-                      <Label key={index}>{item}</Label>
-                    ))}
-                </Stack>
-                <Typography
-                  variant="subtitle1"
-                  color="text.secondary"
-                  sx={{ whiteSpace: 'pre-line' }}
-                >
-                  {submission?.feedback?.content}
-                </Typography>
-              </Box>
+              <Typography variant="subtitle2" sx={{ textDecoration: 'underline', mb: 2 }}>
+                Changes Required
+              </Typography>
+              <Timeline
+                sx={{
+                  [`& .${timelineOppositeContentClasses.root}`]: {
+                    flex: 0.2,
+                  },
+                }}
+              >
+                {submission?.feedback?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((feedback, index) => (
+                  <TimelineItem key={index}>
+                    <TimelineOppositeContent color="textSecondary">
+                      <Typography 
+                        variant="caption"  // Smaller font size for date
+                        sx={{ 
+                          fontWeight: index === 0 ? 'bold' : 'normal',
+                          opacity: index === 0 ? 1 : 0.7  // Reduced opacity for older feedback dates
+                        }}
+                      >
+                        {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
+                      </Typography>
+                    </TimelineOppositeContent>
+                    <TimelineSeparator>
+                      <TimelineDot />
+                      {index !== submission.feedback.length - 1 && <TimelineConnector />}
+                    </TimelineSeparator>
+                    <TimelineContent>
+                      <Typography 
+                        variant="subtitle1" 
+                        color="text.secondary" 
+                        sx={{ 
+                          whiteSpace: 'pre-line',
+                          fontWeight: index === 0 ? 'bold' : 'normal',
+                          opacity: index === 0 ? 1 : 0.7  // Reduced opacity for older feedback content
+                        }}
+                      >
+                        {feedback.content}
+                      </Typography>
+                      <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center" mt={1}>
+                        {feedback.reasons?.map((item, idx) => (
+                          <Label 
+                            key={idx}
+                            sx={{ 
+                              fontWeight: index === 0 ? 'bold' : 'normal',
+                              opacity: index === 0 ? 1 : 0.7  // Reduced opacity for older feedback reasons
+                            }}
+                          >
+                            {item}
+                          </Label>
+                        ))}
+                      </Stack>
+                    </TimelineContent>
+                  </TimelineItem>
+                ))}
+              </Timeline>
             </Alert>
             {isProcessing ? (
               <Stack justifyContent="center" alignItems="center" gap={1}>
@@ -324,8 +372,6 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                 </Box>
                 <Stack gap={1}>
                   <Typography variant="caption">{progressName && progressName}</Typography>
-                  {/* <LinearProgress variant="determinate" value={progress} /> */}
-
                   <Button variant="contained" size="small" onClick={() => handleCancel()}>
                     Cancel
                   </Button>
@@ -336,7 +382,6 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                 <Stack gap={2}>
                   {localStorage.getItem('preview') ? (
                     <Box>
-                      {/* // eslint-disable-next-line jsx-a11y/media-has-caption */}
                       <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
                         <source src={localStorage.getItem('preview')} />
                       </video>
