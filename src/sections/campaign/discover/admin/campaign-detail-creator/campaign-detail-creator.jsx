@@ -25,11 +25,11 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { endpoints } from 'src/utils/axios';
 
 import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
-import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -53,7 +53,6 @@ const CampaignDetailCreator = ({ campaign }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
   const [selectedAgreement, setSelectedAgreement] = useState(null);
-  
 
   const methods = useForm({
     defaultValues: {
@@ -99,7 +98,7 @@ const CampaignDetailCreator = ({ campaign }) => {
       return acc;
     }, {});
 
-    return campaign.shortlisted.map(creator => ({
+    return campaign.shortlisted.map((creator) => ({
       ...creator,
       isSent: agreementsMap[creator.userId]?.isSent || false,
       agreementStatus: agreementsMap[creator.userId]?.status || 'NOT_SENT',
@@ -119,6 +118,7 @@ const CampaignDetailCreator = ({ campaign }) => {
       modal.onFalse();
       reset();
       enqueueSnackbar(res?.data?.message);
+      mutate(endpoints.campaign.creatorAgreement(campaign.id));
       mutate(endpoints.campaign.getCampaignsByAdminId);
     } catch (error) {
       console.log(error);
@@ -132,13 +132,13 @@ const CampaignDetailCreator = ({ campaign }) => {
   });
 
   const handleEditAgreement = (creator) => {
-    const agreement = agreements.find(a => a.userId === creator.userId);
-    
-    if (!agreement || agreement.isSent) {
+    const agreement = agreements.find((a) => a.userId === creator.userId);
+
+    if (!loadingAgreements && (!agreement || agreement.isSent)) {
       enqueueSnackbar('No editable agreement found for this creator', { variant: 'info' });
       return;
     }
-  
+
     setSelectedAgreement(agreement);
     editDialog.onTrue();
   };
@@ -195,6 +195,7 @@ const CampaignDetailCreator = ({ campaign }) => {
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(option, value) => option.id === value.id}
               renderOption={(props, option, { selected }) => {
+                // eslint-disable-next-line react/prop-types
                 const { key, ...optionProps } = props;
                 return (
                   <Box key={key} component="div" {...optionProps}>
@@ -294,10 +295,10 @@ const CampaignDetailCreator = ({ campaign }) => {
               gap={2}
             >
               {creatorsWithAgreements.map((elem) => (
-                <UserCard 
-                  key={elem?.id} 
-                  creator={elem?.user} 
-                  campaignId={campaign?.id} 
+                <UserCard
+                  key={elem?.id}
+                  creator={elem?.user}
+                  campaignId={campaign?.id}
                   isSent={elem.isSent}
                   onEditAgreement={() => handleEditAgreement(elem)}
                   agreementStatus={elem.agreementStatus}

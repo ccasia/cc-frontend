@@ -36,28 +36,24 @@ export default function UserCard({ creator, campaignId, isSent, onEditAgreement 
   };
 
   return (
-    <Box
-      component="div"
-      onClick={handleCardClick}
-      sx={{ position: 'relative', cursor: 'pointer' }}
-    >
+    <Box component="div" onClick={handleCardClick} sx={{ position: 'relative', cursor: 'pointer' }}>
       {!isSent && (
-      <Typography
-        variant="caption"
-        sx={{
-          position: 'absolute',
-          top: 10,
-          left: 10,
-          backgroundColor: theme.palette.warning.main,
-          color: 'white',
-          padding: '3.5px 8px',
-          borderRadius: 1,
-          zIndex: 10,
-        }}
-      >
-        PENDING AGREEMENT
-      </Typography>
-    )}
+        <Typography
+          variant="caption"
+          sx={{
+            position: 'absolute',
+            top: 10,
+            left: 10,
+            backgroundColor: theme.palette.warning.main,
+            color: 'white',
+            padding: '3.5px 8px',
+            borderRadius: 1,
+            zIndex: 10,
+          }}
+        >
+          PENDING AGREEMENT
+        </Typography>
+      )}
 
       <Card
         sx={{

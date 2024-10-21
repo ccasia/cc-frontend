@@ -19,7 +19,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import Scrollbar from 'src/components/scrollbar';
 
 import KanbanDetailsToolbar from './kanban-details-toolbar';
-import KanbanDetailsPriority from './kanban-details-priority';
 import CampaignPosting from '../campaign/manage-creator/campaign-posting';
 import CampaignAgreement from '../campaign/manage-creator/campaign-agreement';
 import CampaignFirstDraft from '../campaign/manage-creator/campaign-first-draft';
@@ -54,7 +53,6 @@ export default function KanbanDetails({
   onDeleteTask,
   ...other
 }) {
-
   const { user } = useAuthContext();
 
   const { data, isLoading } = useSWR(
@@ -241,7 +239,7 @@ export default function KanbanDetails({
           {/* {renderLabel} */}
 
           {/* {renderDueDate} */}
-          
+
           {renderSubmission}
         </Stack>
       </Scrollbar>
