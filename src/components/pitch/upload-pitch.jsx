@@ -32,6 +32,7 @@ const UploadPitch = ({
   ...other
 }) => {
   const [duration, setDuration] = useState('');
+
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     disabled,
     accept: {
@@ -108,7 +109,7 @@ const UploadPitch = ({
   );
 
   const renderUploading = (
-    <Stack justifyContent="center" alignItems="center" gap={1} alignSelf="center">
+    <Stack justifyContent="center" alignItems="center" gap={1} alignSelf="center" flexGrow={1}>
       <Box
         sx={{
           position: 'relative',

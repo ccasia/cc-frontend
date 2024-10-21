@@ -1,4 +1,5 @@
 /* eslint-disable jsx-a11y/media-has-caption */
+import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
@@ -6,6 +7,15 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
+import Timeline from '@mui/lab/Timeline';
+import TimelineDot from '@mui/lab/TimelineDot';
+import TimelineItem from '@mui/lab/TimelineItem';
+import TimelineContent from '@mui/lab/TimelineContent';
+import TimelineSeparator from '@mui/lab/TimelineSeparator';
+import TimelineConnector from '@mui/lab/TimelineConnector';
+import TimelineOppositeContent, {
+  timelineOppositeContentClasses,
+} from '@mui/lab/TimelineOppositeContent';
 import {
   Box,
   Stack,
@@ -13,13 +23,13 @@ import {
   Alert,
   Button,
   Dialog,
+  useTheme,
   Typography,
   DialogTitle,
   DialogContent,
   DialogActions,
-  CircularProgress,
-  useTheme,
   useMediaQuery,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -33,16 +43,6 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
-import Timeline from '@mui/lab/Timeline';
-import TimelineItem from '@mui/lab/TimelineItem';
-import TimelineSeparator from '@mui/lab/TimelineSeparator';
-import TimelineConnector from '@mui/lab/TimelineConnector';
-import TimelineContent from '@mui/lab/TimelineContent';
-import TimelineDot from '@mui/lab/TimelineDot';
-import TimelineOppositeContent, {
-  timelineOppositeContentClasses,
-} from '@mui/lab/TimelineOppositeContent';
-import dayjs from 'dayjs';
 
 const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, fullSubmission }) => {
   // eslint-disable-next-line no-unused-vars
@@ -202,7 +202,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                     size={200}
                     sx={{
                       ' .MuiCircularProgress-circle': {
-                        stroke: (theme) =>
+                        stroke:
                           theme.palette.mode === 'dark'
                             ? theme.palette.common.white
                             : theme.palette.common.black,
@@ -240,11 +240,20 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
               <FormProvider methods={methods} onSubmit={onSubmit}>
                 <Stack gap={2}>
                   {localStorage.getItem('preview') ? (
-                    <Box>
-                      {/* // eslint-disable-next-line jsx-a11y/media-has-caption */}
-                      <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+                    <Stack spacing={2} alignItems="center">
+                      <Box
+                        component="video"
+                        autoPlay
+                        controls
+                        sx={{
+                          height: 600,
+                          borderRadius: 2,
+                        }}
+                      >
                         <source src={localStorage.getItem('preview')} />
-                      </video>
+                      </Box>
+                      {/* <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+                    </video> */}
                       <Button
                         color="error"
                         variant="outlined"
@@ -253,7 +262,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                       >
                         Change Video
                       </Button>
-                    </Box>
+                    </Stack>
                   ) : (
                     <RHFUpload
                       name="draft"
@@ -293,89 +302,91 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                   },
                 }}
               >
-                {submission?.feedback?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((feedback, index) => (
-                  <TimelineItem 
-                    key={index}
-                    sx={{
-                      [theme.breakpoints.down('sm')]: {
-                        flexDirection: 'column',
-                        '&::before': {
-                          display: 'none',
-                        },
-                      },
-                    }}
-                  >
-                    <TimelineOppositeContent 
-                      color="textSecondary"
+                {submission?.feedback
+                  ?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                  .map((feedback, index) => (
+                    <TimelineItem
+                      key={index}
                       sx={{
                         [theme.breakpoints.down('sm')]: {
-                          padding: '6px 16px',
+                          flexDirection: 'column',
+                          '&::before': {
+                            display: 'none',
+                          },
                         },
                       }}
                     >
-                      <Typography 
-                        variant="caption"  
-                        sx={{ 
-                          fontWeight: index === 0 ? 'bold' : 'normal',
-                          opacity: index === 0 ? 1 : 0.7 
-                        }}
-                      >
-                        {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
-                      </Typography>
-                    </TimelineOppositeContent>
-                    <TimelineSeparator>
-                      <TimelineDot />
-                      {index !== submission.feedback.length - 1 && <TimelineConnector />}
-                    </TimelineSeparator>
-                    <TimelineContent
-                      sx={{
-                        [theme.breakpoints.down('sm')]: {
-                          padding: '6px 16px 16px',
-                        },
-                      }}
-                    >
-                      <Typography 
-                        variant="subtitle1" 
-                        color="text.secondary" 
-                        sx={{ 
-                          whiteSpace: 'pre-line',
-                          fontWeight: index === 0 ? 'bold' : 'normal',
-                          opacity: index === 0 ? 1 : 0.7  
-                        }}
-                      >
-                        {feedback.content}
-                      </Typography>
-                      <Stack 
-                        direction="row" 
-                        spacing={1} 
-                        flexWrap="wrap" 
-                        alignItems="center" 
-                        mt={1}
+                      <TimelineOppositeContent
+                        color="textSecondary"
                         sx={{
                           [theme.breakpoints.down('sm')]: {
-                            mt: 0.5,
+                            padding: '6px 16px',
                           },
                         }}
                       >
-                        {feedback.reasons?.map((item, idx) => (
-                          <Label 
-                            key={idx}
-                            sx={{ 
-                              fontWeight: index === 0 ? 'bold' : 'normal',
-                              opacity: index === 0 ? 1 : 0.7,
-                              [theme.breakpoints.down('sm')]: {
-                                fontSize: '0.75rem',
-                                padding: '2px 4px',
-                              },
-                            }}
-                          >
-                            {item}
-                          </Label>
-                        ))}
-                      </Stack>
-                    </TimelineContent>
-                  </TimelineItem>
-                ))}
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: index === 0 ? 'bold' : 'normal',
+                            opacity: index === 0 ? 1 : 0.7,
+                          }}
+                        >
+                          {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
+                        </Typography>
+                      </TimelineOppositeContent>
+                      <TimelineSeparator>
+                        <TimelineDot />
+                        {index !== submission.feedback.length - 1 && <TimelineConnector />}
+                      </TimelineSeparator>
+                      <TimelineContent
+                        sx={{
+                          [theme.breakpoints.down('sm')]: {
+                            padding: '6px 16px 16px',
+                          },
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle1"
+                          color="text.secondary"
+                          sx={{
+                            whiteSpace: 'pre-line',
+                            fontWeight: index === 0 ? 'bold' : 'normal',
+                            opacity: index === 0 ? 1 : 0.7,
+                          }}
+                        >
+                          {feedback.content}
+                        </Typography>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          flexWrap="wrap"
+                          alignItems="center"
+                          mt={1}
+                          sx={{
+                            [theme.breakpoints.down('sm')]: {
+                              mt: 0.5,
+                            },
+                          }}
+                        >
+                          {feedback.reasons?.map((item, idx) => (
+                            <Label
+                              key={idx}
+                              sx={{
+                                fontWeight: index === 0 ? 'bold' : 'normal',
+                                opacity: index === 0 ? 1 : 0.7,
+                                [theme.breakpoints.down('sm')]: {
+                                  fontSize: '0.75rem',
+                                  padding: '2px 4px',
+                                },
+                              }}
+                            >
+                              {item}
+                            </Label>
+                          ))}
+                        </Stack>
+                      </TimelineContent>
+                    </TimelineItem>
+                  ))}
               </Timeline>
             </Alert>
             {isProcessing ? (
@@ -393,7 +404,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                     size={200}
                     sx={{
                       ' .MuiCircularProgress-circle': {
-                        stroke: (theme) =>
+                        stroke:
                           theme.palette.mode === 'dark'
                             ? theme.palette.common.white
                             : theme.palette.common.black,
@@ -429,10 +440,20 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
               <FormProvider methods={methods} onSubmit={onSubmit}>
                 <Stack gap={2}>
                   {localStorage.getItem('preview') ? (
-                    <Box>
-                      <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+                    <Stack spacing={2} alignItems="center">
+                      <Box
+                        component="video"
+                        autoPlay
+                        controls
+                        sx={{
+                          maxHeight: '60vh',
+                          width: { xs: '70vw', md: 1 },
+                          borderRadius: 2,
+                        }}
+                      >
                         <source src={localStorage.getItem('preview')} />
-                      </video>
+                      </Box>
+
                       <Button
                         color="error"
                         variant="outlined"
@@ -441,7 +462,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                       >
                         Change Video
                       </Button>
-                    </Box>
+                    </Stack>
                   ) : (
                     <RHFUpload
                       name="draft"
@@ -459,6 +480,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
             )}
           </Stack>
         )}
+
         {submission?.status === 'APPROVED' && (
           <Stack justifyContent="center" alignItems="center" spacing={2}>
             <Image src="/assets/approve.svg" sx={{ width: 250 }} />
@@ -472,18 +494,27 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
         <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
           <DialogTitle>Final Draft Video</DialogTitle>
           <DialogContent>
-            <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
-              <source src={submission?.content} />
-            </video>
-            <Box
-              component={Paper}
-              p={1.5}
-              my={1}
-              sx={{
-                bgcolor: (theme) => theme.palette.background.default,
-              }}
-            >
-              <Typography>{submission?.caption}</Typography>
+            <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+              <Box
+                component="video"
+                autoPlay
+                controls
+                sx={{
+                  maxHeight: '60vh',
+                  width: { xs: '70vw', sm: 'auto' },
+                  borderRadius: 2,
+                  boxShadow: 3,
+                }}
+              >
+                <source src={submission?.content} />
+              </Box>
+
+              <Box component={Paper} p={1.5} width={1}>
+                <Typography variant="caption" color="text.secondary">
+                  Caption
+                </Typography>
+                <Typography variant="subtitle1">{submission?.caption}</Typography>
+              </Box>
             </Box>
           </DialogContent>
           <DialogActions>

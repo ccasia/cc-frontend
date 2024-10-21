@@ -96,7 +96,9 @@ const CampaignAgreements = ({ campaign }) => {
           </TableHead>
           <TableBody>
             {!isLoading &&
-              data.map((item) => (
+              data.map((item) => {
+                const isAmountValid = !isNaN(parseFloat(item?.amount?.toString()));
+                return (
                 <TableRow key={item.id}>
                   <TableCell>{item?.user?.name}</TableCell>
                   <TableCell>{item?.user?.email}</TableCell>
@@ -108,7 +110,7 @@ const CampaignAgreements = ({ campaign }) => {
                       <Label color="warning">Pending</Label>
                     )}
                   </TableCell>
-                  <TableCell>{`RM ${parseFloat(item?.amount?.toString())}`}</TableCell>
+                  <TableCell>{isAmountValid ? `RM ${parseFloat(item?.amount?.toString())}` : 'Not set'}</TableCell>
                   <TableCell>
                     {smUp ? (
                       <Stack direction="row" gap={1}>
@@ -128,27 +130,16 @@ const CampaignAgreements = ({ campaign }) => {
                         >
                           Payment Amount
                         </Button>
-                        {item.isSent ? (
-                          <Button
-                            onClick={() => handleSendAgreement(item)}
-                            size="small"
-                            variant="outlined"
-                            startIcon={<Iconify icon="bx:send" />}
-                            color="warning"
-                          >
-                            Resend
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={() => handleSendAgreement(item)}
-                            size="small"
-                            variant="outlined"
-                            startIcon={<Iconify icon="bx:send" />}
-                            color="primary"
-                          >
-                            Send
-                          </Button>
-                        )}
+                        <Button
+                          onClick={() => handleSendAgreement(item)}
+                          size="small"
+                          variant="outlined"
+                          startIcon={<Iconify icon="bx:send" />}
+                          color={item.isSent ? 'warning' : 'primary'}
+                          disabled={!isAmountValid}
+                        >
+                          {item.isSent ? 'Resend' : 'Send'}
+                        </Button>
                       </Stack>
                     ) : (
                       <Stack direction="row" gap={1}>
@@ -158,14 +149,19 @@ const CampaignAgreements = ({ campaign }) => {
                         <IconButton color="warning" onClick={() => handleEditAgreement(item)}>
                           <Iconify icon="iconamoon:edit-light" />
                         </IconButton>
-                        <IconButton color="primary" onClick={() => handleSendAgreement(item)}>
+                        <IconButton 
+                          color={item.isSent ? 'warning' : 'primary'}
+                          onClick={() => handleSendAgreement(item)}
+                          disabled={!isAmountValid}
+                        >
                           <Iconify icon="bx:send" />
                         </IconButton>
                       </Stack>
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
           </TableBody>
         </Table>
       </TableContainer>

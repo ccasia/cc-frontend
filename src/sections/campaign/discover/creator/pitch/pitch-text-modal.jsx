@@ -120,7 +120,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
           Are you sure you want to submit your pitch?
         </Box>
       </DialogContent>
-      <DialogActions sx={{ px: 2, pb: 2 }}>
+      <DialogActions sx={{ px: 2, pb: 2, justifyContent: 'space-between' }}>
         <Button
           variant="outlined"
           onClick={() => {

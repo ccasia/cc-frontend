@@ -162,7 +162,7 @@ export default function SettingsDrawer() {
       }}
       sx={{
         [`& .${drawerClasses.paper}`]: {
-          ...paper({ theme, bgcolor: theme.palette.background.sidebar }),
+          ...paper({ theme, bgcolor: theme.palette.background.default }),
           width: 280,
         },
       }}
@@ -173,7 +173,7 @@ export default function SettingsDrawer() {
 
       <Scrollbar>
         <Stack spacing={3} sx={{ p: 3 }}>
-          {/* {renderMode} */}
+          {renderMode}
 
           {/* {renderContrast} */}
 

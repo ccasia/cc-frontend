@@ -5,7 +5,6 @@ import {
   Stack,
   Avatar,
   Button,
-  MenuItem,
   Container,
   TextField,
   Autocomplete,
@@ -22,6 +21,7 @@ import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
@@ -35,9 +35,9 @@ const defaultFilters = {
 
 const CampaignView = () => {
   const settings = useSettingsContext();
-  const { campaigns } = useGetCampaigns();
+  const { campaigns, isLoading } = useGetCampaigns();
   const { data: brandOptions } = useGetCampaignBrandOption();
-  
+
   const router = useRouter();
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -131,11 +131,15 @@ const CampaignView = () => {
         </Button>
       </Stack>
 
-      {dataFiltered && dataFiltered.length > 0 ? (
-        <CampaignLists campaigns={dataFiltered} />
-      ) : (
-        <EmptyContent title="No campaign available" />
-      )}
+      {isLoading && <LoadingScreen />}
+
+      {!isLoading &&
+        (dataFiltered?.length > 0 ? (
+          <CampaignLists campaigns={dataFiltered} />
+        ) : (
+          <EmptyContent title="No campaign available" />
+        ))}
+
       <CampaignFilter
         open={openFilters.value}
         onOpen={openFilters.onTrue}
