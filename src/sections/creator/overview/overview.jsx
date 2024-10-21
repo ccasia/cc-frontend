@@ -64,8 +64,12 @@ const Overview = () => {
               p: 2,
             }}
           >
-            {!isLoading &&
-              data.map((item, index) => (
+            {!isLoading && data.length < 1 ? (
+              <Typography textAlign="center" variant="subtitle2" color="text.secondary">
+                No campaigns found
+              </Typography>
+            ) : (
+              data?.slice(0, 3).map((item, index) => (
                 <Card sx={{ p: 2 }} key={index}>
                   <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Stack direction="row" spacing={2} alignItems="center">
@@ -97,7 +101,8 @@ const Overview = () => {
                     Last update: Awaiting client approval.
                   </Typography>
                 </Card>
-              ))}
+              ))
+            )}
           </Stack>
 
           <Divider />

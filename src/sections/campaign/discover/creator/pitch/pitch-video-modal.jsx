@@ -38,7 +38,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const sources = useRef(null);
   const smUp = useResponsive('sm', 'down');
-  const [source, setSource] = useState(undefined);
+  const [source, setSource] = useState([]);
   const [sourceName, setSourceName] = useState('');
   const [progress, setProgress] = useState([]);
   const [size, setSize] = useState('');
@@ -66,7 +66,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
       setLoading(true);
       const res = await axiosInstance.patch(endpoints.campaign.pitch.root, {
         campaignId: campaign.id,
-        content: data.pitchVideo,
+        content: source?.find((item) => item.campaignId === campaign?.id)?.url,
         type: 'video',
       });
       mutate(endpoints.campaign.getMatchedCampaign);
@@ -98,7 +98,11 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
           return;
         }
 
-        setSource(url);
+        setSource((prev) => [...prev, { campaignId: campaign.id, url }]);
+
+        // setSource((prev) =>
+        //   prev.map((item) => (item.campaignId === campaign.id ? { ...item, url } : item))
+        // );
         setSourceName(e[0].path);
 
         const formData = new FormData();
@@ -152,7 +156,12 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const updateVideo = useCallback(
     (data) => {
       setProgress((prev) => prev.filter((item) => item.campaignId !== data.campaignId));
-      setSource(data.video);
+      setSource((prev) =>
+        prev.map((item) =>
+          item.campaignId === data.campaignId ? { ...item, url: data.video } : item
+        )
+      );
+      // setSource(data.video);
       setSize(data.size);
       setValue('pitchVideo', data.video);
     },
@@ -173,8 +182,9 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
       sources.current.cancel('Cancel');
       sources.current = null;
     }
-    setSource(undefined);
-    setValue('pitchVideo', null);
+    setSource((prev) => prev.filter((item) => item?.campaignId !== campaign.id));
+    // setSource(undefined);
+    setValue('pitchVideo', '');
     socket?.off('video-upload', updateProgress);
     socket?.off('video-upload-done', uploadDone);
   };
@@ -212,12 +222,12 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
               <IconButton
                 onClick={() => {
-                  if (watch('pitchVideo')) {
-                    confirm.onTrue();
-                  } else {
-                    handleClose();
-                    handleRemove();
-                  }
+                  // if (source?.find((item) => item.campaignId === campaign.id)?.url) {
+                  //   confirm.onTrue();
+                  // } else {
+                  handleClose();
+                  // handleRemove();
+                  // }
                 }}
               >
                 <Iconify icon="hugeicons:cancel-01" width={20} />
@@ -238,7 +248,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
               type="video"
               onDrop={handleDropSingleFile}
               handleProgress={handleProgress}
-              source={source}
+              source={source?.find((item) => item.campaignId === campaign.id)?.url}
               sourceName={sourceName}
               remove={handleRemove}
               size={size}
@@ -272,7 +282,8 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
             color="error"
             onClick={() => {
               setValue('pitchVideo', null);
-              setSource('');
+              setSource((prev) => prev.filter((item) => item?.campaignId !== campaign.id));
+              // setSource('');
               handleClose();
               confirm.onFalse();
             }}

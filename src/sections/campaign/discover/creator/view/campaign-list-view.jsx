@@ -29,6 +29,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
 
 import CreatorForm from '../creator-form';
 import CampaignLists from '../campaign-list';
@@ -40,7 +41,7 @@ import CampaignSearch from '../campaign-search';
 
 export default function CampaignListView() {
   const settings = useSettingsContext();
-  const { campaigns } = useGetCampaigns('creator');
+  const { campaigns, isLoading } = useGetCampaigns('creator');
   const [filter, setFilter] = useState('');
   const { user } = useAuthContext();
   const dialog = useBoolean();
@@ -279,24 +280,23 @@ export default function CampaignListView() {
             <CreatorForm dialog={dialog} user={user} display backdrop={backdrop} />
           </Box>
         </Backdrop>
-        {/* {!user?.creator?.isFormCompleted && (
-          <Button
-            size="small"
-            variant="contained"
-            onClick={dialog.onTrue}
-            startIcon={<Iconify icon="fluent:warning-32-filled" color="warning.main" />}
-          >
-            Complete Form
-          </Button>
-        )} */}
       </Stack>
 
       <Box sx={{ my: 2 }} />
-      {filteredData && filteredData?.length > 0 ? (
+
+      {isLoading && <LoadingScreen />}
+
+      {!isLoading &&
+        (filteredData?.length > 0 ? (
+          <CampaignLists campaigns={filteredData} />
+        ) : (
+          <EmptyContent title="No campaign available" />
+        ))}
+      {/* {filteredData && filteredData?.length > 0 ? (
         <CampaignLists campaigns={filteredData} />
       ) : (
         <EmptyContent title="No campaign available" />
-      )}
+      )} */}
 
       {upload.length > 0 && renderUploadProgress}
 
