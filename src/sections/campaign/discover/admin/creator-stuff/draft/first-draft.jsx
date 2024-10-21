@@ -71,18 +71,30 @@ const FirstDraft = ({ campaign, submission, user }) => {
       {submission ? (
         <>
           {submission?.campaignTask.status === 'CHANGES_REQUIRED' ? (
-            <Box>
-              <video
-                autoPlay
-                width="100%"
-                height="100%"
-                controls
-                style={{
-                  borderRadius: 10,
-                }}
-              >
-                <source src={submission?.firstDraft?.draftURL} />
-              </video>
+            // <Box>
+            //   <video
+            //     autoPlay
+            //     width="100%"
+            //     height="100%"
+            //     controls
+            //     style={{
+            //       borderRadius: 10,
+            //     }}
+            //   >
+            //     <source src={submission?.firstDraft?.draftURL} />
+            //   </video>
+            // </Box>
+            <Box
+              component="video"
+              autoPlay
+              controls
+              sx={{
+                maxHeight: '60vh',
+                width: { xs: '70vw', sm: 'auto' },
+                borderRadius: 2,
+              }}
+            >
+              <source src={submission?.firstDraft?.draftURL} />
             </Box>
           ) : (
             <Grid container spacing={2}>

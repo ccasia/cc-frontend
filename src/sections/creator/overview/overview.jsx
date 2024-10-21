@@ -21,6 +21,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import { LoadingScreen } from 'src/components/loading-screen';
 
 const Overview = () => {
   const { user } = useAuthContext();
@@ -64,6 +65,7 @@ const Overview = () => {
               p: 2,
             }}
           >
+            {isLoading && <LoadingScreen />}
             {!isLoading && data.length < 1 ? (
               <Typography textAlign="center" variant="subtitle2" color="text.secondary">
                 No campaigns found
@@ -162,7 +164,12 @@ const Overview = () => {
               }}
             />
           </Stack>
+
           <Divider />
+
+          <Typography textAlign="center" py={2}>
+            In development...
+          </Typography>
         </Card>
       </Grid>
     </Grid>

@@ -97,6 +97,7 @@ export const endpoints = {
     getCreatorSocialMediaData: '/api/creator/getCreatorSocialMediaData',
     getCreatorSocialMediaDataById: (id) => `/creator/${id}/social-media`,
     updateCreatorform: '/api/creator/updateCreatorForm',
+    updateSocialMediaUsername: '/api/creator/updateSocialMediaUsername',
   },
   users: {
     newAdmin: '/api/user/admins',

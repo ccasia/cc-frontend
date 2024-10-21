@@ -257,11 +257,11 @@ const Profile = () => {
         icon={<Iconify icon="solar:user-id-bold" width={24} />}
       />
 
-      {/* <Tab
+      <Tab
         label="Social"
         value="Social Links"
         icon={<Iconify icon="solar:share-bold" width={24} />}
-      /> */}
+      />
       <Tab
         label="Security"
         value="security"

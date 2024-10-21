@@ -1,8 +1,7 @@
 import * as Yup from 'yup';
 import 'croppie/croppie.css';
-import Croppie from 'croppie';
-import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -12,8 +11,7 @@ import Grid from '@mui/material/Unstable_Grid2';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { Checkbox, InputAdornment, FormControlLabel } from '@mui/material';
+import { Button, Checkbox, IconButton, InputAdornment, FormControlLabel } from '@mui/material';
 
 import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -22,6 +20,7 @@ import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 import { regions } from 'src/assets/data/regions';
 
+import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, {
   RHFTextField,
@@ -36,22 +35,18 @@ export default function AccountGeneral() {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const theme = useTheme();
-  const isXs = useMediaQuery(theme.breakpoints.only('xs'));
-  const isMd = useMediaQuery(theme.breakpoints.only('md'));
-  const isLg = useMediaQuery(theme.breakpoints.up('lg'));
+  // const isXs = useMediaQuery(theme.breakpoints.only('xs'));
+  // const isMd = useMediaQuery(theme.breakpoints.only('md'));
+  // const isLg = useMediaQuery(theme.breakpoints.up('lg'));
 
   // State
   const [openCropDialog, setOpenCropDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  // const [previewUrl, setPreviewUrl] = useState(user?.photoBackgroundURL || null);
   const [isLoading, setIsLoading] = useState(false);
   const [imageDataUrl, setImageDataUrl] = useState(null);
-  // const [activeTab, setActiveTab] = useState(0);
-  const [zoom, setZoom] = useState(0);
-  const [maxZoom, setMaxZoom] = useState(1.5);
 
   const croppieRef = useRef(null);
-  const croppieContainerRef = useRef(null);
+  // const croppieContainerRef = useRef(null);
 
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -65,6 +60,8 @@ export default function AccountGeneral() {
     about: Yup.string().required('About is required'),
   });
 
+  console.log(user?.paymentForm);
+
   const defaultValues = {
     name: user?.name || '',
     email: user?.email || '',
@@ -75,6 +72,10 @@ export default function AccountGeneral() {
     address: user?.creator?.address || '',
     state: user?.creator?.state || '',
     about: user?.creator?.mediaKit?.about || '',
+    bodyMeasurement: user?.paymentForm?.bodyMeasurement || '',
+    allergies: user?.paymentForm?.allergies?.map((allergy) => ({ name: allergy })) || [
+      { name: '' },
+    ],
   };
 
   const methods = useForm({
@@ -82,26 +83,32 @@ export default function AccountGeneral() {
     defaultValues,
   });
 
-  const getViewportSize = useCallback(() => {
-    if (isXs) return { width: 300, height: 75 };
-    if (isMd) return { width: 600, height: 150 };
-    if (isLg) return { width: 796, height: 198 };
-    return { width: 400, height: 100 }; // Default size for sm
-  }, [isLg, isMd, isXs]);
+  // const getViewportSize = useCallback(() => {
+  //   if (isXs) return { width: 300, height: 75 };
+  //   if (isMd) return { width: 600, height: 150 };
+  //   if (isLg) return { width: 796, height: 198 };
+  //   return { width: 400, height: 100 }; // Default size for sm
+  // }, [isLg, isMd, isXs]);
 
-  const getBoundarySize = useCallback(() => {
-    if (isXs) return { width: 320, height: 150 };
-    if (isMd) return { width: 620, height: 250 };
-    if (isLg) return { width: 796, height: 300 };
-    return { width: 420, height: 200 }; // Default size for sm
-  }, [isLg, isMd, isXs]);
+  // const getBoundarySize = useCallback(() => {
+  //   if (isXs) return { width: 320, height: 150 };
+  //   if (isMd) return { width: 620, height: 250 };
+  //   if (isLg) return { width: 796, height: 300 };
+  //   return { width: 420, height: 200 }; // Default size for sm
+  // }, [isLg, isMd, isXs]);
 
   const {
     setValue,
     handleSubmit,
     watch,
+    control,
     formState: { isSubmitting, isDirty },
   } = methods;
+
+  const { fields, remove, insert } = useFieldArray({
+    control,
+    name: 'allergies',
+  });
 
   useEffect(() => {
     if (!openCropDialog) {
@@ -118,59 +125,59 @@ export default function AccountGeneral() {
     }
   }, [openCropDialog]);
 
-  useEffect(() => {
-    console.log('useEffect triggered', {
-      openCropDialog,
-      imageDataUrl,
-      croppieContainerRef: !!croppieContainerRef.current,
-      croppieRef: !!croppieRef.current,
-    });
-    if (openCropDialog && imageDataUrl && croppieContainerRef.current && !croppieRef.current) {
-      console.log('Initializing Croppie with imageDataUrl');
-      setTimeout(() => {
-        try {
-          const viewport = getViewportSize();
-          const boundary = getBoundarySize();
+  // useEffect(() => {
+  //   console.log('useEffect triggered', {
+  //     openCropDialog,
+  //     imageDataUrl,
+  //     croppieContainerRef: !!croppieContainerRef.current,
+  //     croppieRef: !!croppieRef.current,
+  //   });
+  //   if (openCropDialog && imageDataUrl && croppieContainerRef.current && !croppieRef.current) {
+  //     console.log('Initializing Croppie with imageDataUrl');
+  //     setTimeout(() => {
+  //       try {
+  //         const viewport = getViewportSize();
+  //         const boundary = getBoundarySize();
 
-          croppieRef.current = new Croppie(croppieContainerRef.current, {
-            viewport: { ...viewport, type: 'square' },
-            boundary,
-            showZoomer: false,
-            enableOrientation: true,
-            enableResize: false,
-            enableExif: true,
-            mouseWheelZoom: 'ctrl',
-          });
-          croppieRef.current
-            .bind({
-              url: imageDataUrl,
-              zoom: 0, // Use the zoom state here
-            })
-            .then(() => {
-              // Get the maximum zoom level
-              const newMaxZoom = croppieRef.current._currentZoom;
-              setMaxZoom(newMaxZoom);
-              setZoom(0); // Reset zoom to minimum
-            });
-          console.log('Croppie initialized successfully');
-        } catch (error) {
-          console.error('Error initializing Croppie:', error);
-        }
-      }, 0);
-    }
+  //         croppieRef.current = new Croppie(croppieContainerRef.current, {
+  //           viewport: { ...viewport, type: 'square' },
+  //           boundary,
+  //           showZoomer: false,
+  //           enableOrientation: true,
+  //           enableResize: false,
+  //           enableExif: true,
+  //           mouseWheelZoom: 'ctrl',
+  //         });
+  //         croppieRef.current
+  //           .bind({
+  //             url: imageDataUrl,
+  //             zoom: 0, // Use the zoom state here
+  //           })
+  //           .then(() => {
+  //             // Get the maximum zoom level
+  //             const newMaxZoom = croppieRef.current._currentZoom;
+  //             setMaxZoom(newMaxZoom);
+  //             setZoom(0); // Reset zoom to minimum
+  //           });
+  //         console.log('Croppie initialized successfully');
+  //       } catch (error) {
+  //         console.error('Error initializing Croppie:', error);
+  //       }
+  //     }, 0);
+  //   }
 
-    return () => {
-      if (croppieRef.current) {
-        console.log('Cleaning up Croppie');
-        try {
-          croppieRef.current.destroy();
-        } catch (error) {
-          console.error('Error cleaning up Croppie:', error);
-        }
-        croppieRef.current = null;
-      }
-    };
-  }, [openCropDialog, imageDataUrl, isXs, isMd, isLg, getBoundarySize, getViewportSize]);
+  //   return () => {
+  //     if (croppieRef.current) {
+  //       console.log('Cleaning up Croppie');
+  //       try {
+  //         croppieRef.current.destroy();
+  //       } catch (error) {
+  //         console.error('Error cleaning up Croppie:', error);
+  //       }
+  //       croppieRef.current = null;
+  //     }
+  //   };
+  // }, [openCropDialog, imageDataUrl, isXs, isMd, isLg, getBoundarySize, getViewportSize]);
 
   // const handleZoomChange = (event, newValue) => {
   //   setZoom(newValue);
@@ -438,6 +445,32 @@ export default function AccountGeneral() {
                 }}
               />
 
+              <RHFTextField
+                name="bodyMeasurement"
+                type="number"
+                label="Body Measurement"
+                InputProps={{
+                  endAdornment: <InputAdornment position="start">cm</InputAdornment>,
+                }}
+              />
+
+              <Stack spacing={1}>
+                {fields.map((item, index) => (
+                  <Stack key={item.id} direction="row" spacing={1} alignItems="center">
+                    <RHFTextField
+                      name={`allergies[${index}].name`}
+                      label={`Allergy ${index + 1}`}
+                    />
+                    <IconButton onClick={() => remove(index)}>
+                      <Iconify icon="material-symbols:remove" />
+                    </IconButton>
+                  </Stack>
+                ))}
+                <Button size="small" variant="contained" onClick={() => insert({ name: '' })}>
+                  Add more allergy
+                </Button>
+              </Stack>
+
               {/* <RHFTextField name="state" label="State/Region" /> */}
               {/* <RHFTextField name="city" label="City" /> */}
               {/* <RHFTextField name="zipCode" label="Zip/Code" /> */}
@@ -448,7 +481,7 @@ export default function AccountGeneral() {
 
               <LoadingButton
                 type="submit"
-                variant="contained"
+                variant="outlined"
                 loading={isSubmitting}
                 size="small"
                 disabled={!isDirty}

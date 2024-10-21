@@ -58,7 +58,12 @@ const CampaignDetailCreator = ({ campaign }) => {
     },
   });
 
-  const { handleSubmit, watch, reset } = methods;
+  const {
+    handleSubmit,
+    watch,
+    reset,
+    formState: { isSubmitting },
+  } = methods;
 
   const filteredData = useMemo(
     () =>
@@ -83,12 +88,19 @@ const CampaignDetailCreator = ({ campaign }) => {
   const onSubmit = handleSubmit(async (value) => {
     try {
       loading.onTrue();
-      const res = await shortlistCreator({ value, campaignId: campaign.id });
+
+      const newVal = value?.creator?.map((val) => ({
+        ...val,
+        creator: { ...val.creator, socialMediaData: '' },
+      }));
+
+      const res = await shortlistCreator({ newVal, campaignId: campaign.id });
       modal.onFalse();
       reset();
       enqueueSnackbar(res?.data?.message);
       mutate(endpoints.campaign.getCampaignsByAdminId);
     } catch (error) {
+      console.log(error);
       loading.onFalse();
       enqueueSnackbar('Error Shortlist Creator', {
         variant: 'error',
@@ -132,7 +144,7 @@ const CampaignDetailCreator = ({ campaign }) => {
       fullWidth
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>List Creator</DialogTitle>
+        <DialogTitle>List Creators</DialogTitle>
         <DialogContent>
           <Box py={1}>
             <RHFAutocomplete
@@ -194,8 +206,12 @@ const CampaignDetailCreator = ({ campaign }) => {
             Cancel
           </Button>
 
-          <LoadingButton type="submit" disabled={!selectedCreator.length} loading={loading.value}>
-            Shortlist {selectedCreator.length > 0 && selectedCreator.length}
+          <LoadingButton
+            type="submit"
+            disabled={!selectedCreator.length || isSubmitting}
+            loading={loading.value}
+          >
+            Shortlist {selectedCreator.length > 0 && selectedCreator.length} creators
           </LoadingButton>
         </DialogActions>
       </FormProvider>

@@ -10,6 +10,7 @@ import {
   Button,
   Divider,
   Container,
+  TextField,
   Typography,
 } from '@mui/material';
 
@@ -25,6 +26,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
 import AppliedCampaignView from '../applied-campaign-view';
 
@@ -174,21 +176,44 @@ const ManageCampaignView = () => {
       />
       {renderTabs}
 
-      {currentTab === 'myCampaign' && !isLoading && (
-        <Grid container spacing={3} sx={{ mt: 2 }}>
-          {filteredData
-            .filter(
-              (campaign) =>
-                !campaign?.shortlisted?.find((item) => item.userId === user.id).isCampaignDone
-            )
-            .map((campaign) => (
-              <Grid item xs={12} sm={6} md={4} key={campaign.id}>
-                {renderCampaignItem(campaign)}
-              </Grid>
-            ))}
-        </Grid>
+      {currentTab === 'myCampaign' && (
+        <>
+          <Box sx={{ my: 2, p: 2, borderRadius: 2, bgcolor: 'white' }}>
+            <TextField
+              sx={{
+                width: { xs: '100%', md: 300 },
+              }}
+              label="Search"
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </Box>
+
+          {!isLoading && (
+            <Grid container spacing={3}>
+              {filteredData
+                .filter(
+                  (campaign) =>
+                    !campaign?.shortlisted?.find((item) => item.userId === user.id).isCampaignDone
+                )
+                .map((campaign) => (
+                  <Grid item xs={12} sm={6} md={4} key={campaign.id}>
+                    {renderCampaignItem(campaign)}
+                  </Grid>
+                ))}
+              {filteredData?.length < 1 && (
+                <Grid item xs={12}>
+                  <Box>
+                    <EmptyContent title={`No Campaign with name ${query} Found`} />
+                  </Box>
+                </Grid>
+              )}
+            </Grid>
+          )}
+        </>
       )}
+
       {currentTab === 'applied' && <AppliedCampaignView />}
+
       {currentTab === 'completed' && !isLoading && (
         <Grid container spacing={3} sx={{ mt: 2 }}>
           {filteredData
@@ -208,5 +233,3 @@ const ManageCampaignView = () => {
 };
 
 export default ManageCampaignView;
-
-// ManageCampaignView.propTypes = {};
