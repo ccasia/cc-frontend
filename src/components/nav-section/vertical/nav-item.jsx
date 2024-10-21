@@ -230,6 +230,7 @@ const StyledNavItem = styled(ListItemButton, {
     // Root item
     ...(!subItem && {
       ...baseStyles.item,
+      position: 'relative',
       minHeight: 44,
       '& .icon': {
         ...baseStyles.icon,
@@ -259,6 +260,17 @@ const StyledNavItem = styled(ListItemButton, {
         //       theme.palette.primary.light,
         // backgroundColor: alpha(theme.palette.primary.main, 0.08),
         background: 'rgba(245, 245, 245, 1)',
+        '::before': {
+          content: '""',
+          width: 8,
+          height: 20,
+          backgroundColor: 'blue',
+          position: 'absolute',
+          left: -20,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          borderRadius: 10,
+        },
         '&:hover': {
           backgroundColor: alpha(theme.palette.primary.main, 0.16),
         },

@@ -80,9 +80,9 @@ export function useNavData() {
       {
         items: [
           {
-            title: 'Dashboard',
+            title: 'Overview',
             path: paths.dashboard.root,
-            icon: ICONS.dashboard,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
           },
         ],
       },

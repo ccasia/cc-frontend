@@ -44,7 +44,7 @@ export default function NavList({ data, depth, slotProps }) {
         position: 'relative',
       }}
     >
-      {active && (
+      {/* {active && (
         <Box
           sx={{
             width: 8,
@@ -57,7 +57,7 @@ export default function NavList({ data, depth, slotProps }) {
             borderRadius: 2,
           }}
         />
-      )}
+      )} */}
       <NavItem
         ref={navRef}
         open={openMenu}
