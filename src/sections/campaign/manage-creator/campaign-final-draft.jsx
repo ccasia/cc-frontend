@@ -18,6 +18,8 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -161,6 +163,9 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
     }
   };
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
     previewSubmission?.status === 'CHANGES_REQUIRED' && (
       <Box>
@@ -281,16 +286,36 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                   [`& .${timelineOppositeContentClasses.root}`]: {
                     flex: 0.2,
                   },
+                  [theme.breakpoints.down('sm')]: {
+                    padding: 0,
+                  },
                 }}
               >
                 {submission?.feedback?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map((feedback, index) => (
-                  <TimelineItem key={index}>
-                    <TimelineOppositeContent color="textSecondary">
+                  <TimelineItem 
+                    key={index}
+                    sx={{
+                      [theme.breakpoints.down('sm')]: {
+                        flexDirection: 'column',
+                        '&::before': {
+                          display: 'none',
+                        },
+                      },
+                    }}
+                  >
+                    <TimelineOppositeContent 
+                      color="textSecondary"
+                      sx={{
+                        [theme.breakpoints.down('sm')]: {
+                          padding: '6px 16px',
+                        },
+                      }}
+                    >
                       <Typography 
-                        variant="caption"  // Smaller font size for date
+                        variant="caption"  
                         sx={{ 
                           fontWeight: index === 0 ? 'bold' : 'normal',
-                          opacity: index === 0 ? 1 : 0.7  // Reduced opacity for older feedback dates
+                          opacity: index === 0 ? 1 : 0.7 
                         }}
                       >
                         {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
@@ -300,25 +325,46 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                       <TimelineDot />
                       {index !== submission.feedback.length - 1 && <TimelineConnector />}
                     </TimelineSeparator>
-                    <TimelineContent>
+                    <TimelineContent
+                      sx={{
+                        [theme.breakpoints.down('sm')]: {
+                          padding: '6px 16px 16px',
+                        },
+                      }}
+                    >
                       <Typography 
                         variant="subtitle1" 
                         color="text.secondary" 
                         sx={{ 
                           whiteSpace: 'pre-line',
                           fontWeight: index === 0 ? 'bold' : 'normal',
-                          opacity: index === 0 ? 1 : 0.7  // Reduced opacity for older feedback content
+                          opacity: index === 0 ? 1 : 0.7  
                         }}
                       >
                         {feedback.content}
                       </Typography>
-                      <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center" mt={1}>
+                      <Stack 
+                        direction="row" 
+                        spacing={1} 
+                        flexWrap="wrap" 
+                        alignItems="center" 
+                        mt={1}
+                        sx={{
+                          [theme.breakpoints.down('sm')]: {
+                            mt: 0.5,
+                          },
+                        }}
+                      >
                         {feedback.reasons?.map((item, idx) => (
                           <Label 
                             key={idx}
                             sx={{ 
                               fontWeight: index === 0 ? 'bold' : 'normal',
-                              opacity: index === 0 ? 1 : 0.7  // Reduced opacity for older feedback reasons
+                              opacity: index === 0 ? 1 : 0.7,
+                              [theme.breakpoints.down('sm')]: {
+                                fontSize: '0.75rem',
+                                padding: '2px 4px',
+                              },
                             }}
                           >
                             {item}

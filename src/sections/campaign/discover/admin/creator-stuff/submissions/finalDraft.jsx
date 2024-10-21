@@ -159,7 +159,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
     <Box>
       <Grid container spacing={2}>
         <Grid item xs={12} md={3}>
-          <Box component={Paper} p={1.5}>
+          <Box component={Paper} p={1.5} sx={{ mb: { xs: 2, md: 0 } }}>
             <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
               <Stack spacing={1} justifyContent="space-evenly">
                 <Typography variant="subtitle2">Due Date</Typography>
@@ -202,7 +202,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                 top: '50%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: '90%',
+                width: { xs: '95%', sm: '90%' },
                 maxWidth: 600,
                 maxHeight: '90vh',
                 bgcolor: 'background.paper',
@@ -219,12 +219,20 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                     <CloseIcon />
                   </IconButton>
                 </Box>
-                <Box sx={{ p: 3, maxHeight: 'calc(90vh - 60px)', overflowY: 'auto' }}>
+                <Box sx={{ p: { xs: 2, sm: 3 }, maxHeight: 'calc(90vh - 60px)', overflowY: 'auto' }}>
                   {sortedFeedback.length > 0 ? (
-                    <Timeline position="alternate">
+                    <Timeline position="right" sx={{ 
+                      [`& .MuiTimelineItem-root:before`]: {
+                        flex: 0,
+                        padding: 0,
+                      }
+                    }}>
                       {sortedFeedback.map((feedback, index) => (
                         <TimelineItem key={index}>
-                          <TimelineOppositeContent color="text.secondary">
+                          <TimelineOppositeContent sx={{ 
+                            display: { xs: 'none', sm: 'block' },
+                            flex: { sm: 0.2 },
+                          }} color="text.secondary">
                             {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
                           </TimelineOppositeContent>
                           <TimelineSeparator>
@@ -237,12 +245,15 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                             </TimelineDot>
                             {index < sortedFeedback.length - 1 && <TimelineConnector />}
                           </TimelineSeparator>
-                          <TimelineContent>
+                          <TimelineContent sx={{ py: '12px', px: 2 }}>
                             <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
                               <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
                                 {feedback.type === 'COMMENT' ? 'Comment' : 'Change Request'}
                               </Typography>
-                              <Typography variant="body2" sx={{ mb: 2 }}>{feedback.content}</Typography>
+                              <Typography variant="body2" sx={{ mb: 1 }}>{feedback.content}</Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 1 }}>
+                                {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
+                              </Typography>
                               {feedback.reasons && feedback.reasons.length > 0 && (
                                 <Box sx={{ mt: 1 }}>
                                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Reasons for changes:</Typography>
@@ -279,13 +290,15 @@ const FinalDraft = ({ campaign, submission, creator }) => {
             submission?.status === 'CHANGES_REQUIRED') && (
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <video
-                  autoPlay
-                  style={{ width: '100%', borderRadius: 10, margin: 'auto' }}
-                  controls
-                >
-                  <source src={submission?.content} />
-                </video>
+                <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+                  <video
+                    autoPlay
+                    style={{ width: '100%', height: 'auto', borderRadius: 10, margin: 'auto' }}
+                    controls
+                  >
+                    <source src={submission?.content} />
+                  </video>
+                </Box>
                 <Box component={Paper} p={1.5}>
                   <Typography variant="caption" color="text.secondary">
                     Caption
