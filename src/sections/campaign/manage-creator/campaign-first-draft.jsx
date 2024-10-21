@@ -279,8 +279,8 @@ const CampaignFirstDraft = ({
                       Changes Required
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-                      {submission?.feedback?.reasons?.length &&
-                        submission?.feedback?.reasons?.map((item, index) => (
+                      {submission?.feedback[0]?.reasons?.length &&
+                        submission?.feedback[0]?.reasons?.map((item, index) => (
                           <Label key={index}>{item}</Label>
                         ))}
                     </Stack>
@@ -289,7 +289,7 @@ const CampaignFirstDraft = ({
                       color="text.secondary"
                       sx={{ whiteSpace: 'pre-line' }}
                     >
-                      {submission?.feedback?.content}
+                      {submission?.feedback[0]?.content}
                     </Typography>
                   </Box>
                 </Alert>
