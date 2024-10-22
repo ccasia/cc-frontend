@@ -1,22 +1,13 @@
 /* eslint-disable no-nested-ternary */
-import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
 
-import Link from '@mui/material/Link';
-import Stack from '@mui/material/Stack';
-import { LoadingButton } from '@mui/lab';
-import ListItemText from '@mui/material/ListItemText';
-import {
-  Grid,
-  Card,
-  Tooltip,
-  Typography,
-  IconButton,
-  CircularProgress, Avatar, Box, Chip, Button,
-} from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
+
+import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -25,19 +16,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
-import Label from 'src/components/label';
-import Iconify from 'src/components/iconify';
 
-import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
-import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
-
-import { alpha } from '@mui/material/styles';
-import { Divider } from '@mui/material';
-
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
-import { useTheme } from '@mui/material/styles';
 
 // ----------------------------------------------------------------------
 
@@ -203,17 +183,17 @@ export default function CampaignItem({ campaign, user }) {
         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: -0.5 }}>
           {campaign?.name}
         </Typography>
-        <Typography 
-          variant="subtitle1" 
-          sx={{ 
-            mb: 2, 
-            color: '#8e8e93'
+        <Typography
+          variant="subtitle1"
+          sx={{
+            mb: 2,
+            color: '#8e8e93',
           }}
         >
           {campaign?.brand?.name || campaign?.company?.name}
         </Typography>
       </Box>
-      
+
       <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5 }}>
         <Box sx={{ position: 'relative', display: 'inline-flex', mr: 1 }}>
           <CircularProgress
@@ -236,11 +216,7 @@ export default function CampaignItem({ campaign, user }) {
             }}
           />
         </Box>
-        <Typography 
-          variant="body2" 
-          color="text.primary"
-          sx={{ fontWeight: 600 }} 
-        >
+        <Typography variant="body2" color="text.primary" sx={{ fontWeight: 600 }}>
           {`${Math.min(Math.round(campaign?.percentageMatch), 100)}% Match for you!`}
         </Typography>
       </Box>
@@ -249,17 +225,17 @@ export default function CampaignItem({ campaign, user }) {
 
   return (
     <>
-      <Card 
-        sx={{ 
+      <Card
+        sx={{
           overflow: 'hidden',
           cursor: 'pointer',
           transition: 'all 0.3s',
           bgcolor: 'background.paper',
-          borderRadius: '25px', 
+          borderRadius: '25px',
           border: '1px solid transparent',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.05)', 
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
           mb: -0.5,
-          '&:hover': { 
+          '&:hover': {
             borderColor: '#1340ff',
             transform: 'translateY(-2px)',
           },

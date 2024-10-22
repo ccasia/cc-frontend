@@ -1,66 +1,50 @@
 /* eslint-disable no-nested-ternary */
-import React, { useState, useEffect, useRef } from 'react';
+import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
 import { enqueueSnackbar } from 'notistack';
-import CircularProgress from '@mui/material/CircularProgress';
+import React, { useRef, useState, useEffect } from 'react';
+
+import Dialog from '@mui/material/Dialog';
+import { useTheme } from '@mui/material/styles';
+import CloseIcon from '@mui/icons-material/Close';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import DialogContent from '@mui/material/DialogContent';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import CloseIcon from '@mui/icons-material/Close';
-import LinearProgress from '@mui/material/LinearProgress';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { useTheme } from '@mui/material/styles';
-import Backdrop from '@mui/material/Backdrop';
-import Fade from '@mui/material/Fade';
-
 import {
   Box,
   Chip,
+  Grid,
   Stack,
+  Paper,
   Button,
-  Tooltip,
+  Avatar,
+  Divider,
   Typography,
   IconButton,
-  Grid,
-  Tabs,
-  Tab,
-  Avatar,
-  Paper,
-  Divider
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useResponsive } from 'src/hooks/use-responsive';
-
-import { formatText } from 'src/utils/format-test';
+import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-import Masonry from '@mui/lab/Masonry';
-import ImageList from '@mui/material/ImageList';
-import ImageListItem from '@mui/material/ImageListItem';
 
-import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
-
-import { fDate } from 'src/utils/format-time';
-import dayjs from 'dayjs';
-
-import CampaignEndedIcon from '@mui/icons-material/EventBusy'; // Import an appropriate icon
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import CampaignPitchOptionsModal from './campaign-pitch-options-modal'; // Import an appropriate icon
 
 const ChipStyle = {
   bgcolor: '#e4e4e4',
   color: '#636366',
   borderRadius: 16,
-  '& .MuiChip-label': { 
+  '& .MuiChip-label': {
     fontWeight: 700,
     px: 1.5,
     py: 0.5,
@@ -75,9 +59,8 @@ function calculateDaysLeft(endDate) {
 
   if (daysLeft > 0) {
     return `ENDING IN ${daysLeft} DAYS`;
-  } else {
-    return 'Campaign Ended';
   }
+  return 'Campaign Ended';
 }
 
 const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
@@ -91,7 +74,8 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
   const isShortlisted = user?.shortlisted && user?.shortlisted.map((item) => item.campaignId);
 
   const existingPitch = user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id);
-  const draftPitch = user?.draftPitch && user?.draftPitch.find((item) => item.campaignId === campaign?.id);
+  const draftPitch =
+    user?.draftPitch && user?.draftPitch.find((item) => item.campaignId === campaign?.id);
 
   const hasPitched = !!existingPitch && existingPitch.status !== 'draft';
   const hasDraft = !!draftPitch || (existingPitch && existingPitch.status === 'draft');
@@ -223,13 +207,13 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
 
   return (
     <>
-      <Dialog 
-        open={open} 
-        onClose={handleClose} 
-        fullWidth 
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        fullWidth
         maxWidth="md"
-        PaperProps={{ 
-          sx: { 
+        PaperProps={{
+          sx: {
             borderRadius: 3,
             overflow: 'visible',
             display: 'flex',
@@ -237,24 +221,26 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
             maxHeight: '90vh',
             position: 'relative',
             width: isSmallScreen ? '90vw' : '75vh',
-          } 
+          },
         }}
       >
         {/* DialogContent for the Avatar */}
-        <DialogContent sx={{ 
-          p: 0.55, 
-          height: 0,
-          boxShadow: 'none',
-        }}>
-          <Avatar 
-            src={campaign?.company?.logo} 
-            alt={campaign?.company?.name} 
-            sx={{ 
+        <DialogContent
+          sx={{
+            p: 0.55,
+            height: 0,
+            boxShadow: 'none',
+          }}
+        >
+          <Avatar
+            src={campaign?.company?.logo}
+            alt={campaign?.company?.name}
+            sx={{
               position: 'absolute',
               left: '50%',
               top: -32,
               transform: 'translateX(-50%)',
-              width: 72, 
+              width: 72,
               height: 72,
               border: '4px solid',
               borderColor: 'background.paper',
@@ -265,22 +251,25 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
 
         {/* DialogContent for the main white box */}
         <DialogContent sx={{ p: 2, pt: 4, overflow: 'auto', flexGrow: 1 }}>
-          <Box sx={{ 
-            bgcolor: 'background.paper', 
-            borderRadius: 2, 
-            overflow: 'hidden',
-            mt: -4,
-            mx: -1,
-          }}>
-            {/* Campaign image */}
-            <Box sx={{ 
-              position: 'relative', 
-              height: { xs: 200, sm: 250 }, 
-              mb: 2,
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              borderRadius: 2,
               overflow: 'hidden',
-              cursor: 'pointer',
+              mt: -4,
+              mx: -1,
             }}
-            onClick={handleImageClick}
+          >
+            {/* Campaign image */}
+            <Box
+              sx={{
+                position: 'relative',
+                height: { xs: 200, sm: 250 },
+                mb: 2,
+                overflow: 'hidden',
+                cursor: 'pointer',
+              }}
+              onClick={handleImageClick}
             >
               <Image
                 src={images[currentImageIndex]}
@@ -345,59 +334,59 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                 <ZoomInIcon sx={{ color: 'white', fontSize: 24 }} />
               </Box>
             </Box>
-            
+
             {/* Campaign info */}
-            <Box sx={{ px: 3, pb: 3, }}>
-              <Stack 
-                direction={{ xs: 'column', sm: 'row' }} 
-                justifyContent="space-between" 
-                alignItems={{ xs: 'flex-start', sm: 'center' }} 
+            <Box sx={{ px: 3, pb: 3 }}>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
                 spacing={2}
                 sx={{ mb: 2 }}
               >
                 <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
-                  <Typography 
-                    variant="h5" 
-                    sx={{ 
-                      fontWeight: 'bold', 
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 'bold',
                       fontSize: { xs: '1.2rem', sm: '1.5rem' },
-                      mb: 1
+                      mb: 1,
                     }}
                   >
                     {campaign?.name}
                   </Typography>
-                  <Typography 
-                    variant="subtitle1" 
-                    color="text.secondary" 
-                    sx={{ 
+                  <Typography
+                    variant="subtitle1"
+                    color="text.secondary"
+                    sx={{
                       fontSize: { xs: '0.8rem', sm: '1rem' },
                       mt: -1.5,
-                      mb: 1
+                      mb: 1,
                     }}
                   >
                     {campaign?.company?.name}
                   </Typography>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: -1 }}>
-                    <Iconify 
-                      icon={isCampaignEnded ? "mdi:calendar-remove" : "mdi:clock-outline"} 
-                      width={18} 
-                      sx={{ color: isCampaignEnded ? 'red' : '#b0b0b0' }} 
+                    <Iconify
+                      icon={isCampaignEnded ? 'mdi:calendar-remove' : 'mdi:clock-outline'}
+                      width={18}
+                      sx={{ color: isCampaignEnded ? 'red' : '#b0b0b0' }}
                     />
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        fontSize: { xs: '0.8rem', sm: '0.875rem' }, 
-                        fontWeight: 700, 
-                        color: isCampaignEnded ? 'red' : '#b0b0b0' 
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        fontWeight: 700,
+                        color: isCampaignEnded ? 'red' : '#b0b0b0',
                       }}
                     >
                       {daysLeftMessage}
                     </Typography>
                   </Stack>
                 </Stack>
-                <Stack 
-                  direction={{ xs: 'row', sm: 'row' }} 
-                  spacing={1} 
+                <Stack
+                  direction={{ xs: 'row', sm: 'row' }}
+                  spacing={1}
                   width={{ xs: '100%', sm: 'auto' }}
                   justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
                 >
@@ -429,9 +418,9 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                           fontWeight: 700,
                           fontSize: { xs: '0.8rem', sm: '0.875rem' },
                           height: 36,
-                          '& .MuiChip-icon': { 
+                          '& .MuiChip-icon': {
                             fontSize: 20,
-                            color: 'error.dark'
+                            color: 'error.dark',
                           },
                           '&:hover': { bgcolor: 'error.light' },
                           px: 0.5,
@@ -447,9 +436,9 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                           fontWeight: 700,
                           fontSize: { xs: '0.8rem', sm: '0.875rem' },
                           height: 36,
-                          '& .MuiChip-icon': { 
+                          '& .MuiChip-icon': {
                             fontSize: 20,
-                            color: 'warning.dark'
+                            color: 'warning.dark',
                           },
                           '&:hover': { bgcolor: 'warning.light' },
                           px: 0.5,
@@ -462,10 +451,10 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                       onClick={handleDraftClick}
                       startIcon={<Iconify icon="mdi:file-document-edit-outline" />}
                       sx={{
-                        bgcolor: '#FFD700', 
+                        bgcolor: '#FFD700',
                         color: '#8B4513',
                         '&:hover': {
-                          bgcolor: '#FFC300', 
+                          bgcolor: '#FFC300',
                         },
                         fontSize: { xs: '0.8rem', sm: '0.875rem' },
                         padding: { xs: '6px 12px', sm: '8px 16px' },
@@ -494,7 +483,11 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                   )}
                   <Button
                     variant="outlined"
-                    onClick={() => campaign?.bookMarkCampaign ? unSaveCampaign(campaign?.bookMarkCampaign.id) : saveCampaign(campaign?.id)}
+                    onClick={() =>
+                      campaign?.bookMarkCampaign
+                        ? unSaveCampaign(campaign?.bookMarkCampaign.id)
+                        : saveCampaign(campaign?.id)
+                    }
                     sx={{
                       minWidth: 0,
                       padding: '6px 12px',
@@ -503,8 +496,8 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                       borderRadius: 1,
                     }}
                   >
-                    <Iconify 
-                      icon={campaign?.bookMarkCampaign ? "mdi:bookmark" : "mdi:bookmark-outline"} 
+                    <Iconify
+                      icon={campaign?.bookMarkCampaign ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
                       width={20}
                       height={20}
                     />
@@ -519,25 +512,43 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
               <Grid container spacing={2}>
                 {/* Left column */}
                 <Grid item xs={12} md={6}>
-                  <Paper elevation={0} sx={{ border: 1, borderColor: 'grey.300', borderRadius: 1, p: 2 }}>
+                  <Paper
+                    elevation={0}
+                    sx={{ border: 1, borderColor: 'grey.300', borderRadius: 1, p: 2 }}
+                  >
                     <Stack spacing={2}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                         <Box>
-                          <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>Category</Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}
+                          >
+                            Category
+                          </Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            <Chip 
-                              label={campaign?.campaignBrief?.industries || 'Not specified'} 
-                              size="small" 
+                            <Chip
+                              label={campaign?.campaignBrief?.industries || 'Not specified'}
+                              size="small"
                               sx={ChipStyle}
                             />
                           </Box>
                         </Box>
                         <Box>
-                          <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>Campaign Period</Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}
+                          >
+                            Campaign Period
+                          </Typography>
                           <Typography variant="body2">{renderCampaignPeriod()}</Typography>
                         </Box>
                         <Box>
-                          <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>Details</Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}
+                          >
+                            Details
+                          </Typography>
                           <Typography variant="body2">{campaign?.description}</Typography>
                         </Box>
                       </Box>
@@ -546,24 +557,42 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                 </Grid>
                 {/* Right column */}
                 <Grid item xs={12} md={6}>
-                  <Paper elevation={0} sx={{ border: 1, borderColor: 'grey.300', borderRadius: 1, p: 2 }}>
+                  <Paper
+                    elevation={0}
+                    sx={{ border: 1, borderColor: 'grey.300', borderRadius: 1, p: 2 }}
+                  >
                     <Stack spacing={2}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                         {[
                           { label: 'Gender', data: campaign?.campaignRequirement?.gender },
                           { label: 'Age', data: campaign?.campaignRequirement?.age },
-                          { label: 'Geo Location', data: campaign?.campaignRequirement?.geoLocation },
+                          {
+                            label: 'Geo Location',
+                            data: campaign?.campaignRequirement?.geoLocation,
+                          },
                           { label: 'Language', data: campaign?.campaignRequirement?.language },
-                          { label: 'Creator Persona', data: campaign?.campaignRequirement?.creator_persona },
+                          {
+                            label: 'Creator Persona',
+                            data: campaign?.campaignRequirement?.creator_persona,
+                          },
                         ].map((item, index) => (
                           <Box key={index}>
-                            <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>{item.label}</Typography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
+                            <Typography
+                              variant="body2"
+                              sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}
+                            >
+                              {item.label}
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                               {item.data?.map((value, idx) => (
-                                <Chip 
-                                  key={idx} 
-                                  label={item.label === 'Creator Persona' ? value.charAt(0).toUpperCase() + value.slice(1) : value} 
-                                  size="small" 
+                                <Chip
+                                  key={idx}
+                                  label={
+                                    item.label === 'Creator Persona'
+                                      ? value.charAt(0).toUpperCase() + value.slice(1)
+                                      : value
+                                  }
+                                  size="small"
                                   sx={ChipStyle}
                                 />
                               ))}
@@ -571,8 +600,15 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                           </Box>
                         ))}
                         <Box>
-                          <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>User Persona</Typography>
-                          <Typography variant="body2">{campaign?.campaignRequirement?.user_persona}</Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}
+                          >
+                            User Persona
+                          </Typography>
+                          <Typography variant="body2">
+                            {campaign?.campaignRequirement?.user_persona}
+                          </Typography>
                         </Box>
                       </Box>
                     </Stack>
@@ -583,25 +619,26 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
           </Box>
         </DialogContent>
         {/* DialogContent for the bottom padding */}
-        <DialogContent sx={{ 
-          p: 0.55, 
-          height: 16,
-          boxShadow: 'none',
-        }}>
-        </DialogContent>
+        <DialogContent
+          sx={{
+            p: 0.55,
+            height: 16,
+            boxShadow: 'none',
+          }}
+        />
         <CampaignPitchOptionsModal
           open={pitchOptionsOpen}
           handleClose={handlePitchOptionsClose}
           campaign={campaign}
-          text={{ 
+          text={{
             onTrue: handleOpenTextPitch,
             value: textPitchOpen,
-            onFalse: handleCloseTextPitch
+            onFalse: handleCloseTextPitch,
           }}
-          video={{ 
+          video={{
             onTrue: handleOpenVideoPitch,
             value: videoPitchOpen,
-            onFalse: handleCloseVideoPitch
+            onFalse: handleCloseVideoPitch,
           }}
         />
       </Dialog>
@@ -619,25 +656,25 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
             borderRadius: 2,
             overflow: 'hidden',
             bgcolor: 'background.paper',
-          }
+          },
         }}
       >
-        <DialogContent 
+        <DialogContent
           ref={dialogContentRef}
-          sx={{ 
-            p: 0, 
-            position: 'relative', 
+          sx={{
+            p: 0,
+            position: 'relative',
             overflow: 'auto',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             '&::-webkit-scrollbar': {
-              width: '0.4em'
+              width: '0.4em',
             },
             '&::-webkit-scrollbar-thumb': {
               backgroundColor: 'rgba(0,0,0,.3)',
-              borderRadius: '4px'
-            }
+              borderRadius: '4px',
+            },
           }}
         >
           <IconButton

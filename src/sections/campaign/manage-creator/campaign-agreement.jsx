@@ -337,7 +337,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             <Document
               file={submission?.content}
               onLoadSuccess={onDocumentLoadSuccess}
-              options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+              // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
             >
               {Array.from(new Array(numPages), (el, index) => (
                 <div key={index} style={{ marginBottom: '0px' }}>

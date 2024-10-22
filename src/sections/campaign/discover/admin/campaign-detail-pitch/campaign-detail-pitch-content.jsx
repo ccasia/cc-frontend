@@ -71,7 +71,6 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         });
         enqueueSnackbar(res?.data?.message);
       } catch (error) {
-        console.log(error);
         enqueueSnackbar('error', {
           variant: 'error',
         });
@@ -88,6 +87,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         ...values,
         status: 'approved',
       });
+
       enqueueSnackbar(res?.data?.message);
       modal.onFalse();
     } catch (error) {
