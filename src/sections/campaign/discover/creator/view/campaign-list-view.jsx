@@ -1,7 +1,7 @@
 import { mutate } from 'swr';
 import { m } from 'framer-motion';
 import { enqueueSnackbar } from 'notistack';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import Container from '@mui/material/Container';
 import {
@@ -63,6 +63,9 @@ export default function CampaignListView() {
   const theme = useTheme();
 
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const MAX_ITEM = 9;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -208,7 +211,11 @@ export default function CampaignListView() {
     </Box>
   );
 
-  const filteredData = applyFilter({ inputData: campaigns, filter, user });
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
+
+  const filteredData = useMemo(() => applyFilter({ inputData: campaigns, filter, user }), [campaigns, filter, user]);
 
   const sortCampaigns = (campaigns) => {
     if (!campaigns) return [];
@@ -223,7 +230,20 @@ export default function CampaignListView() {
     }
   };
 
-  const sortedCampaigns = sortCampaigns(search.query ? search.results : filteredData);
+  const sortedCampaigns = useMemo(() => {
+    const dataToSort = search.query ? search.results : filteredData;
+    return sortCampaigns(dataToSort, sortBy);
+  }, [search.query, search.results, filteredData, sortBy]);
+
+  const paginatedCampaigns = useMemo(() => {
+    const indexOfLastItem = page * MAX_ITEM;
+    const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
+    return sortedCampaigns.slice(indexOfFirstItem, indexOfLastItem);
+  }, [sortedCampaigns, page]);
+
+  useEffect(() => {
+    setPage(1); // Reset to first page when search query changes
+  }, [search.query]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -360,13 +380,17 @@ export default function CampaignListView() {
 
       {isLoading && <LoadingScreen />}
  
-      {/* {!isLoading && sortedCampaigns?.length > 0 ? (
-        <CampaignLists campaigns={sortedCampaigns} />
+      {!isLoading && (sortedCampaigns?.length > 0 ? (
+        <CampaignLists 
+          campaigns={paginatedCampaigns} 
+          totalCampaigns={sortedCampaigns.length}
+          page={page}
+          onPageChange={handlePageChange}
+          maxItemsPerPage={MAX_ITEM}
+        />
       ) : (
         <EmptyContent title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`} />
-      )} */}
-
-      {!isLoading && (sortedCampaigns?.length > 0 ? <CampaignLists campaigns={sortedCampaigns} /> : <EmptyContent title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`} />)}
+      ))}
 
       {upload.length > 0 && renderUploadProgress}
 
