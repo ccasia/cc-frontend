@@ -10,7 +10,7 @@ import EmptyContent from 'src/components/empty-content';
 
 import CampaignItem from '../discover/creator/campaign-item';
 
-const AppliedCampaignView = ({ searchQuery }) => {
+const CompletedCampaignView = ({ searchQuery }) => {
   const { campaigns: data, isLoading } = useGetCampaigns('creator');
   const { user } = useAuthContext();
 
@@ -18,11 +18,8 @@ const AppliedCampaignView = ({ searchQuery }) => {
     () =>
       !isLoading &&
       data?.filter((campaign) =>
-        campaign?.pitch?.some(
-          (item) =>
-            item?.userId === user?.id &&
-            (item?.status === 'undecided' || item?.status === 'rejected')
-        )
+        campaign.status === 'COMPLETED' ||
+        campaign?.shortlisted?.some((item) => item.userId === user.id && item.isCampaignDone)
       ),
     [isLoading, data, user]
   );
@@ -37,24 +34,30 @@ const AppliedCampaignView = ({ searchQuery }) => {
     [filteredCampaigns, searchQuery]
   );
 
+  const sortedData = useMemo(
+    () =>
+      filteredData?.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt)),
+    [filteredData]
+  );
+
   return (
     <Box mt={2}>
-      {!isLoading && filteredData?.length ? (
+      {!isLoading && sortedData?.length ? (
         <Grid container spacing={3}>
-          {filteredData.map((campaign) => (
+          {sortedData.map((campaign) => (
             <Grid item xs={12} sm={6} md={4} key={campaign.id}>
               <CampaignItem
                 campaign={campaign}
-                pitchStatus={campaign.pitch.find(item => item.userId === user.id)?.status}
+                user={user}
               />
             </Grid>
           ))}
         </Grid>
       ) : (
-        <EmptyContent title={`No pending applications ${searchQuery ? `for "${searchQuery}"` : ''} found.`} />
+        <EmptyContent title={`No completed campaign ${searchQuery && searchQuery} found.`} />
       )}
     </Box>
   );
 };
 
-export default AppliedCampaignView;
+export default CompletedCampaignView;

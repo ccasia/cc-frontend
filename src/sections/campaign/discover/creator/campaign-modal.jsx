@@ -1,30 +1,41 @@
 /* eslint-disable no-nested-ternary */
+import React, { useState, useEffect, useRef } from 'react';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
 import 'react-quill/dist/quill.snow.css';
 import { enqueueSnackbar } from 'notistack';
-
-import Dialog from '@mui/material/Dialog';
-import CloseIcon from '@mui/icons-material/Close';
-import DialogContent from '@mui/material/DialogContent';
-import LinearProgress from '@mui/material/LinearProgress';
+import CircularProgress from '@mui/material/CircularProgress';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import CloseIcon from '@mui/icons-material/Close';
+import LinearProgress from '@mui/material/LinearProgress';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
+import Backdrop from '@mui/material/Backdrop';
+import Fade from '@mui/material/Fade';
+
 import {
   Box,
   Chip,
-  Grid,
   Stack,
-  Paper,
   Button,
-  Avatar,
+  Tooltip,
   Typography,
   IconButton,
+  Grid,
+  Tabs,
+  Tab,
+  Avatar,
+  Paper,
+  Divider
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import { formatText } from 'src/utils/format-test';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -33,16 +44,57 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-import Carousel from 'src/components/carousel/carousel';
+import Masonry from '@mui/lab/Masonry';
+import ImageList from '@mui/material/ImageList';
+import ImageListItem from '@mui/material/ImageListItem';
+
+import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
+
+import { fDate } from 'src/utils/format-time';
+import dayjs from 'dayjs';
+
+import CampaignEndedIcon from '@mui/icons-material/EventBusy'; // Import an appropriate icon
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+
+const ChipStyle = {
+  bgcolor: '#e4e4e4',
+  color: '#636366',
+  borderRadius: 16,
+  '& .MuiChip-label': { 
+    fontWeight: 700,
+    px: 1.5,
+    py: 0.5,
+  },
+  '&:hover': { bgcolor: '#e4e4e4' },
+};
+
+function calculateDaysLeft(endDate) {
+  const today = dayjs();
+  const end = dayjs(endDate);
+  const daysLeft = end.diff(today, 'day');
+
+  if (daysLeft > 0) {
+    return `ENDING IN ${daysLeft} DAYS`;
+  } else {
+    return 'Campaign Ended';
+  }
+}
 
 const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
-  // const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuthContext();
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const isShortlisted = user?.shortlisted && user?.shortlisted.map((item) => item.campaignId);
 
   const existingPitch = user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id);
+  const draftPitch = user?.draftPitch && user?.draftPitch.find((item) => item.campaignId === campaign?.id);
+
+  const hasPitched = !!existingPitch && existingPitch.status !== 'draft';
+  const hasDraft = !!draftPitch || (existingPitch && existingPitch.status === 'draft');
 
   const saveCampaign = async (campaignId) => {
     try {
@@ -72,419 +124,591 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
     }
   };
 
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [fullImageOpen, setFullImageOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const dialogContentRef = useRef(null);
   const images = campaign?.campaignBrief?.images || [];
 
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : images.length - 1));
-  };
-
-  const handleNextImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex < images.length - 1 ? prevIndex + 1 : 0));
-  };
-
-  const handleImageClick = () => {
-    setFullImageOpen(true);
+  const handleImageClick = (event) => {
+    // Prevent expansion if clicking on navigation buttons
+    if (!event.target.closest('button')) {
+      setFullImageOpen(true);
+      setImageLoaded(false);
+    }
   };
 
   const handleFullImageClose = () => {
     setFullImageOpen(false);
   };
 
-  const renderContent = (
-    <Box sx={{ p: 3, pt: 4 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Avatar
-            src={campaign?.company?.logo}
-            alt={campaign?.company?.name}
-            sx={{ width: 64, height: 64 }}
-          />
-          <Box>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 'bold',
-                mb: 0.5,
-              }}
-            >
-              {campaign?.name}
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.secondary',
-              }}
-            >
-              by {campaign?.company?.name}
-            </Typography>
-          </Box>
-        </Stack>
-        <Box sx={{ width: '30%', maxWidth: 200 }}>
-          <Typography variant="caption" color="text.secondary" noWrap>
-            Profile match:{' '}
-            <Box component="span" sx={{ color: 'success.main', fontWeight: 'bold' }}>
-              {Math.min(Math.round(campaign?.percentageMatch), 100)}%
-            </Box>
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={Math.min(Math.round(campaign?.percentageMatch), 100)}
-            sx={{
-              mt: 0.5,
-              height: 4,
-              borderRadius: 1,
-              bgcolor: 'success.lighter',
-              '& .MuiLinearProgress-bar': {
-                borderRadius: 1,
-                bgcolor: 'success.main',
-              },
-            }}
-          />
-        </Box>
-      </Stack>
-      {/* <Box sx={{ position: 'relative', height: 400, mb: 3 }}>
-        <Image
-          src={images[currentImageIndex]}
-          alt={`Campaign image ${currentImageIndex + 1}`}
-          sx={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            borderRadius: 2,
-            cursor: 'pointer',
-          }}
-          onClick={handleImageClick}
-        />
-        {images.length > 1 && (
-          <>
-            <IconButton
-              onClick={handlePrevImage}
-              sx={{
-                position: 'absolute',
-                left: 16,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                bgcolor: 'rgba(0, 0, 0, 0.5)',
-                color: 'white',
-                '&:hover': {
-                  bgcolor: 'rgba(0, 0, 0, 0.7)',
-                },
-              }}
-            >
-              <ArrowBackIosNewIcon />
-            </IconButton>
-            <IconButton
-              onClick={handleNextImage}
-              sx={{
-                position: 'absolute',
-                right: 16,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                bgcolor: 'rgba(0, 0, 0, 0.5)',
-                color: 'white',
-                '&:hover': {
-                  bgcolor: 'rgba(0, 0, 0, 0.7)',
-                },
-              }}
-            >
-              <ArrowForwardIosIcon />
-            </IconButton>
-          </>
-        )}
-      </Box> */}
-      <Box sx={{ mb: 3 }}>
-        <Carousel images={campaign?.campaignBrief?.images} />
-      </Box>
+  const handlePrevImage = (event) => {
+    event.stopPropagation(); // Prevent image expansion
+    setCurrentImageIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : images.length - 1));
+    setImageLoaded(false);
+  };
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Stack spacing={3}>
-            <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom color="primary">
-                Campaign Description
-              </Typography>
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                {campaign?.description}
-              </Typography>
-            </Paper>
+  const handleNextImage = (event) => {
+    event.stopPropagation(); // Prevent image expansion
+    setCurrentImageIndex((prevIndex) => (prevIndex < images.length - 1 ? prevIndex + 1 : 0));
+    setImageLoaded(false);
+  };
 
-            <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-              <Typography variant="h6" gutterBottom color="primary">
-                User Persona
-              </Typography>
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                {formatText(campaign?.campaignRequirement?.user_persona)}
-              </Typography>
-            </Paper>
-          </Stack>
-        </Grid>
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
 
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom color="primary">
-              Campaign Requirements
-            </Typography>
-            <Grid container spacing={2}>
-              {[
-                {
-                  label: 'Gender',
-                  data: campaign?.campaignRequirement?.gender,
-                  icon: 'mdi:gender-male-female',
-                },
-                {
-                  label: 'Age',
-                  data: campaign?.campaignRequirement?.age,
-                  icon: 'mdi:account-outline',
-                },
-              ].map((item, index) => (
-                <Grid item xs={6} key={index}>
-                  <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-                    <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                      <Iconify icon={item.icon} width={20} height={20} />
-                      <Typography variant="subtitle2">{item.label}</Typography>
-                    </Stack>
-                    <Stack direction="row" flexWrap="wrap" gap={0.5}>
-                      {item.data?.map((value, idx) => (
-                        <Chip key={idx} label={formatText(value)} size="small" />
-                      ))}
-                    </Stack>
-                  </Paper>
-                </Grid>
-              ))}
-              <Grid item xs={6} sx={{ display: 'flex' }}>
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}
-                >
-                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                    <Iconify icon="mdi:map-marker-outline" width={20} height={20} />
-                    <Typography variant="subtitle2">Geo Location</Typography>
-                  </Stack>
-                  <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ flexGrow: 1 }}>
-                    {campaign?.campaignRequirement?.geoLocation?.map((value, idx) => (
-                      <Chip key={idx} label={formatText(value)} size="small" />
-                    ))}
-                  </Stack>
-                </Paper>
-              </Grid>
-              <Grid item xs={6} sx={{ display: 'flex' }}>
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}
-                >
-                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                    <Iconify icon="mdi:translate" width={20} height={20} />
-                    <Typography variant="subtitle2">Language</Typography>
-                  </Stack>
-                  <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ flexGrow: 1 }}>
-                    {campaign?.campaignRequirement?.language?.map((value, idx) => (
-                      <Chip key={idx} label={formatText(value)} size="small" />
-                    ))}
-                  </Stack>
-                </Paper>
-              </Grid>
-              <Grid item xs={12}>
-                <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                    <Iconify icon="mdi:account-star-outline" width={20} height={20} />
-                    <Typography variant="subtitle2">Creator Persona</Typography>
-                  </Stack>
-                  <Stack direction="row" flexWrap="wrap" gap={0.5}>
-                    {campaign?.campaignRequirement?.creator_persona?.map((value, idx) => (
-                      <Chip key={idx} label={formatText(value)} size="small" />
-                    ))}
-                  </Stack>
-                </Paper>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
-  );
+  useEffect(() => {
+    if (imageLoaded && dialogContentRef.current) {
+      dialogContentRef.current.scrollTop = 0;
+    }
+  }, [imageLoaded]);
 
-  const renderActions = (
-    <Stack
-      direction="row"
-      justifyContent="space-between"
-      alignItems="center"
-      sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}
-    >
-      <Button
-        variant="outlined"
-        startIcon={
-          <Iconify icon={campaign?.bookMarkCampaign ? 'mdi:bookmark' : 'mdi:bookmark-outline'} />
-        }
-        onClick={() =>
-          campaign?.bookMarkCampaign
-            ? unSaveCampaign(campaign?.bookMarkCampaign.id)
-            : saveCampaign(campaign?.id)
-        }
-      >
-        {campaign?.bookMarkCampaign ? 'Unsave' : 'Save'}
-      </Button>
-      <Stack direction="row" spacing={2}>
-        <Button variant="outlined" onClick={handleClose}>
-          Close
-        </Button>
-        {isShortlisted?.includes(campaign.id) ? (
-          <Button
-            variant="contained"
-            onClick={() => router.push(paths.dashboard.campaign.creator.detail(campaign.id))}
-          >
-            Manage Campaign
-          </Button>
-        ) : (
-          <>
-            {existingPitch?.status === 'undecided' && (
-              <Button
-                variant="contained"
-                startIcon={<Iconify icon="mdi:clock-outline" width={20} />}
-                disabled
-                color="warning"
-              >
-                Pitch In Review
-              </Button>
-            )}
-            {!user?.creator?.isFormCompleted && (
-              <Button
-                variant="contained"
-                startIcon={<Iconify icon="mdi:form-select" width={20} />}
-                onClick={() => dialog.onTrue()}
-              >
-                Complete Profile
-              </Button>
-            )}
-            {!existingPitch && user?.creator?.isFormCompleted && (
-              <Button
-                variant="contained"
-                startIcon={<Iconify icon="mdi:send" width={20} />}
-                onClick={() => {
-                  handleClose();
-                  openForm();
-                }}
-              >
-                Pitch
-              </Button>
-            )}
-          </>
-        )}
-      </Stack>
-    </Stack>
-  );
+  const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
+  const [textPitchOpen, setTextPitchOpen] = useState(false);
+  const [videoPitchOpen, setVideoPitchOpen] = useState(false);
 
-  const renderFullSizeImage = (
-    <Dialog
-      open={fullImageOpen}
-      onClose={handleFullImageClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: 'background.paper',
-          borderRadius: 2,
-        },
-      }}
-    >
-      <DialogContent
-        sx={{
-          p: 0,
-          position: 'relative',
-          height: '80vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Box
-          sx={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Image
-            src={images[currentImageIndex] || '/path/to/default/image.jpg'}
-            alt={`Full size campaign image ${currentImageIndex + 1}`}
-            sx={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain',
-            }}
-          />
-        </Box>
-        <IconButton
-          onClick={handleFullImageClose}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            color: 'text.primary',
-            bgcolor: 'background.paper',
-            '&:hover': { bgcolor: 'action.hover' },
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-        {images.length > 1 && (
-          <>
-            <IconButton
-              onClick={handlePrevImage}
-              sx={{
-                position: 'absolute',
-                left: 16,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'text.primary',
-                bgcolor: 'background.paper',
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              <ArrowBackIosNewIcon />
-            </IconButton>
-            <IconButton
-              onClick={handleNextImage}
-              sx={{
-                position: 'absolute',
-                right: 16,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'text.primary',
-                bgcolor: 'background.paper',
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              <ArrowForwardIosIcon />
-            </IconButton>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
+  const handlePitch = () => {
+    setPitchOptionsOpen(true);
+  };
+
+  const handlePitchOptionsClose = () => {
+    setPitchOptionsOpen(false);
+  };
+
+  const handleOpenTextPitch = () => {
+    setTextPitchOpen(true);
+    setPitchOptionsOpen(false);
+  };
+
+  const handleOpenVideoPitch = () => {
+    setVideoPitchOpen(true);
+    setPitchOptionsOpen(false);
+  };
+
+  const handleCloseTextPitch = () => {
+    setTextPitchOpen(false);
+  };
+
+  const handleCloseVideoPitch = () => {
+    setVideoPitchOpen(false);
+  };
+
+  const renderCampaignPeriod = () => {
+    const startDate = campaign?.campaignBrief?.startDate;
+    const endDate = campaign?.campaignBrief?.endDate;
+
+    if (!startDate || !endDate) {
+      return 'Date not available';
+    }
+
+    try {
+      return `${fDate(startDate)} - ${fDate(endDate)}`;
+    } catch (error) {
+      console.error('Error formatting dates:', error);
+      return 'Invalid date format';
+    }
+  };
+
+  const daysLeftMessage = calculateDaysLeft(campaign?.campaignBrief?.endDate);
+  const isCampaignEnded = daysLeftMessage === 'Campaign Ended';
+
+  const handleManageClick = (campaignId) => {
+    router.push(paths.dashboard.campaign.creator.detail(campaignId));
+  };
+
+  const handleDraftClick = () => {
+    setTextPitchOpen(true);
+  };
 
   return (
     <>
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        fullWidth
+      <Dialog 
+        open={open} 
+        onClose={handleClose} 
+        fullWidth 
         maxWidth="md"
-        PaperProps={{
-          sx: {
+        PaperProps={{ 
+          sx: { 
             borderRadius: 3,
-            overflow: 'hidden',
-          },
+            overflow: 'visible',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '90vh',
+            position: 'relative',
+            width: isSmallScreen ? '90vw' : '75vh',
+          } 
         }}
       >
-        <DialogContent sx={{ p: 0 }}>{renderContent}</DialogContent>
-        {renderActions}
+        {/* DialogContent for the Avatar */}
+        <DialogContent sx={{ 
+          p: 0.55, 
+          height: 0,
+          boxShadow: 'none',
+        }}>
+          <Avatar 
+            src={campaign?.company?.logo} 
+            alt={campaign?.company?.name} 
+            sx={{ 
+              position: 'absolute',
+              left: '50%',
+              top: -32,
+              transform: 'translateX(-50%)',
+              width: 72, 
+              height: 72,
+              border: '4px solid',
+              borderColor: 'background.paper',
+              zIndex: 2,
+            }}
+          />
+        </DialogContent>
+
+        {/* DialogContent for the main white box */}
+        <DialogContent sx={{ p: 2, pt: 4, overflow: 'auto', flexGrow: 1 }}>
+          <Box sx={{ 
+            bgcolor: 'background.paper', 
+            borderRadius: 2, 
+            overflow: 'hidden',
+            mt: -4,
+            mx: -1,
+          }}>
+            {/* Campaign image */}
+            <Box sx={{ 
+              position: 'relative', 
+              height: { xs: 200, sm: 250 }, 
+              mb: 2,
+              overflow: 'hidden',
+              cursor: 'pointer',
+            }}
+            onClick={handleImageClick}
+            >
+              <Image
+                src={images[currentImageIndex]}
+                alt={`Campaign image ${currentImageIndex + 1}`}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                }}
+              />
+              {images.length > 1 && (
+                <>
+                  <IconButton
+                    onClick={handlePrevImage}
+                    sx={{
+                      position: 'absolute',
+                      left: 8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      bgcolor: 'rgba(0, 0, 0, 0.5)',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: 'rgba(0, 0, 0, 0.7)',
+                      },
+                    }}
+                  >
+                    <ArrowBackIosNewIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={handleNextImage}
+                    sx={{
+                      position: 'absolute',
+                      right: 8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      bgcolor: 'rgba(0, 0, 0, 0.5)',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: 'rgba(0, 0, 0, 0.7)',
+                      },
+                    }}
+                  >
+                    <ArrowForwardIosIcon />
+                  </IconButton>
+                </>
+              )}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  borderRadius: '50%',
+                  p: 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ZoomInIcon sx={{ color: 'white', fontSize: 24 }} />
+              </Box>
+            </Box>
+            
+            {/* Campaign info */}
+            <Box sx={{ px: 3, pb: 3, }}>
+              <Stack 
+                direction={{ xs: 'column', sm: 'row' }} 
+                justifyContent="space-between" 
+                alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                spacing={2}
+                sx={{ mb: 2 }}
+              >
+                <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
+                  <Typography 
+                    variant="h5" 
+                    sx={{ 
+                      fontWeight: 'bold', 
+                      fontSize: { xs: '1.2rem', sm: '1.5rem' },
+                      mb: 1
+                    }}
+                  >
+                    {campaign?.name}
+                  </Typography>
+                  <Typography 
+                    variant="subtitle1" 
+                    color="text.secondary" 
+                    sx={{ 
+                      fontSize: { xs: '0.8rem', sm: '1rem' },
+                      mt: -1.5,
+                      mb: 1
+                    }}
+                  >
+                    {campaign?.company?.name}
+                  </Typography>
+                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: -1 }}>
+                    <Iconify 
+                      icon={isCampaignEnded ? "mdi:calendar-remove" : "mdi:clock-outline"} 
+                      width={18} 
+                      sx={{ color: isCampaignEnded ? 'red' : '#b0b0b0' }} 
+                    />
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' }, 
+                        fontWeight: 700, 
+                        color: isCampaignEnded ? 'red' : '#b0b0b0' 
+                      }}
+                    >
+                      {daysLeftMessage}
+                    </Typography>
+                  </Stack>
+                </Stack>
+                <Stack 
+                  direction={{ xs: 'row', sm: 'row' }} 
+                  spacing={1} 
+                  width={{ xs: '100%', sm: 'auto' }}
+                  justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                >
+                  {hasPitched ? (
+                    existingPitch.status === 'approved' ? (
+                      <Button
+                        variant="contained"
+                        onClick={() => handleManageClick(campaign.id)}
+                        sx={{
+                          background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
+                          color: 'white',
+                          border: '1px solid #3300c3',
+                          '&:hover': {
+                            background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+                          },
+                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          padding: { xs: '6px 12px', sm: '8px 16px' },
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    ) : existingPitch.status === 'rejected' ? (
+                      <Chip
+                        icon={<Iconify icon="mdi:close-circle" />}
+                        label="Rejected"
+                        sx={{
+                          bgcolor: 'error.light',
+                          color: 'error.dark',
+                          fontWeight: 700,
+                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          height: 36,
+                          '& .MuiChip-icon': { 
+                            fontSize: 20,
+                            color: 'error.dark'
+                          },
+                          '&:hover': { bgcolor: 'error.light' },
+                          px: 0.5,
+                        }}
+                      />
+                    ) : (
+                      <Chip
+                        icon={<Iconify icon="mdi:clock-outline" />}
+                        label="In Review"
+                        sx={{
+                          bgcolor: 'warning.light',
+                          color: 'warning.dark',
+                          fontWeight: 700,
+                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          height: 36,
+                          '& .MuiChip-icon': { 
+                            fontSize: 20,
+                            color: 'warning.dark'
+                          },
+                          '&:hover': { bgcolor: 'warning.light' },
+                          px: 0.5,
+                        }}
+                      />
+                    )
+                  ) : hasDraft ? (
+                    <Button
+                      variant="contained"
+                      onClick={handleDraftClick}
+                      startIcon={<Iconify icon="mdi:file-document-edit-outline" />}
+                      sx={{
+                        bgcolor: '#FFD700', 
+                        color: '#8B4513',
+                        '&:hover': {
+                          bgcolor: '#FFC300', 
+                        },
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        padding: { xs: '6px 12px', sm: '8px 16px' },
+                        fontWeight: 700,
+                      }}
+                    >
+                      Draft
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      onClick={handlePitch}
+                      sx={{
+                        background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
+                        color: 'white',
+                        border: '1px solid #3300c3',
+                        '&:hover': {
+                          background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+                        },
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        padding: { xs: '6px 12px', sm: '8px 16px' },
+                      }}
+                    >
+                      Pitch Yourself
+                    </Button>
+                  )}
+                  <Button
+                    variant="outlined"
+                    onClick={() => campaign?.bookMarkCampaign ? unSaveCampaign(campaign?.bookMarkCampaign.id) : saveCampaign(campaign?.id)}
+                    sx={{
+                      minWidth: 0,
+                      padding: '6px 12px',
+                      border: '1px solid',
+                      borderColor: 'grey.300',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Iconify 
+                      icon={campaign?.bookMarkCampaign ? "mdi:bookmark" : "mdi:bookmark-outline"} 
+                      width={20}
+                      height={20}
+                    />
+                  </Button>
+                </Stack>
+              </Stack>
+
+              {/* Add Divider here */}
+              <Divider sx={{ my: 2, mb: 3, mt: 4 }} />
+
+              {/* Campaign details grid */}
+              <Grid container spacing={2}>
+                {/* Left column */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={0} sx={{ border: 1, borderColor: 'grey.300', borderRadius: 1, p: 2 }}>
+                    <Stack spacing={2}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <Box>
+                          <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>Category</Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            <Chip 
+                              label={campaign?.campaignBrief?.industries || 'Not specified'} 
+                              size="small" 
+                              sx={ChipStyle}
+                            />
+                          </Box>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>Campaign Period</Typography>
+                          <Typography variant="body2">{renderCampaignPeriod()}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>Details</Typography>
+                          <Typography variant="body2">{campaign?.description}</Typography>
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </Paper>
+                </Grid>
+                {/* Right column */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={0} sx={{ border: 1, borderColor: 'grey.300', borderRadius: 1, p: 2 }}>
+                    <Stack spacing={2}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {[
+                          { label: 'Gender', data: campaign?.campaignRequirement?.gender },
+                          { label: 'Age', data: campaign?.campaignRequirement?.age },
+                          { label: 'Geo Location', data: campaign?.campaignRequirement?.geoLocation },
+                          { label: 'Language', data: campaign?.campaignRequirement?.language },
+                          { label: 'Creator Persona', data: campaign?.campaignRequirement?.creator_persona },
+                        ].map((item, index) => (
+                          <Box key={index}>
+                            <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>{item.label}</Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
+                              {item.data?.map((value, idx) => (
+                                <Chip 
+                                  key={idx} 
+                                  label={item.label === 'Creator Persona' ? value.charAt(0).toUpperCase() + value.slice(1) : value} 
+                                  size="small" 
+                                  sx={ChipStyle}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        ))}
+                        <Box>
+                          <Typography variant="body2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 800 }}>User Persona</Typography>
+                          <Typography variant="body2">{campaign?.campaignRequirement?.user_persona}</Typography>
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+          </Box>
+        </DialogContent>
+        {/* DialogContent for the bottom padding */}
+        <DialogContent sx={{ 
+          p: 0.55, 
+          height: 16,
+          boxShadow: 'none',
+        }}>
+        </DialogContent>
+        <CampaignPitchOptionsModal
+          open={pitchOptionsOpen}
+          handleClose={handlePitchOptionsClose}
+          campaign={campaign}
+          text={{ 
+            onTrue: handleOpenTextPitch,
+            value: textPitchOpen,
+            onFalse: handleCloseTextPitch
+          }}
+          video={{ 
+            onTrue: handleOpenVideoPitch,
+            value: videoPitchOpen,
+            onFalse: handleCloseVideoPitch
+          }}
+        />
       </Dialog>
-      {renderFullSizeImage}
+
+      {/* Updated full-size image Dialog */}
+      <Dialog
+        open={fullImageOpen}
+        onClose={handleFullImageClose}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            m: 'auto',
+            borderRadius: 2,
+            overflow: 'hidden',
+            bgcolor: 'background.paper',
+          }
+        }}
+      >
+        <DialogContent 
+          ref={dialogContentRef}
+          sx={{ 
+            p: 0, 
+            position: 'relative', 
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            '&::-webkit-scrollbar': {
+              width: '0.4em'
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(0,0,0,.3)',
+              borderRadius: '4px'
+            }
+          }}
+        >
+          <IconButton
+            onClick={handleFullImageClose}
+            sx={{
+              position: 'fixed',
+              right: 16,
+              top: 16,
+              color: 'white',
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+              zIndex: 1,
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              minHeight: '100%',
+              width: '100%',
+              py: 2,
+            }}
+          >
+            <Image
+              src={images[currentImageIndex]}
+              alt={`Full size campaign image ${currentImageIndex + 1}`}
+              onLoad={handleImageLoad}
+              sx={{
+                maxWidth: '100%',
+                height: 'auto',
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
+          {images.length > 1 && (
+            <>
+              <IconButton
+                onClick={handlePrevImage}
+                sx={{
+                  position: 'fixed',
+                  left: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                }}
+              >
+                <ArrowBackIosNewIcon />
+              </IconButton>
+              <IconButton
+                onClick={handleNextImage}
+                sx={{
+                  position: 'fixed',
+                  right: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                }}
+              >
+                <ArrowForwardIosIcon />
+              </IconButton>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

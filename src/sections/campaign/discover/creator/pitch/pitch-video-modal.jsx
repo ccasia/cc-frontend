@@ -61,12 +61,14 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   const a = watch('pitchVideo');
 
+  console.log(a)
+
   const onSubmit = handleSubmit(async (data) => {
     try {
       setLoading(true);
       const res = await axiosInstance.patch(endpoints.campaign.pitch.root, {
         campaignId: campaign.id,
-        content: source?.find((item) => item.campaignId === campaign?.id)?.url,
+        content: source.find((item) => item.campaignId === campaign?.id)?.url,
         type: 'video',
       });
       mutate(endpoints.campaign.getMatchedCampaign);
@@ -98,11 +100,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
           return;
         }
 
-        setSource((prev) => [...prev, { campaignId: campaign.id, url }]);
-
-        // setSource((prev) =>
-        //   prev.map((item) => (item.campaignId === campaign.id ? { ...item, url } : item))
-        // );
+        setSource((prev) => [...prev, {campaignId: campaign?.id, url: url}]);
         setSourceName(e[0].path);
 
         const formData = new FormData();
@@ -156,12 +154,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const updateVideo = useCallback(
     (data) => {
       setProgress((prev) => prev.filter((item) => item.campaignId !== data.campaignId));
-      setSource((prev) =>
-        prev.map((item) =>
-          item.campaignId === data.campaignId ? { ...item, url: data.video } : item
-        )
-      );
-      // setSource(data.video);
+      setSource((prev) => prev.map((item) => item.campaignId === data.campaignId ? {...item, url :data.video} : item));
       setSize(data.size);
       setValue('pitchVideo', data.video);
     },
@@ -182,9 +175,8 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
       sources.current.cancel('Cancel');
       sources.current = null;
     }
-    setSource((prev) => prev.filter((item) => item?.campaignId !== campaign.id));
-    // setSource(undefined);
-    setValue('pitchVideo', '');
+    setSource((prev) => prev.filter((item) => item.campaignId !== campaign.id));
+    setValue('pitchVideo', null);
     socket?.off('video-upload', updateProgress);
     socket?.off('video-upload-done', uploadDone);
   };
@@ -198,6 +190,66 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
       socket?.off('video-upload-done', updateVideo);
     };
   }, [socket, updateVideo]);
+
+  const modalConfirmation = (
+    <Dialog 
+      open={confirm.value} 
+      onClose={confirm.onFalse}
+      PaperProps={{
+        sx: {
+          width: '400px',
+          maxHeight: '200px',
+        }
+      }}
+    >
+      <DialogTitle sx={{ pb: 1.2, fontSize: '1.25rem' }}>You have a uploaded video</DialogTitle>
+      <DialogContent>
+        <Box sx={{ 
+          fontWeight: 500, 
+          color: 'text.secondary',
+          fontSize: '0.95rem',
+          pb: 1,
+        }}>
+          Confirm to remove ?
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'flex-end' }}>
+        <Button
+          onClick={confirm.onFalse}
+          variant="outlined"
+          sx={{
+            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            padding: { xs: '6px 12px', sm: '8px 16px' },
+            height: { xs: '32px', sm: '36px' },
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => {
+            setValue('pitchVideo', null);
+            setSource('');
+            handleClose();
+            confirm.onFalse();
+          }}
+          sx={{
+            background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
+            color: 'white',
+            border: '1px solid #3300c3',
+            '&:hover': {
+              background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+            },
+            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            padding: { xs: '6px 12px', sm: '8px 16px' },
+            height: { xs: '32px', sm: '36px' },
+          }}
+        >
+          Confirm
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   return (
     <>
@@ -222,11 +274,11 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
               <IconButton
                 onClick={() => {
-                  // if (source?.find((item) => item.campaignId === campaign.id)?.url) {
+                  // if (watch('pitchVideo')) {
                   //   confirm.onTrue();
                   // } else {
-                  handleClose();
-                  // handleRemove();
+                    handleClose();
+                    // handleRemove();
                   // }
                 }}
               >
@@ -255,43 +307,47 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
             />
           </Box>
 
-          <DialogActions>
-            <LoadingButton
-              autoFocus
-              variant="contained"
-              startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-              type="submit"
-              loading={loading}
-              disabled={progress.some((elem) => elem.campaignId === campaign.id) || !a}
-            >
-              Pitch
-            </LoadingButton>
+          <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'flex-end' }}>
+            <Box sx={{ display: 'flex', gap: 1.5 }}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  handleClose();
+                  handleRemove();
+                }}
+                sx={{
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  padding: { xs: '6px 12px', sm: '8px 16px' },
+                  height: { xs: '32px', sm: '36px' },
+                }}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                autoFocus
+                variant="contained"
+                type="submit"
+                loading={loading}
+                disabled={progress.some((elem) => elem.campaignId === campaign.id) || !a}
+                sx={{
+                  background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
+                  color: 'white',
+                  border: '1px solid #3300c3',
+                  '&:hover': {
+                    background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+                  },
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  padding: { xs: '6px 12px', sm: '8px 16px' },
+                  height: { xs: '32px', sm: '36px' },
+                }}
+              >
+                Send Pitch
+              </LoadingButton>
+            </Box>
           </DialogActions>
         </FormProvider>
       </Dialog>
-      <Dialog open={confirm.value} onClose={confirm.onFalse}>
-        <DialogTitle>You have a uploaded video</DialogTitle>
-        <DialogContent>Confirm to remove ?</DialogContent>
-        <DialogActions>
-          <Button onClick={confirm.onFalse} size="small" variant="outlined">
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            size="small"
-            color="error"
-            onClick={() => {
-              setValue('pitchVideo', null);
-              setSource((prev) => prev.filter((item) => item?.campaignId !== campaign.id));
-              // setSource('');
-              handleClose();
-              confirm.onFalse();
-            }}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {modalConfirmation}
     </>
   );
 };

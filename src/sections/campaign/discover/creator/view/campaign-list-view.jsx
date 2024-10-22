@@ -1,7 +1,7 @@
 import { mutate } from 'swr';
 import { m } from 'framer-motion';
 import { enqueueSnackbar } from 'notistack';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import Container from '@mui/material/Container';
 import {
@@ -14,6 +14,9 @@ import {
   Typography,
   ListItemText,
   CircularProgress,
+  Select,
+  MenuItem,
+  InputBase,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -29,11 +32,14 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
 
 import CreatorForm from '../creator-form';
 import CampaignLists from '../campaign-list';
 import CampaignSearch from '../campaign-search';
+
+import { useTheme } from '@mui/material/styles';
+import { Fab } from '@mui/material';
+import { LoadingScreen } from 'src/components/loading-screen';
 
 // ----------------------------------------------------------------------
 
@@ -42,7 +48,7 @@ import CampaignSearch from '../campaign-search';
 export default function CampaignListView() {
   const settings = useSettingsContext();
   const { campaigns, isLoading } = useGetCampaigns('creator');
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState('all');
   const { user } = useAuthContext();
   const dialog = useBoolean();
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
@@ -51,6 +57,31 @@ export default function CampaignListView() {
   const [upload, setUpload] = useState([]);
   const { socket } = useSocketContext();
   const smUp = useResponsive('up', 'sm');
+
+  const [sortBy, setSortBy] = useState('');
+
+  const theme = useTheme();
+
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const MAX_ITEM = 9;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.pageYOffset > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleScrollTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth' 
+    });
+  };
 
   useEffect(() => {
     // Define the handler function
@@ -104,9 +135,12 @@ export default function CampaignListView() {
         query: inputValue,
       }));
 
-      if (inputValue) {
-        const results = _tours.filter(
-          (tour) => tour.name.toLowerCase().indexOf(search.query.toLowerCase()) !== -1
+      if (inputValue && campaigns) {
+        const filteredCampaigns = applyFilter({ inputData: campaigns, filter, user });
+        const results = filteredCampaigns.filter(
+          (campaign) =>
+            campaign.name.toLowerCase().includes(inputValue.toLowerCase()) ||
+            campaign.company.name.toLowerCase().includes(inputValue.toLowerCase())
         );
 
         setSearch((prevState) => ({
@@ -115,7 +149,7 @@ export default function CampaignListView() {
         }));
       }
     },
-    [search.query]
+    [campaigns, filter, user]
   );
 
   const renderUploadProgress = (
@@ -177,130 +211,206 @@ export default function CampaignListView() {
     </Box>
   );
 
-  const filteredData = applyFilter({ inputData: campaigns, filter, user });
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
+
+  const filteredData = useMemo(() => applyFilter({ inputData: campaigns, filter, user }), [campaigns, filter, user]);
+
+  const sortCampaigns = (campaigns) => {
+    if (!campaigns) return [];
+    
+    switch (sortBy) {
+      case 'Highest':
+        return [...campaigns].sort((a, b) => (b.percentageMatch || 0) - (a.percentageMatch || 0));
+      case 'Lowest':
+        return [...campaigns].sort((a, b) => (a.percentageMatch || 0) - (b.percentageMatch || 0));
+      default:
+        return campaigns;
+    }
+  };
+
+  const sortedCampaigns = useMemo(() => {
+    const dataToSort = search.query ? search.results : filteredData;
+    return sortCampaigns(dataToSort, sortBy);
+  }, [search.query, search.results, filteredData, sortBy]);
+
+  const paginatedCampaigns = useMemo(() => {
+    const indexOfLastItem = page * MAX_ITEM;
+    const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
+    return sortedCampaigns.slice(indexOfFirstItem, indexOfLastItem);
+  }, [sortedCampaigns, page]);
+
+  useEffect(() => {
+    setPage(1); // Reset to first page when search query changes
+  }, [search.query]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <ListItemText
-        primary="Discover Campaigns ✨"
-        secondary="Here are the top campaigns that fit your profile!"
-        primaryTypographyProps={{
-          variant: 'h3',
-        }}
-        secondaryTypographyProps={{
-          variant: 'body1',
-          color: 'text.secondary',
-        }}
+      <Typography variant="h3" sx={{ mb: 0.2 }}>
+        Discover Campaigns ✨
+      </Typography>
+      <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
+        Here are the top campaigns that fit your profile!
+      </Typography>
+
+      <Box
         sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          justifyContent: { sm: 'space-between' }, // Add this line
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          boxShadow: '0 0 0 1px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05)', 
           mb: 3,
-        }}
-      />
-      {/* <Typography
-        variant="h3"
-        sx={{
-          mb: 3,
+          p: 2,
+          width: '100%',
+          minHeight: { xs: 'auto', sm: 72 },
         }}
       >
-        Discover Campaigns ✨
-      </Typography> */}
-
-      <CampaignSearch
-        query={search.query}
-        results={search.results}
-        onSearch={handleSearch}
-        campaigns={campaigns}
-      />
-
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <Stack direction="row" spacing={1} my={1.5}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, sm: 0 }, width: { xs: '100%', sm: 'auto' } }}>
           <Button
-            size="small"
-            variant={filter === 'all' ? 'contained' : 'outlined'}
+            size="large"
+            variant={filter === 'all' ? 'contained' : 'text'}
             onClick={() => setFilter('all')}
+            sx={{
+              mr: 1,
+              flex: { xs: 1, sm: 'none' },
+              fontWeight: 'bold',
+              bgcolor: filter === 'all' ? 'common.black' : 'transparent',
+              color: filter === 'all' ? 'common.white' : 'text.secondary',
+              '&:hover': {
+                bgcolor: filter === 'all' ? 'common.black' : 'transparent',
+              },
+              borderRadius: 1.5,
+              height: 42,
+              minWidth: 60,
+            }}
           >
-            All
+            For You
           </Button>
           <Button
-            size="small"
-            variant={filter === 'saved' ? 'contained' : 'outlined'}
+            size="large"
+            variant={filter === 'saved' ? 'contained' : 'text'}
             onClick={() => setFilter('saved')}
+            sx={{
+              flex: { xs: 1, sm: 'none' },
+              fontWeight: 'bold',
+              bgcolor: filter === 'saved' ? 'common.black' : 'transparent',
+              color: filter === 'saved' ? 'common.white' : 'text.secondary',
+              '&:hover': {
+                bgcolor: filter === 'saved' ? 'common.black' : 'transparent',
+              },
+              borderRadius: 1.5,
+              height: 42,
+              minWidth: 60,
+            }}
           >
             Saved
           </Button>
-          <Button
-            size="small"
-            color="warning"
-            variant={filter === 'draft' ? 'contained' : 'outlined'}
-            onClick={() => setFilter('draft')}
-          >
-            Draft
-          </Button>
-        </Stack>
+        </Box>
 
-        <Backdrop
-          open={backdrop.value}
-          sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          // onClick={backdrop.onFalse}
-        >
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          alignItems: 'center', 
+          width: { xs: '100%', sm: 'auto' },
+          gap: { xs: 2, sm: 0 }
+        }}>
           <Box
             sx={{
-              bgcolor: (theme) => theme.palette.background.paper,
-              borderRadius: 2,
-              p: 4,
-              pb: 2,
-              width: 600,
-              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1,
+              height: 42,
+              width: { xs: '100%', sm: 280 },
             }}
           >
-            <Box
-              sx={{
-                display: 'inline-block',
-                position: 'absolute',
-                top: 20,
-                right: 20,
-              }}
-            >
-              <IconButton onClick={backdrop.onFalse}>
-                <Iconify icon="mingcute:close-fill" />
-              </IconButton>
-            </Box>
-            <ListItemText
-              primary="Complete Your Profile Before Making a Pitch"
-              secondary="Before you can submit a pitch for this campaign, please complete your profile form. This ensures we have all the necessary information for your submission. Click below to finish filling out your form and get ready to pitch!"
-              primaryTypographyProps={{
-                variant: 'subtitle1',
-              }}
-              secondaryTypographyProps={{
-                variant: 'subtitle2',
-              }}
-              sx={{
-                my: 3,
-              }}
+            <Iconify 
+              icon="eva:search-fill" 
+              sx={{ width: 20, height: 20, ml: 1, mr: 1, color: 'text.disabled' }} 
             />
-            <CreatorForm dialog={dialog} user={user} display backdrop={backdrop} />
+            <InputBase
+              value={search.query}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Search"
+              sx={{ flex: 1 }}
+            />
           </Box>
-        </Backdrop>
-      </Stack>
-
-      <Box sx={{ my: 2 }} />
+          <Divider orientation="vertical" flexItem sx={{ 
+            display: { xs: 'none', sm: 'block' },
+            mx: 2, 
+            height: 35,
+            bgcolor: 'divider',
+            alignSelf: 'center' 
+          }} />
+          <Select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            displayEmpty
+            input={<InputBase />}
+            renderValue={(selected) => <strong>{selected || 'Sort By'}</strong>}
+            sx={{
+              height: 42,
+              width: { xs: '100%', sm: 95}, 
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1,
+              '& .MuiSelect-select': {
+                pl: 2,
+                pr: 4,
+                py: 1.25,
+                display: 'flex',
+                alignItems: 'center',
+              },
+            }}
+            IconComponent={(props) => <Iconify icon="eva:chevron-down-fill" {...props} />}
+          >
+            <MenuItem value="">
+              Reset
+            </MenuItem>
+            <MenuItem value="Highest">Highest Match %</MenuItem>
+            <MenuItem value="Lowest">Lowest Match %</MenuItem>
+          </Select>
+        </Box>
+      </Box>
 
       {isLoading && <LoadingScreen />}
-
-      {!isLoading &&
-        (filteredData?.length > 0 ? (
-          <CampaignLists campaigns={filteredData} />
-        ) : (
-          <EmptyContent title="No campaign available" />
-        ))}
-      {/* {filteredData && filteredData?.length > 0 ? (
-        <CampaignLists campaigns={filteredData} />
+ 
+      {!isLoading && (sortedCampaigns?.length > 0 ? (
+        <CampaignLists 
+          campaigns={paginatedCampaigns} 
+          totalCampaigns={sortedCampaigns.length}
+          page={page}
+          onPageChange={handlePageChange}
+          maxItemsPerPage={MAX_ITEM}
+        />
       ) : (
-        <EmptyContent title="No campaign available" />
-      )} */}
+        <EmptyContent title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`} />
+      ))}
 
       {upload.length > 0 && renderUploadProgress}
 
       {!user?.creator?.isFormCompleted && <CreatorForm dialog={dialog} user={user} />}
+
+      {showScrollTop && (
+        <Fab
+          color="primary"
+          size="small"
+          onClick={handleScrollTop}
+          sx={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+            zIndex: (theme) => theme.zIndex.drawer + 1,
+          }}
+        >
+          <Iconify icon="mdi:arrow-up" />
+        </Fab>
+      )}
     </Container>
   );
 }
@@ -364,3 +474,4 @@ const applyFilter = ({ inputData, filter, user }) => {
 
 //   return inputData;
 // };
+

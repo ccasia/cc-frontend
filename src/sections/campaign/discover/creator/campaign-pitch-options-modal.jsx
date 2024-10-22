@@ -11,9 +11,11 @@ import {
   DialogTitle,
   ListItemText,
   DialogContent,
+  Button,
 } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
@@ -23,6 +25,19 @@ import CampaignPitchVideoModal from './pitch/pitch-video-modal';
 
 const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video }) => {
   const smUp = useResponsive('sm', 'down');
+  const { user } = useAuthContext();
+
+  const hasDraft = campaign?.draftPitch && campaign.draftPitch.find(item => item.userId === user?.id);
+
+  const handlePitchClick = () => {
+    handleClose();
+    if (hasDraft) {
+      text.onTrue();
+    } else {
+      // Open the pitch options
+      // (This is the existing functionality when clicking "Pitch Yourself")
+    }
+  };
 
   return (
     <>
@@ -190,8 +205,20 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
           </Box>
         </Stack> */}
       </Dialog>
+      {open && (
+        <Button
+          variant="contained"
+          onClick={handlePitchClick}
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            right: 16,
+          }}
+        >
+          {hasDraft ? 'Draft' : 'Pitch Yourself'}
+        </Button>
+      )}
       <CampaignPitchTextModal open={text.value} handleClose={text.onFalse} campaign={campaign} />
-      {/* <CampaignPitchTextModal open={text.value} handleClose={text.onFalse} campaign={campaign} /> */}
       <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} />
     </>
   );

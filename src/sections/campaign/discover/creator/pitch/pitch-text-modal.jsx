@@ -42,6 +42,11 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
     [campaign, user]
   );
 
+  const draftPitch = useMemo(
+    () => campaign?.draftPitch?.find((elem) => elem.userId === user?.id),
+    [campaign, user]
+  );
+
   const schema = Yup.object().shape({
     content: Yup.string().required('Pitch Script is required'),
   });
@@ -51,7 +56,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
     reValidateMode: 'onChange',
     resolver: yupResolver(schema),
     defaultValues: {
-      content: pitch?.content || '',
+      content: draftPitch?.content || pitch?.content || '',
     },
   });
 
@@ -63,6 +68,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
       const res = await axiosInstance.patch(endpoints.campaign.pitch.root, {
         campaignId: campaign?.id,
         ...data,
+        status: 'pending',
       });
       enqueueSnackbar(res?.data?.message);
       mutate(endpoints.campaign.getMatchedCampaign);
@@ -93,24 +99,63 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
   };
 
   const modalConfirmation = (
-    <Dialog open={modal.value} onClose={modal.onFalse}>
-      <DialogTitle>Confirm Submission</DialogTitle>
-      <DialogContent>Are you sure you want to submit your pitch?</DialogContent>
-      <DialogActions>
+    <Dialog 
+      open={modal.value} 
+      onClose={modal.onFalse}
+      PaperProps={{
+        sx: {
+          width: '400px',
+          maxHeight: '200px',
+        }
+      }}
+    >
+      <DialogTitle sx={{ pb: 1.2, fontSize: '1.25rem' }}>Confirm Submission 🫣</DialogTitle>
+      <DialogContent>
+        <Box sx={{ 
+          fontWeight: 500, 
+          color: 'text.secondary',
+          fontSize: '0.95rem',
+          pb: 1,
+        }}>
+          Are you sure you want to submit your pitch?
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 2, pb: 2, justifyContent: 'space-between' }}>
         <Button
           variant="outlined"
-          color="error"
           onClick={() => {
             modal.onFalse();
             handleClose();
             reset();
           }}
-          size="small"
+          sx={{
+            flex: 1,
+            mr: 1,
+            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            padding: { xs: '6px 12px', sm: '8px 16px' },
+            height: { xs: '32px', sm: '36px' },
+          }}
         >
           Cancel
         </Button>
-        <Button variant="contained" color="primary" size="small" onClick={onSubmit}>
-          Confirm
+        <Button
+          variant="contained"
+          onClick={onSubmit}
+          sx={{
+            flex: 1,
+            ml: 1,
+            background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
+            color: 'white',
+            border: '1px solid #3300c3',
+            '&:hover': {
+              background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+            },
+            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            padding: { xs: '6px 12px', sm: '8px 16px' },
+            height: { xs: '32px', sm: '36px' },
+          }}
+        >
+          Yes, confirm!
         </Button>
       </DialogActions>
     </Dialog>
@@ -118,24 +163,49 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
 
   const modalClosePitch = (
     <Dialog open={dialog.value} fullWidth maxWidth="xs" onClose={dialog.onFalse}>
-      <DialogTitle>Unsaved Changes</DialogTitle>
+      <DialogTitle sx={{ pb: 1.2 }}>Unsaved Changes! 😱</DialogTitle>
       <DialogContent>
-        You have unsaved changes. Would you like to save your draft before closing, or discard it?
+        <Box sx={{ 
+          fontWeight: 500, 
+          color: 'text.secondary',
+          fontSize: '0.9rem',
+          pb: 1,
+        }}>
+          You have unsaved changes. Would you like to save your draft before closing, or discard it?
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button
           autoFocus
           variant="outlined"
-          size="small"
           onClick={() => {
             dialog.onFalse();
             handleClose();
             reset();
           }}
+          sx={{
+            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            padding: { xs: '6px 12px', sm: '8px 16px' },
+            height: { xs: '32px', sm: '36px' },
+          }}
         >
           Discard Draft
         </Button>
-        <Button variant="contained" size="small" onClick={saveAsDraft}>
+        <Button
+          variant="contained"
+          onClick={saveAsDraft}
+          sx={{
+            background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
+            color: 'white',
+            border: '1px solid #3300c3',
+            '&:hover': {
+              background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+            },
+            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            padding: { xs: '6px 12px', sm: '8px 16px' },
+            height: { xs: '32px', sm: '36px' },
+          }}
+        >
           Save Draft
         </Button>
       </DialogActions>
@@ -145,15 +215,9 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
   return (
     <Dialog
       open={open}
-      //   onClose={() => {
-      //     if (value && value !== pitch?.content) {
-      //       dialog.onTrue();
-      //     } else {
-      //       handleClose();
-      //     }
-      //   }}
       fullWidth
-      maxWidth="md"
+      maxWidth={false}
+      PaperProps={{ sx: { width: '750px' } }}
       fullScreen={smUp}
     >
       <FormProvider methods={methods}>
@@ -188,38 +252,61 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
             </IconButton>
           </Stack>
         </DialogTitle>
-        <Box p={2}>
+        <DialogContent sx={{ p: 2 }}>
           <RHFEditor simple name="content" />
-        </Box>
-        <DialogActions>
-          {/* <Button
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'flex-end' }}>
+          {value && value !== pitch?.content && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={saveAsDraft}
+              sx={{
+                fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                padding: { xs: '6px 12px', sm: '8px 16px' },
+                height: { xs: '32px', sm: '36px' },
+              }}
+            >
+              Save As Draft
+            </Button>
+          )}
+
+          <Button
+            variant="outlined"
             onClick={() => {
               if (value && value !== pitch?.content) {
                 dialog.onTrue();
               } else {
                 handleClose();
+                reset();
               }
             }}
-            size="small"
+            sx={{
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+              padding: { xs: '6px 12px', sm: '8px 16px' },
+              height: { xs: '32px', sm: '36px' },
+            }}
           >
-            Close
-          </Button> */}
-
-          {value && value !== pitch?.content && (
-            <Button variant="outlined" size="small" onClick={saveAsDraft}>
-              Save as draft
-            </Button>
-          )}
+            Cancel
+          </Button>
 
           <Button
-            autoFocus
             variant="contained"
-            startIcon={<Iconify icon="ph:paper-plane-tilt-bold" />}
             onClick={modal.onTrue}
-            size="small"
             disabled={!value || value === pitch?.content}
+            sx={{
+              background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
+              color: 'white',
+              border: '1px solid #3300c3',
+              '&:hover': {
+                background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+              },
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+              padding: { xs: '6px 12px', sm: '8px 16px' },
+              height: { xs: '32px', sm: '36px' },
+            }}
           >
-            Pitch
+            Send Pitch
           </Button>
         </DialogActions>
         {modalConfirmation}

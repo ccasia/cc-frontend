@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { Box, Grid } from '@mui/material';
+import { Box } from '@mui/material';
 
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
@@ -10,7 +10,7 @@ import EmptyContent from 'src/components/empty-content';
 
 import CampaignItem from '../discover/creator/campaign-item';
 
-const AppliedCampaignView = ({ searchQuery }) => {
+const ActiveCampaignView = ({ searchQuery }) => {
   const { campaigns: data, isLoading } = useGetCampaigns('creator');
   const { user } = useAuthContext();
 
@@ -18,11 +18,8 @@ const AppliedCampaignView = ({ searchQuery }) => {
     () =>
       !isLoading &&
       data?.filter((campaign) =>
-        campaign?.pitch?.some(
-          (item) =>
-            item?.userId === user?.id &&
-            (item?.status === 'undecided' || item?.status === 'rejected')
-        )
+        campaign?.shortlisted?.some((item) => item.userId === user.id && !item.isCampaignDone) &&
+        campaign.status !== 'COMPLETED'
       ),
     [isLoading, data, user]
   );
@@ -40,21 +37,28 @@ const AppliedCampaignView = ({ searchQuery }) => {
   return (
     <Box mt={2}>
       {!isLoading && filteredData?.length ? (
-        <Grid container spacing={3}>
+        <Box
+          gap={2}
+          display="grid"
+          gridTemplateColumns={{
+            xs: 'repeat(1, 1fr)',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
+          }}
+        >
           {filteredData.map((campaign) => (
-            <Grid item xs={12} sm={6} md={4} key={campaign.id}>
-              <CampaignItem
-                campaign={campaign}
-                pitchStatus={campaign.pitch.find(item => item.userId === user.id)?.status}
-              />
-            </Grid>
+            <CampaignItem
+              key={campaign.id}
+              campaign={campaign}
+              user={user}
+            />
           ))}
-        </Grid>
+        </Box>
       ) : (
-        <EmptyContent title={`No pending applications ${searchQuery ? `for "${searchQuery}"` : ''} found.`} />
+        <EmptyContent title={`No active campaign ${searchQuery && searchQuery} found.`} />
       )}
     </Box>
   );
 };
 
-export default AppliedCampaignView;
+export default ActiveCampaignView;
