@@ -39,6 +39,7 @@ import CampaignSearch from '../campaign-search';
 
 import { useTheme } from '@mui/material/styles';
 import { Fab } from '@mui/material';
+import { LoadingScreen } from 'src/components/loading-screen';
 
 // ----------------------------------------------------------------------
 
@@ -46,7 +47,7 @@ import { Fab } from '@mui/material';
 
 export default function CampaignListView() {
   const settings = useSettingsContext();
-  const { campaigns } = useGetCampaigns('creator');
+  const { campaigns, isLoading } = useGetCampaigns('creator');
   const [filter, setFilter] = useState('all');
   const { user } = useAuthContext();
   const dialog = useBoolean();
@@ -357,11 +358,15 @@ export default function CampaignListView() {
         </Box>
       </Box>
 
-      {sortedCampaigns.length > 0 ? (
+      {isLoading && <LoadingScreen />}
+ 
+      {/* {!isLoading && sortedCampaigns?.length > 0 ? (
         <CampaignLists campaigns={sortedCampaigns} />
       ) : (
         <EmptyContent title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`} />
-      )}
+      )} */}
+
+      {!isLoading && (sortedCampaigns?.length > 0 ? <CampaignLists campaigns={sortedCampaigns} /> : <EmptyContent title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`} />)}
 
       {upload.length > 0 && renderUploadProgress}
 
