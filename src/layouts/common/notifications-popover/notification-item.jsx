@@ -49,7 +49,7 @@ export default function NotificationItem({ notification }) {
     // Determine the route based on the entity type
     let link;
     if (entity === 'Pitch') {
-      if (user.role === 'admin') {
+      if (user.role === 'admin' || user.role === 'superadmin') {
         link = `/dashboard/campaign/discover/detail/${campaignId}`; // Admin route
       } else {
         link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`; // Creator route
@@ -58,14 +58,14 @@ export default function NotificationItem({ notification }) {
       // link = `/dashboard/campaign/details/${campaignId}`;
       link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
     } else if (entity === 'Agreement') {
-      if (user.role === 'admin') {
+      if (user.role === 'admin' || user.role === 'superadmin') {
         link = `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`; // Admin route
       } else {
         link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`; // Creator route
       }
     } else if (entity === 'Draft') {
       //  link = `/campaign/discover/detail/${campaignId}/creator/${userId}`;
-      if (user.role === 'admin') {
+      if (user.role === 'admin' || user.role === 'superadmin') {
         link = `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`; // Admin route
       } else {
         link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
@@ -79,7 +79,7 @@ export default function NotificationItem({ notification }) {
       // This is for Agreement Approval
       // link = `/dashboard/campaign/discover/detail/${campaignId}`;
       link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
-    } else if (entity === 'Live' && user.role === 'admin') {
+    } else if (entity === 'Live' && (user.role === 'admin' || user.role === 'superadmin')) {
       link = `/dashboard/campaign/discover/detail/${campaignId}`; // Adjust this route as needed
     }
 
