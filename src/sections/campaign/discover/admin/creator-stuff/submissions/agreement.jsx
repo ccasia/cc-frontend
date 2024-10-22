@@ -1,8 +1,9 @@
-import React from 'react';
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 
 import {
@@ -16,6 +17,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useMediaQuery,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -29,6 +31,13 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const Agreement = ({ campaign, submission, creator }) => {
+  const isSmallScreen = useMediaQuery('(max-width: 600px)');
+  const [numPages, setNumPages] = useState(null);
+  // eslint-disable-next-line no-shadow
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+  };
+
   const modal = useBoolean();
   const methods = useForm({
     defaultValues: {
@@ -152,7 +161,28 @@ const Agreement = ({ campaign, submission, creator }) => {
           {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
             <Box component={Paper} p={1.5}>
               <>
-                <iframe
+                <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
+                  <Document
+                    file={submission?.content}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+                  >
+                    {Array.from(new Array(numPages), (el, index) => (
+                      <div key={index} style={{ marginBottom: '0px' }}>
+                        <Page
+                          key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
+                          pageNumber={index + 1}
+                          scale={isSmallScreen ? 0.7 : 1.5}
+                          renderAnnotationLayer={false}
+                          renderTextLayer={false}
+                          style={{ overflow: 'scroll' }}
+                          // style={{ margin: 0, padding: 0, position: 'relative' }}
+                        />
+                      </div>
+                    ))}
+                  </Document>
+                </Box>
+                {/* <iframe
                   src={submission?.content}
                   style={{
                     borderRadius: 10,
@@ -160,7 +190,7 @@ const Agreement = ({ campaign, submission, creator }) => {
                     height: 900,
                   }}
                   title="AgreementForm"
-                />
+                /> */}
                 {submission.status === 'PENDING_REVIEW' && (
                   <Stack direction="row" gap={1.5} justifyContent="end" mt={2}>
                     <Button

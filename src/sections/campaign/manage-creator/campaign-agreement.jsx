@@ -2,6 +2,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 
 import { LoadingButton } from '@mui/lab';
@@ -16,6 +17,7 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
+  useMediaQuery,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -35,6 +37,15 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const [loading, setLoading] = useState(false);
   const { user } = useAuthContext();
   const display = useBoolean();
+
+  const isSmallScreen = useMediaQuery('(max-width: 600px)');
+
+  const [numPages, setNumPages] = useState(null);
+
+  // eslint-disable-next-line no-shadow
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+  };
 
   const agreement = campaign?.campaignTimeline.find((elem) => elem.name === 'Agreement');
 
@@ -106,16 +117,18 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(link.href);
-      } 
+      }
       // For IE10+
       else if (navigator.msSaveBlob) {
         navigator.msSaveBlob(blob, filename);
-      } 
+      }
       // Fallback - open in new window
       else {
         const newWindow = window.open(url, '_blank');
         if (!newWindow) {
-          enqueueSnackbar('Please allow popups for this website to download the file.', { variant: 'warning' });
+          enqueueSnackbar('Please allow popups for this website to download the file.', {
+            variant: 'warning',
+          });
         }
       }
     } catch (error) {
@@ -320,7 +333,28 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
         <DialogTitle>Agreement</DialogTitle>
         <DialogContent>
-          <iframe
+          <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
+            <Document
+              file={submission?.content}
+              onLoadSuccess={onDocumentLoadSuccess}
+              options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+            >
+              {Array.from(new Array(numPages), (el, index) => (
+                <div key={index} style={{ marginBottom: '0px' }}>
+                  <Page
+                    key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
+                    pageNumber={index + 1}
+                    scale={isSmallScreen ? 0.7 : 1.5}
+                    renderAnnotationLayer={false}
+                    renderTextLayer={false}
+                    style={{ overflow: 'scroll' }}
+                    // style={{ margin: 0, padding: 0, position: 'relative' }}
+                  />
+                </div>
+              ))}
+            </Document>
+          </Box>
+          {/* <iframe
             src={submission?.content}
             style={{
               width: '100%',
@@ -329,7 +363,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               borderRadius: 15,
             }}
             title="PDF Viewer"
-          />
+          /> */}
         </DialogContent>
         <DialogActions>
           <Button onClick={display.onFalse}>Close</Button>
