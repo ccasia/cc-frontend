@@ -191,7 +191,7 @@ const TopContentGrid = ({ topContents }) => {
                   mb: 1,
                 }}
               >
-                {`${content.description.slice(0, 50)}...`}
+                {`${content?.description?.slice(0, 50)}...`}
               </Typography>
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Chip
