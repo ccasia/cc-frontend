@@ -63,12 +63,22 @@ function calculateDaysLeft(endDate) {
   return 'Campaign Ended';
 }
 
-const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
+const CampaignModal = ({ open, handleClose, campaign }) => {
+  const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
+  const [textPitchOpen, setTextPitchOpen] = useState(false);
+  const [videoPitchOpen, setVideoPitchOpen] = useState(false);
+  const [fullImageOpen, setFullImageOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const dialogContentRef = useRef(null);
+  const images = campaign?.campaignBrief?.images || [];
+  const [bookMark, setBookMark] = useState(campaign?.bookMarkCampaign || false);
+
   // const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuthContext();
   const router = useRouter();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const isShortlisted =
@@ -85,6 +95,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
   const hasDraft = !!draftPitch || (existingPitch && existingPitch.status === 'draft');
 
   const saveCampaign = async (campaignId) => {
+    setBookMark(true);
     try {
       const res = await axiosInstance.post(endpoints.campaign.creator.saveCampaign, {
         campaignId,
@@ -92,6 +103,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
       mutate(endpoints.campaign.getMatchedCampaign);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
+      setBookMark(false);
       enqueueSnackbar('Error', {
         variant: 'error',
       });
@@ -100,23 +112,19 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
 
   const unSaveCampaign = async (saveCampaignId) => {
     try {
+      setBookMark(false);
       const res = await axiosInstance.delete(
         endpoints.campaign.creator.unsaveCampaign(saveCampaignId)
       );
       mutate(endpoints.campaign.getMatchedCampaign);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
+      setBookMark(true);
       enqueueSnackbar('Error', {
         variant: 'error',
       });
     }
   };
-
-  const [fullImageOpen, setFullImageOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const dialogContentRef = useRef(null);
-  const images = campaign?.campaignBrief?.images || [];
 
   const handleImageClick = (event) => {
     // Prevent expansion if clicking on navigation buttons
@@ -151,10 +159,6 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
       dialogContentRef.current.scrollTop = 0;
     }
   }, [imageLoaded]);
-
-  const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
-  const [textPitchOpen, setTextPitchOpen] = useState(false);
-  const [videoPitchOpen, setVideoPitchOpen] = useState(false);
 
   const handlePitch = () => {
     setPitchOptionsOpen(true);
@@ -193,7 +197,6 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
     try {
       return `${fDate(startDate)} - ${fDate(endDate)}`;
     } catch (error) {
-      console.error('Error formatting dates:', error);
       return 'Invalid date format';
     }
   };
@@ -518,7 +521,7 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                     }}
                   >
                     <Iconify
-                      icon={campaign?.bookMarkCampaign ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
+                      icon={bookMark ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
                       width={20}
                       height={20}
                     />
@@ -777,6 +780,6 @@ CampaignModal.propTypes = {
   open: PropTypes.bool,
   handleClose: PropTypes.func,
   campaign: PropTypes.object,
-  openForm: PropTypes.func,
-  dialog: PropTypes.object,
+  // openForm: PropTypes.func,
+  // dialog: PropTypes.object,
 };

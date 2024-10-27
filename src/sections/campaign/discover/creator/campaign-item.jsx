@@ -249,10 +249,10 @@ export default function CampaignItem({ campaign, user }) {
       <CampaignModal
         open={campaignInfo.value}
         handleClose={campaignInfo.onFalse}
-        openForm={() => setOpen(true)}
+        // openForm={() => setOpen(true)}
         campaign={campaign}
-        existingPitch={campaignIds}
-        dialog={dialog}
+        // existingPitch={campaignIds}
+        // dialog={dialog}
       />
     </>
   );

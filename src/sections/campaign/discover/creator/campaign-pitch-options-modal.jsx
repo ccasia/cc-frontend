@@ -6,15 +6,16 @@ import {
   Box,
   Stack,
   Dialog,
+  Button,
   Typography,
   IconButton,
   DialogTitle,
   ListItemText,
   DialogContent,
-  Button,
 } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
@@ -27,7 +28,8 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
   const smUp = useResponsive('sm', 'down');
   const { user } = useAuthContext();
 
-  const hasDraft = campaign?.draftPitch && campaign.draftPitch.find(item => item.userId === user?.id);
+  const hasDraft =
+    campaign?.draftPitch && campaign.draftPitch.find((item) => item.userId === user?.id);
 
   const handlePitchClick = () => {
     handleClose();

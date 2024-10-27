@@ -69,6 +69,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
         content: data.pitchVideo,
         type: 'video',
       });
+      mutate(endpoints.auth.me);
       mutate(endpoints.campaign.getMatchedCampaign);
       enqueueSnackbar(res?.data?.message);
       handleClose();

@@ -54,6 +54,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
         ...data,
       });
       enqueueSnackbar(res?.data?.message);
+      mutate(endpoints.auth.me);
       mutate(endpoints.campaign.getMatchedCampaign);
       handleClose();
     } catch (error) {

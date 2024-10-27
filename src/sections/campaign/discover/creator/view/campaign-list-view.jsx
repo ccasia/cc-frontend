@@ -244,11 +244,11 @@ export default function CampaignListView() {
   //   return sortCampaigns(dataToSort, sortBy);
   // }, [search.query, search.results, filteredData, sortBy]);
 
-  const paginatedCampaigns = useMemo(() => {
-    const indexOfLastItem = page * MAX_ITEM;
-    const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
-    return filteredData?.slice(indexOfFirstItem, indexOfLastItem);
-  }, [filteredData, page]);
+  // const paginatedCampaigns = useMemo(() => {
+  //   const indexOfLastItem = page * MAX_ITEM;
+  //   const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
+  //   return filteredData?.slice(indexOfFirstItem, indexOfLastItem);
+  // }, [filteredData, page]);
 
   useEffect(() => {
     setPage(1); // Reset to first page when search query changes
