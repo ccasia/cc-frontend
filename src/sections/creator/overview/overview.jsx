@@ -160,7 +160,7 @@ const Overview = () => {
                 variant: 'h4',
                 fontWeight: 'bold',
                 color: 'black',
-                letterSpacing: -3,
+                letterSpacing: -1,
               }}
             />
           </Stack>
@@ -178,10 +178,14 @@ const Overview = () => {
   return (
     <Container maxWidth="xl">
       <ListItemText
-        primary={`Hi ${user?.name} 👋🏼`}
+        primary={`Welcome back, ${user?.name} 👋🏼`}
         secondary="Keep up the good work! Here’s what is relevant to you right now."
         primaryTypographyProps={{
-          variant: 'h3',
+          // variant: 'h3',
+          variant: 'h2',
+          fontWeight: 400,
+          fontFamily: 'InstrumentSerif',
+          letterSpacing: 0.5,
         }}
         secondaryTypographyProps={{
           variant: 'body1',

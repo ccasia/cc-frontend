@@ -56,7 +56,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
 
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
-  ).isAgreementReady;
+  )?.isAgreementReady;
 
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
 

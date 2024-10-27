@@ -1,3 +1,4 @@
+import useSound from 'use-sound';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
 
@@ -9,6 +10,8 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
+
+import sound from '../../../public/sounds/noti.mp3';
 
 // ----------------------------------------------------------------------
 
@@ -55,15 +58,19 @@ const ICONS = {
 export function useNavData() {
   const { user } = useAuthContext();
   const { unreadCount } = useTotalUnreadCount();
+  const [play] = useSound(sound, {
+    interrupt: true,
+  });
 
   const { socket } = useSocketContext();
   const [unreadMessageCount, setUnreadMessageCount] = useState(null);
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
-      enqueueSnackbar(`${data.count} new messages from ${data.name}.`, {
+      play();
+      enqueueSnackbar(`${data.count + 1} new messages from ${data.name}.`, {
         anchorOrigin: {
-          vertical: 'bottom',
+          vertical: 'top',
           horizontal: 'left',
         },
       });
@@ -73,7 +80,7 @@ export function useNavData() {
     return () => {
       socket?.off('messageCount');
     };
-  }, [socket]);
+  }, [socket, play]);
 
   const adminNavigations = useMemo(
     () => [

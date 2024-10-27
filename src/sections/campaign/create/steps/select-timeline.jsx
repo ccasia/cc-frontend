@@ -10,23 +10,12 @@ import {
   Box,
   Stack,
   Button,
-  Dialog,
   Divider,
   MenuItem,
   Typography,
   IconButton,
-  DialogContent,
   InputAdornment,
 } from '@mui/material';
-import {
-  Timeline,
-  TimelineDot,
-  TimelineItem,
-  TimelineContent,
-  TimelineConnector,
-  TimelineSeparator,
-  TimelineOppositeContent,
-} from '@mui/lab';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
@@ -290,26 +279,26 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods }) 
     </Box>
   );
 
-  const renderPreview = (
-    <Dialog open={modal.value} onClose={modal.onFalse}>
-      <DialogContent>
-        <Timeline position="alternate">
-          {existingTimeline.map((timeline, index) => (
-            <TimelineItem key={index}>
-              <TimelineOppositeContent color="text.secondary" fontSize={13}>
-                {dayjs(timeline.startDate).format('ddd LL')}
-              </TimelineOppositeContent>
-              <TimelineSeparator>
-                <TimelineDot />
-                <TimelineConnector />
-              </TimelineSeparator>
-              <TimelineContent variant="subtitle1">{timeline?.name}</TimelineContent>
-            </TimelineItem>
-          ))}
-        </Timeline>
-      </DialogContent>
-    </Dialog>
-  );
+  // const renderPreview = (
+  //   <Dialog open={modal.value} onClose={modal.onFalse}>
+  //     <DialogContent>
+  //       <Timeline position="alternate">
+  //         {existingTimeline.map((timeline, index) => (
+  //           <TimelineItem key={index}>
+  //             <TimelineOppositeContent color="text.secondary" fontSize={13}>
+  //               {dayjs(timeline.startDate).format('ddd LL')}
+  //             </TimelineOppositeContent>
+  //             <TimelineSeparator>
+  //               <TimelineDot />
+  //               <TimelineConnector />
+  //             </TimelineSeparator>
+  //             <TimelineContent variant="subtitle1">{timeline?.name}</TimelineContent>
+  //           </TimelineItem>
+  //         ))}
+  //       </Timeline>
+  //     </DialogContent>
+  //   </Dialog>
+  // );
 
   return (
     <Box

@@ -96,14 +96,14 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
       formData.append('agreementForm', blob);
       formData.append('data', JSON.stringify({ ...data, ...agreement }));
 
-      await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, formData, {
+      const res = await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, formData, {
         headers: {
           Accept: 'multipart/form-data',
         },
       });
 
       await handleSendAgreement();
-      enqueueSnackbar('Success');
+      enqueueSnackbar(res?.data?.message);
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
       reset();
       dialog.onFalse();

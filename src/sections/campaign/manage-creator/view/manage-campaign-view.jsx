@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
 
-import { Tab, Tabs, Container, Box, Button, TextField, InputAdornment, InputBase } from '@mui/material';
+import { Box, Button, Container, InputBase } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import Iconify from 'src/components/iconify';
+import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
-
-import AppliedCampaignView from '../applied-campaign-view';
 import ActiveCampaignView from '../active-campaign-view';
-import CompletedCampaignView from '../completed-campaign-view'; 
+import AppliedCampaignView from '../applied-campaign-view';
+import CompletedCampaignView from '../completed-campaign-view';
 
 const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
@@ -30,7 +29,7 @@ const ManageCampaignView = () => {
         alignItems: { xs: 'stretch', sm: 'center' },
         bgcolor: 'background.paper',
         borderRadius: 2,
-        boxShadow: '0 0 0 1px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05)', 
+        boxShadow: '0 0 0 1px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05)',
         mb: 3,
         mt: 4,
         p: 2,
@@ -38,12 +37,14 @@ const ManageCampaignView = () => {
         minHeight: { xs: 'auto', sm: 72 },
       }}
     >
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' },
-        alignItems: { xs: 'stretch', sm: 'center' }, 
-        mb: { xs: 2, sm: 0 }
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          mb: { xs: 2, sm: 0 },
+        }}
+      >
         {['myCampaign', 'applied', 'completed'].map((tab) => (
           <Button
             key={tab}
@@ -64,8 +65,11 @@ const ManageCampaignView = () => {
               minWidth: 60,
             }}
           >
-            {tab === 'myCampaign' ? 'Active Campaigns' : 
-             tab === 'applied' ? 'My Applications' : 'Completed Campaigns'}
+            {tab === 'myCampaign'
+              ? 'Active Campaigns'
+              : tab === 'applied'
+                ? 'My Applications'
+                : 'Completed Campaigns'}
           </Button>
         ))}
       </Box>
@@ -81,9 +85,9 @@ const ManageCampaignView = () => {
             width: { xs: '100%', sm: 250 },
           }}
         >
-          <Iconify 
-            icon="eva:search-fill" 
-            sx={{ width: 20, height: 20, ml: 1, mr: 1, color: 'text.disabled' }} 
+          <Iconify
+            icon="eva:search-fill"
+            sx={{ width: 20, height: 20, ml: 1, mr: 1, color: 'text.disabled' }}
           />
           <InputBase
             value={query}

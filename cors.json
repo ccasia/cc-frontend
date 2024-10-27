@@ -1,6 +1,12 @@
 [
   {
-    "origin": ["*"],
+    "origin": [
+      "http://localhost",
+      "http://localhost:81",
+      "http://localhost:3030",
+      "https://app.cultcreativeasia.com",
+      "https://staging.cultcreativeasia.com"
+    ],
     "method": ["GET"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type"]

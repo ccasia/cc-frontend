@@ -1,22 +1,23 @@
 import { mutate } from 'swr';
 import { m } from 'framer-motion';
 import { enqueueSnackbar } from 'notistack';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Container from '@mui/material/Container';
+import { useTheme } from '@mui/material/styles';
 import {
+  Fab,
   Box,
   Stack,
   Button,
+  Select,
   Divider,
-  Backdrop,
+  MenuItem,
+  InputBase,
   IconButton,
   Typography,
   ListItemText,
   CircularProgress,
-  Select,
-  MenuItem,
-  InputBase,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -25,21 +26,16 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { endpoints } from 'src/utils/axios';
 
-import { _tours } from 'src/_mock';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
 
 import CreatorForm from '../creator-form';
 import CampaignLists from '../campaign-list';
-import CampaignSearch from '../campaign-search';
-
-import { useTheme } from '@mui/material/styles';
-import { Fab } from '@mui/material';
-import { LoadingScreen } from 'src/components/loading-screen';
 
 // ----------------------------------------------------------------------
 
@@ -79,7 +75,7 @@ export default function CampaignListView() {
   const handleScrollTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth' 
+      behavior: 'smooth',
     });
   };
 
@@ -163,7 +159,7 @@ export default function CampaignListView() {
         right: smUp ? 50 : 0,
         width: smUp ? 300 : '100vw',
         height: load.value ? 400 : 50,
-        bgcolor: (theme) => theme.palette.background.default,
+        bgcolor: theme.palette.background.default,
         boxShadow: 20,
         border: 1,
         borderBottom: 0,
@@ -215,11 +211,14 @@ export default function CampaignListView() {
     setPage(value);
   };
 
-  const filteredData = useMemo(() => applyFilter({ inputData: campaigns, filter, user }), [campaigns, filter, user]);
+  const filteredData = useMemo(
+    () => applyFilter({ inputData: campaigns, filter, user }),
+    [campaigns, filter, user]
+  );
 
   const sortCampaigns = (campaigns) => {
     if (!campaigns) return [];
-    
+
     switch (sortBy) {
       case 'Highest':
         return [...campaigns].sort((a, b) => (b.percentageMatch || 0) - (a.percentageMatch || 0));
@@ -262,14 +261,21 @@ export default function CampaignListView() {
           justifyContent: { sm: 'space-between' }, // Add this line
           bgcolor: 'background.paper',
           borderRadius: 2,
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05)', 
+          boxShadow: '0 0 0 1px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05)',
           mb: 3,
           p: 2,
           width: '100%',
           minHeight: { xs: 'auto', sm: 72 },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, sm: 0 }, width: { xs: '100%', sm: 'auto' } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            mb: { xs: 2, sm: 0 },
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
           <Button
             size="large"
             variant={filter === 'all' ? 'contained' : 'text'}
@@ -311,13 +317,15 @@ export default function CampaignListView() {
           </Button>
         </Box>
 
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' }, 
-          alignItems: 'center', 
-          width: { xs: '100%', sm: 'auto' },
-          gap: { xs: 2, sm: 0 }
-        }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: 'center',
+            width: { xs: '100%', sm: 'auto' },
+            gap: { xs: 2, sm: 0 },
+          }}
+        >
           <Box
             sx={{
               display: 'flex',
@@ -329,9 +337,9 @@ export default function CampaignListView() {
               width: { xs: '100%', sm: 280 },
             }}
           >
-            <Iconify 
-              icon="eva:search-fill" 
-              sx={{ width: 20, height: 20, ml: 1, mr: 1, color: 'text.disabled' }} 
+            <Iconify
+              icon="eva:search-fill"
+              sx={{ width: 20, height: 20, ml: 1, mr: 1, color: 'text.disabled' }}
             />
             <InputBase
               value={search.query}
@@ -340,13 +348,17 @@ export default function CampaignListView() {
               sx={{ flex: 1 }}
             />
           </Box>
-          <Divider orientation="vertical" flexItem sx={{ 
-            display: { xs: 'none', sm: 'block' },
-            mx: 2, 
-            height: 35,
-            bgcolor: 'divider',
-            alignSelf: 'center' 
-          }} />
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{
+              display: { xs: 'none', sm: 'block' },
+              mx: 2,
+              height: 35,
+              bgcolor: 'divider',
+              alignSelf: 'center',
+            }}
+          />
           <Select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -355,7 +367,7 @@ export default function CampaignListView() {
             renderValue={(selected) => <strong>{selected || 'Sort By'}</strong>}
             sx={{
               height: 42,
-              width: { xs: '100%', sm: 95}, 
+              width: { xs: '100%', sm: 95 },
               border: '1px solid',
               borderColor: 'divider',
               borderRadius: 1,
@@ -369,9 +381,7 @@ export default function CampaignListView() {
             }}
             IconComponent={(props) => <Iconify icon="eva:chevron-down-fill" {...props} />}
           >
-            <MenuItem value="">
-              Reset
-            </MenuItem>
+            <MenuItem value="">Reset</MenuItem>
             <MenuItem value="Highest">Highest Match %</MenuItem>
             <MenuItem value="Lowest">Lowest Match %</MenuItem>
           </Select>
@@ -379,18 +389,21 @@ export default function CampaignListView() {
       </Box>
 
       {isLoading && <LoadingScreen />}
- 
-      {!isLoading && (sortedCampaigns?.length > 0 ? (
-        <CampaignLists 
-          campaigns={paginatedCampaigns} 
-          totalCampaigns={sortedCampaigns.length}
-          page={page}
-          onPageChange={handlePageChange}
-          maxItemsPerPage={MAX_ITEM}
-        />
-      ) : (
-        <EmptyContent title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`} />
-      ))}
+
+      {!isLoading &&
+        (sortedCampaigns?.length > 0 ? (
+          <CampaignLists
+            campaigns={paginatedCampaigns}
+            totalCampaigns={sortedCampaigns.length}
+            page={page}
+            onPageChange={handlePageChange}
+            maxItemsPerPage={MAX_ITEM}
+          />
+        ) : (
+          <EmptyContent
+            title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`}
+          />
+        ))}
 
       {upload.length > 0 && renderUploadProgress}
 
@@ -474,4 +487,3 @@ const applyFilter = ({ inputData, filter, user }) => {
 
 //   return inputData;
 // };
-

@@ -1,5 +1,6 @@
 import React from 'react';
 import * as Yup from 'yup';
+import useSound from 'use-sound';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -21,8 +22,13 @@ import Image from 'src/components/image/image';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
+import error from '../../../public/sounds/error.mp3';
+
 const Login = () => {
   const password = useBoolean();
+  const [play] = useSound(error, {
+    interrupt: true,
+  });
 
   const { login } = useAuthContext();
   //   const [error, setError] = useState();
@@ -56,10 +62,10 @@ const Login = () => {
       }
       enqueueSnackbar('Successfully login');
     } catch (err) {
+      play();
       enqueueSnackbar(err.message, {
         variant: 'error',
       });
-      // setError(err.message);
     }
   });
 

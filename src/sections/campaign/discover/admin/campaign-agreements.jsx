@@ -76,7 +76,7 @@ const CampaignAgreements = ({ campaign }) => {
       mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar('Error', { variant: error?.message });
+      enqueueSnackbar(error?.message, { variant: 'error' });
     }
   };
 

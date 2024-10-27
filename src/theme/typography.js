@@ -1,4 +1,6 @@
 // ----------------------------------------------------------------------
+import '../../public/fonts/inter/inter.css';
+import '../../public/fonts/instrument-serif/index.css';
 
 export function remToPx(value) {
   return Math.round(parseFloat(value) * 16);
@@ -22,7 +24,8 @@ export function responsiveFontSizes({ sm, md, lg }) {
   };
 }
 
-export const primaryFont = 'Aileron, sans-serif';
+export const primaryFont = 'InterVariable';
+// export const primaryFont = 'Aileron, sans-serif';
 export const secondaryFont = 'Barlow, sans-serif';
 
 // ----------------------------------------------------------------------

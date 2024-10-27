@@ -64,16 +64,20 @@ function calculateDaysLeft(endDate) {
 }
 
 const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
-  const [activeTab, setActiveTab] = useState(0);
+  // const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuthContext();
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const isShortlisted = user?.shortlisted && user?.shortlisted.map((item) => item.campaignId);
+  const isShortlisted =
+    user &&
+    user?.shortlisted &&
+    user?.shortlisted.some((item) => item.userId === user?.id && item.campaignId === campaign?.id);
 
   const existingPitch = user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id);
+
   const draftPitch =
     user?.draftPitch && user?.draftPitch.find((item) => item.campaignId === campaign?.id);
 
@@ -462,6 +466,23 @@ const CampaignModal = ({ open, handleClose, campaign, openForm, dialog }) => {
                       }}
                     >
                       Draft
+                    </Button>
+                  ) : isShortlisted ? (
+                    <Button
+                      variant="contained"
+                      onClick={() => handleManageClick(campaign.id)}
+                      sx={{
+                        background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
+                        color: 'white',
+                        border: '1px solid #3300c3',
+                        '&:hover': {
+                          background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+                        },
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        padding: { xs: '6px 12px', sm: '8px 16px' },
+                      }}
+                    >
+                      Manage
                     </Button>
                   ) : (
                     <Button
