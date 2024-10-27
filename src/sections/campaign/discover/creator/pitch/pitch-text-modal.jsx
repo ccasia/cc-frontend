@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
@@ -60,7 +61,13 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
     },
   });
 
-  const { handleSubmit, reset, watch } = methods;
+  const {
+    handleSubmit,
+    reset,
+    watch,
+    formState: { isSubmitting },
+  } = methods;
+
   const value = watch('content');
 
   const onSubmit = handleSubmit(async (data) => {
@@ -99,24 +106,26 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
   };
 
   const modalConfirmation = (
-    <Dialog 
-      open={modal.value} 
+    <Dialog
+      open={modal.value}
       onClose={modal.onFalse}
       PaperProps={{
         sx: {
           width: '400px',
           maxHeight: '200px',
-        }
+        },
       }}
     >
       <DialogTitle sx={{ pb: 1.2, fontSize: '1.25rem' }}>Confirm Submission 🫣</DialogTitle>
       <DialogContent>
-        <Box sx={{ 
-          fontWeight: 500, 
-          color: 'text.secondary',
-          fontSize: '0.95rem',
-          pb: 1,
-        }}>
+        <Box
+          sx={{
+            fontWeight: 500,
+            color: 'text.secondary',
+            fontSize: '0.95rem',
+            pb: 1,
+          }}
+        >
           Are you sure you want to submit your pitch?
         </Box>
       </DialogContent>
@@ -138,9 +147,10 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
         >
           Cancel
         </Button>
-        <Button
+        <LoadingButton
           variant="contained"
           onClick={onSubmit}
+          loading={isSubmitting}
           sx={{
             flex: 1,
             ml: 1,
@@ -156,7 +166,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
           }}
         >
           Yes, confirm!
-        </Button>
+        </LoadingButton>
       </DialogActions>
     </Dialog>
   );
@@ -165,12 +175,14 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
     <Dialog open={dialog.value} fullWidth maxWidth="xs" onClose={dialog.onFalse}>
       <DialogTitle sx={{ pb: 1.2 }}>Unsaved Changes! 😱</DialogTitle>
       <DialogContent>
-        <Box sx={{ 
-          fontWeight: 500, 
-          color: 'text.secondary',
-          fontSize: '0.9rem',
-          pb: 1,
-        }}>
+        <Box
+          sx={{
+            fontWeight: 500,
+            color: 'text.secondary',
+            fontSize: '0.9rem',
+            pb: 1,
+          }}
+        >
           You have unsaved changes. Would you like to save your draft before closing, or discard it?
         </Box>
       </DialogContent>

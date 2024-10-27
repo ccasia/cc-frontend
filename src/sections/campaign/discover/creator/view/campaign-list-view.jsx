@@ -1,4 +1,5 @@
 import { mutate } from 'swr';
+import { orderBy } from 'lodash';
 import { m } from 'framer-motion';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback } from 'react';
@@ -45,6 +46,7 @@ export default function CampaignListView() {
   const settings = useSettingsContext();
   const { campaigns, isLoading } = useGetCampaigns('creator');
   const [filter, setFilter] = useState('all');
+
   const { user } = useAuthContext();
   const dialog = useBoolean();
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
@@ -211,34 +213,42 @@ export default function CampaignListView() {
     setPage(value);
   };
 
-  const filteredData = useMemo(
-    () => applyFilter({ inputData: campaigns, filter, user }),
-    [campaigns, filter, user]
-  );
+  const filteredData = useMemo(() => {
+    const indexOfLastItem = page * MAX_ITEM;
+    const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
 
-  const sortCampaigns = (campaigns) => {
-    if (!campaigns) return [];
+    return applyFilter({
+      inputData: campaigns?.slice(indexOfFirstItem, indexOfLastItem),
+      filter,
+      user,
+      sortBy,
+      search,
+    });
+  }, [campaigns, filter, user, sortBy, page, search]);
 
-    switch (sortBy) {
-      case 'Highest':
-        return [...campaigns].sort((a, b) => (b.percentageMatch || 0) - (a.percentageMatch || 0));
-      case 'Lowest':
-        return [...campaigns].sort((a, b) => (a.percentageMatch || 0) - (b.percentageMatch || 0));
-      default:
-        return campaigns;
-    }
-  };
+  // const sortCampaigns = (campaigns) => {
+  //   if (!campaigns) return [];
 
-  const sortedCampaigns = useMemo(() => {
-    const dataToSort = search.query ? search.results : filteredData;
-    return sortCampaigns(dataToSort, sortBy);
-  }, [search.query, search.results, filteredData, sortBy]);
+  //   switch (sortBy) {
+  //     case 'Highest':
+  //       return [...campaigns].sort((a, b) => (b.percentageMatch || 0) - (a.percentageMatch || 0));
+  //     case 'Lowest':
+  //       return [...campaigns].sort((a, b) => (a.percentageMatch || 0) - (b.percentageMatch || 0));
+  //     default:
+  //       return campaigns;
+  //   }
+  // };
+
+  // const sortedCampaigns = useMemo(() => {
+  //   const dataToSort = search.query ? search.results : filteredData;
+  //   return sortCampaigns(dataToSort, sortBy);
+  // }, [search.query, search.results, filteredData, sortBy]);
 
   const paginatedCampaigns = useMemo(() => {
     const indexOfLastItem = page * MAX_ITEM;
     const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
-    return sortedCampaigns.slice(indexOfFirstItem, indexOfLastItem);
-  }, [sortedCampaigns, page]);
+    return filteredData?.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredData, page]);
 
   useEffect(() => {
     setPage(1); // Reset to first page when search query changes
@@ -246,7 +256,7 @@ export default function CampaignListView() {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <Typography variant="h3" sx={{ mb: 0.2 }}>
+      <Typography variant="h2" sx={{ mb: 0.2 }} fontFamily="InstrumentSerif">
         Discover Campaigns ✨
       </Typography>
       <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
@@ -391,10 +401,10 @@ export default function CampaignListView() {
       {isLoading && <LoadingScreen />}
 
       {!isLoading &&
-        (sortedCampaigns?.length > 0 ? (
+        (filteredData?.length > 0 ? (
           <CampaignLists
-            campaigns={paginatedCampaigns}
-            totalCampaigns={sortedCampaigns.length}
+            campaigns={filteredData}
+            totalCampaigns={campaigns?.length}
             page={page}
             onPageChange={handlePageChange}
             maxItemsPerPage={MAX_ITEM}
@@ -418,7 +428,7 @@ export default function CampaignListView() {
             position: 'fixed',
             bottom: 16,
             right: 16,
-            zIndex: (theme) => theme.zIndex.drawer + 1,
+            zIndex: theme.zIndex.drawer + 1,
           }}
         >
           <Iconify icon="mdi:arrow-up" />
@@ -430,7 +440,7 @@ export default function CampaignListView() {
 
 // ----------------------------------------------------------------------
 
-const applyFilter = ({ inputData, filter, user }) => {
+const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
   if (filter === 'saved') {
     inputData = inputData?.filter((campaign) => campaign.bookMarkCampaign);
   }
@@ -438,6 +448,20 @@ const applyFilter = ({ inputData, filter, user }) => {
   if (filter === 'draft') {
     inputData = inputData?.filter((campaign) =>
       campaign.pitch?.some((elem) => elem?.userId === user?.id && elem?.status === 'draft')
+    );
+  }
+
+  if (sortBy === 'Highest') {
+    inputData = orderBy(inputData, ['percentageMatch'], 'desc');
+  }
+
+  if (sortBy === 'Lowest') {
+    inputData = orderBy(inputData, ['percentageMatch'], 'asc');
+  }
+
+  if (search.query) {
+    inputData = inputData?.filter((item) =>
+      item.name.toLowerCase().includes(search.query.toLowerCase())
     );
   }
 

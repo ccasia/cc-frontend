@@ -9,7 +9,13 @@ import CampaignItem from './campaign-item';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignLists({ campaigns, totalCampaigns, page, onPageChange, maxItemsPerPage }) {
+export default function CampaignLists({
+  campaigns,
+  totalCampaigns,
+  page,
+  onPageChange,
+  maxItemsPerPage,
+}) {
   const { user } = useAuthContext();
 
   return (
