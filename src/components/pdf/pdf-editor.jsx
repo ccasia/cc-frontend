@@ -32,11 +32,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 // eslint-disable-next-line react/prop-types
 const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) => {
   const [totalPages, setTotalPages] = useState();
-  const [scale, setScale] = useState(0.6);
-  // const [annotations, setAnnotations] = useState([]);
+  const [scale, setScale] = useState(1);
   const [currentAnnotation, setCurrentAnnotation] = useState();
   const [type, setType] = useState();
-  // const [signURL, setSignURL] = useState('');
   const [isHovered, setIsHovered] = useState(false);
   const testRef = useRef(null);
   const signRef = useRef(null);
@@ -49,8 +47,8 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
   const startDrawing = (e, pageNumber) => {
     const rect = e.target.getBoundingClientRect();
 
-    const x = (e.clientX - rect.left) / scale; // Adjust for scaling
-    const y = (e.clientY - rect.top) / scale; // Adjust for scaling
+    const x = (e.clientX - rect.left - 150) / scale; // Adjust for scaling
+    const y = (e.clientY - rect.top - 150) / scale; // Adjust for scaling
 
     const newAnnotation = {
       x, // Normalized X position
@@ -100,7 +98,7 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
   };
 
   return (
-    <Box>
+    <>
       <Box
         zIndex={3}
         p={1.5}
@@ -190,16 +188,17 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
       <Box
         sx={{
           overflow: 'auto',
+          scrollbarWidth: 'none',
         }}
-        height={400}
+        height={500}
       >
         <Box
           sx={{
-            scale,
+            // scale,
             transformOrigin: 'top left',
-            width: `${100 / scale}%`,
-
+            // width: `${100 / scale}%`,
             textAlign: 'center',
+            bgcolor: 'black',
           }}
         >
           <Box display="inline-block">
@@ -422,7 +421,7 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
         </DialogActions>
       </Dialog>
       {/* <Button onClick={downloadPdf}>Download</Button> */}
-    </Box>
+    </>
   );
 };
 

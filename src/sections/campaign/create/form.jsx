@@ -1370,7 +1370,7 @@ export const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementFo
       <FormProvider methods={methods}>
         <DialogTitle>Agreement Generator</DialogTitle>
         <DialogContent>
-          <Box>
+          <>
             <Stepper activeStep={activeStep}>
               {stepsPDF.map((label, index) => {
                 const stepProps = {};
@@ -1390,7 +1390,7 @@ export const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementFo
                 </Stack>
               )}
               {activeStep === 1 && (
-                <Box>
+                <>
                   <PDFEditor
                     file={url}
                     annotations={annotations}
@@ -1399,10 +1399,10 @@ export const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementFo
                     signURL={signURL}
                   />
                   <Button onClick={() => signRef.current.clear()}>Clear</Button>
-                </Box>
+                </>
               )}
             </Box>
-          </Box>
+          </>
         </DialogContent>
         <DialogActions>
           {activeStep === 0 ? (

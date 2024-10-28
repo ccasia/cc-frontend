@@ -1,9 +1,10 @@
+import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
+import { Page, pdfjs, Document } from 'react-pdf';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -31,6 +32,11 @@ import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) => {
   const [preview, setPreview] = useState('');
@@ -103,9 +109,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const handleDownload = async (url) => {
     try {
       const response = await fetch(url);
-      const contentType = response.headers.get('content-type');
+      // const contentType = response.headers.get('content-type');
       const blob = await response.blob();
-      const filename = 'agreementForm.pdf';
+      const filename = `${campaign?.id}-${campaign?.name}.pdf?v=${dayjs().toISOString()}.pdf`;
 
       // For browsers that support the download attribute
       if ('download' in document.createElement('a')) {
@@ -132,7 +138,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         }
       }
     } catch (error) {
-      console.error('Download failed:', error);
       enqueueSnackbar('Download failed. Please try again.', { variant: 'error' });
     }
   };
@@ -335,9 +340,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         <DialogContent>
           <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
             <Document
-              file={submission?.content}
+              // file={submission?.content}
+              file="https://storage.googleapis.com/app-test-cult-cretive/agreement/cm2t0viyu000v91g3u3r6avvy.pdf?v=2024-10-28T13:10:58+00:00"
               onLoadSuccess={onDocumentLoadSuccess}
-              // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
             >
               {Array.from(new Array(numPages), (el, index) => (
                 <div key={index} style={{ marginBottom: '0px' }}>

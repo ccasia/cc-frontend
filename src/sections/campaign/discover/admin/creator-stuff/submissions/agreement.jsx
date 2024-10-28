@@ -3,8 +3,8 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
+import { Page, pdfjs, Document } from 'react-pdf';
 
 import {
   Box,
@@ -29,6 +29,11 @@ import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 const Agreement = ({ campaign, submission, creator }) => {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -176,7 +181,6 @@ const Agreement = ({ campaign, submission, creator }) => {
                           renderAnnotationLayer={false}
                           renderTextLayer={false}
                           style={{ overflow: 'scroll' }}
-                          // style={{ margin: 0, padding: 0, position: 'relative' }}
                         />
                       </div>
                     ))}
