@@ -88,6 +88,6 @@ const CampaignDetailBrand = ({ brand, campaign }) => (
 export default CampaignDetailBrand;
 
 CampaignDetailBrand.propTypes = {
-  brand: PropTypes.object,
-  campaign: PropTypes.object,
+  brand: PropTypes.any,
+  campaign: PropTypes.any,
 };

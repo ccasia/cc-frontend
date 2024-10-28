@@ -23,7 +23,7 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function UserCard({ creator, campaignId, isSent, onEditAgreement }) {
+export default function UserCard({ key, creator, campaignId, isSent, onEditAgreement }) {
   const theme = useTheme();
   const router = useRouter();
 
@@ -36,7 +36,12 @@ export default function UserCard({ creator, campaignId, isSent, onEditAgreement 
   };
 
   return (
-    <Box component="div" onClick={handleCardClick} sx={{ position: 'relative', cursor: 'pointer' }}>
+    <Box
+      key={key}
+      component="div"
+      onClick={handleCardClick}
+      sx={{ position: 'relative', cursor: 'pointer' }}
+    >
       {!isSent && (
         <Typography
           variant="caption"
@@ -167,4 +172,5 @@ UserCard.propTypes = {
   campaignId: PropTypes.string,
   isSent: PropTypes.bool,
   onEditAgreement: PropTypes.func, // Add this line
+  key: PropTypes.string,
 };

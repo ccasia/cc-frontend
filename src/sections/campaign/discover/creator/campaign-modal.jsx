@@ -4,7 +4,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
 import { enqueueSnackbar } from 'notistack';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
 import { useTheme } from '@mui/material/styles';
@@ -60,6 +60,7 @@ function calculateDaysLeft(endDate) {
   if (daysLeft > 0) {
     return `ENDING IN ${daysLeft} DAYS`;
   }
+
   return 'Campaign Ended';
 }
 
@@ -81,18 +82,35 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
   // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const isShortlisted =
-    user &&
-    user?.shortlisted &&
-    user?.shortlisted.some((item) => item.userId === user?.id && item.campaignId === campaign?.id);
+  const isShortlisted = useMemo(
+    () =>
+      user &&
+      user?.shortlisted &&
+      user?.shortlisted.some(
+        (item) => item.userId === user?.id && item.campaignId === campaign?.id
+      ),
+    [campaign, user]
+  );
 
-  const existingPitch = user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id);
+  const existingPitch = useMemo(
+    () => user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id),
+    [campaign, user]
+  );
 
-  const draftPitch =
-    user?.draftPitch && user?.draftPitch.find((item) => item.campaignId === campaign?.id);
+  const draftPitch = useMemo(
+    () => user?.draftPitch && user?.draftPitch.find((item) => item.campaignId === campaign?.id),
+    [campaign, user]
+  );
 
-  const hasPitched = !!existingPitch && existingPitch.status !== 'draft';
-  const hasDraft = !!draftPitch || (existingPitch && existingPitch.status === 'draft');
+  const hasPitched = useMemo(
+    () => !!existingPitch && existingPitch.status !== 'draft',
+    [existingPitch]
+  );
+
+  const hasDraft = useMemo(
+    () => !!draftPitch || (existingPitch && existingPitch.status === 'draft'),
+    [draftPitch, existingPitch]
+  );
 
   const saveCampaign = async (campaignId) => {
     setBookMark(true);
@@ -650,6 +668,7 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
             boxShadow: 'none',
           }}
         />
+
         <CampaignPitchOptionsModal
           open={pitchOptionsOpen}
           handleClose={handlePitchOptionsClose}

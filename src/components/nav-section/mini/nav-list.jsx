@@ -39,11 +39,7 @@ export default function NavList({ data, depth, slotProps }) {
   }, []);
 
   return (
-    <Box
-      sx={{
-        position: 'relative',
-      }}
-    >
+    <Box>
       {/* {active && (
         <Box
           sx={{

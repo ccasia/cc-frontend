@@ -78,7 +78,9 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
         status: 'pending',
       });
       enqueueSnackbar(res?.data?.message);
+      mutate(endpoints.auth.me);
       mutate(endpoints.campaign.getMatchedCampaign);
+      modal.onFalse()
       handleClose();
     } catch (error) {
       enqueueSnackbar(error?.message, {

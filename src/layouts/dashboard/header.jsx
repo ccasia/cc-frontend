@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
 
-import { Card } from '@mui/material';
 import Stack from '@mui/material/Stack';
+import { Divider } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
+import { grey } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 
@@ -17,7 +18,7 @@ import Logo from 'src/components/logo';
 import SvgColor from 'src/components/svg-color';
 import { useSettingsContext } from 'src/components/settings';
 
-import { NAV, HEADER } from '../config-layout';
+import { HEADER } from '../config-layout';
 import AccountPopover from '../common/account-popover';
 import NotificationsPopover from '../common/notifications-popover';
 // import LanguagePopover from '../common/language-popover';
@@ -31,7 +32,7 @@ export default function Header({ onOpenNav, isOnline }) {
 
   const isNavHorizontal = settings.themeLayout === 'horizontal';
 
-  const isNavMini = settings.themeLayout === 'mini';
+  // const isNavMini = settings.themeLayout === 'mini';
 
   const lgUp = useResponsive('up', 'lg');
 
@@ -40,18 +41,25 @@ export default function Header({ onOpenNav, isOnline }) {
   const offsetTop = offset && !isNavHorizontal;
 
   const renderHeader = (
-    <Card
-      sx={{
-        p: 1,
-        minWidth: 90,
-      }}
-    >
-      <Stack direction="row" alignItems="center" justifyContent="space-around">
-        {/* <Iconify icon="mdi:bell-outline" width={18} /> */}
-        <NotificationsPopover />
-        <AccountPopover isOnline={isOnline} />
-      </Stack>
-    </Card>
+    <Stack direction="row" alignItems="center" spacing={2}>
+      {/* <Card
+        sx={{
+          borderRadius: 1,
+          boxShadow: theme.customShadows.z2,
+        }}
+      > */}
+      <NotificationsPopover />
+      {/* </Card> */}
+      <Divider
+        // variant="fullWidth"
+        orientation="vertical"
+        sx={{
+          height: '24px',
+          borderColor: grey[200],
+        }}
+      />
+      <AccountPopover isOnline={isOnline} />
+    </Stack>
   );
 
   const renderContent = (
@@ -85,17 +93,21 @@ export default function Header({ onOpenNav, isOnline }) {
 
   return (
     <AppBar
+      position="sticky"
       sx={{
+        borderBottom: 1,
+        borderColor: grey[200],
         height: HEADER.H_MOBILE,
         zIndex: theme.zIndex.appBar + 1,
         ...bgBlur({
-          color: theme.palette.background.default,
+          color: theme.palette.background.paper,
+          // color: theme.palette.grey[400],
         }),
         transition: theme.transitions.create(['height'], {
           duration: theme.transitions.duration.shorter,
         }),
         ...(lgUp && {
-          width: `calc(100% - ${NAV.W_VERTICAL + 1}px)`,
+          // width: `calc(100% - ${NAV.W_VERTICAL + 1}px)`,
           height: HEADER.H_DESKTOP,
           ...(offsetTop && {
             height: HEADER.H_DESKTOP_OFFSET,
@@ -106,9 +118,9 @@ export default function Header({ onOpenNav, isOnline }) {
             height: HEADER.H_DESKTOP_OFFSET,
             borderBottom: `dashed 1px ${theme.palette.divider}`,
           }),
-          ...(isNavMini && {
-            width: `calc(100% - ${NAV.W_MINI + 1}px)`,
-          }),
+          // ...(isNavMini && {
+          //   // width: `calc(100% - ${NAV.W_MINI + 1}px)`,
+          // }),
         }),
       }}
     >

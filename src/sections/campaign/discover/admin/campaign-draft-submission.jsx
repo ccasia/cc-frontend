@@ -60,5 +60,5 @@ const CampaignDraftSubmissions = ({ campaign }) => {
 export default CampaignDraftSubmissions;
 
 CampaignDraftSubmissions.propTypes = {
-  campaign: PropTypes.object,
+  campaign: PropTypes.any,
 };

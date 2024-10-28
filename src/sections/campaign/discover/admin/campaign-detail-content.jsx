@@ -27,7 +27,6 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import Carousel from 'src/components/carousel/carousel';
 
@@ -189,7 +188,7 @@ const CampaignDetailContent = ({ campaign }) => {
 
       <Stack gap={1.5}>
         <Typography variant="h5">Objectives</Typography>
-        <Typography variant="subtitle2">{campaign?.campaignBrief.objectives}</Typography>
+        <Typography variant="subtitle2">{campaign?.campaignBrief?.objectives}</Typography>
       </Stack>
 
       <Divider
@@ -335,5 +334,5 @@ const CampaignDetailContent = ({ campaign }) => {
 export default CampaignDetailContent;
 
 CampaignDetailContent.propTypes = {
-  campaign: PropTypes.object,
+  campaign: PropTypes.any,
 };

@@ -28,7 +28,7 @@ const Overview = () => {
   const { data, isLoading } = useGetOverview();
 
   const renderOverview = (
-    <Grid container mt={3} spacing={2}>
+    <Grid container spacing={2}>
       <Grid item xs={12} md={6}>
         <Card>
           <Stack
@@ -190,6 +190,12 @@ const Overview = () => {
         secondaryTypographyProps={{
           variant: 'body1',
           color: 'text.secondary',
+        }}
+      />
+
+      <Divider
+        sx={{
+          my: 3,
         }}
       />
 

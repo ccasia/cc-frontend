@@ -61,7 +61,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   const a = watch('pitchVideo');
 
-  console.log(a)
+  console.log(a);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -71,8 +71,10 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
         content: source.find((item) => item.campaignId === campaign?.id)?.url,
         type: 'video',
       });
+      mutate(endpoints.auth.me);
       mutate(endpoints.campaign.getMatchedCampaign);
       enqueueSnackbar(res?.data?.message);
+      confirm.onFalse();
       handleClose();
     } catch (error) {
       enqueueSnackbar(error?.message, {
@@ -100,7 +102,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
           return;
         }
 
-        setSource((prev) => [...prev, {campaignId: campaign?.id, url: url}]);
+        setSource((prev) => [...prev, { campaignId: campaign?.id, url }]);
         setSourceName(e[0].path);
 
         const formData = new FormData();
@@ -154,7 +156,11 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const updateVideo = useCallback(
     (data) => {
       setProgress((prev) => prev.filter((item) => item.campaignId !== data.campaignId));
-      setSource((prev) => prev.map((item) => item.campaignId === data.campaignId ? {...item, url :data.video} : item));
+      setSource((prev) =>
+        prev.map((item) =>
+          item.campaignId === data.campaignId ? { ...item, url: data.video } : item
+        )
+      );
       setSize(data.size);
       setValue('pitchVideo', data.video);
     },
@@ -192,24 +198,26 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   }, [socket, updateVideo]);
 
   const modalConfirmation = (
-    <Dialog 
-      open={confirm.value} 
+    <Dialog
+      open={confirm.value}
       onClose={confirm.onFalse}
       PaperProps={{
         sx: {
           width: '400px',
           maxHeight: '200px',
-        }
+        },
       }}
     >
       <DialogTitle sx={{ pb: 1.2, fontSize: '1.25rem' }}>You have a uploaded video</DialogTitle>
       <DialogContent>
-        <Box sx={{ 
-          fontWeight: 500, 
-          color: 'text.secondary',
-          fontSize: '0.95rem',
-          pb: 1,
-        }}>
+        <Box
+          sx={{
+            fontWeight: 500,
+            color: 'text.secondary',
+            fontSize: '0.95rem',
+            pb: 1,
+          }}
+        >
           Confirm to remove ?
         </Box>
       </DialogContent>
@@ -277,8 +285,8 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
                   // if (watch('pitchVideo')) {
                   //   confirm.onTrue();
                   // } else {
-                    handleClose();
-                    // handleRemove();
+                  handleClose();
+                  // handleRemove();
                   // }
                 }}
               >

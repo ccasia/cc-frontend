@@ -19,8 +19,6 @@ const useGetCampaigns = (type) => {
     revalidateOnMount: true,
   });
 
-  console.log(data);
-
   const memoizedValue = useMemo(
     () => ({
       campaigns: data,

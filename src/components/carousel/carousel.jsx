@@ -31,7 +31,7 @@ const Carousel = ({ images, height }) => {
           transition: 'all .5s ease-in-out',
         }}
       >
-        {images.map((img, idx) => (
+        {images?.map((img, idx) => (
           <Box
             key={idx}
             sx={{
@@ -80,7 +80,7 @@ const Carousel = ({ images, height }) => {
           justifyContent: 'center',
         }}
       >
-        {images.map((img, idx) => (
+        {images?.map((img, idx) => (
           <Box
             sx={{
               bgcolor: (theme) =>

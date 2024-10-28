@@ -241,5 +241,5 @@ const CampaignOverview = ({ campaign }) => {
 export default CampaignOverview;
 
 CampaignOverview.propTypes = {
-  campaign: PropTypes.object,
+  campaign: PropTypes.oneOfType([PropTypes.object, PropTypes.any]),
 };

@@ -1,21 +1,24 @@
 import Box from '@mui/material/Box';
-import { Avatar } from '@mui/material';
 import Stack from '@mui/material/Stack';
+import { grey } from '@mui/material/colors';
+import { Avatar, IconButton } from '@mui/material';
 
 import { hideScroll } from 'src/theme/css';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
+import Iconify from 'src/components/iconify';
 import { NavSectionMini } from 'src/components/nav-section';
+import { useSettingsContext } from 'src/components/settings';
 
 import { NAV } from '../config-layout';
 import { useNavData } from './config-navigation';
-import NavToggleButton from '../common/nav-toggle-button';
 
 // ----------------------------------------------------------------------
 
 export default function NavMini() {
   const { user } = useAuthContext();
+  const settings = useSettingsContext();
 
   const logo = (
     <Box
@@ -24,12 +27,12 @@ export default function NavMini() {
         position: 'relative',
         width: 50,
         height: 50,
-        borderRadius: 10,
+        borderRadius: 1,
         my: 2,
       }}
     >
       <Image
-        src="/assets/icons/auth/Vector.svg"
+        src="/logo/vector1.svg"
         alt="Background Image"
         style={{
           width: '100%',
@@ -43,8 +46,8 @@ export default function NavMini() {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 40,
-          height: 40,
+          width: 30,
+          height: 30,
         }}
         src="/assets/icons/auth/test.svg"
       />
@@ -60,12 +63,12 @@ export default function NavMini() {
         width: { lg: NAV.W_MINI },
       }}
     >
-      <NavToggleButton
+      {/* <NavToggleButton
         sx={{
           top: 22,
           left: NAV.W_MINI - 12,
         }}
-      />
+      /> */}
 
       <Stack
         sx={{
@@ -74,12 +77,31 @@ export default function NavMini() {
           position: 'fixed',
           alignItems: 'center',
           width: NAV.W_MINI,
-          borderRight: (theme) => `dashed 1px ${theme.palette.divider}`,
-          bgcolor: 'background.paper',
+          // borderRight: (theme) => `dashed 1px ${theme.palette.divider}`,
+          // bgcolor: 'background.paper',
           ...hideScroll.x,
         }}
       >
-        {logo}
+        <Stack alignItems="center" mb={2}>
+          {logo}
+
+          <IconButton
+            sx={{
+              borderRadius: 1,
+              border: 0.5,
+              borderColor: grey[300],
+              boxShadow: 3,
+            }}
+            onClick={() =>
+              settings.onUpdate(
+                'themeLayout',
+                settings.themeLayout === 'vertical' ? 'mini' : 'vertical'
+              )
+            }
+          >
+            <Iconify icon="radix-icons:double-arrow-right" color="black" width={18} />
+          </IconButton>
+        </Stack>
 
         <NavSectionMini
           data={navData}

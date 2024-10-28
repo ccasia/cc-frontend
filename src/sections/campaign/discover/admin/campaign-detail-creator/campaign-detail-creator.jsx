@@ -327,5 +327,5 @@ const CampaignDetailCreator = ({ campaign }) => {
 export default CampaignDetailCreator;
 
 CampaignDetailCreator.propTypes = {
-  campaign: PropTypes.object,
+  campaign: PropTypes.any,
 };

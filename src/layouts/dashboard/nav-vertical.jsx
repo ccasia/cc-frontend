@@ -49,11 +49,11 @@ export default function NavVertical({ openNav, onCloseNav }) {
         position: 'relative',
         width: 55,
         height: 55,
-        borderRadius: 10,
+        borderRadius: 1,
       }}
     >
       <Image
-        src="/assets/icons/auth/Vector.svg"
+        src="/logo/vector1.svg"
         alt="Background Image"
         style={{
           width: '100%',
@@ -67,8 +67,8 @@ export default function NavVertical({ openNav, onCloseNav }) {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 40,
-          height: 40,
+          width: 30,
+          height: 30,
         }}
         src="/assets/icons/auth/test.svg"
       />
@@ -84,7 +84,6 @@ export default function NavVertical({ openNav, onCloseNav }) {
           display: 'flex',
           flexDirection: 'column',
         },
-        bgcolor: 'background.paper',
       }}
     >
       {/* <Logo sx={{ mt: 3, ml: 4, mb: 1 }} /> */}
@@ -98,10 +97,10 @@ export default function NavVertical({ openNav, onCloseNav }) {
       >
         {logo}
         <Stack flexGrow={1}>
-          <Typography variant="body1" fontWeight={900}>
+          <Typography variant="body1" fontWeight={800}>
             CULT CREATIVE
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" fontWeight={600}>
             Creator
           </Typography>
         </Stack>
@@ -109,7 +108,8 @@ export default function NavVertical({ openNav, onCloseNav }) {
           sx={{
             borderRadius: 1,
             border: 0.5,
-            borderColor: grey[200],
+            borderColor: grey[300],
+            boxShadow: 3,
           }}
           onClick={() =>
             settings.onUpdate(

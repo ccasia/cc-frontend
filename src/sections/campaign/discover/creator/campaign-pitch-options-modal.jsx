@@ -1,5 +1,5 @@
-import React from 'react';
 import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 
 import { grey } from '@mui/material/colors';
 import {
@@ -28,9 +28,10 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
   const smUp = useResponsive('sm', 'down');
   const { user } = useAuthContext();
 
-  const hasDraft =
-    campaign?.draftPitch && campaign.draftPitch.find((item) => item.userId === user?.id);
-
+  const hasDraft = useMemo(
+    () => campaign?.draftPitch && campaign.draftPitch.find((item) => item.userId === user?.id),
+    [campaign, user]
+  );
   const handlePitchClick = () => {
     handleClose();
     if (hasDraft) {

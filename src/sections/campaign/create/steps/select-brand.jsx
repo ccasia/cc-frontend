@@ -39,7 +39,8 @@ const SelectBrand = ({ openCompany, openBrand }) => {
         <RHFAutocomplete
           name="client"
           label="Select or Create Client"
-          options={!isLoading && (data || [])}
+          options={data || []}
+          loading={isLoading}
           freeSolo
           getOptionLabel={(option) => {
             // Add "xxx" option created dynamically
@@ -98,7 +99,8 @@ const SelectBrand = ({ openCompany, openBrand }) => {
           <RHFAutocomplete
             name="campaignBrand"
             label="Select or Create Brand"
-            options={client?.brand}
+            options={client?.brand || []}
+            loading={isLoading}
             freeSolo
             getOptionLabel={(option) => {
               // Add "xxx" option created dynamically

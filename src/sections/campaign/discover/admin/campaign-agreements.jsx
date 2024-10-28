@@ -179,7 +179,7 @@ const CampaignAgreements = ({ campaign }) => {
 };
 
 CampaignAgreements.propTypes = {
-  campaign: PropTypes.object,
+  campaign: PropTypes.any,
 };
 
 export default CampaignAgreements;

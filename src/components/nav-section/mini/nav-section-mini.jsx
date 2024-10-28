@@ -11,11 +11,17 @@ import NavList from './nav-list';
 function NavSectionMini({ data, slotProps, ...other }) {
   return (
     <Stack component="nav" id="nav-section-mini" spacing={`${slotProps?.gap || 4}px`} {...other}>
-      <Stack component="nav" id="nav-section-vertical" {...other}>
-        {data.map((group, index) => (
-          <Group key={group.subheader || index} items={group.items} slotProps={slotProps} />
-        ))}
-      </Stack>
+      {/* <Stack component="nav" id="nav-section-vertical" {...other}> */}
+      <Divider
+        sx={{
+          mb: 1,
+          mt: 1,
+        }}
+      />
+      {data.map((group, index) => (
+        <Group key={group.subheader || index} items={group.items} slotProps={slotProps} />
+      ))}
+      {/* </Stack> */}
     </Stack>
   );
 }

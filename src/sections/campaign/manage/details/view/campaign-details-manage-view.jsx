@@ -45,6 +45,7 @@ import withPermission from 'src/auth/guard/withPermissions';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+import Carousel from 'src/components/carousel/carousel';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import { EditTimeline } from './EditTimeline';
@@ -54,8 +55,6 @@ import { EditRequirements } from './EditRequirements';
 import EditCampaignImages from './EditCampaignImages';
 import { EditBrandOrCompany } from './EditBrandOrCompany';
 import EditAgreementTemplate from './EditAgreementTemplate';
-import Carousel from 'src/components/carousel/carousel';
-import { useAuthContext } from 'src/auth/hooks';
 
 const EditButton = ({ tooltip, onClick }) => (
   <Stack direction="row" spacing={1} position="absolute" top={10} right={10} alignItems="center">
@@ -86,7 +85,10 @@ const CampaignDetailManageView = ({ id }) => {
 
   const [pages, setPages] = useState();
 
-  const campaignStartDate = !campaignLoading && campaign?.campaignBrief?.startDate;
+  const campaignStartDate = useMemo(
+    () => !campaignLoading && campaign?.campaignBrief?.startDate,
+    [campaign, campaignLoading]
+  );
 
   const modalConfirm = useBoolean();
 

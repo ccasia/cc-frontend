@@ -213,7 +213,7 @@ export function useNavData() {
           {
             title: 'Overview',
             path: paths.dashboard.overview.root,
-            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={23} />,
           },
         ],
       },
@@ -222,12 +222,12 @@ export function useNavData() {
           {
             title: 'Discover',
             path: paths.dashboard.campaign.view,
-            icon: <Iconify icon="iconamoon:discover" width={25} />,
+            icon: <Iconify icon="iconamoon:discover" width={23} />,
           },
           {
             title: 'My Campaigns',
             path: paths.dashboard.campaign.creator.manage,
-            icon: <Iconify icon="material-symbols:assignment" width={25} />,
+            icon: <Iconify icon="material-symbols:assignment" width={23} />,
           },
           {
             title: 'My Tasks',
@@ -237,12 +237,12 @@ export function useNavData() {
           {
             title: 'Media Kit',
             path: paths.dashboard.creator.mediaKitCreator,
-            icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
+            icon: <Iconify icon="flowbite:profile-card-outline" width={23} />,
           },
           {
             title: 'Invoice',
             path: paths.dashboard.creator.invoiceCreator,
-            icon: <Iconify icon="material-symbols:finance" width={25} />,
+            icon: <Iconify icon="material-symbols:finance" width={23} />,
           },
           // {
           //   title: 'Inbox',
