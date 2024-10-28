@@ -381,7 +381,7 @@ const CampaignDetailView = ({ id }) => {
         ]}
         action={
           <Button
-            variant="contained"
+            variant="outlined"
             size="small"
             startIcon={
               <Iconify
@@ -393,40 +393,17 @@ const CampaignDetailView = ({ id }) => {
             onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
             sx={{
               mb: 3,
+              borderRadius: 1,
+              boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
             }}
           >
-            Manage
+            Edit
           </Button>
         }
       />
 
       {renderTabs}
       {(!isLoading ? renderTabContent[currentTab] : <LoadingScreen />) || null}
-      {/* {currentTab === 'overview' && <CampaignOverview campaign={currentCampaign} />}
-      {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
-      {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
-      {currentTab === 'agreement' && <CampaignAgreements campaign={currentCampaign} />}
-      {currentTab === 'invoices' && <CampaignInvoicesList campId={currentCampaign?.id} />}
-      {currentTab === 'client' && (
-        <CampaignDetailBrand
-          brand={currentCampaign?.brand ?? currentCampaign?.company}
-          campaign={currentCampaign}
-        />
-      )}
-
-      {currentTab === 'pitch' && (
-        <CampaignDetailPitch
-          pitches={currentCampaign?.pitch}
-          timeline={
-            currentCampaign?.campaignTimeline.filter((elem) => elem.name === 'Open For Pitch')[0]
-          }
-          timelines={currentCampaign?.campaignTimeline.filter(
-            (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
-          )}
-          shortlisted={currentCampaign?.shortlisted}
-        />
-      )}
-      {currentTab === 'submission' && <CampaignDraftSubmissions campaign={currentCampaign} />} */}
     </Container>
   );
 };

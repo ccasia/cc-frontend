@@ -126,7 +126,13 @@ const CampaignView = () => {
           />
         )}
 
-        <Button onClick={openFilters.onTrue} endIcon={<Iconify icon="ic:round-filter-list" />}>
+        <Button
+          onClick={openFilters.onTrue}
+          endIcon={<Iconify icon="ic:round-filter-list" />}
+          sx={{
+            boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+          }}
+        >
           Filter
         </Button>
       </Stack>

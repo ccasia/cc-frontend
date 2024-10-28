@@ -202,7 +202,6 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
       >
         All creators
       </Button>
-      
 
       {isLoading && <LoadingScreen />}
 
