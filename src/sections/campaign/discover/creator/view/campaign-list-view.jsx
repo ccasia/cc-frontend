@@ -256,7 +256,15 @@ export default function CampaignListView() {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <Typography variant="h2" sx={{ mb: 0.2 }} fontFamily="Instrument Serif, serif">
+      <Typography
+        variant="h2"
+        sx={{
+          mb: 0.2,
+          fontFamily: theme.typography.fontSecondaryFamily,
+          fontWeight: 200,
+          letterSpacing: -1,
+        }}
+      >
         Discover Campaigns ✨
       </Typography>
       <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
