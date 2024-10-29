@@ -103,17 +103,18 @@ export function useNavData() {
             icon: <Iconify icon="material-symbols:explore-outline" width={25} />,
             children: [
               {
-                title: 'Manage Campaign',
+                // title: 'Manage Campaign',
+                title: 'Lists',
                 path: paths.dashboard.campaign.view,
               },
               {
                 roles: ['superadmin', 'CSM'],
-                title: 'Create Campaign',
+                title: 'Create',
                 path: paths.dashboard.campaign.create,
               },
               {
                 roles: ['superadmin', 'CSM'],
-                title: 'Edit Campaign',
+                title: 'Edit',
                 path: paths.dashboard.campaign.manage,
               },
               {

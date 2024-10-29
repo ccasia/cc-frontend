@@ -15,7 +15,6 @@ import BrandItem from './brandItem';
 
 export default function BrandList({ companies }) {
   const router = useRouter();
-
   const [filterData, setFilterData] = useState();
 
   const handleView = useCallback(
@@ -62,6 +61,8 @@ export default function BrandList({ companies }) {
         }}
       >
         {filterData?.map((company) => (
+
+          
           <BrandItem
             key={company.id}
             company={company}
@@ -71,6 +72,7 @@ export default function BrandList({ companies }) {
           />
         ))}
       </Box>
+
       {/* {jobs.length > 8 && (
         <Pagination
           count={8}

@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import React from 'react';
 import { useTheme } from '@emotion/react';
 
+import { grey } from '@mui/material/colors';
 import {
   Box,
   Grid,
@@ -152,11 +153,7 @@ const DashboardSuperadmin = () => {
   return (
     <Grid container spacing={3}>
       <Grid item xs={12} md={3}>
-        <Box
-          component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-        >
+        <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
               Total campaign
@@ -176,11 +173,7 @@ const DashboardSuperadmin = () => {
         </Box>
       </Grid>
       <Grid item xs={12} md={3}>
-        <Box
-          component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-        >
+        <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
               Total Pitch
@@ -200,11 +193,7 @@ const DashboardSuperadmin = () => {
         </Box>
       </Grid>
       <Grid item xs={12} md={3}>
-        <Box
-          component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-        >
+        <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
               Total Creator
@@ -224,11 +213,7 @@ const DashboardSuperadmin = () => {
         </Box>
       </Grid>
       <Grid item xs={12} md={3}>
-        <Box
-          component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-        >
+        <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
               Total Task

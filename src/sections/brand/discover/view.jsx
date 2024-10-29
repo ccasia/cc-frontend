@@ -33,8 +33,6 @@ function DiscoverBrand() {
 
   const { data: companies, isLoading } = useGetCompany();
 
-  // const [sortBy, setSortBy] = useState('latest');
-
   const [search, setSearch] = useState('');
 
   const handleSearch = useCallback((event) => {
