@@ -15,11 +15,11 @@ function FianaceDiscover() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Fianace"
+        heading="Finance"
         links={[
           { name: 'Dashboard', href: paths.dashboard.finance.root },
           {
-            name: 'Fianace',
+            name: 'Finance',
             href: paths.dashboard.finance.root,
           },
         ]}
