@@ -75,14 +75,16 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
       const res = await axiosInstance.patch(endpoints.campaign.pitch.root, {
         campaignId: campaign?.id,
         ...data,
-        status: 'pending',
+        status: 'undecided',
       });
+      console.log('Submitting text pitch with status:', 'undecided');
       enqueueSnackbar(res?.data?.message);
       mutate(endpoints.auth.me);
       mutate(endpoints.campaign.getMatchedCampaign);
       modal.onFalse()
       handleClose();
     } catch (error) {
+      console.error('Error submitting pitch:', error);
       enqueueSnackbar(error?.message, {
         variant: 'error',
       });
