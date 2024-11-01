@@ -293,29 +293,6 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
             />
 
             <ListItemText
-              primary="Industries"
-              secondary={
-                <Stack gap={1} direction="row" flexWrap="wrap">
-                  {data?.user?.creator?.industries?.length > 0 ? (
-                    data.user.creator.industries.map((elem, index) => (
-                      <Label key={index}>{elem?.name}</Label>
-                    ))
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      No industries specified
-                    </Typography>
-                  )}
-                </Stack>
-              }
-              primaryTypographyProps={{
-                variant: 'subtitle1',
-              }}
-              secondaryTypographyProps={{
-                variant: 'subtitle2',
-              }}
-            />
-
-            <ListItemText
               primary="Instagram"
               secondary={data?.user?.creator?.instagram}
               primaryTypographyProps={{
