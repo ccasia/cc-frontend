@@ -11,7 +11,6 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 
-import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -40,7 +39,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const loadingSend = useBoolean();
   const { campaigns } = useGetInvoiceById(id);
   const currentInvoice = campaigns;
-
 
   const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
     id: creator.user.id,
@@ -127,7 +125,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
         accountNumber: '',
         accountEmail: '',
       },
-      totalAmount: currentInvoice?.totalAmount || 0,
+      totalAmount: currentInvoice?.amount || 0,
     }),
     [currentInvoice]
   );
@@ -144,19 +142,19 @@ export default function InvoiceNewEditForm({ id, creators }) {
     formState: { isSubmitting },
   } = methods;
 
-  const handleSaveAsDraft = handleSubmit(async (data) => {
-    loadingSave.onTrue();
+  // const handleSaveAsDraft = handleSubmit(async (data) => {
+  //   loadingSave.onTrue();
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      reset();
-      loadingSave.onFalse();
-      router.push(paths.dashboard.invoice.root);
-    } catch (error) {
-      console.error(error);
-      loadingSave.onFalse();
-    }
-  });
+  //   try {
+  //     await new Promise((resolve) => setTimeout(resolve, 500));
+  //     reset();
+  //     loadingSave.onFalse();
+  //     router.push(paths.dashboard.invoice.root);
+  //   } catch (error) {
+  //     console.error(error);
+  //     loadingSave.onFalse();
+  //   }
+  // });
 
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
@@ -175,29 +173,12 @@ export default function InvoiceNewEditForm({ id, creators }) {
   });
   const values = watch();
 
-  const bankAccount = () => (
+  const bankAccount = (
     <Box>
       <Typography variant="h6" sx={{ color: 'text.disabled', mt: 3, ml: 2 }}>
         Bank Information:
       </Typography>
       <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} sx={{ p: 3 }}>
-        {' '}
-        {/* <RHFTextField
-          required
-          type={'select'}
-          name="bankInfo.bankName"
-          label="Bank Name"
-          fullWidth
-          sx={{ width: 1 / 2 }}
-          value={values.bankInfo?.bankName}
-        >
-
-{banks.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </RHFTextField> */}
         <RHFSelect
           sx={{ width: 1 / 2 }}
           required
@@ -246,7 +227,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
         <InvoiceNewEditStatusDate />
 
-        {bankAccount()}
+        {bankAccount}
 
         <InvoiceNewEditDetails />
       </Card>

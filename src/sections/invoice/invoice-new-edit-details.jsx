@@ -34,21 +34,6 @@ export default function InvoiceNewEditDetails() {
     setValue('totalAmount', totalAmount);
   }, [setValue, totalAmount]);
 
-  // const handleAdd = () => {
-  //   append({
-  //     title: '',
-  //     description: '',
-  //     service: '',
-  //     // quantity: 1,
-  //     // price: 0,
-  //     total: 0,
-  //   });
-  // };
-
-  // const handleRemove = (index) => {
-  //   remove(index);
-  // };
-
   const handleClearService = useCallback(
     (index) => {
       resetField(`items[${index}].quantity`);
@@ -65,17 +50,6 @@ export default function InvoiceNewEditDetails() {
     },
     [setValue]
   );
-
-  // const handleChangeQuantity = useCallback(
-  //   (event, index) => {
-  //     setValue(`items[${index}].quantity`, Number(event.target.value));
-  //     setValue(
-  //       `items[${index}].total`,
-  //       values.items.map((item) => item.quantity * item.price)[index]
-  //     );
-  //   },
-  //   [setValue, values.items]
-  // );
 
   const handleChangePrice = useCallback(
     (event, index) => {
@@ -189,17 +163,6 @@ export default function InvoiceNewEditDetails() {
                 ))}
               </RHFSelect>
 
-              {/* <RHFTextField
-                size="small"
-                type="number"
-                name={`items[${index}].quantity`}
-                label="Quantity"
-                placeholder="0"
-                onChange={(event) => handleChangeQuantity(event, index)}
-                InputLabelProps={{ shrink: true }}
-                sx={{ maxWidth: { md: 96 } }}
-              /> */}
-
               <RHFTextField
                 size="small"
                 type="number"
@@ -224,7 +187,11 @@ export default function InvoiceNewEditDetails() {
                 name={`items[${index}].total`}
                 label="Total"
                 placeholder="0.00"
-                value={values.items[index].total === 0 ? '' : values.items[index].total.toFixed(2)}
+                value={
+                  Number(values.items[index].total) === 0
+                    ? ''
+                    : Number(values.items[index].total).toFixed(2)
+                }
                 onChange={(event) => handleChangePrice(event, index)}
                 InputProps={{
                   startAdornment: (
