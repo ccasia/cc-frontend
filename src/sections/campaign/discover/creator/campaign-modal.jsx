@@ -731,7 +731,7 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
             alignItems: 'center',
             overflow: 'hidden', 
             maxHeight: '90vh', 
-            maxWidth: '30vw',
+            maxWidth: { xs: '90vw', sm: '30vw' },
           }}
         >
           <IconButton
