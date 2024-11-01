@@ -74,6 +74,7 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
   const dialogContentRef = useRef(null);
   const images = campaign?.campaignBrief?.images || [];
   const [bookMark, setBookMark] = useState(campaign?.bookMarkCampaign || false);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 
   // const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuthContext();
@@ -168,7 +169,9 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
     setImageLoaded(false);
   };
 
-  const handleImageLoad = () => {
+  const handleImageLoad = (event) => {
+    const { naturalWidth, naturalHeight } = event.target;
+    setImageDimensions({ width: naturalWidth, height: naturalHeight });
     setImageLoaded(true);
   };
 
@@ -275,7 +278,24 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
         </DialogContent>
 
         {/* DialogContent for the main white box */}
-        <DialogContent sx={{ p: 2, pt: 4, overflow: 'auto', flexGrow: 1 }}>
+        <DialogContent
+          sx={{
+            p: 2,
+            pt: 4,
+            overflow: 'auto',
+            flexGrow: 1,
+            '&::-webkit-scrollbar': {
+              width: '8px', 
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#888', 
+              borderRadius: '4px', 
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              backgroundColor: '#555', 
+            },
+          }}
+        >
           <Box
             sx={{
               bgcolor: 'background.paper',
@@ -690,7 +710,7 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
       <Dialog
         open={fullImageOpen}
         onClose={handleFullImageClose}
-        maxWidth={false}
+        maxWidth="md"
         PaperProps={{
           sx: {
             maxWidth: '90vw',
@@ -703,27 +723,21 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
         }}
       >
         <DialogContent
-          ref={dialogContentRef}
           sx={{
             p: 0,
             position: 'relative',
-            overflow: 'auto',
             display: 'flex',
-            flexDirection: 'column',
+            justifyContent: 'center',
             alignItems: 'center',
-            '&::-webkit-scrollbar': {
-              width: '0.4em',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(0,0,0,.3)',
-              borderRadius: '4px',
-            },
+            overflow: 'hidden', 
+            maxHeight: '90vh', 
+            maxWidth: '30vw',
           }}
         >
           <IconButton
             onClick={handleFullImageClose}
             sx={{
-              position: 'fixed',
+              position: 'absolute',
               right: 16,
               top: 16,
               color: 'white',
@@ -738,10 +752,10 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
             sx={{
               display: 'flex',
               justifyContent: 'center',
-              alignItems: 'flex-start',
-              minHeight: '100%',
+              alignItems: 'center',
               width: '100%',
-              py: 2,
+              height: '100%', 
+              overflowY: imageDimensions.width < imageDimensions.height ? 'auto' : 'hidden', 
             }}
           >
             <Image
@@ -750,22 +764,23 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
               onLoad={handleImageLoad}
               sx={{
                 maxWidth: '100%',
-                height: 'auto',
-                objectFit: 'contain',
+                maxHeight: '100%', 
+                objectFit: 'contain', 
               }}
             />
           </Box>
+          {/* Navigation Buttons */}
           {images.length > 1 && (
             <>
               <IconButton
                 onClick={handlePrevImage}
                 sx={{
-                  position: 'fixed',
+                  position: 'absolute',
                   left: 16,
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  bgcolor: 'rgba(0, 0, 0, 0.5)',
                   color: 'white',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
                   '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
                 }}
               >
@@ -774,12 +789,12 @@ const CampaignModal = ({ open, handleClose, campaign }) => {
               <IconButton
                 onClick={handleNextImage}
                 sx={{
-                  position: 'fixed',
+                  position: 'absolute',
                   right: 16,
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  bgcolor: 'rgba(0, 0, 0, 0.5)',
                   color: 'white',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
                   '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
                 }}
               >
