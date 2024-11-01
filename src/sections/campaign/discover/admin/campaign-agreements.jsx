@@ -130,6 +130,7 @@ const CampaignAgreements = ({ campaign }) => {
                             size="small"
                             variant="outlined"
                             startIcon={<Iconify icon="iconamoon:edit-light" />}
+                            sx={{ whiteSpace: 'nowrap', padding: '6px 16px', borderRadius: '4px' }}
                           >
                             Payment Amount
                           </Button>

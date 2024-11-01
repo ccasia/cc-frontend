@@ -80,7 +80,7 @@ const Login = () => {
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
-              <IconButton edge="end">
+              <IconButton onClick={password.onToggle} edge="end">
                 <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
               </IconButton>
             </InputAdornment>

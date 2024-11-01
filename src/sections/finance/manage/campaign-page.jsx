@@ -31,7 +31,6 @@ function CampaignPage() {
         }}
       />
 
-      {/* Test */}
       {!isLoading ? (
         <CampaignLists campaigns={campaigns} />
       ) : (
