@@ -10,6 +10,7 @@ import {
   Container,
   Typography,
   ListItemText,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -30,16 +31,24 @@ const Overview = () => {
   const renderOverview = (
     <Grid container spacing={2}>
       <Grid item xs={12} md={6}>
-        <Card>
+        <Box>
           <Stack
             direction="row"
             alignItems="center"
-            spacing={1}
+            spacing={2}
             sx={{
               p: 2,
             }}
           >
-            <Image src="/assets/icons/overview/total_campaigns.svg" />
+            <Avatar
+              sx={{
+                width: 50,
+                height: 50,
+                bgcolor: '#1340FF',
+              }}
+            >
+              <Image src="/assets/icons/overview/total_campaigns.svg" />
+            </Avatar>
             <ListItemText
               primary="TOTAL CAMPAIGNS"
               secondary={data?.length}
@@ -57,7 +66,7 @@ const Overview = () => {
             />
           </Stack>
 
-          <Divider />
+          {/* <Divider /> */}
 
           <Stack
             spacing={1}
@@ -72,8 +81,16 @@ const Overview = () => {
               </Typography>
             ) : (
               data?.slice(0, 3).map((item, index) => (
-                <Card sx={{ p: 2 }} key={index}>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Card
+                  sx={{ p: 2, boxShadow: 'none', border: 1, borderColor: '#EBEBEB' }}
+                  key={index}
+                >
+                  <Stack
+                    direction={{ sm: 'row' }}
+                    alignItems={{ xs: 'start', sm: 'center' }}
+                    justifyContent={{ sm: 'space-between' }}
+                    gap={{ xs: 2, sm: 0 }}
+                  >
                     <Stack direction="row" spacing={2} alignItems="center">
                       <Avatar src={item?.campaignImages[0]}>H</Avatar>
                       <ListItemText
@@ -90,9 +107,40 @@ const Overview = () => {
                         }}
                       />
                     </Stack>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      {item.completed}% Completed
-                    </Typography>
+                    <Box
+                      sx={{
+                        p: 0.5,
+                        px: 1,
+                        textAlign: 'center',
+                        border: 1,
+                        borderColor: '#EBEBEB',
+                        borderRadius: 1,
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        {item?.completed > 0 && (
+                          <CircularProgress
+                            variant="determinate"
+                            thickness={8}
+                            value={parseInt(item?.completed, 10)}
+                            size={20}
+                            sx={{
+                              ' .MuiCircularProgress-circle': {
+                                stroke: (theme) =>
+                                  theme.palette.mode === 'dark'
+                                    ? theme.palette.common.white
+                                    : theme.palette.success.main,
+                                strokeLinecap: 'round',
+                              },
+                            }}
+                          />
+                        )}
+                        <Typography variant="subtitle2" color="text.secondary">
+                          {item?.completed}% Completed
+                        </Typography>
+                      </Stack>
+                    </Box>
                   </Stack>
                   <Divider
                     sx={{
@@ -134,20 +182,28 @@ const Overview = () => {
             </Typography>
             <Iconify icon="ic:round-navigate-next" width={18} />
           </Box>
-        </Card>
+        </Box>
       </Grid>
 
       <Grid item xs={12} md={6}>
-        <Card>
+        <Box>
           <Stack
             direction="row"
             alignItems="center"
-            spacing={1}
+            spacing={2}
             sx={{
               p: 2,
             }}
           >
-            <Image src="/assets/icons/overview/total_tasks.svg" />
+            <Avatar
+              sx={{
+                width: 50,
+                height: 50,
+                bgcolor: '#FF3500',
+              }}
+            >
+              <Image src="/assets/icons/overview/total_tasks.svg" />
+            </Avatar>
             <ListItemText
               primary="TOTAL TASKS"
               secondary="11"
@@ -165,12 +221,12 @@ const Overview = () => {
             />
           </Stack>
 
-          <Divider />
+          {/* <Divider /> */}
 
           <Typography textAlign="center" py={2}>
             In development...
           </Typography>
-        </Card>
+        </Box>
       </Grid>
     </Grid>
   );
@@ -181,7 +237,6 @@ const Overview = () => {
         primary={`Welcome back, ${user?.name} 👋🏼`}
         secondary="Keep up the good work! Here’s what is relevant to you right now."
         primaryTypographyProps={{
-          // variant: 'h3',
           variant: 'h2',
           fontWeight: 400,
           fontFamily: 'InstrumentSerif',
@@ -191,13 +246,16 @@ const Overview = () => {
           variant: 'body1',
           color: 'text.secondary',
         }}
+        sx={{
+          mb: 3,
+        }}
       />
 
-      <Divider
+      {/* <Divider
         sx={{
           my: 3,
         }}
-      />
+      /> */}
 
       {renderOverview}
     </Container>

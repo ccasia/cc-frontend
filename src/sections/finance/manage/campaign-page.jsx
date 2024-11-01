@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Stack, Container } from '@mui/material';
+import { Box, Container, CircularProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
@@ -13,7 +13,7 @@ import CampaignLists from 'src/sections/campaign/discover/admin/campaign-list';
 
 function CampaignPage() {
   const settings = useSettingsContext();
-  const { campaigns } = useGetCampaignsFinance();
+  const { campaigns, isLoading } = useGetCampaignsFinance();
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -31,9 +31,28 @@ function CampaignPage() {
         }}
       />
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+      {!isLoading ? (
+        // <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}
         <CampaignLists campaigns={campaigns} />
-      </Stack>
+      ) : (
+        // </Stack>
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: (theme) => theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
     </Container>
   );
 }

@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Grid,
@@ -32,10 +33,12 @@ const Posting = ({ campaign, submission, creator }) => {
   const dialogApprove = useBoolean();
   const dialogReject = useBoolean();
   const [feedback, setFeedback] = useState('');
+  const loading = useBoolean();
 
   const onSubmit = async (type) => {
     let res;
     try {
+      loading.onTrue();
       if (type === 'APPROVED') {
         res = await axiosInstance.patch(endpoints.submission.admin.posting, {
           submissionId: submission?.id,
@@ -60,6 +63,8 @@ const Posting = ({ campaign, submission, creator }) => {
       enqueueSnackbar(error?.message, {
         variant: 'error',
       });
+    } finally {
+      loading.onFalse();
     }
   };
 
@@ -152,15 +157,16 @@ const Posting = ({ campaign, submission, creator }) => {
           <Button onClick={dialogApprove.onFalse} size="small" variant="outlined">
             Cancel
           </Button>
-          <Button
+          <LoadingButton
             onClick={() => {
               onSubmit('APPROVED');
             }}
             size="small"
             variant="contained"
+            loading={loading.value}
           >
             Confirm
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </Dialog>
       <Dialog open={dialogReject.value} maxWidth="xs" fullWidth>
