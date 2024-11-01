@@ -82,7 +82,7 @@ function CompanyBrandBasic() {
     ),
     brandInstagram: Yup.string().required('Brand Instagram is required'),
     brandTiktok: Yup.string().required('Brand Tiktok is required'),
-    brandIndustries: Yup.array().min(3, 'Brand Industries is required'),
+    brandIndustries: Yup.array().min(1, 'Brand Industries is required'),
     companyId: Yup.object().required('Company is required'),
   });
 

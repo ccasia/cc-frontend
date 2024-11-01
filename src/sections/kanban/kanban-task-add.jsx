@@ -15,19 +15,9 @@ export default function KanbanTaskAdd({ status, onAddTask, onCloseAddTask }) {
   const defaultTask = useMemo(
     () => ({
       id: uuidv4(),
-      // status,
       name: name.trim(),
-      // priority: 'medium',
-      // attachments: [],
-      // labels: [],
-      // comments: [],
       assignee: [],
       due: [null, null],
-      // reporter: {
-      //   id: _mock.id(16),
-      //   name: _mock.fullName(16),
-      //   avatarUrl: _mock.image.avatar(16),
-      // },
     }),
     [name]
   );

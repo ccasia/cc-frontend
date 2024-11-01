@@ -81,7 +81,6 @@ export default function CreatorForm({ creator, open, onClose }) {
     location: Yup.string().required('location is required'),
     Interests: Yup.array().min(3, 'Choose at least three option'),
     languages: Yup.array().min(1, 'Choose at least one option'),
-    industries: Yup.array().min(3, 'Choose at least three option'),
     employment: Yup.string().required('pronounce is required'),
     birthDate: Yup.mixed().nullable().required('birthDate date is required'),
     Nationality: Yup.string().required('Nationality is required'),

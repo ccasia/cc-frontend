@@ -338,12 +338,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
         <DialogTitle>Agreement</DialogTitle>
         <DialogContent>
-          <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
-            <Document
-              // file={submission?.content}
-              file="https://storage.googleapis.com/app-test-cult-cretive/agreement/cm2t0viyu000v91g3u3r6avvy.pdf?v=2024-10-28T13:10:58+00:00"
-              onLoadSuccess={onDocumentLoadSuccess}
-            >
+          <Box
+            sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll', scrollbarWidth: 'none' }}
+          >
+            <Document file={submission?.content} onLoadSuccess={onDocumentLoadSuccess}>
               {Array.from(new Array(numPages), (el, index) => (
                 <div key={index} style={{ marginBottom: '0px' }}>
                   <Page

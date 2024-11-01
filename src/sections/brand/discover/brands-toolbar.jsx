@@ -27,15 +27,15 @@ export default function BrandsToolBar({
     [onFilters]
   );
 
-  const handleFilterRole = useCallback(
-    (event) => {
-      onFilters(
-        'role',
-        typeof event.target.value === 'string' ? event.target.value.split(',') : event.target.value
-      );
-    },
-    [onFilters]
-  );
+  // const handleFilterRole = useCallback(
+  //   (event) => {
+  //     onFilters(
+  //       'role',
+  //       typeof event.target.value === 'string' ? event.target.value.split(',') : event.target.value
+  //     );
+  //   },
+  //   [onFilters]
+  // );
 
   return (
     <>

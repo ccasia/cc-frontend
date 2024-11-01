@@ -27,14 +27,17 @@ import { fNumber } from 'src/utils/format-number';
 import Label from 'src/components/label';
 import Chart from 'src/components/chart';
 import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const DashboardSuperadmin = () => {
   const { campaigns, isLoading } = useGetCampaigns();
-  const { data: creators } = useGetCreators();
+  const { data: creators, isLoading: creatorLoading } = useGetCreators();
 
   const theme = useTheme();
   const setting = useSettingsContext();
+
+  const loadingDone = !isLoading && !creatorLoading;
 
   const taskLists =
     !isLoading &&
@@ -150,7 +153,7 @@ const DashboardSuperadmin = () => {
     </TableContainer>
   );
 
-  return (
+  return loadingDone ? (
     <Grid container spacing={3}>
       <Grid item xs={12} md={3}>
         <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
@@ -306,6 +309,8 @@ const DashboardSuperadmin = () => {
         </Box>
       </Grid> */}
     </Grid>
+  ) : (
+    <LoadingScreen />
   );
 };
 
