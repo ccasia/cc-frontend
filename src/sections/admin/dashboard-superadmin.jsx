@@ -17,6 +17,7 @@ import {
   TableBody,
   Typography,
   TableContainer,
+  CircularProgress,
 } from '@mui/material';
 
 import useGetCreators from 'src/hooks/use-get-creators';
@@ -27,7 +28,6 @@ import { fNumber } from 'src/utils/format-number';
 import Label from 'src/components/label';
 import Chart from 'src/components/chart';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const DashboardSuperadmin = () => {
@@ -176,7 +176,11 @@ const DashboardSuperadmin = () => {
         </Box>
       </Grid>
       <Grid item xs={12} md={3}>
-        <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
+        <Box
+          component={Card}
+          p="16px 24px"
+          sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
+        >
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
               Total Pitch
@@ -196,7 +200,11 @@ const DashboardSuperadmin = () => {
         </Box>
       </Grid>
       <Grid item xs={12} md={3}>
-        <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
+        <Box
+          component={Card}
+          p="16px 24px"
+          sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
+        >
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
               Total Creator
@@ -216,7 +224,11 @@ const DashboardSuperadmin = () => {
         </Box>
       </Grid>
       <Grid item xs={12} md={3}>
-        <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
+        <Box
+          component={Card}
+          p="16px 24px"
+          sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
+        >
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
               Total Task
@@ -238,7 +250,7 @@ const DashboardSuperadmin = () => {
       <Grid item xs={12} md={12}>
         <Box
           component={Card}
-          p={2}
+          p="16px 24px"
           sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
         >
           <Stack gap={1}>
@@ -310,7 +322,22 @@ const DashboardSuperadmin = () => {
       </Grid> */}
     </Grid>
   ) : (
-    <LoadingScreen />
+    <Box
+      sx={{
+        position: 'relative',
+        top: 200,
+        textAlign: 'center',
+      }}
+    >
+      <CircularProgress
+        thickness={7}
+        size={25}
+        sx={{
+          color: theme.palette.common.black,
+          strokeLinecap: 'round',
+        }}
+      />
+    </Box>
   );
 };
 

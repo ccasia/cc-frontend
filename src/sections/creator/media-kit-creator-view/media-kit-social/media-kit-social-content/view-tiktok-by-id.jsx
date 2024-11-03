@@ -171,7 +171,7 @@ const MediaKitSocialContent = ({ user }) => {
         <Grid item xs={12} sm={4}>
           <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>
-              Average Likes
+              {/* Average Likes */}
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
               {user_performance?.avg_likes_per_post
