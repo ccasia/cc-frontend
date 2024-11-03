@@ -70,13 +70,18 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
         campaignId: campaign.id,
         content: source.find((item) => item.campaignId === campaign?.id)?.url,
         type: 'video',
+        status: 'undecided',
       });
+      
+      console.log('Submitting pitch with status:', 'undecided');
+      
       mutate(endpoints.auth.me);
       mutate(endpoints.campaign.getMatchedCampaign);
       enqueueSnackbar(res?.data?.message);
       confirm.onFalse();
       handleClose();
     } catch (error) {
+      console.error('Error submitting pitch:', error);
       enqueueSnackbar(error?.message, {
         variant: 'error',
       });
