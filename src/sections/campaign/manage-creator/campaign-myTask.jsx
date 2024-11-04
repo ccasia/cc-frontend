@@ -92,7 +92,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
           <Stack alignItems="center" justifyContent="center" spacing={2}>
             <Iconify icon="hugeicons:license-maintenance" width={50} />
             <Typography variant="h6" color="text.secondary">
-              Campaign is under maintenance
+              Campaign is currently under maintenance.
             </Typography>
           </Stack>
         </Box>

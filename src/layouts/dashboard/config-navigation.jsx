@@ -11,7 +11,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
 
-import sound from '../../../public/sounds/noti.mp3';
+// import sound from '../../../public/sounds/noti.mp3';
 
 // ----------------------------------------------------------------------
 
@@ -58,9 +58,9 @@ const ICONS = {
 export function useNavData() {
   const { user } = useAuthContext();
   const { unreadCount } = useTotalUnreadCount();
-  const [play] = useSound(sound, {
-    interrupt: true,
-  });
+  // const [play] = useSound(sound, {
+  //   interrupt: true,
+  // });
 
   const { socket } = useSocketContext();
   const [unreadMessageCount, setUnreadMessageCount] = useState(null);
@@ -80,7 +80,7 @@ export function useNavData() {
     return () => {
       socket?.off('messageCount');
     };
-  }, [socket, play]);
+  }, [socket]);
 
   const adminNavigations = useMemo(
     () => [
