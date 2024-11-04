@@ -3,17 +3,7 @@ import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { keyframes } from '@emotion/react';
 
-import {
-  Box,
-  Grid,
-  Chip,
-  Stack,
-  useTheme,
-  CardMedia,
-  Typography,
-  IconButton,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
@@ -74,13 +64,16 @@ const TopContentGrid = ({ topContents }) => {
           <Box
             sx={{
               position: 'relative',
+              height: 600,
               overflow: 'hidden',
-              borderRadius: 1,
-              // bgcolor: 'red',
-              height: 1,
+              borderRadius: 3,
+              cursor: 'pointer',
+              '&:hover .image': {
+                scale: 1.05,
+              },
             }}
           >
-            <CardMedia
+            {/* <CardMedia
               component="img"
               image={content.image_url}
               alt={`Top content ${index + 1}`}
@@ -91,87 +84,29 @@ const TopContentGrid = ({ topContents }) => {
                 height: 1,
               }}
               className="image"
+            /> */}
+
+            <CardMedia
+              component="Box"
+              className="image"
+              alt={`Top content ${index + 1}`}
+              sx={{
+                height: 1,
+                transition: 'all .2s linear',
+                objectFit: 'cover',
+                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.image_url}) lightgray 50% / cover no-repeat`,
+              }}
             />
 
-            {/* <Box
-              component="div"
-              className="description"
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                bgcolor: 'rgba(0, 0, 0, 0.8)',
-                color: 'white',
-                p: isMobile ? 1 : 2,
-                opacity: 0,
-                transition: 'opacity 0.3s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                borderRadius: 3,
-              }}
-              onClick={() => {
-                const link = document.createElement('a');
-                link.href = content?.content_url;
-                link.target = '_blank';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link); // Clean u
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{
-                  textAlign: 'justify',
-                  overflow: 'hidden',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 5,
-                  WebkitBoxOrient: 'vertical',
-                  animation: `${typeAnimation} 0.5s steps(40, end)`,
-                  fontSize: isMobile ? '0.75rem' : '0.875rem', // Smaller font size on mobile
-                }}
-              >
-                {content.description}
-              </Typography>
-            </Box>
             <Box
               sx={{
                 position: 'absolute',
                 bottom: 0,
                 left: 0,
                 width: '100%',
-                bgcolor: 'rgba(0, 0, 0, 0.6)',
                 color: 'white',
-                p: isMobile ? 0.5 : 1,
-                borderRadius: '0 0 24px 24px',
-              }}
-            >
-              <Stack direction="row" justifyContent="space-around">
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Icon icon="mdi:heart" width={isMobile ? 16 : 24} height={isMobile ? 16 : 24} />
-                  <Typography variant="caption" sx={{ fontSize: isMobile ? 16 : 14 }}>
-                    {formatNumber(content.like)}
-                  </Typography>
-                </Stack>
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Icon icon="mdi:comment" width={isMobile ? 16 : 24} height={isMobile ? 16 : 24} />
-                  <Typography variant="caption" sx={{ fontSize: isMobile ? 16 : 14 }}>
-                    {formatNumber(content.comment)}
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Box> */}
-
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: { xs: 10, md: 0 },
-                left: 10,
-                width: '100%',
-                color: 'white',
-                p: isMobile ? 0.5 : 1,
+                p: isMobile ? 2 : 1.5,
+                px: 3,
                 borderRadius: '0 0 24px 24px',
               }}
             >
@@ -183,32 +118,27 @@ const TopContentGrid = ({ topContents }) => {
                   WebkitLineClamp: 5,
                   WebkitBoxOrient: 'vertical',
                   animation: `${typeAnimation} 0.5s steps(40, end)`,
-                  fontSize: isMobile ? '0.75rem' : '0.875rem', // Smaller font size on mobile
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
                   mb: 1,
                 }}
               >
                 {`${content?.description?.slice(0, 50)}...`}
               </Typography>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Chip
-                  label={formatNumber(content?.like)}
-                  icon={<Iconify icon="raphael:fave" width={20} />}
-                  color="info"
-                  sx={{
-                    fontWeight: 900,
-                  }}
-                />
-                <Chip
-                  label={formatNumber(content?.comment)}
-                  icon={<Iconify icon="material-symbols:comment" width={20} />}
-                  color="info"
-                  sx={{
-                    fontWeight: 900,
-                  }}
-                />
+
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify icon="material-symbols:favorite-outline" width={20} />
+                  <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify icon="iconamoon:comment" width={20} />
+                  <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
+                </Stack>
               </Stack>
             </Box>
-            <Box
+
+            {/* <Box
               sx={{
                 position: 'absolute',
                 top: 10,
@@ -232,7 +162,7 @@ const TopContentGrid = ({ topContents }) => {
               >
                 <Iconify icon="akar-icons:link-out" />
               </IconButton>
-            </Box>
+            </Box> */}
           </Box>
         </Grid>
       ))}

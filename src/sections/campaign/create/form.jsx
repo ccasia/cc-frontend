@@ -198,7 +198,9 @@ function CreateCampaignForm() {
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    campaignIndustries: Yup.string().required('Campaign Industry is required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required')
+      .required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
@@ -294,7 +296,7 @@ function CreateCampaignForm() {
     campaignBrand: null,
     campaignStartDate: null,
     campaignEndDate: null,
-    campaignIndustries: null,
+    campaignIndustries: [],
     campaignObjectives: '',
     campaignDescription: '',
     audienceGender: [],
@@ -589,29 +591,15 @@ function CreateCampaignForm() {
         <MenuItem value="Want to drive product awareness">Want to drive product awareness</MenuItem>
       </RHFSelect>
 
-      <RHFAutocomplete
+      <RHFMultiSelect
         name="campaignIndustries"
-        placeholder="Industries"
-        disableCloseOnSelect
-        options={interestsLists}
-        // getOptionLabel={(option) => option || ''}
-        // renderOption={(props, option) => (
-        //   <li {...props} key={option}>
-        //     {option}
-        //   </li>
-        // )}
-        // renderTags={(selected, getTagProps) =>
-        //   selected.map((option, index) => (
-        //     <Chip
-        //       {...getTagProps({ index })}
-        //       key={option}
-        //       label={option}
-        //       size="small"
-        //       color="info"
-        //       variant="soft"
-        //     />
-        //   ))
-        // }
+        label="Industries"
+        checkbox
+        chip
+        options={interestsLists.map((item) => ({
+          value: item.toLowerCase(),
+          label: item,
+        }))}
       />
 
       <RHFTextField name="brandTone" label="Brand Tone" multiline />

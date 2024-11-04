@@ -8,7 +8,6 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Unstable_Grid2';
-import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { Button, Checkbox, IconButton, InputAdornment, FormControlLabel } from '@mui/material';
@@ -34,10 +33,6 @@ export default function AccountGeneral() {
   // Hooks
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
-  const theme = useTheme();
-  // const isXs = useMediaQuery(theme.breakpoints.only('xs'));
-  // const isMd = useMediaQuery(theme.breakpoints.only('md'));
-  // const isLg = useMediaQuery(theme.breakpoints.up('lg'));
 
   // State
   const [openCropDialog, setOpenCropDialog] = useState(false);
@@ -395,7 +390,6 @@ export default function AccountGeneral() {
             >
               <RHFTextField name="name" label="Name" />
               <RHFTextField name="email" label="Email Address" />
-
               <Stack>
                 <RHFTextField name="address" label="Address" multiline />
                 <FormControlLabel
@@ -410,7 +404,6 @@ export default function AccountGeneral() {
                   }}
                 />
               </Stack>
-
               <RHFAutocomplete
                 name="state"
                 type="state"
@@ -423,7 +416,6 @@ export default function AccountGeneral() {
                   .map((c) => c.name)}
                 getOptionLabel={(option) => option}
               />
-
               <RHFAutocomplete
                 name="country"
                 type="country"
@@ -432,6 +424,13 @@ export default function AccountGeneral() {
                 options={countries.map((option) => option.label)}
                 getOptionLabel={(option) => option}
               />
+
+              {/* <NumericFormat
+                label="Phone Number"
+                name="phoneNumber"
+                prefix={`+${countries.filter((a) => a.label === nationality).map((e) => e.phone)} `}
+                customInput={RHFTextField}
+              /> */}
 
               <RHFTextField
                 name="phoneNumber"
@@ -453,7 +452,6 @@ export default function AccountGeneral() {
                   endAdornment: <InputAdornment position="start">cm</InputAdornment>,
                 }}
               />
-
               <Stack spacing={1}>
                 {fields.map((item, index) => (
                   <Stack key={item.id} direction="row" spacing={1} alignItems="center">
@@ -470,10 +468,6 @@ export default function AccountGeneral() {
                   Add more allergy
                 </Button>
               </Stack>
-
-              {/* <RHFTextField name="state" label="State/Region" /> */}
-              {/* <RHFTextField name="city" label="City" /> */}
-              {/* <RHFTextField name="zipCode" label="Zip/Code" /> */}
             </Box>
 
             <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
@@ -492,92 +486,6 @@ export default function AccountGeneral() {
           </Card>
         </Grid>
       </Grid>
-      {/* <Dialog
-        open={openCropDialog}
-        onClose={() => {
-          setOpenCropDialog(false);
-          setImageDataUrl(null);
-          if (croppieRef.current) {
-            console.log('Cleaning up Croppie on dialog close');
-            try {
-              const elements = croppieContainerRef.current?.querySelectorAll(
-                '.cr-boundary, .cr-slider-wrap, .cr-viewport'
-              );
-              elements?.forEach((el) => el.remove());
-              croppieRef.current.destroy();
-            } catch (error) {
-              console.error('Error cleaning up Croppie on dialog close:', error);
-            }
-            croppieRef.current = null;
-          }
-        }}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            width: '100%',
-            maxWidth: '800px',
-            height: 'auto',
-            maxHeight: '80vh',
-            m: 2,
-            display: 'flex',
-            flexDirection: 'column',
-          },
-        }}
-      >
-        <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
-          Edit Image
-        </DialogTitle>
-        <DialogContent
-          sx={{ p: 0, overflow: 'hidden', flexGrow: 1, display: 'flex', flexDirection: 'column' }}
-        >
-          <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-            {activeTab === 0 && (
-              <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                {isLoading ? (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '100%',
-                    }}
-                  >
-                    <CircularProgress />
-                  </Box>
-                ) : (
-                  <Box sx={{ flexGrow: 1, width: '100%', height: '100%', minHeight: '198px' }}>
-                    <div ref={croppieContainerRef} style={{ width: '100%', height: '100%' }} />
-                  </Box>
-                )}
-              </Box>
-            )}
-            {activeTab === 1 && <Box>Filters functionality coming soon</Box>}
-            {activeTab === 2 && <Box>Adjust functionality coming soon</Box>}
-          </Box>
-          {activeTab === 0 && (
-            <Box sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
-              <Typography gutterBottom>Zoom</Typography>
-              <Slider
-                value={zoom}
-                onChange={handleZoomChange}
-                aria-labelledby="zoom-slider"
-                min={0}
-                max={1}
-                step={0.01}
-              />
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', py: 2, px: 3 }}>
-          <Button onClick={() => setOpenCropDialog(false)} color="inherit">
-            Cancel
-          </Button>
-          <Button onClick={handleCrop} variant="contained">
-            Apply and Save
-          </Button>
-        </DialogActions>
-      </Dialog> */}
     </FormProvider>
   );
 }

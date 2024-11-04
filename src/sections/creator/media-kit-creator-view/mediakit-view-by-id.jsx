@@ -13,11 +13,11 @@ import {
   Avatar,
   Button,
   Toolbar,
-  Divider,
   useTheme,
   Container,
   IconButton,
   Typography,
+  ListItemText,
   DialogContent,
 } from '@mui/material';
 
@@ -28,7 +28,6 @@ import { grey } from 'src/theme/palette';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
 
 import MediaKitSocial from './media-kit-social/view';
 import { formatNumber } from './media-kit-social/media-kit-social-content/view-instagram';
@@ -124,60 +123,24 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
         </Toolbar>
       </AppBar>
       <DialogContent>
-        {/* <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-          <MediaKitCover user={creatorData} />
-          <Tabs
-            value={currentTab}
-            onChange={(e, val) => setCurrentTab(val)}
-            variant="fullWidth"
-            sx={{
-              mt: 2,
-              mb: 2,
-              border: `dashed 1px ${theme.palette.divider}`,
-              borderRadius: 2,
-              p: 2,
-              [`& .Mui-selected`]: {
-                bgcolor:
-                  settings.themeMode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300],
-                borderRadius: 1.5,
-                border: 1,
-                borderColor: theme.palette.divider,
-              },
-            }}
-            TabIndicatorProps={{
-              sx: {
-                display: 'none',
-              },
-            }}
-          >
-            <Tab
-              value="instagram"
-              label="Instagram"
-              icon={<Iconify icon="skill-icons:instagram" />}
-            />
-            <Tab value="tiktok" label="Tiktok" icon={<Iconify icon="logos:tiktok-icon" />} />
-            <Tab value="partnership" label="Partnerships" />
-          </Tabs>
-
-          <MediaKitSocial currentTab={currentTab} creator={creatorData} />
-        </Container> */}
         <Container
-          maxWidth={settings.themeStretch ? false : 'lg'}
-          sx={
-            isFullScreen
-              ? {
-                  ...styleFullScreen,
-                }
-              : {
-                  borderRadius: 1,
-                  position: 'relative',
-                  boxShadow:
-                    theme.palette.mode === 'light'
-                      ? 'rgba(9, 30, 66, 0.25) 0px 1px 1px, rgba(9, 30, 66, 0.13) 0px 0px 2px 2px;'
-                      : 'rgba(255, 255, 255, 0.10) 0px 1px 1px, rgba(255, 255, 255, 0.08) 0px 0px 2px 2px',
-                  p: 2,
-                }
-          }
+          maxWidth="xl"
+          // maxWidth={settings.themeStretch ? false : 'lg'}
+          // sx={
+          //   isFullScreen
+          //     ? {
+          //         ...styleFullScreen,
+          //       }
+          //     : {
+          //         borderRadius: 1,
+          //         position: 'relative',
+          //         boxShadow:
+          //           theme.palette.mode === 'light'
+          //             ? 'rgba(9, 30, 66, 0.25) 0px 1px 1px, rgba(9, 30, 66, 0.13) 0px 0px 2px 2px;'
+          //             : 'rgba(255, 255, 255, 0.10) 0px 1px 1px, rgba(255, 255, 255, 0.08) 0px 0px 2px 2px',
+          //         p: 2,
+          //       }
+          // }
         >
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <Avatar
@@ -189,9 +152,15 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
             />
           </Stack>
 
-          <Stack my={2}>
+          <Stack>
             <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="h3" fontWeight="bold">
+              <Typography
+                variant="h3"
+                sx={{
+                  fontFamily: theme.typography.fontSecondaryFamily,
+                  fontWeight: 100,
+                }}
+              >
                 {data?.user?.name}
               </Typography>
               <Iconify icon="material-symbols:verified" color="info.main" width={20} />
@@ -211,9 +180,23 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
             </Stack>
           </Stack>
 
-          <Stack direction="row" alignItems="center" spacing={1} my={2.5}>
+          <Typography variant="subtitle2" my={1}>
+            {data?.user?.creator?.mediaKit?.about}
+          </Typography>
+
+          <Stack direction="row" alignItems="center" spacing={1} mb={2} flexWrap="wrap">
             {data?.user?.creator?.interests.map((interest) => (
-              <Label key={interest?.id}>{interest.name.toUpperCase()}</Label>
+              <Label
+                key={interest?.id}
+                sx={{
+                  border: 1,
+                  borderColor: '#EBEBEB',
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  bgcolor: 'white',
+                }}
+              >
+                {interest.name.toUpperCase()}
+              </Label>
             ))}
           </Stack>
 
@@ -223,109 +206,192 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
             justifyContent="stretch"
             spacing={2}
             flexWrap={{ xs: 'wrap', md: 'nowrap' }}
+            sx={{
+              borderTop: 1,
+              borderBottom: 1,
+              borderColor: '#EBEBEB',
+              py: 2,
+            }}
           >
             <Box
               sx={{
-                boxShadow: 5,
-                p: 2,
-                borderRadius: 2,
-                width: '100%',
+                width: 1,
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  right: 0,
+                  height: '80%',
+                  width: '2px',
+                  backgroundColor: '#EBEBEB',
+                },
               }}
             >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <AvatarIcon icon="ic:sharp-people-alt" />
-                <Stack>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    FOLLOWERS
-                  </Typography>
-                  <Typography
-                    variant="h3"
-                    key={currentTab}
-                    component={m.div}
-                    initial={{ scale: 0.5 }}
-                    animate={{ scale: 1 }}
-                    transition={{
-                      duration: 1,
-                      type: 'spring',
-                    }}
-                  >
-                    {socialMediaAnalytics.followers
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <Avatar
+                  sx={{
+                    bgcolor: '#8A5AFE',
+                    width: 60,
+                    height: 60,
+                  }}
+                >
+                  <Iconify icon="ic:sharp-people-alt" width={30} />
+                </Avatar>
+                <ListItemText
+                  primary="FOLLOWERS"
+                  secondary={
+                    socialMediaAnalytics.followers
                       ? formatNumber(socialMediaAnalytics.followers)
-                      : 'No data'}
-                  </Typography>
-                </Stack>
+                      : 'No data'
+                  }
+                  primaryTypographyProps={{
+                    variant: 'caption',
+                    color: 'text.secondary',
+                    fontWeight: 600,
+                  }}
+                  secondaryTypographyProps={{
+                    variant: 'h3',
+                    color: 'black',
+                    key: currentTab,
+                    component: m.div,
+                    initial: { scale: 0.5 },
+                    animate: { scale: 1 },
+                    transition: {
+                      duration: 1,
+                      type: 'spring',
+                    },
+                    lineHeight: 1,
+                  }}
+                />
               </Stack>
             </Box>
             <Box
               sx={{
-                boxShadow: 5,
-                p: 2,
-                borderRadius: 2,
-                width: '100%',
+                width: 1,
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  right: 0,
+                  height: '80%',
+                  width: '2px',
+                  backgroundColor: '#EBEBEB',
+                },
               }}
             >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <AvatarIcon icon="solar:chart-bold" />
-                <Stack>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    ENGAGEMENT RATE
-                  </Typography>
-                  <Typography
-                    variant="h3"
-                    key={currentTab}
-                    component={m.div}
-                    initial={{ scale: 0.5 }}
-                    animate={{ scale: 1 }}
-                    transition={{
-                      duration: 1,
-                      type: 'spring',
-                    }}
-                  >
-                    {socialMediaAnalytics.engagement_rate
+              {/* <Stack direction="row" alignItems="center" spacing={1}>
+            <AvatarIcon icon="solar:chart-bold" />
+            <Stack>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                ENGAGEMENT RATE
+              </Typography>
+              <Typography
+                variant="h3"
+                key={currentTab}
+                component={m.div}
+                initial={{ scale: 0.5 }}
+                animate={{ scale: 1 }}
+                transition={{
+                  duration: 1,
+                  type: 'spring',
+                }}
+              >
+                {socialMediaAnalytics.engagement_rate
+                  ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
+                  : 'No data'}
+              </Typography>
+            </Stack>
+          </Stack> */}
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <Avatar
+                  sx={{
+                    bgcolor: '#026D54',
+                    width: 60,
+                    height: 60,
+                  }}
+                >
+                  <Iconify icon="mage:chart-up-fill" width={30} />
+                </Avatar>
+                <ListItemText
+                  primary="ENGAGEMENT RATE"
+                  secondary={
+                    socialMediaAnalytics.engagement_rate
                       ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
-                      : 'No data'}
-                  </Typography>
-                </Stack>
+                      : 'No data'
+                  }
+                  primaryTypographyProps={{
+                    variant: 'caption',
+                    color: 'text.secondary',
+                    fontWeight: 600,
+                  }}
+                  secondaryTypographyProps={{
+                    variant: 'h3',
+                    color: 'black',
+                    key: currentTab,
+                    component: m.div,
+                    initial: { scale: 0.5 },
+                    animate: { scale: 1 },
+                    transition: {
+                      duration: 1,
+                      type: 'spring',
+                    },
+                    lineHeight: 1,
+                  }}
+                />
               </Stack>
             </Box>
             <Box
               sx={{
-                boxShadow: 5,
-                p: 2,
-                borderRadius: 2,
-                width: '100%',
+                width: 1,
               }}
             >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <AvatarIcon icon="raphael:fave" />
-
-                <Stack>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    AVERAGE LIKES
-                  </Typography>
-                  <Typography
-                    variant="h3"
-                    key={currentTab}
-                    component={m.div}
-                    initial={{ scale: 0.5 }}
-                    animate={{ scale: 1 }}
-                    transition={{
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <Avatar
+                  sx={{
+                    bgcolor: '#FF3500',
+                    width: 60,
+                    height: 60,
+                  }}
+                >
+                  <Iconify icon="hugeicons:play-list-favourite-02" width={30} />
+                </Avatar>
+                <ListItemText
+                  primary="AVERAGE LIKES"
+                  secondary={
+                    socialMediaAnalytics.averageLikes
+                      ? formatNumber(socialMediaAnalytics.averageLikes)
+                      : 'No data'
+                  }
+                  primaryTypographyProps={{
+                    variant: 'caption',
+                    color: 'text.secondary',
+                    fontWeight: 600,
+                  }}
+                  secondaryTypographyProps={{
+                    variant: 'h3',
+                    color: 'black',
+                    key: currentTab,
+                    component: m.div,
+                    initial: { scale: 0.5 },
+                    animate: { scale: 1 },
+                    transition: {
                       duration: 1,
                       type: 'spring',
-                    }}
-                  >
-                    {socialMediaAnalytics.averageLikes
-                      ? formatNumber(socialMediaAnalytics.averageLikes)
-                      : 'No data'}
-                  </Typography>
-                </Stack>
+                    },
+                    lineHeight: 1,
+                  }}
+                />
               </Stack>
             </Box>
           </Stack>
 
-          <Divider sx={{ my: 3 }} />
+          {/* <Divider sx={{ my: 3 }} /> */}
 
-          <Typography variant="h5" color="text.secondary" fontWeight={800}>
+          <Typography fontWeight={400} fontFamily="Instrument Serif" fontSize="40px" mt={3}>
             Top Content
           </Typography>
 
@@ -333,12 +399,13 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
             <Button
               variant="outlined"
               startIcon={<Iconify icon="mdi:instagram" width={20} />}
-              sx={
-                currentTab === 'instagram' && {
-                  border: 2,
+              sx={{
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                ...(currentTab === 'instagram' && {
                   color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
-                }
-              }
+                  boxShadow: 'none',
+                }),
+              }}
               onClick={() => setCurrentTab('instagram')}
             >
               Instagram
@@ -346,12 +413,13 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
             <Button
               variant="outlined"
               startIcon={<Iconify icon="ic:baseline-tiktok" width={20} />}
-              sx={
-                currentTab === 'tiktok' && {
-                  border: 2,
+              sx={{
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                ...(currentTab === 'tiktok' && {
                   color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
-                }
-              }
+                  boxShadow: 'none',
+                }),
+              }}
               onClick={() => setCurrentTab('tiktok')}
             >
               Tiktok
@@ -359,12 +427,13 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
             <Button
               variant="outlined"
               startIcon={<Iconify icon="mdi:partnership" width={20} />}
-              sx={
-                currentTab === 'partnerships' && {
-                  border: 2,
+              sx={{
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                ...(currentTab === 'partnerships' && {
                   color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
-                }
-              }
+                  boxShadow: 'none',
+                }),
+              }}
               onClick={() => setCurrentTab('partnerships')}
             >
               Partnerships
@@ -378,84 +447,6 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
           />
         </Container>
       </DialogContent>
-
-      {/* {isLoading ? (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      ) : (
-        // <>
-        //   {!creatorData ? (
-        //     <EmptyContent title="Media Kit Data not found." />
-        //   ) : (
-        //     <>
-        //       <AppBar sx={{ position: 'relative' }}>
-        //         <Toolbar>
-        //           <IconButton edge="start" color="inherit" onClick={onClose} aria-label="close">
-        //             <Iconify icon="ic:round-close" />
-        //           </IconButton>
-        //           <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-        //             Media Kit
-        //           </Typography>
-        //         </Toolbar>
-        //       </AppBar>
-        //       <DialogContent>
-        //         <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-        //           <MediaKitCover user={creatorData} />
-
-        //           <Tabs
-        //             value={currentTab}
-        //             onChange={(e, val) => setCurrentTab(val)}
-        //             variant="fullWidth"
-        //             sx={{
-        //               mt: 2,
-        //               mb: 2,
-        //               border: `dashed 1px ${theme.palette.divider}`,
-        //               borderRadius: 2,
-        //               p: 2,
-        //               [`& .Mui-selected`]: {
-        //                 bgcolor:
-        //                   settings.themeMode === 'dark'
-        //                     ? theme.palette.grey[800]
-        //                     : theme.palette.grey[300],
-        //                 borderRadius: 1.5,
-        //                 border: 1,
-        //                 borderColor: theme.palette.divider,
-        //               },
-        //             }}
-        //             TabIndicatorProps={{
-        //               sx: {
-        //                 display: 'none',
-        //               },
-        //             }}
-        //           >
-        //             <Tab
-        //               value="instagram"
-        //               label="Instagram"
-        //               icon={<Iconify icon="skill-icons:instagram" />}
-        //             />
-        //             <Tab
-        //               value="tiktok"
-        //               label="Tiktok"
-        //               icon={<Iconify icon="logos:tiktok-icon" />}
-        //             />
-        //             <Tab value="partnership" label="Partnerships" />
-        //           </Tabs>
-
-        //           <MediaKitSocial currentTab={currentTab} creator={creatorData} />
-        //         </Container>
-        //       </DialogContent>
-        //     </>
-        //   )}
-        // </>
-      )} */}
     </Dialog>
   );
 };
