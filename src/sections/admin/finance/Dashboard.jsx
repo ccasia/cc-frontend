@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Box, Grid, Container, Typography, CircularProgress } from '@mui/material';
+import { Grid, Container, Typography } from '@mui/material';
 
 import { useGetAllInvoices } from 'src/api/invoices';
 
@@ -160,24 +160,13 @@ const Dashboard = () => {
             Invoice History.
           </Typography>
 
-          {!isLoading ? (
+          {!isLoading && (
             <InvoiceHistoryCampaignList
               data={filteredData}
               onDataUpdate={handleDataUpdate}
               searchQuery={searchQuery}
               onSearchChange={handleSearchChange}
             />
-          ) : (
-            <Box textAlign="center">
-              <CircularProgress
-                thickness={7}
-                size={25}
-                sx={{
-                  color: (theme) => theme.palette.common.black,
-                  strokeLinecap: 'round',
-                }}
-              />
-            </Box>
           )}
         </Grid>
       </Grid>
