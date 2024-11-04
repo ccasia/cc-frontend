@@ -3,6 +3,7 @@ import { mutate } from 'swr';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import { ListItemText } from '@mui/material';
 
 import {
   Box,
@@ -103,7 +104,18 @@ const CampaignAgreements = ({ campaign }) => {
                   <TableRow key={item.id}>
                     <TableCell>{item?.user?.name}</TableCell>
                     <TableCell>{item?.user?.email}</TableCell>
-                    <TableCell>{dayjs(item?.updatedAt).format('LL')}</TableCell>
+                    <TableCell>
+                      <ListItemText
+                        primary={dayjs(item?.updatedAt).format('LL')}
+                        secondary={dayjs(item?.updatedAt).format('LT')}
+                        primaryTypographyProps={{ typography: 'body2', noWrap: true }}
+                        secondaryTypographyProps={{
+                          mt: 0.5,
+                          component: 'span',
+                          typography: 'caption',
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>
                       {item?.isSent ? (
                         <Label color="success">Sent</Label>
