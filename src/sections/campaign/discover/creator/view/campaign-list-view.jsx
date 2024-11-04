@@ -33,7 +33,6 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
 
 import CreatorForm from '../creator-form';
 import CampaignLists from '../campaign-list';
@@ -406,8 +405,6 @@ export default function CampaignListView() {
         </Box>
       </Box>
 
-      {isLoading && <LoadingScreen />}
-
       {!isLoading &&
         (filteredData?.length > 0 ? (
           <CampaignLists
@@ -422,6 +419,25 @@ export default function CampaignListView() {
             title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`}
           />
         ))}
+
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
 
       {upload.length > 0 && renderUploadProgress}
 

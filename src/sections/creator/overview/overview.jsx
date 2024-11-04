@@ -22,7 +22,6 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-import { LoadingScreen } from 'src/components/loading-screen';
 
 const Overview = () => {
   const { user } = useAuthContext();
@@ -74,7 +73,25 @@ const Overview = () => {
               p: 2,
             }}
           >
-            {isLoading && <LoadingScreen />}
+            {isLoading && (
+              <Box
+                sx={{
+                  position: 'relative',
+                  top: 200,
+                  textAlign: 'center',
+                }}
+              >
+                <CircularProgress
+                  thickness={7}
+                  size={25}
+                  sx={{
+                    color: (theme) => theme.palette.common.black,
+                    strokeLinecap: 'round',
+                  }}
+                />
+              </Box>
+            )}
+
             {!isLoading && data.length < 1 ? (
               <Typography textAlign="center" variant="subtitle2" color="text.secondary">
                 No campaigns found

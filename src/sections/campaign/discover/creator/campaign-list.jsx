@@ -16,6 +16,7 @@ export default function CampaignLists({
   onPageChange,
   maxItemsPerPage,
 }) {
+  
   const { user } = useAuthContext();
 
   return (
