@@ -78,8 +78,8 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
       if (name && icNumber) {
         try {
           loadingProcess.onTrue();
-          const test = await processPdf();
-          setURL(test);
+          const data = await processPdf();
+          setURL(data);
           setActiveStep(activeStep + 1);
         } catch (error) {
           console.log(error);

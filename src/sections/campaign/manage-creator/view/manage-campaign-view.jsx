@@ -1,26 +1,33 @@
-import React, { useState, useMemo } from 'react';
-import { Box, Button, Container, InputBase, Stack, Typography, Select, MenuItem } from '@mui/material';
+import { orderBy } from 'lodash';
+import React, { useMemo, useState } from 'react';
 
-import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
+import {
+  Box,
+  Stack,
+  Button,
+  Select,
+  MenuItem,
+  Container,
+  InputBase,
+  Typography,
+} from '@mui/material';
 
-import { useAuthContext } from 'src/auth/hooks';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import { useSettingsContext } from 'src/components/settings';
 
 import ActiveCampaignView from '../active-campaign-view';
 import AppliedCampaignView from '../applied-campaign-view';
 import CompletedCampaignView from '../completed-campaign-view';
-import { useSettingsContext } from 'src/components/settings';
-import { orderBy } from 'lodash';
 
 const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
-  const router = useRouter();
+
   const { user } = useAuthContext();
   const { campaigns } = useGetCampaigns('creator');
   const settings = useSettingsContext();
@@ -28,7 +35,7 @@ const ManageCampaignView = () => {
   // Calculate counts for each tab
   const counts = useMemo(() => {
     let filteredCampaigns = campaigns;
-    
+
     // Apply sorting
     if (sortBy === 'Most matched') {
       filteredCampaigns = orderBy(filteredCampaigns, ['percentageMatch'], ['desc']);
@@ -37,22 +44,25 @@ const ManageCampaignView = () => {
     }
 
     return {
-      active: filteredCampaigns?.filter(campaign => 
-        campaign?.shortlisted?.some(item => 
-          item.userId === user?.id && !item.isCampaignDone
-        ) && campaign.status !== 'COMPLETED'
-      )?.length || 0,
-      pending: filteredCampaigns?.filter(campaign =>
-        campaign?.pitch?.some(item =>
-          item?.userId === user?.id &&
-          (item?.status === 'undecided' || item?.status === 'rejected')
-        )
-      )?.length || 0,
-      completed: filteredCampaigns?.filter(campaign =>
-        campaign?.shortlisted?.some(item =>
-          item.userId === user?.id && item.isCampaignDone
-        )
-      )?.length || 0,
+      active:
+        filteredCampaigns?.filter(
+          (campaign) =>
+            campaign?.shortlisted?.some(
+              (item) => item.userId === user?.id && !item.isCampaignDone
+            ) && campaign.status !== 'COMPLETED'
+        )?.length || 0,
+      pending:
+        filteredCampaigns?.filter((campaign) =>
+          campaign?.pitch?.some(
+            (item) =>
+              item?.userId === user?.id &&
+              (item?.status === 'undecided' || item?.status === 'rejected')
+          )
+        )?.length || 0,
+      completed:
+        filteredCampaigns?.filter((campaign) =>
+          campaign?.shortlisted?.some((item) => item.userId === user?.id && item.isCampaignDone)
+        )?.length || 0,
     };
   }, [campaigns, user?.id, sortBy]);
 
@@ -65,14 +75,14 @@ const ManageCampaignView = () => {
   const renderTabs = (
     <>
       {/* Mobile Search and Sort Stack */}
-      <Stack 
+      <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={2}
         alignItems={{ xs: 'stretch', sm: 'center' }}
-        sx={{ 
+        sx={{
           width: '100%',
           mb: { xs: 3, sm: 0 },
-          display: { xs: 'flex', md: 'none' }
+          display: { xs: 'flex', md: 'none' },
         }}
       >
         {/* Search Box - Full width on mobile */}
@@ -96,13 +106,13 @@ const ManageCampaignView = () => {
                 sx={{ width: 20, height: 20, mr: 1, color: 'text.disabled', ml: 1 }}
               />
             }
-            sx={{ 
+            sx={{
               width: '100%',
               color: 'text.primary',
               '& input': {
                 py: 1,
                 px: 1,
-              }
+              },
             }}
           />
         </Box>
@@ -138,9 +148,9 @@ const ManageCampaignView = () => {
               },
             }}
             IconComponent={(props) => (
-              <Iconify 
-                icon="eva:chevron-down-fill" 
-                {...props} 
+              <Iconify
+                icon="eva:chevron-down-fill"
+                {...props}
                 sx={{ mr: 0.2, width: 32, height: 32 }}
               />
             )}
@@ -148,16 +158,22 @@ const ManageCampaignView = () => {
             <MenuItem value="Most matched">
               <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                 Most matched
-                {sortBy === "Most matched" && (
-                  <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                {sortBy === 'Most matched' && (
+                  <Iconify
+                    icon="eva:checkmark-fill"
+                    sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
+                  />
                 )}
               </Stack>
             </MenuItem>
             <MenuItem value="Most recent">
               <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                 Most recent
-                {sortBy === "Most recent" && (
-                  <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                {sortBy === 'Most recent' && (
+                  <Iconify
+                    icon="eva:checkmark-fill"
+                    sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
+                  />
                 )}
               </Stack>
             </MenuItem>
@@ -166,7 +182,15 @@ const ManageCampaignView = () => {
       </Stack>
 
       {/* Existing Tabs and Desktop Search/Sort */}
-      <Stack direction="row" spacing={0.5} sx={{ /* existing styles */ }}>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={
+          {
+            /* existing styles */
+          }
+        }
+      >
         <Stack direction="row" spacing={2.5}>
           {tabs.map((tab) => (
             <Button
@@ -225,13 +249,13 @@ const ManageCampaignView = () => {
           ))}
         </Stack>
 
-        <Stack 
+        <Stack
           direction="row"
           spacing={2}
           alignItems="center"
-          sx={{ 
+          sx={{
             ml: 'auto',
-            display: { xs: 'none', md: 'flex' }
+            display: { xs: 'none', md: 'flex' },
           }}
         >
           {/* Existing Desktop Search Box */}
@@ -245,7 +269,7 @@ const ManageCampaignView = () => {
               borderColor: 'divider',
               borderRadius: 1,
               bgcolor: 'background.paper',
-              display: 'flex',
+              // display: 'flex',
               alignItems: 'center',
               height: '42px',
             }}
@@ -257,19 +281,19 @@ const ManageCampaignView = () => {
               startAdornment={
                 <Iconify
                   icon="eva:search-fill"
-                  sx={{ 
-                    width: 20, 
-                    height: 20, 
+                  sx={{
+                    width: 20,
+                    height: 20,
                     color: 'text.disabled',
                     ml: 1.5,
-                    mr: 1 
+                    mr: 1,
                   }}
                 />
               }
-              sx={{ 
+              sx={{
                 width: '100%',
                 color: 'text.primary',
-                '& input': { 
+                '& input': {
                   py: 1.5,
                   px: 1,
                   height: '100%',
@@ -297,14 +321,16 @@ const ManageCampaignView = () => {
               displayEmpty
               input={<InputBase />}
               renderValue={(selected) => (
-                <Box sx={{ 
-                  width: '100%', 
-                  textAlign: 'center',
-                  mr: selected ? 0 : '24px' 
-                }}>
-                  <Typography 
+                <Box
+                  sx={{
+                    width: '100%',
+                    textAlign: 'center',
+                    mr: selected ? 0 : '24px',
+                  }}
+                >
+                  <Typography
                     variant="body2"
-                    sx={{ 
+                    sx={{
                       fontWeight: 600,
                       fontSize: '0.875rem',
                     }}
@@ -328,10 +354,10 @@ const ManageCampaignView = () => {
                 },
               }}
               IconComponent={(props) => (
-                <Iconify 
-                  icon="eva:chevron-down-fill" 
-                  {...props} 
-                  sx={{ 
+                <Iconify
+                  icon="eva:chevron-down-fill"
+                  {...props}
+                  sx={{
                     mr: 0.2,
                     width: 32,
                     height: 32,
@@ -344,8 +370,11 @@ const ManageCampaignView = () => {
                 <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                     Most matched
-                    {sortBy === "Most matched" && (
-                      <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                    {sortBy === 'Most matched' && (
+                      <Iconify
+                        icon="eva:checkmark-fill"
+                        sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
+                      />
                     )}
                   </Stack>
                 </Typography>
@@ -354,8 +383,11 @@ const ManageCampaignView = () => {
                 <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                     Most recent
-                    {sortBy === "Most recent" && (
-                      <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                    {sortBy === 'Most recent' && (
+                      <Iconify
+                        icon="eva:checkmark-fill"
+                        sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
+                      />
                     )}
                   </Stack>
                 </Typography>
@@ -368,15 +400,15 @@ const ManageCampaignView = () => {
   );
 
   return (
-    <Container 
+    <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
         px: { xs: 2, sm: 3, md: 4 },
       }}
     >
-      <Typography 
-        variant="h2" 
-        sx={{ 
+      <Typography
+        variant="h2"
+        sx={{
           mb: 2,
           fontFamily: 'Instrument Serif, serif',
         }}
