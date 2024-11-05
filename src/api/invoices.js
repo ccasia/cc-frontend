@@ -14,3 +14,19 @@ export const useGetAllInvoices = () => {
 
   return memoizedValue;
 };
+
+export const useGetCreatorInvoice = ({ invoiceId }) => {
+  const { data, isLoading, error } = useSWR(
+    `${endpoints.invoice.getCreatorInvoice}/${invoiceId}`,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateOnMount: true,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  const memoizedValue = useMemo(() => ({ data, isLoading, error }), [data, isLoading, error]);
+
+  return memoizedValue;
+};

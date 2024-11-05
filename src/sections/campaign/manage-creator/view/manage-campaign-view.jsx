@@ -3,9 +3,6 @@ import React, { useState } from 'react';
 import { Box, Button, Container, InputBase } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
-
-import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
@@ -17,8 +14,8 @@ import CompletedCampaignView from '../completed-campaign-view';
 const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
   const [query, setQuery] = useState('');
-  const router = useRouter();
-  const { user } = useAuthContext();
+  // const router = useRouter();
+  // const { user } = useAuthContext();
 
   const renderTabs = (
     <Box

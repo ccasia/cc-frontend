@@ -69,6 +69,7 @@ export const paths = {
       mediaKitCreator: `${ROOTS.DASHBOARD}/mediakit`,
       mediaKitLists: `${ROOTS.DASHBOARD}/creator/media-kits`,
       invoiceCreator: `${ROOTS.DASHBOARD}/invoiceCreator`,
+      invoiceDetail: (invoiceId) => `${ROOTS.DASHBOARD}/invoiceCreator/${invoiceId}`,
       inbox: `${ROOTS.DASHBOARD}/inbox`,
     },
     landing: {

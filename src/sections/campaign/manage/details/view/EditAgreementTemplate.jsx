@@ -3,7 +3,9 @@ import PropTypes from 'prop-types';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import { PDFEditorModal } from 'src/sections/campaign/create/form';
+import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
+
+// import { PDFEditorModal } from 'src/sections/campaign/create/form';
 
 const EditAgreementTemplate = ({ open, campaign, onClose }) => {
   const { user } = useAuthContext();

@@ -45,13 +45,15 @@ const AppliedCampaignView = ({ searchQuery }) => {
             <Grid item xs={12} sm={6} md={4} key={campaign.id}>
               <CampaignItem
                 campaign={campaign}
-                pitchStatus={campaign.pitch.find(item => item.userId === user.id)?.status}
+                pitchStatus={campaign.pitch.find((item) => item.userId === user.id)?.status}
               />
             </Grid>
           ))}
         </Grid>
       ) : (
-        <EmptyContent title={`No pending applications ${searchQuery ? `for "${searchQuery}"` : ''} found.`} />
+        <EmptyContent
+          title={`No pending applications ${searchQuery ? `for "${searchQuery}"` : ''} found.`}
+        />
       )}
     </Box>
   );

@@ -72,6 +72,7 @@ export default function InvoiceDetails({ invoice }) {
       </Grid>
     </Grid>
   );
+
   const renderList = (
     <TableContainer sx={{ overflow: 'unset', mt: 5 }}>
       <Scrollbar>

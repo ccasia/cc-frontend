@@ -31,27 +31,12 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { interestsLists } from 'src/contants/interestLists';
+
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import CreateCompany from './create-company';
-
-const interestsLists = [
-  'Art',
-  'Beauty',
-  'Business',
-  'Fashion',
-  'Fitness',
-  'Food',
-  'Gaming',
-  'Health',
-  'Lifestyle',
-  'Music',
-  'Sports',
-  'Technology',
-  'Travel',
-  'Entertainment',
-];
 
 const steps = ['Select or Create Company', 'Fill in Brand Information'];
 

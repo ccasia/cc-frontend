@@ -1,0 +1,16 @@
+export const interestsLists = [
+  'Art',
+  'Beauty',
+  'Business',
+  'Fashion',
+  'Fitness',
+  'Food',
+  'Gaming',
+  'Health',
+  'Lifestyle',
+  'Music',
+  'Sports',
+  'Technology',
+  'Travel',
+  'Entertainment',
+];
