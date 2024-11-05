@@ -1,10 +1,10 @@
-import { pdfjs } from 'react-pdf';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { enqueueSnackbar } from 'notistack';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { Page, pdfjs, Document } from 'react-pdf';
+import React, { useState, useEffect } from 'react';
 
 import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material';
 
@@ -26,6 +26,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 const InvoiceDetail = ({ invoiceId }) => {
   const router = useRouter();
+  const [pdfBlob, setPdfBlob] = useState(null);
 
   const { data, isLoading, error } = useGetCreatorInvoice({ invoiceId });
 
@@ -51,6 +52,19 @@ const InvoiceDetail = ({ invoiceId }) => {
     } catch (err) {
       console.log(err);
     }
+  };
+
+  useEffect(() => {
+    const generateBlob = async () => {
+      const blob = await pdf(<InvoicePDF data={data} />).toBlob();
+      setPdfBlob(blob);
+    };
+
+    generateBlob();
+  }, [data]);
+
+  const handleUploadSuccess = ({ numPages }) => {
+    console.log(numPages);
   };
 
   return (
@@ -142,8 +156,24 @@ const InvoiceDetail = ({ invoiceId }) => {
       )}
 
       {/* Fix this one later */}
-
-      {/* {!isLoading && data && <ReactPDF />} */}
+      <Box
+        sx={{
+          textAlign: 'center',
+          height: 1000,
+          overflow: 'hidden',
+          overflowX: 'auto',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'inline-flex',
+          }}
+        >
+          <Document file={pdfBlob} onLoadSuccess={handleUploadSuccess}>
+            <Page pageNumber={1} scale={2} />
+          </Document>
+        </Box>
+      </Box>
     </Box>
   );
 };
