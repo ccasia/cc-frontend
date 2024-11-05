@@ -98,9 +98,24 @@ const Invoice = () => {
               }}
               IconComponent={(props) => <Iconify icon="eva:chevron-down-fill" {...props} />}
             >
-              <MenuItem value="Latest">Latest</MenuItem>
-              <MenuItem value="Status">Status</MenuItem>
-              <MenuItem value="Price">Price</MenuItem>
+              <MenuItem value="Latest">
+                <Stack direction="row" alignItems="center" justifyContent="space-between" gap={4}>
+                  <Typography variant="subtitle2">Latest</Typography>
+                  {sortBy === 'Latest' && <Iconify icon="ic:round-check" />}
+                </Stack>
+              </MenuItem>
+              <MenuItem value="Status">
+                <Stack direction="row" alignItems="center" justifyContent="space-between" gap={4}>
+                  <Typography variant="subtitle2">Status</Typography>
+                  {sortBy === 'Status' && <Iconify icon="ic:round-check" />}
+                </Stack>
+              </MenuItem>
+              <MenuItem value="Price">
+                <Stack direction="row" alignItems="center" justifyContent="space-between" gap={4}>
+                  <Typography variant="subtitle2">Price</Typography>
+                  {sortBy === 'Price' && <Iconify icon="ic:round-check" />}
+                </Stack>
+              </MenuItem>
             </Select>
           </Stack>
         </Box>

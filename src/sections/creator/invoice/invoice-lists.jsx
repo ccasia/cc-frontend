@@ -30,7 +30,6 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 const InvoiceLists = ({ invoices }) => {
   const router = useRouter();
 
-  console.log(invoices);
   return (
     <Box>
       <TableContainer>
