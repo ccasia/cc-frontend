@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect  } from 'react';
 
-import { Stack, Container } from '@mui/material';
+import { Stack, Container, Button } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
@@ -10,10 +10,45 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CampaignLists from 'src/sections/campaign/discover/admin/campaign-list';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
+
+import { useNavigate, useLocation } from 'react-router-dom';
+
+import useSWR from 'swr';
+import axios from 'axios';
 
 function CampaignPage() {
   const settings = useSettingsContext();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const { campaigns } = useGetCampaignsFinance();
+  const { data, isLoading } = useSWR(endpoints.invoice.ConnectToXero, fetcher, {
+    revalidateOnFocus: true,
+    revalidateOnMount: true,
+    revalidateOnReconnect: true,
+  });
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      const searchParams = new URLSearchParams(location.search);
+      const code = searchParams.get('code'); // Get the authorization code
+      if (code) {
+        try {
+          // Call the backend to exchange the authorization code for the access token
+          const { data } = await axios.get(endpoints.auth.xeroCallback(code), {
+            withCredentials: true,
+          });
+
+          navigate('/dashboard');
+        } catch (error) {
+          console.error('Error fetching access token:', error);
+        }
+      }
+    };
+
+    fetchToken();
+  }, []);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>

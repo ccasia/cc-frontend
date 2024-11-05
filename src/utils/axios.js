@@ -77,6 +77,10 @@ export const endpoints = {
     verifyCreator: '/api/auth/verifyCreator',
     resendToken: '/api/auth/resendVerifyToken',
     checkTokenValidity: '/api/auth/checkTokenValidity',
+
+    xeroCallback: `/api/auth/xeroCallback`,
+    xeroGetContacts:'/api/auth/getXeroContacts',
+    xeroCheckRefreshToken:'/api/auth/checkRefreshToken'
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',
@@ -239,5 +243,7 @@ export const endpoints = {
       `/api/invoice/creator/${creatorId}/campaign/${campaignId}`,
     updateInvoiceStatus: '/api/invoice/updateStatus',
     getInvoicesByCreator: '/api/invoice/creator',
+    ConnectToXero:'/api/invoice/ConnectXero',
+    xero:'/api/invoice/zeroConnect',
   },
 };

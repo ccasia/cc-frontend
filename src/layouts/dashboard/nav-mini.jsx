@@ -16,7 +16,7 @@ import NavToggleButton from '../common/nav-toggle-button';
 export default function NavMini() {
   const { user } = useAuthContext();
   // const { user } = useMockedUser();
-
+  console.log("mohand stash");
   const navData = useNavData();
 
   return (
