@@ -18,25 +18,10 @@ import DialogContent from '@mui/material/DialogContent';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { interestsLists } from 'src/contants/interestLists';
+
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
-
-const interestsLists = [
-  'Art',
-  'Beauty',
-  'Business',
-  'Fashion',
-  'Fitness',
-  'Food',
-  'Gaming',
-  'Health',
-  'Lifestyle',
-  'Music',
-  'Sports',
-  'Technology',
-  'Travel',
-  'Entertainment',
-];
 
 export default function CreateBrand({ setBrand, open, onClose, brandName, client }) {
   const NewUserSchema = Yup.object().shape({

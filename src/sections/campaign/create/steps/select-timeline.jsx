@@ -3,7 +3,8 @@ import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect, useCallback } from 'react';
+import { useFieldArray, useFormContext } from 'react-hook-form';
+import React, { memo, useState, useEffect, useCallback } from 'react';
 import { Droppable, Draggable, DragDropContext } from 'react-beautiful-dnd';
 
 import {
@@ -17,8 +18,8 @@ import {
   InputAdornment,
 } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
+import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -31,16 +32,26 @@ import {
   RHFAutocomplete,
 } from 'src/components/hook-form';
 
-const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods }) => {
+const SelectTimeline = () => {
   const { data, isLoading } = useGetAllTimelineType();
+  const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const [dateError, setDateError] = useState(false);
-  const { fields, remove, move, append } = timelineMethods;
-  const modal = useBoolean();
+
   const [query, setQuery] = useState('');
+
+  const { watch, setValue, control } = useFormContext();
 
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
   const existingTimeline = watch('timeline');
+
+  const timelineMethods = useFieldArray({
+    name: 'timeline',
+    control,
+  });
+
+  const { fields, remove, move, append } = timelineMethods;
+
   const timelineEndDate = existingTimeline[fields.length - 1]?.endDate;
 
   useEffect(() => {
@@ -342,7 +353,7 @@ const SelectTimeline = ({ defaultTimelines, setValue, watch, timelineMethods }) 
   );
 };
 
-export default SelectTimeline;
+export default memo(SelectTimeline);
 
 SelectTimeline.propTypes = {
   defaultTimelines: PropTypes.array,

@@ -17,9 +17,10 @@ const ActiveCampaignView = ({ searchQuery }) => {
   const filteredCampaigns = useMemo(
     () =>
       !isLoading &&
-      data?.filter((campaign) =>
-        campaign?.shortlisted?.some((item) => item.userId === user.id && !item.isCampaignDone) &&
-        campaign.status !== 'COMPLETED'
+      data?.filter(
+        (campaign) =>
+          campaign?.shortlisted?.some((item) => item.userId === user.id && !item.isCampaignDone) &&
+          campaign.status !== 'COMPLETED'
       ),
     [isLoading, data, user]
   );
@@ -47,11 +48,7 @@ const ActiveCampaignView = ({ searchQuery }) => {
           }}
         >
           {filteredData.map((campaign) => (
-            <CampaignItem
-              key={campaign.id}
-              campaign={campaign}
-              user={user}
-            />
+            <CampaignItem key={campaign.id} campaign={campaign} user={user} />
           ))}
         </Box>
       ) : (

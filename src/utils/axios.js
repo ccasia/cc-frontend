@@ -251,6 +251,7 @@ export const endpoints = {
       `/api/invoice/creator/${creatorId}/campaign/${campaignId}`,
     updateInvoiceStatus: '/api/invoice/updateStatus',
     getInvoicesByCreator: '/api/invoice/creator',
+    getCreatorInvoice: `/api/invoice/creatorInvoice`,
   },
   agreementTemplate: {
     byId: (id) => `/api/campaign/template/${id}`,
