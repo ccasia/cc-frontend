@@ -38,7 +38,7 @@ const Invoice = () => {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
-      <Typography
+      {/* <Typography
         variant="h2"
         sx={{
           mb: 2,
@@ -46,6 +46,10 @@ const Invoice = () => {
           fontWeight: 200,
           letterSpacing: -1,
         }}
+      > */}
+      <Typography
+        variant="h2"
+        sx={{ mb: 0.2, fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
       >
         Invoices 🧾
       </Typography>

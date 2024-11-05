@@ -133,7 +133,14 @@ export default function CalendarView() {
             mb: { xs: 3, md: 5 },
           }}
         >
-          <Typography variant="h4">Calendar</Typography>
+          <Typography
+            variant="h2"
+            sx={{
+              fontFamily: theme.typography.fontSecondaryFamily,
+            }}
+          >
+            Calendar
+          </Typography>
           <Button
             variant="contained"
             startIcon={<Iconify icon="mingcute:add-line" />}

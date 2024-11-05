@@ -124,10 +124,8 @@ export default function KanbanView() {
       }}
     >
       <Typography
-        variant="h4"
-        sx={{
-          mb: { xs: 3, md: 5 },
-        }}
+        variant="h2"
+        sx={{ mb: 0.2, fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
       >
         Kanban
       </Typography>

@@ -3,8 +3,8 @@ import { orderBy } from 'lodash';
 import { m } from 'framer-motion';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import Backdrop from '@mui/material/Backdrop';
 
+import Backdrop from '@mui/material/Backdrop';
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -256,13 +256,13 @@ export default function CampaignListView() {
   }, [search.query]);
 
   return (
-    <Container 
+    <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
         px: { xs: 2, sm: 3, md: 4 },
       }}
     >
-      <Typography variant="h2" sx={{ mb: 0.2 }} fontFamily="Instrument Serif, serif">
+      <Typography variant="h2" sx={{ mb: 0.2, fontFamily: theme.typography.fontSecondaryFamily }}>
         Discover Campaigns ✨
       </Typography>
       <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
@@ -271,14 +271,14 @@ export default function CampaignListView() {
 
       <Box sx={{ mb: 2.5 }}>
         {/* Mobile Search and Sort Stack */}
-        <Stack 
+        <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
           alignItems={{ xs: 'stretch', sm: 'center' }}
-          sx={{ 
+          sx={{
             width: '100%',
             mb: { xs: 3, sm: 0 },
-            display: { xs: 'flex', md: 'none' }
+            display: { xs: 'flex', md: 'none' },
           }}
         >
           {/* Search Box - Full width on mobile */}
@@ -302,13 +302,13 @@ export default function CampaignListView() {
                   sx={{ width: 20, height: 20, mr: 1, color: 'text.disabled', ml: 1 }}
                 />
               }
-              sx={{ 
+              sx={{
                 width: '100%',
                 color: 'text.primary',
                 '& input': {
                   py: 1,
                   px: 1,
-                }
+                },
               }}
             />
           </Box>
@@ -344,9 +344,9 @@ export default function CampaignListView() {
                 },
               }}
               IconComponent={(props) => (
-                <Iconify 
-                  icon="eva:chevron-down-fill" 
-                  {...props} 
+                <Iconify
+                  icon="eva:chevron-down-fill"
+                  {...props}
                   sx={{ mr: 0.2, width: 32, height: 32 }}
                 />
               )}
@@ -354,16 +354,22 @@ export default function CampaignListView() {
               <MenuItem value="Most matched">
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                   Most matched
-                  {sortBy === "Most matched" && (
-                    <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                  {sortBy === 'Most matched' && (
+                    <Iconify
+                      icon="eva:checkmark-fill"
+                      sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
+                    />
                   )}
                 </Stack>
               </MenuItem>
               <MenuItem value="Most recent">
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                   Most recent
-                  {sortBy === "Most recent" && (
-                    <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                  {sortBy === 'Most recent' && (
+                    <Iconify
+                      icon="eva:checkmark-fill"
+                      sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
+                    />
                   )}
                 </Stack>
               </MenuItem>
@@ -372,10 +378,10 @@ export default function CampaignListView() {
         </Stack>
 
         {/* Filter Buttons and Desktop Search/Sort */}
-        <Stack 
-          direction="row" 
+        <Stack
+          direction="row"
           spacing={0.5}
-          sx={{ 
+          sx={{
             position: 'relative',
             width: '100%',
             '&::after': {
@@ -386,11 +392,11 @@ export default function CampaignListView() {
               right: 0,
               height: '1px',
               bgcolor: 'divider',
-            }
+            },
           }}
         >
-          <Stack 
-            direction="row" 
+          <Stack
+            direction="row"
             spacing={0.5}
             sx={{
               width: { xs: '100%', sm: 'auto' },
@@ -492,13 +498,13 @@ export default function CampaignListView() {
           </Stack>
 
           {/* Desktop Search and Sort Stack */}
-          <Stack 
+          <Stack
             direction="row"
             spacing={2}
             alignItems="center"
-            sx={{ 
+            sx={{
               ml: 'auto',
-              display: { xs: 'none', md: 'flex' }
+              display: { xs: 'none', md: 'flex' },
             }}
           >
             {/* Search Box - Fixed width on desktop */}
@@ -522,19 +528,19 @@ export default function CampaignListView() {
                 startAdornment={
                   <Iconify
                     icon="eva:search-fill"
-                    sx={{ 
-                      width: 20, 
-                      height: 20, 
+                    sx={{
+                      width: 20,
+                      height: 20,
                       color: 'text.disabled',
                       ml: 1.5,
-                      mr: 1 
+                      mr: 1,
                     }}
                   />
                 }
-                sx={{ 
+                sx={{
                   width: '100%',
                   color: 'text.primary',
-                  '& input': { 
+                  '& input': {
                     py: 1.5,
                     px: 1,
                     height: '100%',
@@ -562,14 +568,16 @@ export default function CampaignListView() {
                 displayEmpty
                 input={<InputBase />}
                 renderValue={(selected) => (
-                  <Box sx={{ 
-                    width: '100%', 
-                    textAlign: 'center',
-                    mr: selected ? 0 : '24px' 
-                  }}>
-                    <Typography 
+                  <Box
+                    sx={{
+                      width: '100%',
+                      textAlign: 'center',
+                      mr: selected ? 0 : '24px',
+                    }}
+                  >
+                    <Typography
                       variant="body2"
-                      sx={{ 
+                      sx={{
                         fontWeight: 600,
                         fontSize: '0.875rem',
                       }}
@@ -593,10 +601,10 @@ export default function CampaignListView() {
                   },
                 }}
                 IconComponent={(props) => (
-                  <Iconify 
-                    icon="eva:chevron-down-fill" 
-                    {...props} 
-                    sx={{ 
+                  <Iconify
+                    icon="eva:chevron-down-fill"
+                    {...props}
+                    sx={{
                       mr: 0.2,
                       width: 32,
                       height: 32,
@@ -609,8 +617,11 @@ export default function CampaignListView() {
                   <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                       Most matched
-                      {sortBy === "Most matched" && (
-                        <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                      {sortBy === 'Most matched' && (
+                        <Iconify
+                          icon="eva:checkmark-fill"
+                          sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
+                        />
                       )}
                     </Stack>
                   </Typography>
@@ -619,8 +630,11 @@ export default function CampaignListView() {
                   <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                       Most recent
-                      {sortBy === "Most recent" && (
-                        <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                      {sortBy === 'Most recent' && (
+                        <Iconify
+                          icon="eva:checkmark-fill"
+                          sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
+                        />
                       )}
                     </Stack>
                   </Typography>
@@ -650,13 +664,10 @@ export default function CampaignListView() {
 
       {upload.length > 0 && renderUploadProgress}
 
-      <Backdrop
-        open={backdrop.value}
-        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
-      >
+      <Backdrop open={backdrop.value} sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Box
           sx={{
-            bgcolor: (theme) => theme.palette.background.paper,
+            bgcolor: theme.palette.background.paper,
             borderRadius: 3,
             p: 4,
             pb: 2,
@@ -664,7 +675,7 @@ export default function CampaignListView() {
             position: 'relative',
           }}
         >
-          <IconButton 
+          <IconButton
             onClick={backdrop.onFalse}
             sx={{
               position: 'absolute',
@@ -683,9 +694,11 @@ export default function CampaignListView() {
             <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
               Complete Your Profile Before Making a Pitch
             </Typography>
-            
+
             <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
-              Before you can submit a pitch for this campaign, please complete your profile form. This ensures we have all the necessary information for your submission. Click below to finish filling out your form and get ready to pitch!
+              Before you can submit a pitch for this campaign, please complete your profile form.
+              This ensures we have all the necessary information for your submission. Click below to
+              finish filling out your form and get ready to pitch!
             </Typography>
 
             <CreatorForm dialog={dialog} user={user} display backdrop={backdrop} />
@@ -716,9 +729,7 @@ export default function CampaignListView() {
 
 const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
   if (filter === 'saved') {
-    inputData = inputData?.filter(
-      (campaign) => campaign.bookMarkCampaign?.userId === user?.id
-    );
+    inputData = inputData?.filter((campaign) => campaign.bookMarkCampaign?.userId === user?.id);
   }
 
   if (filter === 'draft') {
@@ -737,7 +748,7 @@ const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
 
   if (search.query) {
     inputData = inputData?.filter(
-      (item) => 
+      (item) =>
         item.name.toLowerCase().includes(search.query.toLowerCase()) ||
         item.company?.name.toLowerCase().includes(search.query.toLowerCase())
     );
