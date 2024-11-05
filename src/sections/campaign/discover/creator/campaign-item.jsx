@@ -5,9 +5,8 @@ import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
+import { Bookmark, BookmarkBorder } from '@mui/icons-material';
 import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
-
-import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -19,24 +18,22 @@ import Image from 'src/components/image';
 
 import CampaignModal from './campaign-modal';
 
-import { BookmarkBorder, Bookmark } from '@mui/icons-material';
-
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, user }) {
   const [open, setOpen] = useState(false);
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
-  const dialog = useBoolean();
-  const text = useBoolean();
-  const video = useBoolean();
+  // const dialog = useBoolean();
+  // const text = useBoolean();
+  // const video = useBoolean();
 
   const { socket } = useSocketContext();
-  const router = useRouter();
+  // const router = useRouter();
   const theme = useTheme();
 
   const [bookMark, setBookMark] = useState(
-    campaign?.bookMarkCampaign?.userId === user?.id || false
+    campaign?.bookMarkCampaign?.some((item) => item.userId === user?.id) || false
   );
 
   useEffect(() => {
@@ -86,7 +83,7 @@ export default function CampaignItem({ campaign, user }) {
         userId: user?.id,
       });
       mutate(endpoints.campaign.getMatchedCampaign);
-      mutate(endpoints.campaign.creator.getSavedCampaigns);
+      // mutate(endpoints.campaign.creator.getSavedCampaigns);
       setBookMark(true);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
@@ -102,7 +99,6 @@ export default function CampaignItem({ campaign, user }) {
         endpoints.campaign.creator.unsaveCampaign(saveCampaignId)
       );
       mutate(endpoints.campaign.getMatchedCampaign);
-      mutate(endpoints.campaign.creator.getSavedCampaigns);
       setBookMark(false);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
@@ -251,11 +247,15 @@ export default function CampaignItem({ campaign, user }) {
           }}
         />
         <Chip
-          icon={bookMark ? <Bookmark sx={{ fontSize: 24 }} /> : <BookmarkBorder sx={{ fontSize: 24 }} />}
+          icon={
+            bookMark ? <Bookmark sx={{ fontSize: 24 }} /> : <BookmarkBorder sx={{ fontSize: 24 }} />
+          }
           onClick={(e) => {
             e.stopPropagation();
-            if (campaign?.bookMarkCampaign) {
-              unSaveCampaign(campaign?.bookMarkCampaign.id);
+            if (bookMark) {
+              unSaveCampaign(
+                campaign?.bookMarkCampaign?.find((item) => item.userId === user?.id)?.id
+              );
             } else {
               saveCampaign(campaign?.id);
             }
