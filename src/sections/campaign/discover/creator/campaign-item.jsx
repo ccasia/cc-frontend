@@ -19,6 +19,8 @@ import Image from 'src/components/image';
 
 import CampaignModal from './campaign-modal';
 
+import { BookmarkBorder, Bookmark } from '@mui/icons-material';
+
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, user }) {
@@ -32,6 +34,10 @@ export default function CampaignItem({ campaign, user }) {
   const { socket } = useSocketContext();
   const router = useRouter();
   const theme = useTheme();
+
+  const [bookMark, setBookMark] = useState(
+    campaign?.bookMarkCampaign?.userId === user?.id || false
+  );
 
   useEffect(() => {
     const handlePitchLoading = (data) => {
@@ -77,8 +83,11 @@ export default function CampaignItem({ campaign, user }) {
     try {
       const res = await axiosInstance.post(endpoints.campaign.creator.saveCampaign, {
         campaignId,
+        userId: user?.id,
       });
       mutate(endpoints.campaign.getMatchedCampaign);
+      mutate(endpoints.campaign.creator.getSavedCampaigns);
+      setBookMark(true);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Error', {
@@ -93,6 +102,8 @@ export default function CampaignItem({ campaign, user }) {
         endpoints.campaign.creator.unsaveCampaign(saveCampaignId)
       );
       mutate(endpoints.campaign.getMatchedCampaign);
+      mutate(endpoints.campaign.creator.getSavedCampaigns);
+      setBookMark(false);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Error', {
@@ -140,32 +151,32 @@ export default function CampaignItem({ campaign, user }) {
           objectPosition: 'center',
         }}
       />
-      <Chip
-        label={campaign?.campaignBrief?.industries}
-        sx={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          backgroundColor: alpha(theme.palette.grey[800], 0.6),
-          backdropFilter: 'blur(10px)',
-          color: theme.palette.common.white,
-          fontWeight: 'bold',
-          fontSize: '0.875rem',
-          borderRadius: '20px',
-          height: '32px',
-          '& .MuiChip-label': {
-            padding: '0 12px',
-          },
-          '&:hover': {
-            backgroundColor: alpha(theme.palette.grey[800], 0.6),
-          },
-        }}
-      />
+      <Box sx={{ position: 'absolute', top: 20, left: 20, display: 'flex', gap: 1 }}>
+        <Chip
+          label={campaign?.campaignBrief?.industries}
+          sx={{
+            backgroundColor: theme.palette.common.white,
+            color: '#48484a',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            borderRadius: '5px',
+            height: '32px',
+            border: '1px solid #ebebeb',
+            borderBottom: '3px solid #ebebeb',
+            '& .MuiChip-label': {
+              padding: '0 8px',
+            },
+            '&:hover': {
+              backgroundColor: theme.palette.common.white,
+            },
+          }}
+        />
+      </Box>
     </Box>
   );
 
   const renderCampaignInfo = (
-    <Box sx={{ position: 'relative', pt: 3, px: 3, pb: 2.5 }}>
+    <Box sx={{ position: 'relative', pt: 2, px: 3, pb: 2.5 }}>
       <Avatar
         src={campaign?.brand?.logo || campaign?.company?.logo}
         alt={campaign?.brand?.name || campaign?.company?.name}
@@ -175,50 +186,106 @@ export default function CampaignItem({ campaign, user }) {
           border: '2px solid #ebebeb',
           borderRadius: '50%',
           position: 'absolute',
-          top: -30,
+          top: -40,
           left: 17,
         }}
       />
-      <Box sx={{ mt: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: -0.5 }}>
+      <Box sx={{ mt: 0.5 }}>
+        <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
           {campaign?.name}
         </Typography>
         <Typography
-          variant="subtitle1"
+          variant="body2"
           sx={{
             mb: 2,
             color: '#8e8e93',
+            fontSize: '0.95rem',
+            fontWeight: 550,
           }}
         >
           {campaign?.brand?.name || campaign?.company?.name}
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5 }}>
-        <Box sx={{ position: 'relative', display: 'inline-flex', mr: 1 }}>
-          <CircularProgress
-            variant="determinate"
-            value={100}
-            size={25}
-            thickness={7}
-            sx={{ color: 'grey.300' }}
-          />
-          <CircularProgress
-            variant="determinate"
-            value={Math.min(Math.round(campaign?.percentageMatch), 100)}
-            size={25}
-            thickness={7}
-            sx={{
-              color: 'success.main',
-              position: 'absolute',
-              left: 0,
-              strokeLinecap: 'round',
-            }}
-          />
-        </Box>
-        <Typography variant="body2" color="text.primary" sx={{ fontWeight: 600 }}>
-          {`${Math.min(Math.round(campaign?.percentageMatch), 100)}% Match for you!`}
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Chip
+          icon={
+            <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
+              <CircularProgress
+                variant="determinate"
+                value={100}
+                size={20}
+                thickness={7}
+                sx={{ color: 'grey.300' }}
+              />
+              <CircularProgress
+                variant="determinate"
+                value={Math.min(Math.round(campaign?.percentageMatch), 100)}
+                size={20}
+                thickness={7}
+                sx={{
+                  color: '#5abc6f',
+                  position: 'absolute',
+                  left: 0,
+                  strokeLinecap: 'round',
+                }}
+              />
+            </Box>
+          }
+          label={`${Math.min(Math.round(campaign?.percentageMatch), 100)}% MATCH`}
+          sx={{
+            backgroundColor: theme.palette.common.white,
+            color: '#48484a',
+            fontWeight: 'bold',
+            fontSize: '0.875rem',
+            borderRadius: '10px',
+            height: '35px',
+            border: '1px solid #ebebeb',
+            borderBottom: '3px solid #ebebeb',
+            '& .MuiChip-label': {
+              padding: '0 8px 0 12px',
+            },
+            '&:hover': {
+              backgroundColor: theme.palette.common.white,
+            },
+          }}
+        />
+        <Chip
+          icon={bookMark ? <Bookmark sx={{ fontSize: 24 }} /> : <BookmarkBorder sx={{ fontSize: 24 }} />}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (campaign?.bookMarkCampaign) {
+              unSaveCampaign(campaign?.bookMarkCampaign.id);
+            } else {
+              saveCampaign(campaign?.id);
+            }
+          }}
+          sx={{
+            backgroundColor: theme.palette.common.white,
+            color: '#48484a',
+            fontWeight: 'bold',
+            fontSize: '0.875rem',
+            borderRadius: '8px',
+            height: '40px',
+            border: '1px solid #ebebeb',
+            borderBottom: '3px solid #ebebeb',
+            '& .MuiChip-label': {
+              display: 'none',
+            },
+            '& .MuiChip-icon': {
+              marginRight: 0,
+              marginLeft: 0,
+              color: bookMark ? '#232b35' : '#48484a',
+              fontSize: 24,
+            },
+            '&:hover': {
+              backgroundColor: alpha('#232b35', 0.08),
+            },
+            width: '40px',
+            padding: 0,
+            transition: 'background-color 0.2s ease-in-out',
+          }}
+        />
       </Box>
     </Box>
   );
@@ -231,10 +298,11 @@ export default function CampaignItem({ campaign, user }) {
           cursor: 'pointer',
           transition: 'all 0.3s',
           bgcolor: 'background.paper',
-          borderRadius: '25px',
-          border: '1px solid transparent',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          borderRadius: '15px',
+          border: '1.2px solid',
+          borderColor: '#ebebeb',
           mb: -0.5,
+          height: 335,
           '&:hover': {
             borderColor: '#1340ff',
             transform: 'translateY(-2px)',
@@ -249,10 +317,10 @@ export default function CampaignItem({ campaign, user }) {
       <CampaignModal
         open={campaignInfo.value}
         handleClose={campaignInfo.onFalse}
-        // openForm={() => setOpen(true)}
         campaign={campaign}
-        // existingPitch={campaignIds}
-        // dialog={dialog}
+        bookMark={bookMark}
+        onSaveCampaign={saveCampaign}
+        onUnsaveCampaign={unSaveCampaign}
       />
     </>
   );

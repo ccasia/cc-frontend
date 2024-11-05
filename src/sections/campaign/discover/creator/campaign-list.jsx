@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-
 import Box from '@mui/material/Box';
 import Pagination, { paginationClasses } from '@mui/material/Pagination';
 
@@ -16,7 +15,6 @@ export default function CampaignLists({
   onPageChange,
   maxItemsPerPage,
 }) {
-  
   const { user } = useAuthContext();
 
   return (

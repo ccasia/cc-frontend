@@ -3,6 +3,7 @@ import { orderBy } from 'lodash';
 import { m } from 'framer-motion';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback } from 'react';
+import Backdrop from '@mui/material/Backdrop';
 
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
@@ -33,6 +34,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
 
 import CreatorForm from '../creator-form';
 import CampaignLists from '../campaign-list';
@@ -254,156 +256,382 @@ export default function CampaignListView() {
   }, [search.query]);
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <Typography
-        variant="h2"
-        sx={{
-          mb: 0.2,
-          fontFamily: theme.typography.fontSecondaryFamily,
-          fontWeight: 200,
-          letterSpacing: -1,
-        }}
-      >
+    <Container 
+      maxWidth={settings.themeStretch ? false : 'xl'}
+      sx={{
+        px: { xs: 2, sm: 3, md: 4 },
+      }}
+    >
+      <Typography variant="h2" sx={{ mb: 0.2 }} fontFamily="Instrument Serif, serif">
         Discover Campaigns ✨
       </Typography>
       <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
         Here are the top campaigns that fit your profile!
       </Typography>
 
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' },
-          justifyContent: { sm: 'space-between' }, // Add this line
-          bgcolor: 'background.paper',
-          borderRadius: 2,
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05)',
-          mb: 3,
-          p: 2,
-          width: '100%',
-          minHeight: { xs: 'auto', sm: 72 },
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            mb: { xs: 2, sm: 0 },
-            width: { xs: '100%', sm: 'auto' },
+      <Box sx={{ mb: 2.5 }}>
+        {/* Mobile Search and Sort Stack */}
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          sx={{ 
+            width: '100%',
+            mb: { xs: 3, sm: 0 },
+            display: { xs: 'flex', md: 'none' }
           }}
         >
-          <Button
-            size="large"
-            variant={filter === 'all' ? 'contained' : 'text'}
-            onClick={() => setFilter('all')}
-            sx={{
-              mr: 1,
-              flex: { xs: 1, sm: 'none' },
-              fontWeight: 'bold',
-              bgcolor: filter === 'all' ? 'common.black' : 'transparent',
-              color: filter === 'all' ? 'common.white' : 'text.secondary',
-              '&:hover': {
-                bgcolor: filter === 'all' ? 'common.black' : 'transparent',
-              },
-              borderRadius: 1.5,
-              height: 42,
-              minWidth: 60,
-            }}
-          >
-            For You
-          </Button>
-          <Button
-            size="large"
-            variant={filter === 'saved' ? 'contained' : 'text'}
-            onClick={() => setFilter('saved')}
-            sx={{
-              flex: { xs: 1, sm: 'none' },
-              fontWeight: 'bold',
-              bgcolor: filter === 'saved' ? 'common.black' : 'transparent',
-              color: filter === 'saved' ? 'common.white' : 'text.secondary',
-              '&:hover': {
-                bgcolor: filter === 'saved' ? 'common.black' : 'transparent',
-              },
-              borderRadius: 1.5,
-              height: 42,
-              minWidth: 60,
-            }}
-          >
-            Saved
-          </Button>
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: 'center',
-            width: { xs: '100%', sm: 'auto' },
-            gap: { xs: 2, sm: 0 },
-          }}
-        >
+          {/* Search Box - Full width on mobile */}
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
+              width: '100%',
               border: '1px solid',
+              borderBottom: '3.5px solid',
               borderColor: 'divider',
               borderRadius: 1,
-              height: 42,
-              width: { xs: '100%', sm: 280 },
+              bgcolor: 'background.paper',
             }}
           >
-            <Iconify
-              icon="eva:search-fill"
-              sx={{ width: 20, height: 20, ml: 1, mr: 1, color: 'text.disabled' }}
-            />
             <InputBase
               value={search.query}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search"
-              sx={{ flex: 1 }}
+              startAdornment={
+                <Iconify
+                  icon="eva:search-fill"
+                  sx={{ width: 20, height: 20, mr: 1, color: 'text.disabled', ml: 1 }}
+                />
+              }
+              sx={{ 
+                width: '100%',
+                color: 'text.primary',
+                '& input': {
+                  py: 1,
+                  px: 1,
+                }
+              }}
             />
           </Box>
-          <Divider
-            orientation="vertical"
-            flexItem
+
+          {/* Sort Box - Full width on mobile */}
+          <Box
             sx={{
-              display: { xs: 'none', sm: 'block' },
-              mx: 2,
-              height: 35,
-              bgcolor: 'divider',
-              alignSelf: 'center',
-            }}
-          />
-          <Select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            displayEmpty
-            input={<InputBase />}
-            renderValue={(selected) => <strong>{selected || 'Sort By'}</strong>}
-            sx={{
-              height: 42,
-              width: { xs: '100%', sm: 95 },
+              width: '100%',
               border: '1px solid',
+              borderBottom: '3.5px solid',
               borderColor: 'divider',
               borderRadius: 1,
-              '& .MuiSelect-select': {
-                pl: 2,
-                pr: 4,
-                py: 1.25,
+              bgcolor: 'background.paper',
+            }}
+          >
+            <Select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              displayEmpty
+              input={<InputBase />}
+              renderValue={(selected) => <strong>{selected || 'Sort by'}</strong>}
+              sx={{
+                width: '100%',
+                '& .MuiSelect-select': {
+                  py: 1,
+                  px: 1.5,
+                  pr: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                },
+                '& .MuiSelect-icon': {
+                  color: '#1340ff',
+                },
+              }}
+              IconComponent={(props) => (
+                <Iconify 
+                  icon="eva:chevron-down-fill" 
+                  {...props} 
+                  sx={{ mr: 0.2, width: 32, height: 32 }}
+                />
+              )}
+            >
+              <MenuItem value="Most matched">
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
+                  Most matched
+                  {sortBy === "Most matched" && (
+                    <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                  )}
+                </Stack>
+              </MenuItem>
+              <MenuItem value="Most recent">
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
+                  Most recent
+                  {sortBy === "Most recent" && (
+                    <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                  )}
+                </Stack>
+              </MenuItem>
+            </Select>
+          </Box>
+        </Stack>
+
+        {/* Filter Buttons and Desktop Search/Sort */}
+        <Stack 
+          direction="row" 
+          spacing={0.5}
+          sx={{ 
+            position: 'relative',
+            width: '100%',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '1px',
+              bgcolor: 'divider',
+            }
+          }}
+        >
+          <Stack 
+            direction="row" 
+            spacing={0.5}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
+            <Button
+              disableRipple
+              size="large"
+              onClick={() => setFilter('all')}
+              sx={{
+                px: 0.5,
+                py: 0.5,
+                pb: 1,
+                minWidth: 'fit-content',
+                color: filter === 'all' ? '#221f20' : '#8e8e93',
+                position: 'relative',
+                fontSize: '1.05rem',
+                fontWeight: 650,
+                transition: 'transform 0.1s ease-in-out',
+                '&:focus': {
+                  outline: 'none',
+                  bgcolor: 'transparent',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  bgcolor: 'transparent',
+                },
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '2px',
+                  width: filter === 'all' ? '100%' : '0%',
+                  bgcolor: '#1340ff',
+                  transition: 'all 0.3s ease-in-out',
+                  transform: 'scaleX(1)',
+                  transformOrigin: 'left',
+                },
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  '&::after': {
+                    width: '100%',
+                    opacity: filter === 'all' ? 1 : 0.5,
+                  },
+                },
+              }}
+            >
+              For you
+            </Button>
+            <Button
+              disableRipple
+              size="large"
+              onClick={() => setFilter('saved')}
+              sx={{
+                px: 1,
+                py: 0.5,
+                pb: 1,
+                ml: 2,
+                minWidth: 'fit-content',
+                color: filter === 'saved' ? '#221f20' : '#8e8e93',
+                position: 'relative',
+                fontSize: '1.05rem',
+                fontWeight: 650,
+                transition: 'transform 0.1s ease-in-out',
+                '&:focus': {
+                  outline: 'none',
+                  bgcolor: 'transparent',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  bgcolor: 'transparent',
+                },
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '2px',
+                  width: filter === 'saved' ? '100%' : '0%',
+                  bgcolor: '#1340ff',
+                  transition: 'all 0.3s ease-in-out',
+                  transform: 'scaleX(1)',
+                  transformOrigin: 'left',
+                },
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  '&::after': {
+                    width: '100%',
+                    opacity: filter === 'saved' ? 1 : 0.5,
+                  },
+                },
+              }}
+            >
+              Saved
+            </Button>
+          </Stack>
+
+          {/* Desktop Search and Sort Stack */}
+          <Stack 
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            sx={{ 
+              ml: 'auto',
+              display: { xs: 'none', md: 'flex' }
+            }}
+          >
+            {/* Search Box - Fixed width on desktop */}
+            <Box
+              sx={{
+                width: 280,
+                border: '1px solid',
+                borderBottom: '2.5px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'background.paper',
                 display: 'flex',
                 alignItems: 'center',
-              },
-            }}
-            IconComponent={(props) => <Iconify icon="eva:chevron-down-fill" {...props} />}
-          >
-            <MenuItem value="">Reset</MenuItem>
-            <MenuItem value="Highest">Highest Match %</MenuItem>
-            <MenuItem value="Lowest">Lowest Match %</MenuItem>
-          </Select>
-        </Box>
+                height: '42px',
+              }}
+            >
+              <InputBase
+                value={search.query}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Search"
+                startAdornment={
+                  <Iconify
+                    icon="eva:search-fill"
+                    sx={{ 
+                      width: 20, 
+                      height: 20, 
+                      color: 'text.disabled',
+                      ml: 1.5,
+                      mr: 1 
+                    }}
+                  />
+                }
+                sx={{ 
+                  width: '100%',
+                  color: 'text.primary',
+                  '& input': { 
+                    py: 1.5,
+                    px: 1,
+                    height: '100%',
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Sort Box - Compact on desktop */}
+            <Box
+              sx={{
+                minWidth: 120,
+                maxWidth: 160,
+                border: '1px solid',
+                borderBottom: '2.5px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                height: '42px',
+              }}
+            >
+              <Select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                displayEmpty
+                input={<InputBase />}
+                renderValue={(selected) => (
+                  <Box sx={{ 
+                    width: '100%', 
+                    textAlign: 'center',
+                    mr: selected ? 0 : '24px' 
+                  }}>
+                    <Typography 
+                      variant="body2"
+                      sx={{ 
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      {selected || 'Sort by'}
+                    </Typography>
+                  </Box>
+                )}
+                sx={{
+                  height: '100%',
+                  '& .MuiSelect-select': {
+                    py: 1,
+                    px: 1.5,
+                    pr: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                  '& .MuiSelect-icon': {
+                    color: '#1340ff',
+                  },
+                }}
+                IconComponent={(props) => (
+                  <Iconify 
+                    icon="eva:chevron-down-fill" 
+                    {...props} 
+                    sx={{ 
+                      mr: 0.2,
+                      width: 32,
+                      height: 32,
+                      right: -4,
+                    }}
+                  />
+                )}
+              >
+                <MenuItem value="Most matched">
+                  <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
+                      Most matched
+                      {sortBy === "Most matched" && (
+                        <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                      )}
+                    </Stack>
+                  </Typography>
+                </MenuItem>
+                <MenuItem value="Most recent">
+                  <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
+                      Most recent
+                      {sortBy === "Most recent" && (
+                        <Iconify icon="eva:checkmark-fill" sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }} />
+                      )}
+                    </Stack>
+                  </Typography>
+                </MenuItem>
+              </Select>
+            </Box>
+          </Stack>
+        </Stack>
       </Box>
+
+      {isLoading && <LoadingScreen />}
 
       {!isLoading &&
         (filteredData?.length > 0 ? (
@@ -420,28 +648,50 @@ export default function CampaignListView() {
           />
         ))}
 
-      {isLoading && (
-        <Box
-          sx={{
-            position: 'relative',
-            top: 200,
-            textAlign: 'center',
-          }}
-        >
-          <CircularProgress
-            thickness={7}
-            size={25}
-            sx={{
-              color: theme.palette.common.black,
-              strokeLinecap: 'round',
-            }}
-          />
-        </Box>
-      )}
-
       {upload.length > 0 && renderUploadProgress}
 
-      {!user?.creator?.isFormCompleted && <CreatorForm dialog={dialog} user={user} />}
+      <Backdrop
+        open={backdrop.value}
+        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      >
+        <Box
+          sx={{
+            bgcolor: (theme) => theme.palette.background.paper,
+            borderRadius: 3,
+            p: 4,
+            pb: 2,
+            width: 600,
+            position: 'relative',
+          }}
+        >
+          <IconButton 
+            onClick={backdrop.onFalse}
+            sx={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              color: 'text.secondary',
+              '&:hover': {
+                bgcolor: 'rgba(0, 0, 0, 0.04)',
+              },
+            }}
+          >
+            <Iconify icon="mingcute:close-fill" width={24} />
+          </IconButton>
+
+          <Stack spacing={2}>
+            <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
+              Complete Your Profile Before Making a Pitch
+            </Typography>
+            
+            <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
+              Before you can submit a pitch for this campaign, please complete your profile form. This ensures we have all the necessary information for your submission. Click below to finish filling out your form and get ready to pitch!
+            </Typography>
+
+            <CreatorForm dialog={dialog} user={user} display backdrop={backdrop} />
+          </Stack>
+        </Box>
+      </Backdrop>
 
       {showScrollTop && (
         <Fab
@@ -466,7 +716,9 @@ export default function CampaignListView() {
 
 const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
   if (filter === 'saved') {
-    inputData = inputData?.filter((campaign) => campaign.bookMarkCampaign);
+    inputData = inputData?.filter(
+      (campaign) => campaign.bookMarkCampaign?.userId === user?.id
+    );
   }
 
   if (filter === 'draft') {
@@ -475,17 +727,19 @@ const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
     );
   }
 
-  if (sortBy === 'Highest') {
-    inputData = orderBy(inputData, ['percentageMatch'], 'desc');
+  if (sortBy === 'Most matched') {
+    inputData = orderBy(inputData, ['percentageMatch'], ['desc']);
   }
 
-  if (sortBy === 'Lowest') {
-    inputData = orderBy(inputData, ['percentageMatch'], 'asc');
+  if (sortBy === 'Most recent') {
+    inputData = orderBy(inputData, ['createdAt'], ['desc']);
   }
 
   if (search.query) {
-    inputData = inputData?.filter((item) =>
-      item.name.toLowerCase().includes(search.query.toLowerCase())
+    inputData = inputData?.filter(
+      (item) => 
+        item.name.toLowerCase().includes(search.query.toLowerCase()) ||
+        item.company?.name.toLowerCase().includes(search.query.toLowerCase())
     );
   }
 
