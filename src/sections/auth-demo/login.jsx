@@ -7,7 +7,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Avatar, Typography, IconButton, InputAdornment } from '@mui/material';
+import { Box, Stack, Typography, IconButton, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -18,7 +18,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import Image from 'src/components/image/image';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
@@ -51,7 +50,7 @@ const Login = () => {
 
   const {
     handleSubmit,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
@@ -102,28 +101,19 @@ const Login = () => {
       <LoadingButton
         fullWidth
         sx={{
-          background: 'linear-gradient(180deg, #138EFF 0%, #1340FF 100%)',
+          background: isDirty
+            ? '#1340FF'
+            : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+          pointerEvents: !isDirty && 'none',
         }}
         size="large"
         type="submit"
         variant="contained"
         loading={isSubmitting}
+        // disabled={!isDirty}
       >
         Login
       </LoadingButton>
-
-      <Stack direction="row" spacing={0.5}>
-        <Typography variant="body2">New user?</Typography>
-
-        <Link
-          component={RouterLink}
-          href={paths.auth.jwt.register}
-          variant="body2"
-          color="rgba(19, 64, 255, 1)"
-        >
-          Create an account
-        </Link>
-      </Stack>
     </Stack>
   );
 
@@ -134,7 +124,7 @@ const Login = () => {
           p: 3,
         }}
       >
-        <Box
+        {/* <Box
           component="div"
           sx={{
             position: 'relative',
@@ -164,11 +154,32 @@ const Login = () => {
             }}
             src="/assets/icons/auth/test.svg"
           />
-        </Box>
+        </Box> */}
 
-        <Typography variant="h3" fontWeight="bold">
-          Welcome Back 👾
+        <Typography
+          variant="h3"
+          fontWeight="bold"
+          sx={{
+            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          }}
+        >
+          Login 👾
         </Typography>
+
+        <Stack direction="row" spacing={0.5} my={2}>
+          <Typography variant="body2">New user?</Typography>
+
+          <Link
+            component={RouterLink}
+            href={paths.auth.jwt.register}
+            variant="body2"
+            color="#1340FF"
+            fontWeight={600}
+          >
+            Create an account
+          </Link>
+        </Stack>
+
         <Box
           sx={{
             mt: 3,

@@ -2,8 +2,8 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
+import { Page, pdfjs, Document } from 'react-pdf';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
@@ -11,7 +11,6 @@ import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
-  Avatar,
   Dialog,
   Button,
   Typography,
@@ -33,9 +32,13 @@ import { useCreator } from 'src/hooks/zustands/useCreator';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import Image from 'src/components/image/image';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 const PdfModal = ({ open, onClose, pdfFile, title }) => {
   const [numPages, setNumPages] = useState(null);
@@ -86,7 +89,7 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
 const Register = () => {
   const password = useBoolean();
   const { register } = useAuthContext();
-  const [error, setError] = useState();
+
   const router = useRouter();
   const { setEmail } = useCreator();
   const [openTermsModal, setOpenTermsModal] = useState(false);
@@ -127,7 +130,7 @@ const Register = () => {
 
   const {
     handleSubmit,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
@@ -145,7 +148,7 @@ const Register = () => {
   });
 
   const renderHead = (
-    <Stack direction="row" spacing={0.5}>
+    <Stack direction="row" spacing={0.5} my={1.5}>
       <Typography variant="body2">Already have an account?</Typography>
       <Link
         href={paths.auth.jwt.login}
@@ -153,7 +156,7 @@ const Register = () => {
         variant="subtitle2"
         color="rgba(19, 64, 255, 1)"
       >
-        Sign in
+        Login
       </Link>
     </Stack>
   );
@@ -181,8 +184,6 @@ const Register = () => {
         }}
       />
 
-      {renderHead}
-
       <LoadingButton
         fullWidth
         size="large"
@@ -190,7 +191,10 @@ const Register = () => {
         variant="contained"
         loading={isSubmitting}
         sx={{
-          background: 'linear-gradient(180deg, #138EFF 0%, #1340FF 100%)',
+          background: isDirty
+            ? '#1340FF'
+            : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+          pointerEvents: !isDirty && 'none',
         }}
       >
         Create account
@@ -237,9 +241,10 @@ const Register = () => {
       <Box
         sx={{
           p: 3,
+          bgcolor: '#F4F4F4',
         }}
       >
-        <Box
+        {/* <Box
           component="div"
           sx={{
             position: 'relative',
@@ -269,11 +274,20 @@ const Register = () => {
             }}
             src="/assets/icons/auth/test.svg"
           />
-        </Box>
+        </Box> */}
 
-        <Typography variant="h3" fontWeight="bold">
-          Register 👾
+        <Typography
+          variant="h3"
+          fontWeight="bold"
+          sx={{
+            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          }}
+        >
+          Join The Cult 👽
         </Typography>
+
+        {renderHead}
+
         <Box
           sx={{
             mt: 3,
