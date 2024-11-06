@@ -14,21 +14,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import { fToNow } from 'src/utils/format-time';
 
 // ----------------------------------------------------------------------
-// Entity types
-// Live 
-// Campaign
-// User
-// Pitch
-// Shortlist
-// Timeline
-// Feedback
-// Draft
-// Post
-// Logistic
-// Invoice
-// Metrcis
-// Agreement
-// Chat
+
 
 export default function NotificationItem({ notification }) {
   const { user } = useAuthContext();
