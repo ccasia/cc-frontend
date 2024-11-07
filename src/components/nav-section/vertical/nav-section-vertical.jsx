@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { memo, useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
-import { Collapse, ListSubheader } from '@mui/material';
+import { Divider, Collapse, ListSubheader } from '@mui/material';
 
 import NavList from './nav-list';
 
@@ -35,7 +35,6 @@ export default memo(NavSectionVertical);
 
 function Group({ subheader, items, slotProps, whoCanSee }) {
   const [open, setOpen] = useState(true);
-  // const { user } = useAuthContext();
 
   const handleToggle = useCallback(() => {
     setOpen((prev) => !prev);
@@ -74,11 +73,20 @@ function Group({ subheader, items, slotProps, whoCanSee }) {
             {subheader}
           </ListSubheader>
 
-          <Collapse in={open}>{renderContent}</Collapse>
+          <Collapse in={open}>
+            {/* <NavList key={items[0]?.title} data={items[0]} depth={1} slotProps={slotProps} /> */}
+            {renderContent}
+          </Collapse>
         </>
       ) : (
         renderContent
       )}
+      <Divider
+        sx={{
+          mb: 2,
+          mt: 1,
+        }}
+      />
     </Stack>
   );
 }

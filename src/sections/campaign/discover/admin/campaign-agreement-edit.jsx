@@ -2,11 +2,11 @@ import dayjs from 'dayjs';
 import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { pdf } from '@react-pdf/renderer';
 import { enqueueSnackbar } from 'notistack';
 import { SyncLoader } from 'react-spinners';
-import React, { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -27,7 +27,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
   const { user } = useAuthContext();
-  const [test, setTest] = useState('');
+  // const { data: agreements, isLoading } = useGetAgreements(campaign?.id);
 
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
@@ -54,6 +54,16 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
       setValue('paymentAmount', agreement?.amount);
     }
   }, [setValue, isDefault, agreement]);
+
+  const handleSendAgreement = async () => {
+    try {
+      await axiosInstance.patch(endpoints.campaign.sendAgreement, agreement);
+      mutate(endpoints.campaign.creatorAgreement(agreement.campaignId));
+      // enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error', { variant: error?.message });
+    }
+  };
 
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
@@ -86,12 +96,14 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
       formData.append('agreementForm', blob);
       formData.append('data', JSON.stringify({ ...data, ...agreement }));
 
-      await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, formData, {
+      const res = await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, formData, {
         headers: {
           Accept: 'multipart/form-data',
         },
       });
-      enqueueSnackbar('Success');
+
+      await handleSendAgreement();
+      enqueueSnackbar(res?.data?.message);
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
       reset();
       dialog.onFalse();
@@ -132,7 +144,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
               <SyncLoader color={settings.themeMode === 'light' ? 'black' : 'white'} size={5} />
             }
           >
-            Generate
+            Generate and send
           </LoadingButton>
         </DialogActions>
       </FormProvider>

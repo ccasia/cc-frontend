@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Tab,
@@ -31,6 +31,7 @@ import { filterTimelineAdmin } from 'src/utils/filterTimeline';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CampaignOverview from '../campaign-overview';
@@ -45,14 +46,22 @@ import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-cr
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
-  const { campaigns } = useGetCampaigns();
+  const { campaigns, isLoading } = useGetCampaigns();
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
 
   const open = Boolean(anchorEl);
   const idd = open ? 'simple-popper' : undefined;
 
-  const currentCampaign = campaigns && campaigns.find((campaign) => campaign.id === id);
+  // const currentCampaign = useMemo(
+  //   () => !isLoading && campaigns.find((campaign) => campaign.id === id),
+  //   [campaigns, id, isLoading]
+  // );
+
+  const currentCampaign = useMemo(
+    () => !isLoading && campaigns.find((campaign) => campaign.id === id),
+    [campaigns, id, isLoading]
+  );
 
   let timeline =
     currentCampaign?.defaultcampaignTimeline || currentCampaign?.customcampaignTimeline;
@@ -88,8 +97,11 @@ const CampaignDetailView = ({ id }) => {
   }, []);
 
   const icons = (tab) => {
-    if (tab.value === 'pitch' && currentCampaign?.pitch.length > 0) {
-      return <Label>{currentCampaign?.pitch.length}</Label>;
+    if (tab.value === 'pitch' && currentCampaign?.pitch?.length > 0) {
+      const undecidedPitches = currentCampaign.pitch.filter(
+        (pitch) => pitch.status === 'undecided'
+      );
+      return undecidedPitches.length > 0 ? <Label>{undecidedPitches.length}</Label> : null;
     }
 
     if (tab.value === 'creator' && currentCampaign?.shortlisted?.length) {
@@ -334,6 +346,33 @@ const CampaignDetailView = ({ id }) => {
     </>
   );
 
+  const renderTabContent = {
+    overview: <CampaignOverview campaign={currentCampaign} />,
+    'campaign-content': <CampaignDetailContent campaign={currentCampaign} />,
+    creator: <CampaignDetailCreator campaign={currentCampaign} />,
+    agreement: <CampaignAgreements campaign={currentCampaign} />,
+    invoices: <CampaignInvoicesList campId={currentCampaign?.id} />,
+    client: (
+      <CampaignDetailBrand
+        brand={currentCampaign?.brand ?? currentCampaign?.company}
+        campaign={currentCampaign}
+      />
+    ),
+    pitch: (
+      <CampaignDetailPitch
+        pitches={currentCampaign?.pitch}
+        timeline={currentCampaign?.campaignTimeline?.find((elem) => elem.name === 'Open For Pitch')}
+        timelines={currentCampaign?.campaignTimeline?.filter(
+          (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
+        )}
+        shortlisted={currentCampaign?.shortlisted}
+      />
+    ),
+    submission: <CampaignDraftSubmissions campaign={currentCampaign} />,
+  };
+
+  // Render the current tab component based on the `currentTab` value
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -345,7 +384,7 @@ const CampaignDetailView = ({ id }) => {
         ]}
         action={
           <Button
-            variant="contained"
+            variant="outlined"
             size="small"
             startIcon={
               <Iconify
@@ -357,39 +396,17 @@ const CampaignDetailView = ({ id }) => {
             onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
             sx={{
               mb: 3,
+              borderRadius: 1,
+              boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
             }}
           >
-            Manage
+            Edit
           </Button>
         }
       />
 
       {renderTabs}
-      {currentTab === 'overview' && <CampaignOverview campaign={currentCampaign} />}
-      {currentTab === 'campaign-content' && <CampaignDetailContent campaign={currentCampaign} />}
-      {currentTab === 'creator' && <CampaignDetailCreator campaign={currentCampaign} />}
-      {currentTab === 'agreement' && <CampaignAgreements campaign={currentCampaign} />}
-      {currentTab === 'invoices' && <CampaignInvoicesList campId={currentCampaign?.id} />}
-      {currentTab === 'client' && (
-        <CampaignDetailBrand
-          brand={currentCampaign?.brand ?? currentCampaign?.company}
-          campaign={currentCampaign}
-        />
-      )}
-
-      {currentTab === 'pitch' && (
-        <CampaignDetailPitch
-          pitches={currentCampaign?.pitch}
-          timeline={
-            currentCampaign?.campaignTimeline.filter((elem) => elem.name === 'Open For Pitch')[0]
-          }
-          timelines={currentCampaign?.campaignTimeline.filter(
-            (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
-          )}
-          shortlisted={currentCampaign?.shortlisted}
-        />
-      )}
-      {currentTab === 'submission' && <CampaignDraftSubmissions campaign={currentCampaign} />}
+      {(!isLoading ? renderTabContent[currentTab] : <LoadingScreen />) || null}
     </Container>
   );
 };

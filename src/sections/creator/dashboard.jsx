@@ -26,27 +26,6 @@ export default function CreatorView() {
     setCreator(res?.data?.creator);
   }, []);
 
-  // useEffect(() => {
-  //   const getUserRoleAndCheckData = async () => {
-  //     let role;
-  //     try {
-  //       const response = await axios.get(endpoints.auth.getCurrentUser);
-  //       role = response.data?.user.role;
-  //     } catch (error) {
-  //       console.error(error);
-  //     }
-  //     // check if role is creator
-  //     if (role === 'creator') {
-  //       const response = await axios.get(endpoints.auth.checkCreator);
-  //       setCreator(response.data?.creator);
-  //       const openFormModal = response?.data?.creator?.user?.status === 'pending';
-  //       setDialogOpen(openFormModal);
-  //     }
-  //   };
-
-  //   getUserRoleAndCheckData();
-  // }, []);
-
   useEffect(() => {
     statusCheck();
   }, [statusCheck]);

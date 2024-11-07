@@ -1,8 +1,10 @@
+import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { Page, pdfjs, Document } from 'react-pdf';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -16,6 +18,7 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
+  useMediaQuery,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -30,11 +33,25 @@ import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
+
 const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) => {
   const [preview, setPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const { user } = useAuthContext();
   const display = useBoolean();
+
+  const isSmallScreen = useMediaQuery('(max-width: 600px)');
+
+  const [numPages, setNumPages] = useState(null);
+
+  // eslint-disable-next-line no-shadow
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+  };
 
   const agreement = campaign?.campaignTimeline.find((elem) => elem.name === 'Agreement');
 
@@ -89,6 +106,42 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     }
   });
 
+  const handleDownload = async (url) => {
+    try {
+      const response = await fetch(url);
+      // const contentType = response.headers.get('content-type');
+      const blob = await response.blob();
+      const filename = `${campaign?.id}-${campaign?.name}.pdf?v=${dayjs().toISOString()}.pdf`;
+
+      // For browsers that support the download attribute
+      if ('download' in document.createElement('a')) {
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(link.href);
+      }
+      // For IE10+
+      else if (navigator.msSaveBlob) {
+        navigator.msSaveBlob(blob, filename);
+      }
+      // Fallback - open in new window
+      else {
+        const newWindow = window.open(url, '_blank');
+        if (!newWindow) {
+          enqueueSnackbar('Please allow popups for this website to download the file.', {
+            variant: 'warning',
+          });
+        }
+      }
+    } catch (error) {
+      enqueueSnackbar('Download failed. Please try again.', { variant: 'error' });
+    }
+  };
+
   return (
     <Box p={1.5}>
       {!agreementStatus ? (
@@ -110,9 +163,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   <Button
                     variant="contained"
                     startIcon={<Iconify icon="material-symbols:download" width={20} />}
-                    href={campaign?.agreement?.agreementUrl}
-                    download="agreementForm.pdf"
-                    target="__blank"
+                    onClick={() => handleDownload(campaign?.agreement?.agreementUrl)}
                     size="small"
                   >
                     Download Agreement
@@ -287,7 +338,26 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
         <DialogTitle>Agreement</DialogTitle>
         <DialogContent>
-          <iframe
+          <Box
+            sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll', scrollbarWidth: 'none' }}
+          >
+            <Document file={submission?.content} onLoadSuccess={onDocumentLoadSuccess}>
+              {Array.from(new Array(numPages), (el, index) => (
+                <div key={index} style={{ marginBottom: '0px' }}>
+                  <Page
+                    key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
+                    pageNumber={index + 1}
+                    scale={isSmallScreen ? 0.7 : 1.5}
+                    renderAnnotationLayer={false}
+                    renderTextLayer={false}
+                    style={{ overflow: 'scroll' }}
+                    // style={{ margin: 0, padding: 0, position: 'relative' }}
+                  />
+                </div>
+              ))}
+            </Document>
+          </Box>
+          {/* <iframe
             src={submission?.content}
             style={{
               width: '100%',
@@ -296,7 +366,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               borderRadius: 15,
             }}
             title="PDF Viewer"
-          />
+          /> */}
         </DialogContent>
         <DialogActions>
           <Button onClick={display.onFalse}>Close</Button>
@@ -310,7 +380,7 @@ export default CampaignAgreement;
 
 CampaignAgreement.propTypes = {
   campaign: PropTypes.object,
-  timeline: PropTypes.object,
+  timeline: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   submission: PropTypes.object,
   agreementStatus: PropTypes.bool,
 };

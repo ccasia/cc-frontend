@@ -41,7 +41,7 @@ const CampaignDetailBrand = ({ brand, campaign }) => (
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1}>
-            {brand?.industries &&
+            {brand?.industries?.length > 0 &&
               brand?.industries.map((item, index) => <CustomChip key={index} label={item} />)}
           </Stack>
         </Stack>
@@ -88,6 +88,6 @@ const CampaignDetailBrand = ({ brand, campaign }) => (
 export default CampaignDetailBrand;
 
 CampaignDetailBrand.propTypes = {
-  brand: PropTypes.object,
-  campaign: PropTypes.object,
+  brand: PropTypes.any,
+  campaign: PropTypes.any,
 };

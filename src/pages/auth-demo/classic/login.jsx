@@ -14,7 +14,7 @@ export default function LoginPage() {
   return (
     <>
       <Helmet>
-        <title> Auth Classic: Login</title>
+        <title>Auth Classic: Login</title>
       </Helmet>
 
       {option === 'admin' ? <ClassicLoginView /> : <ModernLoginView />}

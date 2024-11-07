@@ -1,3 +1,4 @@
+import useSound from 'use-sound';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
 
@@ -9,6 +10,8 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
+
+// import sound from '../../../public/sounds/noti.mp3';
 
 // ----------------------------------------------------------------------
 
@@ -55,15 +58,19 @@ const ICONS = {
 export function useNavData() {
   const { user } = useAuthContext();
   const { unreadCount } = useTotalUnreadCount();
+  // const [play] = useSound(sound, {
+  //   interrupt: true,
+  // });
 
   const { socket } = useSocketContext();
   const [unreadMessageCount, setUnreadMessageCount] = useState(null);
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
-      enqueueSnackbar(`${data.count} new messages from ${data.name}.`, {
+      play();
+      enqueueSnackbar(`${data.count + 1} new messages from ${data.name}.`, {
         anchorOrigin: {
-          vertical: 'bottom',
+          vertical: 'top',
           horizontal: 'left',
         },
       });
@@ -75,23 +82,19 @@ export function useNavData() {
     };
   }, [socket]);
 
-  // useEffect(() => {
-  //   setUnreadMessageCount(unreadCount);
-  // }, [unreadCount]);
-
   const adminNavigations = useMemo(
     () => [
       {
         items: [
           {
-            title: 'Dashboard',
+            title: 'Overview',
             path: paths.dashboard.root,
-            icon: ICONS.dashboard,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
           },
         ],
       },
       {
-        subheader: 'Management',
+        // subheader: 'Management',
         items: [
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD'],
@@ -100,17 +103,18 @@ export function useNavData() {
             icon: <Iconify icon="material-symbols:explore-outline" width={25} />,
             children: [
               {
-                title: 'Manage Campaign',
+                // title: 'Manage Campaign',
+                title: 'Lists',
                 path: paths.dashboard.campaign.view,
               },
               {
                 roles: ['superadmin', 'CSM'],
-                title: 'Create Campaign',
+                title: 'Create',
                 path: paths.dashboard.campaign.create,
               },
               {
                 roles: ['superadmin', 'CSM'],
-                title: 'Edit Campaign',
+                title: 'Edit',
                 path: paths.dashboard.campaign.manage,
               },
               {
@@ -208,24 +212,38 @@ export function useNavData() {
       {
         items: [
           {
+            title: 'Overview',
+            path: paths.dashboard.overview.root,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={23} />,
+          },
+        ],
+      },
+      {
+        items: [
+          {
             title: 'Discover',
             path: paths.dashboard.campaign.view,
-            icon: <Iconify icon="iconamoon:discover" width={25} />,
+            icon: <Iconify icon="iconamoon:discover" width={23} />,
           },
           {
             title: 'My Campaigns',
             path: paths.dashboard.campaign.creator.manage,
-            icon: <Iconify icon="material-symbols:assignment" width={25} />,
+            icon: <Iconify icon="material-symbols:assignment" width={23} />,
+          },
+          {
+            title: 'My Tasks',
+            path: paths.dashboard.kanban,
+            icon: ICONS.kanban,
           },
           {
             title: 'Media Kit',
             path: paths.dashboard.creator.mediaKitCreator,
-            icon: <Iconify icon="flowbite:profile-card-outline" width={25} />,
+            icon: <Iconify icon="flowbite:profile-card-outline" width={23} />,
           },
           {
             title: 'Invoice',
             path: paths.dashboard.creator.invoiceCreator,
-            icon: <Iconify icon="material-symbols:finance" width={25} />,
+            icon: <Iconify icon="material-symbols:finance" width={23} />,
           },
           // {
           //   title: 'Inbox',
@@ -287,9 +305,16 @@ export function useNavData() {
 
   const data = useMemo(
     () => [
-      {
-        subheader: 'Cult Creative',
-      },
+      // {
+      //   items: [
+      //     {
+      //       title: 'Overview',
+      //       path: paths.dashboard.overview.root,
+      //       icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+      //     },
+      //   ],
+      // },
+
       ...navigations,
       {
         items: [
@@ -303,11 +328,6 @@ export function useNavData() {
             title: 'Calendar',
             path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,
-          },
-          {
-            title: 'My Tasks',
-            path: paths.dashboard.kanban,
-            icon: ICONS.kanban,
           },
         ],
       },

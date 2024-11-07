@@ -7,7 +7,6 @@ import Drawer from '@mui/material/Drawer';
 import { Typography } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import { styled } from '@mui/material/styles';
-import TextField from '@mui/material/TextField';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
@@ -19,7 +18,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import Scrollbar from 'src/components/scrollbar';
 
 import KanbanDetailsToolbar from './kanban-details-toolbar';
-import KanbanDetailsPriority from './kanban-details-priority';
 import CampaignPosting from '../campaign/manage-creator/campaign-posting';
 import CampaignAgreement from '../campaign/manage-creator/campaign-agreement';
 import CampaignFirstDraft from '../campaign/manage-creator/campaign-first-draft';
@@ -54,7 +52,6 @@ export default function KanbanDetails({
   onDeleteTask,
   ...other
 }) {
-
   const { user } = useAuthContext();
 
   const { data, isLoading } = useSWR(
@@ -84,27 +81,27 @@ export default function KanbanDetails({
     [submissions]
   );
 
-  const handleChangeTaskName = useCallback((event) => {
-    setTaskName(event.target.value);
-  }, []);
+  // const handleChangeTaskName = useCallback((event) => {
+  //   setTaskName(event.target.value);
+  // }, []);
 
-  const handleUpdateTask = useCallback(
-    (event) => {
-      try {
-        if (event.key === 'Enter') {
-          if (taskName) {
-            onUpdateTask({
-              ...task,
-              name: taskName,
-            });
-          }
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    [onUpdateTask, task, taskName]
-  );
+  // const handleUpdateTask = useCallback(
+  //   (event) => {
+  //     try {
+  //       if (event.key === 'Enter') {
+  //         if (taskName) {
+  //           onUpdateTask({
+  //             ...task,
+  //             name: taskName,
+  //           });
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   },
+  //   [onUpdateTask, task, taskName]
+  // );
 
   const handleChangeTaskDescription = useCallback((event) => {
     setTaskDescription(event.target.value);
@@ -140,22 +137,22 @@ export default function KanbanDetails({
     // />
   );
 
-  const renderDescription = (
-    <Stack direction="row">
-      <StyledLabel>Description</StyledLabel>
+  // const renderDescription = (
+  //   <Stack direction="row">
+  //     <StyledLabel>Description</StyledLabel>
 
-      <TextField
-        fullWidth
-        multiline
-        size="small"
-        value={taskDescription}
-        onChange={handleChangeTaskDescription}
-        InputProps={{
-          sx: { typography: 'body2' },
-        }}
-      />
-    </Stack>
-  );
+  //     <TextField
+  //       fullWidth
+  //       multiline
+  //       size="small"
+  //       value={taskDescription}
+  //       onChange={handleChangeTaskDescription}
+  //       InputProps={{
+  //         sx: { typography: 'body2' },
+  //       }}
+  //     />
+  //   </Stack>
+  // );
 
   const renderSubmission = (
     <>
@@ -238,10 +235,6 @@ export default function KanbanDetails({
         >
           {renderName}
 
-          {/* {renderLabel} */}
-
-          {/* {renderDueDate} */}
-          
           {renderSubmission}
         </Stack>
       </Scrollbar>

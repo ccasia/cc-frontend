@@ -202,7 +202,6 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
       >
         All creators
       </Button>
-      
 
       {isLoading && <LoadingScreen />}
 
@@ -277,17 +276,20 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             <Submissions campaign={campaign} submissions={submissions} creator={data} />
           )}
           {currentTab === 'logistics' && <LogisticView campaign={campaign} creator={data} />}
+
           {currentTab === 'invoice' && invoice ? (
-            <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+            <PDFViewer width="100%" height={600} style={{ border: 'none', borderRadius: 10 }}>
               <InvoicePDF invoice={invoice} />
             </PDFViewer>
           ) : null}
+
           {currentTab === 'invoice' && !invoice ? (
             <EmptyContent
               title="No invoice found"
               description="This creator has not been invoiced yet."
             />
           ) : null}
+
           {currentTab === 'timeline' && <TimelineCreator campaign={campaign} creator={data} />}
         </>
       )}

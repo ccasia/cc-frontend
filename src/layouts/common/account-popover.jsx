@@ -24,16 +24,16 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 const OPTIONS = [
   {
     label: 'Home',
-    linkTo: '/',
+    linkTo: paths.dashboard.overview.root,
   },
   {
     label: 'Profile',
     linkTo: paths.dashboard.user.profile,
   },
-  {
-    label: 'Settings',
-    linkTo: '/#2',
-  },
+  // {
+  //   label: 'Settings',
+  //   linkTo: '/#2',
+  // },
 ];
 
 // ----------------------------------------------------------------------
@@ -55,9 +55,14 @@ export default function AccountPopover({ isOnline }) {
     }
   };
 
-  const handleClickItem = (path) => {
+  const handleClickItem = (path, label) => {
     popover.onClose();
-    router.push(path);
+    if (label === 'Home' && user?.role === 'creator') {
+      router.push(path);
+    }
+    if (label === 'Profile') {
+      router.push(path);
+    }
   };
 
   return (
@@ -108,7 +113,10 @@ export default function AccountPopover({ isOnline }) {
 
         <Stack sx={{ p: 1 }}>
           {OPTIONS.map((option) => (
-            <MenuItem key={option.label} onClick={() => handleClickItem(option.linkTo)}>
+            <MenuItem
+              key={option.label}
+              onClick={() => handleClickItem(option.linkTo, option.label)}
+            >
               {option.label}
             </MenuItem>
           ))}

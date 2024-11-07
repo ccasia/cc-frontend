@@ -58,6 +58,7 @@ const NavItem = forwardRef(
             {icon}
           </Box>
         )}
+
         {subItem && icon ? (
           <Box component="span" className="icon">
             {icon}
@@ -65,6 +66,7 @@ const NavItem = forwardRef(
         ) : (
           <Box component="span" className="sub-icon" />
         )}
+
         {title && (
           <Box component="span" sx={{ flex: '1 1 auto', minWidth: 0 }}>
             <Box component="span" className="label">
@@ -80,14 +82,14 @@ const NavItem = forwardRef(
             )}
           </Box>
         )}
+
         {info && (
           <Box component="span" className="info">
             {info}
           </Box>
         )}
-        {msgcounter && <Label color="success">{msgcounter}</Label>}
 
-        {/* <Badge badgeContent={msgcounter} color="primary" sx={{ ml: 2 }} />} */}
+        {msgcounter && <Label color="success">{msgcounter}</Label>}
 
         {hasChild && (
           <Iconify
@@ -198,6 +200,10 @@ const StyledNavItem = styled(ListItemButton, {
       height: 24,
       flexShrink: 0,
       marginRight: theme.spacing(2),
+      ...(active && {
+        color:
+          theme.palette.mode === 'light' ? 'rgba(19, 64, 255, 1)' : theme.palette.primary.light,
+      }),
     },
     label: {
       ...noWrapStyles,
@@ -224,6 +230,7 @@ const StyledNavItem = styled(ListItemButton, {
     // Root item
     ...(!subItem && {
       ...baseStyles.item,
+      position: 'relative',
       minHeight: 44,
       '& .icon': {
         ...baseStyles.icon,
@@ -243,10 +250,29 @@ const StyledNavItem = styled(ListItemButton, {
       '& .arrow': {
         ...baseStyles.arrow,
       },
+
       ...(active && {
+        fontWeight: 900,
+        // color: 'black',
         color:
-          theme.palette.mode === 'light' ? theme.palette.primary.main : theme.palette.primary.light,
-        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+          theme.palette.mode === 'light'
+            ? 'rgba(19, 64, 255, 1)'
+            : // theme.palette.primary.main
+              theme.palette.primary.light,
+        // backgroundColor: 'black',
+        // backgroundColor: alpha('rgba(19, 64, 255, 1)', 0.08),
+        background: alpha('rgba(19, 64, 255, 1)', 0.08),
+        // '::before': {
+        //   content: '""',
+        //   width: 8,
+        //   height: 20,
+        //   backgroundColor: 'blue',
+        //   position: 'absolute',
+        //   left: -20,
+        //   top: '50%',
+        //   transform: 'translateY(-50%)',
+        //   borderRadius: 10,
+        // },
         '&:hover': {
           backgroundColor: alpha(theme.palette.primary.main, 0.16),
         },

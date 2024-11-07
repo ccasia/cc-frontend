@@ -40,7 +40,10 @@ const AccountSecurity = () => {
 
   const methods = useForm({ defaultValues, resolver: yupResolver(ChangePassWordSchema) });
 
-  const { handleSubmit } = methods;
+  const {
+    handleSubmit,
+    formState: { isDirty },
+  } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     setLoading(true);
@@ -116,7 +119,13 @@ const AccountSecurity = () => {
             />
           </Grid>
           <Grid item xs={12} sm={12} md={12} lg={12} sx={{ textAlign: 'end' }}>
-            <LoadingButton type="submit" variant="contained" loading={loading}>
+            <LoadingButton
+              type="submit"
+              variant="outlined"
+              loading={loading}
+              disabled={!isDirty}
+              size="small"
+            >
               Save Changes
             </LoadingButton>
           </Grid>

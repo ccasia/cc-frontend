@@ -33,6 +33,9 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
+  overview: {
+    root: (userId) => `/api/user/overview/${userId}`,
+  },
   kanban: {
     root: '/api/kanban',
     createColumn: '/api/kanban/createColumn',
@@ -94,6 +97,7 @@ export const endpoints = {
     getCreatorSocialMediaData: '/api/creator/getCreatorSocialMediaData',
     getCreatorSocialMediaDataById: (id) => `/creator/${id}/social-media`,
     updateCreatorform: '/api/creator/updateCreatorForm',
+    updateSocialMediaUsername: '/api/creator/updateSocialMediaUsername',
   },
   users: {
     newAdmin: '/api/user/admins',
@@ -247,6 +251,7 @@ export const endpoints = {
       `/api/invoice/creator/${creatorId}/campaign/${campaignId}`,
     updateInvoiceStatus: '/api/invoice/updateStatus',
     getInvoicesByCreator: '/api/invoice/creator',
+    getCreatorInvoice: `/api/invoice/creatorInvoice`,
   },
   agreementTemplate: {
     byId: (id) => `/api/campaign/template/${id}`,

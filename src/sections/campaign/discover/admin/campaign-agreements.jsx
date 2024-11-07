@@ -3,6 +3,7 @@ import { mutate } from 'swr';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import { ListItemText } from '@mui/material';
 
 import {
   Box,
@@ -76,7 +77,7 @@ const CampaignAgreements = ({ campaign }) => {
       mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar('Error', { variant: error?.message });
+      enqueueSnackbar(error?.message, { variant: 'error' });
     }
   };
 
@@ -96,76 +97,87 @@ const CampaignAgreements = ({ campaign }) => {
           </TableHead>
           <TableBody>
             {!isLoading &&
-              data.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item?.user?.name}</TableCell>
-                  <TableCell>{item?.user?.email}</TableCell>
-                  <TableCell>{dayjs(item?.updatedAt).format('LL')}</TableCell>
-                  <TableCell>
-                    {item?.isSent ? (
-                      <Label color="success">Sent</Label>
-                    ) : (
-                      <Label color="warning">Pending</Label>
-                    )}
-                  </TableCell>
-                  <TableCell>{`RM ${parseFloat(item?.amount?.toString())}`}</TableCell>
-                  <TableCell>
-                    {smUp ? (
-                      <Stack direction="row" gap={1}>
-                        <Button
-                          onClick={() => handleViewAgreement(item?.agreementUrl)}
-                          size="small"
-                          variant="outlined"
-                          startIcon={<Iconify icon="hugeicons:view" />}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          onClick={() => handleEditAgreement(item)}
-                          size="small"
-                          variant="outlined"
-                          startIcon={<Iconify icon="iconamoon:edit-light" />}
-                        >
-                          Payment Amount
-                        </Button>
-                        {item.isSent ? (
+              data.map((item) => {
+                // eslint-disable-next-line no-restricted-globals
+                const isAmountValid = !isNaN(parseFloat(item?.amount?.toString()));
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell>{item?.user?.name}</TableCell>
+                    <TableCell>{item?.user?.email}</TableCell>
+                    <TableCell>
+                      <ListItemText
+                        primary={dayjs(item?.updatedAt).format('LL')}
+                        secondary={dayjs(item?.updatedAt).format('LT')}
+                        primaryTypographyProps={{ typography: 'body2', noWrap: true }}
+                        secondaryTypographyProps={{
+                          mt: 0.5,
+                          component: 'span',
+                          typography: 'caption',
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {item?.isSent ? (
+                        <Label color="success">Sent</Label>
+                      ) : (
+                        <Label color="warning">Pending</Label>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isAmountValid ? `RM ${parseFloat(item?.amount?.toString())}` : 'Not set'}
+                    </TableCell>
+                    <TableCell>
+                      {smUp ? (
+                        <Stack direction="row" gap={1}>
+                          <Button
+                            onClick={() => handleViewAgreement(item?.agreementUrl)}
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Iconify icon="hugeicons:view" />}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            onClick={() => handleEditAgreement(item)}
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Iconify icon="iconamoon:edit-light" />}
+                            sx={{ whiteSpace: 'nowrap', padding: '6px 16px', borderRadius: '4px' }}
+                          >
+                            Payment Amount
+                          </Button>
                           <Button
                             onClick={() => handleSendAgreement(item)}
                             size="small"
                             variant="outlined"
                             startIcon={<Iconify icon="bx:send" />}
-                            color="warning"
+                            color={item.isSent ? 'warning' : 'primary'}
+                            disabled={!isAmountValid}
                           >
-                            Resend
+                            {item.isSent ? 'Resend' : 'Send'}
                           </Button>
-                        ) : (
-                          <Button
+                        </Stack>
+                      ) : (
+                        <Stack direction="row" gap={1}>
+                          <IconButton onClick={() => handleViewAgreement(item?.agreementUrl)}>
+                            <Iconify icon="hugeicons:view" />
+                          </IconButton>
+                          <IconButton color="warning" onClick={() => handleEditAgreement(item)}>
+                            <Iconify icon="iconamoon:edit-light" />
+                          </IconButton>
+                          <IconButton
+                            color={item.isSent ? 'warning' : 'primary'}
                             onClick={() => handleSendAgreement(item)}
-                            size="small"
-                            variant="outlined"
-                            startIcon={<Iconify icon="bx:send" />}
-                            color="primary"
+                            disabled={!isAmountValid}
                           >
-                            Send
-                          </Button>
-                        )}
-                      </Stack>
-                    ) : (
-                      <Stack direction="row" gap={1}>
-                        <IconButton onClick={() => handleViewAgreement(item?.agreementUrl)}>
-                          <Iconify icon="hugeicons:view" />
-                        </IconButton>
-                        <IconButton color="warning" onClick={() => handleEditAgreement(item)}>
-                          <Iconify icon="iconamoon:edit-light" />
-                        </IconButton>
-                        <IconButton color="primary" onClick={() => handleSendAgreement(item)}>
-                          <Iconify icon="bx:send" />
-                        </IconButton>
-                      </Stack>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+                            <Iconify icon="bx:send" />
+                          </IconButton>
+                        </Stack>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
           </TableBody>
         </Table>
       </TableContainer>
@@ -180,7 +192,7 @@ const CampaignAgreements = ({ campaign }) => {
 };
 
 CampaignAgreements.propTypes = {
-  campaign: PropTypes.object,
+  campaign: PropTypes.any,
 };
 
 export default CampaignAgreements;

@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import React from 'react';
 import { useTheme } from '@emotion/react';
 
+import { grey } from '@mui/material/colors';
 import {
   Box,
   Grid,
@@ -16,6 +17,7 @@ import {
   TableBody,
   Typography,
   TableContainer,
+  CircularProgress,
 } from '@mui/material';
 
 import useGetCreators from 'src/hooks/use-get-creators';
@@ -30,10 +32,12 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 const DashboardSuperadmin = () => {
   const { campaigns, isLoading } = useGetCampaigns();
-  const { data: creators } = useGetCreators();
+  const { data: creators, isLoading: creatorLoading } = useGetCreators();
 
   const theme = useTheme();
   const setting = useSettingsContext();
+
+  const loadingDone = !isLoading && !creatorLoading;
 
   const taskLists =
     !isLoading &&
@@ -149,14 +153,10 @@ const DashboardSuperadmin = () => {
     </TableContainer>
   );
 
-  return (
+  return loadingDone ? (
     <Grid container spacing={3}>
       <Grid item xs={12} md={3}>
-        <Box
-          component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-        >
+        <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
               Total campaign
@@ -178,8 +178,8 @@ const DashboardSuperadmin = () => {
       <Grid item xs={12} md={3}>
         <Box
           component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+          p="16px 24px"
+          sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
         >
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
@@ -202,8 +202,8 @@ const DashboardSuperadmin = () => {
       <Grid item xs={12} md={3}>
         <Box
           component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+          p="16px 24px"
+          sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
         >
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
@@ -226,8 +226,8 @@ const DashboardSuperadmin = () => {
       <Grid item xs={12} md={3}>
         <Box
           component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+          p="16px 24px"
+          sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
         >
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
@@ -250,7 +250,7 @@ const DashboardSuperadmin = () => {
       <Grid item xs={12} md={12}>
         <Box
           component={Card}
-          p={2}
+          p="16px 24px"
           sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
         >
           <Stack gap={1}>
@@ -321,6 +321,23 @@ const DashboardSuperadmin = () => {
         </Box>
       </Grid> */}
     </Grid>
+  ) : (
+    <Box
+      sx={{
+        position: 'relative',
+        top: 200,
+        textAlign: 'center',
+      }}
+    >
+      <CircularProgress
+        thickness={7}
+        size={25}
+        sx={{
+          color: theme.palette.common.black,
+          strokeLinecap: 'round',
+        }}
+      />
+    </Box>
   );
 };
 

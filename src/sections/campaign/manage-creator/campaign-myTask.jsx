@@ -56,7 +56,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
 
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
-  ).isAgreementReady;
+  )?.isAgreementReady;
 
   const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
 
@@ -92,7 +92,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
           <Stack alignItems="center" justifyContent="center" spacing={2}>
             <Iconify icon="hugeicons:license-maintenance" width={50} />
             <Typography variant="h6" color="text.secondary">
-              Campaign is under maintenance
+              Campaign is currently under maintenance.
             </Typography>
           </Stack>
         </Box>
@@ -111,7 +111,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
             }
 
             return (
-              <TimelineItem>
+              <TimelineItem key={index} id={item.type}>
                 <TimelineSeparator>
                   <Label sx={{ mt: 0.5 }}>{index + 1}</Label>
                   <TimelineConnector />

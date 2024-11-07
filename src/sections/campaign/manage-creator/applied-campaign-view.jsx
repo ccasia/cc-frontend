@@ -1,85 +1,59 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 
-import { Box, TextField, InputAdornment } from '@mui/material';
+import { Box, Grid } from '@mui/material';
 
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 
 import CampaignItem from '../discover/creator/campaign-item';
 
-// import CampaignItem from './campaign-item';
-
-const AppliedCampaignView = () => {
-  // const { data, isLoading } = useGetCampaignPitch();
+const AppliedCampaignView = ({ searchQuery }) => {
   const { campaigns: data, isLoading } = useGetCampaigns('creator');
-  const [query, setQuery] = useState('');
   const { user } = useAuthContext();
 
   const filteredCampaigns = useMemo(
     () =>
       !isLoading &&
       data?.filter((campaign) =>
-        campaign?.pitch.some((item) => item?.userId === user?.id && item?.status === 'undecided')
+        campaign?.pitch?.some(
+          (item) =>
+            item?.userId === user?.id &&
+            (item?.status === 'undecided' || item?.status === 'rejected')
+        )
       ),
     [isLoading, data, user]
   );
 
   const filteredData = useMemo(
     () =>
-      query
+      searchQuery
         ? filteredCampaigns?.filter((elem) =>
-            elem.campaign.name.toLowerCase()?.includes(query.toLowerCase())
+            elem.name.toLowerCase()?.includes(searchQuery.toLowerCase())
           )
         : filteredCampaigns,
-    [filteredCampaigns, query]
+    [filteredCampaigns, searchQuery]
   );
-
-  console.log(filteredData);
 
   return (
     <Box mt={2}>
-      <TextField
-        value={query}
-        placeholder="Search By Campaign Name"
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Iconify icon="hugeicons:search-02" />
-            </InputAdornment>
-          ),
-        }}
-        sx={{
-          width: 250,
-        }}
-        onChange={(e) => setQuery(e.target.value)}
-      />
       {!isLoading && filteredData?.length ? (
-        <Box
-          gap={3}
-          display="grid"
-          mt={2}
-          gridTemplateColumns={{
-            xs: 'repeat(1, 1fr)',
-            sm: 'repeat(2, 1fr)',
-            md: 'repeat(3, 1fr)',
-          }}
-        >
-          {filteredData.map((elem) => (
-            <CampaignItem
-              key={elem.campaign?.id}
-              campaign={elem}
-              pitchStatus={elem.status}
-              user={user}
-              // onClick={() => onClick(campaign?.id)}
-            />
+        <Grid container spacing={3}>
+          {filteredData.map((campaign) => (
+            <Grid item xs={12} sm={6} md={4} key={campaign.id}>
+              <CampaignItem
+                campaign={campaign}
+                pitchStatus={campaign.pitch.find((item) => item.userId === user.id)?.status}
+              />
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       ) : (
-        <EmptyContent title={`No campaign ${query && query} found.`} />
+        <EmptyContent
+          title={`No pending applications ${searchQuery ? `for "${searchQuery}"` : ''} found.`}
+        />
       )}
     </Box>
   );

@@ -2,16 +2,15 @@ import React, { useState, useCallback } from 'react';
 
 import {
   Box,
-  Menu,
   Stack,
   Avatar,
   Button,
-  MenuItem,
   Container,
   TextField,
   Autocomplete,
   ListItemText,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -19,6 +18,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
+import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -35,17 +35,11 @@ const defaultFilters = {
 
 const CampaignView = () => {
   const settings = useSettingsContext();
-  const { campaigns } = useGetCampaigns();
+  const { campaigns, isLoading } = useGetCampaigns();
+  const { data: brandOptions } = useGetCampaignBrandOption();
+
   const router = useRouter();
-
-  const [anchorEl, setAnchorEl] = useState(null);
   const [filters, setFilters] = useState(defaultFilters);
-
-  const open = Boolean(anchorEl);
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
 
   const openFilters = useBoolean();
 
@@ -132,29 +126,43 @@ const CampaignView = () => {
           />
         )}
 
-        <Button onClick={openFilters.onTrue} endIcon={<Iconify icon="ic:round-filter-list" />}>
-          Filter
-        </Button>
-
-        <Menu
-          id="basic-menu"
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-          MenuListProps={{
-            'aria-labelledby': 'basic-button',
+        <Button
+          onClick={openFilters.onTrue}
+          endIcon={<Iconify icon="ic:round-filter-list" />}
+          sx={{
+            boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
           }}
         >
-          <MenuItem>Active</MenuItem>
-          <MenuItem>Past</MenuItem>
-        </Menu>
+          Filter
+        </Button>
       </Stack>
 
-      {dataFiltered && dataFiltered.length > 0 ? (
-        <CampaignLists campaigns={dataFiltered} />
-      ) : (
-        <EmptyContent title="No campaign available" />
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: (theme) => theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
       )}
+
+      {!isLoading &&
+        (dataFiltered?.length > 0 ? (
+          <CampaignLists campaigns={dataFiltered} />
+        ) : (
+          <EmptyContent title="No campaign available" />
+        ))}
+
       <CampaignFilter
         open={openFilters.value}
         onOpen={openFilters.onTrue}
@@ -163,6 +171,7 @@ const CampaignView = () => {
         filters={filters}
         onFilters={handleFilters}
         reset={handleResetFitlers}
+        brands={brandOptions}
       />
     </Container>
   );

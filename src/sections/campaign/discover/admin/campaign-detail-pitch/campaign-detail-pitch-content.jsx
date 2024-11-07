@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Chip,
@@ -46,7 +47,11 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
     },
   });
 
-  const { setValue, getValues } = methods;
+  const {
+    setValue,
+    getValues,
+    formState: { isSubmitting },
+  } = methods;
 
   useEffect(() => {
     setValue('status', data?.status);
@@ -66,7 +71,6 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         });
         enqueueSnackbar(res?.data?.message);
       } catch (error) {
-        console.log(error);
         enqueueSnackbar('error', {
           variant: 'error',
         });
@@ -83,6 +87,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         ...values,
         status: 'approved',
       });
+
       enqueueSnackbar(res?.data?.message);
       modal.onFalse();
     } catch (error) {
@@ -134,12 +139,12 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         </TableContainer>
       </DialogContent>
       <DialogActions>
-        <Button size="small" onClick={modal.onFalse}>
+        <Button size="small" onClick={modal.onFalse} variant="outlined">
           Cancel
         </Button>
-        <Button variant="contained" size="small" color="primary" onClick={onConfirm}>
+        <LoadingButton variant="contained" size="small" onClick={onConfirm} loading={isSubmitting}>
           Shortlist {data?.user?.name}
-        </Button>
+        </LoadingButton>
       </DialogActions>
     </Dialog>
   );
@@ -288,23 +293,6 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
             />
 
             <ListItemText
-              primary="Industries"
-              secondary={
-                <Stack gap={1} direction="row" flexWrap="wrap">
-                  {data?.user?.creator?.industries.map((elem, index) => (
-                    <Chip key={index} size="small" label={elem?.name} />
-                  ))}
-                </Stack>
-              }
-              primaryTypographyProps={{
-                variant: 'subtitle1',
-              }}
-              secondaryTypographyProps={{
-                variant: 'subtitle2',
-              }}
-            />
-
-            <ListItemText
               primary="Instagram"
               secondary={data?.user?.creator?.instagram}
               primaryTypographyProps={{
@@ -330,12 +318,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         <Box display="flex" flexDirection="column">
           <Typography variant="h6">Pitch</Typography>
 
-          <Box
-            // display="grid"
-            // gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }}
-            // gap={2}
-            mt={1.5}
-          >
+          <Box mt={1.5} mx="auto">
             {data?.type === 'text' ? (
               <Markdown children={data?.content} />
             ) : (
@@ -343,15 +326,19 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
                 {data.status === 'pending' ? (
                   <Typography>Video is uploading...</Typography>
                 ) : (
-                  // eslint-disable-next-line jsx-a11y/media-has-caption
-                  <video
+                  <Box
+                    component="video"
                     autoPlay
-                    style={{ width: '100%', borderRadius: 10, margin: 'auto' }}
-                    key={data?.content}
                     controls
+                    sx={{
+                      maxHeight: '60vh',
+                      width: { xs: '70vw', sm: 'auto' },
+                      borderRadius: 2,
+                      boxShadow: 3,
+                    }}
                   >
                     <source src={data?.content} />
-                  </video>
+                  </Box>
                 )}
               </>
             )}

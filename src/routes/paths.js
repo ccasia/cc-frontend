@@ -69,6 +69,7 @@ export const paths = {
       mediaKitCreator: `${ROOTS.DASHBOARD}/mediakit`,
       mediaKitLists: `${ROOTS.DASHBOARD}/creator/media-kits`,
       invoiceCreator: `${ROOTS.DASHBOARD}/invoiceCreator`,
+      invoiceDetail: (invoiceId) => `${ROOTS.DASHBOARD}/invoiceCreator/${invoiceId}`,
       inbox: `${ROOTS.DASHBOARD}/inbox`,
     },
     landing: {
@@ -96,8 +97,10 @@ export const paths = {
     template: {
       root: `${ROOTS.DASHBOARD}/template`,
     },
+    overview: {
+      root: `${ROOTS.DASHBOARD}/overview`,
+    },
   },
-
   public: {
     creator: {
       mediaKit: (id) => `${ROOTS.PUBLIC}/media-kits/creator/${id}`,

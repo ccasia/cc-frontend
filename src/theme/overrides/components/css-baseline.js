@@ -19,6 +19,8 @@ export function cssBaseline(theme) {
           padding: 0,
           width: '100%',
           height: '100%',
+          WebkitFontSmoothing: 'antialiased',
+          MozOsxFontSmoothing: 'grayscale',
         },
         '#root, #__next': {
           width: '100%',

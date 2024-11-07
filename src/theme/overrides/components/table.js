@@ -13,6 +13,7 @@ export function table(theme) {
         },
       },
     },
+
     MuiTableRow: {
       styleOverrides: {
         root: {
@@ -33,13 +34,15 @@ export function table(theme) {
     MuiTableCell: {
       styleOverrides: {
         root: {
-          borderBottomStyle: 'dashed',
+          // borderBottomStyle: 'dashed',
+          // height: 100,
         },
         head: {
           fontSize: 14,
           color: theme.palette.text.secondary,
           fontWeight: theme.typography.fontWeightSemiBold,
           backgroundColor: theme.palette.background.neutral,
+          height: 0,
         },
         stickyHeader: {
           backgroundColor: theme.palette.background.paper,

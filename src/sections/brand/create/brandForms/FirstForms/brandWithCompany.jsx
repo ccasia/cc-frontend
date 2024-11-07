@@ -24,26 +24,28 @@ import { useCompany } from 'src/hooks/zustands/useCompany';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { interestsLists } from 'src/contants/interestLists';
+
 import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import UploadPhoto from 'src/sections/profile/dropzone';
 
-const interestsLists = [
-  'Art',
-  'Beauty',
-  'Business',
-  'Fashion',
-  'Fitness',
-  'Food',
-  'Gaming',
-  'Health',
-  'Lifestyle',
-  'Music',
-  'Sports',
-  'Technology',
-  'Travel',
-  'Entertainment',
-];
+// const interestsLists = [
+//   'Art',
+//   'Beauty',
+//   'Business',
+//   'Fashion',
+//   'Fitness',
+//   'Food',
+//   'Gaming',
+//   'Health',
+//   'Lifestyle',
+//   'Music',
+//   'Sports',
+//   'Technology',
+//   'Travel',
+//   'Entertainment',
+// ];
 
 const steps = [
   'choose company',

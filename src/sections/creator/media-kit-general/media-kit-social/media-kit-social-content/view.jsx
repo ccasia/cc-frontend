@@ -88,7 +88,7 @@ const TopContentGrid = ({ topContents }) => {
                   fontSize: isMobile ? '0.75rem' : '0.875rem', // Smaller font size on mobile
                 }}
               >
-                {content.description}
+                {`${content?.description?.slice(0, 50)}...`}
               </Typography>
             </Box>
             <Box

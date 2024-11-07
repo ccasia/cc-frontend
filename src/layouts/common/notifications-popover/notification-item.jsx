@@ -3,22 +3,22 @@ import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 
 // import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { fToNow } from 'src/utils/format-time';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
 
 export default function NotificationItem({ notification }) {
   const { user } = useAuthContext();
-  const router = useRouter(); 
+  const router = useRouter();
 
   const handleViewClick = () => {
     const { entity, campaignId, threadId, creatorId } = notification.notification ?? {};
@@ -127,7 +127,6 @@ export default function NotificationItem({ notification }) {
       }}
     />
   );
-
 
   const renderOther = (
     <Stack

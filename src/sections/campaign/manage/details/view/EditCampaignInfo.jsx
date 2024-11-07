@@ -16,26 +16,12 @@ import {
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { interestsLists } from 'src/contants/interestLists';
+
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 // TODO: Copied from `src/sections/campaign/create/form.jsx`, consider consolidating them sometime
-const interestsLists = [
-  'Art',
-  'Beauty',
-  'Business',
-  'Fashion',
-  'Fitness',
-  'Food',
-  'Gaming',
-  'Health',
-  'Lifestyle',
-  'Music',
-  'Sports',
-  'Technology',
-  'Travel',
-  'Entertainment',
-];
 
 export const EditCampaignInfo = ({ open, campaign, onClose }) => {
   const methods = useForm({

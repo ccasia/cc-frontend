@@ -229,6 +229,10 @@ export default function NotificationsPopover() {
   return (
     <>
       <IconButton
+        sx={{
+          borderRadius: 1,
+          boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+        }}
         component={m.button}
         whileTap="tap"
         whileHover="hover"
@@ -236,8 +240,12 @@ export default function NotificationsPopover() {
         color={drawer.value ? 'primary' : 'default'}
         onClick={drawer.onTrue}
       >
-        <Badge badgeContent={!isLoading && (totalUnRead < 20 ? totalUnRead : `20+`)} color="error">
-          <Iconify icon="solar:bell-bing-bold-duotone" width={24} />
+        <Badge
+          badgeContent={!isLoading && (totalUnRead < 20 ? totalUnRead : `20+`)}
+          color="error"
+          variant="dot"
+        >
+          <Iconify icon="mdi:bell-outline" width={18} />
         </Badge>
       </IconButton>
 

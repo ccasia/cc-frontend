@@ -1,23 +1,12 @@
 /* eslint-disable no-nested-ternary */
-import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
 
-import Link from '@mui/material/Link';
-import Stack from '@mui/material/Stack';
-import { LoadingButton } from '@mui/lab';
-import ListItemText from '@mui/material/ListItemText';
-import {
-  Grid,
-  Card,
-  Tooltip,
-  Typography,
-  IconButton,
-  CircularProgress,
-  Button,
-} from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import { Bookmark, BookmarkBorder } from '@mui/icons-material';
+import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -26,13 +15,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
-import Label from 'src/components/label';
-import Iconify from 'src/components/iconify';
 
-import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
-import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
-import Carousel from 'src/components/carousel/carousel';
 
 // ----------------------------------------------------------------------
 
@@ -40,14 +24,19 @@ export default function CampaignItem({ campaign, user }) {
   const [open, setOpen] = useState(false);
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
-  const dialog = useBoolean();
-  const text = useBoolean();
-  const video = useBoolean();
+  // const dialog = useBoolean();
+  // const text = useBoolean();
+  // const video = useBoolean();
 
   const { socket } = useSocketContext();
+  // const router = useRouter();
+  const theme = useTheme();
+
+  const [bookMark, setBookMark] = useState(
+    campaign?.bookMarkCampaign?.some((item) => item.userId === user?.id) || false
+  );
 
   useEffect(() => {
-    // Define the handler function
     const handlePitchLoading = (data) => {
       setLoading(true);
 
@@ -78,11 +67,9 @@ export default function CampaignItem({ campaign, user }) {
       setLoading(false);
     };
 
-    // Attach the event listener
     socket?.on('pitch-loading', handlePitchLoading);
     socket?.on('pitch-uploaded', handlePitchSuccess);
 
-    // Clean-up function
     return () => {
       socket?.off('pitch-loading', handlePitchLoading);
       socket?.off('pitch-uploaded', handlePitchSuccess);
@@ -93,8 +80,11 @@ export default function CampaignItem({ campaign, user }) {
     try {
       const res = await axiosInstance.post(endpoints.campaign.creator.saveCampaign, {
         campaignId,
+        userId: user?.id,
       });
       mutate(endpoints.campaign.getMatchedCampaign);
+      // mutate(endpoints.campaign.creator.getSavedCampaigns);
+      setBookMark(true);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Error', {
@@ -109,6 +99,7 @@ export default function CampaignItem({ campaign, user }) {
         endpoints.campaign.creator.unsaveCampaign(saveCampaignId)
       );
       mutate(endpoints.campaign.getMatchedCampaign);
+      setBookMark(false);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Error', {
@@ -140,327 +131,197 @@ export default function CampaignItem({ campaign, user }) {
 
   const campaignInfo = useBoolean();
 
-  // const renderImages = (
-  //   <Stack
-  //     spacing={0.5}
-  //     direction="row"
-  //     sx={{
-  //       p: (theme) => theme.spacing(1, 1, 0, 1),
-  //     }}
-  //   >
-  //     <Stack flexGrow={1} sx={{ position: 'relative' }}>
-  //       <Image
-  //         alt={campaign?.name}
-  //         src={campaign?.campaignBrief?.images[0]}
-  //         sx={{ borderRadius: 1, height: 164, width: 1 }}
-  //       />
-  //     </Stack>
-  //     {campaign?.campaignBrief?.images.length > 1 && (
-  //       <Stack spacing={0.5}>
-  //         {campaign?.campaignBrief?.images?.slice(1).map((image) => (
-  //           <Image
-  //             alt={campaign?.name}
-  //             src={image}
-  //             ratio="1/1"
-  //             sx={{ borderRadius: 1, width: 80 }}
-  //           />
-  //         ))}
-  //       </Stack>
-  //     )}
-  //   </Stack>
-  // );
+  const handleCardClick = () => {
+    campaignInfo.onTrue();
+  };
 
-  const renderImages = (
-    <Stack
-      spacing={0.5}
-      direction="row"
-      sx={{
-        p: (theme) => theme.spacing(1, 1, 0, 1),
-      }}
-    >
-      <Stack flexGrow={1} direction="row" gap={1}>
-        <Image
-          alt={campaign?.name}
-          src={campaign?.campaignBrief?.images[0]}
-          sx={{ borderRadius: 1, height: 164, width: 1 }}
-        />
-        {campaign?.campaignBrief?.images.length === 2 && (
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[1]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 1, height: 164 }}
-          />
-        )}
-      </Stack>
-      {campaign?.campaignBrief?.images.length === 3 && (
-        <Stack spacing={0.5}>
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[1]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 80 }}
-          />
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[2]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 80 }}
-          />
-        </Stack>
-      )}
-    </Stack>
-  );
-
-  // const renderImages = <Carousel images={campaign?.campaignBrief?.images} />;
-
-  const renderTexts = (
-    <Stack
-      direction="row"
-      justifyContent="space-between"
-      alignItems="center"
-      sx={{
-        p: (theme) => theme.spacing(2.5, 2.5, 2, 2.5),
-      }}
-    >
-      <ListItemText
-        primary={
-          <Link
-            component="a"
-            color="inherit"
-            onClick={() => campaignInfo?.onTrue()}
-            sx={{
-              cursor: 'pointer',
-            }}
-          >
-            {campaign?.name}
-          </Link>
-        }
-        secondary={`by ${campaign?.brand?.name ?? campaign?.company?.name}`}
-        primaryTypographyProps={{
-          noWrap: true,
-          component: 'span',
-          color: 'text.primary',
-          typography: 'subtitle1',
-        }}
-        secondaryTypographyProps={{
-          noWrap: true,
-          color: 'text.disabled',
-          typography: 'caption',
+  const renderImage = (
+    <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
+      <Image
+        alt={campaign?.name}
+        src={campaign?.campaignBrief?.images[0]}
+        sx={{
+          height: '100%',
+          width: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center',
         }}
       />
-
-      <Stack direction="row" alignItems="center">
-        <Label color="info">
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="caption">Match</Typography>
-            <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 10 }}>
-              {`${Math.round(campaign?.percentageMatch)}%`}
-            </Typography>
-          </Stack>
-        </Label>
-        {/* <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-              <CircularProgress
-                variant="determinate"
-                value={Math.round(campaign?.percentageMatch)}
-                size="20px"
-                sx={{
-                  ' .MuiCircularProgress-circle': {
-                    stroke: (theme) =>
-                      theme.palette.mode === 'dark'
-                        ? theme.palette.common.white
-                        : theme.palette.common.black,
-                    strokeLinecap: 'round',
-                  },
-                }}
-              />
-              <Box
-                sx={{
-                  top: 0,
-                  left: 0,
-                  bottom: 0,
-                  right: 0,
-                  position: 'absolute',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Typography variant="caption" sx={{ fontWeight: 'bolder', fontSize: 10 }}>
-                  {`${Math.round(campaign?.percentageMatch)}%`}
-                </Typography>
-              </Box>
-            </Box> */}
-
-        {campaign?.bookMarkCampaign ? (
-          <Tooltip title="Saved">
-            <IconButton
-              onClick={() => {
-                unSaveCampaign(campaign.bookMarkCampaign.id);
-              }}
-            >
-              <Iconify icon="flowbite:bookmark-solid" width={25} />
-            </IconButton>
-          </Tooltip>
-        ) : (
-          <Tooltip title="Save">
-            <IconButton
-              onClick={() => {
-                saveCampaign(campaign.id);
-              }}
-            >
-              <Iconify icon="mynaui:bookmark" width={25} />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Stack>
-    </Stack>
+      <Box sx={{ position: 'absolute', top: 20, left: 20, display: 'flex', gap: 1 }}>
+        <Chip
+          label={campaign?.campaignBrief?.industries}
+          sx={{
+            backgroundColor: theme.palette.common.white,
+            color: '#48484a',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            borderRadius: '5px',
+            height: '32px',
+            border: '1px solid #ebebeb',
+            borderBottom: '3px solid #ebebeb',
+            '& .MuiChip-label': {
+              padding: '0 8px',
+            },
+            '&:hover': {
+              backgroundColor: theme.palette.common.white,
+            },
+          }}
+        />
+      </Box>
+    </Box>
   );
 
-  const renderInfo = (
-    <Stack
-      spacing={1.5}
-      sx={{
-        p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
-      }}
-    >
-      {pitch && pitch.status === 'pending' && (
-        <Label
-          color="warning"
+  const renderCampaignInfo = (
+    <Box sx={{ position: 'relative', pt: 2, px: 3, pb: 2.5 }}>
+      <Avatar
+        src={campaign?.brand?.logo || campaign?.company?.logo}
+        alt={campaign?.brand?.name || campaign?.company?.name}
+        sx={{
+          width: 56,
+          height: 56,
+          border: '2px solid #ebebeb',
+          borderRadius: '50%',
+          position: 'absolute',
+          top: -40,
+          left: 17,
+        }}
+      />
+      <Box sx={{ mt: 0.5 }}>
+        <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
+          {campaign?.name}
+        </Typography>
+        <Typography
+          variant="body2"
           sx={{
-            position: 'absolute',
-            bottom: 10,
-            right: 10,
+            mb: 2,
+            color: '#8e8e93',
+            fontSize: '0.95rem',
+            fontWeight: 550,
           }}
         >
-          Pending
-        </Label>
-      )}
-      {pitch && pitch.status === 'draft' && (
-        <Button
-          sx={{ position: 'absolute', bottom: 10, right: 10 }}
-          size="small"
-          variant="outlined"
-          color="warning"
-          onClick={() => {
-            if (pitch?.type === 'text') {
-              text.onTrue();
+          {campaign?.brand?.name || campaign?.company?.name}
+        </Typography>
+      </Box>
+
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Chip
+          icon={
+            <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
+              <CircularProgress
+                variant="determinate"
+                value={100}
+                size={20}
+                thickness={7}
+                sx={{ color: 'grey.300' }}
+              />
+              <CircularProgress
+                variant="determinate"
+                value={Math.min(Math.round(campaign?.percentageMatch), 100)}
+                size={20}
+                thickness={7}
+                sx={{
+                  color: '#5abc6f',
+                  position: 'absolute',
+                  left: 0,
+                  strokeLinecap: 'round',
+                }}
+              />
+            </Box>
+          }
+          label={`${Math.min(Math.round(campaign?.percentageMatch), 100)}% MATCH`}
+          sx={{
+            backgroundColor: theme.palette.common.white,
+            color: '#48484a',
+            fontWeight: 'bold',
+            fontSize: '0.875rem',
+            borderRadius: '10px',
+            height: '35px',
+            border: '1px solid #ebebeb',
+            borderBottom: '3px solid #ebebeb',
+            '& .MuiChip-label': {
+              padding: '0 8px 0 12px',
+            },
+            '&:hover': {
+              backgroundColor: theme.palette.common.white,
+            },
+          }}
+        />
+        <Chip
+          icon={
+            bookMark ? <Bookmark sx={{ fontSize: 24 }} /> : <BookmarkBorder sx={{ fontSize: 24 }} />
+          }
+          onClick={(e) => {
+            e.stopPropagation();
+            if (bookMark) {
+              unSaveCampaign(
+                campaign?.bookMarkCampaign?.find((item) => item.userId === user?.id)?.id
+              );
+            } else {
+              saveCampaign(campaign?.id);
             }
           }}
-        >
-          Draft
-        </Button>
-      )}
-      {pitch &&
-        pitch.status !== 'approved' &&
-        pitch.status !== 'pending' &&
-        pitch.status !== 'draft' && (
-          <Label
-            sx={{
-              position: 'absolute',
-              bottom: 10,
-              right: 10,
-              color: (theme) => theme.palette.text.secondary,
-            }}
-          >
-            In Review
-          </Label>
-        )}
-      {shortlisted && (
-        <Label
           sx={{
-            position: 'absolute',
-            bottom: 10,
-            right: 10,
+            backgroundColor: theme.palette.common.white,
+            color: '#48484a',
+            fontWeight: 'bold',
+            fontSize: '0.875rem',
+            borderRadius: '8px',
+            height: '40px',
+            border: '1px solid #ebebeb',
+            borderBottom: '3px solid #ebebeb',
+            '& .MuiChip-label': {
+              display: 'none',
+            },
+            '& .MuiChip-icon': {
+              marginRight: 0,
+              marginLeft: 0,
+              color: bookMark ? '#232b35' : '#48484a',
+              fontSize: 24,
+            },
+            '&:hover': {
+              backgroundColor: alpha('#232b35', 0.08),
+            },
+            width: '40px',
+            padding: 0,
+            transition: 'background-color 0.2s ease-in-out',
           }}
-          color="success"
-        >
-          Approved
-        </Label>
-      )}
-      {!shortlisted && !pitch && (
-        <>
-          {upload.find((item) => item.campaignId === campaign.id)?.loading ? (
-            <CircularProgress
-              sx={{ position: 'absolute', bottom: 10, right: 10 }}
-              variant="determinate"
-              value={upload.find((item) => item.campaignId === campaign.id).progress}
-            />
-          ) : (
-            <LoadingButton
-              sx={{ position: 'absolute', bottom: 10, right: 10 }}
-              variant="contained"
-              size="small"
-              startIcon={<Iconify icon="ph:paper-plane-tilt-bold" width={20} />}
-              onClick={() => setOpen(true)}
-              disabled={!user?.creator?.isFormCompleted}
-            >
-              Pitch
-            </LoadingButton>
-          )}
-        </>
-      )}
-
-      <Grid container>
-        <Grid item xs={1}>
-          <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />
-        </Grid>
-        <Grid item xs={11}>
-          <Stack gap={1.5} direction="row" alignItems="center" flexWrap="wrap">
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Label color="primary">{campaign?.campaignBrief?.industries}</Label>
-            </Stack>
-          </Stack>
-        </Grid>
-      </Grid>
-
-      <Grid container>
-        <Grid item xs={1}>
-          <Iconify icon="solar:clock-circle-bold" />
-        </Grid>
-        <Grid item xs={11}>
-          <Typography variant="caption" color="text.disabled">
-            {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
-          </Typography>
-        </Grid>
-      </Grid>
-    </Stack>
+        />
+      </Box>
+    </Box>
   );
 
   return (
     <>
-      <Card sx={{ position: 'relative' }}>
-        {renderImages}
-
-        {renderTexts}
-
-        {renderInfo}
-
-        {/* <Chip
-          sx={{ position: 'absolute', top: 10, left: 10 }}
-          variant="filled"
-          color="success"
-          size="small"
-          label={`${Math.ceil(campaign?.percentageMatch)} % Match`}
-        /> */}
+      <Card
+        sx={{
+          overflow: 'hidden',
+          cursor: 'pointer',
+          transition: 'all 0.3s',
+          bgcolor: 'background.paper',
+          borderRadius: '15px',
+          border: '1.2px solid',
+          borderColor: '#ebebeb',
+          mb: -0.5,
+          height: 335,
+          '&:hover': {
+            borderColor: '#1340ff',
+            transform: 'translateY(-2px)',
+          },
+        }}
+        onClick={handleCardClick}
+      >
+        {renderImage}
+        {renderCampaignInfo}
       </Card>
 
       <CampaignModal
         open={campaignInfo.value}
         handleClose={campaignInfo.onFalse}
-        openForm={() => setOpen(true)}
         campaign={campaign}
-        existingPitch={campaignIds}
-        dialog={dialog}
+        bookMark={bookMark}
+        onSaveCampaign={saveCampaign}
+        onUnsaveCampaign={unSaveCampaign}
       />
-      <CampaignPitchOptionsModal
-        open={open}
-        handleClose={handleClose}
-        campaign={campaign}
-        text={text}
-        video={video}
-      />
-      <CreatorForm dialog={dialog} user={user} />
     </>
   );
 }

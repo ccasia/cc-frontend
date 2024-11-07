@@ -112,7 +112,7 @@ export function palette(mode) {
     },
     background: {
       paper: '#FFFFFF',
-      default: '#FFFFFF',
+      default: 'rgba(244, 244, 244, 1)',
       neutral: grey[200],
     },
     action: {
