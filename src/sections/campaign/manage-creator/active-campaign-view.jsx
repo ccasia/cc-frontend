@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 
 import { Box } from '@mui/material';
@@ -59,3 +60,7 @@ const ActiveCampaignView = ({ searchQuery }) => {
 };
 
 export default ActiveCampaignView;
+
+ActiveCampaignView.propTypes = {
+  searchQuery: PropTypes.string,
+};

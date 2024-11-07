@@ -1,24 +1,16 @@
-import PropTypes from 'prop-types';
-import React, { useCallback, useMemo } from 'react';
-
-import {
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogActions,
-  DialogContent,
-  Box,
-  Typography,
-} from '@mui/material';
-import Carousel from 'src/components/carousel/carousel';
-import { RHFUpload } from 'src/components/hook-form';
-import { useForm } from 'react-hook-form';
-import FormProvider from 'src/components/hook-form/form-provider';
-import axiosInstance, { endpoints } from 'src/utils/axios';
-import { enqueueSnackbar } from 'notistack';
-import { LoadingButton } from '@mui/lab';
-import { useBoolean } from 'src/hooks/use-boolean';
 import { mutate } from 'swr';
+import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useCallback } from 'react';
+
+import { LoadingButton } from '@mui/lab';
+import { Box, Dialog, Typography, DialogTitle, DialogActions, DialogContent } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { RHFUpload } from 'src/components/hook-form';
+import FormProvider from 'src/components/hook-form/form-provider';
 
 const EditCampaignImages = ({ open, campaign, onClose }) => {
   const campaignImages = useMemo(() => campaign?.campaignBrief?.images, [campaign]);
@@ -57,6 +49,7 @@ const EditCampaignImages = ({ open, campaign, onClose }) => {
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
 
+    // eslint-disable-next-line guard-for-in, no-restricted-syntax
     for (const i in data.campaignImages) {
       formData.append('campaignImages', data.campaignImages[i]);
     }
