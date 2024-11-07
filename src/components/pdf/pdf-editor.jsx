@@ -192,15 +192,16 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
         }}
         height={500}
       >
-        <Box
+        {/* <Box
           sx={{
             // scale,
             transformOrigin: 'top left',
             // width: `${100 / scale}%`,
             textAlign: 'center',
-            bgcolor: 'black',
+            // bgcolor: 'black',
           }}
-        >
+        > */}
+        <Box textAlign="center">
           <Box display="inline-block">
             <Document file={file} onLoadSuccess={onLoadSuccess} renderMode="canvas">
               <Stack gap={2}>
@@ -391,6 +392,7 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
             </Document>
           </Box>
         </Box>
+        {/* </Box> */}
       </Box>
 
       <Dialog open={dialog.value} onClose={dialog.onFalse} maxWidth="sm">

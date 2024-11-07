@@ -198,16 +198,13 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
                 </Stack>
               )}
               {activeStep === 1 && (
-                <>
-                  <PDFEditor
-                    file={url}
-                    annotations={annotations}
-                    setAnnotations={setAnnotations}
-                    setSignURL={setSignURL}
-                    signURL={signURL}
-                  />
-                  <Button onClick={() => signRef.current.clear()}>Clear</Button>
-                </>
+                <PDFEditor
+                  file={url}
+                  annotations={annotations}
+                  setAnnotations={setAnnotations}
+                  setSignURL={setSignURL}
+                  signURL={signURL}
+                />
               )}
             </Box>
           </>

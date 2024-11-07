@@ -439,7 +439,7 @@ function CreateCampaignForm() {
     (step) => {
       switch (step) {
         case 0:
-          return <SelectBrand />;
+          return <SelectBrand openCompany={openCompany} openBrand={openBrand} />;
         case 1:
           return <GeneralCampaign />;
         case 2:
@@ -456,7 +456,7 @@ function CreateCampaignForm() {
           return <SelectBrand />;
       }
     },
-    [pdfModal]
+    [pdfModal, openCompany, openBrand]
   );
 
   const startDate = getValues('campaignStartDate');
