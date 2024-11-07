@@ -14,76 +14,84 @@ import { fToNow } from 'src/utils/format-time';
 import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
-// Entity types
-// Live
-// Campaign
-// User
-// Pitch
-// Shortlist
-// Timeline
-// Feedback
-// Draft
-// Post
-// Logistic
-// Invoice
-// Metrcis
-// Agreement
-// Chat
+
 
 export default function NotificationItem({ notification }) {
   const { user } = useAuthContext();
   const router = useRouter();
 
   const handleViewClick = () => {
-    const entity = notification.notification?.entity;
-    const campaignId = notification.notification?.campaignId;
-    const pitchId = notification.notification?.pitchId;
-    const creatorId = notification.notification?.creatorId;
-    console.log(notification);
-    const adminId = notification.notification?.adminId;
-
-    // console.log('User', user);
-    // console.log('Notification', notification.notification?.campaignId);
-    // console.log('Noti', notification.notification);
-    // console.log('Noti user', notification.notification?.userId);
-    // Determine the route based on the entity type
-    let link;
-    if (entity === 'Pitch') {
-      if (user.role === 'admin' || user.role === 'superadmin') {
-        link = `/dashboard/campaign/discover/detail/${campaignId}`; // Admin route
-      } else {
-        link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`; // Creator route
-      }
-    } else if (entity === 'Shortlist') {
-      // link = `/dashboard/campaign/details/${campaignId}`;
-      link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
-    } else if (entity === 'Agreement') {
-      if (user.role === 'admin' || user.role === 'superadmin') {
-        link = `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`; // Admin route
-      } else {
-        link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`; // Creator route
-      }
-    } else if (entity === 'Draft') {
-      //  link = `/campaign/discover/detail/${campaignId}/creator/${userId}`;
-      if (user.role === 'admin' || user.role === 'superadmin') {
-        link = `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`; // Admin route
-      } else {
+    const { entity, campaignId, threadId, creatorId } = notification.notification ?? {};
+  
+    console.log("Noti", notification.notification);
+  
+    let link = '';
+  
+    // the cases are entity
+    switch (entity) {
+      case 'Pitch':
+        link = user.role === 'admin'
+          ? `/dashboard/campaign/discover/detail/${campaignId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`;
+        break;
+  
+      case 'Shortlist':
         link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
-      }
-    } else if (entity === 'Post') {
-      //  link = `/dashboard/campaign/details/${campaignId}`;
-      link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
-    } else if (entity === 'Chat') {
-      link = `/dashboard/chat/details/${campaignId}`;
-    } else if (entity === 'Campaign') {
-      // This is for Agreement Approval
-      // link = `/dashboard/campaign/discover/detail/${campaignId}`;
-      link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
-    } else if (entity === 'Live' && (user.role === 'admin' || user.role === 'superadmin')) {
-      link = `/dashboard/campaign/discover/detail/${campaignId}`; // Adjust this route as needed
-    }
+        break;
+  
+      case 'Agreement':
+        link = user.role === 'admin'
+          ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        break;
 
-    router.push(link);
+      case 'Draft':
+        link = user.role === 'admin'
+          ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        break;
+      case 'Post':
+        link = user.role === 'admin'
+          ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        break;
+  
+      case 'Chat':
+        link = `/dashboard/chat/thread/${threadId}`;
+        break;
+  
+      case 'Campaign':
+        link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        break;
+  
+      case 'Status':
+        link = user.role === 'admin'
+          ? `/dashboard/campaign/manage/${campaignId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        break;
+  
+      case 'Timeline':
+        if (user.role === 'creator') {
+          link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        }
+        break;
+  
+      case 'Invoice':
+        link = user.role === 'admin'
+          ? `/dashboard/invoice/creator-list/${campaignId}`
+          : `/dashboard/invoice/detail/${threadId}`;
+        break;
+  
+      default:
+        console.warn("Unknown notification entity type:", entity);
+        break;
+    }
+  
+    if (link) {
+      router.push(link);
+    } else {
+      console.error("No valid route found for notification entity:", entity);
+    }
   };
   const renderText = (
     <ListItemText

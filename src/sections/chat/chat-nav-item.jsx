@@ -69,7 +69,6 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
       if (userThreadData.archived) {
         await unarchiveThread(threadData.id);
       } else {
-        console.log('Data', threadData )
         await archiveThread(threadData.id);
       }
       onArchive(threadData.id);
@@ -92,7 +91,6 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
     router.push(threadPath);
   }
 
-  console.log('Latest Message 2:', latestMessage);
   const latestMessageContent = latestMessage?.content;
   return (
     <ListItemButton
