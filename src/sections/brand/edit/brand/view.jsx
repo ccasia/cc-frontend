@@ -48,7 +48,7 @@ const BrandEditView = ({ id }) => {
     brandTiktok: Yup.string(),
     brandWebsite: Yup.string().required('Website is required'),
     brandAbout: Yup.string().required('About Description is required'),
-    brandIndustries: Yup.array().min(1, 'Please choose at least 3 industries'),
+    brandIndustries: Yup.array().min(1, 'Please choose at least 1 industry'),
     brandObjectives: Yup.array().of(
       Yup.object().shape({
         value: Yup.string().required('Value is required'),

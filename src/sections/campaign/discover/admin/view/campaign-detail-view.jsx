@@ -98,7 +98,9 @@ const CampaignDetailView = ({ id }) => {
 
   const icons = (tab) => {
     if (tab.value === 'pitch' && currentCampaign?.pitch?.length > 0) {
-      const undecidedPitches = currentCampaign.pitch.filter(pitch => pitch.status === 'undecided');
+      const undecidedPitches = currentCampaign.pitch.filter(
+        (pitch) => pitch.status === 'undecided'
+      );
       return undecidedPitches.length > 0 ? <Label>{undecidedPitches.length}</Label> : null;
     }
 

@@ -161,7 +161,7 @@ const InvoiceDetail = ({ invoiceId }) => {
           textAlign: 'center',
           height: 1000,
           overflow: 'hidden',
-          overflowX: 'auto',
+          // overflowX: 'auto',
         }}
       >
         <Box
@@ -170,7 +170,7 @@ const InvoiceDetail = ({ invoiceId }) => {
           }}
         >
           <Document file={pdfBlob} onLoadSuccess={handleUploadSuccess}>
-            <Page pageNumber={1} scale={2} />
+            <Page pageNumber={1} scale={1.8} />
           </Document>
         </Box>
       </Box>

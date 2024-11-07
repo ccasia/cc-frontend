@@ -137,9 +137,10 @@ function CreateCampaignForm() {
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    campaignIndustries: Yup.array()
-      .min(1, 'At least one industry is required')
-      .required('Campaign Industry is required.'),
+    // campaignIndustries: Yup.array()
+    //   .min(1, 'At least one industry is required')
+    //   .required('Campaign Industry is required.'),
+    campaignIndustries: Yup.string().required('Campaign industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
@@ -233,7 +234,7 @@ function CreateCampaignForm() {
     campaignBrand: null,
     campaignStartDate: null,
     campaignEndDate: null,
-    campaignIndustries: [],
+    campaignIndustries: '',
     campaignObjectives: '',
     campaignDescription: '',
     audienceGender: [],

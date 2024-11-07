@@ -6,6 +6,7 @@ import {
   Grid,
   Stack,
   Avatar,
+  Button,
   Divider,
   Container,
   Typography,
@@ -22,10 +23,13 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import { useNotification } from 'src/components/popup/popup-provider';
 
 const Overview = () => {
   const { user } = useAuthContext();
   const { data, isLoading } = useGetOverview();
+
+  const { notifications, bool, test } = useNotification();
 
   const renderOverview = (
     <Grid container spacing={2}>
@@ -267,6 +271,8 @@ const Overview = () => {
           mb: 3,
         }}
       />
+
+      <Button onClick={() => test('asdsas')}>Open</Button>
 
       {/* <Divider
         sx={{

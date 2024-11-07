@@ -41,7 +41,7 @@ const CampaignDetailBrand = ({ brand, campaign }) => (
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1}>
-            {brand?.industries &&
+            {brand?.industries?.length > 0 &&
               brand?.industries.map((item, index) => <CustomChip key={index} label={item} />)}
           </Stack>
         </Stack>

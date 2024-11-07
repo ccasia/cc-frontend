@@ -4,7 +4,7 @@ import { Box, MenuItem } from '@mui/material';
 
 import { interestsLists } from 'src/contants/interestLists';
 
-import { RHFSelect, RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
 const GeneralCampaign = () => {
   console.log('test');
@@ -33,7 +33,15 @@ const GeneralCampaign = () => {
         <MenuItem value="Want to drive product awareness">Want to drive product awareness</MenuItem>
       </RHFSelect>
 
-      <RHFMultiSelect
+      <RHFSelect name="campaignIndustries" label="Industries">
+        {interestsLists.map((item, index) => (
+          <MenuItem key={index} value={item}>
+            {item}
+          </MenuItem>
+        ))}
+      </RHFSelect>
+
+      {/* <RHFSelect
         name="campaignIndustries"
         label="Industries"
         checkbox
@@ -42,7 +50,7 @@ const GeneralCampaign = () => {
           value: item.toLowerCase(),
           label: item,
         }))}
-      />
+      /> */}
 
       <RHFTextField name="brandTone" label="Brand Tone" multiline />
       <RHFTextField name="productName" label="Product/Service Name" multiline />
