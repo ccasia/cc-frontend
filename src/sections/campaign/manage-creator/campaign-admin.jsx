@@ -1,9 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { useAuthContext } from 'src/auth/hooks';
-import axiosInstance from 'src/utils/axios';
-import { endpoints } from 'src/utils/axios';
 
 import { 
   Box, 
@@ -11,11 +8,15 @@ import {
   Stack, 
   Avatar, 
   Tooltip, 
-  IconButton, 
-  Typography, 
-  Divider,
-  useTheme
+  Divider, 
+  useTheme, 
+  IconButton,
+  Typography
 } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 

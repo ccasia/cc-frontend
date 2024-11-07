@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 
 import { Box, Grid } from '@mui/material';
@@ -17,9 +18,10 @@ const CompletedCampaignView = ({ searchQuery }) => {
   const filteredCampaigns = useMemo(
     () =>
       !isLoading &&
-      data?.filter((campaign) =>
-        campaign.status === 'COMPLETED' ||
-        campaign?.shortlisted?.some((item) => item.userId === user.id && item.isCampaignDone)
+      data?.filter(
+        (campaign) =>
+          campaign.status === 'COMPLETED' ||
+          campaign?.shortlisted?.some((item) => item.userId === user.id && item.isCampaignDone)
       ),
     [isLoading, data, user]
   );
@@ -35,8 +37,7 @@ const CompletedCampaignView = ({ searchQuery }) => {
   );
 
   const sortedData = useMemo(
-    () =>
-      filteredData?.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt)),
+    () => filteredData?.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt)),
     [filteredData]
   );
 
@@ -46,10 +47,7 @@ const CompletedCampaignView = ({ searchQuery }) => {
         <Grid container spacing={3}>
           {sortedData.map((campaign) => (
             <Grid item xs={12} sm={6} md={4} key={campaign.id}>
-              <CampaignItem
-                campaign={campaign}
-                user={user}
-              />
+              <CampaignItem campaign={campaign} user={user} />
             </Grid>
           ))}
         </Grid>
@@ -61,3 +59,7 @@ const CompletedCampaignView = ({ searchQuery }) => {
 };
 
 export default CompletedCampaignView;
+
+CompletedCampaignView.propTypes = {
+  searchQuery: PropTypes.string,
+};

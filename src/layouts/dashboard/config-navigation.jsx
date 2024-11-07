@@ -1,4 +1,3 @@
-import useSound from 'use-sound';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
 
@@ -67,7 +66,7 @@ export function useNavData() {
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
-      play();
+      // play();
       enqueueSnackbar(`${data.count + 1} new messages from ${data.name}.`, {
         anchorOrigin: {
           vertical: 'top',
