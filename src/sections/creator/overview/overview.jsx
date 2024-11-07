@@ -6,7 +6,6 @@ import {
   Grid,
   Stack,
   Avatar,
-  Button,
   Divider,
   Container,
   Typography,
@@ -272,7 +271,7 @@ const Overview = () => {
         }}
       />
 
-      <Button onClick={() => test('asdsas')}>Open</Button>
+      {/* <Button onClick={() => test('asdsas')}>Open</Button> */}
 
       {/* <Divider
         sx={{
