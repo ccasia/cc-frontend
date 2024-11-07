@@ -59,6 +59,10 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
   } = methods;
 
   const watchedInput = watch('about', '');
+  const interests = watch('interests');
+
+  console.log(user?.creator?.mediaKit?.interests);
+  console.log('DASDSAD', interests);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -135,6 +139,7 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
                 ))
               }
             />
+
             <RHFTextField
               name="about"
               label="Tell us more about you"
@@ -162,7 +167,14 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
               }}
               type="submit"
               size="small"
-              disabled={!isDirty}
+              disabled={
+                !isDirty &&
+                interests.every(
+                  (item) =>
+                    user?.creator?.mediaKit?.interests?.includes(item) ||
+                    user?.creator?.interests?.map((elem) => elem.name).includes(item)
+                )
+              }
               loading={isSubmitting}
             >
               Save
