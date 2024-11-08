@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { io } from 'socket.io-client';
 import React, { useEffect, useCallback } from 'react';
 
 import { Box, Card, Stack, Tooltip, Typography, ListItemText } from '@mui/material';
@@ -19,6 +18,7 @@ import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -53,12 +53,13 @@ export const defaultSubmission = [
 
 const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
   const { user } = useAuthContext();
+  const { socket } = useSocketContext();
 
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
   )?.isAgreementReady;
 
-  const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
+  const { data: submissions, mutate: submissionMutate } = useGetSubmissions(user.id, campaign?.id);
 
   const getDueDate = (name) =>
     submissions?.find((submission) => submission?.submissionType?.type === name)?.dueDate;
@@ -79,11 +80,17 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
   );
 
   useEffect(() => {
-    const socket = io();
     socket?.on('draft', () => {
       mutate(endpoints.campaign.draft.getFirstDraftForCreator(campaign.id));
     });
-  }, [campaign]);
+
+    socket?.on('newFeedback', () => submissionMutate());
+
+    return () => {
+      socket?.off('draft');
+      socket?.off('newFeedback');
+    };
+  }, [campaign, submissionMutate, socket]);
 
   return (
     <Box component={Card}>

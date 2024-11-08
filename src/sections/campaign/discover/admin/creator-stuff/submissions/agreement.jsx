@@ -168,9 +168,9 @@ const Agreement = ({ campaign, submission, creator }) => {
               <>
                 <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
                   <Document
-                    file={submission?.content}
+                    file={submission.content}
                     onLoadSuccess={onDocumentLoadSuccess}
-                    options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+                    // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
                   >
                     {Array.from(new Array(numPages), (el, index) => (
                       <div key={index} style={{ marginBottom: '0px' }}>

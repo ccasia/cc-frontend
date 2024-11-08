@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 export const useGetSubmissions = (id, campaignId) => {
-  const { data, isLoading } = useSWR(
+  const { data, isLoading, mutate } = useSWR(
     `${endpoints.submission.root}?creatorId=${id}&campaignId=${campaignId}`,
     fetcher,
     {
@@ -19,8 +19,9 @@ export const useGetSubmissions = (id, campaignId) => {
     () => ({
       data,
       isLoading,
+      mutate,
     }),
-    [data, isLoading]
+    [data, isLoading, mutate]
   );
 
   return memoizedValue;
