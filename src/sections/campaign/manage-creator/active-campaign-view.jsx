@@ -1,11 +1,15 @@
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 
 import { Box } from '@mui/material';
 
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
+import { endpoints } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import EmptyContent from 'src/components/empty-content';
 
@@ -14,6 +18,7 @@ import CampaignItem from '../discover/creator/campaign-item';
 const ActiveCampaignView = ({ searchQuery }) => {
   const { campaigns: data, isLoading } = useGetCampaigns('creator');
   const { user } = useAuthContext();
+  const { socket } = useSocketContext();
 
   const filteredCampaigns = useMemo(
     () =>
@@ -35,6 +40,18 @@ const ActiveCampaignView = ({ searchQuery }) => {
         : filteredCampaigns,
     [filteredCampaigns, searchQuery]
   );
+
+  useEffect(() => {
+    if (socket) {
+      socket?.on('shortlisted', () => {
+        mutate(endpoints.campaign.getMatchedCampaign);
+      });
+    }
+
+    return () => {
+      socket?.off('shortlisted');
+    };
+  }, [socket]);
 
   return (
     <Box mt={2}>

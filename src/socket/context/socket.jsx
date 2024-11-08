@@ -30,7 +30,6 @@ const SocketProvider = ({ children }) => {
     });
 
     socketConnection.on('connect', () => {
-      console.log('Connected');
       setSocket(socketConnection);
       setOnline(true);
 

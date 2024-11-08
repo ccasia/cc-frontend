@@ -1,5 +1,5 @@
 import { orderBy } from 'lodash';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -15,6 +15,7 @@ import {
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -25,6 +26,7 @@ import CompletedCampaignView from '../completed-campaign-view';
 
 const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
+  
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
 
@@ -398,6 +400,8 @@ const ManageCampaignView = () => {
       </Stack>
     </>
   );
+
+ 
 
   return (
     <Container
