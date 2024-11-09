@@ -10,6 +10,7 @@ import { useSearchParams } from 'src/routes/hooks';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllThreads } from 'src/api/chat';
+import { useUnreadMessageCount } from 'src/context/UnreadMessageCountContext';
 
 import { useSettingsContext } from 'src/components/settings';
 
@@ -26,6 +27,7 @@ export default function ChatView() {
   const { user } = useAuthContext();
   const settings = useSettingsContext();
   const searchParams = useSearchParams();
+  const unreadMessageCount = useUnreadMessageCount();
   const selectedConversationId = searchParams.get('id') || '';
   const { threads, loading, error } = useGetAllThreads(); // Fetch all threads using hook
   
@@ -86,7 +88,9 @@ export default function ChatView() {
           textAlign="center"
           sx={{ width: 1, height: '100%' }}
         >
-          <Typography variant="body1" color="textSecondary">
+          <Typography variant="body1" color="textSecondary"sx={{ 
+            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+            letterSpacing: 2 }}>
             Loading threads & messages...
           </Typography>
         </Box>
@@ -97,25 +101,52 @@ export default function ChatView() {
       // If there are threads but no active thread is selected, show unread count
       return (
         <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          textAlign="center"
-          sx={{ width: 1, height: '100%' }}
-        >
-          <Typography variant="h4" gutterBottom sx={{ letterSpacing: 1 }}>
-            {/* You have {unreadCount} unread message{unreadCount !== 1 ? 's' : ''} */}
-            Unread count will be displayed here 
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Select a thread to view your messages
-          </Typography>
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        sx={{ width: 1, height: '100%' }}
+      >
+        <Box display="flex" flexDirection="column" alignItems="center">
+          {unreadMessageCount > 0 ? (
+            <>
+              <Avatar 
+                src="/assets/images/chat/msgalerticon.png"
+                alt="No Messages Icon"
+                sx={{ width: 80, height: 80, marginBottom: 2 }}
+              />
+              <Typography variant="h4" gutterBottom sx={{ 
+                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                letterSpacing: 2 }}>
+                You have {unreadMessageCount} unread message{unreadMessageCount !== 1 ? 's' : ''}
+              </Typography>
+            </>
+          ) : (
+            <>
+            <Avatar 
+            src="/assets/images/chat/no-messageicon.png"
+            alt="No Messages Icon"
+            sx={{ width: 80, height: 80, marginBottom: 2 }}
+            />
+            <Typography variant="h4" gutterBottom sx={{ 
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              letterSpacing: 2 }}>
+              No New messages!
+            </Typography>
+            </>
+         
+          )}
         </Box>
+        <Typography variant="body2" color="textSecondary"sx={{ 
+            fontFamily: (theme) => theme.typography.fontPrimaryFamily,
+            letterSpacing: 1 }}>
+          Select a chat to view here
+        </Typography>
+      </Box>  
       );
     }
   
-    // If no threads are available
+    // If no chats are available
     return (
       <Box
         display="flex"

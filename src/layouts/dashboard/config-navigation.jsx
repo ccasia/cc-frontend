@@ -1,3 +1,4 @@
+/* eslint-disable */ 
 import useSound from 'use-sound';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
@@ -5,8 +6,9 @@ import { useMemo, useState, useEffect } from 'react';
 import { paths } from 'src/routes/paths';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useTotalUnreadCount } from 'src/api/chat';
+// import { useTotalUnreadCount } from 'src/api/chat';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useUnreadMessageCount } from 'src/context/UnreadMessageCountContext';
 
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
@@ -57,24 +59,24 @@ const ICONS = {
 
 export function useNavData() {
   const { user } = useAuthContext();
-  const { unreadCount } = useTotalUnreadCount();
   // const [play] = useSound(sound, {
   //   interrupt: true,
   // });
 
   const { socket } = useSocketContext();
-  const [unreadMessageCount, setUnreadMessageCount] = useState(null);
+  const unreadMessageCount = useUnreadMessageCount();
+  //  const [unreadMessageCount, setUnreadMessageCount] = useState(null);
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
-      play();
+      //  play();
       enqueueSnackbar(`${data.count + 1} new messages from ${data.name}.`, {
         anchorOrigin: {
           vertical: 'top',
           horizontal: 'left',
         },
       });
-      setUnreadMessageCount(data.count);
+      // setUnreadMessageCount(data.count);
     });
 
     return () => {
@@ -314,6 +316,7 @@ export function useNavData() {
       //     },
       //   ],
       // },
+   
 
       ...navigations,
       {
@@ -322,7 +325,7 @@ export function useNavData() {
             title: 'Chat',
             path: paths.dashboard.chat.root,
             icon: ICONS.chat,
-            msgcounter: unreadMessageCount || (unreadCount > 0 && unreadCount),
+            msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
           },
           {
             title: 'Calendar',
@@ -332,8 +335,7 @@ export function useNavData() {
         ],
       },
     ],
-
-    [navigations, unreadMessageCount, unreadCount]
+    [navigations, unreadMessageCount]
   );
 
   return data;
