@@ -1,17 +1,13 @@
 /* eslint-disable */ 
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-
+import { format } from 'date-fns';
 import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
-import { Icon } from '@iconify/react';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Iconify from 'src/components/iconify';
 
 import { paths } from 'src/routes/paths';
@@ -78,11 +74,75 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
     }
   };
 
-  // use this to show the reciever images and details
-  const renderSingle = (
-    <Badge key={user?.status} variant={user?.status} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+  
+  const renderInfo = (
+    <>
+    <Badge key={user?.status} variant={user?.status} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
       <Avatar alt={''} src={avatarURL} sx={{ width: 48, height: 48 }} />
     </Badge>
+    
+    <Stack direction="column" ml={2} sx={{ flexGrow: 1 }}>
+      
+    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={0.5} sx={{ width: '100%' }}>
+  {/* Left-aligned: Title and Verified Icon */}
+  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexGrow: 1 }}>
+    <Typography noWrap variant="subtitle2" sx={{ flexShrink: 0 }}>
+      {title}
+    </Typography>
+
+    {/* Show verified icon only for single chats */}
+    {!thread.isGroup && (
+      <Iconify icon="material-symbols:verified" style={{ color: '#1340FF' }} />
+    )}
+  </Stack>
+
+  {/* Right-aligned: Badge and Timestamp */}
+  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexShrink: 0 }}>
+    <Badge
+      color="error"
+      overlap="circular"
+      variant="dot"
+      badgeContent={unreadLoading ? '...' : unreadCount}
+    />
+    
+    <Typography
+      noWrap
+      variant="body2"
+      component="span"
+      sx={{
+        fontSize: 10,
+        color: 'text.disabled',
+        minWidth: '60px', // Fixed width to prevent pushing out
+        textAlign: 'right', // Right-align within its box
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {latestMessage?.createdAt
+        ? format(new Date(latestMessage.createdAt), 'hh:mm a') // 12-hour format with AM/PM
+        : ''}
+    </Typography>
+  </Stack>
+</Stack>
+
+      {/* Latest Message Content*/}
+      <Typography
+        variant="body2"
+        sx={{
+          fontSize: 12,
+          color: 'text.secondary',
+          maxWidth: '150px', 
+          maxHeight: '36px', 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          mt: 0.5, 
+        }}
+      >
+        {latestMessage?.content}
+      </Typography>
+    </Stack>
+    </>
+    
   );
 
   const  handleNav = () => {
@@ -91,99 +151,60 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
     router.push(threadPath);
   }
 
-  const latestMessageContent = latestMessage?.content;
+  console.log("Latest message2", latestMessage)
   return (
-    <ListItemButton
-      disableGutters
-      onClick={handleNav}
-      sx={{
-        py: 1.5,
-        px: 2.5,
-        ...(selected && {
-          bgcolor: 'action.selected',
-        }),
+  <>    
+  <ListItemButton
+    disableGutters
+    onClick={handleNav}
+    sx={{
+      py: 1.5,
+      px: 2.5,
+      ...(selected && {
+        bgcolor: 'action.selected',
+      }),
+      display: 'flex', 
+      justifyContent: 'space-between',
+      alignItems: 'center', 
+    }}
+  >
+  
+  {renderInfo}
+    
+
+ 
+  </ListItemButton>
+    
+    {/* Menu for Actions */}
+    {/* <IconButton onClick={handleMenuOpen}>
+      <Icon icon="bi:three-dots-vertical" />
+    </IconButton>
+    <Menu
+      anchorEl={anchorEl}
+      open={Boolean(anchorEl)}
+      onClose={handleMenuClose}
+      anchorOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
       }}
-    >
-       <Badge
-        color="error"
-        overlap="circular"
-        badgeContent={unreadLoading ? '...' : unreadCount}
-      >
-         {renderSingle}
-      </Badge>
-
-      {!collapse && (
-        <>
-          <ListItemText
-            sx={{ ml: 2 }}
-            primary={title}
-            primaryTypographyProps={{
-              noWrap: true,
-              variant: 'subtitle2',
-            }}
-            // secondary={latestMessageContent}
-            // secondaryTypographyProps={{
-            //   noWrap: true,
-            //   component: 'span',
-            // variant: conversation.unreadCount ? 'subtitle2' : 'body2',
-            // color: conversation.unreadCount ? 'text.primary' : 'text.secondary',
-            // }}  
-          />
-
-          <Stack alignItems="flex-end" sx={{ ml: 2, height: 44 }}>
-            <Typography
-              noWrap
-              variant="body2"
-              component="span"
-              sx={{
-                mb: 1.5,
-                fontSize: 12,
-                color: 'text.disabled',
-              }}
-            >
-            </Typography>
-
-          </Stack>
-          
-         {/* Menu for Actions */}
-         <IconButton
-            onClick={handleMenuOpen}
-          >
-            <Icon icon="bi:three-dots-vertical" />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-             PaperProps={{
-              style: {
-              width: 100, 
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+      PaperProps={{
+        style: {
+          width: 100,
         },
       }}
-          >
-            <MenuItem onClick={handleArchiveClick}>
-            <Iconify width={16} icon="material-symbols:archive-outline" />
-            <ListItemText> {userThreadData?.archived ? 'Unarchive' : 'Archive'} </ListItemText>
-            </MenuItem>
-            {/* <MenuItem>
-            <ListItemText> Mute </ListItemText>
-            {/* <ListItemIcon style={{ justifyContent: 'flex-end' }}> */}
-            {/* <Iconify width={16} icon="tabler:bell-off" /> */}
-            {/* </ListItemIcon> 
-            </MenuItem> */}
-          </Menu>
-
-        </>
-      )}
-    </ListItemButton>
+    >
+      <MenuItem onClick={handleArchiveClick}>
+        <Iconify width={16} icon="material-symbols:archive-outline" />
+        <ListItemText> {userThreadData?.archived ? 'Unarchive' : 'Archive'} </ListItemText>
+      </MenuItem>
+    </Menu> */}
+ 
+   
+  </>
   );
 }
 

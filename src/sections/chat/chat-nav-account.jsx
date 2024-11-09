@@ -9,6 +9,7 @@ import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import InputBase from '@mui/material/InputBase';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import Badge, { badgeClasses } from '@mui/material/Badge';
@@ -32,18 +33,11 @@ export default function ChatNavAccount() {
     setStatus(event.target.value);
   }, []);
 
-  // const defaultValues = {
-  //   name: user?.name || '',
-  //   photoURL: user?.photoURL || '',
-  //   email: user?.email || '',
-  //   phoneNumber: user?.phoneNumber || '',
-  //   designation: user?.admin?.designation || '',
-  //   country: user?.country || '',
-  // };
+
 
   return (
     <>
-      <Badge variant={status} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+      <Badge variant={status} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <Avatar
           src={user?.photoURL}
           alt={user?.name}
@@ -53,7 +47,8 @@ export default function ChatNavAccount() {
           {user?.name?.charAt(0).toUpperCase()}
         </Avatar>
       </Badge>
-      <Typography p={2}> {user?.name} </Typography>
+      <Typography p={1}> {user?.name} </Typography>
+      <Iconify icon="material-symbols:verified" style={{ color: '#1340FF' }}> </Iconify>
 
       <CustomPopover open={popover.open} onClose={popover.onClose} arrow="top-left" sx={{ p: 0 }}>
         <Stack
