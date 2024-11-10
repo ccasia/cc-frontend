@@ -15,6 +15,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import SearchNotFound from 'src/components/search-not-found';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import ThreadInfoModal from './threadinfoModal';
 
 // ----------------------------------------------------------------------
 
@@ -26,6 +27,15 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState();
   const [loading, setLoading] = useState(true);
+  const [openModal, setOpenModal] = useState(false);
+
+  const handleOpenModal = () => {
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
 
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'superadmin';
@@ -196,9 +206,15 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
             borderRadius: '12px', 
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', 
             padding: '12px', 
-          }}>
+          }}
+          onClick={handleOpenModal}
+          >
+            
           <Iconify icon="tabler:info-circle"   sx={{ color: 'black' }} />
         </IconButton>
+
+        <ThreadInfoModal open={openModal} onClose={handleCloseModal} threadId={threadId} />
+
       </Box>
     </Box>
 
