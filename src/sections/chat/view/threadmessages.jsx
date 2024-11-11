@@ -9,7 +9,6 @@ import ChatMessageInput from '../chat-message-input';
 import ChatMessageList from '../chat-message-list';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useAuthContext } from 'src/auth/hooks';
-import { useSearchParams } from 'src/routes/hooks';
 import { markMessagesAsSeen, useTotalUnreadCount, useGetAllThreads } from 'src/api/chat';
 
 const ThreadMessages = ({ threadId }) => {
@@ -65,13 +64,11 @@ const ThreadMessages = ({ threadId }) => {
     if (thread && thread.campaign) {
       setCampaignStatus(thread.campaign.status); 
     }
-    
+
     // Cleanup on component unmount
     return () => {
       socket?.off('message');
       socket?.off('existingMessages');
-      //  socket?.off('latestMessage');
-      // socket?.off('room');
     };
   }, [socket, threadId]);
 

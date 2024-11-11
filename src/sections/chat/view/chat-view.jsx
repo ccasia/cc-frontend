@@ -15,10 +15,7 @@ import { useUnreadMessageCount } from 'src/context/UnreadMessageCountContext';
 import { useSettingsContext } from 'src/components/settings';
 
 import ChatNav from '../chat-nav';
-import ChatRoom from '../chat-room';
 import ThreadMessages from './threadmessages';
-import ChatHeaderDetail from '../chat-header-detail';
-import ChatHeaderCompose from '../chat-header-compose';
 
 // ----------------------------------------------------------------------
 
@@ -45,31 +42,8 @@ export default function ChatView() {
   }, [threads, userThreads]);
 
   
-  const { id } = useParams(); // Extracts the threadId from the route
+  const { id } = useParams(); 
 
-  // useEffect(() => {
-  //   if (!selectedConversationId) {
-  //     router.push(paths.dashboard.chat);
-  //   }
-  // }, [router, selectedConversationId]);
-
-  //  const filteredMessages = messages.filter(message => message.threadId === threadId);
-
-  // Head is Showing all the search and names
-  const renderHead = (
-    <Stack
-      direction="row"
-      alignItems="center"
-      flexShrink={0}
-      sx={{ pr: 1, pl: 2.5, py: 1, minHeight: 72 }}
-    >
-      {selectedConversationId ? (
-        <ChatHeaderDetail participants={[]} />
-      ) : (
-        <ChatHeaderCompose currentUserId={user.id} />
-      )}
-    </Stack>
-  );
 
   const renderContent = () => {
     if (id) {

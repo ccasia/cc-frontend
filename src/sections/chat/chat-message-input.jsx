@@ -15,30 +15,6 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  //   const isEmoji = (char) =>
-  //      char.length === 1 && char !== ' ' // Single-length characters are typically emojis
-  //   ;
-  //   const handleEmojiClick = (emoji) => {
-  //     setMessage(prevMessage => prevMessage + emoji); // Append emoji to the message
-  //     setShowEmojiPicker(false); // Hide emoji picker after selection
-  //   };
-
-  //   const handleSendMessage = useCallback(
-  //     (event) => {
-  //       if (event.type === 'click' || (event.type === 'keyup' && event.key === 'Enter' && !event.shiftKey)) {
-  //         if (message.trim() !== '') {
-  //           console.log('message sent:', message);
-  //           onSendMessage(message);
-  //           setMessage('');
-  //         }
-  //       } else if (event.type === 'keyup' && event.key === 'Enter' && event.shiftKey) {
-  //         event.preventDefault();
-  //         setMessage((prevMessage) => prevMessage);
-  //       }
-  //     },
-  //     [message, onSendMessage]
-  //   );
-
   const inputRef = useRef(null); // Reference to the input field
 
  
@@ -73,7 +49,6 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
     inputRef.current.focus();
   };
 
-  console.log ( "send message", handleSendMessage)
   return (
     <Stack
       direction="row"
@@ -87,22 +62,6 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
         maxHeight: 100,
       }}
     >
-      {/* <div
-        style={{
-          position: 'absolute',
-          bottom: 60,
-          width: '400px',
-          height: '250px',
-          overflowY: 'auto',
-          backgroundColor: '#fff',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          zIndex: 1000,
-          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <EmojiPicker onEmojiClick={handleEmojiClick} emojiSize={24} emojiSpacing={8} />
-      </div> */}
 
       <IconButton onClick={toggleEmojiPicker} sx={{ alignSelf: 'center' }}>
         <Iconify icon="eva:smiling-face-fill" />
