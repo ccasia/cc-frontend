@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 //  import {Badge} from '@mui/material';
@@ -116,17 +116,16 @@ export default function NotificationItem({ notification }) {
     />
   );
 
-  //
-  const renderViewButton = notification.notification?.entity === 'Timeline' && (
-    <Button
-      onClick={handleViewClick}
-      variant="text"
+  
+  const renderViewSignUp = notification.notification?.entity === 'Timeline' && (
+    <Typography
+      variant="body2"
       color="secondary"
-      size="small"
-      sx={{ direction: 'flex-start', width: '100px' }}
+      sx={{ textAlign: 'left', width: '100px' }}
     >
       Submit now &gt;
-    </Button>
+    </Typography>
+
   );
 
   const renderUnReadBadge = !notification.read && (
@@ -167,15 +166,41 @@ export default function NotificationItem({ notification }) {
   );
 
   return (
-    <ListItemButton
-      disableRipple
-      sx={{
-        p: 2.5,
-        alignItems: 'flex-start',
-        borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
-        position: 'relative',
-      }}
-    >
+
+  <ListItemButton
+  disableRipple
+  sx={{
+    p: 2.5,
+    alignItems: 'flex-start',
+    borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
+    position: 'relative',
+  }}
+  onClick={handleViewClick} 
+>
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      width: '100%',
+      flexDirection: 'column', 
+    }}
+  >
+   
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start' }}>
+        {renderTitle}
+      </Box>
+
+//     <ListItemButton
+//       disableRipple
+//       sx={{
+//         p: 2.5,
+//         alignItems: 'flex-start',
+//         borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
+//         position: 'relative',
+//       }}
+//     >
+
       <Box
         sx={{
           display: 'flex',
@@ -207,7 +232,15 @@ export default function NotificationItem({ notification }) {
           {renderViewButton}
         </Stack>
       </Box>
-    </ListItemButton>
+    </Box>
+ 
+    <Stack spacing={1} sx={{ flexGrow: 1 }}>
+      {renderText}
+      {renderViewSignUp}
+    </Stack>
+  </Box>
+  </ListItemButton>
+
   );
 }
 
