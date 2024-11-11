@@ -1,5 +1,4 @@
-
-/* eslint-disable */ 
+/* eslint-disable */
 import useSound from 'use-sound';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
@@ -317,7 +316,6 @@ export function useNavData() {
       //     },
       //   ],
       // },
-   
 
       ...navigations,
       {

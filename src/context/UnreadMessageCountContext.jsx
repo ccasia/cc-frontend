@@ -1,4 +1,4 @@
-/* eslint-disable */ 
+/* eslint-disable */
 import { createContext, useContext, useEffect, useState } from 'react';
 
 import { useTotalUnreadCount } from 'src/api/chat';
@@ -13,7 +13,6 @@ export function UnreadMessageCountProvider({ children }) {
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
-      console.log("New message count from WebSocket:", data.count);
       setUnreadMessageCount(data.count);
     });
 
@@ -24,18 +23,18 @@ export function UnreadMessageCountProvider({ children }) {
 
   useEffect(() => {
     if (isError) {
-      console.error("Failed to load unread message count");
+      console.error('Failed to load unread message count');
     }
   }, [isError]);
 
   useEffect(() => {
     if (isLoading) {
-      console.log("Loading unread message count...");
+      console.log('Loading unread message count...');
     }
   }, [isLoading]);
 
   return (
-    <UnreadMessageCountContext.Provider value={unreadCount}>
+    <UnreadMessageCountContext.Provider value={unreadMessageCount}>
       {isLoading ? <div>Loading...</div> : children}
     </UnreadMessageCountContext.Provider>
   );

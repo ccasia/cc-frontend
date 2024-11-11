@@ -116,16 +116,10 @@ export default function NotificationItem({ notification }) {
     />
   );
 
-  
   const renderViewSignUp = notification.notification?.entity === 'Timeline' && (
-    <Typography
-      variant="body2"
-      color="secondary"
-      sx={{ textAlign: 'left', width: '100px' }}
-    >
+    <Typography variant="body2" color="secondary" sx={{ textAlign: 'left', width: '100px' }}>
       Submit now &gt;
     </Typography>
-
   );
 
   const renderUnReadBadge = !notification.read && (
@@ -166,41 +160,16 @@ export default function NotificationItem({ notification }) {
   );
 
   return (
-
-  <ListItemButton
-  disableRipple
-  sx={{
-    p: 2.5,
-    alignItems: 'flex-start',
-    borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
-    position: 'relative',
-  }}
-  onClick={handleViewClick} 
->
-  <Box
-    sx={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      width: '100%',
-      flexDirection: 'column', 
-    }}
-  >
-   
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start' }}>
-        {renderTitle}
-      </Box>
-
-//     <ListItemButton
-//       disableRipple
-//       sx={{
-//         p: 2.5,
-//         alignItems: 'flex-start',
-//         borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
-//         position: 'relative',
-//       }}
-//     >
-
+    <ListItemButton
+      disableRipple
+      sx={{
+        p: 2.5,
+        alignItems: 'flex-start',
+        borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
+        position: 'relative',
+      }}
+      onClick={handleViewClick}
+    >
       <Box
         sx={{
           display: 'flex',
@@ -210,37 +179,59 @@ export default function NotificationItem({ notification }) {
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start' }}>
+          {/* <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start' }}>
             {renderTitle}
-          </Box>
+          </Box> */}
+
+          {/* //     <ListItemButton
+//       disableRipple
+//       sx={{
+//         p: 2.5,
+//         alignItems: 'flex-start',
+//         borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
+//         position: 'relative',
+//       }}
+//     > */}
+
           <Box
             sx={{
-              width: '120px',
               display: 'flex',
               justifyContent: 'space-between',
-              gap: 4,
-              alignItems: 'center',
+              width: '100%',
+              flexDirection: 'column',
             }}
           >
-            {renderUnReadBadge}
-            {renderOther}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start' }}>
+                {renderTitle}
+              </Box>
+              <Box
+                sx={{
+                  width: '120px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 4,
+                  alignItems: 'center',
+                }}
+              >
+                {renderUnReadBadge}
+                {renderOther}
+              </Box>
+            </Box>
+
+            <Stack spacing={1} sx={{ flexGrow: 1 }}>
+              {renderText}
+              {renderViewSignUp}
+            </Stack>
           </Box>
         </Box>
 
-        <Stack spacing={1} sx={{ flexGrow: 1 }}>
+        {/* <Stack spacing={1} sx={{ flexGrow: 1 }}>
           {renderText}
-          {renderViewButton}
-        </Stack>
+          {renderViewSignUp}
+        </Stack> */}
       </Box>
-    </Box>
- 
-    <Stack spacing={1} sx={{ flexGrow: 1 }}>
-      {renderText}
-      {renderViewSignUp}
-    </Stack>
-  </Box>
-  </ListItemButton>
-
+    </ListItemButton>
   );
 }
 

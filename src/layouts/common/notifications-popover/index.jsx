@@ -120,7 +120,7 @@ export default function NotificationsPopover() {
             onClick={handleOpenModal}
             sx={{ display: 'flex', alignItems: 'center' }}
             startIcon={<Iconify icon="eva:done-all-fill" />}
-            disabled={totalUnRead !== data?.notifications?.length}
+            disabled={totalUnRead < 1}
           >
             Mark all as read
           </Button>
