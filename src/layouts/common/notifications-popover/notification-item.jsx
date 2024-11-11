@@ -109,8 +109,8 @@ export default function NotificationItem({ notification }) {
   );
 
   const renderViewButton = (
-    <Button onClick={handleViewClick} variant="outlined" size="small">
-      View
+    <Button onClick={handleViewClick} variant="outlined" color='secondary' size="small">
+      Submit now
     </Button>
   );
 
@@ -146,29 +146,46 @@ export default function NotificationItem({ notification }) {
       }
     >
       {fToNow(notification.notification.createdAt)}
-      {notification.notification?.entity}
     </Stack>
   );
 
   return (
     <ListItemButton
-      disableRipple
+    disableRipple
+    sx={{
+      p: 2.5,
+      alignItems: 'flex-start',
+      borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
+      position: 'relative',
+    }}
+  >
+    <Box
       sx={{
-        p: 2.5,
-        alignItems: 'flex-start',
-        borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        width: '100%',
       }}
     >
-      {renderUnReadBadge}
-      <Stack sx={{ flexGrow: 1 }}>
+      {/* Left side: Text and View button */}
+      <Stack spacing={1} sx={{ flexGrow: 1 }}>
         {renderText}
-        {/* {['Campaign'].includes(notification?.notification.entity) && friendAction} */}
-        {/* {['Shortlist'].includes(notification?.notification.entity) && chatAction} */}
-        {/* {notification?.notification.entity === 'Campaign' && friendAction} */}
         {renderViewButton}
-        {renderOther}
       </Stack>
-    </ListItemButton>
+
+      {/* Right side: Time and Unread Badge */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          textAlign: 'right',
+          gap: 1, 
+        }}
+      >
+        {renderOther}
+        {renderUnReadBadge}
+      </Box>
+    </Box>
+  </ListItemButton>
   );
 }
 

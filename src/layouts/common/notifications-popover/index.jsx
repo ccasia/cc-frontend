@@ -4,6 +4,7 @@ import { m } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
+import { Avatar } from '@mui/material';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import List from '@mui/material/List';
@@ -44,11 +45,11 @@ const TABS = [
     label: 'Unread',
     count: 12,
   },
-  {
-    value: 'archived',
-    label: 'Archived',
-    count: 10,
-  },
+  // {
+  //   value: 'archived',
+  //   label: 'Archived',
+  //   count: 10,
+  // },
 ];
 
 // ----------------------------------------------------------------------
@@ -95,25 +96,31 @@ export default function NotificationsPopover() {
 
   const renderHead = (
     <Stack direction="row" alignItems="center" sx={{ py: 2, pl: 2.5, pr: 1, minHeight: 68 }}>
-      <Typography variant="h6" sx={{ flexGrow: 1 }}>
+      <Typography variant="body1" sx={{
+         fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+         flexGrow: 1, 
+         fontWeight: 'normal',
+         letterSpacing: 2,
+         fontSize: '32px',
+         }}>
         Notifications
       </Typography>
 
-      {!!totalUnRead && (
-        <Tooltip title="Mark all as read">
-          <IconButton color="primary" onClick={handleMarkAllAsRead}>
+      <Tooltip title="Mark all as read">
+          <Button  color="primary" variant="outlined" onClick={handleMarkAllAsRead} sx={{ display: 'flex', alignItems: 'center' }}>
             <Iconify icon="eva:done-all-fill" />
-          </IconButton>
+             Mark all as read
+          </Button>
         </Tooltip>
-      )}
 
-      {!!totalArchive && (
+
+      {/* {!!totalArchive && (
         <Tooltip title="Archive all">
           <IconButton color="primary" onClick={archiveAll}>
             <Iconify icon="material-symbols:archive" />
           </IconButton>
         </Tooltip>
-      )}
+      )} */}
 
       {!smUp && (
         <IconButton onClick={drawer.onFalse}>
@@ -138,7 +145,7 @@ export default function NotificationsPopover() {
           transition: 'all .3s ease-in-out',
           '&.MuiTabs-indicator > span': {
             bgcolor: (theme) =>
-              theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[200],
+              theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.white,
             width: '100%',
             height: '100%',
             display: 'block',
@@ -148,6 +155,9 @@ export default function NotificationsPopover() {
         },
       }}
       sx={{
+        backgroundColor: '#F4F4F4',
+        borderRadius: 2, 
+        margin: '8px', 
         '&.MuiTabs-root': {
           zIndex: 1,
           minHeight: 'auto',
@@ -165,7 +175,8 @@ export default function NotificationsPopover() {
           iconPosition="end"
           sx={{
             '&.Mui-selected': {
-              bgcolor: 'transparent',
+              bgcolor: '#FFFFFF',
+              borderRadius: 2,
               fontWeight: 600,
             },
             '&:not(:last-of-type)': {
@@ -176,18 +187,14 @@ export default function NotificationsPopover() {
           label={tab.label}
           icon={
             <Label
-              variant={((tab.value === 'all' || tab.value === currentTab) && 'filled') || 'soft'}
-              color={
-                (tab.value === 'unread' && 'info') ||
-                (tab.value === 'archived' && 'success') ||
-                'default'
-              }
+              variant={((tab.value === 'all' || tab.value === currentTab) )}
             >
-              {tab.value === 'all' && data?.notifications?.filter((item) => !item.archive)?.length}
+              {/* {tab.value === 'all' && `(${data?.notifications?.filter((item) => !item.archive)?.length})`} */}
               {tab.value === 'unread' &&
-                data?.notifications.filter((notification) => !notification.read).length}
-              {tab.value === 'archived' &&
-                data?.notifications.filter((notification) => notification.archive).length}
+                `(${data?.notifications.filter((notification) => !notification.read).length})`}
+            
+              {/* {tab.value === 'archived' &&
+                `(${data?.notifications.filter((notification) => notification.archive).length})`} */}
             </Label>
           }
         />
@@ -196,7 +203,36 @@ export default function NotificationsPopover() {
   );
 
   const renderList = !isLoading && (
+    
     <Scrollbar>
+     {currentTab === 'unread' && data?.notifications?.filter((item) => !item.read && !item.archive).length === 0 ? (
+        <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        textAlign="center"
+        sx={{ width: 1, height: '100vh' }} 
+      >
+        <Avatar 
+          src="/assets/images/chat/no-messageicon.png"
+          alt="No Messages Icon"
+          sx={{ width: 80, height: 80, marginBottom: 2 }}
+        />
+        <Typography variant="body2" color="textSecondary" sx={{
+          fontSize: '16px',
+          fontFamily: (theme) => theme.typography.fontPrimaryFamily,
+        }}>
+          Woohoo! You have a clean inbox 
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{
+          fontSize: '16px',
+          fontFamily: (theme) => theme.typography.fontPrimaryFamily,
+        }}>
+         (for now)
+        </Typography>
+      </Box>
+    ) : (
       <List disablePadding>
         {data?.notifications
           ?.filter((item) => {
@@ -213,6 +249,7 @@ export default function NotificationsPopover() {
             <NotificationItem key={notification.id} notification={notification} />
           ))}
       </List>
+    )}
     </Scrollbar>
   );
 
@@ -270,11 +307,6 @@ export default function NotificationsPopover() {
 
         {renderList}
 
-        <Box sx={{ p: 1 }}>
-          <Button fullWidth size="large">
-            View All
-          </Button>
-        </Box>
       </Drawer>
     </>
   );
