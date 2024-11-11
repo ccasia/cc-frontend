@@ -4,16 +4,9 @@ import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Controller, useFormContext } from 'react-hook-form';
 
+import { LoadingButton } from '@mui/lab';
 import { grey } from '@mui/material/colors';
-import {
-  Box,
-  Stack,
-  alpha,
-  Button,
-  Typography,
-  ListItemText,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Stack, alpha, Typography, ListItemText, CircularProgress } from '@mui/material';
 
 import { fData } from 'src/utils/format-number';
 
@@ -29,6 +22,7 @@ const UploadPitch = ({
   sourceName,
   remove,
   size,
+  removeVideo,
   ...other
 }) => {
   const [duration, setDuration] = useState('');
@@ -148,11 +142,7 @@ const UploadPitch = ({
           </Typography>
         </Box>
       </Box>
-      <Stack gap={1}>
-        {/* <Typography variant="caption">{progressName && progressName}</Typography> */}
-        {/* <LinearProgress variant="determinate" value={progress} /> */}
-        Uploading {sourceName}{' '}
-      </Stack>
+      <Stack gap={1}>Uploading {sourceName} </Stack>
     </Stack>
   );
 
@@ -197,6 +187,7 @@ const UploadPitch = ({
           </Box>
         </Box>
       )}
+
       {!data?.progress ? (
         <Stack spacing={1} flexGrow={1}>
           <Typography variant="subtitle2" color="text.secondary">
@@ -215,9 +206,14 @@ const UploadPitch = ({
               color: 'text.secondary',
             }}
           />
-          <Button variant="outlined" size="small" onClick={remove}>
+          <LoadingButton
+            variant="outlined"
+            size="small"
+            onClick={remove}
+            loading={removeVideo.value}
+          >
             Change / Remove
-          </Button>
+          </LoadingButton>
         </Stack>
       ) : (
         renderUploading
@@ -261,4 +257,5 @@ UploadPitch.propTypes = {
   sourceName: PropTypes.string,
   remove: PropTypes.func,
   size: PropTypes.number,
+  removeVideo: PropTypes.object,
 };
