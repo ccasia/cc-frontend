@@ -1,15 +1,13 @@
 import React, { useState, useCallback } from 'react';
 
-import Autocomplete from '@mui/material/Autocomplete';
 import {
   Box,
-  Menu,
   Stack,
-  Button,
   Avatar,
-  MenuItem,
+  Button,
   Container,
   TextField,
+  Autocomplete,
   ListItemText,
   InputAdornment,
 } from '@mui/material';
@@ -19,9 +17,11 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
+import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
@@ -35,17 +35,11 @@ const defaultFilters = {
 
 const CampaignView = () => {
   const settings = useSettingsContext();
-  const { campaigns } = useGetCampaigns();
+  const { campaigns, isLoading } = useGetCampaigns();
+  const { data: brandOptions } = useGetCampaignBrandOption();
+
   const router = useRouter();
-
-  const [anchorEl, setAnchorEl] = useState(null);
   const [filters, setFilters] = useState(defaultFilters);
-
-  const open = Boolean(anchorEl);
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
 
   const openFilters = useBoolean();
 
@@ -68,11 +62,11 @@ const CampaignView = () => {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Campaign"
+        heading="Campaigns"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           {
-            name: 'Campaign',
+            name: 'Campaigns',
             href: paths.dashboard.campaign.root,
           },
           { name: 'List' },
@@ -85,8 +79,24 @@ const CampaignView = () => {
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         {campaigns && (
           <Autocomplete
-            options={campaigns.filter((campaign) => campaign?.status === 'active')}
-            getOptionLabel={(option) => option?.name}
+            freeSolo
+            sx={{ width: { xs: 1, sm: 260 } }}
+            options={campaigns}
+            getOptionLabel={(option) => option.name}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Search..."
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="eva:search-fill" sx={{ ml: 1, color: 'text.disabled' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
             renderOption={(props, option) => (
               <Box
                 {...props}
@@ -96,7 +106,7 @@ const CampaignView = () => {
                 }
               >
                 <Avatar
-                  alt="dawd"
+                  alt="Campaign Image"
                   src={option?.campaignBrief?.images[0]}
                   variant="rounded"
                   sx={{
@@ -113,49 +123,29 @@ const CampaignView = () => {
                 />
               </Box>
             )}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Search"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Iconify icon="material-symbols:search" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            )}
-            sx={{
-              width: 250,
-            }}
           />
         )}
 
-        <Button onClick={openFilters.onTrue} endIcon={<Iconify icon="ic:round-filter-list" />}>
-          Filter
-        </Button>
-
-        <Menu
-          id="basic-menu"
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-          MenuListProps={{
-            'aria-labelledby': 'basic-button',
+        <Button
+          onClick={openFilters.onTrue}
+          endIcon={<Iconify icon="ic:round-filter-list" />}
+          sx={{
+            boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
           }}
         >
-          <MenuItem>Active</MenuItem>
-          <MenuItem>Past</MenuItem>
-        </Menu>
+          Filter
+        </Button>
       </Stack>
 
-      {dataFiltered && dataFiltered.length > 0 ? (
-        <CampaignLists campaigns={dataFiltered} />
-      ) : (
-        <EmptyContent title="No campaign available" />
-      )}
+      {isLoading && <LoadingScreen />}
+
+      {!isLoading &&
+        (dataFiltered?.length > 0 ? (
+          <CampaignLists campaigns={dataFiltered} />
+        ) : (
+          <EmptyContent title="No campaign available" />
+        ))}
+
       <CampaignFilter
         open={openFilters.value}
         onOpen={openFilters.onTrue}
@@ -164,6 +154,7 @@ const CampaignView = () => {
         filters={filters}
         onFilters={handleFilters}
         reset={handleResetFitlers}
+        brands={brandOptions}
       />
     </Container>
   );

@@ -9,7 +9,7 @@ function InvoicePage() {
   const { id } = useParams();
   const data = useGetInvoiceById(id);
 
-  return <InvoiceDetailsView data={data.campaigns} />;
+  return <InvoiceDetailsView data={data.invoice} />;
 }
 
 export default InvoicePage;

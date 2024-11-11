@@ -6,11 +6,11 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import { useSettingsContext } from 'src/components/settings';
 
-import { NAV, HEADER } from '../config-layout';
+import { HEADER } from '../config-layout';
 
 // ----------------------------------------------------------------------
 
-const SPACING = 8;
+// const SPACING = 8;
 
 export default function Main({ children, sx, ...other }) {
   const settings = useSettingsContext();
@@ -19,7 +19,7 @@ export default function Main({ children, sx, ...other }) {
 
   const isNavHorizontal = settings.themeLayout === 'horizontal';
 
-  const isNavMini = settings.themeLayout === 'mini';
+  // const isNavMini = settings.themeLayout === 'mini';
 
   if (isNavHorizontal) {
     return (
@@ -50,15 +50,16 @@ export default function Main({ children, sx, ...other }) {
         minHeight: 1,
         display: 'flex',
         flexDirection: 'column',
-        py: `${HEADER.H_MOBILE + SPACING}px`,
-        ...(lgUp && {
-          px: 2,
-          py: `${HEADER.H_DESKTOP + SPACING}px`,
-          width: `calc(100% - ${NAV.W_VERTICAL}px)`,
-          ...(isNavMini && {
-            width: `calc(100% - ${NAV.W_MINI}px)`,
-          }),
-        }),
+        bgcolor: (theme) => theme.palette.background.paper,
+        // py: `${HEADER.H_MOBILE + SPACING}px`,
+        // ...(lgUp && {
+        //   px: 2,
+        //   py: `${HEADER.H_DESKTOP + SPACING}px`,
+        //   // width: `calc(100% - ${NAV.W_VERTICAL}px)`,
+        //   ...(isNavMini && {
+        //     width: `calc(100% - ${NAV.W_MINI}px)`,
+        //   }),
+        // }),
         ...sx,
       }}
       {...other}

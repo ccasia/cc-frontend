@@ -74,7 +74,7 @@ const NavItem = forwardRef(
           </Box>
         )}
 
-        {hasChild && <Iconify width={16} className="arrow" icon="eva:arrow-ios-forward-fill" />}
+        {/* {hasChild && <Iconify width={16} className="arrow" icon="eva:arrow-ios-forward-fill" />} */}
       </StyledNavItem>
     );
 
@@ -186,7 +186,8 @@ const StyledNavItem = styled(ListItemButton, {
     ...(!subItem && {
       ...baseStyles.item,
       fontSize: 10,
-      minHeight: 56,
+      minHeight: 46,
+      width: 50,
       lineHeight: '16px',
       textAlign: 'center',
       flexDirection: 'column',
@@ -201,6 +202,7 @@ const StyledNavItem = styled(ListItemButton, {
         ...noWrapStyles,
         ...baseStyles.label,
         marginTop: theme.spacing(0.5),
+        display: 'none',
       },
       '& .caption': {
         ...baseStyles.caption,
@@ -214,9 +216,10 @@ const StyledNavItem = styled(ListItemButton, {
         position: 'absolute',
       },
       ...(active && {
-        fontWeight: theme.typography.fontWeightBold,
-        backgroundColor: alpha(theme.palette.primary.main, 0.08),
-        color: lightMode ? theme.palette.primary.main : theme.palette.primary.light,
+        fontWeight: 900,
+        color:
+          theme.palette.mode === 'light' ? 'rgba(19, 64, 255, 1)' : theme.palette.primary.light,
+        background: alpha('rgba(19, 64, 255, 1)', 0.08),
         '&:hover': {
           backgroundColor: alpha(theme.palette.primary.main, 0.16),
         },

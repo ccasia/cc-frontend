@@ -32,6 +32,7 @@ export default function InvoiceNewEditStatusDate() {
         label="Status"
         InputLabelProps={{ shrink: true }}
         PaperPropsSx={{ textTransform: 'capitalize' }}
+        disabled={values.status === 'approved'}
       >
         {[
           'approved',
@@ -47,6 +48,7 @@ export default function InvoiceNewEditStatusDate() {
           </MenuItem>
         ))}
       </RHFSelect>
+
 
       <Controller
         name="createDate"

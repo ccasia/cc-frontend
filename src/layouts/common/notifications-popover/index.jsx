@@ -124,11 +124,54 @@ export default function NotificationsPopover() {
   );
 
   const renderTabs = (
-    <Tabs value={currentTab} onChange={handleChangeTab}>
+    <Tabs
+      value={currentTab}
+      onChange={handleChangeTab}
+      variant="fullWidth"
+      TabIndicatorProps={{
+        children: <span />,
+        sx: {
+          height: 1,
+          py: 1,
+          zIndex: -10000,
+          bgcolor: 'transparent',
+          transition: 'all .3s ease-in-out',
+          '&.MuiTabs-indicator > span': {
+            bgcolor: (theme) =>
+              theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[200],
+            width: '100%',
+            height: '100%',
+            display: 'block',
+            borderRadius: 1,
+            boxShadow: 2,
+          },
+        },
+      }}
+      sx={{
+        '&.MuiTabs-root': {
+          zIndex: 1,
+          minHeight: 'auto',
+          flexShrink: 0,
+        },
+        '& .MuiTabs-scroller': {
+          p: 1,
+        },
+      }}
+    >
       {TABS.map((tab) => (
         <Tab
+          // style={{ backgroundColor: 'black', borderRadius: 5 }}
           key={tab.value}
           iconPosition="end"
+          sx={{
+            '&.Mui-selected': {
+              bgcolor: 'transparent',
+              fontWeight: 600,
+            },
+            '&:not(:last-of-type)': {
+              mr: 0,
+            },
+          }}
           value={tab.value}
           label={tab.label}
           icon={
@@ -147,11 +190,6 @@ export default function NotificationsPopover() {
                 data?.notifications.filter((notification) => notification.archive).length}
             </Label>
           }
-          sx={{
-            '&:not(:last-of-type)': {
-              mr: 3,
-            },
-          }}
         />
       ))}
     </Tabs>
@@ -191,6 +229,10 @@ export default function NotificationsPopover() {
   return (
     <>
       <IconButton
+        sx={{
+          borderRadius: 1,
+          boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+        }}
         component={m.button}
         whileTap="tap"
         whileHover="hover"
@@ -198,8 +240,12 @@ export default function NotificationsPopover() {
         color={drawer.value ? 'primary' : 'default'}
         onClick={drawer.onTrue}
       >
-        <Badge badgeContent={totalUnRead < 20 ? totalUnRead : `20+`} color="error">
-          <Iconify icon="solar:bell-bing-bold-duotone" width={24} />
+        <Badge
+          badgeContent={!isLoading && (totalUnRead < 20 ? totalUnRead : `20+`)}
+          color="error"
+          variant="dot"
+        >
+          <Iconify icon="mdi:bell-outline" width={18} />
         </Badge>
       </IconButton>
 
@@ -218,17 +264,7 @@ export default function NotificationsPopover() {
 
         <Divider />
 
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ pl: 2.5, pr: 1 }}
-        >
-          {renderTabs}
-          <IconButton onClick={handleMarkAllAsRead}>
-            <Iconify icon="solar:settings-bold-duotone" />
-          </IconButton>
-        </Stack>
+        {renderTabs}
 
         <Divider />
 

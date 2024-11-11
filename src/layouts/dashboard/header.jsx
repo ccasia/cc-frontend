@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types';
 
 import Stack from '@mui/material/Stack';
+import { Divider } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
+import { grey } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 
@@ -12,15 +14,14 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { bgBlur } from 'src/theme/css';
 
 import Logo from 'src/components/logo';
+// import ContactsPopover from '../common/contacts-popover';
 import SvgColor from 'src/components/svg-color';
 import { useSettingsContext } from 'src/components/settings';
 
-import { NAV, HEADER } from '../config-layout';
-import SettingsButton from '../common/settings-button';
+import { HEADER } from '../config-layout';
 import AccountPopover from '../common/account-popover';
-// import ContactsPopover from '../common/contacts-popover';
-// import LanguagePopover from '../common/language-popover';
 import NotificationsPopover from '../common/notifications-popover';
+// import LanguagePopover from '../common/language-popover';
 
 // ----------------------------------------------------------------------
 
@@ -31,13 +32,35 @@ export default function Header({ onOpenNav, isOnline }) {
 
   const isNavHorizontal = settings.themeLayout === 'horizontal';
 
-  const isNavMini = settings.themeLayout === 'mini';
+  // const isNavMini = settings.themeLayout === 'mini';
 
   const lgUp = useResponsive('up', 'lg');
 
   const offset = useOffSetTop(HEADER.H_DESKTOP);
 
   const offsetTop = offset && !isNavHorizontal;
+
+  const renderHeader = (
+    <Stack direction="row" alignItems="center" spacing={2}>
+      {/* <Card
+        sx={{
+          borderRadius: 1,
+          boxShadow: theme.customShadows.z2,
+        }}
+      > */}
+      <NotificationsPopover />
+      {/* </Card> */}
+      <Divider
+        // variant="fullWidth"
+        orientation="vertical"
+        sx={{
+          height: '24px',
+          borderColor: grey[200],
+        }}
+      />
+      <AccountPopover isOnline={isOnline} />
+    </Stack>
+  );
 
   const renderContent = (
     <>
@@ -58,32 +81,33 @@ export default function Header({ onOpenNav, isOnline }) {
         justifyContent="flex-end"
         spacing={{ xs: 0.5, sm: 1 }}
       >
-        {/* <LanguagePopover /> */}
+        {renderHeader}
+        {/* <NotificationsPopover /> */}
 
-        <NotificationsPopover />
+        {/* <SettingsButton /> */}
 
-        {/* <ContactsPopover /> */}
-
-        <SettingsButton />
-
-        <AccountPopover isOnline={isOnline} />
+        {/* <AccountPopover isOnline={isOnline} /> */}
       </Stack>
     </>
   );
 
   return (
     <AppBar
+      position="sticky"
       sx={{
+        borderBottom: 1,
+        borderColor: grey[200],
         height: HEADER.H_MOBILE,
         zIndex: theme.zIndex.appBar + 1,
         ...bgBlur({
-          color: theme.palette.background.default,
+          color: theme.palette.background.paper,
+          // color: theme.palette.grey[400],
         }),
         transition: theme.transitions.create(['height'], {
           duration: theme.transitions.duration.shorter,
         }),
         ...(lgUp && {
-          width: `calc(100% - ${NAV.W_VERTICAL + 1}px)`,
+          // width: `calc(100% - ${NAV.W_VERTICAL + 1}px)`,
           height: HEADER.H_DESKTOP,
           ...(offsetTop && {
             height: HEADER.H_DESKTOP_OFFSET,
@@ -94,13 +118,12 @@ export default function Header({ onOpenNav, isOnline }) {
             height: HEADER.H_DESKTOP_OFFSET,
             borderBottom: `dashed 1px ${theme.palette.divider}`,
           }),
-          ...(isNavMini && {
-            width: `calc(100% - ${NAV.W_MINI + 1}px)`,
-          }),
+          // ...(isNavMini && {
+          //   // width: `calc(100% - ${NAV.W_MINI + 1}px)`,
+          // }),
         }),
       }}
     >
-      {/* <Alert /> */}
       <Toolbar
         sx={{
           height: 1,

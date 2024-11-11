@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropTypes, { object } from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -10,20 +10,20 @@ import Stack from '@mui/material/Stack';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
-import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 
-import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-import { banks } from 'src/contants/bank';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetInvoiceById from 'src/hooks/use-get-invoice';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { banks } from 'src/contants/bank';
+
+import { useSnackbar } from 'src/components/snackbar';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
-import { useSnackbar } from 'src/components/snackbar';
 
 import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
@@ -33,6 +33,7 @@ import XeroDialoge from './xero-dialoge';
 // ----------------------------------------------------------------------
 
 export default function InvoiceNewEditForm({ id, creators }) {
+  const { isLoading, invoice } = useGetInvoiceById(id);
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
   const [open, setOpen] = useState(false);
@@ -41,8 +42,11 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const loadingSave = useBoolean();
 
   const loadingSend = useBoolean();
-  const { campaigns } = useGetInvoiceById(id);
-  const currentInvoice = campaigns;
+
+  const [loading, setLoading] = useState(true);
+  const currentInvoice = invoice;
+
+  console.log('currentInvoice', currentInvoice);
 
   // add the contact id to the invoice
   const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
@@ -102,7 +106,8 @@ export default function InvoiceNewEditForm({ id, creators }) {
       dueDate: new Date(currentInvoice?.dueDate) || null,
       status: currentInvoice?.status || 'draft',
       invoiceFrom: currentInvoice?.invoiceFrom || null,
-      invoiceTo: currentInvoice?.invoiceTo || [
+      invoiceTo: currentInvoice?.invoiceTo ||
+      [
         {
           id: '1',
           primary: true,
@@ -131,9 +136,9 @@ export default function InvoiceNewEditForm({ id, creators }) {
         accountNumber: '',
         accountEmail: '',
       },
-      totalAmount: currentInvoice?.totalAmount || 0,
+      totalAmount: currentInvoice?.amount || 0,
     }),
-    [currentInvoice]
+    [invoice]
   );
 
   const methods = useForm({
@@ -148,19 +153,26 @@ export default function InvoiceNewEditForm({ id, creators }) {
     formState: { isSubmitting },
   } = methods;
 
-  const handleSaveAsDraft = handleSubmit(async (data) => {
-    loadingSave.onTrue();
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      reset();
-      loadingSave.onFalse();
-      router.push(paths.dashboard.invoice.root);
-    } catch (error) {
-      console.error(error);
-      loadingSave.onFalse();
+  useEffect(() => {
+    if (!isLoading) {
+      setLoading(false);
     }
-  });
+    reset(defaultValues);
+  }, [invoice]);
+
+  // const handleSaveAsDraft = handleSubmit(async (data) => {
+  //   loadingSave.onTrue();
+
+  //   try {
+  //     await new Promise((resolve) => setTimeout(resolve, 500));
+  //     reset();
+  //     loadingSave.onFalse();
+  //     router.push(paths.dashboard.invoice.root);
+  //   } catch (error) {
+  //     console.error(error);
+  //     loadingSave.onFalse();
+  //   }
+  // });
 
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
@@ -191,29 +203,12 @@ export default function InvoiceNewEditForm({ id, creators }) {
   });
   const values = watch();
 
-  const bankAccount = () => (
+  const bankAccount = (
     <Box>
       <Typography variant="h6" sx={{ color: 'text.disabled', mt: 3, ml: 2 }}>
         Bank Information:
       </Typography>
       <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} sx={{ p: 3 }}>
-        {' '}
-        {/* <RHFTextField
-          required
-          type={'select'}
-          name="bankInfo.bankName"
-          label="Bank Name"
-          fullWidth
-          sx={{ width: 1 / 2 }}
-          value={values.bankInfo?.bankName}
-        >
-
-{banks.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </RHFTextField> */}
         <RHFSelect
           sx={{ width: 1 / 2 }}
           required
@@ -255,6 +250,15 @@ export default function InvoiceNewEditForm({ id, creators }) {
     </Box>
   );
 
+  if (loading)
+    return (
+     
+        <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
+          <CircularProgress />
+        </Box>
+      
+    );
+
   return (
     <FormProvider methods={methods}>
       <Card>
@@ -262,7 +266,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
         <InvoiceNewEditStatusDate />
 
-        {bankAccount()}
+        {bankAccount}
 
         <InvoiceNewEditDetails />
       </Card>

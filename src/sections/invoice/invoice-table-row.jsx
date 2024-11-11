@@ -13,16 +13,15 @@ import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useAuthContext } from 'src/auth/hooks';
 
-import { fCurrency } from 'src/utils/format-number';
 import { fDate, fTime } from 'src/utils/format-time';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
-
 
 // ----------------------------------------------------------------------
 
@@ -98,7 +97,7 @@ export default function InvoiceTableRow({
           />
         </TableCell>
 
-        <TableCell>{fCurrency(amount)}</TableCell>
+        <TableCell>{`RM${amount}`}</TableCell>
 
         {/* <TableCell align="center">{sent}</TableCell> */}
 

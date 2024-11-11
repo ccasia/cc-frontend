@@ -153,6 +153,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     }
   });
 
+  console.log(submission)
+
   return (
     <>
       {previewSubmission?.status === 'APPROVED' && (

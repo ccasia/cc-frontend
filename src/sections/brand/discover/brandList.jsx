@@ -2,20 +2,17 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
-import Box from '@mui/material/Box';
-
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import BrandItem from './brandItem';
+import BrandLists from './brand-lists';
 
 // ----------------------------------------------------------------------
 
 export default function BrandList({ companies }) {
   const router = useRouter();
-
   const [filterData, setFilterData] = useState();
 
   const handleView = useCallback(
@@ -52,7 +49,8 @@ export default function BrandList({ companies }) {
 
   return (
     <>
-      <Box
+      <BrandLists />
+      {/* <Box
         gap={3}
         display="grid"
         gridTemplateColumns={{
@@ -70,7 +68,8 @@ export default function BrandList({ companies }) {
             onDelete={() => handleDelete(company.id)}
           />
         ))}
-      </Box>
+      </Box> */}
+
       {/* {jobs.length > 8 && (
         <Pagination
           count={8}

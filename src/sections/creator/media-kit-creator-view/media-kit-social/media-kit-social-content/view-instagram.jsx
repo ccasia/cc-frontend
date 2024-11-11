@@ -1,12 +1,14 @@
 import React from 'react';
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { Icon } from '@iconify/react';
 import { keyframes } from '@emotion/react';
 
 import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
 
+import Iconify from 'src/components/iconify';
+
 // Utility function to format numbers
-const formatNumber = (num) => {
+export const formatNumber = (num) => {
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -31,92 +33,136 @@ const TopContentGrid = ({ topContents }) => {
   const topFiveContents = topContents.slice(0, 5);
 
   return (
-    <Grid container spacing={isMobile ? 1 : 2}>
+    <Grid
+      container
+      spacing={isMobile ? 1 : 2}
+      component={m.div}
+      variants={{
+        hidden: { opacity: 0 },
+        show: {
+          opacity: 1,
+          transition: {
+            staggerChildren: 0.2, // Delay between each child
+          },
+        },
+      }}
+      animate="show"
+      initial="hidden"
+    >
       {topFiveContents.map((content, index) => (
-        <Grid item xs={12} sm={4} key={index}>
+        <Grid
+          item
+          xs={12}
+          sm={4}
+          key={index}
+          component={m.div}
+          variants={{
+            hidden: { opacity: 0, y: 50 },
+            show: { opacity: 1, y: 0 },
+          }}
+        >
           <Box
             sx={{
               position: 'relative',
+              height: 600,
               overflow: 'hidden',
-              borderRadius: 1,
+              borderRadius: 3,
+              cursor: 'pointer',
               '&:hover .image': {
-                opacity: 0,
-              },
-              '&:hover .description': {
-                opacity: 1,
+                scale: 1.05,
               },
             }}
           >
-            <CardMedia
+            {/* <CardMedia
               component="img"
               image={content.image_url}
               alt={`Top content ${index + 1}`}
               sx={{
-                aspectRatio: '1 / 1',
                 objectFit: 'cover',
                 transition: 'opacity 0.3s ease-in-out',
+                borderRadius: 3,
+                height: 1,
               }}
               className="image"
+            /> */}
+
+            <CardMedia
+              component="Box"
+              className="image"
+              alt={`Top content ${index + 1}`}
+              sx={{
+                height: 1,
+                transition: 'all .2s linear',
+                objectFit: 'cover',
+                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.image_url}) lightgray 50% / cover no-repeat`,
+              }}
             />
+
             <Box
-              className="description"
               sx={{
                 position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
                 bottom: 0,
-                bgcolor: 'rgba(0, 0, 0, 0.8)',
+                left: 0,
+                width: '100%',
                 color: 'white',
-                p: isMobile ? 1 : 2,
-                opacity: 0,
-                transition: 'opacity 0.3s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
+                p: isMobile ? 2 : 1.5,
+                px: 3,
+                borderRadius: '0 0 24px 24px',
               }}
             >
               <Typography
                 variant="body2"
                 sx={{
-                  textAlign: 'justify',
                   overflow: 'hidden',
                   display: '-webkit-box',
                   WebkitLineClamp: 5,
                   WebkitBoxOrient: 'vertical',
                   animation: `${typeAnimation} 0.5s steps(40, end)`,
-                  fontSize: isMobile ? '0.75rem' : '0.875rem', // Smaller font size on mobile
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  mb: 1,
                 }}
               >
-                {content.description}
+                {`${content?.description?.slice(0, 50)}...`}
               </Typography>
-            </Box>
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                bgcolor: 'rgba(0, 0, 0, 0.6)',
-                color: 'white',
-                p: isMobile ? 0.5 : 1,
-              }}
-            >
-              <Stack direction="row" justifyContent="space-around">
+
+              <Stack direction="row" alignItems="center" spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Icon icon="mdi:heart" width={isMobile ? 16 : 24} height={isMobile ? 16 : 24} />
-                  <Typography variant="caption" sx={{ fontSize: isMobile ? 16 : 14 }}>
-                    {formatNumber(content.like)}
-                  </Typography>
+                  <Iconify icon="material-symbols:favorite-outline" width={20} />
+                  <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
                 </Stack>
+
                 <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Icon icon="mdi:comment" width={isMobile ? 16 : 24} height={isMobile ? 16 : 24} />
-                  <Typography variant="caption" sx={{ fontSize: isMobile ? 16 : 14 }}>
-                    {formatNumber(content.comment)}
-                  </Typography>
+                  <Iconify icon="iconamoon:comment" width={20} />
+                  <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
                 </Stack>
               </Stack>
             </Box>
+
+            {/* <Box
+              sx={{
+                position: 'absolute',
+                top: 10,
+                right: 10,
+                borderRadius: '0 0 24px 24px',
+              }}
+            >
+              <IconButton
+                sx={{
+                  color: 'black',
+                  bgcolor: 'white',
+                }}
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = content?.content_url;
+                  link.target = '_blank';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+              >
+                <Iconify icon="akar-icons:link-out" />
+              </IconButton>
+            </Box> */}
           </Box>
         </Grid>
       ))}
@@ -132,12 +178,10 @@ TopContentGrid.propTypes = {
   ).isRequired,
 };
 
-const MediaKitSocialContent = ({ instagram }) => {
+const MediaKitSocialContent = ({ instagram }) => (
   // const [socialMediaData, setSocialMediaData] = useState(null);
   // const [loading, setLoading] = useState(false);
   // const [fetchError, setFetchError] = useState(null);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // const getButtonText = () => {
   //   if (loading) return 'Fetching...';
@@ -238,9 +282,8 @@ const MediaKitSocialContent = ({ instagram }) => {
 
   // const renderDataOrPlaceholder = (data, placeholder) => data || placeholder;
 
-  return (
-    <Box>
-      {/* <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+  <Box>
+    {/* <Stack direction="row" spacing={2} alignItems="center" mb={2}>
         {fetchError && (
           <Alert severity="error" sx={{ flexGrow: 1 }}>
             <AlertTitle>Error</AlertTitle>
@@ -252,7 +295,7 @@ const MediaKitSocialContent = ({ instagram }) => {
         )}
       </Stack> */}
 
-      <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
+    {/* <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
         <Grid item xs={12} sm={4}>
           <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>
@@ -291,16 +334,14 @@ const MediaKitSocialContent = ({ instagram }) => {
 
       <Typography variant="h6" mb={isMobile ? 1 : 2} sx={{ fontSize: isMobile ? 18 : 20 }}>
         Top Content
-      </Typography>
-      {instagram?.data.top_contents ? (
-        <TopContentGrid topContents={instagram.data.top_contents} />
-      ) : (
-        <Typography>No top content data available</Typography>
-      )}
-    </Box>
-  );
-};
-
+      </Typography> */}
+    {instagram?.data.top_contents ? (
+      <TopContentGrid topContents={instagram.data.top_contents} />
+    ) : (
+      <Typography>No top content data available</Typography>
+    )}
+  </Box>
+);
 export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {

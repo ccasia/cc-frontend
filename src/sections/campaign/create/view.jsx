@@ -8,9 +8,6 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import CreateCampaignForm from './form';
 
 function CreateCampaign() {
-  // useGetAdmins();
-  // useGetCompany();
-  // useGetBrand();
   const settings = useSettingsContext();
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>

@@ -4,6 +4,8 @@ import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
+import { grey } from '@mui/material/colors';
+import { Avatar, Typography, IconButton } from '@mui/material';
 
 import { usePathname } from 'src/routes/hooks';
 
@@ -11,14 +13,16 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Logo from 'src/components/logo';
+import Image from 'src/components/image';
+import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
+import { useSettingsContext } from 'src/components/settings';
 import { NavSectionVertical } from 'src/components/nav-section';
 
 import { NAV } from '../config-layout';
 import { useNavData } from './config-navigation';
 import NavToggleButton from '../common/nav-toggle-button';
-import { Badge, Button, Typography } from '@mui/material';
+import { Badge, Button } from '@mui/material';
 import useGetTokenExpiry from 'src/hooks/use-get-token-expiry';
 
 import { endpoints } from 'src/utils/axios';
@@ -29,6 +33,8 @@ import axios from 'axios';
 export default function NavVertical({ openNav, onCloseNav }) {
   const { user } = useAuthContext();
 
+  const settings = useSettingsContext();
+
   const pathname = usePathname();
 
   const lgUp = useResponsive('up', 'lg');
@@ -36,6 +42,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
   const navData = useNavData();
 
   const { data } = useGetTokenExpiry();
+  console.log('user', user);
 
   const date = new Date(data?.lastRefreshToken || new Date());
   const formatter = new Intl.DateTimeFormat('en-US', {
@@ -61,6 +68,39 @@ export default function NavVertical({ openNav, onCloseNav }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
+  const logo = (
+    <Box
+      component="div"
+      sx={{
+        position: 'relative',
+        width: 55,
+        height: 55,
+        borderRadius: 1,
+      }}
+    >
+      <Image
+        src="/logo/vector1.svg"
+        alt="Background Image"
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: 'inherit',
+        }}
+      />
+      <Avatar
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 30,
+          height: 30,
+        }}
+        src="/assets/icons/auth/test.svg"
+      />
+    </Box>
+  );
+
   const renderContent = (
     <Scrollbar
       sx={{
@@ -72,7 +112,41 @@ export default function NavVertical({ openNav, onCloseNav }) {
         },
       }}
     >
-      <Logo sx={{ mt: 3, ml: 4, mb: 1 }} />
+      {/* <Logo sx={{ mt: 3, ml: 4, mb: 1 }} /> */}
+      <Stack
+        sx={{
+          p: 2,
+        }}
+        direction="row"
+        alignItems="center"
+        spacing={1.5}
+      >
+        {logo}
+        <Stack flexGrow={1}>
+          <Typography variant="body1" fontWeight={800}>
+            CULT CREATIVE
+          </Typography>
+          <Typography variant="body2" color="text.secondary" fontWeight={600}>
+            Creator
+          </Typography>
+        </Stack>
+        <IconButton
+          sx={{
+            borderRadius: 1,
+            border: 0.5,
+            borderColor: grey[300],
+            boxShadow: 3,
+          }}
+          onClick={() =>
+            settings.onUpdate(
+              'themeLayout',
+              settings.themeLayout === 'vertical' ? 'mini' : 'vertical'
+            )
+          }
+        >
+          <Iconify icon="radix-icons:double-arrow-left" color="black" width={18} />
+        </IconButton>
+      </Stack>
 
       <NavSectionVertical
         data={navData}
@@ -80,7 +154,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
           currentRole: user?.role,
         }}
       />
-      {!data?.tokenStatus ? (
+      {!data?.tokenStatus && user.role === 'admin' && user.admin.role.name === 'Finance' ? (
         <Box
           sx={{
             display: 'flex',
@@ -129,7 +203,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
         width: { lg: NAV.W_VERTICAL },
       }}
     >
-      <NavToggleButton />
+      {/* <NavToggleButton /> */}
 
       {lgUp ? (
         <Stack
@@ -137,7 +211,8 @@ export default function NavVertical({ openNav, onCloseNav }) {
             height: 1,
             position: 'fixed',
             width: NAV.W_VERTICAL,
-            borderRight: (theme) => `dashed 1px ${theme.palette.divider}`,
+            // boxShadow: 5,
+            // borderRight: (theme) => `dashed 1px ${theme.palette.divider}`,
           }}
         >
           {renderContent}

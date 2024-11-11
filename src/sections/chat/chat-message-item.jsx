@@ -4,7 +4,6 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
-//  import Badge from '@mui/material/Badge';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -37,21 +36,9 @@ export default function ChatMessageItem({ message }) {
         <>
           {sender?.name}
           {(isAdmin || isSprAdmin) && (
-            <Label sx={{ ml: 0.5 }}>Admin</Label>
-            // <Typography
-            //   variant="caption"
-            //   component="span"
-            //   sx={{
-            //     ml: 1,
-            //     py: 0.5,
-            //     px: 2,
-            //     backgroundColor: ' #d8b400 ',
-            //     color: 'black',
-            //     borderRadius: 4,
-            //   }}
-            // >
-            //   Admin
-            // </Typography>
+            <Label sx={{ ml: 0.5 }}>
+              {isSprAdmin ? 'Superadmin' : 'Admin'}
+            </Label>
           )}
         </>
       )}
@@ -93,18 +80,19 @@ export default function ChatMessageItem({ message }) {
           bgcolor: 'primary.lighter',
         }),
         ...(isAdmin && {
-          bgcolor: '#efc800',
+          bgcolor: '#128c7e',
           color: 'black',
         }),
         ...(isSprAdmin && {
-          bgcolor: ' #FFC300 ',
+//           bgcolor: ' #128c7e ',
+          bgcolor: '#FFC300',
           color: 'black',
         }),
       }}
     >
-      <Typography
+      <Typography 
         variant="inherit"
-        textTransform="capitalize"
+        textTransform="none"
         sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
       >
         {body}
@@ -141,14 +129,13 @@ export default function ChatMessageItem({ message }) {
 
 ChatMessageItem.propTypes = {
   message: PropTypes.shape({
-    senderId: PropTypes.string,
-    content: PropTypes.string,
-    createdAt: PropTypes.string,
+    senderId: PropTypes.string.isRequired,
+    content: PropTypes.string.isRequired,
+    createdAt: PropTypes.string.isRequired,
     sender: PropTypes.shape({
-      name: PropTypes.string,
+      name: PropTypes.string.isRequired,
       photoURL: PropTypes.string,
       role: PropTypes.string,
     }),
-  }),
-  // onOpenLightbox: PropTypes.func,
+  }).isRequired,
 };

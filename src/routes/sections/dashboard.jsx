@@ -83,6 +83,10 @@ const ManageRole = lazy(() => import('src/pages/dashboard/roles/manage-role'));
 // Template Temp
 const Template = lazy(() => import('src/pages/dashboard/template/view'));
 
+const Overview = lazy(() => import('src/pages/dashboard/creator/overview'));
+
+const InvoiceDetail = lazy(() => import('src/pages/dashboard/creator/invoice-details'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -456,11 +460,24 @@ export const dashboardRoutes = [
       },
       {
         path: 'invoiceCreator',
-        element: (
-          <RoleBasedGuard roles={['creator']} hasContent>
-            <InvoiceCreator />
-          </RoleBasedGuard>
-        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <RoleBasedGuard roles={['creator']} hasContent>
+                <InvoiceCreator />
+              </RoleBasedGuard>
+            ),
+          },
+          {
+            path: ':invoiceId',
+            element: (
+              <RoleBasedGuard roles={['creator']} hasContent>
+                <InvoiceDetail />
+              </RoleBasedGuard>
+            ),
+          },
+        ],
       },
       { path: 'kanban', element: <KanbanPage /> },
       {
@@ -479,6 +496,10 @@ export const dashboardRoutes = [
       {
         path: 'template',
         element: <Template />,
+      },
+      {
+        path: 'overview',
+        element: <Overview />,
       },
     ],
   },

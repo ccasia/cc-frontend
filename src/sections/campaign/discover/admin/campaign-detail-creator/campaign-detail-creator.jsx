@@ -25,6 +25,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { endpoints } from 'src/utils/axios';
 
@@ -37,20 +38,21 @@ import { useSettingsContext } from 'src/components/settings';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 import UserCard from './user-card';
-
-// const steps = ['Select creator', 'Manage agreement'];
+import CampaignAgreementEdit from '../campaign-agreement-edit';
 
 const CampaignDetailCreator = ({ campaign }) => {
-  // eslint-disable-next-line no-unused-vars
   const [query, setQuery] = useState(null);
   const { data, isLoading } = useGetAllCreators();
+  const { data: agreements, isLoading: loadingAgreements } = useGetAgreements(campaign?.id);
   const smUp = useResponsive('up', 'sm');
   const shortlistedCreators = campaign?.shortlisted;
   const shortlistedCreatorsId = shortlistedCreators?.map((item) => item.userId);
   const modal = useBoolean();
   const confirmModal = useBoolean();
+  const editDialog = useBoolean();
   const settings = useSettingsContext();
   const loading = useBoolean();
+  const [selectedAgreement, setSelectedAgreement] = useState(null);
 
   const methods = useForm({
     defaultValues: {
@@ -58,7 +60,12 @@ const CampaignDetailCreator = ({ campaign }) => {
     },
   });
 
-  const { handleSubmit, watch, reset } = methods;
+  const {
+    handleSubmit,
+    watch,
+    reset,
+    formState: { isSubmitting },
+  } = methods;
 
   const filteredData = useMemo(
     () =>
@@ -80,15 +87,41 @@ const CampaignDetailCreator = ({ campaign }) => {
 
   const selectedCreator = watch('creator');
 
+  const creatorsWithAgreements = useMemo(() => {
+    if (!agreements || !campaign?.shortlisted) return campaign?.shortlisted;
+
+    const agreementsMap = agreements.reduce((acc, agreement) => {
+      acc[agreement.userId] = {
+        isSent: agreement.isSent,
+        status: agreement.status,
+      };
+      return acc;
+    }, {});
+
+    return campaign.shortlisted.map((creator) => ({
+      ...creator,
+      isSent: agreementsMap[creator.userId]?.isSent || false,
+      agreementStatus: agreementsMap[creator.userId]?.status || 'NOT_SENT',
+    }));
+  }, [agreements, campaign]);
+
   const onSubmit = handleSubmit(async (value) => {
     try {
       loading.onTrue();
-      const res = await shortlistCreator({ value, campaignId: campaign.id });
+
+      const newVal = value?.creator?.map((val) => ({
+        ...val,
+        creator: { ...val.creator, socialMediaData: '' },
+      }));
+
+      const res = await shortlistCreator({ newVal, campaignId: campaign.id });
       modal.onFalse();
       reset();
       enqueueSnackbar(res?.data?.message);
+      mutate(endpoints.campaign.creatorAgreement(campaign.id));
       mutate(endpoints.campaign.getCampaignsByAdminId);
     } catch (error) {
+      console.log(error);
       loading.onFalse();
       enqueueSnackbar('Error Shortlist Creator', {
         variant: 'error',
@@ -97,6 +130,18 @@ const CampaignDetailCreator = ({ campaign }) => {
       loading.onFalse();
     }
   });
+
+  const handleEditAgreement = (creator) => {
+    const agreement = agreements.find((a) => a.userId === creator.userId);
+
+    if (!loadingAgreements && (!agreement || agreement.isSent)) {
+      enqueueSnackbar('No editable agreement found for this creator', { variant: 'info' });
+      return;
+    }
+
+    setSelectedAgreement(agreement);
+    editDialog.onTrue();
+  };
 
   const renderConfirmationModal = !!selectedCreator.length && (
     <Dialog open={confirmModal.value} onClose={confirmModal.onFalse}>
@@ -132,7 +177,7 @@ const CampaignDetailCreator = ({ campaign }) => {
       fullWidth
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>List Creator</DialogTitle>
+        <DialogTitle>List Creators</DialogTitle>
         <DialogContent>
           <Box py={1}>
             <RHFAutocomplete
@@ -194,8 +239,12 @@ const CampaignDetailCreator = ({ campaign }) => {
             Cancel
           </Button>
 
-          <LoadingButton type="submit" disabled={!selectedCreator.length} loading={loading.value}>
-            Shortlist {selectedCreator.length > 0 && selectedCreator.length}
+          <LoadingButton
+            type="submit"
+            disabled={!selectedCreator.length || isSubmitting}
+            loading={loading.value}
+          >
+            Shortlist {selectedCreator.length > 0 && selectedCreator.length} creators
           </LoadingButton>
         </DialogActions>
       </FormProvider>
@@ -245,8 +294,15 @@ const CampaignDetailCreator = ({ campaign }) => {
               }}
               gap={2}
             >
-              {filteredData.map((elem, index) => (
-                <UserCard key={elem?.id} creator={elem?.user} campaignId={campaign?.id} />
+              {creatorsWithAgreements.map((elem) => (
+                <UserCard
+                  key={elem?.id}
+                  creator={elem?.user}
+                  campaignId={campaign?.id}
+                  isSent={elem.isSent}
+                  onEditAgreement={() => handleEditAgreement(elem)}
+                  agreementStatus={elem.agreementStatus}
+                />
               ))}
             </Box>
             {filteredData?.length < 1 && (
@@ -259,6 +315,11 @@ const CampaignDetailCreator = ({ campaign }) => {
       </Stack>
       {renderShortlistFormModal}
       {renderConfirmationModal}
+      <CampaignAgreementEdit
+        dialog={editDialog}
+        agreement={selectedAgreement}
+        campaign={campaign}
+      />
     </>
   );
 };
@@ -266,5 +327,5 @@ const CampaignDetailCreator = ({ campaign }) => {
 export default CampaignDetailCreator;
 
 CampaignDetailCreator.propTypes = {
-  campaign: PropTypes.object,
+  campaign: PropTypes.any,
 };

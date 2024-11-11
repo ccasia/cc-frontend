@@ -1,30 +1,47 @@
 import useSWR from 'swr';
-import { useEffect, useCallback } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import { useCreator } from './zustands/useCreator';
 
 // Assuming you have a fetcher function defined somewhere
-const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
+// const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
 
 const useGetCreators = () => {
-  const { setCreators, creators } = useCreator();
+  const { data, isLoading } = useSWR(endpoints.creators.getCreators, fetcher, {
+    revalidateIfStale: true,
+    revalidateOnFocus: true,
+    revalidateOnMount: true,
+    revalidateOnReconnect: true,
+  });
 
-  const getCreators = useCallback(async () => {
-    try {
-      const res = await axiosInstance.get(endpoints.creators.getCreators);
-      setCreators(res?.data);
-    } catch (error) {
-      alert(JSON.stringify(error));
-    }
-  }, [setCreators]);
+  const memoizedValue = useMemo(
+    () => ({
+      data,
+      isLoading,
+    }),
+    [data, isLoading]
+  );
 
-  useEffect(() => {
-    getCreators();
-  }, [getCreators]);
+  return memoizedValue;
 
-  return { getCreators, creators };
+  // const { setCreators, creators } = useCreator();
+
+  // const getCreators = useCallback(async () => {
+  //   try {
+  //     const res = await axiosInstance.get(endpoints.creators.getCreators);
+  //     setCreators(res?.data);
+  //   } catch (error) {
+  //     alert(JSON.stringify(error));
+  //   }
+  // }, [setCreators]);
+
+  // useEffect(() => {
+  //   getCreators();
+  // }, [getCreators]);
+
+  // return { getCreators, creators };
 };
 
 export const useGetCreatorByID = (id) => {

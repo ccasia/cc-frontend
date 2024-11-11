@@ -6,6 +6,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useForm } from 'react-hook-form';
 
@@ -13,9 +14,13 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import { useXero } from 'src/hooks/zustands/useXero';
+import { useEffect, useState } from 'react';
+
+import useGetContacts from 'src/hooks/use-get-xeroContacts';
 
 function XeroDialoge({ open, onClose, description, setContact, setNewContact }) {
-  const { contacts } = useXero();
+  const { isLoading, contacts } = useGetContacts();
+
   const methods = useForm({
     defaultValues: {
       contact: { name: '' },
@@ -34,7 +39,24 @@ function XeroDialoge({ open, onClose, description, setContact, setNewContact }) 
   });
 
   const values = watch();
-  
+
+  if (isLoading)
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        sx={{
+          '& .MuiDialog-paper': {
+            width: '50%',
+          },
+        }}
+      >
+        <Box display="flex" justifyContent="center" alignItems="center" height="50vh">
+          <CircularProgress />
+        </Box>
+      </Dialog>
+    );
+
   return (
     <Dialog
       open={open}

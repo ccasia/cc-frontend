@@ -1,14 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import { useForm, useFieldArray } from 'react-hook-form';
 
-import { Box, Paper, Stack, Button, Typography, IconButton, InputAdornment } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import { Box, Paper, Typography } from '@mui/material';
 
 import { banks } from 'src/contants/bank';
 import { updatePaymentForm } from 'src/api/paymentForm';
 
-import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
@@ -19,13 +19,17 @@ const PaymentFormProfile = ({ user }) => {
     defaultValues: {
       bankName: null || { bank: paymentForm?.bankName },
       bankNumber: paymentForm?.bankAccountNumber || '',
-      bodyMeasurement: paymentForm?.bodyMeasurement || '',
-      allergies: paymentForm?.allergies?.map((allergy) => ({ name: allergy })) || [{ name: '' }],
+      // bodyMeasurement: paymentForm?.bodyMeasurement || '',
+      // allergies: paymentForm?.allergies?.map((allergy) => ({ name: allergy })) || [{ name: '' }],
       icPassportNumber: paymentForm?.icNumber || '',
     },
   });
 
-  const { handleSubmit, control } = methods;
+  const {
+    handleSubmit,
+    control,
+    formState: { isDirty, isSubmitting },
+  } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -36,11 +40,6 @@ const PaymentFormProfile = ({ user }) => {
         variant: 'error',
       });
     }
-  });
-
-  const { fields, insert, remove } = useFieldArray({
-    name: 'allergies',
-    control,
   });
 
   return (
@@ -62,15 +61,15 @@ const PaymentFormProfile = ({ user }) => {
           />
           <RHFTextField name="bankNumber" type="number" label="Bank Account Number" />
           <RHFTextField name="icPassportNumber" type="number" label="IC / Passport Number" />
-          <RHFTextField
+          {/* <RHFTextField
             name="bodyMeasurement"
             type="number"
             label="Body Measurement"
             InputProps={{
-              endAdornment: <InputAdornment position="start">inch</InputAdornment>,
+              endAdornment: <InputAdornment position="start">cm</InputAdornment>,
             }}
-          />
-          <Stack spacing={1}>
+          /> */}
+          {/* <Stack spacing={1}>
             {fields.map((item, index) => (
               <Stack key={item.id} direction="row" spacing={1} alignItems="center">
                 <RHFTextField name={`allergies[${index}].name`} label={`Allergy ${index + 1}`} />
@@ -82,12 +81,18 @@ const PaymentFormProfile = ({ user }) => {
             <Button size="small" variant="contained" onClick={() => insert({ name: '' })}>
               Add more allergy
             </Button>
-          </Stack>
+          </Stack> */}
         </Box>
         <Box sx={{ textAlign: 'end', mt: 2 }}>
-          <Button size="small" variant="contained" type="submit">
-            Save
-          </Button>
+          <LoadingButton
+            size="small"
+            variant="outlined"
+            type="submit"
+            disabled={!isDirty}
+            loading={isSubmitting}
+          >
+            Save changes
+          </LoadingButton>
         </Box>
       </FormProvider>
     </Box>

@@ -1,6 +1,7 @@
 import React, { useEffect  } from 'react';
 
-import { Stack, Container, Button } from '@mui/material';
+// import { Stack, Container, Button } from '@mui/material';
+import { Box, Container, CircularProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
@@ -36,7 +37,7 @@ function CampaignPage() {
       if (code) {
         try {
           // Call the backend to exchange the authorization code for the access token
-          const { data } = await axios.get(endpoints.auth.xeroCallback(code), {
+          const { data } = await axios.get(endpoints.invoice.xeroCallback(code), {
             withCredentials: true,
           });
 
@@ -49,6 +50,7 @@ function CampaignPage() {
 
     fetchToken();
   }, []);
+  // const { campaigns, isLoading } = useGetCampaignsFinance();
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -66,9 +68,27 @@ function CampaignPage() {
         }}
       />
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+      {!isLoading ? (
         <CampaignLists campaigns={campaigns} />
-      </Stack>
+      ) : (
+        // </Stack>
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: (theme) => theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
     </Container>
   );
 }

@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { Box, Chip, Modal, Stack, Button, Typography } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import { Box, Chip, Modal, Stack, Button, Divider, Typography } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -51,7 +52,11 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
     defaultValues,
   });
 
-  const { watch, handleSubmit } = methods;
+  const {
+    watch,
+    handleSubmit,
+    formState: { isDirty, isSubmitting },
+  } = methods;
 
   const watchedInput = watch('about', '');
 
@@ -85,18 +90,27 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
     >
       <Box sx={style}>
         <Typography
-          variant="h4"
+          // variant="h4"
           sx={{
-            mb: 3,
+            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+            fontSize: 35,
           }}
         >
-          Settings
+          Edit Profile
         </Typography>
+
+        <Divider
+          sx={{
+            my: 3,
+          }}
+        />
+
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <Stack direction="row" gap={4} flexWrap="wrap">
             <RHFTextField name="name" label="Full Name" />
             <RHFAutocomplete
               name="interests"
+              label="Interests"
               multiple
               fullWidth
               freeSolo={false}
@@ -126,6 +140,7 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
               label="Tell us more about you"
               helperText={`${watchedInput.length}/150`}
               multiline
+              minRows={3}
             />
           </Stack>
           <Stack direction="row" gap={2} justifyContent="end">
@@ -140,16 +155,18 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
             >
               Cancel
             </Button>
-            <Button
+            <LoadingButton
               variant="contained"
               sx={{
                 mt: 2,
               }}
               type="submit"
               size="small"
+              disabled={!isDirty}
+              loading={isSubmitting}
             >
               Save
-            </Button>
+            </LoadingButton>
           </Stack>
         </FormProvider>
       </Box>

@@ -1,8 +1,9 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
-import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 import { useTheme } from '@emotion/react';
+import { Page, Document } from 'react-pdf';
 import { RiseLoader } from 'react-spinners';
 import { enqueueSnackbar } from 'notistack';
 
@@ -44,18 +45,30 @@ import withPermission from 'src/auth/guard/withPermissions';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+import Carousel from 'src/components/carousel/carousel';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import { EditTimeline } from './EditTimeline';
 import { EditDosAndDonts } from './EditDosAndDonts';
 import { EditCampaignInfo } from './EditCampaignInfo';
 import { EditRequirements } from './EditRequirements';
+import EditCampaignImages from './EditCampaignImages';
 import { EditBrandOrCompany } from './EditBrandOrCompany';
+import EditAgreementTemplate from './EditAgreementTemplate';
 
 const EditButton = ({ tooltip, onClick }) => (
   <Stack direction="row" spacing={1} position="absolute" top={10} right={10} alignItems="center">
     <Tooltip title={tooltip} arrow>
-      <IconButton onClick={onClick}>
+      <IconButton
+        onClick={onClick}
+        sx={{
+          '&.MuiIconButton-root': {
+            // bgcolor: (theme) => theme.palette.success.main,
+            color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+            border: 1,
+          },
+        }}
+      >
         <Iconify icon="lucide:edit" />
       </IconButton>
     </Tooltip>
@@ -70,7 +83,12 @@ EditButton.propTypes = {
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading } = useGetCampaignById(id);
 
-  const campaignStartDate = !campaignLoading && campaign?.campaignBrief?.startDate;
+  const [pages, setPages] = useState();
+
+  const campaignStartDate = useMemo(
+    () => !campaignLoading && campaign?.campaignBrief?.startDate,
+    [campaign, campaignLoading]
+  );
 
   const modalConfirm = useBoolean();
 
@@ -86,6 +104,8 @@ const CampaignDetailManageView = ({ id }) => {
     dosAndDonts: false,
     campaignRequirements: false,
     timeline: false,
+    campaignAgreement: false,
+    campaignImages: false,
   });
 
   const onClose = (data) => {
@@ -93,6 +113,10 @@ const CampaignDetailManageView = ({ id }) => {
       ...prev,
       [data]: false,
     }));
+  };
+
+  const refreshPdf = () => {
+    mutate(endpoints.campaign.getCampaignById(id));
   };
 
   const isEditable = campaign?.status !== 'ACTIVE';
@@ -157,6 +181,16 @@ const CampaignDetailManageView = ({ id }) => {
     }
   };
 
+  const statusColor = useMemo(() => {
+    if (campaign?.status === 'PAUSED') {
+      return 'warning';
+    }
+    if (campaign?.status === 'DRAFT' || campaign?.status === 'SCHEDULED') {
+      return 'info';
+    }
+    return 'success';
+  }, [campaign]);
+
   const renderCampaignInformation = (
     <>
       <Box p={2} component={Card} position="relative">
@@ -181,10 +215,17 @@ const CampaignDetailManageView = ({ id }) => {
           right={10}
           alignItems="center"
         >
-          {!smUp && <Chip label={campaign?.status} size="small" color="primary" />}
+          {!smUp && <Chip label={campaign?.status} size="small" color={statusColor} />}
           {isEditable && (
             <Tooltip title="Edit Campaign Information" arrow>
               <IconButton
+                sx={{
+                  '&.MuiIconButton-root': {
+                    // bgcolor: theme.palette.success.main,
+                    border: 1,
+                    color: theme.palette.mode === 'light' ? 'black' : 'white',
+                  },
+                }}
                 onClick={() =>
                   setOpen((prev) => ({
                     ...prev,
@@ -555,6 +596,93 @@ const CampaignDetailManageView = ({ id }) => {
     </Dialog>
   );
 
+  const renderAgreementTemplate = (
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Agreement Template</Typography>
+        {campaign?.status !== 'ACTIVE' && (
+          <Tooltip title="Refresh">
+            <IconButton
+              sx={{
+                position: 'absolute',
+                top: 10,
+                right: 50,
+                border: 1,
+              }}
+              onClick={() => refreshPdf()}
+            >
+              <Iconify icon="material-symbols:refresh" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Agreement Template"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignAgreement: true,
+              }))
+            }
+          />
+        )}
+
+        <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
+          <Box
+            sx={{
+              display: 'inline-block',
+            }}
+          >
+            {campaign?.campaignBrief?.agreementFrom && (
+              <Document
+                file={campaign?.campaignBrief?.agreementFrom}
+                onLoadSuccess={({ numPages }) => setPages(numPages)}
+                renderMode="canvas"
+              >
+                <Stack spacing={2}>
+                  {pages &&
+                    Array.from({ length: pages }, (_, index) => (
+                      <Page
+                        key={index}
+                        pageIndex={index}
+                        pageNumber={index + 1}
+                        scale={1}
+                        renderTextLayer={false}
+                      />
+                    ))}
+                </Stack>
+              </Document>
+            )}
+          </Box>
+        </Box>
+      </Box>
+      {isEditable && <EditAgreementTemplate open={open} campaign={campaign} onClose={onClose} />}
+    </>
+  );
+
+  const renderCampaignImages = (
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Campaign Images</Typography>
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Agreement Template"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignImages: true,
+              }))
+            }
+          />
+        )}
+        <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
+          <Carousel images={campaign?.campaignBrief?.images} />
+        </Box>
+      </Box>
+      {isEditable && <EditCampaignImages open={open} campaign={campaign} onClose={onClose} />}
+    </>
+  );
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -565,8 +693,8 @@ const CampaignDetailManageView = ({ id }) => {
             name: 'Campaign',
             href: paths.dashboard.campaign.manage,
           },
-          { name: 'Detail' },
-          { name: id },
+          { name: 'Edit' },
+          { name: campaign?.name },
         ]}
         action={
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -581,6 +709,17 @@ const CampaignDetailManageView = ({ id }) => {
                 End Campaign
               </LoadingButton>
             )}
+            {campaign?.status === 'SCHEDULED' &&
+              dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') && (
+                <LoadingButton
+                  variant="contained"
+                  color="success"
+                  onClick={() => handleChangeStatus('ACTIVE')}
+                  size="small"
+                >
+                  Start Campaign
+                </LoadingButton>
+              )}
             {campaign &&
               (campaign?.status === 'PAUSED' ||
                 (campaign?.status === 'DRAFT' &&
@@ -625,6 +764,8 @@ const CampaignDetailManageView = ({ id }) => {
                 {campaign?.campaignBrief?.campaign_do &&
                   campaign?.campaignBrief?.campaign_dont &&
                   renderDosAndDonts}
+                {renderAgreementTemplate}
+                {renderCampaignImages}
               </Stack>
             </Grid>
             <Grid item xs={12} md={4}>
@@ -642,21 +783,6 @@ const CampaignDetailManageView = ({ id }) => {
         )}
       </Grid>
 
-      {/* {campaign?.status === 'active' && campaign?.stage === 'publish' && (
-        <LoadingButton
-          sx={{
-            position: 'fixed',
-            bottom: 10,
-            right: 10,
-          }}
-          startIcon={<Iconify icon="ion:close" />}
-          variant="outlined"
-          color="error"
-          onClick={closeCampaign}
-        >
-          Close Campaign
-        </LoadingButton>
-      )} */}
       {confirmationModal}
     </Container>
   );

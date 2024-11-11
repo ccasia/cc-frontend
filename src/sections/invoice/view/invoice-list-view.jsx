@@ -52,7 +52,6 @@ const TABLE_HEAD = [
   { id: 'createDate', label: 'Create' },
   { id: 'dueDate', label: 'Due' },
   { id: 'price', label: 'Amount' },
-  // { id: 'sent', label: 'Sent', align: 'center' },
   { id: 'status', label: 'Status' },
   { id: '' },
 ];
@@ -79,7 +78,6 @@ export default function InvoiceListView({ campId, invoices }) {
   const confirm = useBoolean();
 
   const tableData = invoices?.campaigns ? invoices.campaigns : _invoices;
-  // const [tableData, setTableData] = useState([]);
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -218,36 +216,6 @@ export default function InvoiceListView({ campId, invoices }) {
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-        {/* <CustomBreadcrumbs
-          heading="List"
-          links={[
-            {
-              name: 'Dashboard',
-              href: paths.dashboard.finance.root,
-            },
-            {
-              name: 'Invoice',
-              href: paths.dashboard.finance.root,
-            },
-            {
-              name: 'List',
-            },
-          ]}
-          action={
-            <Button
-              component={RouterLink}
-              href={paths.dashboard.finance.root}
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-            >
-              New Invoice
-            </Button>
-          }
-          sx={{
-            mb: { xs: 3, md: 5 },
-          }}
-        /> */}
-
         <Card
           sx={{
             mb: { xs: 3, md: 5 },

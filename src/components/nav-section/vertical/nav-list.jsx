@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 
+import { Box } from '@mui/material';
 import Collapse from '@mui/material/Collapse';
 
 import { usePathname } from 'src/routes/hooks';
@@ -35,7 +36,25 @@ export default function NavList({ data, depth, slotProps }) {
   }, []);
 
   return (
-    <>
+    <Box
+      sx={{
+        position: 'relative',
+      }}
+    >
+      {/* {active && (
+        <Box
+          sx={{
+            width: 8,
+            height: 20,
+            bgcolor: 'blue',
+            position: 'absolute',
+            left: -20,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            borderRadius: 2,
+          }}
+        />
+      )} */}
       <NavItem
         open={openMenu}
         onClick={handleToggleMenu}
@@ -66,7 +85,7 @@ export default function NavList({ data, depth, slotProps }) {
           <NavSubList data={data.children} depth={depth} slotProps={slotProps} />
         </Collapse>
       )}
-    </>
+    </Box>
   );
 }
 

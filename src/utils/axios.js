@@ -5,6 +5,7 @@ import { HOST_API } from 'src/config-global';
 // ----------------------------------------------------------------------
 
 const axiosInstance = axios.create({ baseURL: HOST_API });
+
 axiosInstance.defaults.withCredentials = true;
 
 axiosInstance.interceptors.request.use((request) => {
@@ -32,6 +33,9 @@ export const fetcher = async (args) => {
 // ----------------------------------------------------------------------
 
 export const endpoints = {
+  overview: {
+    root: (userId) => `/api/user/overview/${userId}`,
+  },
   kanban: {
     root: '/api/kanban',
     createColumn: '/api/kanban/createColumn',
@@ -77,10 +81,11 @@ export const endpoints = {
     verifyCreator: '/api/auth/verifyCreator',
     resendToken: '/api/auth/resendVerifyToken',
     checkTokenValidity: '/api/auth/checkTokenValidity',
-
     xeroCallback: `/api/auth/xeroCallback`,
     xeroGetContacts:'/api/auth/getXeroContacts',
-    xeroCheckRefreshToken:'/api/auth/checkRefreshToken'
+    xeroCheckRefreshToken:'/api/auth/checkRefreshToken',
+    forgetPassword: '/api/user/forget-password',
+    checkToken: (token) => `/api/user/forget-password-token/${token}`,
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',
@@ -95,6 +100,7 @@ export const endpoints = {
     getCreatorSocialMediaData: '/api/creator/getCreatorSocialMediaData',
     getCreatorSocialMediaDataById: (id) => `/creator/${id}/social-media`,
     updateCreatorform: '/api/creator/updateCreatorForm',
+    updateSocialMediaUsername: '/api/creator/updateSocialMediaUsername',
   },
   users: {
     newAdmin: '/api/user/admins',
@@ -103,6 +109,7 @@ export const endpoints = {
     createAdmin: '/api/user/createAdmin',
     getAdmins: '/api/user/getAdmins',
     allusers: '/api/users',
+    changePassword: '/api/user/changePassword',
   },
   mail: {
     list: '/api/mail/list',
@@ -137,6 +144,7 @@ export const endpoints = {
     brandDetail: (id) => `/api/company/getBrand/${id}`,
     editBrand: '/api/company/editBrand',
     getOptions: '/api/company/getOptions',
+    getBrandsByClientId: (id) => `/api/company/getBrands/${id}`,
   },
   event: {
     list: '/api/event/',
@@ -164,6 +172,7 @@ export const endpoints = {
       createSingleTimelineType: `/api/campaign/createSingleTimelineType`,
     },
     pitch: {
+      draft: '/api/campaign/draftPitch',
       root: '/api/campaign/pitch',
       approve: '/api/campaign/approvepitch',
       reject: '/api/campaign/rejectPitch',
@@ -188,6 +197,7 @@ export const endpoints = {
     editCampaignBrandOrCompany: '/api/campaign/editCampaignBrandOrCompany',
     editCampaignRequirements: '/api/campaign/editCampaignRequirements',
     editCampaignDosAndDonts: '/api/campaign/editCampaignDosandDonts',
+    editCampaignImages: (id) => `/api/campaign/editCampaignImages/${id}`,
     editCampaignTimeline: (id) => `/api/campaign/editCampaignTimeline/${id}`,
     creator: {
       shortListedCampaign: '/api/campaign/getCampaignsBySessionId',
@@ -208,6 +218,7 @@ export const endpoints = {
     creatorAgreement: (id) => `/api/campaign/creatorAgreements/${id}`,
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
     sendAgreement: `/api/campaign/sendAgreement`,
+    agreementTemplate: (id) => `/api/campaign/template/${id}`,
   },
   submission: {
     root: '/api/submission/',
@@ -245,5 +256,12 @@ export const endpoints = {
     getInvoicesByCreator: '/api/invoice/creator',
     ConnectToXero:'/api/invoice/ConnectXero',
     xero:'/api/invoice/zeroConnect',
+    xeroCallback: `/api/invoice/xeroCallback`,
+    xeroGetContacts:'/api/invoice/getXeroContacts',
+    xeroCheckRefreshToken:'/api/invoice/checkRefreshToken',
+    getCreatorInvoice: `/api/invoice/creatorInvoice`,
+  },
+  agreementTemplate: {
+    byId: (id) => `/api/campaign/template/${id}`,
   },
 };

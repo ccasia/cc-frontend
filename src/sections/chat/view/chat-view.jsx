@@ -58,7 +58,13 @@ export default function ChatView() {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
-      <Typography variant="h4" sx={{ mb: { xs: 3, md: 5 } }}>
+      <Typography
+        variant="h2"
+        sx={{
+          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          mb: { xs: 3, md: 5 },
+        }}
+      >
         Chat
       </Typography>
 

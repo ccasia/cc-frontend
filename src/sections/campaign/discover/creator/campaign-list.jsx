@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-
 import Box from '@mui/material/Box';
 import Pagination, { paginationClasses } from '@mui/material/Pagination';
 
@@ -9,27 +8,36 @@ import CampaignItem from './campaign-item';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignLists({ campaigns }) {
+export default function CampaignLists({
+  campaigns,
+  totalCampaigns,
+  page,
+  onPageChange,
+  maxItemsPerPage,
+}) {
   const { user } = useAuthContext();
+
   return (
     <>
       <Box
-        gap={3}
+        gap={2}
         display="grid"
         gridTemplateColumns={{
           xs: 'repeat(1, 1fr)',
           sm: 'repeat(2, 1fr)',
           md: 'repeat(3, 1fr)',
         }}
-      >   
+      >
         {campaigns.map((campaign) => (
           <CampaignItem key={campaign.id} campaign={campaign} user={user} />
         ))}
       </Box>
 
-      {campaigns.length > 8 && (
+      {totalCampaigns > maxItemsPerPage && (
         <Pagination
-          count={8}
+          count={Math.ceil(totalCampaigns / maxItemsPerPage)}
+          page={page}
+          onChange={onPageChange}
           sx={{
             mt: 8,
             [`& .${paginationClasses.ul}`]: {
@@ -43,5 +51,9 @@ export default function CampaignLists({ campaigns }) {
 }
 
 CampaignLists.propTypes = {
-  campaigns: PropTypes.array,
+  campaigns: PropTypes.array.isRequired,
+  totalCampaigns: PropTypes.number.isRequired,
+  page: PropTypes.number.isRequired,
+  onPageChange: PropTypes.func.isRequired,
+  maxItemsPerPage: PropTypes.number.isRequired,
 };

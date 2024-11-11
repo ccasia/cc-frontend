@@ -16,7 +16,6 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 
 import { fDate } from 'src/utils/format-time';
-import { fCurrency } from 'src/utils/format-number';
 
 import { INVOICE_STATUS_OPTIONS } from 'src/_mock';
 
@@ -50,7 +49,8 @@ export default function InvoiceDetails({ invoice }) {
       <TableCell colSpan={3} />
       <TableCell sx={{ typography: 'subtitle1' }}>Total</TableCell>
       <TableCell width={140} sx={{ typography: 'subtitle1' }}>
-        {fCurrency(invoice?.task.price)}
+        {/* {fCurrency(invoice?.task.price)} */}
+        {`RM${invoice?.task.price}`}
       </TableCell>
     </StyledTableRow>
   );
@@ -72,6 +72,7 @@ export default function InvoiceDetails({ invoice }) {
       </Grid>
     </Grid>
   );
+
   const renderList = (
     <TableContainer sx={{ overflow: 'unset', mt: 5 }}>
       <Scrollbar>
@@ -103,8 +104,8 @@ export default function InvoiceDetails({ invoice }) {
               <TableCell>{invoice?.task.title}</TableCell>
 
               <TableCell align="right">{invoice?.task.description}</TableCell>
-              <TableCell align="right">{fCurrency(invoice?.amount)}</TableCell>
-              <TableCell align="right">{fCurrency(invoice?.amount)}</TableCell>
+              <TableCell align="right">{`RM${invoice?.amount}`}</TableCell>
+              <TableCell align="right">{`RM${invoice?.amount}`}</TableCell>
             </TableRow>
           </TableBody>
         </Table>

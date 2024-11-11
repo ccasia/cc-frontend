@@ -87,7 +87,7 @@ export function RHFMultiSelect({
   const { control } = useFormContext();
 
   const renderValues = (selectedIds) => {
-    const selectedItems = options.filter((item) => selectedIds.includes(item.value));
+    const selectedItems = options?.filter((item) => selectedIds.includes(item.value));
 
     if (!selectedItems.length && placeholder) {
       return <Box sx={{ color: 'text.disabled' }}>{placeholder}</Box>;

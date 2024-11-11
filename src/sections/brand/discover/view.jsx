@@ -1,9 +1,8 @@
 /* eslint-disable no-unused-vars */
 import { useState, useCallback } from 'react';
 
-import Stack from '@mui/material/Stack';
+import { Box, Button } from '@mui/material';
 import Container from '@mui/material/Container';
-import { Box, Button, TextField, InputAdornment } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -17,7 +16,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import BrandList from './brandList';
+import BrandLists from './brand-lists';
 
 const defaultFilters = {
   roles: [],
@@ -32,8 +31,6 @@ function DiscoverBrand() {
   const router = useRouter();
 
   const { data: companies, isLoading } = useGetCompany();
-
-  // const [sortBy, setSortBy] = useState('latest');
 
   const [search, setSearch] = useState('');
 
@@ -70,8 +67,8 @@ function DiscoverBrand() {
         sx={{
           mb: { xs: 3, md: 5 },
         }}
-      />{' '}
-      <Box mb={3}>
+      />
+      {/* <Box mb={3}>
         <TextField
           placeholder="Search"
           onChange={handleSearch}
@@ -88,7 +85,7 @@ function DiscoverBrand() {
         >
           Search
         </TextField>
-      </Box>
+      </Box> */}
       {!isLoading && (
         <>
           {companies.length < 1 ? (
@@ -102,14 +99,15 @@ function DiscoverBrand() {
               />
             </Box>
           ) : (
-            <Stack
-              spacing={2.5}
-              sx={{
-                mb: { xs: 3, md: 5 },
-              }}
-            >
-              <BrandList companies={filteredData} />
-            </Stack>
+            // <Stack
+            //   spacing={2.5}
+            //   sx={{
+            //     mb: { xs: 3, md: 5 },
+            //   }}
+            // >
+            //   <BrandList companies={filteredData} />
+            // </Stack>
+            <BrandLists dataFiltered={filteredData} />
           )}
         </>
       )}

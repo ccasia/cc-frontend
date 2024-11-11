@@ -6,8 +6,6 @@ import Stack from '@mui/material/Stack';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import Logo from 'src/components/logo';
-
 // ----------------------------------------------------------------------
 
 export default function AuthModernLayout({ children, image }) {
@@ -19,23 +17,26 @@ export default function AuthModernLayout({ children, image }) {
         width: 1,
         mx: 'auto',
         maxWidth: 480,
-        px: { xs: 2, md: 8 },
+        px: { xs: 2, md: 6 },
+        // px: 6,
+        // bgcolor: 'rebeccapurple',
       }}
     >
-      <Logo
+      {/* <Logo
         sx={{
           mt: { xs: 2, md: 8 },
           mb: { xs: 10, md: 8 },
         }}
-      />
+      /> */}
 
       <Card
         sx={{
-          py: { xs: 5, md: 0 },
-          px: { xs: 3, md: 0 },
+          py: { xs: 0, md: 0 },
+          px: { xs: 0, md: 0 },
           boxShadow: { md: 'none' },
           overflow: { md: 'unset' },
           bgcolor: { md: 'background.default' },
+          mt: 10,
         }}
       >
         {children}
@@ -48,7 +49,6 @@ export default function AuthModernLayout({ children, image }) {
       <Box
         component="img"
         alt="auth"
-        // src={image || '/assets/images/login/creator.jpg'} old image
         src={image || '/assets/images/login/cultimage.png'}
         sx={{
           top: 16,
@@ -63,31 +63,42 @@ export default function AuthModernLayout({ children, image }) {
     </Stack>
   );
 
+  // return (
+  //   <Stack
+  //     component="main"
+  //     direction="row"
+  //     sx={{
+  //       minHeight: '100vh',
+  //       position: 'relative',
+  //       '&:before': {
+  //         width: 1,
+  //         height: 1,
+  //         zIndex: -1,
+  //         content: "''",
+  //         position: 'absolute',
+  //         backgroundSize: 'cover',
+  //         opacity: { xs: 0.24, md: 0 },
+  //         backgroundRepeat: 'no-repeat',
+  //         backgroundPosition: 'center center',
+  //         backgroundImage: 'url(/assets/background/overlay_4.jpg)',
+  //       },
+  //     }}
+  //   >
+  //     {renderContent}
+
+  //     {mdUp && renderSection}
+  //   </Stack>
   return (
-    <Stack
-      component="main"
-      direction="row"
+    <Box
       sx={{
-        minHeight: '100vh',
-        position: 'relative',
-        '&:before': {
-          width: 1,
-          height: 1,
-          zIndex: -1,
-          content: "''",
-          position: 'absolute',
-          backgroundSize: 'cover',
-          opacity: { xs: 0.24, md: 0 },
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center center',
-          backgroundImage: 'url(/assets/background/overlay_4.jpg)',
-        },
+        background: 'radial-gradient(circle, rgba(238,224,255,1) 0%, rgba(254,255,255,1) 70%)',
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
       }}
     >
       {renderContent}
-
-      {mdUp && renderSection}
-    </Stack>
+    </Box>
   );
 }
 

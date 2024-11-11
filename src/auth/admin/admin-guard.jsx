@@ -20,7 +20,7 @@ const AdminGuardProvider = ({ children }) => {
     if (!id) {
       router.push(paths.auth.jwt.login);
     }
-  });
+  }, [id, router]);
 
   const inviteToken = id.split('=')[1];
 
@@ -29,9 +29,10 @@ const AdminGuardProvider = ({ children }) => {
       const res = await axiosInstance.get(endpoints.auth.verifyAdmin, {
         params: { inviteToken },
       });
+      console.log(res.data);
       setUser(res.data.user);
     } catch (error) {
-      enqueueSnackbar(error?.error, {
+      enqueueSnackbar(error?.message, {
         variant: 'error',
       });
       router.push(`${paths.auth.jwt.adminLogin}/?token=${inviteToken}`);

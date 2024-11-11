@@ -31,26 +31,12 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { interestsLists } from 'src/contants/interestLists';
+
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import CreateCompany from './create-company';
-
-const interestsLists = [
-  'Art',
-  'Beauty',
-  'Business',
-  'Fashion',
-  'Fitness',
-  'Food',
-  'Gaming',
-  'Health',
-  'Lifestyle',
-  'Music',
-  'Sports',
-  'Technology',
-  'Travel',
-];
 
 const steps = ['Select or Create Company', 'Fill in Brand Information'];
 
@@ -81,7 +67,7 @@ function CompanyBrandBasic() {
     ),
     brandInstagram: Yup.string().required('Brand Instagram is required'),
     brandTiktok: Yup.string().required('Brand Tiktok is required'),
-    brandIndustries: Yup.array().min(3, 'Brand Industries is required'),
+    brandIndustries: Yup.array().min(1, 'Brand Industries is required'),
     companyId: Yup.object().required('Company is required'),
   });
 

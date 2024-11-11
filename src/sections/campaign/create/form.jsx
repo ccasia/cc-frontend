@@ -2,12 +2,14 @@
 /* eslint-disable no-unused-vars */
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
-import { useSnackbar } from 'notistack';
-import { BarLoader } from 'react-spinners';
+import { pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/TextLayer.css';
+import { enqueueSnackbar } from 'notistack';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { useState, useEffect, useCallback } from 'react';
+import { lazy, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Step from '@mui/material/Step';
@@ -15,47 +17,36 @@ import Paper from '@mui/material/Paper';
 import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
-import MenuItem from '@mui/material/MenuItem';
 import StepLabel from '@mui/material/StepLabel';
-import Typography from '@mui/material/Typography';
-import {
-  Grid,
-  Chip,
-  Stack,
-  Avatar,
-  Divider,
-  IconButton,
-  StepContent,
-  ListItemText,
-} from '@mui/material';
+import { Stack, StepContent } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
-import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { langList } from 'src/contants/language';
 
 import Iconify from 'src/components/iconify';
-import FormProvider, {
-  RHFUpload,
-  RHFSelect,
-  RHFTextField,
-  RHFMultiSelect,
-  RHFAutocomplete,
-} from 'src/components/hook-form';
+import FormProvider from 'src/components/hook-form';
 
 import CreateBrand from './brandDialog';
-import { useGetAdmins } from './hooks/get-am';
+import CreateCompany from './companyDialog';
+import SelectBrand from './steps/select-brand';
 import SelectTimeline from './steps/select-timeline';
+import CampaignFormUpload from './steps/form-upload';
+import GeneralCampaign from './steps/general-campaign';
+import CampaignDetails from './steps/campaign-details';
+import CampaignImageUpload from './steps/image-upload';
+import CampaignAdminManager from './steps/admin-manager';
 import TimelineTypeModal from './steps/timeline-type-modal';
-// import CampaignTaskManagement from './steps/campaign-tasks';
 
-// import NotificationReminder from './steps/notification-reminder';
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 const steps = [
+  'Select Client or Brand',
   'General Campaign Information',
   'Campaign Details',
   'Campaign Images',
@@ -64,42 +55,15 @@ const steps = [
   'Agreement Form',
 ];
 
-export const interestsLists = [
-  'Art',
-  'Beauty',
-  'Business',
-  'Fashion',
-  'Fitness',
-  'Food',
-  'Gaming',
-  'Health',
-  'Lifestyle',
-  'Music',
-  'Sports',
-  'Technology',
-  'Travel',
-];
-
-const videoAngle = [
-  'Product Demo/Review',
-  'Service Demo/Review',
-  'Testimonial',
-  'Story Telling',
-  'Organic (soft sell)',
-  'Point Of View (experience with product/service)',
-  'Walkthrough',
-  'Problem vs Solution',
-  'Trends',
-  'Up to cult creative to decide',
-];
+const PDFEditor = lazy(() => import('./pdf-editor'));
 
 function CreateCampaignForm() {
-  const { enqueueSnackbar } = useSnackbar();
-  const active = localStorage.getItem('activeStep');
+  const { user } = useAuthContext();
+  const openCompany = useBoolean();
+  const openBrand = useBoolean();
   const modal = useBoolean();
 
-  const { data: options, isLoading: companyLoading } = useGetCampaignBrandOption();
-  const [activeStep, setActiveStep] = useState(parseInt(active, 10) || 0);
+  const [activeStep, setActiveStep] = useState(0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -107,9 +71,9 @@ function CreateCampaignForm() {
   const [brandState, setBrandState] = useState('');
   const [campaignDo, setcampaignDo] = useState(['']);
   const [campaignDont, setcampaignDont] = useState(['']);
-  const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
-  const { data: admins } = useGetAdmins('active');
-  const { user } = useAuthContext();
+  const [pages, setPages] = useState(0);
+
+  const pdfModal = useBoolean();
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -131,7 +95,6 @@ function CreateCampaignForm() {
   const campaignSchema = Yup.object().shape({
     campaignIndustries: Yup.string().required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
-    campaignBrand: Yup.object().required('Brand name is required'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
@@ -171,21 +134,13 @@ function CreateCampaignForm() {
     adminManager: Yup.array()
       .min(1, 'At least One Admin is required')
       .required('Admin Manager is required'),
-    agreementFrom: Yup.mixed().nullable().required('Single upload is required'),
-    // timeline: Yup.mixed().required(),
-    // campaignTasksAdmin: Yup.array()
-    //   .min(1)
-    //   .of(
-    //     Yup.object().shape({
-    //       name: Yup.string().required('Name is required'),
-    //     })
-    //   ),
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    campaignIndustries: Yup.string().required('Campaign Industry is required.'),
+    campaignIndustries: Yup.array()
+      .min(1, 'At least one industry is required')
+      .required('Campaign Industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
-    campaignBrand: Yup.object().required('Brand name is required'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
@@ -240,71 +195,82 @@ function CreateCampaignForm() {
     campaignStartDate: Yup.string().required('Campaign Start Date is required.'),
   });
 
-  const savedData = localStorage.getItem('formData');
-
-  const defaultValues = savedData
-    ? JSON.parse(savedData)
-    : {
-        campaignTitle: '',
-        campaignBrand: null,
-        campaignStartDate: null,
-        campaignEndDate: null,
-        campaignIndustries: null,
-        campaignObjectives: '',
-        campaignDescription: '',
-        audienceGender: [],
-        audienceAge: [],
-        audienceLocation: [],
-        audienceLanguage: [],
-        audienceCreatorPersona: [],
-        audienceUserPersona: '',
-        socialMediaPlatform: [],
-        videoAngle: [],
-
-        campaignDo: [
-          {
-            value: '',
-          },
-        ],
-        campaignDont: [
-          {
-            value: '',
-          },
-        ],
-        campaignImages: [],
-        adminManager: [],
-        agreementFrom: null,
-        timeline: [
-          {
-            timeline_type: {},
-            id: '',
-            duration: undefined,
-            for: 'creator',
-            startDate: '',
-            endDate: '',
-            isSubmissionNeeded: false,
-          },
-        ],
-        campaignTasksAdmin: [],
-        campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
-      };
+  const clientSchema = Yup.object().shape({
+    client: Yup.object().required('Client is required.'),
+    hasBrand: Yup.bool(),
+    campaignBrand: Yup.object()
+      .nullable()
+      .when('hasBrand', {
+        is: true,
+        then: (s) => s.required('Brand is required.'),
+        otherwise: (s) => s,
+      }),
+  });
 
   const getSchemaForStep = (step) => {
     switch (step) {
       case 0:
-        return campaignInformationSchema;
+        return clientSchema;
       case 1:
-        return campaignRequirementSchema;
+        return campaignInformationSchema;
       case 2:
-        return campaignImagesSchema;
+        return campaignRequirementSchema;
       case 3:
-        return timelineSchema;
+        return campaignImagesSchema;
       case 4:
+        return timelineSchema;
+      case 5:
         return campaignAdminSchema;
-
       default:
-        return campaignSchema; // Assuming step 3 is the default or final step
+        return campaignSchema;
     }
+  };
+
+  const defaultValues = {
+    hasBrand: false,
+    campaignTitle: '',
+    client: null,
+    campaignBrand: null,
+    campaignStartDate: null,
+    campaignEndDate: null,
+    campaignIndustries: [],
+    campaignObjectives: '',
+    campaignDescription: '',
+    audienceGender: [],
+    audienceAge: [],
+    audienceLocation: [],
+    audienceLanguage: [],
+    audienceCreatorPersona: [],
+    audienceUserPersona: '',
+    socialMediaPlatform: [],
+    videoAngle: [],
+
+    campaignDo: [
+      {
+        value: '',
+      },
+    ],
+    campaignDont: [
+      {
+        value: '',
+      },
+    ],
+    campaignImages: [],
+    adminManager: [],
+    agreementFrom: null,
+    timeline: [
+      {
+        timeline_type: {},
+        id: '',
+        duration: undefined,
+        for: 'creator',
+        startDate: '',
+        endDate: '',
+        isSubmissionNeeded: false,
+      },
+    ],
+    campaignTasksAdmin: [],
+    campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
   };
 
   const methods = useForm({
@@ -314,18 +280,23 @@ function CreateCampaignForm() {
     mode: 'onChange',
   });
 
-  const {
-    handleSubmit,
-    getValues,
-    control,
-    setValue,
-    watch,
-    reset,
-    trigger,
-    formState: { errors },
-  } = methods;
+  const { handleSubmit, getValues, reset, control, setValue, watch, trigger } = methods;
 
   const values = watch();
+
+  // useEffect(() => {
+  //   const handleBeforeUnload = (e) => {
+  //     e.preventDefault();
+
+  //     e.returnValue = ''; // Required for Chrome to show the alert
+  //   };
+
+  //   window.addEventListener('beforeunload', handleBeforeUnload);
+
+  //   return () => {
+  //     window.removeEventListener('beforeunload', handleBeforeUnload);
+  //   };
+  // }, []);
 
   const {
     append: doAppend,
@@ -344,13 +315,6 @@ function CreateCampaignForm() {
     name: 'campaignDont',
     control,
   });
-
-  const timelineMethods = useFieldArray({
-    name: 'timeline',
-    control,
-  });
-
-  const audienceGeoLocation = watch('audienceLocation');
 
   const handleDropMultiFile = useCallback(
     (acceptedFiles) => {
@@ -436,18 +400,16 @@ function CreateCampaignForm() {
       audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
     };
 
-    delete adjustedData.othersAudienceLocation;
+    delete adjustedData?.othersAudienceLocation;
 
     const combinedData = { ...adjustedData, ...{ campaignStage: stage } };
 
     formData.append('data', JSON.stringify(combinedData));
-    formData.append('agreementForm', data.agreementFrom);
 
     // eslint-disable-next-line guard-for-in, no-restricted-syntax
     for (const i in data.campaignImages) {
       formData.append('campaignImages', data.campaignImages[i]);
     }
-    // formData.append('campaignImage', data.campaignImages[0]);
 
     try {
       setIsLoading(true);
@@ -472,449 +434,29 @@ function CreateCampaignForm() {
     }
   });
 
-  const formFirstStep = (
-    <Box
-      gap={2}
-      display="grid"
-      mt={4}
-      gridTemplateColumns={{
-        xs: 'repeat(1, 1fr)',
-        sm: 'repeat(2, 1fr)',
-      }}
-    >
-      <RHFTextField name="campaignTitle" label="Campaign Title" />
-
-      <RHFTextField
-        name="campaignDescription"
-        label="let us know more about the campaign"
-        multiline
-      />
-
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <RHFAutocomplete
-          fullWidth
-          name="campaignBrand"
-          placeholder="Brand"
-          options={!companyLoading ? (brandState ? [brandState] : options) : []}
-          getOptionLabel={(option) => option.name || ''}
-          noOptionsText={
-            <Button
-              variant="contained"
-              size="small"
-              fullWidth
-              sx={{ mt: 2 }}
-              onClick={handleOpenCompanyDialog}
-            >
-              Create client
-            </Button>
-          }
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          renderOption={(props, option) => {
-            // eslint-disable-next-line react/prop-types
-            const { key, ...optionProps } = props;
-
-            if (!option.id) {
-              return null;
-            }
-
-            return (
-              <Stack component="li" key={key} direction="row" spacing={1} p={1} {...optionProps}>
-                <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
-                <ListItemText primary={option.name} />
-              </Stack>
-            );
-          }}
-        />
-      </Box>
-
-      <RHFSelect name="campaignObjectives" label="Campaign Objectives">
-        <MenuItem value="I'm launching a new product">I&apos;m launching a new product</MenuItem>
-        <MenuItem value="I'm launching a new service">I&apos;m launching a new service</MenuItem>
-        <MenuItem value="I want to drive brand awareness">I want to drive brand awareness</MenuItem>
-        <MenuItem value="Want to drive product awareness">Want to drive product awareness</MenuItem>
-      </RHFSelect>
-
-      <RHFAutocomplete
-        name="campaignIndustries"
-        placeholder="Industries"
-        disableCloseOnSelect
-        options={interestsLists}
-        // getOptionLabel={(option) => option || ''}
-        // renderOption={(props, option) => (
-        //   <li {...props} key={option}>
-        //     {option}
-        //   </li>
-        // )}
-        // renderTags={(selected, getTagProps) =>
-        //   selected.map((option, index) => (
-        //     <Chip
-        //       {...getTagProps({ index })}
-        //       key={option}
-        //       label={option}
-        //       size="small"
-        //       color="info"
-        //       variant="soft"
-        //     />
-        //   ))
-        // }
-      />
-
-      <RHFTextField name="brandTone" label="Brand Tone" multiline />
-      <RHFTextField name="productName" label="Product/Service Name" multiline />
-    </Box>
-  );
-
-  const formSecondStep = (
-    <Stack spacing={3}>
-      <Box
-        rowGap={2}
-        columnGap={3}
-        display="grid"
-        mt={4}
-        gridTemplateColumns={{
-          xs: 'repeat(1, 1fr)',
-          sm: 'repeat(2, 1fr)',
-        }}
-      >
-        <Typography variant="h4">Target Audience</Typography>
-        <Box flexGrow={1} />
-        <RHFMultiSelect
-          name="audienceGender"
-          checkbox
-          chip
-          options={[
-            { value: 'female', label: 'Female' },
-            { value: 'male', label: 'Male' },
-            { value: 'nonbinary', label: 'Non-Binary' },
-          ]}
-          label="Audience Gender"
-        />
-
-        <RHFMultiSelect
-          name="audienceAge"
-          checkbox
-          chip
-          options={[
-            { value: '18-25', label: '18-25' },
-            { value: '26-34', label: '26-34' },
-            { value: '35-40', label: '35-40' },
-            { value: '>40', label: '>40' },
-          ]}
-          label="Audience Age"
-        />
-
-        <RHFMultiSelect
-          name="audienceLocation"
-          label="Audience City/Area"
-          checkbox
-          chip
-          options={[
-            { value: 'KlangValley', label: 'Klang Valley' },
-            { value: 'Selangor', label: 'Selangor' },
-            { value: 'KualaLumpur', label: 'Kuala Lumpur' },
-            { value: 'MainCities', label: 'Main cities in Malaysia' },
-            { value: 'EastMalaysia', label: 'East Malaysia' },
-            { value: 'Others', label: 'Others' },
-          ]}
-        />
-
-        {audienceGeoLocation?.includes('Others') && (
-          <RHFTextField
-            name="othersAudienceLocation"
-            label="Specify Other Location"
-            variant="outlined"
-          />
-        )}
-
-        <RHFAutocomplete
-          multiple
-          disableCloseOnSelect
-          name="audienceLanguage"
-          label="Audience Language"
-          options={langList.sort()}
-          getOptionLabel={(option) => option || ''}
-        />
-
-        <RHFMultiSelect
-          name="audienceCreatorPersona"
-          label="Audience Creator Persona"
-          checkbox
-          chip
-          options={interestsLists.map((item) => ({
-            value: item.toLowerCase(),
-            label: item,
-          }))}
-        />
-
-        <RHFTextField
-          name="audienceUserPersona"
-          label="User Persona"
-          placeholder=" let us know who you want your campaign to reach!"
-        />
-
-        {audienceGeoLocation === 'Others' && <Box flexGrow={1} />}
-      </Box>
-
-      <Divider
-        sx={{
-          borderStyle: 'dashed',
-        }}
-      />
-
-      <RHFMultiSelect
-        name="socialMediaPlatform"
-        label="Social Media Platform"
-        checkbox
-        chip
-        options={[
-          { value: 'instagram', label: 'Instagram' },
-          { value: 'tiktok', label: 'Tikok' },
-        ]}
-      />
-
-      <RHFMultiSelect
-        name="videoAngle"
-        label="Video Angle"
-        checkbox
-        chip
-        options={videoAngle.map((angle) => ({ value: angle, label: angle }))}
-      />
-
-      <Divider
-        sx={{
-          borderStyle: 'dashed',
-        }}
-      />
-
-      <Stack direction="row" spacing={1} alignItems="center">
-        <Typography variant="h5">Dos and Don&apos;ts</Typography>
-        <Typography variant="caption" color="text.secondary">
-          ( optional )
-        </Typography>
-      </Stack>
-
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
-          <Stack direction="column" spacing={2}>
-            {doFields.map((item, index) => (
-              <Stack key={item.id} direction="row" spacing={1} alignItems="center">
-                <RHFTextField
-                  name={`campaignDo[${index}].value`}
-                  label={`Campaign Do's ${index + 1}`}
-                />
-                {index !== 0 && (
-                  <IconButton color="error" onClick={() => doRemove(index)}>
-                    <Iconify icon="ic:outline-delete" color="error.main" />
-                  </IconButton>
-                )}
-              </Stack>
-            ))}
-
-            <Button variant="contained" onClick={() => doAppend({ value: '' })}>
-              Add Do
-            </Button>
-          </Stack>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Stack direction="column" spacing={2}>
-            {dontFields.map((item, index) => (
-              <Stack key={item.id} direction="row" spacing={1} alignItems="center">
-                <RHFTextField
-                  name={`campaignDont[${index}].value`}
-                  label={`Campaign Dont's ${index + 1}`}
-                />
-                {index !== 0 && (
-                  <IconButton color="error" onClick={() => dontRemove(index)}>
-                    <Iconify icon="ic:outline-delete" color="error.main" />
-                  </IconButton>
-                )}
-              </Stack>
-            ))}
-
-            <Button variant="contained" onClick={() => dontAppend({ value: '' })}>
-              Add Don&apos;t
-            </Button>
-          </Stack>
-        </Grid>
-      </Grid>
-    </Stack>
-  );
-
-  const formSelectAdminManager = (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignContent: 'center',
-        gap: 2,
-        p: 3,
-      }}
-    >
-      <Typography variant="h5">Select Admin Manager</Typography>
-
-      <RHFAutocomplete
-        name="adminManager"
-        multiple
-        placeholder="Admin Manager"
-        options={(admins && admins.map((admin) => ({ id: admin?.id, name: admin?.name }))) || []}
-        freeSolo
-        isOptionEqualToValue={(option, value) => option.id === value.id}
-        getOptionLabel={(option) => (option?.id === user?.id ? 'Me' : option?.name || '')}
-        renderTags={(selected, getTagProps) =>
-          selected.map((option, index) => (
-            <Chip
-              {...getTagProps({ index })}
-              key={option?.id}
-              label={option?.id === user?.id ? 'Me' : option?.name || ''}
-              size="small"
-              color="info"
-              variant="soft"
-            />
-          ))
-        }
-      />
-    </Box>
-  );
-
-  const imageUpload = (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignContent: 'center',
-        gap: 3,
-        p: 3,
-      }}
-    >
-      <Typography variant="h4">Upload Campaign Images</Typography>
-      <RHFUpload
-        multiple
-        thumbnail
-        name="campaignImages"
-        maxSize={3145728}
-        onDrop={handleDropMultiFile}
-        onRemove={(inputFile) =>
-          setValue(
-            'campaignImages',
-            values.campaignImages && values.campaignImages?.filter((file) => file !== inputFile),
-            { shouldValidate: true }
-          )
-        }
-        onRemoveAll={() => setValue('campaignImages', [], { shouldValidate: true })}
-        // onUpload={() => console.info('ON UPLOAD')}
-      />
-    </Box>
-  );
-
-  const handleDropSingleFile = useCallback(
-    (acceptedFiles) => {
-      const file = acceptedFiles[0];
-
-      const newFile = Object.assign(file, {
-        preview: URL.createObjectURL(file),
-      });
-
-      if (newFile) {
-        setValue('agreementFrom', newFile, { shouldValidate: true });
+  const getStepContent = useCallback(
+    (step) => {
+      switch (step) {
+        case 0:
+          return <SelectBrand />;
+        case 1:
+          return <GeneralCampaign />;
+        case 2:
+          return <CampaignDetails />;
+        case 3:
+          return <CampaignImageUpload />;
+        case 4:
+          return <SelectTimeline />;
+        case 5:
+          return <CampaignAdminManager />;
+        case 6:
+          return <CampaignFormUpload pdfModal={pdfModal} />;
+        default:
+          return <SelectBrand />;
       }
     },
-    [setValue]
+    [pdfModal]
   );
-
-  const a = watch('agreementFrom');
-
-  const formUpload = (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignContent: 'center',
-        gap: 3,
-        p: 3,
-      }}
-    >
-      <Stack direction="row" spacing={1} alignItems="center">
-        <Typography variant="h5">Upload Template Agreement</Typography>
-        <Typography variant="caption" color="text.secondary">
-          ( Make sure the template agreement has a signature )
-        </Typography>
-      </Stack>
-
-      <RHFUpload
-        type="doc"
-        name="agreementFrom"
-        onDrop={handleDropSingleFile}
-        onDelete={() => setValue('singleUpload', null, { shouldValidate: true })}
-      />
-
-      {a && (
-        <Button variant="outlined" color="error" onClick={() => setValue('agreementFrom', '')}>
-          Remove
-        </Button>
-      )}
-    </Box>
-  );
-
-  // const formUpload = (
-  //   <>
-  //     <PDFEditor file="/Agreement_Template_CC.pdf" />
-  //     {/* <PDFViewer
-  //       style={{
-  //         width: '100%',
-  //         height: '80vh',
-  //       }}
-  //     >
-  //       <AgreementTemplate />
-  //     </PDFViewer>
-  //     <ReactSignatureCanvas
-  //       penColor="black"
-  //       backgroundColor="white"
-  //       canvasProps={{ width: 500, height: 200, className: 'sigCanvas' }}
-  //     /> */}
-  //   </>
-  // );
-
-  function getStepContent(step) {
-    switch (step) {
-      case 0:
-        return formFirstStep;
-      case 1:
-        return formSecondStep;
-      case 2:
-        return imageUpload;
-      case 3:
-        return (
-          <>
-            {defaultTimelineLoading ? (
-              <BarLoader />
-            ) : (
-              <SelectTimeline
-                defaultTimelines={defaultTimelines}
-                setValue={setValue}
-                timelineMethods={timelineMethods}
-                watch={watch}
-              />
-            )}
-          </>
-        );
-      case 4:
-        return formSelectAdminManager;
-      case 5:
-        return formUpload;
-      default:
-        return 'Unknown step';
-    }
-  }
 
   const startDate = getValues('campaignStartDate');
   const campaignStartDate = watch('campaignStartDate');
@@ -936,7 +478,6 @@ function CreateCampaignForm() {
             m: 1,
           }}
           activeStep={activeStep}
-          // alternativeLabel
           orientation="vertical"
         >
           {steps.map((label, index) => {
@@ -986,8 +527,6 @@ function CreateCampaignForm() {
             }}
           >
             <Box sx={{ my: 1 }}>
-              {/* <FormProvider methods={methods} onSubmit={onSubmit}> */}
-              {/* {getStepContent(activeStep)} */}
               {activeStep === steps.length - 1 && (
                 <Box sx={{ display: 'flex', m: 2, direction: { xs: 'column', md: 'row' } }}>
                   <Button
@@ -1001,12 +540,6 @@ function CreateCampaignForm() {
                   <Box sx={{ flexGrow: 1 }} />
                   {activeStep === steps.length - 1 ? (
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                      {/* <LoadingButton
-                        variant="outlined"
-                        startIcon={<Iconify icon="fluent:preview-link-16-regular" width={16} />}
-                      >
-                        Preview
-                      </LoadingButton> */}
                       <LoadingButton
                         variant="outlined"
                         onClick={() => onSubmit('DRAFT')}
@@ -1044,17 +577,44 @@ function CreateCampaignForm() {
                   )}
                 </Box>
               )}
-              {/* </FormProvider> */}
             </Box>
           </Paper>
         </Box>
       </FormProvider>
+
       <CreateBrand
-        open={openCompanyDialog}
-        onClose={handleCloseCompanyDialog}
-        setBrand={setBrandState}
+        open={openBrand.value}
+        onClose={() => {
+          if (getValues('campaignBrand')?.inputValue) {
+            setValue('campaignBrand', null);
+          }
+          openBrand.onFalse();
+        }}
+        brandName={getValues('campaignBrand')?.inputValue}
+        setBrand={(e) => setValue('campaignBrand', e)}
+        client={getValues('client')}
       />
+
+      <CreateCompany
+        open={openCompany.value}
+        onClose={() => {
+          if (getValues('client')?.inputValue) {
+            setValue('client', null);
+          }
+          openCompany.onFalse();
+        }}
+        companyName={getValues('client')?.inputValue}
+        setCompany={(e) => setValue('client', e)}
+      />
+
       <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
+
+      <PDFEditor
+        open={pdfModal.value}
+        onClose={pdfModal.onFalse}
+        user={user}
+        setAgreementForm={setValue}
+      />
     </Box>
   );
 }

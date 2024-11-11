@@ -18,6 +18,7 @@ import SingleFilePreview from './preview-single-file';
 // ----------------------------------------------------------------------
 
 export default function Upload({
+  uploadType,
   disabled,
   multiple = false,
   error,
@@ -63,7 +64,29 @@ export default function Upload({
           >
             browse
           </Box>
-          thorough your machine
+          thorough your machine.
+        </Typography>
+        {uploadType && uploadType === 'pitch' ? (
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Upload a video that does not exceed 30 seconds.
+          </Typography>
+        ) : (
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Upload a video that does not exceed 5 minutes.
+          </Typography>
+        )}
+
+        <Typography
+          variant="caption"
+          sx={{
+            mt: 3,
+            mx: 'auto',
+            display: 'block',
+            textAlign: 'center',
+            color: 'text.disabled',
+          }}
+        >
+          Allowed *.mp4
         </Typography>
       </Stack>
     </Stack>
@@ -183,4 +206,5 @@ Upload.propTypes = {
   onUpload: PropTypes.func,
   sx: PropTypes.object,
   thumbnail: PropTypes.bool,
+  uploadType: PropTypes.string,
 };

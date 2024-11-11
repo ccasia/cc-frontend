@@ -17,11 +17,10 @@ import {
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { langList } from 'src/contants/language';
+import { interestsLists } from 'src/contants/interestLists';
 
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFMultiSelect, RHFAutocomplete } from 'src/components/hook-form';
-
-import { interestsLists } from 'src/sections/campaign/create/form';
 
 export const EditRequirements = ({ open, campaign, onClose }) => {
   const methods = useForm({
@@ -174,6 +173,7 @@ export const EditRequirements = ({ open, campaign, onClose }) => {
                   //   { value: 'gamer', label: 'Gamer' },
                   //   { value: 'entertainment', label: 'Entertainment' },
                   //   { value: 'travel', label: 'Travel' },
+                  //   { value: 'entertainment', label: 'Entertainment' },
                   // ]
                 }
               />

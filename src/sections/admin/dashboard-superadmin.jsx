@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import React from 'react';
 import { useTheme } from '@emotion/react';
 
+import { grey } from '@mui/material/colors';
 import {
   Box,
   Grid,
@@ -10,13 +11,13 @@ import {
   Stack,
   Table,
   Paper,
-  Button,
   TableRow,
   TableHead,
   TableCell,
   TableBody,
   Typography,
   TableContainer,
+  CircularProgress,
 } from '@mui/material';
 
 import useGetCreators from 'src/hooks/use-get-creators';
@@ -26,16 +27,17 @@ import { fNumber } from 'src/utils/format-number';
 
 import Label from 'src/components/label';
 import Chart from 'src/components/chart';
-import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const DashboardSuperadmin = () => {
   const { campaigns, isLoading } = useGetCampaigns();
-  const { creators } = useGetCreators();
+  const { data: creators, isLoading: creatorLoading } = useGetCreators();
 
   const theme = useTheme();
   const setting = useSettingsContext();
+
+  const loadingDone = !isLoading && !creatorLoading;
 
   const taskLists =
     !isLoading &&
@@ -111,7 +113,7 @@ const DashboardSuperadmin = () => {
 
   const renderCampaignLists = (
     <TableContainer component={Paper} sx={{ mt: 2 }}>
-      <Table size="small">
+      <Table size="medium">
         <TableHead>
           <TableRow>
             <TableCell align="center">Campaign Name</TableCell>
@@ -126,7 +128,7 @@ const DashboardSuperadmin = () => {
             campaigns
               ?.filter((item) => item.status === 'ACTIVE')
               .map((campaign) => (
-                <TableRow>
+                <TableRow key={campaign.id}>
                   <TableCell align="center">{campaign?.name}</TableCell>
                   <TableCell align="center">
                     <Typography variant="caption" color="text.secondary">
@@ -151,18 +153,16 @@ const DashboardSuperadmin = () => {
     </TableContainer>
   );
 
-  return (
+  return loadingDone ? (
     <Grid container spacing={3}>
       <Grid item xs={12} md={3}>
-        <Box
-          component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-        >
+        <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
           <Stack gap={1}>
-            <Typography variant="subtitle2">Total campaign</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total campaign
+            </Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h3">{campaigns?.length}</Typography>
+              <Typography variant="h2">{campaigns?.length}</Typography>
               <Chart
                 dir="ltr"
                 type="bar"
@@ -178,13 +178,15 @@ const DashboardSuperadmin = () => {
       <Grid item xs={12} md={3}>
         <Box
           component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+          p="16px 24px"
+          sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
         >
           <Stack gap={1}>
-            <Typography variant="subtitle2">Total Pitch</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total Pitch
+            </Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h3">{campaigns?.length}</Typography>
+              <Typography variant="h2">{campaigns?.length}</Typography>
               <Chart
                 dir="ltr"
                 type="bar"
@@ -200,13 +202,15 @@ const DashboardSuperadmin = () => {
       <Grid item xs={12} md={3}>
         <Box
           component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+          p="16px 24px"
+          sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
         >
           <Stack gap={1}>
-            <Typography variant="subtitle2">Total Creator</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total Creator
+            </Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h3">{creators?.length}</Typography>
+              <Typography variant="h2">{creators?.length}</Typography>
               <Chart
                 dir="ltr"
                 type="bar"
@@ -222,13 +226,15 @@ const DashboardSuperadmin = () => {
       <Grid item xs={12} md={3}>
         <Box
           component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
+          p="16px 24px"
+          sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
         >
           <Stack gap={1}>
-            <Typography variant="subtitle2">Total Task</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              Total Task
+            </Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h3">{campaigns?.length}</Typography>
+              <Typography variant="h2">{campaigns?.length}</Typography>
               <Chart
                 dir="ltr"
                 type="bar"
@@ -241,19 +247,21 @@ const DashboardSuperadmin = () => {
           </Stack>
         </Box>
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12} md={12}>
         <Box
           component={Card}
-          p={2}
+          p="16px 24px"
           sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
         >
           <Stack gap={1}>
-            <Typography variant="subtitle2">Active Campaigns</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              Active Campaigns
+            </Typography>
             {campaigns?.length ? renderCampaignLists : <EmptyContent title="No active campaign" />}
           </Stack>
         </Box>
       </Grid>
-      <Grid item xs={12} md={6}>
+      {/* <Grid item xs={12} md={6}>
         <Box
           component={Card}
           p={2}
@@ -311,8 +319,25 @@ const DashboardSuperadmin = () => {
             )}
           </Stack>
         </Box>
-      </Grid>
+      </Grid> */}
     </Grid>
+  ) : (
+    <Box
+      sx={{
+        position: 'relative',
+        top: 200,
+        textAlign: 'center',
+      }}
+    >
+      <CircularProgress
+        thickness={7}
+        size={25}
+        sx={{
+          color: theme.palette.common.black,
+          strokeLinecap: 'round',
+        }}
+      />
+    </Box>
   );
 };
 

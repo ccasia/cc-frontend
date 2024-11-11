@@ -1,6 +1,9 @@
-import React from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { Page, pdfjs, Document } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
 import {
   Box,
@@ -12,6 +15,7 @@ import {
   Divider,
   ListItem,
   TableRow,
+  Collapse,
   TableHead,
   TableCell,
   TableBody,
@@ -23,46 +27,58 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import Carousel from 'src/components/carousel/carousel';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 const CampaignDetailContent = ({ campaign }) => {
   const pdf = useBoolean();
+  const [pages, setPages] = useState();
 
-  const renderGallery =
-    campaign?.campaignBrief?.images.length < 2 ? (
-      <Image
-        src={campaign?.campaignBrief?.images[0]}
-        alt="test"
-        ratio="16/9"
-        sx={{ borderRadius: 2, cursor: 'pointer' }}
-      />
-    ) : (
-      <Box
-        display="grid"
-        gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-        gap={1}
-        mb={5}
-      >
-        <Image
-          src={campaign?.campaignBrief?.images[0]}
-          alt="test"
-          ratio="1/1"
-          sx={{ borderRadius: 2, cursor: 'pointer' }}
-        />
-        {/* <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}> */}
-        {campaign?.campaignBrief?.images.slice(1).map((elem, index) => (
-          <Image
-            key={index}
-            src={elem}
-            alt="test"
-            ratio="1/1"
-            sx={{ borderRadius: 2, cursor: 'pointer' }}
-          />
-        ))}
-        {/* </Box> */}
-      </Box>
-    );
+  const renderGallery = (
+    <Box>
+      <Carousel images={campaign?.campaignBrief?.images} />
+    </Box>
+  );
+
+  // const renderGallery =
+  //   campaign?.campaignBrief?.images.length < 2 ? (
+  //     <Image
+  //       src={campaign?.campaignBrief?.images[0]}
+  //       alt="test"
+  //       ratio="16/9"
+  //       sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //     />
+  //   ) : (
+  //     <Box
+  //       display="grid"
+  //       gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
+  //       gap={1}
+  //       mb={5}
+  //     >
+  //       <Image
+  //         src={campaign?.campaignBrief?.images[0]}
+  //         alt="test"
+  //         ratio="1/1"
+  //         sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //       />
+  //       {/* <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}> */}
+  //       {campaign?.campaignBrief?.images.slice(1).map((elem, index) => (
+  //         <Image
+  //           key={index}
+  //           src={elem}
+  //           alt="test"
+  //           ratio="1/1"
+  //           sx={{ borderRadius: 2, cursor: 'pointer' }}
+  //         />
+  //       ))}
+  //       {/* </Box> */}
+  //     </Box>
+  //   );
 
   const renderOverview = (
     <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
@@ -172,7 +188,7 @@ const CampaignDetailContent = ({ campaign }) => {
 
       <Stack gap={1.5}>
         <Typography variant="h5">Objectives</Typography>
-        <Typography variant="subtitle2">{campaign?.campaignBrief.objectives}</Typography>
+        <Typography variant="subtitle2">{campaign?.campaignBrief?.objectives}</Typography>
       </Stack>
 
       <Divider
@@ -181,39 +197,45 @@ const CampaignDetailContent = ({ campaign }) => {
         }}
       />
 
-      <Stack direction="column">
-        <Typography variant="h5">Campaign Do&apos;s</Typography>
-        <List>
-          {campaign?.campaignBrief?.campaigns_do.map((item, index) => (
-            <ListItem key={index}>
-              <ListItemIcon>
-                <Iconify icon="octicon:dot-16" sx={{ color: 'success.main' }} />
-              </ListItemIcon>
-              <ListItemText primary={item.value} />
-            </ListItem>
-          ))}
-        </List>
-      </Stack>
+      {campaign?.campaignBrief?.campaigns_do?.length < 1 && (
+        <Stack direction="column">
+          <Typography variant="h5">Campaign Do&apos;s</Typography>
+          <List>
+            {campaign?.campaignBrief?.campaigns_do.map((item, index) => (
+              <ListItem key={index}>
+                <ListItemIcon>
+                  <Iconify icon="octicon:dot-16" sx={{ color: 'success.main' }} />
+                </ListItemIcon>
+                <ListItemText primary={item.value} />
+              </ListItem>
+            ))}
+          </List>
+        </Stack>
+      )}
 
-      <Stack direction="column">
-        <Typography variant="h5">Campaign Dont&apos;s</Typography>
-        <List>
-          {campaign?.campaignBrief?.campaigns_dont.map((item, index) => (
-            <ListItem key={index}>
-              <ListItemIcon>
-                <Iconify icon="octicon:dot-16" sx={{ color: 'error.main' }} />
-              </ListItemIcon>
-              <ListItemText primary={item.value} />
-            </ListItem>
-          ))}
-        </List>
-      </Stack>
+      {campaign?.campaignBrief?.campaigns_dont.length < 1 && (
+        <>
+          <Stack direction="column">
+            <Typography variant="h5">Campaign Dont&apos;s</Typography>
+            <List>
+              {campaign?.campaignBrief?.campaigns_dont.map((item, index) => (
+                <ListItem key={index}>
+                  <ListItemIcon>
+                    <Iconify icon="octicon:dot-16" sx={{ color: 'error.main' }} />
+                  </ListItemIcon>
+                  <ListItemText primary={item.value} />
+                </ListItem>
+              ))}
+            </List>
+          </Stack>
 
-      <Divider
-        sx={{
-          borderStyle: 'dashed',
-        }}
-      />
+          <Divider
+            sx={{
+              borderStyle: 'dashed',
+            }}
+          />
+        </>
+      )}
 
       <Stack>
         <Typography variant="h5">Campaign timeline</Typography>
@@ -273,17 +295,36 @@ const CampaignDetailContent = ({ campaign }) => {
           <Button variant="contained" onClick={pdf.onToggle}>
             {pdf.value ? 'Collapse' : 'View'}
           </Button>
-          {pdf.value && (
-            <iframe
-              src="https://storage.googleapis.com/app-test-cult-cretive/creatorAgreements/agreement_template.docx"
-              style={{
-                borderRadius: 10,
-                width: '100%',
-                height: 900,
-              }}
-              title="PDF Viewer"
-            />
-          )}
+          <Collapse in={pdf.value}>
+            <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
+              <Box
+                sx={{
+                  display: 'inline-block',
+                }}
+              >
+                {campaign?.campaignBrief?.agreementFrom && (
+                  <Document
+                    file={campaign?.campaignBrief?.agreementFrom}
+                    onLoadSuccess={({ numPages }) => setPages(numPages)}
+                    renderMode="canvas"
+                  >
+                    <Stack spacing={2}>
+                      {pages &&
+                        Array.from({ length: pages }, (_, index) => (
+                          <Page
+                            key={index}
+                            pageIndex={index}
+                            pageNumber={index + 1}
+                            scale={1}
+                            renderTextLayer={false}
+                          />
+                        ))}
+                    </Stack>
+                  </Document>
+                )}
+              </Box>
+            </Box>
+          </Collapse>
         </Stack>
       </Stack>
     </>
@@ -293,5 +334,5 @@ const CampaignDetailContent = ({ campaign }) => {
 export default CampaignDetailContent;
 
 CampaignDetailContent.propTypes = {
-  campaign: PropTypes.object,
+  campaign: PropTypes.any,
 };

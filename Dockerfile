@@ -1,14 +1,8 @@
-FROM node:21-bookworm-slim as development
-
-# RUN apt-get update && \
-#     apt-get install -y \
-#     build-essential \
-#     python3 \
-#     python3-pip
+FROM node:18-alpine as development
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json yarn.lock ./
 
 RUN yarn install
 

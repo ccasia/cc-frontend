@@ -17,22 +17,6 @@ const useGetCompany = () => {
   const memoizedValue = useMemo(() => ({ data, isLoading }), [data, isLoading]);
 
   return memoizedValue;
-
-  // const getCompany = useCallback(async () => {
-  //   try {
-  //     const res = await axiosInstance.get(endpoints.company.getAll);
-  //     setCompanies(res?.data);
-  //     setCompany(res?.data);
-  //   } catch (error) {
-  //     alert(JSON.stringify(error));
-  //   }
-  // }, [setCompany]);
-
-  // useEffect(() => {
-  //   getCompany();
-  // }, [getCompany]);
-
-  // return { getCompany, companies };
 };
 
 export default useGetCompany;

@@ -1,21 +1,18 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 import { Icon } from '@iconify/react';
 import { keyframes } from '@emotion/react';
-import React, { useState, useEffect } from 'react';
+
 import {
   Box,
   Grid,
   Stack,
-  Button,
   useTheme,
   CardMedia,
   Typography,
   useMediaQuery,
   CircularProgress,
-  Alert,
-  AlertTitle,
 } from '@mui/material';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -100,7 +97,7 @@ const TopContentGrid = ({ topContents }) => {
                   fontSize: isMobile ? '0.75rem' : '0.875rem', // Smaller font size on mobile
                 }}
               >
-                {content.description}
+                {content?.description}
               </Typography>
             </Box>
             <Box
@@ -155,7 +152,8 @@ const MediaKitSocialContent = ({ user }) => {
   return (
     <Box>
       <Grid container spacing={isMobile ? 1 : 2} mb={isMobile ? 2 : 4}>
-        <Grid item xs={12} sm={4}>2
+        <Grid item xs={12} sm={4}>
+          2
           <Box sx={{ p: isMobile ? 1 : 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontSize: isMobile ? 12 : 14 }}>
               Followers
@@ -206,3 +204,7 @@ const MediaKitSocialContent = ({ user }) => {
 };
 
 export default MediaKitSocialContent;
+
+MediaKitSocialContent.propTypes = {
+  user: PropTypes.object,
+};

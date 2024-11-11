@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 const useGetContacts = () => {
-  const { data, isLoading } = useSWR(endpoints.auth.xeroGetContacts, fetcher);
+  const { data, isLoading } = useSWR(endpoints.invoice.xeroGetContacts, fetcher);
 
   const memoizedValue = useMemo(
     () => ({

@@ -55,7 +55,7 @@ RHFUploadBox.propTypes = {
 
 // ----------------------------------------------------------------------
 
-export function RHFUpload({ name, multiple, type, helperText, ...other }) {
+export function RHFUpload({ name, multiple, type, helperText, uploadType, ...other }) {
   const { control } = useFormContext();
 
   return (
@@ -98,6 +98,7 @@ export function RHFUpload({ name, multiple, type, helperText, ...other }) {
             }
             file={field.value}
             error={!!error}
+            uploadType={uploadType}
             helperText={
               (!!error || helperText) && (
                 <FormHelperText error={!!error} sx={{ px: 2 }}>
@@ -118,4 +119,5 @@ RHFUpload.propTypes = {
   multiple: PropTypes.bool,
   name: PropTypes.string,
   type: PropTypes.string,
+  uploadType: PropTypes.string,
 };

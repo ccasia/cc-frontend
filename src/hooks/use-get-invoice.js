@@ -9,7 +9,7 @@ const useGetInvoiceById = (id) => {
 
   const memoizedValue = useMemo(
     () => ({
-      campaigns: data,
+      invoice: data,
       isLoading,
     }),
     [data, isLoading]

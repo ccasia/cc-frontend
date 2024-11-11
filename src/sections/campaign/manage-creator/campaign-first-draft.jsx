@@ -18,7 +18,7 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
-  LinearProgress,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -57,9 +57,9 @@ const CampaignFirstDraft = ({
   const { handleSubmit, setValue, reset } = methods;
 
   const handleRemoveFile = () => {
+    localStorage.removeItem('preview');
     setValue('draft', '');
     setPreview('');
-    localStorage.removeItem('preview');
   };
 
   const logistics = useMemo(
@@ -70,6 +70,16 @@ const CampaignFirstDraft = ({
   const handleDrop = useCallback(
     (acceptedFiles) => {
       const file = acceptedFiles[0];
+
+      // if (file.type !== 'video/mp4') {
+      //   enqueueSnackbar(
+      //     'Currently, only MP4 video format is supported. Please upload your video in MP4 format.',
+      //     {
+      //       variant: 'warning',
+      //     }
+      //   );
+      //   return;
+      // }
 
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
@@ -124,6 +134,8 @@ const CampaignFirstDraft = ({
 
           if (data.progress === 100) {
             mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+
+            mutate(endpoints.kanban.root);
             setIsProcessing(false);
             reset();
             setProgressName('');
@@ -168,22 +180,73 @@ const CampaignFirstDraft = ({
             {submission?.status === 'IN_PROGRESS' && (
               <>
                 {isProcessing ? (
-                  <Stack gap={1}>
-                    <Typography variant="caption">{progressName && progressName}</Typography>
-                    <LinearProgress variant="determinate" value={progress} />
-                    <Button variant="contained" size="small" onClick={() => handleCancel()}>
-                      Cancel
-                    </Button>
+                  <Stack justifyContent="center" alignItems="center" gap={1}>
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        display: 'inline-flex',
+                      }}
+                    >
+                      <CircularProgress
+                        variant="determinate"
+                        thickness={5}
+                        value={progress}
+                        size={200}
+                        sx={{
+                          ' .MuiCircularProgress-circle': {
+                            stroke: (theme) =>
+                              theme.palette.mode === 'dark'
+                                ? theme.palette.common.white
+                                : theme.palette.common.black,
+                            strokeLinecap: 'round',
+                          },
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          top: 0,
+                          left: 0,
+                          bottom: 0,
+                          right: 0,
+                          position: 'absolute',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Typography variant="h3" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
+                          {`${Math.round(progress)}%`}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Stack gap={1}>
+                      <Typography variant="caption">{progressName && progressName}</Typography>
+                      {/* <LinearProgress variant="determinate" value={progress} /> */}
+
+                      <Button variant="contained" size="small" onClick={() => handleCancel()}>
+                        Cancel
+                      </Button>
+                    </Stack>
                   </Stack>
                 ) : (
                   <FormProvider methods={methods} onSubmit={onSubmit}>
                     <Stack gap={2}>
                       {localStorage.getItem('preview') ? (
-                        <Box>
-                          {/* // eslint-disable-next-line jsx-a11y/media-has-caption */}
-                          <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+                        <Stack spacing={2} alignItems="center">
+                          <Box
+                            component="video"
+                            autoPlay
+                            controls
+                            sx={{
+                              maxHeight: '60vh',
+                              width: { xs: '70vw', sm: 'auto' },
+                              borderRadius: 2,
+                            }}
+                          >
                             <source src={localStorage.getItem('preview')} />
-                          </video>
+                          </Box>
+                          {/* <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
+                          </video> */}
                           <Button
                             color="error"
                             variant="outlined"
@@ -192,7 +255,7 @@ const CampaignFirstDraft = ({
                           >
                             Change Video
                           </Button>
-                        </Box>
+                        </Stack>
                       ) : (
                         <RHFUpload
                           name="draft"
@@ -213,14 +276,37 @@ const CampaignFirstDraft = ({
             {submission?.status === 'CHANGES_REQUIRED' && (
               <Stack spacing={2}>
                 <Box textAlign="center">
-                  {submission && (
+                  <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                    <Box
+                      component="video"
+                      autoPlay
+                      controls
+                      sx={{
+                        maxHeight: '60vh',
+                        width: { xs: '70vw', sm: 'auto' },
+                        borderRadius: 2,
+                        boxShadow: 3,
+                      }}
+                    >
+                      <source src={submission?.content} />
+                    </Box>
+
+                    <Box component={Paper} p={1.5} width={1}>
+                      <Typography variant="caption" color="text.secondary">
+                        Caption
+                      </Typography>
+                      <Typography variant="subtitle1">{submission?.caption}</Typography>
+                    </Box>
+                  </Box>
+
+                  {/* {submission && (
                     <video autoPlay controls width="80%" style={{ borderRadius: 10 }}>
                       <source src={submission?.content} />
                     </video>
                   )}
                   <Box component={Paper} p={1} border={1}>
                     {submission?.caption}
-                  </Box>
+                  </Box> */}
                 </Box>
                 <Alert severity="warning">
                   <Box display="flex" gap={1.5} flexDirection="column">
@@ -228,8 +314,8 @@ const CampaignFirstDraft = ({
                       Changes Required
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-                      {submission?.feedback?.reasons?.length &&
-                        submission?.feedback?.reasons?.map((item, index) => (
+                      {submission?.feedback[0]?.reasons?.length &&
+                        submission?.feedback[0]?.reasons?.map((item, index) => (
                           <Label key={index}>{item}</Label>
                         ))}
                     </Stack>
@@ -238,7 +324,7 @@ const CampaignFirstDraft = ({
                       color="text.secondary"
                       sx={{ whiteSpace: 'pre-line' }}
                     >
-                      {submission?.feedback?.content}
+                      {submission?.feedback[0]?.content}
                     </Typography>
                   </Box>
                 </Alert>
@@ -254,20 +340,29 @@ const CampaignFirstDraft = ({
               </Stack>
             )}
             <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
-              <DialogTitle>Agreement</DialogTitle>
+              <DialogTitle>First Draft Video</DialogTitle>
               <DialogContent>
-                <video autoPlay controls width="100%" style={{ borderRadius: 10 }}>
-                  <source src={submission?.content} />
-                </video>
-                <Box
-                  component={Paper}
-                  p={1.5}
-                  my={1}
-                  sx={{
-                    bgcolor: (theme) => theme.palette.background.default,
-                  }}
-                >
-                  <Typography>{submission?.caption}</Typography>
+                <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                  <Box
+                    component="video"
+                    autoPlay
+                    controls
+                    sx={{
+                      maxHeight: '60vh',
+                      width: { xs: '70vw', sm: 'auto' },
+                      borderRadius: 2,
+                      boxShadow: 3,
+                    }}
+                  >
+                    <source src={submission?.content} />
+                  </Box>
+
+                  <Box component={Paper} p={1.5} width={1}>
+                    <Typography variant="caption" color="text.secondary">
+                      Caption
+                    </Typography>
+                    <Typography variant="subtitle1">{submission?.caption}</Typography>
+                  </Box>
                 </Box>
               </DialogContent>
               <DialogActions>
@@ -312,7 +407,7 @@ export default CampaignFirstDraft;
 
 CampaignFirstDraft.propTypes = {
   campaign: PropTypes.object,
-  timeline: PropTypes.object,
+  timeline: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
   submission: PropTypes.object,
   getDependency: PropTypes.func,
   fullSubmission: PropTypes.array,
