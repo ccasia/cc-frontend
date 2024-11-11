@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 //  import {Badge} from '@mui/material';
@@ -114,12 +114,15 @@ export default function NotificationItem({ notification }) {
   );
 
   
-//
-  const renderViewButton =  notification.notification?.entity === 'Timeline' && (
-    <Button  onClick={handleViewClick} variant="text" color="secondary" size="small" sx={{ direction:'flex-start', width:'100px'}}>
+  const renderViewSignUp = notification.notification?.entity === 'Timeline' && (
+    <Typography
+      variant="body2"
+      color="secondary"
+      sx={{ textAlign: 'left', width: '100px' }}
+    >
       Submit now &gt;
-    </Button>
-   );
+    </Typography>
+  );
 
   const renderUnReadBadge = !notification.read && (
     <Box
@@ -159,7 +162,7 @@ export default function NotificationItem({ notification }) {
   );
 
   return (
-    <ListItemButton
+  <ListItemButton
   disableRipple
   sx={{
     p: 2.5,
@@ -167,6 +170,7 @@ export default function NotificationItem({ notification }) {
     borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
     position: 'relative',
   }}
+  onClick={handleViewClick} 
 >
   <Box
     sx={{
@@ -200,7 +204,7 @@ export default function NotificationItem({ notification }) {
  
     <Stack spacing={1} sx={{ flexGrow: 1 }}>
       {renderText}
-      {renderViewButton}
+      {renderViewSignUp}
     </Stack>
   </Box>
   </ListItemButton>
