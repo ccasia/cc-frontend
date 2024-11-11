@@ -197,7 +197,6 @@ export default function ChatView() {
         {renderNav}
 
         <Stack sx={{ width: 1, height: 1, overflow: 'hidden' }}>
-          {/* {renderHead} */}
         <Stack
           direction="row"
           sx={{

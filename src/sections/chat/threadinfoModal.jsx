@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { useGetThreadById } from 'src/api/chat'; // Assuming the hook is in this file
 import { Dialog, DialogActions, DialogContent, DialogTitle, CircularProgress, Modal, Typography, Box, Avatar } from '@mui/material';
+import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import Button from '@mui/material/Button';
+import { Padding } from '@mui/icons-material';
 
 // Modal Component
 const ThreadInfoModal = ({ open, onClose, threadId }) => {
+  const user = useAuthContext();
   const { thread, loading, error } = useGetThreadById(threadId);
   if (!open) return null; 
 
@@ -29,6 +32,9 @@ const ThreadInfoModal = ({ open, onClose, threadId }) => {
 
   const isGroup = thread?.isGroup; // Assuming the thread object has an isGroup boolean
 
+  // console.log("User ME", user.user.id)
+  // console.log('Thread UserThread:', thread.UserThread);
+  thread.UserThread?.forEach((member) => console.log('Member:', member));
   // If the thread data is available
   return (
     <Modal
@@ -60,7 +66,6 @@ const ThreadInfoModal = ({ open, onClose, threadId }) => {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '16px',
-          borderBottom: '1px solid #ccc',
         }}
       >
         <Typography variant="h6">{isGroup ? 'Group Info' : 'Chat Info'}</Typography>
@@ -100,9 +105,13 @@ const ThreadInfoModal = ({ open, onClose, threadId }) => {
               <Typography sx={{ fontSize: '0.875rem', color: '#555', margin: '4px 0' }}>
                 Group created on: {thread.createdAt || 'Date'}
               </Typography>
-              <Typography sx={{ fontSize: '0.875rem', color: '#555', margin: '4px 0' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Iconify icon="material-symbols:group-outline" style={{ color: 'black', marginRight: '4px' }} />
+              <Typography fontWeight="bold" sx={{ fontSize: '0.875rem', color: '#555', margin: '4px 0' }}>
                 Total members ({thread.userCount || 0})
               </Typography>
+            </Box>
+
             </Box>
 
             {/* Members List */}
@@ -126,7 +135,7 @@ const ThreadInfoModal = ({ open, onClose, threadId }) => {
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Avatar src={member.user.photoURL} sx={{ width: 30, height: 30, marginRight: '8px' }} />
-                    <Typography variant="body2">{member.user.name}</Typography>
+                    <Typography variant="body2">  {member.userId === user.user.id ? 'You' : member.user.name}</Typography>
                   </Box>
                   {member.user.role === 'admin' && (
                     <Typography variant="caption" sx={{ color: '#555' }}>
@@ -139,14 +148,40 @@ const ThreadInfoModal = ({ open, onClose, threadId }) => {
           </>
         ) : (
           // Single Chat Info
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: '8px' }}>
-              Chat with {thread?.UserThread[0]?.user?.name || 'User Name'}
-            </Typography>
-            <Typography sx={{ fontSize: '0.875rem', color: '#555' }}>
-              Start date: {thread?.createdAt || 'Date'}
-            </Typography>
-          </Box>
+        
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px' }}>
+       {thread.UserThread?.filter((member) => member.userId !== user.user.id) 
+            .map((member) => (
+              <Box key={member.userId} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+              {/* Avatar */}
+              <Avatar
+                src={member.user.photoURL} 
+                sx={{
+                  width: 80,
+                  height: 80,
+                  mb: 2,
+                }}
+              />
+      
+              {/* Member Name and Verified Icon */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', mr: 0.5 }}>
+                  {member?.user.name}
+                  <Iconify icon="material-symbols:verified" style={{ color: '#1340FF' }} />
+                </Typography>
+              </Box>
+      
+              {/* Member Since */}
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Member since: {member.user.createdAt ? new Date(member.user.createdAt).toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                }) : 'Date'}
+              </Typography>
+            </Box>
+        ))}
+        </Box>
         )}
       </Box>
     </Box>
