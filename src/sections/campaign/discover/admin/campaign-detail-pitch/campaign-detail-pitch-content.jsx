@@ -7,7 +7,6 @@ import { enqueueSnackbar } from 'notistack';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
-  Chip,
   Stack,
   Paper,
   Table,
@@ -39,6 +38,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 const CampaignDetailPitchContent = ({ data, timelines }) => {
   const modal = useBoolean();
+  const loading = useBoolean();
 
   const methods = useForm({
     defaultValues: {
@@ -83,6 +83,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
     setValue('status', 'approved');
 
     try {
+      loading.onTrue();
       const res = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
         ...values,
         status: 'approved',
@@ -94,6 +95,8 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
       enqueueSnackbar('error', {
         variant: 'error',
       });
+    } finally {
+      loading.onFalse();
     }
   };
 
@@ -142,7 +145,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         <Button size="small" onClick={modal.onFalse} variant="outlined">
           Cancel
         </Button>
-        <LoadingButton variant="contained" size="small" onClick={onConfirm} loading={isSubmitting}>
+        <LoadingButton variant="contained" size="small" onClick={onConfirm} loading={loading.value}>
           Shortlist {data?.user?.name}
         </LoadingButton>
       </DialogActions>
@@ -332,7 +335,8 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
                     controls
                     sx={{
                       maxHeight: '60vh',
-                      width: { xs: '70vw', sm: 'auto' },
+                      width: 1,
+                      // width: { xs: '70vw', sm: 'auto' },
                       borderRadius: 2,
                       boxShadow: 3,
                     }}

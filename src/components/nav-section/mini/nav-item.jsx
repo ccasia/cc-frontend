@@ -152,7 +152,7 @@ const StyledNavItem = styled(ListItemButton, {
 
   const opened = open && !active;
 
-  const lightMode = theme.palette.mode === 'light';
+  // const lightMode = theme.palette.mode === 'light';
 
   const noWrapStyles = {
     width: '100%',

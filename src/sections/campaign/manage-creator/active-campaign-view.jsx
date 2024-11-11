@@ -1,43 +1,56 @@
-import React, { useMemo } from 'react';
+import { mutate } from 'swr';
+import PropTypes from 'prop-types';
+import React, { useMemo, useEffect } from 'react';
 
 import { Box } from '@mui/material';
 
-import useGetCampaigns from 'src/hooks/use-get-campaigns';
+import { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import EmptyContent from 'src/components/empty-content';
 
-import CampaignItem from '../discover/creator/campaign-item';
+import CampaignItem from './campaign-item';
 
-const ActiveCampaignView = ({ searchQuery }) => {
-  const { campaigns: data, isLoading } = useGetCampaigns('creator');
+const ActiveCampaignView = ({ searchQuery, campaigns }) => {
+  // const { campaigns: data, isLoading } = useGetCampaigns('creator');
   const { user } = useAuthContext();
+  const { socket } = useSocketContext();
 
-  const filteredCampaigns = useMemo(
-    () =>
-      !isLoading &&
-      data?.filter(
-        (campaign) =>
-          campaign?.shortlisted?.some((item) => item.userId === user.id && !item.isCampaignDone) &&
-          campaign.status !== 'COMPLETED'
-      ),
-    [isLoading, data, user]
-  );
+  // const filteredCampaigns = useMemo(
+  //   () =>
+  //     campaigns?.filter(
+  //       (campaign) =>
+  //         campaign?.shortlisted?.some((item) => item.userId === user.id && !item.isCampaignDone) &&
+  //         campaign.status !== 'COMPLETED'
+  //     ),
+  //   [campaigns, user]
+  // );
 
   const filteredData = useMemo(
     () =>
       searchQuery
-        ? filteredCampaigns?.filter((elem) =>
-            elem.name.toLowerCase()?.includes(searchQuery.toLowerCase())
-          )
-        : filteredCampaigns,
-    [filteredCampaigns, searchQuery]
+        ? campaigns?.filter((elem) => elem.name.toLowerCase()?.includes(searchQuery.toLowerCase()))
+        : campaigns,
+    [searchQuery, campaigns]
   );
+
+  useEffect(() => {
+    if (socket) {
+      socket?.on('shortlisted', () => {
+        mutate(endpoints.campaign.getMatchedCampaign);
+      });
+    }
+
+    return () => {
+      socket?.off('shortlisted');
+    };
+  }, [socket]);
 
   return (
     <Box mt={2}>
-      {!isLoading && filteredData?.length ? (
+      {filteredData?.length ? (
         <Box
           gap={2}
           display="grid"
@@ -48,7 +61,8 @@ const ActiveCampaignView = ({ searchQuery }) => {
           }}
         >
           {filteredData.map((campaign) => (
-            <CampaignItem key={campaign.id} campaign={campaign} user={user} />
+            <CampaignItem key={campaign.id} campaign={campaign} />
+            // <CampaignItem key={campaign.id} campaign={campaign} user={user} />
           ))}
         </Box>
       ) : (
@@ -59,3 +73,8 @@ const ActiveCampaignView = ({ searchQuery }) => {
 };
 
 export default ActiveCampaignView;
+
+ActiveCampaignView.propTypes = {
+  searchQuery: PropTypes.string,
+  campaigns: PropTypes.array,
+};

@@ -81,7 +81,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
       enqueueSnackbar(res?.data?.message);
       mutate(endpoints.auth.me);
       mutate(endpoints.campaign.getMatchedCampaign);
-      modal.onFalse()
+      modal.onFalse();
       handleClose();
     } catch (error) {
       console.error('Error submitting pitch:', error);

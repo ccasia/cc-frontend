@@ -5,17 +5,6 @@ import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-
-import { LoadingButton } from '@mui/lab';
-import Timeline from '@mui/lab/Timeline';
-import TimelineDot from '@mui/lab/TimelineDot';
-import TimelineItem from '@mui/lab/TimelineItem';
-import TimelineContent from '@mui/lab/TimelineContent';
-import TimelineSeparator from '@mui/lab/TimelineSeparator';
-import TimelineConnector from '@mui/lab/TimelineConnector';
-import TimelineOppositeContent, {
-  timelineOppositeContentClasses,
-} from '@mui/lab/TimelineOppositeContent';
 import {
   Box,
   Stack,
@@ -30,7 +19,15 @@ import {
   DialogActions,
   useMediaQuery,
   CircularProgress,
+  Modal,
+  IconButton,
+  Chip,
+  Avatar,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import { Timeline, TimelineItem, TimelineSeparator, TimelineDot, TimelineConnector, TimelineContent, TimelineOppositeContent, timelineOppositeContentClasses } from '@mui/lab';
+import { LoadingButton } from '@mui/lab';
+import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -43,6 +40,29 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Error caught in ErrorBoundary: ", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>;
+    }
+
+    return this.props.children; 
+  }
+}
 
 const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, fullSubmission }) => {
   // eslint-disable-next-line no-unused-vars
@@ -168,6 +188,38 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
+
+  // const handleOpenFeedbackModal = () => {
+  //   setOpenFeedbackModal(true);
+  // };
+
+  // const handleCloseFeedbackModal = () => {
+  //   setOpenFeedbackModal(false);
+  // };
+
+  const [userDetails, setUserDetails] = useState(null);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (!endpoints.user || !endpoints.user.details) {
+        console.error('User details endpoint is not defined. Check the endpoints configuration.');
+        return; // Exit if the endpoint is not defined
+      }
+
+      try {
+        const response = await axiosInstance.get(`${endpoints.user.details}/${submission.userId}`); 
+        setUserDetails(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user details:', error);
+      }
+    };
+
+    if (submission?.userId) {
+      fetchUserDetails();
+    }
+  }, [submission]);
+
   return (
     previewSubmission?.status === 'CHANGES_REQUIRED' && (
       <Box>
@@ -272,9 +324,9 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                     />
                   )}
                   <RHFTextField name="caption" placeholder="Caption" multiline />
-                  <LoadingButton loading={loading} variant="contained" type="submit">
+                  {/* <LoadingButton loading={loading} variant="contained" type="submit">
                     Submit Draft
-                  </LoadingButton>
+                  </LoadingButton> */}
                 </Stack>
               </FormProvider>
             )}
@@ -288,7 +340,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                 <Button onClick={display.onTrue}>Preview Draft</Button>
               </Box>
             </Box>
-            <Alert severity="warning">
+            {/* <Alert severity="warning">
               <Typography variant="subtitle2" sx={{ textDecoration: 'underline', mb: 2 }}>
                 Changes Required
               </Typography>
@@ -356,39 +408,46 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                         >
                           {feedback.content}
                         </Typography>
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          flexWrap="wrap"
-                          alignItems="center"
-                          mt={1}
+                        <Box
                           sx={{
-                            [theme.breakpoints.down('sm')]: {
-                              mt: 0.5,
-                            },
+                            border: '1.5px solid #203ff5',
+                            borderBottom: '4px solid #203ff5',
+                            borderRadius: 1,
+                            p: 1,
+                            mb: 1,
+                            width: 'fit-content',
+                            backgroundColor: 'white',
                           }}
                         >
-                          {feedback.reasons?.map((item, idx) => (
-                            <Label
-                              key={idx}
-                              sx={{
-                                fontWeight: index === 0 ? 'bold' : 'normal',
-                                opacity: index === 0 ? 1 : 0.7,
-                                [theme.breakpoints.down('sm')]: {
-                                  fontSize: '0.75rem',
-                                  padding: '2px 4px',
-                                },
-                              }}
-                            >
-                              {item}
-                            </Label>
-                          ))}
-                        </Stack>
+                          <Typography variant="caption" color="text.disabled">
+                            Reasons for changes:
+                          </Typography>
+                          <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ p: 1 }}>
+                            {feedback.reasons?.map((item, idx) => (
+                              <Label
+                                key={idx}
+                                sx={{
+                                  fontWeight: index === 0 ? 'bold' : 'normal',
+                                  opacity: index === 0 ? 1 : 0.7,
+                                  [theme.breakpoints.down('sm')]: {
+                                    fontSize: '0.75rem',
+                                    padding: '2px 4px',
+                                  },
+                                }}
+                              >
+                                {item}
+                              </Label>
+                            ))}
+                          </Stack>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
+                        </Typography>
                       </TimelineContent>
                     </TimelineItem>
                   ))}
               </Timeline>
-            </Alert>
+            </Alert> */}
             {isProcessing ? (
               <Stack justifyContent="center" alignItems="center" gap={1}>
                 <Box
@@ -472,9 +531,9 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                     />
                   )}
                   <RHFTextField name="caption" placeholder="Caption" multiline />
-                  <LoadingButton loading={loading} variant="contained" type="submit">
+                  {/* <LoadingButton loading={loading} variant="contained" type="submit">
                     Submit Draft
-                  </LoadingButton>
+                  </LoadingButton> */}
                 </Stack>
               </FormProvider>
             )}
@@ -521,6 +580,79 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
             <Button onClick={display.onFalse}>Close</Button>
           </DialogActions>
         </Dialog>
+
+        <Stack spacing={2}>
+          <LoadingButton loading={loading} variant="contained" onClick={handleSubmit(onSubmit)} fullWidth>
+            Submit Draft
+          </LoadingButton>
+{/* 
+          <Button onClick={handleOpenFeedbackModal} variant="outlined" size="small" fullWidth>
+            View Feedback History
+          </Button> */}
+        </Stack>
+
+        {submission?.feedback.length > 0 && (
+          <Box mt={2}>
+            {/* <Typography variant="h6">Feedback</Typography> */}
+            {submission.feedback
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+              .map((feedback, index) => (
+                <Box key={index} mb={2} p={2} border={1} borderColor="grey.300" borderRadius={1} display="flex" alignItems="flex-start">
+                  <Avatar 
+                    src={feedback.admin?.photoURL || userDetails?.photoURL || '/default-avatar.png'}
+                    alt={feedback.user?.name || userDetails?.name || 'User'}
+                    sx={{ mr: 2 }}
+                  />
+                  <Box flexGrow={1}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                      {feedback.admin?.name || userDetails?.name || 'Unknown User'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {feedback.admin?.role || userDetails?.role || 'No Role'}
+                    </Typography>
+                    <Box sx={{ textAlign: 'left', mt: 1 }}>
+                      <Typography variant="body2">{feedback.content}</Typography>
+                      {feedback.reasons && feedback.reasons.length > 0 && (
+                        <Box mt={1} sx={{ textAlign: 'left' }}>
+                          {/* <Typography variant="caption" color="text.disabled">
+                            Reasons for changes:
+                          </Typography> */}
+                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                            {feedback.reasons.map((reason, idx) => (
+                              <Box
+                                key={idx}
+                                sx={{
+                                  border: '1.5px solid #e7e7e7', 
+                                  borderBottom: '4px solid #e7e7e7',
+                                  borderRadius: 1,
+                                  p: 0.5, 
+                                  display: 'inline-flex', 
+                                }}
+                              >
+                                <Chip
+                                  label={reason}
+                                  size="small"
+                                  color="default"
+                                  variant="outlined"
+                                  sx={{
+                                    border: 'none', 
+                                    color: '#8e8e93'
+                                  }}
+                                />
+                              </Box>
+                            ))}
+                          </Stack>
+                        </Box>
+                      )}
+                      {/* <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'left' }}>
+                        {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
+                      </Typography> */}
+                    </Box>
+                  </Box>
+                </Box>
+              ))}
+          </Box>
+        )}
       </Box>
     )
   );

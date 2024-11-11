@@ -10,7 +10,7 @@ import { HEADER } from '../config-layout';
 
 // ----------------------------------------------------------------------
 
-// const SPACING = 8;
+const SPACING = 8;
 
 export default function Main({ children, sx, ...other }) {
   const settings = useSettingsContext();
@@ -19,7 +19,7 @@ export default function Main({ children, sx, ...other }) {
 
   const isNavHorizontal = settings.themeLayout === 'horizontal';
 
-  // const isNavMini = settings.themeLayout === 'mini';
+  const isNavMini = settings.themeLayout === 'mini';
 
   if (isNavHorizontal) {
     return (
@@ -60,6 +60,7 @@ export default function Main({ children, sx, ...other }) {
         //     width: `calc(100% - ${NAV.W_MINI}px)`,
         //   }),
         // }),
+        // overflow: 'auto',
         ...sx,
       }}
       {...other}

@@ -615,6 +615,7 @@ const CampaignDetailManageView = ({ id }) => {
             </IconButton>
           </Tooltip>
         )}
+
         {isEditable && (
           <EditButton
             tooltip="Edit Agreement Template"
@@ -666,7 +667,7 @@ const CampaignDetailManageView = ({ id }) => {
         <Typography variant="h5">Campaign Images</Typography>
         {isEditable && (
           <EditButton
-            tooltip="Edit Agreement Template"
+            tooltip="Edit Campaign Images"
             onClick={() =>
               setOpen((prev) => ({
                 ...prev,

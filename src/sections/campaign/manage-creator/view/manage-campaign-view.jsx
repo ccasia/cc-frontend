@@ -10,9 +10,10 @@ import {
   Container,
   InputBase,
   Typography,
+  CircularProgress,
 } from '@mui/material';
 
-import useGetCampaigns from 'src/hooks/use-get-campaigns';
+import { useGetMyCampaign } from 'src/hooks/use-get-my-campaign';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -25,15 +26,18 @@ import CompletedCampaignView from '../completed-campaign-view';
 
 const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
+
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
 
   const { user } = useAuthContext();
-  const { campaigns } = useGetCampaigns('creator');
+  const { data: campaigns, isLoading } = useGetMyCampaign(user?.id);
+
+  // const { campaigns } = useGetCampaigns('creator');
   const settings = useSettingsContext();
 
   // Calculate counts for each tab
-  const counts = useMemo(() => {
+  const filteredData = useMemo(() => {
     let filteredCampaigns = campaigns;
 
     // Apply sorting
@@ -47,29 +51,43 @@ const ManageCampaignView = () => {
       active:
         filteredCampaigns?.filter(
           (campaign) =>
-            campaign?.shortlisted?.some(
-              (item) => item.userId === user?.id && !item.isCampaignDone
-            ) && campaign.status !== 'COMPLETED'
-        )?.length || 0,
+            campaign.shortlisted &&
+            campaign.status === 'ACTIVE' &&
+            !campaign.shortlisted?.isCampaignDone
+        ) || [],
       pending:
-        filteredCampaigns?.filter((campaign) =>
-          campaign?.pitch?.some(
-            (item) =>
-              item?.userId === user?.id &&
-              (item?.status === 'undecided' || item?.status === 'rejected')
-          )
-        )?.length || 0,
+        filteredCampaigns?.filter(
+          (campaign) => !campaign.shortlisted && campaign?.pitch?.status === 'undecided'
+        ) || [],
       completed:
-        filteredCampaigns?.filter((campaign) =>
-          campaign?.shortlisted?.some((item) => item.userId === user?.id && item.isCampaignDone)
-        )?.length || 0,
+        filteredCampaigns?.filter((campaign) => campaign?.shortlisted?.isCampaignDone) || [],
+
+      // active:
+      //   filteredCampaigns?.filter(
+      //     (campaign) =>
+      //       campaign?.shortlisted?.some(
+      //         (item) => item.userId === user?.id && !item.isCampaignDone
+      //       ) && campaign.status !== 'COMPLETED'
+      //   )?.length || 0,
+      // pending:
+      //   filteredCampaigns?.filter((campaign) =>
+      //     campaign?.pitch?.some(
+      //       (item) =>
+      //         item?.userId === user?.id &&
+      //         (item?.status === 'undecided' || item?.status === 'rejected')
+      //     )
+      //   )?.length || 0,
+      // completed:
+      //   filteredCampaigns?.filter((campaign) =>
+      //     campaign?.shortlisted?.some((item) => item.userId === user?.id && item.isCampaignDone)
+      //   )?.length || 0,
     };
-  }, [campaigns, user?.id, sortBy]);
+  }, [campaigns, sortBy]);
 
   const tabs = [
-    { id: 'myCampaign', label: 'Active', count: counts.active },
-    { id: 'applied', label: 'Pending', count: counts.pending },
-    { id: 'completed', label: 'Completed', count: counts.completed },
+    { id: 'myCampaign', label: 'Active', count: filteredData.active?.length || 0 },
+    { id: 'applied', label: 'Pending', count: filteredData.pending?.length || 0 },
+    { id: 'completed', label: 'Completed', count: filteredData.completed?.length || 0 },
   ];
 
   const renderTabs = (
@@ -416,11 +434,43 @@ const ManageCampaignView = () => {
         My Campaigns ⏰
       </Typography>
 
-      {renderTabs}
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: (theme) => theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
 
-      {currentTab === 'myCampaign' && <ActiveCampaignView searchQuery={query} />}
-      {currentTab === 'applied' && <AppliedCampaignView searchQuery={query} />}
-      {currentTab === 'completed' && <CompletedCampaignView searchQuery={query} />}
+      {!isLoading && (
+        <>
+          {renderTabs}
+          {currentTab === 'myCampaign' && (
+            <ActiveCampaignView searchQuery={query} campaigns={filteredData.active} />
+          )}
+          {currentTab === 'applied' && (
+            <AppliedCampaignView searchQuery={query} campaigns={filteredData.pending} />
+          )}
+          {currentTab === 'completed' && (
+            <CompletedCampaignView searchQuery={query} campaigns={filteredData.completed} />
+          )}
+        </>
+      )}
+
+      {/* {currentTab === 'myCampaign' && <ActiveCampaignView searchQuery={query} />} */}
+      {/* {currentTab === 'applied' && <AppliedCampaignView searchQuery={query} />} */}
+      {/* {currentTab === 'completed' && <CompletedCampaignView searchQuery={query} />} */}
     </Container>
   );
 };

@@ -34,7 +34,6 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
 
 import CreatorForm from '../creator-form';
 import CampaignLists from '../campaign-list';
@@ -65,6 +64,11 @@ export default function CampaignListView() {
 
   const [page, setPage] = useState(1);
   const MAX_ITEM = 9;
+
+  const onOpenCreatorForm = () => {
+    backdrop.onTrue();
+    dialog.onTrue();
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -219,7 +223,9 @@ export default function CampaignListView() {
     const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
 
     return applyFilter({
-      inputData: campaigns?.slice(indexOfFirstItem, indexOfLastItem),
+      inputData: campaigns
+        ?.filter((campaign) => campaign?.status === 'ACTIVE')
+        ?.slice(indexOfFirstItem, indexOfLastItem),
       filter,
       user,
       sortBy,
@@ -645,7 +651,24 @@ export default function CampaignListView() {
         </Stack>
       </Box>
 
-      {isLoading && <LoadingScreen />}
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
 
       {!isLoading &&
         (filteredData?.length > 0 ? (
@@ -729,7 +752,9 @@ export default function CampaignListView() {
 
 const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
   if (filter === 'saved') {
-    inputData = inputData?.filter((campaign) => campaign.bookMarkCampaign?.userId === user?.id);
+    inputData = inputData?.filter((campaign) =>
+      campaign.bookMarkCampaign.some((item) => item.userId === user.id)
+    );
   }
 
   if (filter === 'draft') {

@@ -1,9 +1,9 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { io } from 'socket.io-client';
-import React, { useEffect, useCallback } from 'react';
 
+import React, { useEffect, useCallback, useState } from 'react';
+ 
 import { Box, Card, Stack, Tooltip, Typography, ListItemText } from '@mui/material';
 import {
   Timeline,
@@ -15,60 +15,67 @@ import {
 } from '@mui/lab';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
-
+ 
 import { endpoints } from 'src/utils/axios';
-
+ 
 import { useAuthContext } from 'src/auth/hooks';
-
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+ 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-
+ 
 import CampaignPosting from './campaign-posting';
 import CampaignAgreement from './campaign-agreement';
 import CampaignFirstDraft from './campaign-first-draft';
 import CampaignFinalDraft from './campaign-final-draft';
-
+ 
 export const defaultSubmission = [
   {
-    name: 'Agreeement Submission',
+    name: 'Agreeement Submission ✍',
     value: 'Agreement',
     type: 'AGREEMENT_FORM',
+    stage: 1,
   },
   {
-    name: 'First Draft Submission',
+    name: 'First Draft Submission 📝',
     value: 'First Draft',
     type: 'FIRST_DRAFT',
+    stage: 2,
   },
   {
-    name: 'Final Draft Submission',
+    name: 'Final Draft Submission 📝',
     value: 'Final Draft',
     type: 'FINAL_DRAFT',
+    stage: 3,
   },
   {
-    name: 'Posting',
+    name: 'Posting Link Submission 🔗',
     value: 'Posting',
     type: 'POSTING',
+    stage: 4,
   },
 ];
-
+ 
 const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
   const { user } = useAuthContext();
-
+  const { socket } = useSocketContext();
+  const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
+ 
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
   )?.isAgreementReady;
-
-  const { data: submissions } = useGetSubmissions(user.id, campaign?.id);
-
+ 
+  const { data: submissions, mutate: submissionMutate } = useGetSubmissions(user.id, campaign?.id);
+ 
   const getDueDate = (name) =>
     submissions?.find((submission) => submission?.submissionType?.type === name)?.dueDate;
-
+ 
   const value = (name) => submissions?.find((item) => item.submissionType.type === name);
-
+ 
   const timeline = campaign?.campaignTimeline;
-
+ 
   const getTimeline = (name) => timeline?.find((item) => item.name === name);
-
+ 
   const getDependency = useCallback(
     (submissionId) => {
       const isDependencyeExist = submissions?.find((item) => item.id === submissionId)
@@ -77,18 +84,61 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
     },
     [submissions]
   );
-
+ 
   useEffect(() => {
-    const socket = io();
     socket?.on('draft', () => {
       mutate(endpoints.campaign.draft.getFirstDraftForCreator(campaign.id));
     });
-  }, [campaign]);
-
+ 
+    socket?.on('newFeedback', () => submissionMutate());
+ 
+    return () => {
+      socket?.off('draft');
+      socket?.off('newFeedback');
+    };
+  }, [campaign, submissionMutate, socket]);
+ 
+ 
+  const getVisibleStages = () => {
+    const stages = [];
+    const agreementSubmission = value('AGREEMENT_FORM');
+    const firstDraftSubmission = value('FIRST_DRAFT');
+    const finalDraftSubmission = value('FINAL_DRAFT');
+    const postingSubmission = value('POSTING');
+ 
+    // Always show Agreement stage (will be last and always Stage 01)
+    stages.unshift({ ...defaultSubmission[0] });
+ 
+    // Show First Draft if Agreement is approved
+    if (agreementSubmission?.status === 'APPROVED') {
+      stages.unshift({ ...defaultSubmission[1] });
+    }
+ 
+    // Show Final Draft if First Draft is in CHANGES_REQUIRED status
+    if (firstDraftSubmission?.status === 'CHANGES_REQUIRED') {
+      stages.unshift({ ...defaultSubmission[2] });
+    }
+ 
+    // Show Posting if either First Draft or Final Draft is approved
+    if (firstDraftSubmission?.status === 'APPROVED' || finalDraftSubmission?.status === 'APPROVED') {
+      stages.unshift({ ...defaultSubmission[3] });
+    }
+ 
+    // Add sequential stage numbers starting from the bottom
+    return stages.map((stage, index) => ({
+      ...stage,
+      stage: stages.length - index // This makes the bottom item Stage 01
+    }));
+  };
+ 
   return (
-    <Box component={Card}>
+    <Stack 
+      direction={{ xs: 'column', md: 'row' }}
+      spacing={1}
+      sx={{ width: '100%' }}
+    >
       {campaign.status === 'PAUSED' ? (
-        <Box p={20}>
+        <Box component={Card} p={{ xs: 3, md: 20 }}>
           <Stack alignItems="center" justifyContent="center" spacing={2}>
             <Iconify icon="hugeicons:license-maintenance" width={50} />
             <Typography variant="h6" color="text.secondary">
@@ -97,130 +147,183 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
           </Stack>
         </Box>
       ) : (
-        <Timeline
-          sx={{
-            [`& .${timelineItemClasses.root}:before`]: {
-              flex: 0,
-              padding: 0,
-            },
-          }}
-        >
-          {defaultSubmission.map((item, index) => {
-            if (item.type === 'FINAL_DRAFT' && value('FIRST_DRAFT')?.status === 'APPROVED') {
-              return null;
-            }
-
-            return (
-              <TimelineItem key={index} id={item.type}>
-                <TimelineSeparator>
-                  <Label sx={{ mt: 0.5 }}>{index + 1}</Label>
-                  <TimelineConnector />
-                </TimelineSeparator>
-                <TimelineContent>
-                  <ListItemText
-                    primary={
-                      <Stack
-                        direction={{ xs: 'column', md: 'row' }}
-                        spacing={1}
-                        alignItems={{ md: 'center' }}
-                        mb={2}
+        <>
+          {/* Left Column - Navigation */}
+          <Card 
+            sx={{ 
+              width: { xs: '100%', md: '35%' },
+              minWidth: { md: '320px' },
+              maxWidth: { md: '600px' },
+              boxShadow: 'none',
+              ml: { xs: 0, md: -2 },
+              mr: { xs: 0, md: -1.5 },
+              mt: { xs: 0, md: -3.9 },
+              mb: { xs: 2, md: 0 }
+            }}
+          >
+            <Box
+              sx={{
+                height: '100%',
+                py: 2,
+                px: { xs: 1, md: 0 }
+              }}
+            >
+              {getVisibleStages().map((item, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    mx: 2,
+                    mb: 1,
+                    p: 2.5,
+                    cursor: 'pointer',
+                    borderRadius: 2,
+                    bgcolor: selectedStage === item.type ? '#f5f5f5' : 'transparent',
+                    '&:hover': {
+                      bgcolor: '#f5f5f5',
+                    },
+                    minHeight: 75,
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  onClick={() => setSelectedStage(item.type)}
+                >
+                  <Stack direction="row" spacing={2} alignItems="center" width="100%">
+                    <Label 
+                      sx={{ 
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: (value(item.type)?.status === 'APPROVED' || 
+                                  (item.type === 'FIRST_DRAFT' && value(item.type)?.status === 'CHANGES_REQUIRED')) 
+                          ? '#5abc6f' 
+                          : '#f6c945',
+                      }}
+                    >
+                      {(value(item.type)?.status === 'APPROVED' || 
+                        (item.type === 'FIRST_DRAFT' && value(item.type)?.status === 'CHANGES_REQUIRED')) ? (
+                        <Iconify icon="mingcute:check-circle-fill" sx={{ color: '#fff' }} width={20} />
+                      ) : (
+                        <Iconify icon="mdi:clock" sx={{ color: '#fff' }} width={20} />
+                      )}
+                    </Label>
+ 
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          color: '#8e8e93',
+                          display: 'block',
+                          mb: 0.4,
+                          textTransform: 'uppercase',
+                          fontWeight: 700
+                        }}
                       >
-                        <Typography variant="subtitle2">{item.name}</Typography>
-                        {value(item.type) && (
-                          <Box flexGrow={1}>
-                            {value(item.type)?.status === 'PENDING_REVIEW' && (
-                              <Tooltip title="Pending Review">
-                                <Label>
-                                  <Iconify
-                                    icon="mdi:clock-outline"
-                                    color="warning.main"
-                                    width={18}
-                                  />
-                                </Label>
-                              </Tooltip>
-                            )}
-
-                            {value(item.type)?.status === 'APPROVED' && (
-                              <Tooltip title="Approved">
-                                <Label color="success">
-                                  <Iconify
-                                    icon="hugeicons:tick-04"
-                                    color="success.main"
-                                    width={18}
-                                  />
-                                </Label>
-                              </Tooltip>
-                            )}
-
-                            {value(item.type)?.status === 'CHANGES_REQUIRED' && (
-                              <Tooltip title="Change Required">
-                                <Label color="warning">
-                                  <Iconify icon="uiw:warning" color="warning.main" width={18} />
-                                </Label>
-                              </Tooltip>
-                            )}
-                          </Box>
-                        )}
-                        <Typography variant="caption">
-                          Due: {dayjs(getDueDate(item.type)).format('D MMMM, YYYY')}
-                          {/* Due: {dayjs(getTimeline(item.value)?.endDate).format('D MMMM, YYYY')} */}
-                        </Typography>
-                      </Stack>
-                    }
-                    secondaryTypographyProps={{
-                      variant: 'caption',
-                      color: 'text.disabled',
-                    }}
-                  />
-                  {item.value === 'Agreement' && (
-                    <CampaignAgreement
-                      campaign={campaign}
-                      timeline={timeline}
-                      submission={value(item.type)}
-                      getDependency={getDependency}
-                      agreementStatus={agreementStatus}
+                        Stage {String(item.stage).padStart(2, '0')}
+                      </Typography>
+ 
+                      <Typography variant="subtitle1" sx={{ mb: 0.2 }}>
+                        {item.name}
+                      </Typography>
+ 
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          color: '#636366', 
+                          display: 'block',
+                          ...(value(item.type)?.status === 'APPROVED' && {
+                            textDecoration: 'line-through',
+                            color: '#b0b0b0',
+                          }),
+                        }}
+                      >
+                        Due: {dayjs(getDueDate(item.type)).format('D MMMM, YYYY')}
+                      </Typography>
+                    </Box>
+ 
+                    <Iconify 
+                      icon="eva:arrow-ios-forward-fill" 
+                      sx={{ 
+                        color: 'text.secondary',
+                        width: 20,
+                        height: 20,
+                        ml: 1
+                      }} 
                     />
-                  )}
-                  {item.value === 'First Draft' && (
-                    <CampaignFirstDraft
-                      campaign={campaign}
-                      timeline={timeline}
-                      fullSubmission={submissions}
-                      submission={value(item.type)}
-                      getDependency={getDependency}
-                      openLogisticTab={openLogisticTab}
-                    />
-                  )}
-                  {item.value === 'Final Draft' && (
-                    <CampaignFinalDraft
-                      campaign={campaign}
-                      timeline={timeline}
-                      submission={value(item.type)}
-                      fullSubmission={submissions}
-                      getDependency={getDependency}
-                    />
-                  )}
-                  {item.value === 'Posting' && (
-                    <CampaignPosting
-                      campaign={campaign}
-                      timeline={timeline}
-                      submission={value(item.type)}
-                      fullSubmission={submissions}
-                      getDependency={getDependency}
-                    />
-                  )}
-                </TimelineContent>
-              </TimelineItem>
-            );
-          })}
-        </Timeline>
+                  </Stack>
+                </Box>
+              ))}
+            </Box>
+          </Card>
+ 
+          {/* Right Column - Content */}
+          <Card 
+            sx={{ 
+              width: { xs: '100%', md: '65%' },
+              flexGrow: 1,
+              boxShadow: 'none',
+              border: '1px solid',
+              borderColor: 'divider',
+              mr: { xs: 0, md: 0 },
+              mt: { xs: 0, md: -2 },
+              maxWidth: '100%',
+              overflow: 'hidden'
+            }}
+          >
+            <Box 
+              sx={{ 
+                p: { xs: 2, md: 3 }
+              }}
+            >
+              {selectedStage === 'AGREEMENT_FORM' && (
+                <CampaignAgreement
+                  campaign={campaign}
+                  timeline={timeline}
+                  submission={value('AGREEMENT_FORM')}
+                  getDependency={getDependency}
+                  agreementStatus={agreementStatus}
+                />
+              )}
+              {selectedStage === 'FIRST_DRAFT' && (
+                <CampaignFirstDraft
+                  campaign={campaign}
+                  timeline={timeline}
+                  fullSubmission={submissions}
+                  submission={value('FIRST_DRAFT')}
+                  getDependency={getDependency}
+                  openLogisticTab={openLogisticTab}
+                />
+              )}
+              {selectedStage === 'FINAL_DRAFT' && (
+                <CampaignFinalDraft
+                  campaign={campaign}
+                  timeline={timeline}
+                  submission={value('FINAL_DRAFT')}
+                  fullSubmission={submissions}
+                  getDependency={getDependency}
+                />
+              )}
+              {selectedStage === 'POSTING' && (
+                <CampaignPosting
+                  campaign={campaign}
+                  timeline={timeline}
+                  submission={value('POSTING')}
+                  fullSubmission={submissions}
+                  getDependency={getDependency}
+                />
+              )}
+            </Box>
+          </Card>
+        </>
       )}
-    </Box>
+    </Stack>
   );
 };
-
+ 
 export default CampaignMyTasks;
-
+ 
 CampaignMyTasks.propTypes = {
   campaign: PropTypes.object,
   openLogisticTab: PropTypes.func,

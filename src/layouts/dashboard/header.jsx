@@ -1,11 +1,10 @@
 import PropTypes from 'prop-types';
 
 import Stack from '@mui/material/Stack';
-import { Divider } from '@mui/material';
-import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import { grey } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
+import { AppBar, Divider } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 
 import { useOffSetTop } from 'src/hooks/use-off-set-top';
@@ -93,8 +92,9 @@ export default function Header({ onOpenNav, isOnline }) {
 
   return (
     <AppBar
-      position="sticky"
       sx={{
+        position: 'sticky',
+        top: 0,
         borderBottom: 1,
         borderColor: grey[200],
         height: HEADER.H_MOBILE,
@@ -107,7 +107,7 @@ export default function Header({ onOpenNav, isOnline }) {
           duration: theme.transitions.duration.shorter,
         }),
         ...(lgUp && {
-          // width: `calc(100% - ${NAV.W_VERTICAL + 1}px)`,
+          // width: `calc(100% - ${NAV.W_VERTICAL + 32}px)`,
           height: HEADER.H_DESKTOP,
           ...(offsetTop && {
             height: HEADER.H_DESKTOP_OFFSET,
@@ -118,9 +118,10 @@ export default function Header({ onOpenNav, isOnline }) {
             height: HEADER.H_DESKTOP_OFFSET,
             borderBottom: `dashed 1px ${theme.palette.divider}`,
           }),
-          // ...(isNavMini && {
-          //   // width: `calc(100% - ${NAV.W_MINI + 1}px)`,
-          // }),
+          // ...(isNavMini &&
+          //   {
+          //     // width: `calc(100% - ${NAV.W_MINI + 1}px)`,
+          //   }),
         }),
       }}
     >

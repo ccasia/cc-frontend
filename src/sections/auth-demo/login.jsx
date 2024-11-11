@@ -1,6 +1,5 @@
 import React from 'react';
 import * as Yup from 'yup';
-import useSound from 'use-sound';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -21,13 +20,13 @@ import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-import error from '../../../public/sounds/error.mp3';
+// import error from '../../../public/sounds/error.mp3';
 
 const Login = () => {
   const password = useBoolean();
-  const [play] = useSound(error, {
-    interrupt: true,
-  });
+  // const [play] = useSound(error, {
+  //   interrupt: true,
+  // });
 
   const { login } = useAuthContext();
   //   const [error, setError] = useState();
@@ -36,11 +35,13 @@ const Login = () => {
   const LoginSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     password: Yup.string().required('Password is required'),
+    
   });
 
   const defaultValues = {
     email: '',
     password: '',
+
   };
 
   const methods = useForm({
@@ -61,7 +62,7 @@ const Login = () => {
       }
       enqueueSnackbar('Successfully login');
     } catch (err) {
-      play();
+      // play();
       enqueueSnackbar(err.message, {
         variant: 'error',
       });

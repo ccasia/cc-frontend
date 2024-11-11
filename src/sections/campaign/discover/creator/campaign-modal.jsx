@@ -63,6 +63,7 @@ const CampaignModal = ({
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
+
   const dialogContentRef = useRef(null);
   const images = campaign?.campaignBrief?.images || [];
 
@@ -102,6 +103,8 @@ const CampaignModal = ({
     () => !!draftPitch || (existingPitch && existingPitch.status === 'draft'),
     [draftPitch, existingPitch]
   );
+
+  const { isFormCompleted } = user.creator;
 
   const handleImageClick = (event) => {
     // Prevent expansion if clicking on navigation buttons
@@ -187,8 +190,8 @@ const CampaignModal = ({
   };
 
   const handleBookmarkClick = () => {
-    if (campaign?.bookMarkCampaign?.userId === user?.id) {
-      onUnsaveCampaign(campaign?.bookMarkCampaign.id);
+    if (bookMark) {
+      onUnsaveCampaign(campaign?.bookMarkCampaign?.find((item) => item.userId === user?.id)?.id);
     } else {
       onSaveCampaign(campaign?.id);
     }
@@ -423,7 +426,17 @@ const CampaignModal = ({
               justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
               sx={{ mt: { xs: 1.5, sm: 0 } }}
             >
-              {hasPitched ? (
+              {!isFormCompleted ? (
+                <Button
+                  variant="contained"
+                  color="warning"
+                  sx={{
+                    px: 5,
+                  }}
+                >
+                  Complete profile
+                </Button>
+              ) : hasPitched ? (
                 existingPitch.status === 'approved' ? (
                   <Button
                     variant="contained"
@@ -1060,6 +1073,7 @@ CampaignModal.propTypes = {
   bookMark: PropTypes.bool,
   onSaveCampaign: PropTypes.func,
   onUnsaveCampaign: PropTypes.func,
+
   // openForm: PropTypes.func,
   // dialog: PropTypes.object,
 };

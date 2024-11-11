@@ -6,13 +6,12 @@ import { Box, TextField, InputAdornment } from '@mui/material';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import CampaignItem from './campaign-item';
+import CampaignItem from '../campaign-item';
 
 const MyCampaignView = ({ query, setQuery, filteredData, onClick }) => (
   <Box mt={2}>
     <TextField
       value={query}
-      // placeholder="Search By Campaign Name"
       InputProps={{
         startAdornment: (
           <InputAdornment position="start">
@@ -25,6 +24,7 @@ const MyCampaignView = ({ query, setQuery, filteredData, onClick }) => (
       }}
       onChange={(e) => setQuery(e.target.value)}
     />
+
     {filteredData?.length ? (
       <Box
         gap={3}

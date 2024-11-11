@@ -119,15 +119,18 @@ export default function KanbanView() {
   return (
     <Container
       maxWidth={false}
-      sx={{
-        height: 1,
-      }}
+      // sx={{
+      //   height: 1,
+      // }}
     >
       <Typography
         variant="h2"
-        sx={{ mb: 0.2, fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
+        sx={{
+          mb: 0.2,
+          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+        }}
       >
-        Kanban
+        My Tasks ✏️
       </Typography>
 
       {boardLoading && renderSkeleton}
@@ -142,7 +145,7 @@ export default function KanbanView() {
           }}
         />
       )} */}
-
+      {/* <Box sx={{ maxHeight: '75vh', overflow: 'hidden' }}> */}
       {!!board?.columns.length && (
         <DragDropContext
           onDragEnd={onDragEnd}
@@ -195,6 +198,7 @@ export default function KanbanView() {
         </DragDropContext>
       )}
       {!!board?.columns.length < 1 && <KanbanColumnAdd />}
+      {/* </Box> */}
     </Container>
   );
 }
