@@ -5,13 +5,14 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
-
+//  import {Badge} from '@mui/material';
 // import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { fToNow } from 'src/utils/format-time';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { Typography } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -93,14 +94,21 @@ export default function NotificationItem({ notification }) {
       console.error("No valid route found for notification entity:", entity);
     }
   };
+
+  const renderTitle =(
+   <ListItemText
+    primary={notification.notification?.title}
+    primaryTypographyProps={{
+      variant: 'subtitle2',
+      marginBottom: 0.5,
+    }}
+    >
+
+  </ListItemText>
+  )
   const renderText = (
     <ListItemText
-      primary={notification.notification?.title}
       secondary={notification.notification.message}
-      primaryTypographyProps={{
-        variant: 'subtitle2',
-        marginBottom: 0.5,
-      }}
       secondaryTypographyProps={{
         variant: 'body2',
         marginBottom: 0.5,
@@ -108,21 +116,25 @@ export default function NotificationItem({ notification }) {
     />
   );
 
-  const renderViewButton = (
-    <Button onClick={handleViewClick} variant="outlined" color='secondary' size="small">
-      Submit now
+  
+//
+  const renderViewButton =  notification.notification?.entity === 'Timeline' && (
+    <Button  onClick={handleViewClick} variant="text" color="secondary" size="small" sx={{ direction:'flex-start', width:'100px'}}>
+      Submit now &gt;
     </Button>
-  );
+   );
 
   const renderUnReadBadge = !notification.read && (
     <Box
+    direction="row"
+    alignItems="center"
       sx={{
         top: 26,
         width: 8,
         height: 8,
         right: 20,
         borderRadius: '50%',
-        bgcolor: 'info.main',
+        bgcolor: '#F04438',
         position: 'absolute',
       }}
     />
@@ -151,41 +163,52 @@ export default function NotificationItem({ notification }) {
 
   return (
     <ListItemButton
-    disableRipple
+  disableRipple
+  sx={{
+    p: 2.5,
+    alignItems: 'flex-start',
+    borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
+    position: 'relative',
+  }}
+>
+  <Box
     sx={{
-      p: 2.5,
-      alignItems: 'flex-start',
-      borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
-      position: 'relative',
+      display: 'flex',
+      justifyContent: 'space-between',
+      width: '100%',
+      flexDirection: 'column', 
     }}
   >
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        width: '100%',
-      }}
-    >
-      {/* Left side: Text and View button */}
-      <Stack spacing={1} sx={{ flexGrow: 1 }}>
-        {renderText}
-        {renderViewButton}
-      </Stack>
-
-      {/* Right side: Time and Unread Badge */}
+   
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start' }}>
+        {renderTitle}
+      </Box>
       <Box
         sx={{
+          width:'120px',
           display: 'flex',
+          justifyContent: 'space-between',
+          gap: 4,
           alignItems: 'center',
-          textAlign: 'right',
-          gap: 1, 
+          
         }}
       >
-        {renderOther}
         {renderUnReadBadge}
+        {renderOther}
+       
       </Box>
     </Box>
+
+ 
+    <Stack spacing={1} sx={{ flexGrow: 1 }}>
+      {renderText}
+      {renderViewButton}
+    </Stack>
+  </Box>
   </ListItemButton>
+
+  
   );
 }
 
