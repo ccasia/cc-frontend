@@ -11,7 +11,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import EmptyContent from 'src/components/empty-content';
 
-import CampaignItem from '../discover/creator/campaign-item';
+import CampaignItem from './campaign-item';
 
 const ActiveCampaignView = ({ searchQuery, campaigns }) => {
   // const { campaigns: data, isLoading } = useGetCampaigns('creator');
@@ -61,8 +61,8 @@ const ActiveCampaignView = ({ searchQuery, campaigns }) => {
           }}
         >
           {filteredData.map((campaign) => (
-            // <CampaignItem key={campaign.id} campaign={campaign} />
-            <CampaignItem key={campaign.id} campaign={campaign} user={user} />
+            <CampaignItem key={campaign.id} campaign={campaign} />
+            // <CampaignItem key={campaign.id} campaign={campaign} user={user} />
           ))}
         </Box>
       ) : (

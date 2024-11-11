@@ -21,13 +21,13 @@ import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-import error from '../../../public/sounds/error.mp3';
+// import error from '../../../public/sounds/error.mp3';
 
 const Login = () => {
   const password = useBoolean();
-  const [play] = useSound(error, {
-    interrupt: true,
-  });
+  // const [play] = useSound(error, {
+  //   interrupt: true,
+  // });
 
   const { login } = useAuthContext();
   //   const [error, setError] = useState();
@@ -61,7 +61,7 @@ const Login = () => {
       }
       enqueueSnackbar('Successfully login');
     } catch (err) {
-      play();
+      // play();
       enqueueSnackbar(err.message, {
         variant: 'error',
       });

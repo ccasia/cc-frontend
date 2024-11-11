@@ -7,8 +7,8 @@ import Button from '@mui/material/Button';
 import { alpha } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-
-import { UploadIllustration } from 'src/assets/illustrations';
+import ListItemText from '@mui/material/ListItemText';
+import { grey } from '@mui/material/colors';
 
 import Iconify from '../iconify';
 import MultiFilePreview from './preview-multi-file';
@@ -48,48 +48,76 @@ export default function Upload({
   const hasError = isDragReject || !!error;
 
   const renderPlaceholder = (
-    <Stack spacing={3} alignItems="center" justifyContent="center" flexWrap="wrap">
-      <UploadIllustration sx={{ width: 1, maxWidth: 200 }} />
-      <Stack spacing={1} sx={{ textAlign: 'center' }}>
-        <Typography variant="h6">Drop or Select file</Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          Drop files here or click
-          <Box
-            component="span"
-            sx={{
-              mx: 0.5,
-              color: 'primary.main',
-              textDecoration: 'underline',
-            }}
-          >
-            browse
-          </Box>
-          thorough your machine.
-        </Typography>
-        {uploadType && uploadType === 'pitch' ? (
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Upload a video that does not exceed 30 seconds.
-          </Typography>
-        ) : (
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Upload a video that does not exceed 5 minutes.
-          </Typography>
-        )}
+    <Box
+      {...getRootProps()}
+      sx={{
+        display: 'flex',
+        border: 1,
+        borderColor: grey[300],
+        justifyContent: 'center',
+        alignItems: 'center',
+        cursor: 'pointer',
+        '&:hover': {
+          opacity: 0.4,
+        },
+        minHeight: 250,
+        borderRadius: 2,
+        ...(isDragActive && {
+          opacity: 0.3,
+        }),
+        ...(disabled && {
+          opacity: 0.3,
+          pointerEvents: 'none',
+        }),
+        ...(hasError && {
+          color: 'error.main',
+          borderColor: 'error.main',
+          bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
+        }),
+      }}
+    >
+      <input {...getInputProps()} />
 
-        <Typography
-          variant="caption"
+      {helperText && helperText}
+
+      <Stack alignItems="center" spacing={2}>
+        <Box
           sx={{
-            mt: 3,
-            mx: 'auto',
-            display: 'block',
-            textAlign: 'center',
-            color: 'text.disabled',
+            bgcolor: '#203ff5',
+            borderRadius: '50%',
+            width: 40,
+            height: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          Allowed *.mp4
-        </Typography>
+          <Iconify 
+            icon="fluent:add-24-filled" 
+            width={26} 
+            sx={{
+              color: '#fff',
+            }}
+          />
+        </Box>
+        <ListItemText
+          primary="Choose a file or drag and drop here"
+          secondary={uploadType === 'pitch' 
+            ? "Upload a video that does not exceed 30 seconds"
+            : "Acceptable files: PDF, DOC | Max file size: 2MB"
+          }
+          primaryTypographyProps={{
+            textAlign: 'center',
+            variant: 'h5',
+          }}
+          secondaryTypographyProps={{
+            textAlign: 'center',
+            variant: 'body1',
+            color: '#8E8E93',
+          }}
+        />
       </Stack>
-    </Stack>
+    </Box>
   );
 
   const renderSinglePreview = (
@@ -145,46 +173,19 @@ export default function Upload({
 
   return (
     <Box sx={{ width: 1, position: 'relative', ...sx }}>
-      <Box
-        {...getRootProps()}
-        sx={{
-          p: 5,
-          outline: 'none',
-          borderRadius: 1,
-          cursor: 'pointer',
-          overflow: 'hidden',
-          position: 'relative',
-          bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-          border: (theme) => `1px dashed ${alpha(theme.palette.grey[500], 0.2)}`,
-          transition: (theme) => theme.transitions.create(['opacity', 'padding']),
-          '&:hover': {
-            opacity: 0.72,
-          },
-          ...(isDragActive && {
-            opacity: 0.72,
-          }),
-          ...(disabled && {
-            opacity: 0.48,
-            pointerEvents: 'none',
-          }),
-          ...(hasError && {
-            color: 'error.main',
-            borderColor: 'error.main',
-            bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
-          }),
-          ...(hasFile && {
-            padding: '24% 0',
-          }),
-        }}
-      >
-        <input {...getInputProps()} />
-
-        {hasFile ? renderSinglePreview : renderPlaceholder}
-      </Box>
+      {hasFile ? renderSinglePreview : renderPlaceholder}
 
       {removeSinglePreview}
 
-      {helperText && helperText}
+      {helperText && (
+        <Typography
+          variant="caption"
+          color={hasError ? 'error' : 'text.secondary'}
+          sx={{ mt: 1 }}
+        >
+          {helperText}
+        </Typography>
+      )}
 
       <RejectionFiles fileRejections={fileRejections} />
 
