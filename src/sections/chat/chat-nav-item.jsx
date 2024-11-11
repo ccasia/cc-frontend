@@ -138,7 +138,7 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
           mt: 0.5, 
         }}
       >
-        {latestMessage?.content}
+        {/* {latestMessage?.content} */}
       </Typography>
     </Stack>
     </>
@@ -151,7 +151,6 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
     router.push(threadPath);
   }
 
-  console.log("Latest message2", latestMessage)
   return (
   <>    
   <ListItemButton

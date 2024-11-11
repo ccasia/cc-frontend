@@ -89,12 +89,15 @@ const ThreadMessages = ({ threadId }) => {
   );
 
   const messages = threadMessages[threadId] || [];
+  const thread = threads?.find((t) => t.id === threadId);
+  const isGroup = thread?.isGroup;
 
   return (
     <Stack sx={{ width: 1, height: 1, overflow: 'hidden' }}>
       <ChatHeaderCompose currentUserId={user.id} threadId={threadId} />
       <ChatMessageList messages={messages} />
-      {campaignStatus === 'COMPLETED' ? (
+     
+      { isGroup && campaignStatus === 'COMPLETED' ? (
       <Typography variant="body2" color="text.secondary" align="center" sx={{ 
         fontFamily: (theme) => theme.typography.fontPrimaryFamily,
         letterSpacing: 2,  padding:"20px", fontSize: '12px' 
