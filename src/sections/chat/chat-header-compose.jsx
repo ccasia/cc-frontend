@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 import { mutate } from 'swr';
 import { useNavigate } from 'react-router-dom';
-import { IconButton, Button, Alert, Snackbar } from '@mui/material';
+import { IconButton, Button, Alert, Snackbar, Stack, Divider } from '@mui/material';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
 import TextField from '@mui/material/TextField';
@@ -24,15 +24,15 @@ import ChatArchiveModal from './chatArchiveModal';
 
 export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const { user } = useAuthContext();
-  const { thread,  error } = useGetThreadById(threadId);
+  const { thread, error } = useGetThreadById(threadId);
   const [archivedChats, setArchivedChats] = useState([]);
   const [openAlert, setOpenAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertSeverity, setAlertSeverity] = useState('success');
   const navigate = useNavigate();
   const [contacts, setContacts] = useState([]);
-  const [lastAction, setLastAction] = useState(null); 
-  const [previousArchivedChats, setPreviousArchivedChats] = useState([])
+  const [lastAction, setLastAction] = useState(null);
+  const [previousArchivedChats, setPreviousArchivedChats] = useState([]);
   const [selectedContact, setSelectedContact] = useState();
   const [loading, setLoading] = useState(true);
   const [openInfoModal, setOpenInfoModal] = useState(false);
@@ -67,12 +67,12 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   //   try {
   //     if (archivedChats.includes(threadId)) {
   //       setArchivedChats(archivedChats.filter((id) => id !== threadId));
-  //       await unarchiveUserThread(threadId);  
+  //       await unarchiveUserThread(threadId);
   //       console.log(`Unarchived thread ${threadId}`);
   //       setModalOpen(false);
   //     } else {
   //       setArchivedChats([...archivedChats, threadId]);
-  //       await archiveUserThread(threadId);  
+  //       await archiveUserThread(threadId);
   //       console.log(`Archived thread ${threadId}`);
   //       setModalOpen(false);
   //     }
@@ -100,14 +100,14 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         setAlertSeverity('success');
         setLastAction({ action: 'archive', threadId });
       }
-  
-      setOpenAlert(true);  // Show the alert
-      setOpenArchiveModal(false);  // Close the modal
+
+      setOpenAlert(true); // Show the alert
+      setOpenArchiveModal(false); // Close the modal
     } catch (error) {
       console.error('Error archiving/unarchiving chat:', error);
       setAlertMessage('Error archiving/unarchiving chat.');
       setAlertSeverity('error');
-      setOpenAlert(true);  // Show the error alert
+      setOpenAlert(true); // Show the error alert
     }
   };
 
@@ -115,7 +115,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
     if (lastAction) {
       // Undo the last action
       setArchivedChats(previousArchivedChats);
-  
+
       // Optionally, re-perform the undo action on the server side (like unarchiving or archiving the thread again)
       if (lastAction.action === 'archive') {
         unarchiveUserThread(lastAction.threadId);
@@ -124,13 +124,12 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         archiveUserThread(lastAction.threadId);
         setAlertMessage('Undo: Chat archived!');
       }
-  
+
       setAlertSeverity('success');
       setOpenAlert(true); // Show the undo confirmation
       setLastAction(null); // Reset last action after undo
     }
   };
-
 
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'superadmin';
@@ -158,12 +157,10 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
     fetchUsers();
   }, [currentUserId]);
 
-  const otherUser = thread?.UserThread.find(u => u.userId !== currentUserId);
+  const otherUser = thread?.UserThread.find((u) => u.userId !== currentUserId);
   const otherUserName = otherUser ? otherUser.user.name : 'Unknown User';
 
-
-  useEffect(() => {
-  }, [selectedContact]);
+  useEffect(() => {}, [selectedContact]);
 
   const handleChange = (_event, newValue) => {
     console.log('newValue:', newValue);
@@ -214,7 +211,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
 
   return (
     <>
-
       <Snackbar
         open={openAlert}
         autoHideDuration={3000}
@@ -222,11 +218,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         action={
           lastAction && (
-            <Button
-              color="secondary"
-              size="small"
-              onClick={handleUndo}
-            >
+            <Button color="secondary" size="small" onClick={handleUndo}>
               Undo
             </Button>
           )
@@ -237,83 +229,112 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         </Alert>
       </Snackbar>
       <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        px: 2,
-        py: 1,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
-      {/* Flex Start: Thread information */}
-    <Box width="200px" sx={{ display: 'flex', alignItems: 'center' }}>
-    {thread ? (
-    <>
-      
-      {/* Display group chat title or single chat other user name */}
-      {thread.isGroup ? (
-        <>
-          <Avatar alt={thread.title} src={thread.photoURL} sx={{ width: 32, height: 32, mr: 1 }} />
-          <Typography variant="h6">{thread.title}</Typography> 
-        </>  
-      ) : (
-        <>
-        <Avatar alt={otherUserName} src={otherUser.user.photoURL} sx={{ width: 32, height: 32, mr: 1 }} />
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-      <Typography variant="body" paddingRight={2} sx={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', fontSize: '14px' }}>
-        {otherUserName}
-        <Iconify icon="material-symbols:verified" style={{ color: '#1340FF', paddingLeft: 1 }} />
-      </Typography>
-      <Typography variant="body2" sx={{fontSize: '10px'}}>Available</Typography>
-    </Box>     
-        </>  
-      )}
-    </>
-  ) : (
-    <Typography variant="h6">Thread not found</Typography>
-  )}
-    </Box>
-      {/* Flex End: Icon buttons */}
-      <Box paddingLeft={1} sx={{ display: 'flex', alignItems: 'center' }}>
-        <Button width="100px"
-          sx={{
-            borderRadius: '12px', 
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', 
-            display: 'flex',
-            justifyContent: 'center', 
-            alignItems: 'center',
-            padding: '8px 16px', 
-            textTransform: 'none',
-          }}
-          onClick={handleOpenArchiveModal}
-          >
-          <Iconify icon="tabler:archive" style={{color: 'black'}}  />
-          {archivedChats.includes(threadId) ? 'Unarchive' : 'Archive'}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 2,
+          py: 2,
+        }}
+      >
+        {/* Flex Start: Thread information */}
+        <Box width="200px" sx={{ display: 'flex', alignItems: 'center' }}>
+          {thread ? (
+            <>
+              {/* Display group chat title or single chat other user name */}
+              {thread.isGroup ? (
+                <>
+                  <Avatar
+                    alt={thread.title}
+                    src={thread.photoURL}
+                    sx={{ width: 32, height: 32, mr: 1 }}
+                  />
+                  <Typography variant="h6">{thread.title}</Typography>
+                </>
+              ) : (
+                <>
+                  <Avatar
+                    alt={otherUserName}
+                    src={otherUser.user.photoURL}
+                    sx={{ width: 40, height: 40, mr: 1 }}
+                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <Typography
+                      variant="body"
+                      paddingRight={2}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                      }}
+                    >
+                      <Stack direction={'row'} alignItems={'center'} spacing={0.5}>
+                        <Typography variant="subtitle1">{otherUserName}</Typography>
+                        <Iconify
+                          icon="material-symbols:verified"
+                          style={{ color: '#1340FF', paddingLeft: 1 }}
+                        />
+                      </Stack>
+                    </Typography>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ fontSize: '12px', color: 'text.secondary' }}
+                    >
+                      Available
+                    </Typography>
+                  </Box>
+                </>
+              )}
+            </>
+          ) : (
+            <Typography variant="h6">Thread not found</Typography>
+          )}
+        </Box>
 
-        </Button>
-        <IconButton  sx={{
-            borderRadius: '12px', 
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', 
-            padding: '12px', 
-          }}
-          onClick={handleOpenInfoModal}
+        {/* Flex End: Icon buttons */}
+        <Box paddingLeft={1} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Button
+            sx={{
+              border: 1,
+              borderRadius: 1,
+              borderColor: '#E7E7E7',
+              px: 2,
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            }}
+            startIcon={<Iconify icon="tabler:archive" style={{ color: 'black' }} />}
+            onClick={handleOpenArchiveModal}
           >
-            
-          <Iconify icon="tabler:info-circle"   sx={{ color: 'black' }} />
-        </IconButton>
+            {archivedChats.includes(threadId) ? 'Unarchive' : 'Archive'}
+          </Button>
+          <IconButton
+            sx={{
+              border: 1,
+              borderRadius: 1,
+              borderColor: '#E7E7E7',
+              height: 38,
+              width: 38,
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            }}
+            onClick={handleOpenInfoModal}
+          >
+            <Iconify icon="tabler:info-circle" sx={{ color: 'black' }} width={20} />
+          </IconButton>
 
-        <ThreadInfoModal open={openInfoModal} onClose={handleCloseInfoModal} threadId={threadId} />
-        <ChatArchiveModal open={openArchiveModal} 
-        onClose={handleCloseArchiveModal}  
-        onArchive={() => handleArchive(threadId)}  
-        archivedChats={archivedChats}
-        threadId={threadId} />
+          <ThreadInfoModal
+            open={openInfoModal}
+            onClose={handleCloseInfoModal}
+            threadId={threadId}
+          />
+          <ChatArchiveModal
+            open={openArchiveModal}
+            onClose={handleCloseArchiveModal}
+            onArchive={() => handleArchive(threadId)}
+            archivedChats={archivedChats}
+            threadId={threadId}
+          />
+        </Box>
       </Box>
-    </Box>
-
-    
     </>
   );
 }
@@ -321,4 +342,3 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
 ChatHeaderCompose.propTypes = {
   currentUserId: PropTypes.string,
 };
-

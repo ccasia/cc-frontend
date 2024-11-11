@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'src/routes/hooks';
 import Stack from '@mui/material/Stack';
 import PropTypes from 'prop-types';
-import { Typography } from '@mui/material';
+import { Divider, Typography } from '@mui/material';
 import ChatHeaderCompose from '../chat-header-compose';
 import ChatMessageInput from '../chat-message-input';
 import ChatMessageList from '../chat-message-list';
@@ -22,7 +22,6 @@ const ThreadMessages = ({ threadId }) => {
   const [campaignStatus, setCampaignStatus] = useState(null);
   // const { message, loading, error } = useGetMessagesFromThread(threadId);
 
-  
   useEffect(() => {
     // Listen for existing messages
     socket?.on('existingMessages', ({ threadId, oldMessages }) => {
@@ -62,7 +61,7 @@ const ThreadMessages = ({ threadId }) => {
 
     const thread = threads?.find((t) => t.id === threadId);
     if (thread && thread.campaign) {
-      setCampaignStatus(thread.campaign.status); 
+      setCampaignStatus(thread.campaign.status);
     }
 
     // Cleanup on component unmount
@@ -89,17 +88,27 @@ const ThreadMessages = ({ threadId }) => {
   return (
     <Stack sx={{ width: 1, height: 1, overflow: 'hidden' }}>
       <ChatHeaderCompose currentUserId={user.id} threadId={threadId} />
+
+      <Divider sx={{ width: '97%', mx: 'auto' }} />
+
       <ChatMessageList messages={messages} />
-     
-      { isGroup && campaignStatus === 'COMPLETED' ? (
-      <Typography variant="body2" color="text.secondary" align="center" sx={{ 
-        fontFamily: (theme) => theme.typography.fontPrimaryFamily,
-        letterSpacing: 2,  padding:"20px", fontSize: '12px' 
-        }}>
-        The campaign has ended.
-      </Typography>
-       ) : (
-      <ChatMessageInput threadId={threadId} onSendMessage={handleSendMessage} />
+
+      {isGroup && campaignStatus === 'COMPLETED' ? (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{
+            fontFamily: (theme) => theme.typography.fontPrimaryFamily,
+            letterSpacing: 2,
+            padding: '20px',
+            fontSize: '12px',
+          }}
+        >
+          The campaign has ended.
+        </Typography>
+      ) : (
+        <ChatMessageInput threadId={threadId} onSendMessage={handleSendMessage} />
       )}
     </Stack>
   );
