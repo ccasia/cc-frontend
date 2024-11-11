@@ -13,7 +13,7 @@ import Iconify from 'src/components/iconify';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useGetThreadById, archiveThread, unarchiveThread, useGetUnreadMessageCount } from 'src/api/chat';
+import { useGetThreadById, archiveUserThread, unarchiveUserThread, useGetUnreadMessageCount } from 'src/api/chat';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -60,19 +60,19 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
     setAnchorEl(null);
   };
 
-  const handleArchiveClick = async () => {
-    try {
-      if (userThreadData.archived) {
-        await unarchiveThread(threadData.id);
-      } else {
-        await archiveThread(threadData.id);
-      }
-      onArchive(threadData.id);
-      handleMenuClose();
-    } catch (error) {
-      console.error('Error archiving/unarchiving thread:', error);
-    }
-  };
+  // const handleArchiveClick = async () => {
+  //   try {
+  //     if (userThreadData.archived) {
+  //       await unarchiveUserThread(threadData.id);
+  //     } else {
+  //       await archiveUserThread(threadData.id);
+  //     }
+  //     onArchive(threadData.id);
+  //     handleMenuClose();
+  //   } catch (error) {
+  //     console.error('Error archiving/unarchiving thread:', error);
+  //   }
+  // };
 
   
   const renderInfo = (

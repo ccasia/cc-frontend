@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 import { mutate } from 'swr';
 import { useNavigate } from 'react-router-dom';
-import { IconButton, Button } from '@mui/material';
+import { IconButton, Button, Alert, Snackbar } from '@mui/material';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
 import TextField from '@mui/material/TextField';
@@ -14,28 +14,123 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import SearchNotFound from 'src/components/search-not-found';
+import { archiveUserThread, unarchiveUserThread } from 'src/api/chat';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import ThreadInfoModal from './threadinfoModal';
+import ChatArchiveModal from './chatArchiveModal';
+//  import { toast } from 'react-toastify';
 
 // ----------------------------------------------------------------------
 
 export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const { user } = useAuthContext();
   const { thread,  error } = useGetThreadById(threadId);
-
+  const [archivedChats, setArchivedChats] = useState([]);
+  const [openAlert, setOpenAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertSeverity, setAlertSeverity] = useState('success');
   const navigate = useNavigate();
   const [contacts, setContacts] = useState([]);
+  const [lastAction, setLastAction] = useState(null); 
+  const [previousArchivedChats, setPreviousArchivedChats] = useState([])
   const [selectedContact, setSelectedContact] = useState();
   const [loading, setLoading] = useState(true);
-  const [openModal, setOpenModal] = useState(false);
+  const [openInfoModal, setOpenInfoModal] = useState(false);
+  const [openArchiveModal, setOpenArchiveModal] = useState(false);
 
-  const handleOpenModal = () => {
-    setOpenModal(true);
+  const handleOpenInfoModal = () => {
+    setOpenInfoModal(true);
   };
 
-  const handleCloseModal = () => {
-    setOpenModal(false);
+  const handleCloseInfoModal = () => {
+    setOpenInfoModal(false);
   };
+
+  const handleOpenArchiveModal = () => {
+    setOpenArchiveModal(true);
+  };
+
+  const handleCloseArchiveModal = () => {
+    setOpenArchiveModal(false);
+  };
+
+  // const handleArchive = (threadId) => {
+  //   if (archivedChats.includes(threadId)) {
+  //     setArchivedChats(archivedChats.filter((id) => id !== threadId));
+  //     console.log(`Thread ${threadId} removed from archived chats.`);
+  //   } else {
+  //     setArchivedChats([...archivedChats, threadId]);
+  //     console.log(`Thread ${threadId} added to archived chats.`);
+  //   }
+  // };
+  // const handleArchive = async (threadId) => {
+  //   try {
+  //     if (archivedChats.includes(threadId)) {
+  //       setArchivedChats(archivedChats.filter((id) => id !== threadId));
+  //       await unarchiveUserThread(threadId);  
+  //       console.log(`Unarchived thread ${threadId}`);
+  //       setModalOpen(false);
+  //     } else {
+  //       setArchivedChats([...archivedChats, threadId]);
+  //       await archiveUserThread(threadId);  
+  //       console.log(`Archived thread ${threadId}`);
+  //       setModalOpen(false);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error archiving/unarchiving thread:', error);
+  //   }
+  // };
+
+  const handleArchive = async (threadId) => {
+    try {
+      setPreviousArchivedChats([...archivedChats]);
+
+      if (archivedChats.includes(threadId)) {
+        setArchivedChats(archivedChats.filter((id) => id !== threadId));
+        await unarchiveUserThread(threadId);
+        console.log(`Unarchived Chat ${threadId}`);
+        setAlertMessage('Chat unarchived successfully!');
+        setAlertSeverity('success');
+        setLastAction({ action: 'unarchive', threadId });
+      } else {
+        setArchivedChats([...archivedChats, threadId]);
+        await archiveUserThread(threadId);
+        console.log(`Archived Chat ${threadId}`);
+        setAlertMessage('Chat archived successfully!');
+        setAlertSeverity('success');
+        setLastAction({ action: 'archive', threadId });
+      }
+  
+      setOpenAlert(true);  // Show the alert
+      setOpenArchiveModal(false);  // Close the modal
+    } catch (error) {
+      console.error('Error archiving/unarchiving chat:', error);
+      setAlertMessage('Error archiving/unarchiving chat.');
+      setAlertSeverity('error');
+      setOpenAlert(true);  // Show the error alert
+    }
+  };
+
+  const handleUndo = () => {
+    if (lastAction) {
+      // Undo the last action
+      setArchivedChats(previousArchivedChats);
+  
+      // Optionally, re-perform the undo action on the server side (like unarchiving or archiving the thread again)
+      if (lastAction.action === 'archive') {
+        unarchiveUserThread(lastAction.threadId);
+        setAlertMessage('Undo: Chat unarchived!');
+      } else if (lastAction.action === 'unarchive') {
+        archiveUserThread(lastAction.threadId);
+        setAlertMessage('Undo: Chat archived!');
+      }
+  
+      setAlertSeverity('success');
+      setOpenAlert(true); // Show the undo confirmation
+      setLastAction(null); // Reset last action after undo
+    }
+  };
+
 
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'superadmin';
@@ -66,7 +161,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const otherUser = thread?.UserThread.find(u => u.userId !== currentUserId);
   const otherUserName = otherUser ? otherUser.user.name : 'Unknown User';
 
-  console.log("User", otherUser)
 
   useEffect(() => {
   }, [selectedContact]);
@@ -120,6 +214,28 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
 
   return (
     <>
+
+      <Snackbar
+        open={openAlert}
+        autoHideDuration={3000}
+        onClose={() => setOpenAlert(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        action={
+          lastAction && (
+            <Button
+              color="secondary"
+              size="small"
+              onClick={handleUndo}
+            >
+              Undo
+            </Button>
+          )
+        }
+      >
+        <Alert onClose={() => setOpenAlert(false)} severity={alertSeverity}>
+          {alertMessage}
+        </Alert>
+      </Snackbar>
       <Box
       sx={{
         display: 'flex',
@@ -159,34 +275,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
     <Typography variant="h6">Thread not found</Typography>
   )}
     </Box>
-
-      {/* Flex Center: Autocomplete component */}
-      {/* <Box sx={{ flexGrow: 1, mx: 2 }}>
-        <Autocomplete
-          width="20px"
-          popupIcon={null}
-          disablePortal
-          noOptionsText={<SearchNotFound query={contacts} />}
-          onChange={handleChange}
-          options={contacts}
-          getOptionLabel={(recipient) => recipient.name}
-          renderInput={(params) => <TextField {...params} placeholder="Search recipients" />}
-          renderOption={(props, recipient) => (
-            <li {...props} key={recipient.id}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar alt={recipient.name} src={recipient.photoURL} sx={{ width: 32, height: 32, mr: 1 }} />
-                <div>
-                  <Typography variant="body1">{recipient.name}</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {recipient.email}
-                  </Typography>
-                </div>
-              </Box>
-            </li>
-          )}
-        />
-      </Box> */}
-
       {/* Flex End: Icon buttons */}
       <Box paddingLeft={1} sx={{ display: 'flex', alignItems: 'center' }}>
         <Button width="100px"
@@ -198,87 +286,39 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
             alignItems: 'center',
             padding: '8px 16px', 
             textTransform: 'none',
-          }}>
+          }}
+          onClick={handleOpenArchiveModal}
+          >
           <Iconify icon="tabler:archive" style={{color: 'black'}}  />
-          Archive
+          {archivedChats.includes(threadId) ? 'Unarchive' : 'Archive'}
+
         </Button>
         <IconButton  sx={{
             borderRadius: '12px', 
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', 
             padding: '12px', 
           }}
-          onClick={handleOpenModal}
+          onClick={handleOpenInfoModal}
           >
             
           <Iconify icon="tabler:info-circle"   sx={{ color: 'black' }} />
         </IconButton>
 
-        <ThreadInfoModal open={openModal} onClose={handleCloseModal} threadId={threadId} />
-
+        <ThreadInfoModal open={openInfoModal} onClose={handleCloseInfoModal} threadId={threadId} />
+        <ChatArchiveModal open={openArchiveModal} 
+        onClose={handleCloseArchiveModal}  
+        onArchive={() => handleArchive(threadId)}  
+        archivedChats={archivedChats}
+        threadId={threadId} />
       </Box>
     </Box>
 
-      {/* {(isAdmin || isSuperAdmin) && contacts.length > 0 && (
-        <Autocomplete
-          sx={{ minWidth: 320 }}
-          popupIcon={null}
-          disablePortal
-          noOptionsText={<SearchNotFound query={contacts} />}
-          onChange={handleChange}
-          options={contacts}
-          getOptionLabel={(recipient) => recipient.name}
-          renderInput={(params) => <TextField {...params} placeholder="Search recipients" />}
-          renderOption={(props, recipient, { selected }) => (
-            <li {...props} key={recipient.id}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Avatar
-                  alt={recipient.name}
-                  src={recipient.photoURL}
-                  sx={{ width: 32, height: 32, mr: 1 }}
-                />
-                <div>
-                  <Typography variant="body1">{recipient.name}</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {recipient.email}
-                  </Typography>
-                </div>
-              </Box>
-            </li>
-          )} 
-
-          //  renderTags={(selected, getTagProps) =>
-          //    selected.map((recipient, index) => (
-          //      <Chip
-          //        {...getTagProps({ index })}
-          //        key={recipient.id}
-          //        label={recipient.name}
-          //        avatar={<Avatar alt={recipient.name} src={recipient.avatarUrl} />}
-          //        size="small"
-          //        variant="soft"
-          //      />
-          //    ))
-          //  } 
-        />
-      )} */} 
+    
     </>
   );
 }
 
 ChatHeaderCompose.propTypes = {
-  // onAddRecipients: PropTypes.func.isRequired,
   currentUserId: PropTypes.string,
 };
 
-// const existingThread = existingThreadResponse.data.find(thread =>
-//   thread.UserThread.some(userThread =>
-//     (userThread.userId === currentUserId || userThread.userId === recipientId) &&
-//     thread.UserThread.some(ut =>
-//       (ut.userId === recipientId || ut.userId === currentUserId)
-//     )
-//   )
-// );
