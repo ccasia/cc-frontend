@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
-
+import { Button } from '@mui/material';
 import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -15,32 +15,9 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  //   const isEmoji = (char) =>
-  //      char.length === 1 && char !== ' ' // Single-length characters are typically emojis
-  //   ;
-  //   const handleEmojiClick = (emoji) => {
-  //     setMessage(prevMessage => prevMessage + emoji); // Append emoji to the message
-  //     setShowEmojiPicker(false); // Hide emoji picker after selection
-  //   };
-
-  //   const handleSendMessage = useCallback(
-  //     (event) => {
-  //       if (event.type === 'click' || (event.type === 'keyup' && event.key === 'Enter' && !event.shiftKey)) {
-  //         if (message.trim() !== '') {
-  //           console.log('message sent:', message);
-  //           onSendMessage(message);
-  //           setMessage('');
-  //         }
-  //       } else if (event.type === 'keyup' && event.key === 'Enter' && event.shiftKey) {
-  //         event.preventDefault();
-  //         setMessage((prevMessage) => prevMessage);
-  //       }
-  //     },
-  //     [message, onSendMessage]
-  //   );
-
   const inputRef = useRef(null); // Reference to the input field
 
+ 
   const handleSendMessage = useCallback(() => {
     const trimmedMessage = message.trim(); // Remove unnecessary spaces
     if (trimmedMessage !== '') {
@@ -85,22 +62,6 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
         maxHeight: 100,
       }}
     >
-      {/* <div
-        style={{
-          position: 'absolute',
-          bottom: 60,
-          width: '400px',
-          height: '250px',
-          overflowY: 'auto',
-          backgroundColor: '#fff',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          zIndex: 1000,
-          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <EmojiPicker onEmojiClick={handleEmojiClick} emojiSize={24} emojiSpacing={8} />
-      </div> */}
 
       <IconButton onClick={toggleEmojiPicker} sx={{ alignSelf: 'center' }}>
         <Iconify icon="eva:smiling-face-fill" />
@@ -126,7 +87,7 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
         value={message}
         onKeyDown={handleKeyDown} // Handles sending the message only on Enter
         onChange={handleChangeMessage}
-        placeholder="Type a message"
+        placeholder="Type your message here"
         disabled={disabled}
         inputRef={inputRef} // Attach the ref to the input field
         sx={{
@@ -135,9 +96,9 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
           overflow: 'auto',
         }}
       />
-      <IconButton onClick={handleSendMessage} sx={{ alignSelf: 'center' }}>
-        <Iconify icon="tabler:send" width={18} />
-      </IconButton>
+      <Button  color="secondary" onClick={handleSendMessage} sx={{ alignSelf: 'center' }}>
+        Send
+      </Button>
     </Stack>
   );
 }

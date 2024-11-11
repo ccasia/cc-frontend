@@ -4,28 +4,140 @@ import { useState, useEffect } from 'react';
 
 import { mutate } from 'swr';
 import { useNavigate } from 'react-router-dom';
-
+import { IconButton, Button, Alert, Snackbar } from '@mui/material';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useGetThreadById } from 'src/api/chat';
 import Autocomplete from '@mui/material/Autocomplete';
 import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import SearchNotFound from 'src/components/search-not-found';
+import { archiveUserThread, unarchiveUserThread } from 'src/api/chat';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import ThreadInfoModal from './threadinfoModal';
+import ChatArchiveModal from './chatArchiveModal';
+//  import { toast } from 'react-toastify';
 
 // ----------------------------------------------------------------------
 
-export default function ChatHeaderCompose({ currentUserId }) {
+export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const { user } = useAuthContext();
+  const { thread,  error } = useGetThreadById(threadId);
+  const [archivedChats, setArchivedChats] = useState([]);
+  const [openAlert, setOpenAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertSeverity, setAlertSeverity] = useState('success');
   const navigate = useNavigate();
   const [contacts, setContacts] = useState([]);
+  const [lastAction, setLastAction] = useState(null); 
+  const [previousArchivedChats, setPreviousArchivedChats] = useState([])
   const [selectedContact, setSelectedContact] = useState();
   const [loading, setLoading] = useState(true);
+  const [openInfoModal, setOpenInfoModal] = useState(false);
+  const [openArchiveModal, setOpenArchiveModal] = useState(false);
+
+  const handleOpenInfoModal = () => {
+    setOpenInfoModal(true);
+  };
+
+  const handleCloseInfoModal = () => {
+    setOpenInfoModal(false);
+  };
+
+  const handleOpenArchiveModal = () => {
+    setOpenArchiveModal(true);
+  };
+
+  const handleCloseArchiveModal = () => {
+    setOpenArchiveModal(false);
+  };
+
+  // const handleArchive = (threadId) => {
+  //   if (archivedChats.includes(threadId)) {
+  //     setArchivedChats(archivedChats.filter((id) => id !== threadId));
+  //     console.log(`Thread ${threadId} removed from archived chats.`);
+  //   } else {
+  //     setArchivedChats([...archivedChats, threadId]);
+  //     console.log(`Thread ${threadId} added to archived chats.`);
+  //   }
+  // };
+  // const handleArchive = async (threadId) => {
+  //   try {
+  //     if (archivedChats.includes(threadId)) {
+  //       setArchivedChats(archivedChats.filter((id) => id !== threadId));
+  //       await unarchiveUserThread(threadId);  
+  //       console.log(`Unarchived thread ${threadId}`);
+  //       setModalOpen(false);
+  //     } else {
+  //       setArchivedChats([...archivedChats, threadId]);
+  //       await archiveUserThread(threadId);  
+  //       console.log(`Archived thread ${threadId}`);
+  //       setModalOpen(false);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error archiving/unarchiving thread:', error);
+  //   }
+  // };
+
+  const handleArchive = async (threadId) => {
+    try {
+      setPreviousArchivedChats([...archivedChats]);
+
+      if (archivedChats.includes(threadId)) {
+        setArchivedChats(archivedChats.filter((id) => id !== threadId));
+        await unarchiveUserThread(threadId);
+        console.log(`Unarchived Chat ${threadId}`);
+        setAlertMessage('Chat unarchived successfully!');
+        setAlertSeverity('success');
+        setLastAction({ action: 'unarchive', threadId });
+      } else {
+        setArchivedChats([...archivedChats, threadId]);
+        await archiveUserThread(threadId);
+        console.log(`Archived Chat ${threadId}`);
+        setAlertMessage('Chat archived successfully!');
+        setAlertSeverity('success');
+        setLastAction({ action: 'archive', threadId });
+      }
+  
+      setOpenAlert(true);  // Show the alert
+      setOpenArchiveModal(false);  // Close the modal
+    } catch (error) {
+      console.error('Error archiving/unarchiving chat:', error);
+      setAlertMessage('Error archiving/unarchiving chat.');
+      setAlertSeverity('error');
+      setOpenAlert(true);  // Show the error alert
+    }
+  };
+
+  const handleUndo = () => {
+    if (lastAction) {
+      // Undo the last action
+      setArchivedChats(previousArchivedChats);
+  
+      // Optionally, re-perform the undo action on the server side (like unarchiving or archiving the thread again)
+      if (lastAction.action === 'archive') {
+        unarchiveUserThread(lastAction.threadId);
+        setAlertMessage('Undo: Chat unarchived!');
+      } else if (lastAction.action === 'unarchive') {
+        archiveUserThread(lastAction.threadId);
+        setAlertMessage('Undo: Chat archived!');
+      }
+  
+      setAlertSeverity('success');
+      setOpenAlert(true); // Show the undo confirmation
+      setLastAction(null); // Reset last action after undo
+    }
+  };
+
 
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'superadmin';
+
+  if (error) {
+    return <Typography variant="h6">Error loading thread</Typography>;
+  }
 
   useEffect(() => {
     async function fetchUsers() {
@@ -33,7 +145,7 @@ export default function ChatHeaderCompose({ currentUserId }) {
         const response = await axiosInstance.get(endpoints.users.allusers);
         const filteredContacts = response.data.filter((user) => user.id !== currentUserId);
         setContacts(filteredContacts);
-        console.log('FIlted contacts', filteredContacts);
+        //  console.log('FIlted contacts', filteredContacts);
 
         //  console.log('Api Response', response.data) // Assuming response.data contains an array of users
       } catch (error) {
@@ -46,10 +158,11 @@ export default function ChatHeaderCompose({ currentUserId }) {
     fetchUsers();
   }, [currentUserId]);
 
-  console.log('CUrrent user', currentUserId);
+  const otherUser = thread?.UserThread.find(u => u.userId !== currentUserId);
+  const otherUserName = otherUser ? otherUser.user.name : 'Unknown User';
+
 
   useEffect(() => {
-    console.log('selectedContact in useEffect:', selectedContact);
   }, [selectedContact]);
 
   const handleChange = (_event, newValue) => {
@@ -64,32 +177,6 @@ export default function ChatHeaderCompose({ currentUserId }) {
       console.error('Invalid recipient:', recipient);
       return;
     }
-
-    // try {
-    //   // Check if a thread already exists
-    //   const existingThreadResponse = await axiosInstance.get(endpoints.threads.getAll, {
-
-    //   });
-
-    //   const existingThread = existingThreadResponse.data;
-    //   console.log ("existing thread", existingThreadResponse)
-
-    //   if (existingThread) {
-    //     console.log('Thread already exists.');
-    //   } else {
-    //     // Create a new thread
-    //     const response = await axiosInstance.post(endpoints.threads.create, {
-    //       title: `${recipient.name}`,
-    //       description: '',
-    //       userIds: [currentUserId, recipient.id],
-    //     });
-    //     console.log('Thread created:', response.data);
-    //     // Logic to open the newly created thread
-    //     // e.g., navigate to the chat thread or display the new thread
-    //   }
-    // } catch (error) {
-    //   console.error('Error handling thread creation or retrieval:', error);
-    // }
 
     try {
       const recipientId = recipient.id;
@@ -114,9 +201,6 @@ export default function ChatHeaderCompose({ currentUserId }) {
           userIds: [currentUserId, recipientId],
           isGroup: false,
         });
-        console.log('Thread created:', response.data);
-
-        console.log('Recipient ID:', recipientId);
 
         mutate(endpoints.threads.getAll);
 
@@ -128,103 +212,113 @@ export default function ChatHeaderCompose({ currentUserId }) {
     }
   };
 
-  if (loading) {
-    return <Typography variant="body2">Loading users...</Typography>;
-  }
-
-  // useEffect(() => {
-  //   // Listen for new messages
-  //   socket?.on('message', (data) => {
-  //     console.log('New message:', data);
-  //     // Handle new messages, e.g., update state or call a callback prop
-  //   });
-
-  //   return () => {
-  //     // Cleanup listener on unmount
-  //     socket?.off('message');
-  //   };
-  // }, []);
-
-  // const handleAddRecipients = useCallback(
-  //   (selected) => {
-  //     setSearchRecipients('');
-  //     onAddRecipients(selected);
-  //   },
-  //   [onAddRecipients]
-  // );
-  if (loading) {
-    return <Typography variant="body2">Loading users...</Typography>;
-  }
-
   return (
     <>
-      {/* <Typography variant="subtitle2" sx={{ color: 'text.primary', mr: 2 }}>
-      <Iconify
-          width={24}
-          icon="material-symbols:search-rounded" />
-      </Typography> */}
 
-      {(isAdmin || isSuperAdmin) && contacts.length > 0 && (
-        <Autocomplete
-          sx={{ minWidth: 320 }}
-          popupIcon={null}
-          disablePortal
-          noOptionsText={<SearchNotFound query={contacts} />}
-          onChange={handleChange}
-          options={contacts}
-          getOptionLabel={(recipient) => recipient.name}
-          renderInput={(params) => <TextField {...params} placeholder="Search recipients" />}
-          renderOption={(props, recipient, { selected }) => (
-            <li {...props} key={recipient.id}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Avatar
-                  alt={recipient.name}
-                  src={recipient.photoURL}
-                  sx={{ width: 32, height: 32, mr: 1 }}
-                />
-                <div>
-                  <Typography variant="body1">{recipient.name}</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {recipient.email}
-                  </Typography>
-                </div>
-              </Box>
-            </li>
-          )}
-
-          //  renderTags={(selected, getTagProps) =>
-          //    selected.map((recipient, index) => (
-          //      <Chip
-          //        {...getTagProps({ index })}
-          //        key={recipient.id}
-          //        label={recipient.name}
-          //        avatar={<Avatar alt={recipient.name} src={recipient.avatarUrl} />}
-          //        size="small"
-          //        variant="soft"
-          //      />
-          //    ))
-          //  }
-        />
+      <Snackbar
+        open={openAlert}
+        autoHideDuration={3000}
+        onClose={() => setOpenAlert(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        action={
+          lastAction && (
+            <Button
+              color="secondary"
+              size="small"
+              onClick={handleUndo}
+            >
+              Undo
+            </Button>
+          )
+        }
+      >
+        <Alert onClose={() => setOpenAlert(false)} severity={alertSeverity}>
+          {alertMessage}
+        </Alert>
+      </Snackbar>
+      <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        px: 2,
+        py: 1,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      {/* Flex Start: Thread information */}
+    <Box width="200px" sx={{ display: 'flex', alignItems: 'center' }}>
+    {thread ? (
+    <>
+      
+      {/* Display group chat title or single chat other user name */}
+      {thread.isGroup ? (
+        <>
+          <Avatar alt={thread.title} src={thread.photoURL} sx={{ width: 32, height: 32, mr: 1 }} />
+          <Typography variant="h6">{thread.title}</Typography> 
+        </>  
+      ) : (
+        <>
+        <Avatar alt={otherUserName} src={otherUser.user.photoURL} sx={{ width: 32, height: 32, mr: 1 }} />
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+      <Typography variant="body" paddingRight={2} sx={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', fontSize: '14px' }}>
+        {otherUserName}
+        <Iconify icon="material-symbols:verified" style={{ color: '#1340FF', paddingLeft: 1 }} />
+      </Typography>
+      <Typography variant="body2" sx={{fontSize: '10px'}}>Available</Typography>
+    </Box>     
+        </>  
       )}
+    </>
+  ) : (
+    <Typography variant="h6">Thread not found</Typography>
+  )}
+    </Box>
+      {/* Flex End: Icon buttons */}
+      <Box paddingLeft={1} sx={{ display: 'flex', alignItems: 'center' }}>
+        <Button width="100px"
+          sx={{
+            borderRadius: '12px', 
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', 
+            display: 'flex',
+            justifyContent: 'center', 
+            alignItems: 'center',
+            padding: '8px 16px', 
+            textTransform: 'none',
+          }}
+          onClick={handleOpenArchiveModal}
+          >
+          <Iconify icon="tabler:archive" style={{color: 'black'}}  />
+          {archivedChats.includes(threadId) ? 'Unarchive' : 'Archive'}
+
+        </Button>
+        <IconButton  sx={{
+            borderRadius: '12px', 
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', 
+            padding: '12px', 
+          }}
+          onClick={handleOpenInfoModal}
+          >
+            
+          <Iconify icon="tabler:info-circle"   sx={{ color: 'black' }} />
+        </IconButton>
+
+        <ThreadInfoModal open={openInfoModal} onClose={handleCloseInfoModal} threadId={threadId} />
+        <ChatArchiveModal open={openArchiveModal} 
+        onClose={handleCloseArchiveModal}  
+        onArchive={() => handleArchive(threadId)}  
+        archivedChats={archivedChats}
+        threadId={threadId} />
+      </Box>
+    </Box>
+
+    
     </>
   );
 }
 
 ChatHeaderCompose.propTypes = {
-  // onAddRecipients: PropTypes.func.isRequired,
   currentUserId: PropTypes.string,
 };
 
-// const existingThread = existingThreadResponse.data.find(thread =>
-//   thread.UserThread.some(userThread =>
-//     (userThread.userId === currentUserId || userThread.userId === recipientId) &&
-//     thread.UserThread.some(ut =>
-//       (ut.userId === recipientId || ut.userId === currentUserId)
-//     )
-//   )
-// );
