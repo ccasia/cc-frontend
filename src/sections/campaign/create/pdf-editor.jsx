@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { PDFDocument } from 'pdf-lib';
-import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { pdf } from '@react-pdf/renderer';
 import { enqueueSnackbar } from 'notistack';
@@ -40,7 +40,7 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
   const [signURL, setSignURL] = useState('');
   const [annotations, setAnnotations] = useState([]);
   const loading = useBoolean();
-  const signRef = useRef(null);
+  // const signRef = useRef(null);
 
   const smDown = useResponsive('down', 'sm');
 
@@ -140,7 +140,7 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
   const onSubmit = handleSubmit(async (data) => {
     try {
       loading.onTrue();
-      const { blob: agreementBlob, signImage } = await downloadPdf();
+      const { blob: agreementBlob } = await downloadPdf();
 
       const response = await fetch(signURL);
       const blob = await response.blob();

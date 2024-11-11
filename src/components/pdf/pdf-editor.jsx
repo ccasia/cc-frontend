@@ -202,7 +202,7 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
           }}
         > */}
         <Box textAlign="center">
-          <Box display="inline-block">
+          <Box display="inline-flex">
             <Document file={file} onLoadSuccess={onLoadSuccess} renderMode="canvas">
               <Stack gap={2}>
                 {Array(totalPages)
@@ -263,7 +263,7 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
                                 y: position.y / scale,
                               })
                             }
-                            scale={scale}
+                            // scale={scale}
                             dragHandleClassName="handle"
                             resizeHandleClasses={{
                               bottomRight: 'cc-resize',
