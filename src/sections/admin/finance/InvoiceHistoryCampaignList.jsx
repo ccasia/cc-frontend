@@ -1,6 +1,5 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
 import React, { useState } from 'react';
 import { useSnackbar } from 'notistack';
 
@@ -21,18 +20,9 @@ import {
   FormControl,
   TableContainer,
   InputAdornment,
-  Dialog,
-  CircularProgress,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
-import LoadingButton from '@mui/lab/LoadingButton';
 
 import Iconify from 'src/components/iconify';
-
-import InvoicePDF from 'src/sections/invoice/invoice-pdf';
-
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
 const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchChange }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -40,25 +30,13 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
   const [statusFilter, setStatusFilter] = useState('All');
   const [amountFilter, setAmountFilter] = useState('All');
   const [localData, setLocalData] = useState(data);
-  const [open, setOpen] = useState(false);
 
   const handleSearch = (e) => {
     onSearchChange(e);
   };
 
-  const handleStatusChange = async (invoice) => {
-    try {
-      const response = await axiosInstance.post(endpoints.invoice.updateStatus, {
-        id: invoice.id,
-        status: 'approved',
-      });
-      if (response.status === 200) {
-        enqueueSnackbar('Status updated successfully', { variant: 'success' });
-      }
-    } catch (error) {
-      console.log(error);
-      enqueueSnackbar('Error updating status', { variant: 'error' });
-    }
+  const handleStatusChange = (e) => {
+    setStatusFilter(e.target.value);
   };
 
   const handleAmountFilterChange = (e) => {
@@ -105,58 +83,6 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
   const handleSendReminder = (invoice) => {
     console.log(`Sending reminder for ${invoice}`);
     enqueueSnackbar(`Reminder sent for ${invoice}`, { variant: 'success' });
-  };
-
-  const PDFActions = ({ invoice }) => {
-    return (
-      <>
-        <Button
-          key={invoice?.id}
-          variant="outlined"
-          sx={{
-            color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-            borderColor: theme.palette.grey[150],
-            mr: 1,
-          }}
-          startIcon={<Iconify icon="eva:eye-outline" width={20} />}
-          onClick={() => setOpen(true)}
-        >
-          View
-        </Button>
-        <PDFDownloadLink
-          document={<InvoicePDF invoice={invoice} currentStatus={invoice.status} />}
-          fileName={invoice.invoiceNumber}
-          style={{ textDecoration: 'none' }}
-        >
-          {({ loading }) => (
-            <LoadingButton
-              variant="outlined"
-              color="primary"
-              loading={loading}
-              startIcon={<Iconify icon="eva:download-outline" width={20} />}
-            >
-              PDF
-            </LoadingButton>
-          )}
-        </PDFDownloadLink>
-        <Dialog
-          key={invoice.id}
-          open={open}
-          onClose={() => setOpen(false)}
-          sx={{
-            '& .MuiDialog-paper': {
-              width: '100%',
-            },
-          }}
-        >
-          <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-            <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
-              <InvoicePDF invoice={invoice} currentStatus={invoice.status} />
-            </PDFViewer>
-          </Box>
-        </Dialog>
-      </>
-    );
   };
 
   return (
@@ -262,9 +188,7 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                       value={item.status}
                       onChange={(e) => handleStatusChangeInTable(item.id, e.target.value)}
                       sx={{ textAlign: 'center' }}
-                      disabled={item.status == 'approved'}
                     >
-                      <MenuItem value="approved">Approved</MenuItem>
                       <MenuItem value="paid">Paid</MenuItem>
                       <MenuItem value="pending">Pending</MenuItem>
                       <MenuItem value="overdue">Overdue</MenuItem>
@@ -277,7 +201,7 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                       <Button
                         variant="outlined"
                         startIcon={<Iconify icon="eva:eye-outline" width={20} />}
-                        onClick={() => setOpen(true)}
+                        onClick={() => console.log(`Viewing ${item.invoice}`)}
                         sx={{
                           color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
                           borderColor: theme.palette.grey[150],
@@ -306,7 +230,7 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                           mr: 1,
                         }}
                         startIcon={<Iconify icon="eva:eye-outline" width={20} />}
-                        onClick={setOpen(true)}
+                        onClick={() => console.log(`Viewing ${item.invoice}`)}
                       >
                         View
                       </Button>
@@ -314,14 +238,35 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                         variant="outlined"
                         color="success"
                         startIcon={<Iconify icon="eva:checkmark-outline" width={20} />}
-                        onClick={() => handleStatusChangeInTable(item)}
+                        onClick={() => handleStatusChangeInTable(item.id, 'Paid')}
                       >
-                        Approve
+                        Paid
                       </Button>
                     </>
                   )}
                   {item.status !== 'Overdue' && item.status !== 'Pending' && (
-                    <PDFActions invoice={item} />
+                    <>
+                      <Button
+                        variant="outlined"
+                        sx={{
+                          color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                          borderColor: theme.palette.grey[150],
+                          mr: 1,
+                        }}
+                        startIcon={<Iconify icon="eva:eye-outline" width={20} />}
+                        onClick={() => console.log(`Viewing ${item.invoice}`)}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<Iconify icon="eva:download-outline" width={20} />}
+                        onClick={() => handleDownload(item.invoice)}
+                      >
+                        PDF
+                      </Button>
+                    </>
                   )}
                 </TableCell>
               </TableRow>
