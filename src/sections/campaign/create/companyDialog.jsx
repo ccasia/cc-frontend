@@ -102,7 +102,7 @@ export default function CreateCompany({ setCompany, open, onClose, companyName }
               type="submit"
               variant="contained"
               loading={isSubmitting}
-              loadingPosition="start"
+              // loadingPosition="start"
             >
               Create
             </LoadingButton>

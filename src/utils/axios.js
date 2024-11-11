@@ -101,6 +101,7 @@ export const endpoints = {
     getCreatorSocialMediaDataById: (id) => `/creator/${id}/social-media`,
     updateCreatorform: '/api/creator/updateCreatorForm',
     updateSocialMediaUsername: '/api/creator/updateSocialMediaUsername',
+    getMyCampaigns: (userId) => `/api/campaign/getMyCampaigns/${userId}`,
   },
   users: {
     newAdmin: '/api/user/admins',

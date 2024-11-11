@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 
 import { ToggleButton, ToggleButtonGroup } from '@mui/material';
 
@@ -13,21 +13,25 @@ import Posting from './posting/posting';
 const Submissions = ({ campaign, submissions, creator }) => {
   const [currentTab, setCurrentTab] = useState('agreement');
 
-  console.log(currentTab);
-
-  const agreementSubmission = submissions?.find(
-    (item) => item.submissionType.type === 'AGREEMENT_FORM'
+  const agreementSubmission = useMemo(
+    () => submissions?.find((item) => item.submissionType.type === 'AGREEMENT_FORM'),
+    [submissions]
   );
 
-  const firstDraftSubmission = submissions?.find(
-    (item) => item.submissionType.type === 'FIRST_DRAFT'
+  const firstDraftSubmission = useMemo(
+    () => submissions?.find((item) => item.submissionType.type === 'FIRST_DRAFT'),
+    [submissions]
   );
 
-  const finalDraftSubmission = submissions?.find(
-    (item) => item.submissionType.type === 'FINAL_DRAFT'
+  const finalDraftSubmission = useMemo(
+    () => submissions?.find((item) => item.submissionType.type === 'FINAL_DRAFT'),
+    [submissions]
   );
 
-  const postingSubmission = submissions?.find((item) => item.submissionType.type === 'POSTING');
+  const postingSubmission = useMemo(
+    () => submissions?.find((item) => item.submissionType.type === 'POSTING'),
+    [submissions]
+  );
 
   const renderTabs = (
     <ToggleButtonGroup

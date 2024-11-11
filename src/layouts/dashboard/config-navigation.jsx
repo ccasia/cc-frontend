@@ -67,7 +67,7 @@ export function useNavData() {
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
-      play();
+      // play();
       enqueueSnackbar(`${data.count + 1} new messages from ${data.name}.`, {
         anchorOrigin: {
           vertical: 'top',

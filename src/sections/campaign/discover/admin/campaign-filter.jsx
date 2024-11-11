@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
 
+import { createFilterOptions } from '@mui/material/Autocomplete';
 import {
   Chip,
   Stack,
@@ -15,7 +16,6 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
-import { createFilterOptions } from '@mui/material/Autocomplete';
 import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import Iconify from 'src/components/iconify';

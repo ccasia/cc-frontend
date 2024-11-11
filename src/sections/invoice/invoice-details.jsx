@@ -191,7 +191,7 @@ export default function InvoiceDetails({ invoice }) {
               {currentStatus}
             </Label>
 
-            <Typography variant="h6">{invoice?.invoiceNumber}</Typography>
+            <Typography variant="h6">{invoice?.invoiceNumber  || "NUll"}</Typography>
           </Stack>
 
           <Stack sx={{ typography: 'body2' }}>

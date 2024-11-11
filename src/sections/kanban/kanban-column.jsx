@@ -2,10 +2,10 @@ import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 
-import { alpha } from '@mui/material';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import { Box, alpha } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -149,21 +149,22 @@ export default function KanbanColumn({ column, tasks, index, status }) {
             px: 2,
             borderRadius: 2,
             bgcolor: 'background.neutral',
-
             ...(snapshot.isDragging && {
               bgcolor: (theme) => alpha(theme.palette.grey[500], 0.2),
             }),
           }}
         >
-          <Stack>
-            <KanbanColumnToolBar
-              columnName={column?.name}
-              onUpdateColumn={handleUpdateColumn}
-              onClearColumn={handleClearColumn}
-              onDeleteColumn={handleDeleteColumn}
-              taskLength={tasks.length}
-              provided={provided}
-            />
+          {/* <Stack> */}
+          <KanbanColumnToolBar
+            columnName={column?.name}
+            onUpdateColumn={handleUpdateColumn}
+            onClearColumn={handleClearColumn}
+            onDeleteColumn={handleDeleteColumn}
+            taskLength={tasks.length}
+            provided={provided}
+          />
+
+          <Box sx={{ overflow: 'auto', height: '65vh', scrollbarWidth: 'none' }}>
             <Droppable droppableId={column?.id} type="TASK">
               {(dropProvided, dropSnapshot) => (
                 <Stack
@@ -208,8 +209,9 @@ export default function KanbanColumn({ column, tasks, index, status }) {
                 </Stack>
               )}
             </Droppable>
-            {/* {renderAddTask} */}
-          </Stack>
+          </Box>
+          {/* {renderAddTask} */}
+          {/* </Stack> */}
         </Paper>
       )}
     </Draggable>

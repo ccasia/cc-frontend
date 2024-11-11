@@ -6,7 +6,6 @@ import { Box, Stack, Button } from '@mui/material';
 // import Image from 'src/components/image';
 
 import CampaignInfo from './campaign-info';
-import CampaignAdmin from './campaign-admin';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignLogistics from './campaign-logistics';
 
@@ -26,7 +25,7 @@ const CampaignDetailItem = ({ campaign }) => {
             { value: 'tasks', label: 'Activity' },
             { value: 'info', label: 'Campaign Details' },
             { value: 'logistics', label: 'Logistics' },
-            { value: 'admin', label: 'Campaign Admin' },
+            // { value: 'admin', label: 'Campaign Admin' }, // Remove admin tab
           ].map((tab) => (
             <Button
               key={tab.value}
@@ -73,7 +72,7 @@ const CampaignDetailItem = ({ campaign }) => {
             width: '100%',
             height: '1px',
             bgcolor: 'divider',
-            mt: -2.2, // Adjust to position the line closer to the buttons
+            mt: -2.2,
           }}
         />
 
@@ -82,7 +81,7 @@ const CampaignDetailItem = ({ campaign }) => {
             <CampaignMyTasks campaign={campaign} openLogisticTab={openLogisticTab} />
           )}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
-          {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />}
+          {/* {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />} */}
           {currentTab === 'logistics' && <CampaignLogistics campaign={campaign} />}
         </Box>
       </Stack>

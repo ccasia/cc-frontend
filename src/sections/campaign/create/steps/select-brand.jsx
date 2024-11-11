@@ -1,19 +1,17 @@
+import PropTypes from 'prop-types';
 import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import { Box, Stack, Avatar, ListItemText, createFilterOptions } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompany from 'src/hooks/use-get-company';
 
 import { RHFCheckbox, RHFAutocomplete } from 'src/components/hook-form';
 
 const filter = createFilterOptions();
 
-const SelectBrand = () => {
+const SelectBrand = ({ openBrand, openCompany }) => {
   const { data, isLoading } = useGetCompany();
-  const openCompany = useBoolean();
-  const openBrand = useBoolean();
   const { getValues } = useFormContext();
   const client = getValues('client');
   const brand = getValues('campaignBrand');
@@ -21,6 +19,7 @@ const SelectBrand = () => {
 
   useEffect(() => {
     if (client && client.inputValue) {
+      console.log('DASDSA');
       openCompany.onTrue();
     }
   }, [client, openCompany]);
@@ -160,3 +159,8 @@ const SelectBrand = () => {
 };
 
 export default memo(SelectBrand);
+
+SelectBrand.propTypes = {
+  openCompany: PropTypes.object,
+  openBrand: PropTypes.object,
+};

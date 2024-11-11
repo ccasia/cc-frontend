@@ -464,7 +464,7 @@ export const dashboardRoutes = [
           {
             index: true,
             element: (
-              <RoleBasedGuard roles={['creator']} hasContent>
+              <RoleBasedGuard roles={['creator' , 'admin']} hasContent>
                 <InvoiceCreator />
               </RoleBasedGuard>
             ),
@@ -472,7 +472,7 @@ export const dashboardRoutes = [
           {
             path: ':invoiceId',
             element: (
-              <RoleBasedGuard roles={['creator']} hasContent>
+              <RoleBasedGuard roles={['creator' , 'admin']} hasContent>
                 <InvoiceDetail />
               </RoleBasedGuard>
             ),

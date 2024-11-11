@@ -17,6 +17,7 @@ import { AuthProvider } from 'src/auth/context/jwt';
 import { LocalizationProvider } from './locales';
 import { SnackbarProvider } from './components/snackbar';
 import SocketProvider from './socket/context/socket';
+import PoppupProvider from './components/popup/popup-provider';
 
 // ----------------------------------------------------------------------
 // Test
@@ -49,15 +50,17 @@ export default function App() {
           }}
         >
           <ThemeProvider>
-            <SnackbarProvider>
-              <MotionLazy>
-                <SocketProvider>
-                  <SettingsDrawer />
-                  <ProgressBar />
-                  <Router />
-                </SocketProvider>
-              </MotionLazy>
-            </SnackbarProvider>
+            <PoppupProvider>
+              <SnackbarProvider>
+                <MotionLazy>
+                  <SocketProvider>
+                    <SettingsDrawer />
+                    <ProgressBar />
+                    <Router />
+                  </SocketProvider>
+                </MotionLazy>
+              </SnackbarProvider>
+            </PoppupProvider>
           </ThemeProvider>
         </SettingsProvider>
       </LocalizationProvider>

@@ -10,6 +10,7 @@ import {
   Autocomplete,
   ListItemText,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -21,7 +22,6 @@ import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
@@ -81,7 +81,7 @@ const CampaignView = () => {
           <Autocomplete
             freeSolo
             sx={{ width: { xs: 1, sm: 260 } }}
-            options={campaigns}
+            options={campaigns.filter((campaign) => campaign?.status === 'ACTIVE')}
             getOptionLabel={(option) => option.name}
             renderInput={(params) => (
               <TextField
@@ -137,7 +137,24 @@ const CampaignView = () => {
         </Button>
       </Stack>
 
-      {isLoading && <LoadingScreen />}
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: (theme) => theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
 
       {!isLoading &&
         (dataFiltered?.length > 0 ? (

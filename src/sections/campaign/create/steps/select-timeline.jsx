@@ -1,11 +1,10 @@
 /* eslint-disable react/prop-types */
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
-import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useFieldArray, useFormContext } from 'react-hook-form';
-import React, { memo, useState, useEffect, useCallback } from 'react';
-import { Droppable, Draggable, DragDropContext } from 'react-beautiful-dnd';
+import { Draggable, Droppable, DragDropContext } from 'react-beautiful-dnd';
+import React, { memo, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
@@ -16,6 +15,7 @@ import {
   Typography,
   IconButton,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 
 import useGetAllTimelineType from 'src/hooks/use-get-all-timeline';
@@ -24,18 +24,14 @@ import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import {
-  RHFSelect,
-  RHFCheckbox,
-  RHFTextField,
-  RHFDatePicker,
-  RHFAutocomplete,
-} from 'src/components/hook-form';
+import { RHFSelect, RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
 
 const SelectTimeline = () => {
   const { data, isLoading } = useGetAllTimelineType();
   const { data: defaultTimelines, isLoading: defaultTimelineLoading } = useGetDefaultTimeLine();
   const [dateError, setDateError] = useState(false);
+
+  const doneLoading = !isLoading && !defaultTimelineLoading;
 
   const [query, setQuery] = useState('');
 
@@ -54,31 +50,19 @@ const SelectTimeline = () => {
 
   const timelineEndDate = existingTimeline[fields.length - 1]?.endDate;
 
-  useEffect(() => {
-    if (timelineEndDate) {
-      setValue('campaignEndDate', dayjs(timelineEndDate).format('ddd LL'));
-    }
-  }, [setValue, timelineEndDate]);
-
-  const values = useCallback(() => {
-    setValue(
-      'timeline',
-      defaultTimelines
-        ?.sort((a, b) => a.order - b.order)
-        ?.map((elem) => ({
-          timeline_type: { id: elem?.timelineType?.id, name: elem.timelineType.name },
-          id: elem?.id,
-          duration: elem.duration,
-          for: elem?.for,
-          startDate: '',
-          endDate: '',
-        }))
-    );
-  }, [defaultTimelines, setValue]);
-
-  useEffect(() => {
-    values();
-  }, [values]);
+  const processedTimelines = useMemo(() => {
+    if (!defaultTimelines) return [];
+    return defaultTimelines
+      .sort((a, b) => a.order - b.order)
+      .map((elem) => ({
+        timeline_type: { id: elem?.timelineType?.id, name: elem.timelineType.name },
+        id: elem?.id,
+        duration: elem.duration,
+        for: elem?.for,
+        startDate: '',
+        endDate: '',
+      }));
+  }, [defaultTimelines]);
 
   const timelines = watch('timeline');
 
@@ -96,10 +80,6 @@ const SelectTimeline = () => {
     });
   }, [existingTimeline, setValue, startDate]);
 
-  useEffect(() => {
-    updateTimelineDates();
-  }, [startDate, existingTimeline.length, updateTimelineDates]);
-
   const handleDurationChange = (index, value) => {
     setValue(`timeline[${index}].duration`, value);
     updateTimelineDates();
@@ -108,14 +88,6 @@ const SelectTimeline = () => {
   const handleRemove = (index, item) => {
     remove(index);
   };
-
-  useEffect(() => {
-    if (endDate && startDate && endDate < startDate) {
-      setDateError(true);
-    } else {
-      setDateError(false);
-    }
-  }, [startDate, endDate]);
 
   const onDragEnd = (result) => {
     if (!result.destination) {
@@ -148,7 +120,29 @@ const SelectTimeline = () => {
     }
   };
 
-  const renderTimelineForm = (
+  useEffect(() => {
+    if (timelineEndDate) {
+      setValue('campaignEndDate', dayjs(timelineEndDate).format('ddd LL'));
+    }
+  }, [setValue, timelineEndDate]);
+
+  useEffect(() => {
+    setValue('timeline', processedTimelines);
+  }, [processedTimelines, setValue]);
+
+  useEffect(() => {
+    updateTimelineDates();
+  }, [startDate, existingTimeline.length, updateTimelineDates]);
+
+  useEffect(() => {
+    if (endDate && startDate && endDate < startDate) {
+      setDateError(true);
+    } else {
+      setDateError(false);
+    }
+  }, [startDate, endDate]);
+
+  const renderTimelineForm = () => (
     <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1,fr)', md: 'repeat(1, 1fr)' }} gap={1}>
       <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ md: 'center' }} mb={2} gap={2}>
         <Typography sx={{ textAlign: 'start' }} variant="h6">
@@ -159,8 +153,9 @@ const SelectTimeline = () => {
           Total days: {dayjs(endDate).diff(dayjs(startDate), 'day') || 0}
         </Typography>
       </Stack>
+
       <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="chraraters">
+        <Droppable droppableId="timeline">
           {(value) => (
             <Box {...value.droppableProps} ref={value.innerRef}>
               <Stack gap={3}>
@@ -185,63 +180,60 @@ const SelectTimeline = () => {
                       >
                         <Stack direction="row" alignItems="center" gap={3}>
                           <Iconify icon="mingcute:dots-fill" width={20} />
-
                           <Stack
                             direction={{ xs: 'column', md: 'row' }}
                             gap={1}
                             alignItems="center"
                             flexGrow={1}
                           >
-                            {!isLoading && (
-                              <RHFAutocomplete
-                                disabled={!!timelines[index]?.timeline_type?.name}
-                                label="Select a timeline name"
-                                name={`timeline[${index}].timeline_type`}
-                                fullWidth
-                                onInputChange={(e, val) => setQuery(val)}
-                                noOptionsText={
-                                  <Stack alignItems="center">
-                                    <Typography>No Option</Typography>
-                                    {query && (
-                                      <Button
-                                        variant="contained"
-                                        size="small"
-                                        fullWidth
-                                        sx={{ mt: 2, fontSize: 12 }}
-                                        onClick={() => handleSubmitNewTimelineType(index)}
-                                      >
-                                        Create {query}
-                                      </Button>
-                                    )}
-                                  </Stack>
-                                }
-                                options={data || []}
-                                getOptionLabel={(option) => option.name}
-                                isOptionEqualToValue={(option, a) => option.name === a.name}
-                                renderOption={(props, option) => {
-                                  const { key, ...optionProps } = props;
-                                  return (
-                                    <MenuItem key={key} {...optionProps}>
-                                      {option.name}
-                                    </MenuItem>
-                                  );
-                                }}
-                                filterOptions={(a, state) => {
-                                  const existingNames = timelines.map(
-                                    (val) => val?.timeline_type?.name
-                                  );
-                                  const filtered = a.filter(
-                                    (option) =>
-                                      !existingNames.includes(option.name) &&
-                                      option.name
-                                        .toLowerCase()
-                                        .includes(state.inputValue.toLowerCase())
-                                  );
+                            <RHFAutocomplete
+                              disabled={!!timelines[index]?.timeline_type?.name}
+                              label="Select a timeline name"
+                              name={`timeline[${index}].timeline_type`}
+                              fullWidth
+                              onInputChange={(e, val) => setQuery(val)}
+                              noOptionsText={
+                                <Stack alignItems="center">
+                                  <Typography>No Option</Typography>
+                                  {query && (
+                                    <Button
+                                      variant="contained"
+                                      size="small"
+                                      fullWidth
+                                      sx={{ mt: 2, fontSize: 12 }}
+                                      onClick={() => handleSubmitNewTimelineType(index)}
+                                    >
+                                      Create {query}
+                                    </Button>
+                                  )}
+                                </Stack>
+                              }
+                              options={data || []}
+                              getOptionLabel={(option) => option.name}
+                              isOptionEqualToValue={(option, a) => option.name === a.name}
+                              renderOption={(props, option) => {
+                                const { key, ...optionProps } = props;
+                                return (
+                                  <MenuItem key={key} {...optionProps}>
+                                    {option.name}
+                                  </MenuItem>
+                                );
+                              }}
+                              filterOptions={(a, state) => {
+                                const existingNames = timelines.map(
+                                  (val) => val?.timeline_type?.name
+                                );
+                                const filtered = a.filter(
+                                  (option) =>
+                                    !existingNames.includes(option.name) &&
+                                    option.name
+                                      .toLowerCase()
+                                      .includes(state.inputValue.toLowerCase())
+                                );
 
-                                  return filtered;
-                                }}
-                              />
-                            )}
+                                return filtered;
+                              }}
+                            />
 
                             <RHFSelect name={`timeline[${index}].for`} label="For">
                               <MenuItem value="admin">Admin</MenuItem>
@@ -265,10 +257,10 @@ const SelectTimeline = () => {
                               label="End Date"
                               disabled
                             />
-                            <RHFCheckbox
-                              name={`timeline[${index}].isSubmissionNeeded`}
-                              label="Need Submission?"
-                            />
+                            {/* <RHFCheckbox
+                      name={`timeline[${index}].isSubmissionNeeded`}
+                      label="Need Submission?"
+                    /> */}
                             <IconButton color="error" onClick={() => handleRemove(index, item)}>
                               <Iconify icon="uil:trash" />
                             </IconButton>
@@ -284,77 +276,77 @@ const SelectTimeline = () => {
           )}
         </Droppable>
       </DragDropContext>
+
       <Button variant="contained" onClick={handleAdd}>
         Add new timeline
       </Button>
     </Box>
   );
 
-  // const renderPreview = (
-  //   <Dialog open={modal.value} onClose={modal.onFalse}>
-  //     <DialogContent>
-  //       <Timeline position="alternate">
-  //         {existingTimeline.map((timeline, index) => (
-  //           <TimelineItem key={index}>
-  //             <TimelineOppositeContent color="text.secondary" fontSize={13}>
-  //               {dayjs(timeline.startDate).format('ddd LL')}
-  //             </TimelineOppositeContent>
-  //             <TimelineSeparator>
-  //               <TimelineDot />
-  //               <TimelineConnector />
-  //             </TimelineSeparator>
-  //             <TimelineContent variant="subtitle1">{timeline?.name}</TimelineContent>
-  //           </TimelineItem>
-  //         ))}
-  //       </Timeline>
-  //     </DialogContent>
-  //   </Dialog>
-  // );
+  if (!doneLoading)
+    return (
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
 
   return (
-    <Box
-      component="div"
-      sx={{
-        textAlign: 'center',
-      }}
-    >
-      <Stack gap={1}>
-        <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
-          <RHFDatePicker name="campaignStartDate" label="Campaign Start Date" minDate={dayjs()} />
-          <Iconify
-            icon="pepicons-pop:line-x"
-            width={20}
-            sx={{
-              transform: {
-                xs: 'rotate(90deg)',
-                md: 'rotate(180deg)',
-              },
-            }}
-          />
-          <RHFTextField name="campaignEndDate" disabled />
-        </Stack>
-        {dateError && (
-          <Typography variant="caption" color="red">
-            End date cannot be less than Start Date
-          </Typography>
-        )}
-      </Stack>
-
-      <Divider
+    doneLoading && (
+      <Box
         sx={{
-          my: 2,
-          borderStyle: 'dashed',
+          textAlign: 'center',
+          position: 'relative',
         }}
-      />
+      >
+        <Stack gap={1}>
+          <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
+            <RHFDatePicker name="campaignStartDate" label="Campaign Start Date" minDate={dayjs()} />
+            <Iconify
+              icon="pepicons-pop:line-x"
+              width={20}
+              sx={{
+                transform: {
+                  xs: 'rotate(90deg)',
+                  md: 'rotate(180deg)',
+                },
+              }}
+            />
+            <RHFTextField name="campaignEndDate" disabled />
+          </Stack>
+          {dateError && (
+            <Typography variant="caption" color="red">
+              End date cannot be less than Start Date
+            </Typography>
+          )}
+        </Stack>
 
-      {renderTimelineForm}
-      {/* {renderPreview} */}
-    </Box>
+        <Divider
+          sx={{
+            my: 2,
+            borderStyle: 'dashed',
+          }}
+        />
+
+        {/* {JSON.stringify(fields)} */}
+
+        {renderTimelineForm()}
+      </Box>
+    )
   );
 };
 
 export default memo(SelectTimeline);
-
-SelectTimeline.propTypes = {
-  defaultTimelines: PropTypes.array,
-};

@@ -52,9 +52,19 @@ const CampaignFirstDraft = ({
   const display = useBoolean();
   const { user } = useAuthContext();
 
-  const methods = useForm();
+  const methods = useForm({
+    defaultValues: {
+      draft: '',
+      caption: '',
+    },
+  });
 
-  const { handleSubmit, setValue, reset } = methods;
+  const {
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { isSubmitting, isDirty },
+  } = methods;
 
   const handleRemoveFile = () => {
     localStorage.removeItem('preview');
@@ -96,7 +106,6 @@ const CampaignFirstDraft = ({
   );
 
   const onSubmit = handleSubmit(async (value) => {
-    setLoading(true);
     const formData = new FormData();
     const newData = { ...value, campaignId: campaign.id, submissionId: submission.id };
     formData.append('data', JSON.stringify(newData));
@@ -114,8 +123,6 @@ const CampaignFirstDraft = ({
       enqueueSnackbar('Failed to submit draft', {
         variant: 'error',
       });
-    } finally {
-      setLoading(false);
     }
   });
 
@@ -265,7 +272,12 @@ const CampaignFirstDraft = ({
                         />
                       )}
                       <RHFTextField name="caption" placeholder="Caption" multiline />
-                      <LoadingButton loading={loading} variant="contained" type="submit">
+                      <LoadingButton
+                        loading={isSubmitting}
+                        variant="contained"
+                        type="submit"
+                        disabled={!isDirty}
+                      >
                         Submit Draft
                       </LoadingButton>
                     </Stack>

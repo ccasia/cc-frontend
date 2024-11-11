@@ -2,7 +2,7 @@
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
 import { PDFViewer } from '@react-pdf/renderer';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -18,6 +18,7 @@ import {
   Typography,
   tabsClasses,
   ListItemText,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -31,9 +32,9 @@ import useGetInvoiceByCreatorAndCampaign from 'src/hooks/use-get-invoice-creator
 import { _userAbout } from 'src/_mock';
 import { bgGradient } from 'src/theme/css';
 import { countries } from 'src/assets/data';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
-import { LoadingScreen } from 'src/components/loading-screen';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import InvoicePDF from 'src/sections/invoice/invoice-pdf';
@@ -46,11 +47,13 @@ import LogisticView from '../creator-stuff/logistics/view/logistic-view';
 const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const [currentTab, setCurrentTab] = useState('profile');
+  const { socket } = useSocketContext();
   const { campaign, campaignLoading } = useGetCampaignById(campaignId);
-  const { data: submissions /* isLoading: submissionLoading */ } = useGetSubmissions(
-    id,
-    campaignId
-  );
+  const {
+    data: submissions,
+    isLoading: submissionLoading,
+    mutate,
+  } = useGetSubmissions(id, campaignId);
   const { invoice } = useGetInvoiceByCreatorAndCampaign(id, campaignId);
 
   // use get invoice by campaign id and creator id
@@ -67,8 +70,6 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     // eslint-disable-next-line consistent-return
     return `+${prefix} ${phoneNumber}`;
   };
-
-  // const calculateRank = (val) => Math.ceil((val / 5) * 100);
 
   const renderTabs = (
     <Tabs
@@ -190,6 +191,18 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
 
   const currentIndex = shortlistedCreators.find((a) => a?.userId === id)?.index;
 
+  useEffect(() => {
+    if (socket) {
+      socket.on('newSubmission', () => {
+        mutate();
+      });
+    }
+
+    return () => {
+      socket?.off('newSubmission');
+    };
+  }, [socket, mutate]);
+
   return (
     <Container>
       <Button
@@ -203,72 +216,91 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         All creators
       </Button>
 
-      {isLoading && <LoadingScreen />}
-
-      <Card
-        sx={{
-          mb: 3,
-          height: 290,
-        }}
-      >
+      {isLoading && (
         <Box
           sx={{
-            ...bgGradient({
-              color: alpha(theme.palette.primary.darker, 0.8),
-              imgUrl: _userAbout?.coverUrl,
-            }),
-            height: 1,
-            color: 'common.white',
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
           }}
         >
-          <Stack
-            direction={{ xs: 'column', md: 'row' }}
+          <CircularProgress
+            thickness={7}
+            size={25}
             sx={{
-              left: { md: 24 },
-              bottom: { md: 24 },
-              zIndex: { md: 10 },
-              pt: { xs: 6, md: 0 },
-              position: { md: 'absolute' },
+              color: theme.palette.common.black,
+              strokeLinecap: 'round',
             }}
-          >
-            <Avatar
-              alt={data?.user?.name}
-              src={data?.user?.photoURL}
-              sx={{
-                mx: 'auto',
-                width: { xs: 64, md: 128 },
-                height: { xs: 64, md: 128 },
-                border: `solid 2px ${theme.palette.common.white}`,
-              }}
-            >
-              {data?.user?.name?.charAt(0).toUpperCase()}
-            </Avatar>
-
-            <ListItemText
-              sx={{
-                mt: 3,
-                ml: { md: 3 },
-                textAlign: { xs: 'center', md: 'unset' },
-              }}
-              primary={`${data?.user?.name?.charAt(0).toUpperCase()}${data?.user?.name.slice(1)}`}
-              secondary={data?.user?.creator?.pronounce}
-              primaryTypographyProps={{
-                typography: 'h4',
-              }}
-              secondaryTypographyProps={{
-                mt: 0.5,
-                color: 'inherit',
-                component: 'span',
-                typography: 'body2',
-                sx: { opacity: 0.48 },
-              }}
-            />
-          </Stack>
+          />
         </Box>
-        {renderTabs}
-      </Card>
+      )}
+
       {!campaignLoading && (
         <>
+          <Card
+            sx={{
+              mb: 3,
+              height: 290,
+            }}
+          >
+            <Box
+              sx={{
+                ...bgGradient({
+                  color: alpha(theme.palette.primary.darker, 0.8),
+                  imgUrl: _userAbout?.coverUrl,
+                }),
+                height: 1,
+                color: 'common.white',
+              }}
+            >
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                sx={{
+                  left: { md: 24 },
+                  bottom: { md: 24 },
+                  zIndex: { md: 10 },
+                  pt: { xs: 6, md: 0 },
+                  position: { md: 'absolute' },
+                }}
+              >
+                <Avatar
+                  alt={data?.user?.name}
+                  src={data?.user?.photoURL}
+                  sx={{
+                    mx: 'auto',
+                    width: { xs: 64, md: 128 },
+                    height: { xs: 64, md: 128 },
+                    border: `solid 2px ${theme.palette.common.white}`,
+                  }}
+                >
+                  {data?.user?.name?.charAt(0).toUpperCase()}
+                </Avatar>
+
+                <ListItemText
+                  sx={{
+                    mt: 3,
+                    ml: { md: 3 },
+                    textAlign: { xs: 'center', md: 'unset' },
+                  }}
+                  primary={`${data?.user?.name?.charAt(0).toUpperCase()}${data?.user?.name.slice(1)}`}
+                  secondary={data?.user?.creator?.pronounce}
+                  primaryTypographyProps={{
+                    typography: 'h3',
+                    fontFamily: theme.typography.fontSecondaryFamily,
+                  }}
+                  secondaryTypographyProps={{
+                    color: 'inherit',
+                    component: 'span',
+                    typography: 'body1',
+                    sx: { opacity: 0.48 },
+                    fontFamily: theme.typography.fontSecondaryFamily,
+                  }}
+                />
+              </Stack>
+            </Box>
+            {renderTabs}
+          </Card>
+
           {currentTab === 'profile' && renderProfile}
           {currentTab === 'overview' && <OverView campaign={campaign} />}
 

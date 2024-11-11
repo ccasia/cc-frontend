@@ -20,7 +20,7 @@ function CreatorSelection() {
   const data = useGetInvoicesByCampId(id);
   const { setContacts } = useXero();
   const contacts = useGetContacts();
-  console.log(contacts);
+  
   useEffect(() => {
     setContacts(contacts.contacts);
   }, []);

@@ -192,16 +192,17 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
         }}
         height={500}
       >
-        <Box
+        {/* <Box
           sx={{
             // scale,
             transformOrigin: 'top left',
             // width: `${100 / scale}%`,
             textAlign: 'center',
-            bgcolor: 'black',
+            // bgcolor: 'black',
           }}
-        >
-          <Box display="inline-block">
+        > */}
+        <Box textAlign="center">
+          <Box display="inline-flex">
             <Document file={file} onLoadSuccess={onLoadSuccess} renderMode="canvas">
               <Stack gap={2}>
                 {Array(totalPages)
@@ -262,7 +263,7 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
                                 y: position.y / scale,
                               })
                             }
-                            scale={scale}
+                            // scale={scale}
                             dragHandleClassName="handle"
                             resizeHandleClasses={{
                               bottomRight: 'cc-resize',
@@ -391,6 +392,7 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
             </Document>
           </Box>
         </Box>
+        {/* </Box> */}
       </Box>
 
       <Dialog open={dialog.value} onClose={dialog.onFalse} maxWidth="sm">

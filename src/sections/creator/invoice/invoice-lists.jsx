@@ -68,7 +68,7 @@ const InvoiceLists = ({ invoices }) => {
                     <Avatar src={invoice.campaign.company?.logo ?? invoice.campaign.brand?.logo} />
                     <ListItemText
                       primary={invoice.campaign.name}
-                      secondary={invoice.campaign.description?? invoice.campaign.name}
+                      secondary={invoice.campaign.company?.name ?? invoice.campaign.brand?.name}
                     />
                   </Stack>
                 </TableCell>
