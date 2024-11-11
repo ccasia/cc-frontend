@@ -12,7 +12,6 @@ import { useRouter } from 'src/routes/hooks';
 import { fToNow } from 'src/utils/format-time';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { Typography } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -102,9 +101,7 @@ export default function NotificationItem({ notification }) {
       variant: 'subtitle2',
       marginBottom: 0.5,
     }}
-    >
-
-  </ListItemText>
+    />
   )
   const renderText = (
     <ListItemText

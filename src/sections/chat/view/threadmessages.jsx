@@ -66,7 +66,7 @@ const ThreadMessages = ({ threadId }) => {
 
     const thread = threads?.find((t) => t.id === threadId);
     if (thread && thread.campaign) {
-      setCampaignStatus(thread.campaign.status); // Set campaign status from the thread data
+      setCampaignStatus(thread.campaign.status); 
     }
     console.log("Threasds stt", thread)
     // Cleanup on component unmount

@@ -1,3 +1,4 @@
+/* eslint-disable perfectionist/sort-imports */
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import { m } from 'framer-motion';
@@ -69,7 +70,7 @@ export default function NotificationsPopover() {
   }, []);
 
   const totalUnRead = data?.notifications?.filter((item) => !item.read).length;
-  const totalArchive = data?.notifications?.filter((item) => !item.archive).length;
+  //  const totalArchive = data?.notifications?.filter((item) => !item.archive).length;
 
   const handleMarkAllAsRead = async () => {
     try {
@@ -81,18 +82,18 @@ export default function NotificationsPopover() {
     }
   };
 
-  const archiveAll = async () => {
-    try {
-      await axiosInstance.patch(endpoints.notification.archive);
-      const newData = data.notifications.map((notification) => ({
-        ...notification,
-        archive: true,
-      }));
-      mutate(endpoints.notification.root, { notifications: newData }, false);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  // const archiveAll = async () => {
+  //   try {
+  //     await axiosInstance.patch(endpoints.notification.archive);
+  //     const newData = data.notifications.map((notification) => ({
+  //       ...notification,
+  //       archive: true,
+  //     }));
+  //     mutate(endpoints.notification.root, { notifications: newData }, false);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
 
   const renderHead = (
     <Stack direction="row" alignItems="center" sx={{ py: 2, pl: 2.5, pr: 1, minHeight: 68 }}>
