@@ -190,8 +190,8 @@ const CampaignModal = ({
   };
 
   const handleBookmarkClick = () => {
-    if (campaign?.bookMarkCampaign?.userId === user?.id) {
-      onUnsaveCampaign(campaign?.bookMarkCampaign.id);
+    if (bookMark) {
+      onUnsaveCampaign(campaign?.bookMarkCampaign?.find((item) => item.userId === user?.id)?.id);
     } else {
       onSaveCampaign(campaign?.id);
     }
