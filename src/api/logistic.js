@@ -1,10 +1,8 @@
-import useSWR from 'swr';
-
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-export const useGetLogisticById = (userId, campaignId) => {
-  const { data } = useSWR(endpoints);
-};
+// export const useGetLogisticById = (userId, campaignId) => {
+//   const { data } = useSWR(endpoints);
+// };
 
 export const useGetAllLogistics = () => {};
 

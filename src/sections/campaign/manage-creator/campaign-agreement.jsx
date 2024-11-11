@@ -1,10 +1,10 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
+import React, { useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -13,15 +13,14 @@ import {
   Alert,
   Button,
   Dialog,
+  Avatar,
+  Divider,
   Typography,
+  IconButton,
   DialogTitle,
-  ListItemText,
   DialogContent,
   DialogActions,
   useMediaQuery,
-  Avatar,
-  IconButton,
-  Divider,
   CircularProgress,
 } from '@mui/material';
 
@@ -42,20 +41,19 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-const AvatarIcon = ({ icon, ...props }) => {
-  return (
-    <Avatar {...props}>
-      <Iconify icon={icon} />
-    </Avatar>
-  );
-};
+// eslint-disable-next-line react/prop-types
+const AvatarIcon = ({ icon, ...props }) => (
+  <Avatar {...props}>
+    <Iconify icon={icon} />
+  </Avatar>
+);
 
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
 
 const LoadingDots = () => {
@@ -65,7 +63,7 @@ const LoadingDots = () => {
     const interval = setInterval(() => {
       setDots((prev) => {
         if (prev === '...') return '';
-        return prev + '.';
+        return `${prev}.`;
       });
     }, 500);
 
@@ -159,9 +157,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           'Content-Type': 'multipart/form-data',
         },
       });
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       enqueueSnackbar(res?.data?.message);
       mutate(endpoints.kanban.root);
       mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
@@ -170,8 +168,8 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       setPreview('');
       setSubmitStatus('success');
     } catch (error) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       enqueueSnackbar('Submission of agreement failed', {
         variant: 'error',
       });
@@ -228,20 +226,31 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         <EmptyContent title="Agreement Processing" />
       ) : (
         <>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: -2, ml: -1.2 }}>
-            <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>Agreement Submission ✍</Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+              mt: -2,
+              ml: -1.2,
+            }}
+          >
+            <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
+              Agreement Submission ✍
+            </Typography>
             <Typography variant="subtitle2" color="text.secondary">
               Due: {dayjs(submission?.dueDate).format('MMM DD, YYYY')}
             </Typography>
           </Box>
-          
-          <Box 
-            sx={{ 
+
+          <Box
+            sx={{
               borderBottom: '1px solid',
               borderColor: 'divider',
               mb: 3,
               mx: -1.5,
-            }} 
+            }}
           />
 
           {submission?.status === 'PENDING_REVIEW' && (
@@ -255,12 +264,14 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             <Stack gap={2}>
               <Box>
                 <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                  Before starting the campaign, you must sign the standard agreement submission procedure!
+                  Before starting the campaign, you must sign the standard agreement submission
+                  procedure!
                 </Typography>
                 <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                  Download the agreement PDF from the link below, and then upload it back here to proceed to the next step.
+                  Download the agreement PDF from the link below, and then upload it back here to
+                  proceed to the next step.
                 </Typography>
-                
+
                 <Button
                   variant="contained"
                   startIcon={<Iconify icon="material-symbols:download" width={20} />}
@@ -279,15 +290,15 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     },
                     '& .MuiButton-startIcon': {
                       color: '#203ff5',
-                    }
+                    },
                   }}
                 >
                   Download Agreement
                 </Button>
 
                 {/* Full-width Scrollable PDF Preview */}
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     mt: 3,
                     height: 400,
                     border: '1px solid',
@@ -305,8 +316,8 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     },
                   }}
                 >
-                  <Document 
-                    file={campaign?.agreement?.agreementUrl} 
+                  <Document
+                    file={campaign?.agreement?.agreementUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                   >
                     {Array.from(new Array(numPages), (el, index) => (
@@ -315,20 +326,20 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                         pageNumber={index + 1}
                         renderAnnotationLayer={false}
                         renderTextLayer={false}
-                        width={isSmallScreen ? undefined : 800}  // Set a fixed width for larger screens
+                        width={isSmallScreen ? undefined : 800} // Set a fixed width for larger screens
                       />
                     ))}
                   </Document>
                 </Box>
               </Box>
 
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   borderBottom: '1px solid',
                   borderColor: 'divider',
                   mb: -2,
                   mx: -1.5,
-                }} 
+                }}
               />
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
@@ -360,8 +371,8 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             <Stack justifyContent="center" alignItems="center" spacing={2}>
               <Image src="/assets/approve.svg" sx={{ width: 250 }} />
               <Typography variant="subtitle2">Your agreement has been approved!</Typography>
-              <Button 
-                onClick={display.onTrue} 
+              <Button
+                onClick={display.onTrue}
                 variant="contained"
                 startIcon={<Iconify icon="solar:document-bold" width={24} />}
                 sx={{
@@ -386,10 +397,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           {submission?.status === 'CHANGES_REQUIRED' && (
             <Stack gap={2}>
               <Box>
-                <Alert 
-                  severity="warning" 
+                <Alert
+                  severity="warning"
                   icon={<Iconify icon="solar:danger-triangle-bold" width={20} />}
-                  sx={{ 
+                  sx={{
                     mb: 2,
                     ml: -1,
                     p: 1.5,
@@ -397,15 +408,15 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     border: '1px solid',
                     borderColor: 'warning.light',
                     '& .MuiAlert-icon': {
-                      color: 'warning.main'
+                      color: 'warning.main',
                     },
                     bgcolor: 'warning.lighter',
                   }}
                 >
                   <Stack spacing={1}>
-                    <Typography 
-                      variant="subtitle2" 
-                      sx={{ 
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
                         color: 'warning.darker',
                         fontWeight: 600,
                       }}
@@ -415,35 +426,38 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
                     {submission?.feedback?.length > 0 && (
                       <Box>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
+                        <Typography
+                          variant="body2"
+                          sx={{
                             color: 'text.primary',
                             mb: 1,
-                            lineHeight: 1.5 
+                            lineHeight: 1.5,
                           }}
                         >
                           {submission.feedback[submission.feedback.length - 1].content}
                         </Typography>
 
-                        {submission.feedback[submission.feedback.length - 1].reasons?.length > 0 && (
+                        {submission.feedback[submission.feedback.length - 1].reasons?.length >
+                          0 && (
                           <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
-                            {submission.feedback[submission.feedback.length - 1].reasons.map((reason, index) => (
-                              <Box
-                                key={index}
-                                sx={{
-                                  px: 1,
-                                  py: 0.5,
-                                  borderRadius: 1,
-                                  bgcolor: 'warning.main',
-                                  color: 'white',
-                                  fontSize: '0.75rem',
-                                  fontWeight: 500,
-                                }}
-                              >
-                                {reason}
-                              </Box>
-                            ))}
+                            {submission.feedback[submission.feedback.length - 1].reasons.map(
+                              (reason, index) => (
+                                <Box
+                                  key={index}
+                                  sx={{
+                                    px: 1,
+                                    py: 0.5,
+                                    borderRadius: 1,
+                                    bgcolor: 'warning.main',
+                                    color: 'white',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {reason}
+                                </Box>
+                              )
+                            )}
                           </Stack>
                         )}
                       </Box>
@@ -452,10 +466,12 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 </Alert>
 
                 <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                  Before starting the campaign, you must sign the standard agreement submission procedure!
+                  Before starting the campaign, you must sign the standard agreement submission
+                  procedure!
                 </Typography>
                 <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                  Download the agreement PDF from the link below, and then upload it back here to proceed to the next step.
+                  Download the agreement PDF from the link below, and then upload it back here to
+                  proceed to the next step.
                 </Typography>
 
                 <Button
@@ -476,14 +492,14 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     },
                     '& .MuiButton-startIcon': {
                       color: '#203ff5',
-                    }
+                    },
                   }}
                 >
                   Download Agreement
                 </Button>
 
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     mt: 3,
                     height: 400,
                     border: '1px solid',
@@ -501,8 +517,8 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     },
                   }}
                 >
-                  <Document 
-                    file={campaign?.agreement?.agreementUrl} 
+                  <Document
+                    file={campaign?.agreement?.agreementUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                   >
                     {Array.from(new Array(numPages), (el, index) => (
@@ -518,13 +534,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 </Box>
               </Box>
 
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   borderBottom: '1px solid',
                   borderColor: 'divider',
                   mb: -2,
                   mx: -1.5,
-                }} 
+                }}
               />
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
@@ -557,12 +573,12 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             <DialogTitle>
               <Stack direction="row" alignItems="center" gap={2}>
                 <Box>
-                  <Typography 
+                  <Typography
                     variant="h5"
-                    sx={{ 
+                    sx={{
                       fontFamily: 'Instrument Serif, serif',
                       fontSize: { xs: '2rem', sm: '2.4rem' },
-                      fontWeight: 550
+                      fontWeight: 550,
                     }}
                   >
                     Upload Document
@@ -571,13 +587,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
                 <IconButton
                   onClick={() => setOpenUploadModal(false)}
-                  sx={{ 
+                  sx={{
                     ml: 'auto',
-                    '& svg': { 
+                    '& svg': {
                       width: 24,
                       height: 24,
-                      color: '#636366'
-                    }
+                      color: '#636366',
+                    },
                   }}
                 >
                   <Iconify icon="hugeicons:cancel-01" width={24} />
@@ -589,11 +605,11 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               <FormProvider methods={methods} onSubmit={onSubmit}>
                 {agreementForm ? (
                   <Box sx={{ mt: 0.5 }}>
-                    <Stack 
-                      direction="row" 
-                      alignItems="center" 
-                      spacing={2} 
-                      sx={{ 
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      spacing={2}
+                      sx={{
                         p: 2,
                         border: '1px solid',
                         borderColor: '#e7e7e7',
@@ -602,26 +618,26 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                         position: 'relative',
                       }}
                     >
-                      <AvatarIcon 
+                      <AvatarIcon
                         icon="ph:file-light"
-                        sx={{ 
+                        sx={{
                           width: 48,
                           height: 48,
                           bgcolor: '#f5f5f5',
                           color: '#8e8e93',
                           borderRadius: 1.2,
-                          '& svg': {  
+                          '& svg': {
                             width: 24,
                             height: 24,
                           },
-                        }} 
+                        }}
                       />
-                      
+
                       <Box sx={{ flexGrow: 1 }}>
-                        <Typography 
-                          variant="subtitle2" 
+                        <Typography
+                          variant="subtitle2"
                           noWrap
-                          sx={{ 
+                          sx={{
                             color: 'text.primary',
                             fontWeight: 600,
                             fontSize: '1rem',
@@ -629,39 +645,38 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                         >
                           {agreementForm.name}
                         </Typography>
-                        
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
+
+                        <Typography
+                          variant="caption"
+                          sx={{
                             color: 'text.secondary',
                             display: 'block',
                             mt: 0.5,
                             fontSize: '0.875rem',
                           }}
                         >
-                          {uploadProgress < 100 
-                            ? `Uploading ${uploadProgress}%` 
-                            : formatFileSize(agreementForm.size)
-                          }
+                          {uploadProgress < 100
+                            ? `Uploading ${uploadProgress}%`
+                            : formatFileSize(agreementForm.size)}
                         </Typography>
                       </Box>
 
                       {uploadProgress < 100 ? (
                         <Stack direction="row" spacing={2} alignItems="center">
                           <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                            <CircularProgress 
-                              variant="determinate" 
+                            <CircularProgress
+                              variant="determinate"
                               value={100}
                               size={30}
                               thickness={6}
                               sx={{ color: 'grey.300' }}
                             />
-                            <CircularProgress 
-                              variant="determinate" 
-                              value={uploadProgress} 
+                            <CircularProgress
+                              variant="determinate"
+                              value={uploadProgress}
                               size={30}
                               thickness={6}
-                              sx={{ 
+                              sx={{
                                 color: '#5abc6f',
                                 position: 'absolute',
                                 left: 0,
@@ -779,19 +794,11 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             </DialogActions>
           </Dialog>
 
-          <Dialog 
-            open={!!preview} 
-            onClose={() => setPreview('')} 
-            fullWidth 
-            maxWidth="md"
-          >
+          <Dialog open={!!preview} onClose={() => setPreview('')} fullWidth maxWidth="md">
             <DialogTitle>
               <Stack direction="row" alignItems="center" gap={2}>
                 <Typography variant="h5">Preview Document</Typography>
-                <IconButton
-                  onClick={() => setPreview('')}
-                  sx={{ ml: 'auto' }}
-                >
+                <IconButton onClick={() => setPreview('')} sx={{ ml: 'auto' }}>
                   <Iconify icon="hugeicons:cancel-01" width={20} />
                 </IconButton>
               </Stack>
@@ -799,10 +806,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             <Divider sx={{ width: '95%', mx: 'auto' }} />
             <DialogContent>
               <Box sx={{ height: 600, overflow: 'auto' }}>
-                <Document
-                  file={preview}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                >
+                <Document file={preview} onLoadSuccess={onDocumentLoadSuccess}>
                   {Array.from(new Array(numPages), (el, index) => (
                     <Page
                       key={index}
@@ -857,11 +861,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         </DialogActions>
       </Dialog>
 
-      <Dialog 
-        open={showSubmitDialog} 
-        maxWidth="xs"
-        fullWidth
-      >
+      <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>
         <DialogContent>
           <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
             {submitStatus === 'submitting' && (
@@ -876,21 +876,22 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     borderRadius: '50%',
                     bgcolor: '#f4b84a',
                     fontSize: '40px',
-                    mb: 2
+                    mb: 2,
                   }}
                 >
                   🛫
                 </Box>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+                <Typography
+                  variant="h6"
+                  sx={{
                     display: 'flex',
                     fontFamily: 'Instrument Serif, serif',
                     fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                    fontWeight: 550
+                    fontWeight: 550,
                   }}
                 >
-                  Submitting Agreement<LoadingDots />
+                  Submitting Agreement
+                  <LoadingDots />
                 </Typography>
               </>
             )}
@@ -906,25 +907,25 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     borderRadius: '50%',
                     bgcolor: '#835cf5',
                     fontSize: '50px',
-                    mb: -2
+                    mb: -2,
                   }}
                 >
                   🚀
                 </Box>
                 <Stack spacing={1} alignItems="center">
-                  <Typography 
+                  <Typography
                     variant="h6"
-                    sx={{ 
+                    sx={{
                       fontFamily: 'Instrument Serif, serif',
                       fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                      fontWeight: 550
+                      fontWeight: 550,
                     }}
                   >
                     Agreement Submitted!
                   </Typography>
-                  <Typography 
+                  <Typography
                     variant="body1"
-                    sx={{ 
+                    sx={{
                       color: '#636366',
                       mt: -2,
                     }}
@@ -946,20 +947,17 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     borderRadius: '50%',
                     bgcolor: 'error.lighter',
                     fontSize: '40px',
-                    mb: 2
+                    mb: 2,
                   }}
                 >
-                  <Iconify 
-                    icon="mdi:error" 
-                    sx={{ width: 60, height: 60, color: 'error.main' }} 
-                  />
+                  <Iconify icon="mdi:error" sx={{ width: 60, height: 60, color: 'error.main' }} />
                 </Box>
-                <Typography 
+                <Typography
                   variant="h6"
-                  sx={{ 
+                  sx={{
                     fontFamily: 'Instrument Serif, serif',
                     fontSize: { xs: '1.5rem', sm: '1.8rem' },
-                    fontWeight: 550
+                    fontWeight: 550,
                   }}
                 >
                   Submission Failed
@@ -970,7 +968,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         </DialogContent>
         {(submitStatus === 'success' || submitStatus === 'error') && (
           <DialogActions sx={{ pb: 3, px: 3 }}>
-            <Button 
+            <Button
               onClick={handleCloseSubmitDialog}
               variant="contained"
               fullWidth

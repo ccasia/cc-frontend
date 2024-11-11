@@ -6,7 +6,6 @@ import { Box, Stack, Button } from '@mui/material';
 // import Image from 'src/components/image';
 
 import CampaignInfo from './campaign-info';
-import CampaignAdmin from './campaign-admin';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignLogistics from './campaign-logistics';
 

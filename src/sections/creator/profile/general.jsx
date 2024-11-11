@@ -55,8 +55,6 @@ export default function AccountGeneral() {
     about: Yup.string().required('About is required'),
   });
 
-  console.log(user?.paymentForm);
-
   const defaultValues = {
     name: user?.name || '',
     email: user?.email || '',

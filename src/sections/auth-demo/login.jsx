@@ -1,6 +1,5 @@
 import React from 'react';
 import * as Yup from 'yup';
-import useSound from 'use-sound';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -36,11 +35,13 @@ const Login = () => {
   const LoginSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     password: Yup.string().required('Password is required'),
+    
   });
 
   const defaultValues = {
     email: '',
     password: '',
+
   };
 
   const methods = useForm({

@@ -34,7 +34,6 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
 
 import CreatorForm from '../creator-form';
 import CampaignLists from '../campaign-list';
@@ -645,7 +644,24 @@ export default function CampaignListView() {
         </Stack>
       </Box>
 
-      {isLoading && <LoadingScreen />}
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
 
       {!isLoading &&
         (filteredData?.length > 0 ? (
@@ -729,7 +745,9 @@ export default function CampaignListView() {
 
 const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
   if (filter === 'saved') {
-    inputData = inputData?.filter((campaign) => campaign.bookMarkCampaign?.userId === user?.id);
+    inputData = inputData?.filter((campaign) =>
+      campaign.bookMarkCampaign.some((item) => item.userId === user.id)
+    );
   }
 
   if (filter === 'draft') {
