@@ -22,7 +22,6 @@ export default function CreatorView() {
 
   const roleCheck = useCallback(async () => {
     const res = await axiosInstance.get(endpoints.auth.checkCreator);
-    console.log(res);
     setCreator(res?.data?.creator);
   }, []);
 

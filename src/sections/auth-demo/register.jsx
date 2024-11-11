@@ -115,12 +115,16 @@ const Register = () => {
     name: Yup.string().required('First name required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     password: Yup.string().required('Password is required'),
+    confirmPassword: Yup.string()
+      .required('Confirm password is required')
+      .oneOf([Yup.ref('password')], 'Passwords must match'),
   });
 
   const defaultValues = {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
   };
 
   const methods = useForm({
@@ -172,6 +176,21 @@ const Register = () => {
       <RHFTextField
         name="password"
         label="Password"
+        type={password.value ? 'text' : 'password'}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton onClick={password.onToggle} edge="end">
+                <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+      />
+
+      <RHFTextField
+        name="confirmPassword"
+        label="Confirm Password"
         type={password.value ? 'text' : 'password'}
         InputProps={{
           endAdornment: (

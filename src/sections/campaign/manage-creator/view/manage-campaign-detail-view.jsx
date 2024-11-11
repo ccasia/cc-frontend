@@ -2,21 +2,24 @@ import useSWR from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import React, { useEffect, useCallback } from 'react';
+
  
 import { Container, Stack, Typography, Button } from '@mui/material';
 import Iconify from 'src/components/iconify';
  
+
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
  
 import { fetcher, endpoints } from 'src/utils/axios';
  
 import { useAuthContext } from 'src/auth/hooks';
- 
+
+
 import { LoadingScreen } from 'src/components/loading-screen';
  
 import CampaignDetailItem from '../campaign-detail-item';
- 
+
 const ManageCampaignDetailView = ({ id }) => {
   const { user } = useAuthContext();
   const router = useRouter();

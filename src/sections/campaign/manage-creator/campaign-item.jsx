@@ -1,18 +1,10 @@
 /* eslint-disable no-nested-ternary */
-import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { enqueueSnackbar } from 'notistack';
-import { useState, useEffect } from 'react';
 
-import { alpha, useTheme } from '@mui/material/styles';
-import { Bookmark, BookmarkBorder } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
-import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
 
@@ -22,19 +14,19 @@ import Image from 'src/components/image';
 
 export default function CampaignItem({ campaign, user }) {
   // const [open, setOpen] = useState(false);
-  const [upload, setUpload] = useState([]);
-  const [, setLoading] = useState(false);
+  // const [upload, setUpload] = useState([]);
+  // const [, setLoading] = useState(false);
   // const dialog = useBoolean();
   // const text = useBoolean();
   // const video = useBoolean();
 
-  const { socket } = useSocketContext();
+  // const { socket } = useSocketContext();
   // const router = useRouter();
   const theme = useTheme();
 
-  const [bookMark, setBookMark] = useState(
-    campaign?.bookMarkCampaign?.some((item) => item.userId === user?.id) || false
-  );
+  // const [bookMark, setBookMark] = useState(
+  //   campaign?.bookMarkCampaign?.some((item) => item.userId === user?.id) || false
+  // );
 
   // useEffect(() => {
   //   const handlePitchLoading = (data) => {
@@ -60,12 +52,12 @@ export default function CampaignItem({ campaign, user }) {
   //     }
   //   };
 
-    // const handlePitchSuccess = (data) => {
-    //   mutate(endpoints.campaign.getAllActiveCampaign);
-    //   enqueueSnackbar(data.name);
-    //   setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));
-    //   setLoading(false);
-    // };
+  // const handlePitchSuccess = (data) => {
+  //   mutate(endpoints.campaign.getAllActiveCampaign);
+  //   enqueueSnackbar(data.name);
+  //   setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));
+  //   setLoading(false);
+  // };
 
   //   socket?.on('pitch-loading', handlePitchLoading);
   //   socket?.on('pitch-uploaded', handlePitchSuccess);
@@ -228,7 +220,7 @@ export default function CampaignItem({ campaign, user }) {
               />
             </Box>
           }
-          label={`${Math.min(Math.round(campaign?.totalCompletion), 100)}% COMPLETED`} //totalCompletion
+          label={`${Math.min(Math.round(campaign?.totalCompletion), 100)}% COMPLETED`} // totalCompletion
           sx={{
             backgroundColor: theme.palette.common.white,
             color: '#48484a',
@@ -246,7 +238,7 @@ export default function CampaignItem({ campaign, user }) {
             },
           }}
         />
-        <Chip
+        {/* <Chip
           icon={
             bookMark ? <Bookmark sx={{ fontSize: 24 }} /> : <BookmarkBorder sx={{ fontSize: 24 }} />
           }
@@ -285,7 +277,7 @@ export default function CampaignItem({ campaign, user }) {
             padding: 0,
             transition: 'background-color 0.2s ease-in-out',
           }}
-        />
+        /> */}
       </Box>
     </Box>
   );

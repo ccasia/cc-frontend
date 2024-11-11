@@ -96,86 +96,133 @@ const Overview = () => {
             )}
 
             {!isLoading && data.length < 1 ? (
-              <Typography textAlign="center" variant="subtitle2" color="text.secondary">
-                No campaigns found
-              </Typography>
+              <Box
+                sx={{
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: '#EBEBEB',
+                  p: 5,
+                  textAlign: 'center',
+                }}
+              >
+                <ListItemText
+                  primary="No campaigns to show"
+                  secondary="Click here to discover campaigns for you!"
+                  primaryTypographyProps={{
+                    variant: 'subtitle1',
+                  }}
+                  secondaryTypographyProps={{
+                    variant: 'subtitle2',
+                  }}
+                />
+              </Box>
             ) : (
-              data?.slice(0, 3).map((item, index) => (
-                <Card
-                  sx={{ p: 2, boxShadow: 'none', border: 1, borderColor: '#EBEBEB' }}
-                  key={index}
-                >
-                  <Stack
-                    direction={{ sm: 'row' }}
-                    alignItems={{ xs: 'start', sm: 'center' }}
-                    justifyContent={{ sm: 'space-between' }}
-                    gap={{ xs: 2, sm: 0 }}
+              <>
+                {data?.slice(0, 3).map((item, index) => (
+                  <Card
+                    sx={{ p: 2, boxShadow: 'none', border: 1, borderColor: '#EBEBEB' }}
+                    key={index}
                   >
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar src={item?.campaignImages[0]}>H</Avatar>
-                      <ListItemText
-                        primary={item?.campaignName}
-                        secondary={item?.brand?.name}
-                        primaryTypographyProps={{
-                          variant: 'h6',
-                          fontWeight: 'bold',
-                          color: 'black',
-                        }}
-                        secondaryTypographyProps={{
-                          variant: 'subtitle2',
-                          color: 'text.secondary',
-                        }}
-                      />
-                    </Stack>
-                    <Box
-                      sx={{
-                        p: 0.5,
-                        px: 1,
-                        textAlign: 'center',
-                        border: 1,
-                        borderColor: '#EBEBEB',
-                        borderRadius: 1,
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                      }}
+                    <Stack
+                      direction={{ sm: 'row' }}
+                      alignItems={{ xs: 'start', sm: 'center' }}
+                      justifyContent={{ sm: 'space-between' }}
+                      gap={{ xs: 2, sm: 0 }}
                     >
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        {item?.completed > 0 && (
-                          <CircularProgress
-                            variant="determinate"
-                            thickness={8}
-                            value={parseInt(item?.completed, 10)}
-                            size={20}
-                            sx={{
-                              ' .MuiCircularProgress-circle': {
-                                stroke: (theme) =>
-                                  theme.palette.mode === 'dark'
-                                    ? theme.palette.common.white
-                                    : theme.palette.success.main,
-                                strokeLinecap: 'round',
-                              },
-                            }}
-                          />
-                        )}
-                        <Typography variant="subtitle2" color="text.secondary">
-                          {item?.completed}% Completed
-                        </Typography>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Avatar src={item?.campaignImages[0]}>H</Avatar>
+                        <ListItemText
+                          primary={item?.campaignName}
+                          secondary={item?.brand?.name}
+                          primaryTypographyProps={{
+                            variant: 'h6',
+                            fontWeight: 'bold',
+                            color: 'black',
+                          }}
+                          secondaryTypographyProps={{
+                            variant: 'subtitle2',
+                            color: 'text.secondary',
+                          }}
+                        />
                       </Stack>
-                    </Box>
-                  </Stack>
-                  <Divider
+                      <Box
+                        sx={{
+                          p: 0.5,
+                          px: 1,
+                          textAlign: 'center',
+                          border: 1,
+                          borderColor: '#EBEBEB',
+                          borderRadius: 1,
+                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          {item?.completed > 0 && (
+                            <CircularProgress
+                              variant="determinate"
+                              thickness={8}
+                              value={parseInt(item?.completed, 10)}
+                              size={20}
+                              sx={{
+                                ' .MuiCircularProgress-circle': {
+                                  stroke: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                      ? theme.palette.common.white
+                                      : theme.palette.success.main,
+                                  strokeLinecap: 'round',
+                                },
+                              }}
+                            />
+                          )}
+                          <Typography variant="subtitle2" color="text.secondary">
+                            {item?.completed}% Completed
+                          </Typography>
+                        </Stack>
+                      </Box>
+                    </Stack>
+                    <Divider
+                      sx={{
+                        my: 2,
+                      }}
+                    />
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Last update: Awaiting client approval.
+                    </Typography>
+                  </Card>
+                ))}
+
+                <Divider />
+
+                <Box
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight="bolder"
+                    component={RouterLink}
                     sx={{
-                      my: 2,
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
                     }}
-                  />
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Last update: Awaiting client approval.
+                    href={paths.dashboard.campaign.creator.manage}
+                  >
+                    SEE ALL CAMPAIGNS
                   </Typography>
-                </Card>
-              ))
+                  <Iconify icon="ic:round-navigate-next" width={18} />
+                </Box>
+              </>
             )}
           </Stack>
 
-          <Divider />
+          {/* <Divider />
 
           <Box
             sx={{
@@ -201,7 +248,7 @@ const Overview = () => {
               SEE ALL CAMPAIGNS
             </Typography>
             <Iconify icon="ic:round-navigate-next" width={18} />
-          </Box>
+          </Box> */}
         </Box>
       </Grid>
 

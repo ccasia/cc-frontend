@@ -81,7 +81,7 @@ const CampaignView = () => {
           <Autocomplete
             freeSolo
             sx={{ width: { xs: 1, sm: 260 } }}
-            options={campaigns}
+            options={campaigns.filter((campaign) => campaign?.status === 'ACTIVE')}
             getOptionLabel={(option) => option.name}
             renderInput={(params) => (
               <TextField
