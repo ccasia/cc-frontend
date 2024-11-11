@@ -15,9 +15,6 @@ import { markMessagesAsSeen, useTotalUnreadCount, useGetAllThreads } from 'src/a
 const ThreadMessages = ({ threadId }) => {
   const { socket } = useSocketContext();
   // const [message, setMessage] = useState([]);
-  const searchParams = useSearchParams();
-  const selectedConversationId = searchParams.get('id') || '';
-  const { id } = useParams();
   const [latestMessages, setLatestMessages] = useState({});
   const [threadMessages, setThreadMessages] = useState({});
   const { user } = useAuthContext();
@@ -68,7 +65,7 @@ const ThreadMessages = ({ threadId }) => {
     if (thread && thread.campaign) {
       setCampaignStatus(thread.campaign.status); 
     }
-    console.log("Threasds stt", thread)
+    
     // Cleanup on component unmount
     return () => {
       socket?.off('message');

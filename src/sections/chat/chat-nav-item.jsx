@@ -21,7 +21,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-export default function ChatNavItem({ onArchive, selected, collapse, thread, latestMessage }) {
+export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
   const { user } = useAuthContext();
   const [anchorEl, setAnchorEl] = useState(null);
   const mdUp = useResponsive('up', 'md');
@@ -31,8 +31,9 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
   const [otherUser, setOtherUser] = useState(null);
   const [userThreadData, setUserThreadData] = useState(null);
   const { thread: threadData } = useGetThreadById(thread.id);
+  
 
-
+ 
   useEffect(() => {
     if (threadData && !threadData.isGroup && threadData.UserThread) {
       const otherUserInfo = threadData.UserThread.find(userThread => userThread.user.id !== user.id)?.user;
@@ -74,8 +75,11 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
   //   }
   // };
 
-  
+  const latestMessage = thread.latestMessage;
+
+  //  console.log('messages', latestMessage)
   const renderInfo = (
+    
     <>
     <Badge key={user?.status} variant={user?.status} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
       <Avatar alt={''} src={avatarURL} sx={{ width: 48, height: 48 }} />
@@ -117,12 +121,12 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
         whiteSpace: 'nowrap',
       }}
     >
-      {latestMessage?.createdAt
-        ? format(new Date(latestMessage.createdAt), 'hh:mm a') // 12-hour format with AM/PM
-        : ''}
+      {latestMessage && latestMessage.createdAt
+      ? format(new Date(latestMessage.createdAt), 'hh:mm a') 
+      : ''}
     </Typography>
   </Stack>
-</Stack>
+  </Stack>
 
       {/* Latest Message Content*/}
       <Typography
@@ -138,7 +142,8 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread, lat
           mt: 0.5, 
         }}
       >
-        {/* {latestMessage?.content} */}
+       {latestMessage && latestMessage.content }
+      
       </Typography>
     </Stack>
     </>
@@ -212,6 +217,7 @@ ChatNavItem.propTypes = {
   onArchive: PropTypes.func.isRequired,
   conversation: PropTypes.object,
   latestMessage: PropTypes.object,
+  messages: PropTypes.array.isRequired,
   onCloseMobile: PropTypes.func,
   selected: PropTypes.bool,
 };

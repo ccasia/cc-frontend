@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
-
+import { Button } from '@mui/material';
 import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -41,6 +41,7 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
 
   const inputRef = useRef(null); // Reference to the input field
 
+ 
   const handleSendMessage = useCallback(() => {
     const trimmedMessage = message.trim(); // Remove unnecessary spaces
     if (trimmedMessage !== '') {
@@ -72,6 +73,7 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
     inputRef.current.focus();
   };
 
+  console.log ( "send message", handleSendMessage)
   return (
     <Stack
       direction="row"
@@ -126,7 +128,7 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
         value={message}
         onKeyDown={handleKeyDown} // Handles sending the message only on Enter
         onChange={handleChangeMessage}
-        placeholder="Type a message"
+        placeholder="Type your message here"
         disabled={disabled}
         inputRef={inputRef} // Attach the ref to the input field
         sx={{
@@ -135,9 +137,9 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
           overflow: 'auto',
         }}
       />
-      <IconButton onClick={handleSendMessage} sx={{ alignSelf: 'center' }}>
-        <Iconify icon="tabler:send" width={18} />
-      </IconButton>
+      <Button  color="secondary" onClick={handleSendMessage} sx={{ alignSelf: 'center' }}>
+        Send
+      </Button>
     </Stack>
   );
 }
