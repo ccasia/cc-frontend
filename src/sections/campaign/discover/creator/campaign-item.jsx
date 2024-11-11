@@ -228,7 +228,7 @@ export default function CampaignItem({ campaign, user }) {
               />
             </Box>
           }
-          label={`${Math.min(Math.round(campaign?.totalCompletion), 100)}% COMPLETED`}
+          label={`${Math.min(Math.round(campaign?.percentageMatch), 100)}% MATCH`} //totalCompletion
           sx={{
             backgroundColor: theme.palette.common.white,
             color: '#48484a',
