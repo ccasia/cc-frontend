@@ -30,7 +30,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { varHover } from 'src/components/animate';
-
+import NotificationModal from '../notificationModal';
 import NotificationItem from './notification-item';
 
 // ----------------------------------------------------------------------
@@ -57,7 +57,7 @@ const TABS = [
 
 export default function NotificationsPopover() {
   const drawer = useBoolean();
-
+  const [isModalOpen, setModalOpen] = useState(false);
   const { data, isLoading } = useGetNotificationById();
   const { socket } = useSocketContext();
 
@@ -69,6 +69,8 @@ export default function NotificationsPopover() {
     setCurrentTab(newValue);
   }, []);
 
+  const handleOpenModal = () => setModalOpen(true);
+  const handleCloseModal = () => setModalOpen(false);
   const totalUnRead = data?.notifications?.filter((item) => !item.read).length;
   //  const totalArchive = data?.notifications?.filter((item) => !item.archive).length;
 
@@ -96,32 +98,32 @@ export default function NotificationsPopover() {
   // };
 
   const renderHead = (
-    <Stack direction="row" alignItems="center" sx={{ py: 2, pl: 2.5, pr: 1, minHeight: 68 }}>
+    <><Stack direction="row" alignItems="center" sx={{ py: 2, pl: 2.5, pr: 1, minHeight: 68 }}>
       <Typography variant="body1" sx={{
-         fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-         flexGrow: 1, 
-         fontWeight: 'normal',
-         letterSpacing: 2,
-         fontSize: '32px',
-         }}>
+        fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+        flexGrow: 1,
+        fontWeight: 'normal',
+        letterSpacing: 2,
+        fontSize: '32px',
+      }}>
         Notifications
       </Typography>
 
       <Tooltip title="Mark all as read">
-          <Button  color="primary" variant="outlined" onClick={handleMarkAllAsRead} sx={{ display: 'flex', alignItems: 'center' }}>
-            <Iconify icon="eva:done-all-fill" />
-             Mark all as read
-          </Button>
-        </Tooltip>
+        <Button color="primary" variant="outlined" onClick={handleOpenModal} sx={{ display: 'flex', alignItems: 'center' }}>
+          <Iconify icon="eva:done-all-fill" />
+          Mark all as read
+        </Button>
+      </Tooltip>
 
 
       {/* {!!totalArchive && (
-        <Tooltip title="Archive all">
-          <IconButton color="primary" onClick={archiveAll}>
-            <Iconify icon="material-symbols:archive" />
-          </IconButton>
-        </Tooltip>
-      )} */}
+      <Tooltip title="Archive all">
+        <IconButton color="primary" onClick={archiveAll}>
+          <Iconify icon="material-symbols:archive" />
+        </IconButton>
+      </Tooltip>
+    )} */}
 
       {!smUp && (
         <IconButton onClick={drawer.onFalse}>
@@ -129,6 +131,12 @@ export default function NotificationsPopover() {
         </IconButton>
       )}
     </Stack>
+    <NotificationModal
+      open={isModalOpen}
+      onClose={handleCloseModal}
+      onConfirm={handleMarkAllAsRead}
+    />
+  </>
   );
 
   const renderTabs = (

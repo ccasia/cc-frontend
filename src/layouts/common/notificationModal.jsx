@@ -1,10 +1,11 @@
 import React from 'react';
 import { Modal, Typography, Box, Button, Avatar } from '@mui/material';
 
-const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
-    threadId  }) => {
-     
-    const isArchived = archivedChats.includes(threadId);      
+const NotificationModal = ({ open, onClose, onConfirm}) => {
+    const handleConfirm = () => {
+        onConfirm();
+        onClose();
+      };
   return (
     <Modal open={open} onClose={onClose}>
       <Box
@@ -23,7 +24,7 @@ const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
       >
         {/* Emoji Avatar */}
         <Avatar
-          src="/assets/images/chat/archive.png"
+          src="/assets/images/notification/markread.png"
           alt="archive"
           sx={{
             width: 60,
@@ -36,10 +37,7 @@ const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
 
         {/* Confirmation Text */}
         <Typography variant="body1" sx={{ mb: 2 }}>
-        {isArchived
-            ? 'Are you sure you want to unarchive this chat?'  
-            : 'Are you sure you want to archive this chat?'}  
-  
+         Are you sure you want to mark all notifications?  
         </Typography>
 
         {/* Action Buttons */}
@@ -47,7 +45,7 @@ const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
           <Button
             variant="contained"
             fullWidth
-            onClick={onArchive}
+            onClick={handleConfirm}
             sx={{
               fontWeight: 'bold',
               backgroundColor: '#000',
@@ -56,7 +54,7 @@ const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
               },
             }}
           >
-           {isArchived ? 'Unarchive Chat' : 'Archive Chat'} 
+            Yes
           </Button>
           <Button
             variant="outlined"
@@ -72,4 +70,4 @@ const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
   );
 };
 
-export default ChatArchiveModal;
+export default NotificationModal;
