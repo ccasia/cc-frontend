@@ -3,37 +3,32 @@ import React, { useMemo } from 'react';
 
 import { Box, Grid } from '@mui/material';
 
-import useGetCampaigns from 'src/hooks/use-get-campaigns';
-
 import { useAuthContext } from 'src/auth/hooks';
 
 import EmptyContent from 'src/components/empty-content';
 
 import CampaignItem from '../discover/creator/campaign-item';
 
-const CompletedCampaignView = ({ searchQuery }) => {
-  const { campaigns: data, isLoading } = useGetCampaigns('creator');
+const CompletedCampaignView = ({ searchQuery, campaigns }) => {
+  // const { campaigns: data, isLoading } = useGetCampaigns('creator');
   const { user } = useAuthContext();
 
-  const filteredCampaigns = useMemo(
-    () =>
-      !isLoading &&
-      data?.filter(
-        (campaign) =>
-          campaign.status === 'COMPLETED' ||
-          campaign?.shortlisted?.some((item) => item.userId === user.id && item.isCampaignDone)
-      ),
-    [isLoading, data, user]
-  );
+  // const filteredCampaigns = useMemo(
+  //   () =>
+  //     campaigns?.filter(
+  //       (campaign) =>
+  //         campaign.status === 'COMPLETED' ||
+  //         campaign?.shortlisted?.some((item) => item.userId === user.id && item.isCampaignDone)
+  //     ),
+  //   [campaigns, user]
+  // );
 
   const filteredData = useMemo(
     () =>
       searchQuery
-        ? filteredCampaigns?.filter((elem) =>
-            elem.name.toLowerCase()?.includes(searchQuery.toLowerCase())
-          )
-        : filteredCampaigns,
-    [filteredCampaigns, searchQuery]
+        ? campaigns?.filter((elem) => elem.name.toLowerCase()?.includes(searchQuery.toLowerCase()))
+        : campaigns,
+    [campaigns, searchQuery]
   );
 
   const sortedData = useMemo(
@@ -43,7 +38,7 @@ const CompletedCampaignView = ({ searchQuery }) => {
 
   return (
     <Box mt={2}>
-      {!isLoading && sortedData?.length ? (
+      {sortedData?.length ? (
         <Grid container spacing={3}>
           {sortedData.map((campaign) => (
             <Grid item xs={12} sm={6} md={4} key={campaign.id}>
@@ -62,4 +57,5 @@ export default CompletedCampaignView;
 
 CompletedCampaignView.propTypes = {
   searchQuery: PropTypes.string,
+  campaigns: PropTypes.array,
 };

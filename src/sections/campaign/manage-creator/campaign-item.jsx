@@ -13,7 +13,7 @@ import Iconify from 'src/components/iconify';
 
 import CampaignModal from '../discover/creator/campaign-modal';
 
-const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
+const CampaignItem = ({ campaign, key }) => {
   const campaignInfo = useBoolean();
 
   const renderImages = (
@@ -113,8 +113,9 @@ const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
   return (
     <>
       <Box
+        key={key}
         component={Card}
-        onClick={type === 'my-campaign' ? onClick : campaignInfo.onTrue}
+        // onClick={type === 'my-campaign' ? onClick : campaignInfo.onTrue}
         sx={{
           cursor: 'pointer',
         }}
@@ -123,6 +124,7 @@ const CampaignItem = ({ campaign, onClick, pitchStatus, type }) => {
         {renderText}
         {renderInfo}
       </Box>
+
       <CampaignModal
         open={campaignInfo.value}
         handleClose={campaignInfo.onFalse}
@@ -136,7 +138,5 @@ export default CampaignItem;
 
 CampaignItem.propTypes = {
   campaign: PropTypes.object,
-  onClick: PropTypes.func,
-  pitchStatus: PropTypes.string,
-  type: PropTypes.string,
+  key: PropTypes.string,
 };

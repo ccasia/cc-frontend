@@ -2,7 +2,7 @@
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
 import { Bookmark, BookmarkBorder } from '@mui/icons-material';
@@ -21,7 +21,7 @@ import CampaignModal from './campaign-modal';
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, user }) {
-  const [open, setOpen] = useState(false);
+  // const [open, setOpen] = useState(false);
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
   // const dialog = useBoolean();
@@ -113,21 +113,21 @@ export default function CampaignItem({ campaign, user }) {
   //   [campaign, user]
   // );
 
-  const pitch = useMemo(
-    () => campaign?.pitch?.find((elem) => elem.userId === user?.id),
-    [campaign, user]
-  );
+  // const pitch = useMemo(
+  //   () => campaign?.pitch?.find((elem) => elem.userId === user?.id),
+  //   [campaign, user]
+  // );
 
-  const shortlisted = useMemo(
-    () => campaign?.shortlisted?.filter((elem) => elem.userId.includes(user?.id))[0],
-    [campaign, user]
-  );
+  // const shortlisted = useMemo(
+  //   () => campaign?.shortlisted?.filter((elem) => elem.userId.includes(user?.id))[0],
+  //   [campaign, user]
+  // );
 
-  const campaignIds = useMemo(() => user?.pitch?.map((item) => item.campaignId), [user]) || [];
+  // const campaignIds = useMemo(() => user?.pitch?.map((item) => item.campaignId), [user]) || [];
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+  // const handleClose = () => {
+  //   setOpen(false);
+  // };
 
   const campaignInfo = useBoolean();
 
@@ -228,7 +228,7 @@ export default function CampaignItem({ campaign, user }) {
               />
             </Box>
           }
-          label={`${Math.min(Math.round(campaign?.percentageMatch), 100)}% MATCH`}
+          label={`${Math.min(Math.round(campaign?.totalCompletion), 100)}% COMPLETED`}
           sx={{
             backgroundColor: theme.palette.common.white,
             color: '#48484a',
