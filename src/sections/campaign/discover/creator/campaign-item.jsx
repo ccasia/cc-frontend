@@ -20,7 +20,7 @@ import CampaignModal from './campaign-modal';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ campaign, user }) {
+export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
   // const [open, setOpen] = useState(false);
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
@@ -321,6 +321,7 @@ export default function CampaignItem({ campaign, user }) {
         bookMark={bookMark}
         onSaveCampaign={saveCampaign}
         onUnsaveCampaign={unSaveCampaign}
+        onOpenCreatorForm={onOpenCreatorForm}
       />
     </>
   );
@@ -329,4 +330,5 @@ export default function CampaignItem({ campaign, user }) {
 CampaignItem.propTypes = {
   campaign: PropTypes.object,
   user: PropTypes.object,
+  onOpenCreatorForm: PropTypes.func,
 };

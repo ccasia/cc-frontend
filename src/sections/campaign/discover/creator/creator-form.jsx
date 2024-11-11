@@ -62,7 +62,7 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
       });
       enqueueSnackbar(res?.data?.message);
       dialog.onFalse();
-      backdrop.onFalse();
+      backdrop?.onFalse();
       mutate(endpoints.auth.me);
     } catch (error) {
       enqueueSnackbar('error', {
@@ -106,7 +106,7 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
       </Box>
 
       <Stack direction="row" alignItems="center" justifyContent="end" spacing={1} mt={2}>
-        <Button size="small" variant="outlined" onClick={backdrop.onFalse}>
+        <Button size="small" variant="outlined" onClick={backdrop?.onFalse}>
           Later
         </Button>
         <LoadingButton size="small" variant="contained" type="submit" loading={loading.value}>

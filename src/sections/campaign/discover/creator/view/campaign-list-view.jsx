@@ -65,6 +65,11 @@ export default function CampaignListView() {
   const [page, setPage] = useState(1);
   const MAX_ITEM = 9;
 
+  const onOpenCreatorForm = () => {
+    backdrop.onTrue();
+    dialog.onTrue();
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.pageYOffset > 300);
@@ -218,7 +223,9 @@ export default function CampaignListView() {
     const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
 
     return applyFilter({
-      inputData: campaigns?.slice(indexOfFirstItem, indexOfLastItem),
+      inputData: campaigns
+        ?.filter((campaign) => campaign?.status === 'ACTIVE')
+        ?.slice(indexOfFirstItem, indexOfLastItem),
       filter,
       user,
       sortBy,
