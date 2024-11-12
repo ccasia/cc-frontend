@@ -111,31 +111,31 @@ const CampaignModal = ({
     }
   }, [imageLoaded]);
 
-  const handlePitch = () => {
-    setPitchOptionsOpen(true);
-  };
+  // const handlePitch = () => {
+  //   setPitchOptionsOpen(true);
+  // };
 
-  const handlePitchOptionsClose = () => {
-    setPitchOptionsOpen(false);
-  };
+  // const handlePitchOptionsClose = () => {
+  //   setPitchOptionsOpen(false);
+  // };
 
-  const handleOpenTextPitch = () => {
-    setTextPitchOpen(true);
-    setPitchOptionsOpen(false);
-  };
+  // const handleOpenTextPitch = () => {
+  //   setTextPitchOpen(true);
+  //   setPitchOptionsOpen(false);
+  // };
 
-  const handleOpenVideoPitch = () => {
-    setVideoPitchOpen(true);
-    setPitchOptionsOpen(false);
-  };
+  // const handleOpenVideoPitch = () => {
+  //   setVideoPitchOpen(true);
+  //   setPitchOptionsOpen(false);
+  // };
 
-  const handleCloseTextPitch = () => {
-    setTextPitchOpen(false);
-  };
+  // const handleCloseTextPitch = () => {
+  //   setTextPitchOpen(false);
+  // };
 
-  const handleCloseVideoPitch = () => {
-    setVideoPitchOpen(false);
-  };
+  // const handleCloseVideoPitch = () => {
+  //   setVideoPitchOpen(false);
+  // };
 
   const renderCampaignPeriod = () => {
     const startDate = campaign?.campaignBrief?.startDate;
@@ -156,9 +156,9 @@ const CampaignModal = ({
     router.push(paths.dashboard.campaign.creator.detail(campaignId));
   };
 
-  const handleDraftClick = () => {
-    setTextPitchOpen(true);
-  };
+  // const handleDraftClick = () => {
+  //   setTextPitchOpen(true);
+  // };
 
   const handleBookmarkClick = () => {
     if (campaign?.bookMarkCampaign?.userId === user?.id) {
@@ -412,7 +412,8 @@ const CampaignModal = ({
               justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
               sx={{ mt: { xs: 1.5, sm: 0 } }}
             >
-              {campaign?.shortlisted &&  <Button
+              {campaign?.shortlisted && (
+                <Button
                   variant="contained"
                   onClick={() => handleManageClick(campaign.id)}
                   sx={{
@@ -433,7 +434,8 @@ const CampaignModal = ({
                   }}
                 >
                   Manage
-                </Button>}
+                </Button>
+              )}
               {campaign?.pitch && !campaign?.shortlisted && (
                 <Chip
                   icon={<Iconify icon="mdi:clock" />}
@@ -459,7 +461,6 @@ const CampaignModal = ({
                   }}
                 />
               )}
-
 
               {/* {hasPitched ? (
                 existingPitch.status === 'approved' ? (

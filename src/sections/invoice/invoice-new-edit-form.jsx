@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
-import { useEffect, useMemo, useState } from 'react';
-import PropTypes, { object } from 'prop-types';
+import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { useMemo, useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
@@ -25,10 +25,10 @@ import { useSnackbar } from 'src/components/snackbar';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
+import XeroDialoge from './xero-dialoge';
 import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
 import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
-import XeroDialoge from './xero-dialoge';
 
 // ----------------------------------------------------------------------
 
@@ -106,8 +106,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
       dueDate: new Date(currentInvoice?.dueDate) || null,
       status: currentInvoice?.status || 'draft',
       invoiceFrom: currentInvoice?.invoiceFrom || null,
-      invoiceTo: currentInvoice?.invoiceTo ||
-      [
+      invoiceTo: currentInvoice?.invoiceTo || [
         {
           id: '1',
           primary: true,
@@ -138,7 +137,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
       },
       totalAmount: currentInvoice?.amount || 0,
     }),
-    [invoice]
+    [currentInvoice]
   );
 
   const methods = useForm({
@@ -158,7 +157,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
       setLoading(false);
     }
     reset(defaultValues);
-  }, [invoice]);
+  }, [defaultValues, isLoading, reset]);
 
   // const handleSaveAsDraft = handleSubmit(async (data) => {
   //   loadingSave.onTrue();
@@ -191,7 +190,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
         ...data,
         invoiceId: id,
         contactId: contact,
-        newContact: newContact,
+        newContact,
       });
       reset();
       loadingSend.onFalse();
@@ -210,7 +209,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
       </Typography>
       <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} sx={{ p: 3 }}>
         <RHFSelect
-          sx={{ width: 1 / 2 }}
+          // sx={{ width: 1 / 2 }}
           required
           name="bankInfo.bankName"
           label="Bank Name"
@@ -229,7 +228,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
           name="bankInfo.payTo"
           required
           fullWidth
-          sx={{ width: 1 / 2 }}
+          // sx={{ width: 1 / 2 }}
           value={values.bankInfo?.payTo}
         />
         <RHFTextField
@@ -237,14 +236,14 @@ export default function InvoiceNewEditForm({ id, creators }) {
           name="bankInfo.accountNumber"
           required
           fullWidth
-          sx={{ width: 1 / 2 }}
+          // sx={{ width: 1 / 2 }}
         />
         <RHFTextField
           fullWidth
           required
           name="bankInfo.accountEmail"
           label="Account Email"
-          sx={{ width: 1 / 2 }}
+          // sx={{ width: 1 / 2 }}
         />
       </Stack>
     </Box>
@@ -252,11 +251,9 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
   if (loading)
     return (
-     
-        <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
-          <CircularProgress />
-        </Box>
-      
+      <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
+        <CircularProgress />
+      </Box>
     );
 
   return (

@@ -1,11 +1,10 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import { Box, Modal, Button, Avatar, Typography } from '@mui/material';
 
-const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
-    threadId  }) => {
-     
-    const isArchived = archivedChats.includes(threadId);      
+const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats, threadId }) => {
+  const isArchived = archivedChats.includes(threadId);
   return (
     <Modal open={open} onClose={onClose}>
       <Box
@@ -30,16 +29,15 @@ const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
             width: 60,
             height: 60,
             margin: '0 auto 16px',
-            backgroundColor: '#ffeb3b', 
+            backgroundColor: '#ffeb3b',
           }}
-         />
+        />
 
         {/* Confirmation Text */}
         <Typography variant="body1" sx={{ mb: 2 }}>
-        {isArchived
-            ? 'Are you sure you want to unarchive this chat?'  
-            : 'Are you sure you want to archive this chat?'}  
-  
+          {isArchived
+            ? 'Are you sure you want to unarchive this chat?'
+            : 'Are you sure you want to archive this chat?'}
         </Typography>
 
         {/* Action Buttons */}
@@ -56,14 +54,9 @@ const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
               },
             }}
           >
-           {isArchived ? 'Unarchive Chat' : 'Archive Chat'} 
+            {isArchived ? 'Unarchive Chat' : 'Archive Chat'}
           </Button>
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={onClose}
-            sx={{ fontWeight: 'bold' }}
-          >
+          <Button variant="outlined" fullWidth onClick={onClose} sx={{ fontWeight: 'bold' }}>
             Cancel
           </Button>
         </Box>
@@ -73,3 +66,11 @@ const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
 };
 
 export default ChatArchiveModal;
+
+ChatArchiveModal.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  onArchive: PropTypes.func,
+  archivedChats: PropTypes.func,
+  threadId: PropTypes.string,
+};

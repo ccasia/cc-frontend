@@ -1,4 +1,7 @@
-import React, { useEffect  } from 'react';
+import useSWR from 'swr';
+import axios from 'axios';
+import React, { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // import { Stack, Container, Button } from '@mui/material';
 import { Box, Container, CircularProgress } from '@mui/material';
@@ -7,16 +10,12 @@ import { paths } from 'src/routes/paths';
 
 import useGetCampaignsFinance from 'src/hooks/use-get-campaign-finance';
 
+import { fetcher, endpoints } from 'src/utils/axios';
+
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CampaignLists from 'src/sections/campaign/discover/admin/campaign-list';
-import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
-
-import { useNavigate, useLocation } from 'react-router-dom';
-
-import useSWR from 'swr';
-import axios from 'axios';
 
 function CampaignPage() {
   const settings = useSettingsContext();
@@ -24,7 +23,7 @@ function CampaignPage() {
   const location = useLocation();
 
   const { campaigns } = useGetCampaignsFinance();
-  const { data, isLoading } = useSWR(endpoints.invoice.ConnectToXero, fetcher, {
+  const { data: invoiceData, isLoading } = useSWR(endpoints.invoice.ConnectToXero, fetcher, {
     revalidateOnFocus: true,
     revalidateOnMount: true,
     revalidateOnReconnect: true,
@@ -49,7 +48,7 @@ function CampaignPage() {
     };
 
     fetchToken();
-  }, []);
+  }, [navigate, location]);
   // const { campaigns, isLoading } = useGetCampaignsFinance();
 
   return (

@@ -5,14 +5,14 @@ import { Container } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
-import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+import { useXero } from 'src/hooks/zustands/useXero';
 import useGetContacts from 'src/hooks/use-get-xeroContacts';
+import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import InvoiceListView from 'src/sections/invoice/view/invoice-list-view';
-import { useXero } from 'src/hooks/zustands/useXero';
 
 function CreatorSelection() {
   const settings = useSettingsContext();
@@ -20,10 +20,10 @@ function CreatorSelection() {
   const data = useGetInvoicesByCampId(id);
   const { setContacts } = useXero();
   const contacts = useGetContacts();
-  
+
   useEffect(() => {
     setContacts(contacts.contacts);
-  }, []);
+  }, [contacts, setContacts]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>

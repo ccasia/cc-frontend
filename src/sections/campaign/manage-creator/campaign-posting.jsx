@@ -228,7 +228,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
           <Stack gap={2}>
             <Box>
               <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                Let's wrap up this campaign by submitting your posting link on your socials! 🥳
+                Let&apos;s wrap up this campaign by submitting your posting link on your socials! 🥳
               </Typography>
               <Typography variant="body2" sx={{ color: '#221f20', mb: 2, ml: -1, fontWeight: 600 }}>
                 {' '}

@@ -24,6 +24,8 @@ export default function InvoiceNewEditDetails() {
 
   const values = watch();
 
+  console.log(values);
+
   const totalOnRow = values.items.map((item) => item?.price);
 
   const subTotal = sum(totalOnRow);
