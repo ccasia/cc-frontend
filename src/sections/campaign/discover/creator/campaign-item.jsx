@@ -16,20 +16,18 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
 
+import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
 
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
-  // const [open, setOpen] = useState(false);
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
-  // const dialog = useBoolean();
-  // const text = useBoolean();
-  // const video = useBoolean();
+  const dialog = useBoolean();
 
   const { socket } = useSocketContext();
-  // const router = useRouter();
+
   const theme = useTheme();
 
   const [bookMark, setBookMark] = useState(
@@ -314,7 +312,10 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
         {renderCampaignInfo}
       </Card>
 
+      <CreatorForm dialog={dialog} user={user} />
+
       <CampaignModal
+        dialog={dialog}
         open={campaignInfo.value}
         handleClose={campaignInfo.onFalse}
         campaign={campaign}

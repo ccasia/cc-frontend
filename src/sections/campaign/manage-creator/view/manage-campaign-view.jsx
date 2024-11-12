@@ -1,5 +1,5 @@
 import { orderBy } from 'lodash';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -17,6 +17,7 @@ import {
 import { useGetMyCampaign } from 'src/hooks/use-get-my-campaign';
 
 import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -27,14 +28,21 @@ import CompletedCampaignView from '../completed-campaign-view';
 
 const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
-  
+  const { socket } = useSocketContext();
+
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
 
   const { user } = useAuthContext();
-  const { data: campaigns, isLoading } = useGetMyCampaign(user?.id);
-  
-  console.log(campaigns);
+  const { data: campaigns, isLoading, mutate } = useGetMyCampaign(user?.id);
+
+  useEffect(() => {
+    socket?.on('pitchUpdate', () => mutate());
+
+    return () => {
+      socket?.off('pitchUpdate');
+    };
+  }, [socket, mutate]);
 
   // const { campaigns } = useGetCampaigns('creator');
   const settings = useSettingsContext();

@@ -109,7 +109,7 @@ const SecondStep = ({ item }) => {
           </FormLabel>
           <RHFTextField
             name="location"
-            label="Select City"
+            placeholder="Select City"
             multiline
             InputProps={{
               endAdornment: (

@@ -1,18 +1,27 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { useFormContext } from 'react-hook-form';
+import { Controller, useFormContext } from 'react-hook-form';
+import { formatIncompletePhoneNumber } from 'libphonenumber-js';
 
-import { Stack, MenuItem, FormLabel, ListItemText, InputAdornment } from '@mui/material';
+import { Stack, MenuItem, FormLabel, TextField, ListItemText } from '@mui/material';
 
 import { countries } from 'src/assets/data';
 
 import { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
 
 const ThirdStep = ({ item }) => {
-  const { watch } = useFormContext();
+  const { watch, control } = useFormContext();
 
   const nationality = watch('Nationality');
   const pronounce = watch('pronounce');
+
+  const handlePhoneChange = (event, onChange) => {
+    const formattedNumber = formatIncompletePhoneNumber(
+      event.target.value,
+      countries.find((country) => country.label === nationality).code
+    ); // Replace 'MY' with your country code
+    onChange(formattedNumber);
+  };
 
   return (
     <>
@@ -60,9 +69,29 @@ const ThirdStep = ({ item }) => {
           <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
             Phone Number
           </FormLabel>
-          <RHFTextField
+
+          <Controller
             name="phone"
-            label="Phone Number"
+            control={control}
+            defaultValue=""
+            rules={{ required: 'Phone number is required' }}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                placeholder="Phone Number"
+                variant="outlined"
+                fullWidth
+                error={!!fieldState.error}
+                helperText={fieldState.error ? fieldState.error.message : ''}
+                onChange={(event) => handlePhoneChange(event, field.onChange)}
+              />
+            )}
+          />
+
+          {/* <RHFTextField
+            name="phone"
+            type="number"
+            placeholder="Phone Number"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -71,7 +100,7 @@ const ThirdStep = ({ item }) => {
                 </InputAdornment>
               ),
             }}
-          />
+          /> */}
         </Stack>
 
         <Stack spacing={1}>

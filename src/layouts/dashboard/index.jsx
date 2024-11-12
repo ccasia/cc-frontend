@@ -155,7 +155,7 @@ export default function DashboardLayout({ children }) {
           minHeight: 1,
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
-          pr: 2,
+          pr: lgUp && 2,
         }}
       >
         {renderNavVertical}
@@ -163,12 +163,17 @@ export default function DashboardLayout({ children }) {
         <Box
           sx={{
             width: 1,
-            height: '95vh',
-            borderRadius: 2,
-            my: 'auto',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
+            height: '100vh',
+            // overflow: 'hidden',
+            ...(lgUp && {
+              width: 1,
+              height: '95vh',
+              borderRadius: 2,
+              my: 'auto',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }),
           }}
         >
           <Header onOpenNav={nav.onTrue} isOnline={isOnline} />

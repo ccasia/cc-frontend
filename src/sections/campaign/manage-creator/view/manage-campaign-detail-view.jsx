@@ -48,17 +48,17 @@ const ManageCampaignDetailView = ({ id }) => {
 
   const calculateDaysLeft = (endDate) => {
     if (!endDate) return 'No end date';
-    
+
     const end = new Date(endDate);
     const today = new Date();
-    
+
     if (end < today) return 'Campaign Ended';
-    
+
     const diffTime = Math.abs(end - today);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return `${diffDays} days`;
   };
- 
+
   return (
     <Container maxWidth="xl">
       <Stack spacing={1}>
@@ -134,7 +134,7 @@ const ManageCampaignDetailView = ({ id }) => {
                   fontSize: { xs: '0.875rem', sm: '1rem' },
                 }}
               >
-                {/* {calculateDaysLeft(data?.campaignBrief?.endDate)} */}
+                {calculateDaysLeft(data?.campaignBrief?.endDate)}
               </Typography>
             </Stack>
 
@@ -143,7 +143,7 @@ const ManageCampaignDetailView = ({ id }) => {
                 height: 40,
                 width: '1px',
                 backgroundColor: '#e0e0e0',
-                mx: 2,
+                mx: 1.5,
               }}
             />
 

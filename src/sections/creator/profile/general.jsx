@@ -1,8 +1,9 @@
 import * as Yup from 'yup';
 import 'croppie/croppie.css';
+import { useState, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { formatIncompletePhoneNumber } from 'libphonenumber-js';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -10,7 +11,14 @@ import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { Button, Checkbox, IconButton, InputAdornment, FormControlLabel } from '@mui/material';
+import {
+  Button,
+  Checkbox,
+  TextField,
+  IconButton,
+  InputAdornment,
+  FormControlLabel,
+} from '@mui/material';
 
 import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -30,18 +38,9 @@ import FormProvider, {
 // ----------------------------------------------------------------------
 
 export default function AccountGeneral() {
-  // Hooks
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
-
-  // State
-  const [openCropDialog, setOpenCropDialog] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [imageDataUrl, setImageDataUrl] = useState(null);
-
-  const croppieRef = useRef(null);
-  // const croppieContainerRef = useRef(null);
+  const [image, setImage] = useState(null);
 
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -76,20 +75,6 @@ export default function AccountGeneral() {
     defaultValues,
   });
 
-  // const getViewportSize = useCallback(() => {
-  //   if (isXs) return { width: 300, height: 75 };
-  //   if (isMd) return { width: 600, height: 150 };
-  //   if (isLg) return { width: 796, height: 198 };
-  //   return { width: 400, height: 100 }; // Default size for sm
-  // }, [isLg, isMd, isXs]);
-
-  // const getBoundarySize = useCallback(() => {
-  //   if (isXs) return { width: 320, height: 150 };
-  //   if (isMd) return { width: 620, height: 250 };
-  //   if (isLg) return { width: 796, height: 300 };
-  //   return { width: 420, height: 200 }; // Default size for sm
-  // }, [isLg, isMd, isXs]);
-
   const {
     setValue,
     handleSubmit,
@@ -103,160 +88,13 @@ export default function AccountGeneral() {
     name: 'allergies',
   });
 
-  useEffect(() => {
-    if (!openCropDialog) {
-      if (croppieRef.current) {
-        console.log('Cleaning up Croppie on dialog close');
-        try {
-          croppieRef.current.destroy();
-        } catch (error) {
-          console.error('Error cleaning up Croppie on dialog close:', error);
-        }
-        croppieRef.current = null;
-      }
-      setImageDataUrl(null);
-    }
-  }, [openCropDialog]);
-
-  // useEffect(() => {
-  //   console.log('useEffect triggered', {
-  //     openCropDialog,
-  //     imageDataUrl,
-  //     croppieContainerRef: !!croppieContainerRef.current,
-  //     croppieRef: !!croppieRef.current,
-  //   });
-  //   if (openCropDialog && imageDataUrl && croppieContainerRef.current && !croppieRef.current) {
-  //     console.log('Initializing Croppie with imageDataUrl');
-  //     setTimeout(() => {
-  //       try {
-  //         const viewport = getViewportSize();
-  //         const boundary = getBoundarySize();
-
-  //         croppieRef.current = new Croppie(croppieContainerRef.current, {
-  //           viewport: { ...viewport, type: 'square' },
-  //           boundary,
-  //           showZoomer: false,
-  //           enableOrientation: true,
-  //           enableResize: false,
-  //           enableExif: true,
-  //           mouseWheelZoom: 'ctrl',
-  //         });
-  //         croppieRef.current
-  //           .bind({
-  //             url: imageDataUrl,
-  //             zoom: 0, // Use the zoom state here
-  //           })
-  //           .then(() => {
-  //             // Get the maximum zoom level
-  //             const newMaxZoom = croppieRef.current._currentZoom;
-  //             setMaxZoom(newMaxZoom);
-  //             setZoom(0); // Reset zoom to minimum
-  //           });
-  //         console.log('Croppie initialized successfully');
-  //       } catch (error) {
-  //         console.error('Error initializing Croppie:', error);
-  //       }
-  //     }, 0);
-  //   }
-
-  //   return () => {
-  //     if (croppieRef.current) {
-  //       console.log('Cleaning up Croppie');
-  //       try {
-  //         croppieRef.current.destroy();
-  //       } catch (error) {
-  //         console.error('Error cleaning up Croppie:', error);
-  //       }
-  //       croppieRef.current = null;
-  //     }
-  //   };
-  // }, [openCropDialog, imageDataUrl, isXs, isMd, isLg, getBoundarySize, getViewportSize]);
-
-  // const handleZoomChange = (event, newValue) => {
-  //   setZoom(newValue);
-  //   if (croppieRef.current) {
-  //     // Reverse the zoom calculation
-  //     const scaledZoom = maxZoom - newValue * (maxZoom - 1);
-  //     croppieRef.current.setZoom(scaledZoom);
-  //   }
-  // };
-
-  useEffect(() => {
-    if (openCropDialog && selectedFile) {
-      console.log('Reading file');
-      setIsLoading(true);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        console.log('FileReader onload', `${e.target.result.substring(0, 50)}...`);
-        setIsLoading(false);
-        setImageDataUrl(e.target.result);
-      };
-      reader.readAsDataURL(selectedFile);
-    }
-
-    return () => {
-      console.log('Cleanup: setting imageDataUrl to null');
-      setImageDataUrl(null);
-    };
-  }, [openCropDialog, selectedFile]);
-
-  // const scaleImage = (file, maxWidth, maxHeight) =>
-  //   new Promise((resolve) => {
-  //     const reader = new FileReader();
-  //     reader.onload = (e) => {
-  //       const img = new Image();
-  //       img.onload = () => {
-  //         const canvas = document.createElement('canvas');
-  //         let { width } = img;
-  //         let { height } = img;
-
-  //         if (width > height) {
-  //           if (width > maxWidth) {
-  //             height *= maxWidth / width;
-  //             width = maxWidth;
-  //           }
-  //         } else if (height > maxHeight) {
-  //           width *= maxHeight / height;
-  //           height = maxHeight;
-  //         }
-
-  //         canvas.width = width;
-  //         canvas.height = height;
-  //         const ctx = canvas.getContext('2d');
-  //         ctx.drawImage(img, 0, 0, width, height);
-  //         canvas.toBlob(resolve, 'image/png', 1);
-  //       };
-  //       img.src = e.target.result;
-  //     };
-  //     reader.readAsDataURL(file);
-  //   });
-
-  // const handleCrop = () => {
-  //   if (croppieRef.current) {
-  //     croppieRef.current
-  //       .result({
-  //         type: 'blob',
-  //         size: { width: 1584, height: 396 },
-  //         format: 'png',
-  //         quality: 1,
-  //         circle: false,
-  //       })
-  //       .then((blob) => {
-  //         const newPreviewUrl = URL.createObjectURL(blob);
-  //         setPreviewUrl(newPreviewUrl);
-
-  //         const fileName = selectedFile ? selectedFile.name : 'background.png';
-  //         const newFile = new File([blob], fileName, { type: 'image/png' });
-
-  //         setValue('photoBackgroundURL', newFile, { shouldValidate: true });
-  //         setOpenCropDialog(false);
-  //       });
-  //   }
-  // };
-
-  // const handleTabChange = (event, newValue) => {
-  //   setActiveTab(newValue);
-  // };
+  const handlePhoneChange = (event, onChange) => {
+    const formattedNumber = formatIncompletePhoneNumber(
+      event.target.value,
+      countries.find((country) => country.label === nationality).code
+    ); // Replace 'MY' with your country code
+    onChange(formattedNumber);
+  };
 
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
@@ -291,28 +129,12 @@ export default function AccountGeneral() {
       });
 
       if (file) {
+        setImage(file);
         setValue('photoURL', newFile, { shouldValidate: true });
       }
     },
     [setValue]
   );
-
-  // const handleDropBackground = useCallback(
-  //   async (acceptedFiles) => {
-  //     const file = acceptedFiles[0];
-  //     console.log('File selected', file);
-  //     if (file) {
-  //       if (croppieRef.current) {
-  //         croppieRef.current.destroy();
-  //         croppieRef.current = null;
-  //       }
-  //       const scaledBlob = await scaleImage(file, 1584, 396);
-  //       setSelectedFile(new File([scaledBlob], file.name, { type: 'image/png' }));
-  //       setOpenCropDialog(true);
-  //     }
-  //   },
-  //   [setSelectedFile, setOpenCropDialog]
-  // );
 
   const country = watch('country');
   const nationality = watch('country');
@@ -345,33 +167,6 @@ export default function AccountGeneral() {
                 </Typography>
               }
             />
-            {/* <Box sx={{ mt: 5 }}>
-              <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Background Picture
-              </Typography>
-              <RHFUploadSquare
-                name="photoBackgroundURL"
-                maxSize={5242880}
-                onDrop={handleDropBackground}
-                previewUrl={previewUrl}
-                sx={{ width: '100%', height: 200 }}
-                helperText={
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      mt: 3,
-                      mx: 'auto',
-                      display: 'block',
-                      textAlign: 'center',
-                      color: 'text.disabled',
-                    }}
-                  >
-                    Allowed *.jpeg, *.jpg, *.png
-                    <br /> max size of {fData(5242880)}
-                  </Typography>
-                }
-              />
-            </Box> */}
           </Card>
         </Grid>
 
@@ -423,14 +218,7 @@ export default function AccountGeneral() {
                 getOptionLabel={(option) => option}
               />
 
-              {/* <NumericFormat
-                label="Phone Number"
-                name="phoneNumber"
-                prefix={`+${countries.filter((a) => a.label === nationality).map((e) => e.phone)} `}
-                customInput={RHFTextField}
-              /> */}
-
-              <RHFTextField
+              {/* <RHFTextField
                 name="phoneNumber"
                 label="Phone Number"
                 InputProps={{
@@ -440,6 +228,24 @@ export default function AccountGeneral() {
                     </InputAdornment>
                   ),
                 }}
+              /> */}
+
+              <Controller
+                name="phoneNumber"
+                control={control}
+                defaultValue=""
+                rules={{ required: 'Phone number is required' }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    placeholder="Phone Number"
+                    variant="outlined"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error ? fieldState.error.message : ''}
+                    onChange={(event) => handlePhoneChange(event, field.onChange)}
+                  />
+                )}
               />
 
               <RHFTextField
@@ -476,7 +282,7 @@ export default function AccountGeneral() {
                 variant="outlined"
                 loading={isSubmitting}
                 size="small"
-                disabled={!isDirty}
+                disabled={!isDirty && !image}
               >
                 Save Changes
               </LoadingButton>
