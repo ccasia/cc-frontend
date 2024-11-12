@@ -91,6 +91,7 @@ export default function AuthModernLayout({ children, image }) {
       sx={{
         // background: 'radial-gradient(circle, rgba(238,224,255,1) 0%, rgba(254,255,255,1) 70%)',
         background: `url(${backgroundImage}) no-repeat fixed center`,
+        backgroundSize: 'cover',
         height: '100vh',
         display: 'flex',
         justifyContent: 'center',
