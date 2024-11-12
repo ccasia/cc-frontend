@@ -39,7 +39,6 @@ export default function NavVertical({ openNav, onCloseNav }) {
   const navData = useNavData();
 
   const { data } = useGetTokenExpiry();
-  console.log('user', user);
 
   const date = new Date(data?.lastRefreshToken || new Date());
 
@@ -125,7 +124,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
             CULT CREATIVE
           </Typography>
           <Typography variant="body2" color="text.secondary" fontWeight={600}>
-            Creator
+            {`${user?.role.slice(0, 1).toUpperCase()}${user?.role.slice(1)}`}
           </Typography>
         </Stack>
         <IconButton
