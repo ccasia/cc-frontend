@@ -1,4 +1,4 @@
-/* eslint-disable */ 
+/* eslint-disable */
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
@@ -25,7 +25,9 @@ export default function ChatRoomSingle({ thread }) {
   useEffect(() => {
     if (thread && thread.UserThread) {
       // Find the user that is not the current user
-      const otherUserInfo = thread.UserThread.find(userThread => userThread.user.id !== user.id)?.user;
+      const otherUserInfo = thread.UserThread.find(
+        (userThread) => userThread.user.id !== user.id
+      )?.user;
       setOtherUser(otherUserInfo);
     }
   }, [thread, user]);
@@ -39,68 +41,65 @@ export default function ChatRoomSingle({ thread }) {
   }
 
   return (
-   
-    <Box  
+    <Box
       sx={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         position: 'relative',
         margin: 2,
-        padding: 1, 
-      }} >
-
-      <Avatar alt={otherUser.name} src={otherUser.photoURL}
-      sx={{ alignContent:'center', cursor: 'pointer', width: 108, height: 108, margin: 2 }} />
+        padding: 1,
+      }}
+    >
+      <Avatar
+        alt={otherUser.name}
+        src={otherUser.photoURL}
+        sx={{ alignContent: 'center', cursor: 'pointer', width: 108, height: 108, margin: 2 }}
+      />
 
       <Typography variant="h6" align="center" sx={{ marginBottom: 2 }}>
         {otherUser.name}
       </Typography>
-{/* 
+      {/* 
       <Typography variant="body2" align="center" sx={{ marginBottom: 2 }}>
         {otherUser.about}
       </Typography>
        */}
-     
-    <Stack
-    spacing={4}
-    sx={{
-      px: 2,
-      py: 2.5,
-      '& svg': {
-        mr: 1,
-        flexShrink: 0,
-        color: 'text.disabled',
-      },
-    }}
-  >
-     {/* <Stack direction="row">
+
+      <Stack
+        spacing={4}
+        sx={{
+          px: 2,
+          py: 2.5,
+          '& svg': {
+            mr: 1,
+            flexShrink: 0,
+            color: 'text.disabled',
+          },
+        }}
+      >
+        {/* <Stack direction="row">
       <Iconify icon="material-symbols:person" />
       <Typography variant="body2"> {otherUser.role}</Typography>
     </Stack>
      */}
-     <Stack direction="row">
-      <Iconify icon="material-symbols:globe" />
-      <Typography variant="body2"> {otherUser.country}</Typography>
-    </Stack>
-    <Stack direction="row">
-      <Iconify icon="solar:phone-bold" />
-      <Typography variant="body2">{otherUser.phoneNumber}</Typography>
-    </Stack>
+        <Stack direction="row">
+          <Iconify icon="material-symbols:globe" />
+          <Typography variant="body2"> {otherUser.country}</Typography>
+        </Stack>
+        <Stack direction="row">
+          <Iconify icon="solar:phone-bold" />
+          <Typography variant="body2">{otherUser.phoneNumber}</Typography>
+        </Stack>
 
-    <Stack direction="row">
-      <Iconify icon="fluent:mail-24-filled" />
-      <Typography variant="body2">
-        {otherUser.email}
-      </Typography>
-    </Stack>
-  </Stack>
-
-  </Box>
+        <Stack direction="row">
+          <Iconify icon="fluent:mail-24-filled" />
+          <Typography variant="body2">{otherUser.email}</Typography>
+        </Stack>
+      </Stack>
+    </Box>
   );
-
 }
-
 
 ChatRoomSingle.propTypes = {
   id: PropTypes.string,

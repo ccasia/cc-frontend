@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 //  import Image from "material-ui-image";
@@ -36,11 +35,6 @@ export default function ChatView() {
 
   // Check if user has threads
   const hasThreads = userThreads && userThreads.length > 0;
-
-  useEffect(() => {
-    console.log('Threads loaded:', threads);
-    console.log('User threads:', userThreads);
-  }, [threads, userThreads]);
 
   const { id } = useParams();
 

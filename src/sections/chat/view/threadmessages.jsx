@@ -13,14 +13,12 @@ import { markMessagesAsSeen, useTotalUnreadCount, useGetAllThreads } from 'src/a
 
 const ThreadMessages = ({ threadId }) => {
   const { socket } = useSocketContext();
-  // const [message, setMessage] = useState([]);
   const [latestMessages, setLatestMessages] = useState({});
   const [threadMessages, setThreadMessages] = useState({});
   const { user } = useAuthContext();
   const { triggerRefetch } = useTotalUnreadCount();
   const { threads, threadrefetch } = useGetAllThreads();
   const [campaignStatus, setCampaignStatus] = useState(null);
-  // const { message, loading, error } = useGetMessagesFromThread(threadId);
 
   useEffect(() => {
     // Listen for existing messages

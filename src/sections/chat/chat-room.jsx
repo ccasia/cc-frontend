@@ -92,35 +92,8 @@ export default function ChatRoom({ participants, conversation, threadId }) {
     }}
   >
     <Typography variant="h5" align="center" sx={{ marginBottom: 15 }}>
-      {' '}
-      Chat Details{' '}
+      Chat Details
     </Typography>
-
-    {/* <Avatar
-      src={thread.photoURL}
-      alt={thread.name}
-      sx={{  cursor: 'pointer', width: 108, height: 108, marginBottom: 2 }}
-    />
-    <Typography variant="h6" align="center" sx={{ marginBottom: 2 }}>
-      {thread.title}
-    </Typography>
-    <Typography variant="body1" align="center" sx={{ marginBottom: 2 }}>
-      {thread.description}
-    </Typography>
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={1} 
-      justifyContent="center"
-    >
-      <Iconify
-        width={24}
-        icon="material-symbols:groups"
-      />
-      <Typography variant="body2">
-        Total Participants: {thread.userCount}
-      </Typography>
-    </Stack> */}
   </Box>;
 
   if (loading) return <div>Loading...</div>;

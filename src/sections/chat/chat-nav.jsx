@@ -2,7 +2,18 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 
-import { Box, Button, Stack, Typography, Drawer, IconButton, Tabs, Tab } from '@mui/material';
+import {
+  Box,
+  Button,
+  Stack,
+  Typography,
+  Drawer,
+  IconButton,
+  Tabs,
+  Tab,
+  Autocomplete,
+  Avatar,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -21,6 +32,9 @@ import { useCollapseNav } from './hooks';
 import ChatNavItem from './chat-nav-item';
 import ChatNavAccount from './chat-nav-account';
 import { useAuthContext } from 'src/auth/hooks';
+import SearchNotFound from 'src/components/search-not-found';
+import axiosInstance, { endpoints } from 'src/utils/axios';
+import { mutate } from 'swr';
 
 // ----------------------------------------------------------------------
 
@@ -38,7 +52,11 @@ export default function ChatNav({}) {
   const [sortedThread, setSortedThreads] = useState([]);
   const { threads, threadrefetch } = useGetAllThreads();
   const [selectedThreadId, setSelectedThreadId] = useState(null);
+  const [contacts, setContacts] = useState([]);
   const [selected, setSelected] = useState('all');
+  const [selectedContact, setSelectedContact] = useState();
+  const isAdmin = user?.role === 'admin';
+  const isSuperAdmin = user?.role === 'superadmin';
 
   const handleToggle = (value) => {
     setSelected(value);
@@ -83,6 +101,19 @@ export default function ChatNav({}) {
     setSortedThreads(sorted);
     threadrefetch();
   }, [threads, latestMessages]);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const response = await axiosInstance.get(endpoints.users.allusers);
+        const filteredContacts = response.data.filter((a) => a.id !== user.id);
+        setContacts(filteredContacts);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    }
+    fetchUsers();
+  }, [user]);
 
   const sortThreadsByLatestMessage = (threads) => {
     return threads.slice().sort((a, b) => {
@@ -176,31 +207,54 @@ export default function ChatNav({}) {
     }).length;
   };
 
+  const createThread = async (recipient) => {
+    if (!recipient || !recipient.id) {
+      console.error('Invalid recipient:', recipient);
+      return;
+    }
+
+    try {
+      const recipientId = recipient.id;
+
+      const existingThreadResponse = await axiosInstance.get(endpoints.threads.getAll);
+      const existingThread = existingThreadResponse.data.find((thread) => {
+        const userIdsInThread = thread.UserThread.map((userThread) => userThread.userId);
+        return (
+          userIdsInThread.includes(user?.id) &&
+          userIdsInThread.includes(recipientId) &&
+          !thread.isGroup
+        );
+      });
+
+      if (existingThread) {
+        console.log('Thread already exists:', existingThread);
+        router.push(`/dashboard/chat/thread/${existingThread.id}`);
+      } else {
+        const response = await axiosInstance.post(endpoints.threads.create, {
+          title: ` Chat between ${user.name} & ${recipient.name}`,
+          description: '',
+          userIds: [user?.id, recipientId],
+          isGroup: false,
+        });
+
+        mutate(endpoints.threads.getAll);
+
+        router.push(`/dashboard/chat/thread/${response.data.id}`);
+      }
+      router.push(threadPath);
+    } catch (error) {
+      console.error('Error creating thread:', error);
+    }
+  };
+
+  const handleChange = (_event, newValue) => {
+    console.log(newValue);
+    setSelectedContact(newValue);
+    createThread(newValue);
+  };
+
   const renderContent = (
     <>
-      {/* <Stack direction="row" alignItems="center" justifyContent="center" sx={{ p: 2.5, pb: 0 }}>
-        {!collapseDesktop && (
-          <>
-            <ChatNavAccount />
-            <Box sx={{ flexGrow: 1 }} />
-          </>
-        )}
-
-        <IconButton onClick={handleToggleNav}>
-          <Iconify
-            icon={collapseDesktop ? 'eva:arrow-ios-forward-fill' : 'eva:arrow-ios-back-fill'}
-          />
-        </IconButton>
-
-        {!collapseDesktop && (
-          <IconButton onClick={handleClickCompose}>
-            <Iconify width={24} icon="solar:user-plus-bold" />
-          </IconButton>
-        )}
-      </Stack> */}
-
-      {/* <Box sx={{ p: 2.5, pt: 0 }}>{!collapseDesktop && renderSearchInput}</Box> */}
-
       <Box>
         <Tabs
           variant="fullWidth"
@@ -208,26 +262,6 @@ export default function ChatNav({}) {
           onChange={(e, val) => {
             setSelected(val);
           }}
-          // TabIndicatorProps={{
-          //   children: <Box component={'span'} />,
-          //   // children: <span />,
-          //   sx: {
-          //     height: 1,
-          //     py: 1,
-          //     zIndex: -10000,
-          //     bgcolor: 'transparent',
-          //     transition: 'all .3s ease-in-out',
-          //     '&.MuiTabs-indicator > span': {
-          //       bgcolor: '#FFF',
-          //       borderColor: '#E7E7E7',
-          //       width: '100%',
-          //       height: '100%',
-          //       display: 'inline-flex',
-          //       borderRadius: 1,
-          //       boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-          //     },
-          //   },
-          // }}
           sx={{
             borderRadius: 2,
             m: 1,
@@ -277,59 +311,61 @@ export default function ChatNav({}) {
         </Tabs>
       </Box>
 
-      {/* Archive Button */}
-      {/* <Box
-        sx={{
-          mx: 'auto',
-          mt: 4,
-          mb: 4,
-          textAlign: 'center',
-          backgroundColor: '#F4F4F4',
-          width: 'fit-content',
-          borderRadius: '8px',
-          p: 1,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            width: '250px',
-            borderRadius: '4px',
-            // boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            overflow: 'hidden',
-            backgroundColor: '#f4f4f4',
-          }}
-        >
-          <button
-            onClick={() => handleToggle('all')}
-            style={{
-              flex: 1,
-              padding: '8px 16px',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: selected === 'all' ? 'bold' : 'normal',
-              backgroundColor: selected === 'all' ? '#ffffff' : '#f4f4f4',
-              borderRadius: '4px 0 0 4px',
-            }}
-          >
-            All ({countUnarchivedChats()})
-          </button>
-          <button
-            onClick={() => handleToggle('archived')}
-            style={{
-              flex: 1,
-              padding: '8px 16px',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: selected === 'archived' ? 'bold' : 'normal',
-              backgroundColor: selected === 'archived' ? '#ffffff' : '#f4f4f4',
-              borderRadius: '0 4px 4px 0',
-            }}
-          >
-            Archived ({countArchivedChats()})
-          </button>
-        </div>
-      </Box> */}
+      {(isAdmin || isSuperAdmin) && contacts.length > 0 && (
+        <Box sx={{ px: 1 }}>
+          <Autocomplete
+            popupIcon={null}
+            disablePortal
+            noOptionsText={
+              'No creator found'
+              // <SearchNotFound query={contacts.length > 0 ? '' : 'No contacts found'} />
+            }
+            onChange={handleChange}
+            options={contacts || []}
+            getOptionLabel={(recipient) => recipient.name || ''}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Search for creators"
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <>
+                      <Iconify
+                        icon="material-symbols:search-rounded"
+                        style={{ color: 'black', marginRight: '8px' }}
+                      />
+                      {params.InputProps.startAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            renderOption={(props, recipient, { selected }) => (
+              <li {...props} key={recipient.id}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Avatar
+                    alt={recipient.name}
+                    src={recipient.photoURL}
+                    sx={{ width: 32, height: 32, mr: 1 }}
+                  />
+                  <div>
+                    <Typography variant="body1">{recipient.name}</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      {recipient.email}
+                    </Typography>
+                  </div>
+                </Box>
+              </li>
+            )}
+          />
+        </Box>
+      )}
 
       <Scrollbar sx={{ pb: 1 }}>{renderList}</Scrollbar>
     </>
@@ -345,6 +381,7 @@ export default function ChatNav({}) {
             height: 1,
             flexShrink: 0,
             width: NAV_WIDTH,
+            px: 0.5,
             // borderRight: `solid 1px ${theme.palette.divider}`,
             transition: theme.transitions.create(['width'], {
               duration: theme.transitions.duration.shorter,

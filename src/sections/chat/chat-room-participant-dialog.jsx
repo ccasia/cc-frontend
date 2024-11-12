@@ -107,4 +107,3 @@ ChatRoomParticipantDialog.propTypes = {
   open: PropTypes.bool,
   participant: PropTypes.object,
 };
-
