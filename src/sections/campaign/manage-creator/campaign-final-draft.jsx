@@ -611,12 +611,13 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                       {feedback.admin?.role || userDetails?.role || 'No Role'}
                     </Typography>
                     <Box sx={{ textAlign: 'left', mt: 1 }}>
-                      <Typography variant="body2">{feedback.content}</Typography>
+                      {feedback.content.split('\n').map((line, index) => (
+                        <Typography key={index} variant="body2">
+                          {line}
+                        </Typography>
+                      ))}
                       {feedback.reasons && feedback.reasons.length > 0 && (
                         <Box mt={1} sx={{ textAlign: 'left' }}>
-                          {/* <Typography variant="caption" color="text.disabled">
-                            Reasons for changes:
-                          </Typography> */}
                           <Stack direction="row" spacing={0.5} flexWrap="wrap">
                             {feedback.reasons.map((reason, idx) => (
                               <Box
@@ -636,7 +637,9 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                                   variant="outlined"
                                   sx={{
                                     border: 'none', 
-                                    color: '#8e8e93'
+                                    color: '#8e8e93',
+                                    fontSize: '0.75rem',
+                                    padding: '1px 2px',
                                   }}
                                 />
                               </Box>

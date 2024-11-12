@@ -21,11 +21,12 @@ import {
   CircularProgress,
   Modal,
   IconButton,
+  Avatar,
+  Chip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineDot, TimelineConnector, TimelineContent, TimelineOppositeContent } from '@mui/lab';
 import dayjs from 'dayjs';
-import Chip from '@mui/material/Chip';
 import CommentIcon from '@mui/icons-material/Comment';
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
 
@@ -193,6 +194,8 @@ const CampaignFirstDraft = ({
     return [];
   }, [submission?.feedback]);
 
+  const userDetails = user.details;
+
   return (
     previousSubmission?.status === 'APPROVED' && (
       <Box>
@@ -355,128 +358,71 @@ const CampaignFirstDraft = ({
                   </Alert> */}
 
                   {/* Button to open Feedback History Modal */}
-                  <Button onClick={handleOpenFeedbackModal} variant="outlined" size="small" fullWidth>
+                  {/* <Button onClick={handleOpenFeedbackModal} variant="outlined" size="small" fullWidth>
                     View Feedback History
-                  </Button>
+                  </Button> */}
 
                   {/* Feedback History Modal */}
-                  <Modal
-                    open={openFeedbackModal}
-                    onClose={handleCloseFeedbackModal}
-                    aria-labelledby="feedback-history-modal"
-                    aria-describedby="feedback-history-description"
-                  >
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: { xs: '95%', sm: '90%' },
-                        maxWidth: 600,
-                        maxHeight: '90vh',
-                        bgcolor: 'background.paper',
-                        borderRadius: 2,
-                        boxShadow: 24,
-                        p: 0,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          p: 2,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          borderBottom: '1px solid',
-                          borderColor: 'divider',
-                        }}
-                      >
-                        <Typography id="feedback-history-modal" variant="h6" component="h2">
-                          Feedback History
-                        </Typography>
-                        <IconButton onClick={handleCloseFeedbackModal} size="small">
-                          <CloseIcon />
-                        </IconButton>
-                      </Box>
-                      <Box
-                        sx={{ p: { xs: 2, sm: 3 }, maxHeight: 'calc(90vh - 60px)', overflowY: 'auto' }}
-                      >
-                        {sortedFeedback.length > 0 ? (
-                          <Timeline
-                            position="right"
-                            sx={{
-                              [`& .MuiTimelineItem-root:before`]: {
-                                flex: 0,
-                                padding: 0,
-                              },
-                            }}
-                          >
-                            {sortedFeedback.map((feedback, index) => (
-                              <TimelineItem key={index}>
-                                <TimelineOppositeContent
-                                  sx={{
-                                    display: { xs: 'none', sm: 'block' },
-                                    flex: { sm: 0.2 },
-                                  }}
-                                  color="text.secondary"
-                                >
-                                  {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
-                                </TimelineOppositeContent>
-                                <TimelineSeparator>
-                                  <TimelineDot
-                                    sx={{
-                                      bgcolor: feedback.type === 'COMMENT' ? 'primary.main' : 'blue',
-                                    }}
-                                  >
-                                    {feedback.type === 'COMMENT' ? <CommentIcon /> : <ChangeCircleIcon />}
-                                  </TimelineDot>
-                                  {index < sortedFeedback.length - 1 && <TimelineConnector />}
-                                </TimelineSeparator>
-                                <TimelineContent sx={{ py: '12px', px: 2 }}>
-                                  <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                      {feedback.type === 'COMMENT' ? 'Comment' : 'Change Request'}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ mb: 1 }}>
-                                      {feedback.content}
-                                    </Typography>
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                      sx={{ display: { xs: 'block', sm: 'none' }, mb: 1 }}
-                                    >
-                                      {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
-                                    </Typography>
-                                    {feedback.reasons && feedback.reasons.length > 0 && (
-                                      <Box sx={{ mt: 1 }}>
-                                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                          Reasons for changes:
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                          {feedback.reasons.map((reason, idx) => (
-                                            <Chip
-                                              key={idx}
-                                              label={reason}
-                                              size="small"
-                                              color="primary"
-                                              variant="outlined"
-                                            />
-                                          ))}
-                                        </Box>
+                  <Box mt={2}>
+                    {/* <Typography variant="h6">Feedback</Typography> */}
+                    {submission.feedback
+                      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                      .map((feedback, index) => (
+                        <Box key={index} mb={2} p={2} border={1} borderColor="grey.300" borderRadius={1} display="flex" alignItems="flex-start">
+                          <Avatar 
+                            src={feedback.admin?.photoURL || userDetails?.photoURL || '/default-avatar.png'}
+                            alt={feedback.user?.name || userDetails?.name || 'User'}
+                            sx={{ mr: 2 }}
+                          />
+                          <Box flexGrow={1} sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', marginBottom: '2px' }}>
+                              {feedback.admin?.name || userDetails?.name || 'Unknown User'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {feedback.admin?.role || userDetails?.role || 'No Role'}
+                            </Typography>
+                            <Box sx={{ textAlign: 'left', mt: 1 }}>
+                              {feedback.content.split('\n').map((line, index) => (
+                                <Typography key={index} variant="body2">
+                                  {line}
+                                </Typography>
+                              ))}
+                              {feedback.reasons && feedback.reasons.length > 0 && (
+                                <Box mt={1} sx={{ textAlign: 'left' }}>
+                                  <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                    {feedback.reasons.map((reason, idx) => (
+                                      <Box
+                                        key={idx}
+                                        sx={{
+                                          border: '1.5px solid #e7e7e7', 
+                                          borderBottom: '4px solid #e7e7e7',
+                                          borderRadius: 1,
+                                          p: 0.5, 
+                                          display: 'inline-flex', 
+                                        }}
+                                      >
+                                        <Chip
+                                          label={reason}
+                                          size="small"
+                                          color="default"
+                                          variant="outlined"
+                                          sx={{
+                                            border: 'none', 
+                                            color: '#8e8e93',
+                                            fontSize: '0.75rem',
+                                            padding: '1px 2px',
+                                          }}
+                                        />
                                       </Box>
-                                    )}
-                                  </Paper>
-                                </TimelineContent>
-                              </TimelineItem>
-                            ))}
-                          </Timeline>
-                        ) : (
-                          <Typography>No feedback history available.</Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  </Modal>
+                                    ))}
+                                  </Stack>
+                                </Box>
+                              )}
+                            </Box>
+                          </Box>
+                        </Box>
+                      ))}
+                  </Box>
                 </Box>
               </Stack>
             )}
