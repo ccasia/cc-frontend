@@ -357,8 +357,10 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                     autoPlay
                     controls
                     sx={{
-                      maxHeight: '60vh',
-                      width: { xs: '70vw', sm: 'auto' },
+                      maxHeight: '50vh',
+                      maxWidth: '100%',
+                      width: 'auto',
+                      height: 'auto',
                       borderRadius: 2,
                       boxShadow: 3,
                     }}
@@ -521,8 +523,10 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                   autoPlay
                   controls
                   sx={{
-                    maxHeight: '60vh',
-                    width: { xs: '70vw', sm: 'auto' },
+                    maxHeight: '50vh',
+                    maxWidth: '100%',
+                    width: 'auto',
+                    height: 'auto',
                     borderRadius: 2,
                     boxShadow: 3,
                   }}
