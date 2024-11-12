@@ -2,14 +2,12 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useMemo, useEffect } from 'react';
 
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 import { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
-
-import EmptyContent from 'src/components/empty-content';
 
 import CampaignItem from './campaign-item';
 
@@ -62,11 +60,40 @@ const ActiveCampaignView = ({ searchQuery, campaigns }) => {
         >
           {filteredData.map((campaign) => (
             <CampaignItem key={campaign.id} campaign={campaign} />
-            // <CampaignItem key={campaign.id} campaign={campaign} user={user} />
           ))}
         </Box>
       ) : (
-        <EmptyContent title={`No active campaign ${searchQuery && searchQuery} found.`} />
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          height="100%"
+          textAlign="center"
+          mt={20}
+        >
+          <Box
+            style={{
+              width: '80px',
+              height: '80px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '40px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '50%',
+              marginBottom: '16px',
+            }}
+          >
+            😿
+          </Box>
+          <Typography variant="h3" style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}>
+            No campaigns to show
+          </Typography>
+          <Typography variant="body1" color="#636366">
+            Get that bag by working on some campaigns!
+          </Typography>
+        </Box>
       )}
     </Box>
   );

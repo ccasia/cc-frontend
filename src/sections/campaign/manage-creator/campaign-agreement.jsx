@@ -34,7 +34,6 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
-import EmptyContent from 'src/components/empty-content/empty-content';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -223,17 +222,50 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   return (
     <Box p={1.5} sx={{ pb: 0 }}>
       {!agreementStatus ? (
-        <EmptyContent title="Agreement Processing" />
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          height="100%"
+          textAlign="center"
+          mt={10}
+          mb={10}
+        >
+          <Box
+            style={{
+              width: '80px',
+              height: '80px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '40px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '50%',
+              marginBottom: '16px',
+            }}
+          >
+            🕑
+          </Box>
+          <Typography variant="h3" style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}>
+            Agreement Processing
+          </Typography>
+          <Typography variant="body1" color="#636366">
+            Your agreement is being processed. Please check back later.
+          </Typography>
+        </Box>
       ) : (
         <>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 2,
-              mt: -2,
-              ml: -1.2,
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              mb: 2, 
+              mt: { xs: 0, sm: -2 },
+              ml: { xs: 0, sm: -1.2 },
+              textAlign: { xs: 'center', sm: 'left' }
             }}
           >
             <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
@@ -326,7 +358,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                         pageNumber={index + 1}
                         renderAnnotationLayer={false}
                         renderTextLayer={false}
-                        width={isSmallScreen ? undefined : 800} // Set a fixed width for larger screens
+                        width={isSmallScreen ? undefined : 800} 
                       />
                     ))}
                   </Document>
@@ -570,7 +602,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
           {/* New Upload Modal */}
           <Dialog open={openUploadModal} fullWidth maxWidth="md">
-            <DialogTitle>
+            <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
               <Stack direction="row" alignItems="center" gap={2}>
                 <Box>
                   <Typography
@@ -593,7 +625,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       width: 24,
                       height: 24,
                       color: '#636366',
-                    },
+                    }
                   }}
                 >
                   <Iconify icon="hugeicons:cancel-01" width={24} />
@@ -601,7 +633,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               </Stack>
             </DialogTitle>
 
-            <DialogContent>
+            <DialogContent sx={{ bgcolor: '#f4f4f4' }}>
               <FormProvider methods={methods} onSubmit={onSubmit}>
                 {agreementForm ? (
                   <Box sx={{ mt: 0.5 }}>
@@ -641,6 +673,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                             color: 'text.primary',
                             fontWeight: 600,
                             fontSize: '1rem',
+                            maxWidth: '300px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
                           }}
                         >
                           {agreementForm.name}
@@ -769,15 +805,17 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               </FormProvider>
             </DialogContent>
 
-            <DialogActions sx={{ px: 3, pb: 3 }}>
+            <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
               <LoadingButton
                 loading={loading}
                 variant="contained"
                 disabled={!agreementForm}
                 onClick={onSubmit}
                 sx={{
-                  bgcolor: agreementForm ? '#203ff5' : '#b0b0b1',
-                  color: 'white',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  bgcolor: agreementForm ? '#203ff5' : '#b0b0b1 !important',
+                  color: '#ffffff !important',
                   borderBottom: 3.5,
                   borderBottomColor: agreementForm ? '#112286' : '#9e9e9f',
                   borderRadius: 1.5,
@@ -797,16 +835,70 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           <Dialog open={!!preview} onClose={() => setPreview('')} fullWidth maxWidth="md">
             <DialogTitle>
               <Stack direction="row" alignItems="center" gap={2}>
-                <Typography variant="h5">Preview Document</Typography>
-                <IconButton onClick={() => setPreview('')} sx={{ ml: 'auto' }}>
-                  <Iconify icon="hugeicons:cancel-01" width={20} />
+                <Box>
+                  <Typography 
+                    variant="h5"
+                    sx={{ 
+                      fontFamily: 'Instrument Serif, serif',
+                      fontSize: { xs: '2rem', sm: '2.4rem' },
+                      fontWeight: 550
+                    }}
+                  >
+                    Preview Document
+                  </Typography>
+                  
+                  <Typography 
+                    variant="body2"
+                    noWrap
+                    sx={{ 
+                      color: 'text.secondary',
+                      maxWidth: '300px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      mt: 0.5
+                    }}
+                  >
+                    {campaign?.agreement?.agreementUrl?.split('/').pop() || 'Document.pdf'}
+                  </Typography>
+                </Box>
+
+                <IconButton
+                  onClick={() => setPreview('')}
+                  sx={{ 
+                    ml: 'auto',
+                    '& svg': { 
+                      width: 24,
+                      height: 24,
+                      color: '#636366'
+                    }
+                  }}
+                >
+                  <Iconify icon="hugeicons:cancel-01" width={24} />
                 </IconButton>
               </Stack>
             </DialogTitle>
+
             <Divider sx={{ width: '95%', mx: 'auto' }} />
-            <DialogContent>
-              <Box sx={{ height: 600, overflow: 'auto' }}>
-                <Document file={preview} onLoadSuccess={onDocumentLoadSuccess}>
+
+            <DialogContent sx={{ p: 3 }}>
+              <Box 
+                sx={{ 
+                  height: 600, 
+                  overflow: 'auto',
+                  '&::-webkit-scrollbar': {
+                    width: '8px',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: 'rgba(0,0,0,0.1)',
+                    borderRadius: '4px',
+                  },
+                }}
+              >
+                <Document
+                  file={preview}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                >
                   {Array.from(new Array(numPages), (el, index) => (
                     <Page
                       key={index}
@@ -823,42 +915,75 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         </>
       )}
 
-      <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
-        <DialogTitle>Agreement</DialogTitle>
-        <DialogContent>
-          <Box
-            sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll', scrollbarWidth: 'none' }}
+      <Dialog 
+        open={display.value} 
+        onClose={display.onFalse} 
+        fullWidth 
+        maxWidth="md"
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" gap={2}>
+            <Box>
+              <Typography 
+                variant="h5"
+                sx={{ 
+                  fontFamily: 'Instrument Serif, serif',
+                  fontSize: { xs: '2rem', sm: '2.4rem' },
+                  fontWeight: 550
+                }}
+              >
+                Preview Document
+              </Typography>
+            </Box>
+
+            <IconButton
+              onClick={display.onFalse}
+              sx={{ 
+                ml: 'auto',
+                '& svg': { 
+                  width: 24,
+                  height: 24,
+                  color: '#636366'
+                }
+              }}
+            >
+              <Iconify icon="hugeicons:cancel-01" width={24} />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+
+        <Divider sx={{ width: '95%', mx: 'auto' }} />
+
+        <DialogContent sx={{ p: 3 }}>
+          <Box 
+            sx={{ 
+              height: 600, 
+              overflow: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                borderRadius: '4px',
+              },
+            }}
           >
-            <Document file={submission?.content} onLoadSuccess={onDocumentLoadSuccess}>
+            <Document
+              file={submission?.content}
+              onLoadSuccess={onDocumentLoadSuccess}
+            >
               {Array.from(new Array(numPages), (el, index) => (
-                <div key={index} style={{ marginBottom: '0px' }}>
-                  <Page
-                    key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
-                    pageNumber={index + 1}
-                    scale={isSmallScreen ? 0.7 : 1.5}
-                    renderAnnotationLayer={false}
-                    renderTextLayer={false}
-                    style={{ overflow: 'scroll' }}
-                    // style={{ margin: 0, padding: 0, position: 'relative' }}
-                  />
-                </div>
+                <Page
+                  key={index}
+                  pageNumber={index + 1}
+                  renderAnnotationLayer={false}
+                  renderTextLayer={false}
+                  width={isSmallScreen ? undefined : 800}
+                />
               ))}
             </Document>
           </Box>
-          {/* <iframe
-            src={submission?.content}
-            style={{
-              width: '100%',
-              height: 600,
-              border: 0,
-              borderRadius: 15,
-            }}
-            title="PDF Viewer"
-          /> */}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={display.onFalse}>Close</Button>
-        </DialogActions>
       </Dialog>
 
       <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>
@@ -868,15 +993,15 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               <>
                 <Box
                   sx={{
-                    width: 80,
-                    height: 80,
+                    width: 100,
+                    height: 100,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: '50%',
                     bgcolor: '#f4b84a',
-                    fontSize: '40px',
-                    mb: 2,
+                    fontSize: '50px',
+                    mb: -2
                   }}
                 >
                   🛫
