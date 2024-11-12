@@ -56,6 +56,7 @@ const CampaignModal = ({
   bookMark,
   onSaveCampaign,
   onUnsaveCampaign,
+  dialog,
 }) => {
   const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
   const [textPitchOpen, setTextPitchOpen] = useState(false);
@@ -448,6 +449,7 @@ const CampaignModal = ({
                   sx={{
                     px: 5,
                   }}
+                  onClick={dialog.onTrue}
                 >
                   Complete profile
                 </Button>
@@ -496,28 +498,28 @@ const CampaignModal = ({
                   />
                 ) : (
                   <Chip
-                  icon={<Iconify icon="mdi:clock" />}
-                  label="Under Review"
-                  sx={{
-                    bgcolor: 'background.paper',
-                    color: 'text.primary',
-                    fontWeight: 550,
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    height: '40px',
-                    minWidth: '100px',
-                    border: '1px solid',
-                    borderBottom: '3px solid',
-                    borderColor: 'divider',
-                    '& .MuiChip-icon': {
-                      fontSize: 18,
-                      color: '#f7c945',
-                    },
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                    },
-                    px: 1,
-                  }}
-                />
+                    icon={<Iconify icon="mdi:clock" />}
+                    label="Under Review"
+                    sx={{
+                      bgcolor: 'background.paper',
+                      color: 'text.primary',
+                      fontWeight: 550,
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      height: '40px',
+                      minWidth: '100px',
+                      border: '1px solid',
+                      borderBottom: '3px solid',
+                      borderColor: 'divider',
+                      '& .MuiChip-icon': {
+                        fontSize: 18,
+                        color: '#f7c945',
+                      },
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                      },
+                      px: 1,
+                    }}
+                  />
                 )
               ) : hasDraft ? (
                 <Button
@@ -1099,7 +1101,5 @@ CampaignModal.propTypes = {
   bookMark: PropTypes.bool,
   onSaveCampaign: PropTypes.func,
   onUnsaveCampaign: PropTypes.func,
-
-  // openForm: PropTypes.func,
-  // dialog: PropTypes.object,
+  dialog: PropTypes.object,
 };
