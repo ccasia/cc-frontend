@@ -134,7 +134,7 @@ const ManageCampaignDetailView = ({ id }) => {
                   fontSize: { xs: '0.875rem', sm: '1rem' },
                 }}
               >
-                {/* {calculateDaysLeft(data?.campaignBrief?.endDate)} */}
+                {calculateDaysLeft(data?.campaignBrief?.endDate)}
               </Typography>
             </Stack>
 
@@ -143,7 +143,7 @@ const ManageCampaignDetailView = ({ id }) => {
                 height: 40,
                 width: '1px',
                 backgroundColor: '#e0e0e0',
-                mx: 2,
+                mx: 1.5,
               }}
             />
 

@@ -51,10 +51,12 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
-  const [viewedStages, setViewedStages] = useState(() => 
-    // Initialize viewedStages from localStorage
-     JSON.parse(localStorage.getItem('viewedStages')) || []
-  );
+  
+  // Initialize viewedStages from localStorage if available
+  const [viewedStages, setViewedStages] = useState(() => {
+    const saved = localStorage.getItem(`viewedStages-${campaign.id}-${user.id}`);
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
@@ -131,9 +133,13 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const handleStageClick = (stageType) => {
     setSelectedStage(stageType);
     if (!viewedStages.includes(stageType)) {
-      const updatedViewedStages = [...viewedStages, stageType];
-      setViewedStages(updatedViewedStages);
-      localStorage.setItem('viewedStages', JSON.stringify(updatedViewedStages));
+      const newViewedStages = [...viewedStages, stageType];
+      setViewedStages(newViewedStages);
+      // Save to localStorage
+      localStorage.setItem(
+        `viewedStages-${campaign.id}-${user.id}`,
+        JSON.stringify(newViewedStages)
+      );
     }
   };
 
@@ -265,29 +271,29 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
 
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       {isNewStage(item.type) && (
-                        <Label
-                          sx={{
+                        <Label 
+                          sx={{ 
                             bgcolor: 'transparent',
                             color: '#eb4a26',
                             border: '1px solid #eb4a26',
                             borderBottom: '3px solid #eb4a26',
-                            borderRadius: 0.8,
-                            px: 0.6,
+                            borderRadius: 0.7,
+                            px: 0.8,
                             py: 1.5,
-                            mr: 0.2,
+                            mr: 0.5,
                           }}
                         >
                           NEW
                         </Label>
                       )}
-                      <Iconify
-                        icon="eva:arrow-ios-forward-fill"
-                        sx={{
+                      <Iconify 
+                        icon="eva:arrow-ios-forward-fill" 
+                        sx={{ 
                           color: 'text.secondary',
                           width: 26,
                           height: 26,
-                          ml: 1,
-                        }}
+                          ml: 1
+                        }} 
                       />
                     </Box>
                   </Stack>
