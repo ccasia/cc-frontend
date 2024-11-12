@@ -13,7 +13,7 @@ const CampaignAdminManager = () => {
   const { user } = useAuthContext();
 
   const filteredAdmins = useMemo(
-    () => !isLoading && admins.filter((item) => item.admin.role.name === 'CSM'),
+    () => !isLoading && admins.filter((item) => item.admin?.role?.name === 'CSM'),
     [admins, isLoading]
   );
 

@@ -46,12 +46,12 @@ export const defaultSubmission = [
     stage: 4,
   },
 ];
- 
+
 const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
-  
+
   // Initialize viewedStages from localStorage if available
   const [viewedStages, setViewedStages] = useState(() => {
     const saved = localStorage.getItem(`viewedStages-${campaign.id}-${user.id}`);
@@ -271,8 +271,8 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
 
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       {isNewStage(item.type) && (
-                        <Label 
-                          sx={{ 
+                        <Label
+                          sx={{
                             bgcolor: 'transparent',
                             color: '#eb4a26',
                             border: '1px solid #eb4a26',
@@ -286,14 +286,14 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                           NEW
                         </Label>
                       )}
-                      <Iconify 
-                        icon="eva:arrow-ios-forward-fill" 
-                        sx={{ 
+                      <Iconify
+                        icon="eva:arrow-ios-forward-fill"
+                        sx={{
                           color: 'text.secondary',
                           width: 26,
                           height: 26,
-                          ml: 1
-                        }} 
+                          ml: 1,
+                        }}
                       />
                     </Box>
                   </Stack>
