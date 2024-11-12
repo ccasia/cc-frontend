@@ -5,7 +5,8 @@ import { Box, Modal, Button, Avatar, Typography } from '@mui/material';
 const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
     threadId  }) => {
      
-    const isArchived = archivedChats.includes(threadId);      
+    const isArchived = archivedChats.includes(threadId);  
+    console.log("Is Archived:", isArchived);    
   return (
     <Modal open={open} onClose={onClose}>
       <Box

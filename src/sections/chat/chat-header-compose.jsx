@@ -14,7 +14,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import SearchNotFound from 'src/components/search-not-found';
-import { archiveUserThread, unarchiveUserThread } from 'src/api/chat';
+import { archiveUserThread, unarchiveUserThread, useGetAllThreads } from 'src/api/chat';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import ThreadInfoModal from './threadinfoModal';
 import ChatArchiveModal from './chatArchiveModal';
@@ -37,6 +37,23 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const [loading, setLoading] = useState(true);
   const [openInfoModal, setOpenInfoModal] = useState(false);
   const [openArchiveModal, setOpenArchiveModal] = useState(false);
+  const { threads } = useGetAllThreads();
+
+  useEffect(() => {
+  if (threads) {
+    // Extract archived status from threads
+    const archivedThreadIds = threads
+      .filter(thread => 
+        thread.UserThread.some(ut => ut.userId === user.id && ut.archived)
+      )
+      .map(thread => thread.id);
+
+    setArchivedChats(archivedThreadIds); 
+    console.log("Archvied", archivedThreadIds)
+  }
+}, [threads]);
+
+ 
 
   const handleOpenInfoModal = () => {
     setOpenInfoModal(true);
@@ -111,8 +128,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
     }
   };
 
-  console.log ("Archived chats", archivedChats)
-
   const handleUndo = () => {
     if (lastAction) {
       // Undo the last action
@@ -146,9 +161,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         const response = await axiosInstance.get(endpoints.users.allusers);
         const filteredContacts = response.data.filter((user) => user.id !== currentUserId);
         setContacts(filteredContacts);
-        //  console.log('FIlted contacts', filteredContacts);
-
-        //  console.log('Api Response', response.data) // Assuming response.data contains an array of users
       } catch (error) {
         console.error('Error fetching users:', error);
         // Handle error fetching users
@@ -210,6 +222,10 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
       console.error('Error creating thread:', error);
     }
   };
+
+  console.log("Archived chats:", archivedChats);
+  //  console.log ("Thread Id", threadId)
+  //  console.log ("Thread", thread)
 
   return (
     <>
