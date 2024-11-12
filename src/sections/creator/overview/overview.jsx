@@ -1,4 +1,5 @@
 import React from 'react';
+import dayjs from 'dayjs';
 
 import {
   Box,
@@ -22,16 +23,13 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-import { useNotification } from 'src/components/popup/popup-provider';
 
 const Overview = () => {
   const { user } = useAuthContext();
   const { data, isLoading } = useGetOverview();
 
-  const { notifications, bool, test } = useNotification();
-
   const renderOverview = (
-    <Grid container spacing={2}>
+    <Grid container spacing={2} pb={10}>
       <Grid item xs={12} md={6}>
         <Box>
           <Stack
@@ -53,7 +51,7 @@ const Overview = () => {
             </Avatar>
             <ListItemText
               primary="TOTAL CAMPAIGNS"
-              secondary={data?.length}
+              secondary={data?.adjustedCampaigns?.length}
               primaryTypographyProps={{
                 variant: 'subtitle2',
                 color: 'text.secondary',
@@ -95,7 +93,7 @@ const Overview = () => {
               </Box>
             )}
 
-            {!isLoading && data.length < 1 ? (
+            {!isLoading && data?.adjustedCampaigns?.length < 1 ? (
               <Box
                 sx={{
                   borderRadius: 2,
@@ -118,7 +116,7 @@ const Overview = () => {
               </Box>
             ) : (
               <>
-                {data?.slice(0, 3).map((item, index) => (
+                {data?.adjustedCampaigns?.slice(0, 3).map((item, index) => (
                   <Card
                     sx={{ p: 2, boxShadow: 'none', border: 1, borderColor: '#EBEBEB' }}
                     key={index}
@@ -221,34 +219,6 @@ const Overview = () => {
               </>
             )}
           </Stack>
-
-          {/* <Divider />
-
-          <Box
-            sx={{
-              p: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-            }}
-          >
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              fontWeight="bolder"
-              component={RouterLink}
-              sx={{
-                textDecoration: 'none',
-                '&:hover': {
-                  textDecoration: 'underline',
-                },
-              }}
-              href={paths.dashboard.campaign.creator.manage}
-            >
-              SEE ALL CAMPAIGNS
-            </Typography>
-            <Iconify icon="ic:round-navigate-next" width={18} />
-          </Box> */}
         </Box>
       </Grid>
 
@@ -273,7 +243,7 @@ const Overview = () => {
             </Avatar>
             <ListItemText
               primary="TOTAL TASKS"
-              secondary="11"
+              secondary={data?.tasks?.length}
               primaryTypographyProps={{
                 variant: 'subtitle2',
                 color: 'text.secondary',
@@ -290,9 +260,97 @@ const Overview = () => {
 
           {/* <Divider /> */}
 
-          <Typography textAlign="center" py={2}>
+          <Stack
+            spacing={1}
+            sx={{
+              p: 2,
+            }}
+          >
+            {!isLoading && data?.tasks?.length < 1 ? (
+              <Box
+                sx={{
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: '#EBEBEB',
+                  p: 5,
+                  textAlign: 'center',
+                }}
+              >
+                <ListItemText
+                  primary="No tasks to show"
+                  secondary="Click here to discover campaigns for you!"
+                  primaryTypographyProps={{
+                    variant: 'subtitle1',
+                  }}
+                  secondaryTypographyProps={{
+                    variant: 'subtitle2',
+                  }}
+                />
+              </Box>
+            ) : (
+              <>
+                {data?.tasks?.slice(0, 3).map((task) => (
+                  <Card
+                    sx={{ p: 2, boxShadow: 'none', border: 1, borderColor: '#EBEBEB' }}
+                    key={task.id}
+                  >
+                    <Stack
+                      direction={{ sm: 'row' }}
+                      alignItems={{ xs: 'start', sm: 'center' }}
+                      gap={1}
+                    >
+                      <Avatar
+                        src={task?.campaign?.campaignBrief?.images[0]}
+                        sx={{
+                          border: 1,
+                          borderColor: '#EBEBEB',
+                        }}
+                      >
+                        H
+                      </Avatar>
+                      <Stack flexGrow={1}>
+                        <Typography variant="subtitle2">{task.campaign.name}</Typography>
+                        <Stack direction="row" spacing={0.5} alignItems="center">
+                          <Iconify
+                            icon="material-symbols-light:calendar-clock"
+                            color="text.secondary"
+                          />
+                          <Typography
+                            sx={{
+                              fontSize: 12,
+                              fontWeight: 400,
+                              color: 'text.secondary',
+                            }}
+                          >
+                            {dayjs(task?.dueDate).format('D MMM')}
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                      <Box
+                        sx={{
+                          py: 0.5,
+                          px: 2,
+                          border: 1,
+                          borderRadius: 1,
+                          borderColor: '#1340FF',
+                          boxShadow: '0px -3px 0px 0px #1340FF inset',
+                          color: '#1340FF',
+                          fontWeight: 600,
+                          fontSize: 13,
+                        }}
+                      >
+                        {task?.task?.status}
+                      </Box>
+                    </Stack>
+                  </Card>
+                ))}
+              </>
+            )}
+          </Stack>
+
+          {/* <Typography textAlign="center" py={2}>
             In development...
-          </Typography>
+          </Typography> */}
         </Box>
       </Grid>
     </Grid>
@@ -326,7 +384,26 @@ const Overview = () => {
         }}
       /> */}
 
-      {renderOverview}
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: (theme) => theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
+      )}
+
+      {!isLoading && renderOverview}
     </Container>
   );
 };

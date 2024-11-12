@@ -39,7 +39,7 @@ function CreateInvoice() {
         }}
       />
 
-      <InvoiceNewEditForm id={id} creators={data}  />
+      <InvoiceNewEditForm id={id} creators={data} />
     </Container>
   );
 }

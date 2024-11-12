@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 
@@ -5,11 +6,14 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
 import { grey } from '@mui/material/colors';
-import { Avatar, Typography, IconButton } from '@mui/material';
+import { Button, Avatar, Typography, IconButton } from '@mui/material';
 
 import { usePathname } from 'src/routes/hooks';
 
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetTokenExpiry from 'src/hooks/use-get-token-expiry';
+
+import { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -21,13 +25,6 @@ import { NavSectionVertical } from 'src/components/nav-section';
 
 import { NAV } from '../config-layout';
 import { useNavData } from './config-navigation';
-import NavToggleButton from '../common/nav-toggle-button';
-import { Badge, Button } from '@mui/material';
-import useGetTokenExpiry from 'src/hooks/use-get-token-expiry';
-
-import { endpoints } from 'src/utils/axios';
-
-import axios from 'axios';
 // ----------------------------------------------------------------------
 
 export default function NavVertical({ openNav, onCloseNav }) {
@@ -42,9 +39,9 @@ export default function NavVertical({ openNav, onCloseNav }) {
   const navData = useNavData();
 
   const { data } = useGetTokenExpiry();
-  console.log('user', user);
 
   const date = new Date(data?.lastRefreshToken || new Date());
+
   const formatter = new Intl.DateTimeFormat('en-US', {
     day: '2-digit',
     month: '2-digit',
@@ -127,7 +124,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
             CULT CREATIVE
           </Typography>
           <Typography variant="body2" color="text.secondary" fontWeight={600}>
-            Creator
+            {`${user?.role.slice(0, 1).toUpperCase()}${user?.role.slice(1)}`}
           </Typography>
         </Stack>
         <IconButton

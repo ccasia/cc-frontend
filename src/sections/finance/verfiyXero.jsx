@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
-import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 function VerfiyXero() {
   const navigate = useNavigate();
@@ -9,18 +9,18 @@ function VerfiyXero() {
   const searchParams = new URLSearchParams(location.search);
   const code = searchParams.get('code');
   const session = searchParams.get('session_state');
-  console.log(code, session);
 
   const xeroCode = async () => {
     try {
       // Call the backend to exchange the authorization code for the access token
-      const { data } = await axios.get(endpoints.auth.xeroCallback, {
-        withCredentials: true,
+      const { data } = await axiosInstance.get(endpoints.invoice.xeroCallback, {
+        // withCredentials: true,
         params: {
-          code: code,
-          session: session,
+          code,
+          session,
         },
       });
+
       // Navigate to another page or update the state after getting the token
       navigate('/dashboard'); // Example navigation after success
     } catch (error) {

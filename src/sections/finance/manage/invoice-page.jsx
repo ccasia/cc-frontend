@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 
 import useGetInvoiceById from 'src/hooks/use-get-invoice';
@@ -9,7 +9,6 @@ function InvoicePage() {
   const { id } = useParams();
 
   const { invoice, isLoading } = useGetInvoiceById(id);
-
 
   if (isLoading) {
     return <div>Loading...</div>;

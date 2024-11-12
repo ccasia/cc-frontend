@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Grid,
@@ -38,6 +39,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 const Agreement = ({ campaign, submission, creator }) => {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const [numPages, setNumPages] = useState(null);
+  const loading = useBoolean();
   // eslint-disable-next-line no-shadow
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
@@ -50,10 +52,15 @@ const Agreement = ({ campaign, submission, creator }) => {
     },
   });
 
-  const { reset, handleSubmit } = methods;
+  const {
+    reset,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = methods;
 
   const handleClick = async () => {
     try {
+      loading.onTrue();
       const res = await axiosInstance.patch(endpoints.submission.admin.agreement, {
         campaignId: campaign?.id,
         status: 'approve',
@@ -69,6 +76,8 @@ const Agreement = ({ campaign, submission, creator }) => {
       enqueueSnackbar('Faileddsadsa', {
         variant: 'error',
       });
+    } finally {
+      loading.onFalse();
     }
   };
 
@@ -122,9 +131,9 @@ const Agreement = ({ campaign, submission, creator }) => {
           >
             Cancel
           </Button>
-          <Button type="submit" size="small" variant="contained">
+          <LoadingButton type="submit" size="small" variant="contained" loading={isSubmitting}>
             Submit
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </FormProvider>
     </Dialog>
@@ -205,15 +214,16 @@ const Agreement = ({ campaign, submission, creator }) => {
                     >
                       Reject
                     </Button>
-                    <Button
+                    <LoadingButton
                       size="small"
                       onClick={() => handleClick()}
                       variant="contained"
                       color="success"
                       startIcon={<Iconify icon="hugeicons:tick-03" />}
+                      loading={loading.value}
                     >
                       Approve
-                    </Button>
+                    </LoadingButton>
                   </Stack>
                 )}
                 {renderFeedbackForm}

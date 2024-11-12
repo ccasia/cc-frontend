@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -8,15 +9,10 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useForm } from 'react-hook-form';
+import useGetContacts from 'src/hooks/use-get-xeroContacts';
 
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
-
-import { useXero } from 'src/hooks/zustands/useXero';
-import { useEffect, useState } from 'react';
-
-import useGetContacts from 'src/hooks/use-get-xeroContacts';
 
 function XeroDialoge({ open, onClose, description, setContact, setNewContact }) {
   const { isLoading, contacts } = useGetContacts();
@@ -82,23 +78,23 @@ function XeroDialoge({ open, onClose, description, setContact, setNewContact }) 
             padding={1}
           >
             <RHFAutocomplete
-              name={'contact'}
-              label={'Select Contact'}
-              options={contacts ? contacts : [{ name: 'No Contacts' }]}
+              name="contact"
+              label="Select Contact"
+              options={contacts || [{ name: 'No Contacts' }]}
               getOptionLabel={(option) => option.name}
               value={values.contact}
               onChange={(e, value) => setValue('contact', value)}
             />
             <RHFAutocomplete
-              name={'type'}
-              label={'Invoice Type'}
+              name="type"
+              label="Invoice Type"
               options={['ACCPAY', 'ACCREC']}
               value={values.type}
               onChange={(e, value) => setValue('type', value)}
             />
 
             <RHFTextField
-              name={'description'}
+              name="description"
               label="Description"
               multiline
               rows={3}
@@ -153,7 +149,9 @@ export default XeroDialoge;
 XeroDialoge.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
-  contacts: PropTypes.array,
+  // contacts: PropTypes.array,
   description: PropTypes.string,
-  type: PropTypes.string,
+  // type: PropTypes.string,
+  setContact: PropTypes.func,
+  setNewContact: PropTypes.func,
 };

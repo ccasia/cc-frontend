@@ -46,15 +46,17 @@ export const defaultSubmission = [
     stage: 4,
   },
 ];
- 
+
 const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
-  const [viewedStages, setViewedStages] = useState(() => 
-    // Initialize viewedStages from localStorage
-     JSON.parse(localStorage.getItem('viewedStages')) || []
-  );
+
+  // Initialize viewedStages from localStorage if available
+  const [viewedStages, setViewedStages] = useState(() => {
+    const saved = localStorage.getItem(`viewedStages-${campaign.id}-${user.id}`);
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
@@ -86,10 +88,12 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     });
 
     socket?.on('newFeedback', () => submissionMutate());
+    socket?.on('agreementReady', () => submissionMutate());
 
     return () => {
       socket?.off('draft');
       socket?.off('newFeedback');
+      socket?.off('agreementReady');
     };
   }, [campaign, submissionMutate, socket]);
 
@@ -98,7 +102,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     const agreementSubmission = value('AGREEMENT_FORM');
     const firstDraftSubmission = value('FIRST_DRAFT');
     const finalDraftSubmission = value('FINAL_DRAFT');
-    const postingSubmission = value('POSTING');
+    // const postingSubmission = value('POSTING');
 
     // Always show Agreement stage (will be last and always Stage 01)
     stages.unshift({ ...defaultSubmission[0] });
@@ -131,9 +135,13 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const handleStageClick = (stageType) => {
     setSelectedStage(stageType);
     if (!viewedStages.includes(stageType)) {
-      const updatedViewedStages = [...viewedStages, stageType];
-      setViewedStages(updatedViewedStages);
-      localStorage.setItem('viewedStages', JSON.stringify(updatedViewedStages));
+      const newViewedStages = [...viewedStages, stageType];
+      setViewedStages(newViewedStages);
+      // Save to localStorage
+      localStorage.setItem(
+        `viewedStages-${campaign.id}-${user.id}`,
+        JSON.stringify(newViewedStages)
+      );
     }
   };
 
@@ -271,10 +279,10 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                             color: '#eb4a26',
                             border: '1px solid #eb4a26',
                             borderBottom: '3px solid #eb4a26',
-                            borderRadius: 0.8,
-                            px: 0.6,
+                            borderRadius: 0.7,
+                            px: 0.8,
                             py: 1.5,
-                            mr: 0.2,
+                            mr: 0.5,
                           }}
                         >
                           NEW

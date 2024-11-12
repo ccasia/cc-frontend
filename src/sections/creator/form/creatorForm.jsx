@@ -507,7 +507,8 @@ export default function CreatorForm({ creator, open, onClose }) {
       </Box>
 
       <FormProvider methods={methods}>
-        <Box
+        <Stack
+          alignItems="center"
           sx={{
             mt: 5,
           }}
@@ -519,10 +520,10 @@ export default function CreatorForm({ creator, open, onClose }) {
               onClick={handleNext}
               disabled={!isValid}
               sx={{
-                position: 'absolute',
-                bottom: 20,
-                left: '50%',
-                transform: 'translate(-50%)',
+                // position: 'absolute',
+                // bottom: 20,
+                // left: '50%',
+                // transform: 'translate(-50%)',
                 bgcolor: '#1340FF',
                 boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                 color: '#FFF',
@@ -539,10 +540,10 @@ export default function CreatorForm({ creator, open, onClose }) {
           {activeStep === steps.length - 1 && (
             <LoadingButton
               sx={{
-                position: 'absolute',
-                bottom: 20,
-                left: '50%',
-                transform: 'translate(-50%)',
+                // position: 'absolute',
+                // bottom: 20,
+                // left: '50%',
+                // transform: 'translate(-50%)',
                 bgcolor: '#1340FF',
                 boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                 color: '#FFF',
@@ -559,7 +560,7 @@ export default function CreatorForm({ creator, open, onClose }) {
               Get Started
             </LoadingButton>
           )}
-        </Box>
+        </Stack>
       </FormProvider>
 
       {/* <Box sx={{ display: 'flex', m: 2 }}>

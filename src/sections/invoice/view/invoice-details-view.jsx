@@ -8,9 +8,7 @@ import { paths } from 'src/routes/paths';
 import { useAuthContext } from 'src/auth/hooks';
 
 import { useSettingsContext } from 'src/components/settings';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
-import InvoiceDetails from '../invoice-details';
 import InvoiceDetail from 'src/sections/creator/invoice/invoice-details';
 
 // ----------------------------------------------------------------------
@@ -61,5 +59,5 @@ export default function InvoiceDetailsView({ id, invoice }) {
 
 InvoiceDetailsView.propTypes = {
   id: PropTypes.string,
-  data: PropTypes.object,
+  invoice: PropTypes.object,
 };
