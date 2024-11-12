@@ -392,7 +392,7 @@ const CampaignFirstDraft = ({
                         the creatives over at the{' '}
                         <Box
                           component="span"
-                          onClick="/"
+                          onClick={() => setCurrentTab('info')}
                           sx={{
                             color: '#203ff5',
                             cursor: 'pointer',

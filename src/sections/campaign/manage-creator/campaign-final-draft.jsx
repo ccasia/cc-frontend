@@ -79,7 +79,7 @@ const generateThumbnail = (file) =>
     });
   });
 
-const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, fullSubmission }) => {
+const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, fullSubmission, setCurrentTab }) => {
   const [preview, setPreview] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressName, setProgressName] = useState('');
@@ -1337,4 +1337,5 @@ CampaignFinalDraft.propTypes = {
   submission: PropTypes.object,
   getDependency: PropTypes.func,
   fullSubmission: PropTypes.array,
+  setCurrentTab: PropTypes.func,
 };

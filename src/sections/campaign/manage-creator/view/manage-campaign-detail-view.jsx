@@ -46,6 +46,19 @@ const ManageCampaignDetailView = ({ id }) => {
     }
   }, [checkIfUserIsShortlisted, data]);
 
+  const calculateDaysLeft = (endDate) => {
+    if (!endDate) return 'No end date';
+    
+    const end = new Date(endDate);
+    const today = new Date();
+    
+    if (end < today) return 'Campaign Ended';
+    
+    const diffTime = Math.abs(end - today);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays} days`;
+  };
+ 
   return (
     <Container maxWidth="xl">
       <Stack spacing={1}>

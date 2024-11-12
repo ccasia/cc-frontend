@@ -80,7 +80,7 @@ const CampaignDetailItem = ({ campaign }) => {
 
         <Box mt={3}>
           {currentTab === 'tasks' && (
-            <CampaignMyTasks campaign={campaign} openLogisticTab={openLogisticTab} />
+            <CampaignMyTasks campaign={campaign} openLogisticTab={openLogisticTab} setCurrentTab={setCurrentTab} />
           )}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
           {/* {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />} */}

@@ -450,21 +450,27 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         open={showSubmitDialog} 
         maxWidth="xs"
         fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            width: { xs: '95%', sm: '400px' },
+            margin: { xs: '16px', sm: '32px' },
+          }
+        }}
       >
         <DialogContent>
-          <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
+          <Stack spacing={{ xs: 2, sm: 3 }} alignItems="center" sx={{ py: { xs: 2, sm: 4 } }}>
             {submitStatus === 'submitting' && (
               <>
                 <Box
                   sx={{
-                    width: 100,
-                    height: 100,
+                    width: { xs: 80, sm: 100 },
+                    height: { xs: 80, sm: 100 },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: '50%',
                     bgcolor: '#f4b84a',
-                    fontSize: '50px',
+                    fontSize: { xs: '40px', sm: '50px' },
                     mb: -2
                   }}
                 >
@@ -476,7 +482,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     display: 'flex',
                     fontFamily: 'Instrument Serif, serif',
                     fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                    fontWeight: 550
+                    fontWeight: 550,
+                    textAlign: 'center'
                   }}
                 >
                   Submitting link<LoadingDots />
@@ -487,14 +494,14 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
               <>
                 <Box
                   sx={{
-                    width: 100,
-                    height: 100,
+                    width: { xs: 80, sm: 100 },
+                    height: { xs: 80, sm: 100 },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: '50%',
                     bgcolor: '#e0fe52',
-                    fontSize: '50px',
+                    fontSize: { xs: '40px', sm: '50px' },
                     mb: -2
                   }}
                 >
@@ -506,7 +513,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     sx={{ 
                       fontFamily: 'Instrument Serif, serif',
                       fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                      fontWeight: 550
+                      fontWeight: 550,
+                      textAlign: 'center'
                     }}
                   >
                     Campaign Completed
@@ -515,7 +523,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     variant="body1"
                     sx={{ 
                       color: '#636366',
-                      mt: -2,
+                      mt: -1,
+                      textAlign: 'center'
                     }}
                   >
                     Woohoo! You have completed this campaign!
@@ -527,20 +536,24 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
               <>
                 <Box
                   sx={{
-                    width: 80,
-                    height: 80,
+                    width: { xs: 60, sm: 80 },
+                    height: { xs: 60, sm: 80 },
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: '50%',
                     bgcolor: 'error.lighter',
-                    fontSize: '40px',
-                    mb: 2
+                    fontSize: { xs: '30px', sm: '40px' },
+                    mb: { xs: 1, sm: 2 }
                   }}
                 >
                   <Iconify 
                     icon="mdi:error" 
-                    sx={{ width: 60, height: 60, color: 'error.main' }} 
+                    sx={{ 
+                      width: { xs: 40, sm: 60 }, 
+                      height: { xs: 40, sm: 60 }, 
+                      color: 'error.main' 
+                    }} 
                   />
                 </Box>
                 <Typography 
@@ -548,7 +561,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   sx={{ 
                     fontFamily: 'Instrument Serif, serif',
                     fontSize: { xs: '1.5rem', sm: '1.8rem' },
-                    fontWeight: 550
+                    fontWeight: 550,
+                    textAlign: 'center'
                   }}
                 >
                   Submission Failed
@@ -558,7 +572,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
           </Stack>
         </DialogContent>
         {(submitStatus === 'success' || submitStatus === 'error') && (
-          <DialogActions sx={{ pb: 3, px: 3 }}>
+          <DialogActions sx={{ pb: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 } }}>
             <Button 
               onClick={handleCloseSubmitDialog}
               variant="contained"
@@ -570,8 +584,9 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                 borderBottomColor: '#202021',
                 borderRadius: 1.5,
                 mt: -4,
-                px: 2.5,
-                py: 1.2,
+                px: { xs: 2, sm: 2.5 },
+                py: { xs: 1, sm: 1.2 },
+                fontSize: { xs: '0.875rem', sm: '1rem' },
                 '&:hover': {
                   bgcolor: '#3a3a3c',
                   opacity: 0.9,

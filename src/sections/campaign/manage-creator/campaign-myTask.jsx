@@ -46,8 +46,8 @@ export const defaultSubmission = [
     stage: 4,
   },
 ];
-
-const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
+ 
+const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
@@ -332,6 +332,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                   submission={value('FIRST_DRAFT')}
                   getDependency={getDependency}
                   openLogisticTab={openLogisticTab}
+                  setCurrentTab={setCurrentTab}
                 />
               )}
               {selectedStage === 'FINAL_DRAFT' && (
@@ -341,6 +342,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                   submission={value('FINAL_DRAFT')}
                   fullSubmission={submissions}
                   getDependency={getDependency}
+                  setCurrentTab={setCurrentTab}
                 />
               )}
               {selectedStage === 'POSTING' && (
@@ -365,4 +367,5 @@ export default CampaignMyTasks;
 CampaignMyTasks.propTypes = {
   campaign: PropTypes.object,
   openLogisticTab: PropTypes.func,
+  setCurrentTab: PropTypes.func,
 };
