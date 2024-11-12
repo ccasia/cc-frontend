@@ -1,13 +1,11 @@
 import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 
-import { Box, Grid } from '@mui/material';
+import { Box, Grid, Typography } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import EmptyContent from 'src/components/empty-content';
-
-import CampaignItem from '../discover/creator/campaign-item';
+import CampaignItem from './campaign-item';
 
 const CompletedCampaignView = ({ searchQuery, campaigns }) => {
   // const { campaigns: data, isLoading } = useGetCampaigns('creator');
@@ -38,16 +36,53 @@ const CompletedCampaignView = ({ searchQuery, campaigns }) => {
 
   return (
     <Box mt={2}>
-      {sortedData?.length ? (
-        <Grid container spacing={3}>
-          {sortedData.map((campaign) => (
-            <Grid item xs={12} sm={6} md={4} key={campaign.id}>
-              <CampaignItem campaign={campaign} user={user} />
-            </Grid>
+      {filteredData?.length ? (
+        <Box
+          gap={2}
+          display="grid"
+          gridTemplateColumns={{
+            xs: 'repeat(1, 1fr)',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
+          }}
+        >
+          {filteredData.map((campaign) => (
+            <CampaignItem key={campaign.id} campaign={campaign} />
+            // <CampaignItem key={campaign.id} campaign={campaign} user={user} />
           ))}
-        </Grid>
+        </Box>
       ) : (
-        <EmptyContent title={`No completed campaign ${searchQuery && searchQuery} found.`} />
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          height="100%"
+          textAlign="center"
+          mt={20}
+        >
+          <Box
+            style={{
+              width: '80px',
+              height: '80px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '40px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '50%',
+              marginBottom: '16px',
+            }}
+          >
+            😿
+          </Box>
+          <Typography variant="h3" style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}>
+            No campaigns to show
+          </Typography>
+          <Typography variant="body1" color="#636366">
+            Get that bag by working on some campaigns!
+          </Typography>
+        </Box>
       )}
     </Box>
   );

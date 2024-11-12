@@ -1,14 +1,20 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
+import { enqueueSnackbar } from 'notistack';
+import { useState, useEffect } from 'react';
+import { useMediaQuery } from '@mui/material';
 
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
+
 import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Image from 'src/components/image';
 
-// import CampaignModal from './campaign-modal';
+import CampaignModal from './campaign-modal';
+
+import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -127,6 +133,8 @@ export default function CampaignItem({ campaign, user }) {
     campaignInfo.onTrue();
   };
 
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
   const renderImage = (
     <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
       <Image
@@ -149,8 +157,8 @@ export default function CampaignItem({ campaign, user }) {
             fontSize: '0.875rem',
             borderRadius: '5px',
             height: '32px',
-            border: '1px solid #ebebeb',
-            borderBottom: '3px solid #ebebeb',
+            border: '1.2px solid #e7e7e7',
+            borderBottom: '3px solid #e7e7e7',
             '& .MuiChip-label': {
               padding: '0 8px',
             },
@@ -178,106 +186,119 @@ export default function CampaignItem({ campaign, user }) {
           left: 17,
         }}
       />
-      <Box sx={{ mt: 0.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
-          {campaign?.name}
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            mb: 2,
-            color: '#8e8e93',
-            fontSize: '0.95rem',
-            fontWeight: 550,
-          }}
-        >
-          {campaign?.brand?.name || campaign?.company?.name}
-        </Typography>
-      </Box>
+      <Box sx={{ 
+        mt: 0.5,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start'
+      }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 650,
+              mb: -0.1,
+              pb: 0.2,
+              mt: 0.8,
+              ml: -0.5,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+              fontSize: isSmallScreen ? '1rem' : 'clamp(0.8rem, 2vw, 1.25rem)',
+            }}
+          >
+            {campaign?.name}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              ml: -0.5,
+              mb: 2,
+              color: '#8e8e93',
+              fontSize: isSmallScreen ? '0.95rem' : 'clamp(0.7rem, 1.8vw, 0.95rem)',
+              fontWeight: 550,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {campaign?.brand?.name || campaign?.company?.name}
+          </Typography>
+        </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Chip
-          icon={
-            <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
-              <CircularProgress
-                variant="determinate"
-                value={100}
-                size={20}
-                thickness={7}
-                sx={{ color: 'grey.300' }}
-              />
-              <CircularProgress
-                variant="determinate"
-                value={Math.min(Math.round(campaign?.totalCompletion), 100)}
-                size={20}
-                thickness={7}
-                sx={{
-                  color: '#5abc6f',
-                  position: 'absolute',
-                  left: 0,
-                  strokeLinecap: 'round',
-                }}
-              />
-            </Box>
-          }
-          label={`${Math.min(Math.round(campaign?.totalCompletion), 100)}% COMPLETED`} // totalCompletion
-          sx={{
-            backgroundColor: theme.palette.common.white,
-            color: '#48484a',
-            fontWeight: 'bold',
-            fontSize: '0.875rem',
-            borderRadius: '10px',
-            height: '35px',
-            border: '1px solid #ebebeb',
-            borderBottom: '3px solid #ebebeb',
-            '& .MuiChip-label': {
-              padding: '0 8px 0 12px',
-            },
-            '&:hover': {
+        {campaign?.pitch?.status !== 'approved' ? (
+          <Chip
+            icon={<Iconify icon="mdi:clock" sx={{ width: 20, height: 20, mt: -0.2, ml: -0.5 }} />}
+            label="PENDING APPROVAL"
+            sx={{
               backgroundColor: theme.palette.common.white,
-            },
-          }}
-        />
-        {/* <Chip
-          icon={
-            bookMark ? <Bookmark sx={{ fontSize: 24 }} /> : <BookmarkBorder sx={{ fontSize: 24 }} />
-          }
-          onClick={(e) => {
-            e.stopPropagation();
-            if (bookMark) {
-              unSaveCampaign(
-                campaign?.bookMarkCampaign?.find((item) => item.userId === user?.id)?.id
-              );
-            } else {
-              saveCampaign(campaign?.id);
+              color: '#48484a',
+              fontWeight: 'bold',
+              fontSize: isSmallScreen ? '0.75rem' : '0.875rem',
+              borderRadius: '6px',
+              height: '35px',
+              border: '1.2px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              marginTop: '8px',
+              '& .MuiChip-label': {
+                padding: '0 8px 0 12px',
+              },
+               '& .MuiChip-icon': {
+                 fontSize: 20,
+                 color: '#f7c945',
+                 width: 20,
+                 height: 20,
+               },
+              '&:hover': {
+                backgroundColor: theme.palette.common.white,
+              },
+            }}
+          />
+        ) : (
+          <Chip
+            icon={
+              <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
+                <CircularProgress
+                  variant="determinate"
+                  value={100}
+                  size={isSmallScreen ? 15 : 20}
+                  thickness={7}
+                  sx={{ color: 'grey.300' }}
+                />
+                <CircularProgress
+                  variant="determinate"
+                  value={Math.min(Math.round(campaign?.totalCompletion), 100)}
+                  size={isSmallScreen ? 15 : 20}
+                  thickness={7}
+                  sx={{
+                    color: '#5abc6f',
+                    position: 'absolute',
+                    left: 0,
+                    strokeLinecap: 'round',
+                  }}
+                />
+              </Box>
             }
-          }}
-          sx={{
-            backgroundColor: theme.palette.common.white,
-            color: '#48484a',
-            fontWeight: 'bold',
-            fontSize: '0.875rem',
-            borderRadius: '8px',
-            height: '40px',
-            border: '1px solid #ebebeb',
-            borderBottom: '3px solid #ebebeb',
-            '& .MuiChip-label': {
-              display: 'none',
-            },
-            '& .MuiChip-icon': {
-              marginRight: 0,
-              marginLeft: 0,
-              color: bookMark ? '#232b35' : '#48484a',
-              fontSize: 24,
-            },
-            '&:hover': {
-              backgroundColor: alpha('#232b35', 0.08),
-            },
-            width: '40px',
-            padding: 0,
-            transition: 'background-color 0.2s ease-in-out',
-          }}
-        /> */}
+            label={`${Math.min(Math.round(campaign?.totalCompletion), 100)}% COMPLETED`}
+            sx={{
+              backgroundColor: theme.palette.common.white,
+              color: '#48484a',
+              fontWeight: 'bold',
+              fontSize: isSmallScreen ? '0.75rem' : '0.875rem',
+              borderRadius: '6px',
+              height: '35px',
+              border: '1.2px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              marginTop: '8px',
+              '& .MuiChip-label': {
+                padding: '0 8px 0 12px',
+              },
+              '&:hover': {
+                backgroundColor: theme.palette.common.white,
+              },
+            }}
+          />
+        )}
       </Box>
     </Box>
   );
@@ -294,7 +315,7 @@ export default function CampaignItem({ campaign, user }) {
           border: '1.2px solid',
           borderColor: '#ebebeb',
           mb: -0.5,
-          height: 335,
+          height: 290,
           '&:hover': {
             borderColor: '#1340ff',
             transform: 'translateY(-2px)',
@@ -306,14 +327,11 @@ export default function CampaignItem({ campaign, user }) {
         {renderCampaignInfo}
       </Card>
 
-      {/* <CampaignModal
+      { <CampaignModal
         open={campaignInfo.value}
         handleClose={campaignInfo.onFalse}
         campaign={campaign}
-        bookMark={bookMark}
-        onSaveCampaign={saveCampaign}
-        onUnsaveCampaign={unSaveCampaign}
-      /> */}
+      /> }
     </>
   );
 }

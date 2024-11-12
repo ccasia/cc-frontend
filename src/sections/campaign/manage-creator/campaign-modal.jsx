@@ -35,8 +35,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
-import CampaignPitchOptionsModal from './campaign-pitch-options-modal'; // Import an appropriate icon
-
 const ChipStyle = {
   bgcolor: '#e4e4e4',
   color: '#636366',
@@ -57,13 +55,9 @@ const CampaignModal = ({
   onSaveCampaign,
   onUnsaveCampaign,
 }) => {
-  const [pitchOptionsOpen, setPitchOptionsOpen] = useState(false);
-  const [textPitchOpen, setTextPitchOpen] = useState(false);
-  const [videoPitchOpen, setVideoPitchOpen] = useState(false);
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
-
   const dialogContentRef = useRef(null);
   const images = campaign?.campaignBrief?.images || [];
 
@@ -83,28 +77,6 @@ const CampaignModal = ({
       ),
     [campaign, user]
   );
-
-  const existingPitch = useMemo(
-    () => user?.pitch && user?.pitch.find((item) => item.campaignId === campaign?.id),
-    [campaign, user]
-  );
-
-  const draftPitch = useMemo(
-    () => user?.draftPitch && user?.draftPitch.find((item) => item.campaignId === campaign?.id),
-    [campaign, user]
-  );
-
-  const hasPitched = useMemo(
-    () => !!existingPitch && existingPitch.status !== 'draft',
-    [existingPitch]
-  );
-
-  const hasDraft = useMemo(
-    () => !!draftPitch || (existingPitch && existingPitch.status === 'draft'),
-    [draftPitch, existingPitch]
-  );
-
-  const { isFormCompleted } = user.creator;
 
   const handleImageClick = (event) => {
     // Prevent expansion if clicking on navigation buttons
@@ -190,8 +162,8 @@ const CampaignModal = ({
   };
 
   const handleBookmarkClick = () => {
-    if (bookMark) {
-      onUnsaveCampaign(campaign?.bookMarkCampaign?.find((item) => item.userId === user?.id)?.id);
+    if (campaign?.bookMarkCampaign?.userId === user?.id) {
+      onUnsaveCampaign(campaign?.bookMarkCampaign.id);
     } else {
       onSaveCampaign(campaign?.id);
     }
@@ -281,7 +253,7 @@ const CampaignModal = ({
           />
 
           {/* Add Match Percentage Chip */}
-          <Box sx={{ position: 'absolute', top: 20, left: 20 }}>
+          {/* <Box sx={{ position: 'absolute', top: 20, left: 20 }}>
             <Chip
               icon={
                 <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
@@ -324,7 +296,7 @@ const CampaignModal = ({
                 },
               }}
             />
-          </Box>
+          </Box> */}
 
           {/* Company Avatar */}
           <Avatar
@@ -441,17 +413,56 @@ const CampaignModal = ({
               justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
               sx={{ mt: { xs: 1.5, sm: 0 } }}
             >
-              {!isFormCompleted ? (
-                <Button
+              {campaign?.shortlisted &&  <Button
                   variant="contained"
-                  color="warning"
+                  onClick={() => handleManageClick(campaign.id)}
                   sx={{
-                    px: 5,
+                    backgroundColor: '#203ff5',
+                    color: 'white',
+                    borderBottom: '4px solid #102387 !important',
+                    border: 'none',
+                    '&:hover': {
+                      backgroundColor: '#1935dd',
+                      borderBottom: '4px solid #102387 !important',
+                    },
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                    padding: { xs: '4px 12px', sm: '6px 18px' },
+                    minWidth: '100px',
+                    height: '42px',
+                    boxShadow: 'none',
+                    textTransform: 'none',
                   }}
                 >
-                  Complete profile
-                </Button>
-              ) : hasPitched ? (
+                  Manage
+                </Button>}
+              {campaign?.pitch && !campaign?.shortlisted && (
+                <Chip
+                  icon={<Iconify icon="mdi:clock" />}
+                  label="Under Review"
+                  sx={{
+                    bgcolor: 'background.paper',
+                    color: 'text.primary',
+                    fontWeight: 550,
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                    height: '40px',
+                    minWidth: '100px',
+                    border: '1px solid',
+                    borderBottom: '3px solid',
+                    borderColor: 'divider',
+                    '& .MuiChip-icon': {
+                      fontSize: 18,
+                      color: '#f7c945',
+                    },
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                    px: 1,
+                  }}
+                />
+              )}
+
+
+              {/* {hasPitched ? (
                 existingPitch.status === 'approved' ? (
                   <Button
                     variant="contained"
@@ -496,28 +507,23 @@ const CampaignModal = ({
                   />
                 ) : (
                   <Chip
-                  icon={<Iconify icon="mdi:clock" />}
-                  label="Under Review"
-                  sx={{
-                    bgcolor: 'background.paper',
-                    color: 'text.primary',
-                    fontWeight: 550,
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    height: '40px',
-                    minWidth: '100px',
-                    border: '1px solid',
-                    borderBottom: '3px solid',
-                    borderColor: 'divider',
-                    '& .MuiChip-icon': {
-                      fontSize: 18,
-                      color: '#f7c945',
-                    },
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                    },
-                    px: 1,
-                  }}
-                />
+                    icon={<Iconify icon="mdi:clock-outline" />}
+                    label="In Review"
+                    sx={{
+                      bgcolor: 'warning.light',
+                      color: 'warning.dark',
+                      fontWeight: 700,
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      height: '42px',
+                      minWidth: '100px',
+                      '& .MuiChip-icon': {
+                        fontSize: 20,
+                        color: 'warning.dark',
+                      },
+                      '&:hover': { bgcolor: 'warning.light' },
+                      px: 2,
+                    }}
+                  />
                 )
               ) : hasDraft ? (
                 <Button
@@ -542,20 +548,14 @@ const CampaignModal = ({
                   variant="contained"
                   onClick={() => handleManageClick(campaign.id)}
                   sx={{
-                    backgroundColor: '#203ff5',
+                    background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
                     color: 'white',
-                    borderBottom: '4px solid #102387 !important',
-                    border: 'none',
+                    border: '1px solid #3300c3',
                     '&:hover': {
-                      backgroundColor: '#1935dd',
-                      borderBottom: '4px solid #102387 !important',
+                      background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
                     },
                     fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    padding: { xs: '4px 12px', sm: '6px 18px' },
-                    minWidth: '100px',
-                    height: '42px',
-                    boxShadow: 'none',
-                    textTransform: 'none',
+                    padding: { xs: '6px 12px', sm: '8px 16px' },
                   }}
                 >
                   Manage
@@ -583,30 +583,7 @@ const CampaignModal = ({
                 >
                   Pitch Now
                 </Button>
-              )}
-              <Button
-                variant="outlined"
-                onClick={handleBookmarkClick}
-                sx={{
-                  minWidth: 0,
-                  padding: '6px 12px',
-                  border: '1px solid',
-                  borderColor: 'grey.300',
-                  borderBottom: '4px solid #e7e7e7',
-                  borderRadius: 1,
-                  '& .MuiSvgIcon-root': {
-                    fontSize: '1.5rem',
-                  },
-                  width: '42px',
-                  height: '42px',
-                }}
-              >
-                <Iconify
-                  icon={bookMark ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
-                  width={28}
-                  height={28}
-                />
-              </Button>
+              )} */}
             </Stack>
           </Stack>
 
@@ -967,7 +944,7 @@ const CampaignModal = ({
         </Box>
       </DialogContent>
 
-      <CampaignPitchOptionsModal
+      {/* <CampaignPitchOptionsModal
         open={pitchOptionsOpen}
         handleClose={handlePitchOptionsClose}
         campaign={campaign}
@@ -981,7 +958,7 @@ const CampaignModal = ({
           value: videoPitchOpen,
           onFalse: handleCloseVideoPitch,
         }}
-      />
+      /> */}
 
       {/* Updated full-size image Dialog */}
       <Dialog
@@ -1099,7 +1076,6 @@ CampaignModal.propTypes = {
   bookMark: PropTypes.bool,
   onSaveCampaign: PropTypes.func,
   onUnsaveCampaign: PropTypes.func,
-
   // openForm: PropTypes.func,
   // dialog: PropTypes.object,
 };
