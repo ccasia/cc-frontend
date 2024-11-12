@@ -88,10 +88,12 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     });
 
     socket?.on('newFeedback', () => submissionMutate());
+    socket?.on('agreementReady', () => submissionMutate());
 
     return () => {
       socket?.off('draft');
       socket?.off('newFeedback');
+      socket?.off('agreementReady');
     };
   }, [campaign, submissionMutate, socket]);
 
@@ -100,7 +102,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     const agreementSubmission = value('AGREEMENT_FORM');
     const firstDraftSubmission = value('FIRST_DRAFT');
     const finalDraftSubmission = value('FINAL_DRAFT');
-    const postingSubmission = value('POSTING');
+    // const postingSubmission = value('POSTING');
 
     // Always show Agreement stage (will be last and always Stage 01)
     stages.unshift({ ...defaultSubmission[0] });

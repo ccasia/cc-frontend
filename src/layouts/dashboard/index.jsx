@@ -164,9 +164,7 @@ export default function DashboardLayout({ children }) {
           sx={{
             width: 1,
             height: '100vh',
-            // borderRadius: 2,
-            // my: 'auto',
-            overflow: 'hidden',
+            // overflow: 'hidden',
             ...(lgUp && {
               width: 1,
               height: '95vh',

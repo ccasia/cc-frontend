@@ -20,7 +20,7 @@ export default function NotificationItem({ notification }) {
   const router = useRouter();
 
   const handleViewClick = () => {
-    const { entity, campaignId, threadId, creatorId } = notification.notification ?? {};
+    const { entity, campaignId, threadId, creatorId, invoiceId } = notification.notification ?? {};
 
     let link = '';
 
@@ -82,7 +82,7 @@ export default function NotificationItem({ notification }) {
         link =
           user.role === 'admin'
             ? `/dashboard/invoice/creator-list/${campaignId}`
-            : `/dashboard/invoice/detail/${threadId}`;
+            : `/dashboard/invoiceCreator/${invoiceId}`;
         break;
 
       default:

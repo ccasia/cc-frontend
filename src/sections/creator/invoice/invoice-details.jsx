@@ -3,8 +3,9 @@ import { pdf } from '@react-pdf/renderer';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { enqueueSnackbar } from 'notistack';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { useReactToPrint } from 'react-to-print';
 import { Page, pdfjs, Document } from 'react-pdf';
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material';
 
@@ -27,12 +28,13 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 const InvoiceDetail = ({ invoiceId }) => {
   const router = useRouter();
   const [pdfBlob, setPdfBlob] = useState(null);
+  const componentRef = useRef();
 
   const { data, isLoading, error } = useGetCreatorInvoice({ invoiceId });
 
   useEffect(() => {
     if (!isLoading && !data) {
-      enqueueSnackbar(error?.message || "no invoice avalible", { variant: 'error' });
+      enqueueSnackbar(error?.message || 'no invoice avalible', { variant: 'error' });
       router.push(paths.dashboard.creator.invoiceCreator);
     }
   }, [data, router, isLoading, error]);
@@ -43,7 +45,7 @@ const InvoiceDetail = ({ invoiceId }) => {
 
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
-      link.download = 'test.pdf';
+      link.download = `${invoiceId}.pdf`;
       link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
@@ -66,6 +68,10 @@ const InvoiceDetail = ({ invoiceId }) => {
   const handleUploadSuccess = ({ numPages }) => {
     console.log(numPages);
   };
+
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+  });
 
   return (
     <Box paddingX={2}>
@@ -131,6 +137,7 @@ const InvoiceDetail = ({ invoiceId }) => {
                 boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
               }}
               fullWidth
+              onClick={handlePrint}
             >
               Print
             </Button>
@@ -165,6 +172,7 @@ const InvoiceDetail = ({ invoiceId }) => {
         }}
       >
         <Box
+          ref={componentRef}
           sx={{
             display: 'inline-flex',
           }}
