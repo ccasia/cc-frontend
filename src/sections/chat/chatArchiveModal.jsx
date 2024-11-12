@@ -3,8 +3,15 @@ import PropTypes from 'prop-types';
 
 import { Box, Modal, Button, Avatar, Typography } from '@mui/material';
 
-const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats, threadId }) => {
-  const isArchived = archivedChats.includes(threadId);
+const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
+    threadId  }) => {
+     
+    const isArchived = archivedChats.includes(threadId);  
+    console.log("Is Archived:", isArchived);    
+
+// const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats, threadId }) => {
+//   const isArchived = archivedChats.includes(threadId);
+
   return (
     <Modal open={open} onClose={onClose}>
       <Box

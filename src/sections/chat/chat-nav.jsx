@@ -151,7 +151,7 @@ export default function ChatNav({}) {
                 selected={thread.id === selectedThreadId}
                 onCloseMobile={onCloseMobile}
                 onClick={() => handleClick(thread.id)}
-                onArchive={() => handleArchive(thread.id)}
+                // onArchive={() => handleArchive(thread.id)}
                 latestMessage={latestMessages?.[thread.id]}
               />
             );
@@ -262,7 +262,7 @@ export default function ChatNav({}) {
           />
           <Tab
             value={'archived'}
-            label="Archieved"
+            label="Archived"
             sx={{
               '&.Mui-selected': {
                 borderRadius: 2,
