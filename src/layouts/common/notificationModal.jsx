@@ -1,11 +1,13 @@
 import React from 'react';
-import { Modal, Typography, Box, Button, Avatar } from '@mui/material';
+import PropTypes from 'prop-types';
 
-const NotificationModal = ({ open, onClose, onConfirm}) => {
-    const handleConfirm = () => {
-        onConfirm();
-        onClose();
-      };
+import { Box, Modal, Button, Avatar, Typography } from '@mui/material';
+
+const NotificationModal = ({ open, onClose, onConfirm }) => {
+  const handleConfirm = () => {
+    onConfirm();
+    onClose();
+  };
   return (
     <Modal open={open} onClose={onClose}>
       <Box
@@ -30,14 +32,13 @@ const NotificationModal = ({ open, onClose, onConfirm}) => {
             width: 60,
             height: 60,
             margin: '0 auto 16px',
-            backgroundColor: '#ffeb3b', 
+            backgroundColor: '#ffeb3b',
           }}
-        >
-        </Avatar>
+        />
 
         {/* Confirmation Text */}
         <Typography variant="body1" sx={{ mb: 2 }}>
-         Are you sure you want to mark all notifications?  
+          Are you sure you want to mark all notifications?
         </Typography>
 
         {/* Action Buttons */}
@@ -56,12 +57,7 @@ const NotificationModal = ({ open, onClose, onConfirm}) => {
           >
             Yes
           </Button>
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={onClose}
-            sx={{ fontWeight: 'bold' }}
-          >
+          <Button variant="outlined" fullWidth onClick={onClose} sx={{ fontWeight: 'bold' }}>
             Cancel
           </Button>
         </Box>
@@ -71,3 +67,9 @@ const NotificationModal = ({ open, onClose, onConfirm}) => {
 };
 
 export default NotificationModal;
+
+NotificationModal.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  onConfirm: PropTypes.func,
+};

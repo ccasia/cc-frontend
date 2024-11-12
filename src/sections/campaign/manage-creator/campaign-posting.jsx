@@ -2,10 +2,9 @@ import dayjs from 'dayjs';
 import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -15,13 +14,13 @@ import {
   Dialog,
   Button,
   ListItem,
+  TextField,
   Typography,
+  IconButton,
   DialogTitle,
   ListItemText,
   DialogContent,
   DialogActions,
-  IconButton,
-  TextField,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -34,8 +33,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
-import FormProvider from 'src/components/hook-form/form-provider';
 import Iconify from 'src/components/iconify';
+import FormProvider from 'src/components/hook-form/form-provider';
 
 const guideSteps = [
   'Log in to Instagram.',
@@ -56,7 +55,7 @@ const LoadingDots = () => {
     const interval = setInterval(() => {
       setDots((prev) => {
         if (prev === '...') return '';
-        return prev + '.';
+        return `${prev  }.`;
       });
     }, 500);
 

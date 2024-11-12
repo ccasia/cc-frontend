@@ -3,16 +3,15 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
 import {
+  Box,
   Table,
   Button,
   TableRow,
   TableHead,
   TableCell,
   TableBody,
-  TableContainer,
-  Box,
-  Stack,
   Typography,
+  TableContainer,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -22,7 +21,6 @@ import { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { confirmItemDelivered } from 'src/api/logistic';
 
-import Label from 'src/components/label';
 
 const statusMapping = {
   Product_is_being_packaged: 'BEING PACKAGED',

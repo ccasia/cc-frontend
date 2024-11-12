@@ -1,34 +1,29 @@
 /* eslint-disable jsx-a11y/media-has-caption */
+import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
+import Chip from '@mui/material/Chip';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
   Paper,
-  Alert,
   Button,
   Dialog,
+  Avatar,
   Typography,
+  IconButton,
   DialogTitle,
   ListItemText,
   DialogContent,
   DialogActions,
   CircularProgress,
-  IconButton,
-  Avatar,
-  Chip,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import { Timeline, TimelineItem, TimelineSeparator, TimelineDot, TimelineConnector, TimelineContent, TimelineOppositeContent } from '@mui/lab';
-import dayjs from 'dayjs';
-import CommentIcon from '@mui/icons-material/Comment';
-import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -38,32 +33,27 @@ import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
-import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
-import dayjs from 'dayjs';
-
-import Iconify from 'src/components/iconify';
-
-const AvatarIcon = ({ icon, ...props }) => {
-  return (
-    <Avatar {...props}>
-      <Iconify icon={icon} />
-    </Avatar>
-  );
-};
+// eslint-disable-next-line react/prop-types
+const AvatarIcon = ({ icon, ...props }) => (
+  <Avatar {...props}>
+    <Iconify icon={icon} />
+  </Avatar>
+);
 
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
 
-const generateThumbnail = (file) => {
-  return new Promise((resolve) => {
+const generateThumbnail = (file) =>
+  new Promise((resolve) => {
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
     video.addEventListener('loadeddata', () => {
@@ -78,7 +68,6 @@ const generateThumbnail = (file) => {
       resolve(canvas.toDataURL());
     });
   });
-};
 
 const LoadingDots = () => {
   const [dots, setDots] = useState('');
@@ -87,7 +76,7 @@ const LoadingDots = () => {
     const interval = setInterval(() => {
       setDots((prev) => {
         if (prev === '...') return '';
-        return prev + '.';
+        return `${prev}.`;
       });
     }, 500);
 
@@ -129,14 +118,14 @@ const CampaignFirstDraft = ({
     },
     resolver: (values) => {
       const errors = {};
-      
+
       if (!values.caption || values.caption.trim() === '') {
         errors.caption = {
           type: 'required',
-          message: 'Caption is required'
+          message: 'Caption is required',
         };
       }
-      
+
       return {
         values,
         errors,
@@ -182,7 +171,7 @@ const CampaignFirstDraft = ({
 
       if (file) {
         setValue('draft', newFile, { shouldValidate: true });
-        
+
         // Simulate upload progress
         const interval = setInterval(() => {
           setUploadProgress((prev) => {
@@ -196,7 +185,7 @@ const CampaignFirstDraft = ({
         }, 200);
       }
     },
-    [setValue, enqueueSnackbar]
+    [setValue]
   );
 
   const onSubmit = handleSubmit(async (value) => {
@@ -205,24 +194,24 @@ const CampaignFirstDraft = ({
     setSubmitStatus('submitting');
 
     const formData = new FormData();
-    const newData = { ...value, campaignId: campaign.id, submissionId: submission.id };
+    const newData = { caption: value.caption, submissionId: submission.id };
     formData.append('data', JSON.stringify(newData));
     formData.append('draftVideo', value.draft);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       const res = await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       enqueueSnackbar(res.data.message);
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
       setSubmitStatus('success');
     } catch (error) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       enqueueSnackbar('Failed to submit draft', {
         variant: 'error',
       });
@@ -281,38 +270,36 @@ const CampaignFirstDraft = ({
     setSubmitStatus('');
   };
 
-  const userDetails = user.details;
-
   return (
     previousSubmission?.status === 'APPROVED' && (
       <Box p={1.5} sx={{ pb: 0 }}>
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          mb: 2, 
-          mt: { xs: 0, sm: -2 },
-          ml: { xs: 0, sm: -1.2 },
-          textAlign: { xs: 'center', sm: 'left' }
-        }}
-      >
-        <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
-          Draft Submission 📝
-        </Typography>
-        <Typography variant="subtitle2" color="text.secondary">
-          Due: {dayjs(submission?.dueDate).format('MMM DD, YYYY')}
-        </Typography>
-      </Box>
-        
-        <Box 
-          sx={{ 
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 2,
+            mt: { xs: 0, sm: -2 },
+            ml: { xs: 0, sm: -1.2 },
+            textAlign: { xs: 'center', sm: 'left' },
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
+            Draft Submission 📝
+          </Typography>
+          <Typography variant="subtitle2" color="text.secondary">
+            Due: {dayjs(submission?.dueDate).format('MMM DD, YYYY')}
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
             borderBottom: '1px solid',
             borderColor: 'divider',
             mb: 3,
             mx: -1.5,
-          }} 
+          }}
         />
 
         {logistics?.every((logistic) => logistic?.status === 'Product_has_been_received') ? (
@@ -321,26 +308,26 @@ const CampaignFirstDraft = ({
               <Stack justifyContent="center" alignItems="center" spacing={2}>
                 <Image src="/assets/pending.svg" sx={{ width: 250 }} />
                 <Typography variant="subtitle2">Your First Draft is in review.</Typography>
-                <Button 
-                onClick={display.onTrue} 
-                variant="contained"
-                startIcon={<Iconify icon="solar:document-bold" width={24} />}
-                sx={{
-                  bgcolor: '#203ff5',
-                  color: 'white',
-                  borderBottom: 3.5,
-                  borderBottomColor: '#112286',
-                  borderRadius: 1.5,
-                  px: 2.5,
-                  py: 1,
-                  '&:hover': {
+                <Button
+                  onClick={display.onTrue}
+                  variant="contained"
+                  startIcon={<Iconify icon="solar:document-bold" width={24} />}
+                  sx={{
                     bgcolor: '#203ff5',
-                    opacity: 0.9,
-                  },
-                }}
-              >
-                Preview Draft
-              </Button>
+                    color: 'white',
+                    borderBottom: 3.5,
+                    borderBottomColor: '#112286',
+                    borderRadius: 1.5,
+                    px: 2.5,
+                    py: 1,
+                    '&:hover': {
+                      bgcolor: '#203ff5',
+                      opacity: 0.9,
+                    },
+                  }}
+                >
+                  Preview Draft
+                </Button>
               </Stack>
             )}
             {submission?.status === 'IN_PROGRESS' && (
@@ -398,10 +385,11 @@ const CampaignFirstDraft = ({
                   <Stack gap={2}>
                     <Box>
                       <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                        It's time to submit your first draft for this campaign!
+                        It&apos;s time to submit your first draft for this campaign!
                       </Typography>
                       <Typography variant="body1" sx={{ color: '#221f20', mb: 44, ml: -1 }}>
-                        Do ensure to read through the brief, and the do's and dont's for the creatives over at the{' '}
+                        Do ensure to read through the brief, and the do&apos;s and dont&apos;s for
+                        the creatives over at the{' '}
                         <Box
                           component="span"
                           onClick="/"
@@ -419,13 +407,13 @@ const CampaignFirstDraft = ({
                         page.
                       </Typography>
 
-                      <Box 
-                        sx={{ 
+                      <Box
+                        sx={{
                           borderBottom: '1px solid',
                           borderColor: 'divider',
                           mb: 2,
                           mx: -1.5,
-                        }} 
+                        }}
                       />
 
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -514,22 +502,37 @@ const CampaignFirstDraft = ({
                     {submission.feedback
                       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                       .map((feedback, index) => (
-                        <Box key={index} mb={2} p={2} border={1} borderColor="grey.300" borderRadius={1} display="flex" alignItems="flex-start">
-                          <Avatar 
-                            src={feedback.admin?.photoURL || userDetails?.photoURL || '/default-avatar.png'}
-                            alt={feedback.user?.name || userDetails?.name || 'User'}
+                        <Box
+                          key={index}
+                          mb={2}
+                          p={2}
+                          border={1}
+                          borderColor="grey.300"
+                          borderRadius={1}
+                          display="flex"
+                          alignItems="flex-start"
+                        >
+                          <Avatar
+                            src={feedback.admin?.photoURL || '/default-avatar.png'}
+                            alt={feedback.user?.name || 'User'}
                             sx={{ mr: 2 }}
                           />
-                          <Box flexGrow={1} sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', marginBottom: '2px' }}>
-                              {feedback.admin?.name || userDetails?.name || 'Unknown User'}
+                          <Box
+                            flexGrow={1}
+                            sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+                          >
+                            <Typography
+                              variant="subtitle1"
+                              sx={{ fontWeight: 'bold', marginBottom: '2px' }}
+                            >
+                              {feedback.admin?.name || 'Unknown User'}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {feedback.admin?.role || userDetails?.role || 'No Role'}
+                              {feedback.admin?.role || 'No Role'}
                             </Typography>
                             <Box sx={{ textAlign: 'left', mt: 1 }}>
-                              {feedback.content.split('\n').map((line, index) => (
-                                <Typography key={index} variant="body2">
+                              {feedback.content.split('\n').map((line, i) => (
+                                <Typography key={i} variant="body2">
                                   {line}
                                 </Typography>
                               ))}
@@ -540,11 +543,11 @@ const CampaignFirstDraft = ({
                                       <Box
                                         key={idx}
                                         sx={{
-                                          border: '1.5px solid #e7e7e7', 
+                                          border: '1.5px solid #e7e7e7',
                                           borderBottom: '4px solid #e7e7e7',
                                           borderRadius: 1,
-                                          p: 0.5, 
-                                          display: 'inline-flex', 
+                                          p: 0.5,
+                                          display: 'inline-flex',
                                         }}
                                       >
                                         <Chip
@@ -553,7 +556,7 @@ const CampaignFirstDraft = ({
                                           color="default"
                                           variant="outlined"
                                           sx={{
-                                            border: 'none', 
+                                            border: 'none',
                                             color: '#8e8e93',
                                             fontSize: '0.75rem',
                                             padding: '1px 2px',
@@ -576,49 +579,49 @@ const CampaignFirstDraft = ({
               <Stack justifyContent="center" alignItems="center" spacing={2}>
                 <Image src="/assets/approve.svg" sx={{ width: 250 }} />
                 <Typography variant="subtitle2">Your First Draft has been approved.</Typography>
-                <Button 
-                onClick={display.onTrue} 
-                variant="contained"
-                startIcon={<Iconify icon="solar:document-bold" width={24} />}
-                sx={{
-                  bgcolor: '#203ff5',
-                  color: 'white',
-                  borderBottom: 3.5,
-                  borderBottomColor: '#112286',
-                  borderRadius: 1.5,
-                  px: 2.5,
-                  py: 1,
-                  '&:hover': {
+                <Button
+                  onClick={display.onTrue}
+                  variant="contained"
+                  startIcon={<Iconify icon="solar:document-bold" width={24} />}
+                  sx={{
                     bgcolor: '#203ff5',
-                    opacity: 0.9,
-                  },
-                }}
-              >
-                Preview Draft
-              </Button>
+                    color: 'white',
+                    borderBottom: 3.5,
+                    borderBottomColor: '#112286',
+                    borderRadius: 1.5,
+                    px: 2.5,
+                    py: 1,
+                    '&:hover': {
+                      bgcolor: '#203ff5',
+                      opacity: 0.9,
+                    },
+                  }}
+                >
+                  Preview Draft
+                </Button>
               </Stack>
             )}
-            <Dialog 
-              open={display.value} 
-              onClose={display.onFalse} 
-              fullWidth 
-              maxWidth="md" 
-              sx={{ 
-                '& .MuiDialog-paper': { 
+            <Dialog
+              open={display.value}
+              onClose={display.onFalse}
+              fullWidth
+              maxWidth="md"
+              sx={{
+                '& .MuiDialog-paper': {
                   p: 0,
-                  maxWidth: '80vw' // Match the upload preview width
-                } 
+                  maxWidth: '80vw', // Match the upload preview width
+                },
               }}
             >
               <DialogTitle sx={{ p: 3 }}>
                 <Stack direction="row" alignItems="center" gap={2}>
-                  <Typography 
+                  <Typography
                     variant="h5"
-                    sx={{ 
+                    sx={{
                       fontFamily: 'Instrument Serif, serif',
                       fontSize: { xs: '2rem', sm: '2.4rem' },
                       fontWeight: 550,
-                      m: 0
+                      m: 0,
                     }}
                   >
                     Preview Video
@@ -626,13 +629,13 @@ const CampaignFirstDraft = ({
 
                   <IconButton
                     onClick={display.onFalse}
-                    sx={{ 
+                    sx={{
                       ml: 'auto',
-                      '& svg': { 
+                      '& svg': {
                         width: 24,
                         height: 24,
-                        color: '#636366'
-                      }
+                        color: '#636366',
+                      },
                     }}
                   >
                     <Iconify icon="hugeicons:cancel-01" width={24} />
@@ -640,25 +643,25 @@ const CampaignFirstDraft = ({
                 </Stack>
               </DialogTitle>
 
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   width: '95%',
                   mx: 'auto',
                   borderBottom: '1px solid',
-                  borderColor: '#e7e7e7'
-                }} 
+                  borderColor: '#e7e7e7',
+                }}
               />
 
               <DialogContent sx={{ p: 3, position: 'relative' }}>
-                <Box 
-                  display="flex" 
-                  flexDirection="column" 
-                  alignItems="center" 
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  alignItems="center"
                   gap={2}
-                  sx={{ 
+                  sx={{
                     width: '100%',
                     maxWidth: '100%',
-                    margin: '0 auto'
+                    margin: '0 auto',
                   }}
                 >
                   <Box
@@ -670,25 +673,25 @@ const CampaignFirstDraft = ({
                       maxHeight: '70vh',
                       borderRadius: 1.5,
                       boxShadow: 'none',
-                      bgcolor: 'background.paper'
+                      bgcolor: 'background.paper',
                     }}
                   >
                     <source src={submission?.content} />
                   </Box>
 
-                  <Box 
-                    component={Paper} 
-                    p={2} 
+                  <Box
+                    component={Paper}
+                    p={2}
                     width="100%"
                     sx={{
                       boxShadow: 'none',
                       border: '1px solid',
                       borderColor: '#e7e7e7',
-                      borderRadius: 1.5
+                      borderRadius: 1.5,
                     }}
                   >
-                    <Typography 
-                      variant="caption" 
+                    <Typography
+                      variant="caption"
                       color="text.secondary"
                       sx={{ mb: 0.5, display: 'block' }}
                     >
@@ -709,12 +712,12 @@ const CampaignFirstDraft = ({
               >
                 <Stack direction="row" alignItems="center" gap={2}>
                   <Box>
-                    <Typography 
+                    <Typography
                       variant="h5"
-                      sx={{ 
+                      sx={{
                         fontFamily: 'Instrument Serif, serif',
                         fontSize: { xs: '2rem', sm: '2.4rem' },
-                        fontWeight: 550
+                        fontWeight: 550,
                       }}
                     >
                       Upload Draft
@@ -723,13 +726,13 @@ const CampaignFirstDraft = ({
 
                   <IconButton
                     onClick={() => setOpenUploadModal(false)}
-                    sx={{ 
+                    sx={{
                       ml: 'auto',
-                      '& svg': { 
+                      '& svg': {
                         width: 24,
                         height: 24,
-                        color: '#636366'
-                      }
+                        color: '#636366',
+                      },
                     }}
                   >
                     <Iconify icon="hugeicons:cancel-01" width={24} />
@@ -746,11 +749,11 @@ const CampaignFirstDraft = ({
                   <Stack gap={2}>
                     {localStorage.getItem('preview') ? (
                       <Box sx={{ mt: 0.5 }}>
-                        <Stack 
-                          direction="row" 
-                          alignItems="center" 
-                          spacing={2} 
-                          sx={{ 
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={2}
+                          sx={{
                             p: 2,
                             border: '1px solid',
                             borderColor: '#e7e7e7',
@@ -759,8 +762,8 @@ const CampaignFirstDraft = ({
                             position: 'relative',
                           }}
                         >
-                          <Box 
-                            sx={{ 
+                          <Box
+                            sx={{
                               width: 48,
                               height: 48,
                               borderRadius: 1.2,
@@ -796,56 +799,55 @@ const CampaignFirstDraft = ({
                               </Box>
                             )}
                           </Box>
-                          
+
                           <Box sx={{ flexGrow: 1 }}>
-                            <Typography 
-                              variant="subtitle2" 
+                            <Typography
+                              variant="subtitle2"
                               noWrap
-                              sx={{ 
+                              sx={{
                                 color: 'text.primary',
                                 fontWeight: 600,
                                 fontSize: '1rem',
                                 maxWidth: '300px',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               {methods.watch('draft').name}
                             </Typography>
-                            
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
+
+                            <Typography
+                              variant="caption"
+                              sx={{
                                 color: 'text.secondary',
                                 display: 'block',
                                 mt: 0.5,
                                 fontSize: '0.875rem',
                               }}
                             >
-                              {uploadProgress < 100 
-                                ? `Uploading ${uploadProgress}%` 
-                                : formatFileSize(methods.watch('draft').size)
-                              }
+                              {uploadProgress < 100
+                                ? `Uploading ${uploadProgress}%`
+                                : formatFileSize(methods.watch('draft').size)}
                             </Typography>
                           </Box>
 
                           {uploadProgress < 100 ? (
                             <Stack direction="row" spacing={2} alignItems="center">
                               <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                                <CircularProgress 
-                                  variant="determinate" 
+                                <CircularProgress
+                                  variant="determinate"
                                   value={100}
                                   size={30}
                                   thickness={6}
                                   sx={{ color: 'grey.300' }}
                                 />
-                                <CircularProgress 
-                                  variant="determinate" 
-                                  value={uploadProgress} 
+                                <CircularProgress
+                                  variant="determinate"
+                                  value={uploadProgress}
                                   size={30}
                                   thickness={6}
-                                  sx={{ 
+                                  sx={{
                                     color: '#5abc6f',
                                     position: 'absolute',
                                     left: 0,
@@ -889,7 +891,7 @@ const CampaignFirstDraft = ({
                                     max-width: 100%;
                                     border-radius: 8px;
                                   `;
-                                  
+
                                   const header = document.createElement('div');
                                   header.style.cssText = `
                                     display: flex;
@@ -930,7 +932,7 @@ const CampaignFirstDraft = ({
                                   closeButton.addEventListener('mouseover', () => {
                                     closeButton.style.backgroundColor = '#f5f5f7';
                                   });
-                                  
+
                                   closeButton.addEventListener('mouseout', () => {
                                     closeButton.style.backgroundColor = 'transparent';
                                   });
@@ -941,13 +943,13 @@ const CampaignFirstDraft = ({
                                     margin: 0 auto;
                                     border-bottom: 1px solid #e7e7e7;
                                   `;
-                                  
+
                                   const videoContainer = document.createElement('div');
                                   videoContainer.style.cssText = `
                                     padding: 24px;
                                     position: relative;
                                   `;
-                                  
+
                                   const dialog = document.createElement('dialog');
                                   dialog.style.cssText = `
                                     padding: 0;
@@ -957,7 +959,7 @@ const CampaignFirstDraft = ({
                                     max-width: 80vw;
                                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                                   `;
-                                  
+
                                   header.appendChild(title);
                                   header.appendChild(closeButton);
                                   videoContainer.appendChild(video);
@@ -966,7 +968,7 @@ const CampaignFirstDraft = ({
                                   dialog.appendChild(videoContainer);
                                   document.body.appendChild(dialog);
                                   dialog.showModal();
-                                  
+
                                   const handleClose = () => {
                                     video.pause();
                                     video.currentTime = 0;
@@ -974,9 +976,9 @@ const CampaignFirstDraft = ({
                                     dialog.close();
                                     dialog.remove();
                                   };
-                                  
+
                                   closeButton.addEventListener('click', handleClose);
-                                  
+
                                   dialog.addEventListener('click', (e) => {
                                     if (e.target === dialog) {
                                       handleClose();
@@ -1046,25 +1048,28 @@ const CampaignFirstDraft = ({
                         onRemove={handleRemoveFile}
                       />
                     )}
-                    
+
                     <Box>
                       <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, color: '#636366' }}>
-                        Post Caption <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                        Post Caption{' '}
+                        <Box component="span" sx={{ color: 'error.main' }}>
+                          *
+                        </Box>
                       </Typography>
                       <RHFTextField
-                        name="caption" 
-                        placeholder="Type your caption here..." 
-                        multiline 
+                        name="caption"
+                        placeholder="Type your caption here..."
+                        multiline
                         rows={4}
                         required
                         rules={{
                           required: 'Caption is required',
-                          validate: (value) => value.trim() !== '' || 'Caption cannot be empty'
+                          validate: (value) => value.trim() !== '' || 'Caption cannot be empty',
                         }}
                         sx={{
-                           bgcolor: '#ffffff !important',
-                           border: '0px solid #e7e7e7',
-                           borderRadius: 1.2,
+                          bgcolor: '#ffffff !important',
+                          border: '0px solid #e7e7e7',
+                          borderRadius: 1.2,
                         }}
                       />
                     </Box>
@@ -1126,11 +1131,7 @@ const CampaignFirstDraft = ({
           </Stack>
         )}
 
-        <Dialog 
-          open={showSubmitDialog} 
-          maxWidth="xs"
-          fullWidth
-        >
+        <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>
           <DialogContent>
             <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
               {submitStatus === 'submitting' && (
@@ -1145,21 +1146,22 @@ const CampaignFirstDraft = ({
                       borderRadius: '50%',
                       bgcolor: '#f4b84a',
                       fontSize: '50px',
-                      mb: -2
+                      mb: -2,
                     }}
                   >
                     🛫
                   </Box>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
+                  <Typography
+                    variant="h6"
+                    sx={{
                       display: 'flex',
                       fontFamily: 'Instrument Serif, serif',
                       fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                      fontWeight: 550
+                      fontWeight: 550,
                     }}
                   >
-                    Submitting Draft<LoadingDots />
+                    Submitting Draft
+                    <LoadingDots />
                   </Typography>
                 </>
               )}
@@ -1175,25 +1177,25 @@ const CampaignFirstDraft = ({
                       borderRadius: '50%',
                       bgcolor: '#835cf5',
                       fontSize: '50px',
-                      mb: -2
+                      mb: -2,
                     }}
                   >
                     🚀
                   </Box>
                   <Stack spacing={1} alignItems="center">
-                    <Typography 
+                    <Typography
                       variant="h6"
-                      sx={{ 
+                      sx={{
                         fontFamily: 'Instrument Serif, serif',
                         fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                        fontWeight: 550
+                        fontWeight: 550,
                       }}
                     >
                       Draft Submitted!
                     </Typography>
-                    <Typography 
+                    <Typography
                       variant="body1"
-                      sx={{ 
+                      sx={{
                         color: '#636366',
                         mt: -2,
                       }}
@@ -1215,20 +1217,17 @@ const CampaignFirstDraft = ({
                       borderRadius: '50%',
                       bgcolor: 'error.lighter',
                       fontSize: '40px',
-                      mb: 2
+                      mb: 2,
                     }}
                   >
-                    <Iconify 
-                      icon="mdi:error" 
-                      sx={{ width: 60, height: 60, color: 'error.main' }} 
-                    />
+                    <Iconify icon="mdi:error" sx={{ width: 60, height: 60, color: 'error.main' }} />
                   </Box>
-                  <Typography 
+                  <Typography
                     variant="h6"
-                    sx={{ 
+                    sx={{
                       fontFamily: 'Instrument Serif, serif',
                       fontSize: { xs: '1.5rem', sm: '1.8rem' },
-                      fontWeight: 550
+                      fontWeight: 550,
                     }}
                   >
                     Submission Failed
@@ -1239,7 +1238,7 @@ const CampaignFirstDraft = ({
           </DialogContent>
           {(submitStatus === 'success' || submitStatus === 'error') && (
             <DialogActions sx={{ pb: 3, px: 3 }}>
-              <Button 
+              <Button
                 onClick={handleCloseSubmitDialog}
                 variant="contained"
                 fullWidth

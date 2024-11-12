@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useFormContext } from 'react-hook-form';
 
-import { Box, Stack, MenuItem, FormLabel, ListItemText, InputAdornment } from '@mui/material';
+import { Stack, MenuItem, FormLabel, ListItemText, InputAdornment } from '@mui/material';
 
 import { countries } from 'src/assets/data';
 

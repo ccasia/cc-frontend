@@ -22,7 +22,6 @@ import {
   Divider,
   Typography,
   IconButton,
-  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';

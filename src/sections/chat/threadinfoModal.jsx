@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+
 import { useGetThreadById } from 'src/api/chat'; // Assuming the hook is in this file
-import { Dialog, DialogActions, DialogContent, DialogTitle, CircularProgress, Modal, Typography, Box, Avatar } from '@mui/material';
-import { useAuthContext } from 'src/auth/hooks';
-import Iconify from 'src/components/iconify';
 import Button from '@mui/material/Button';
-import { Padding } from '@mui/icons-material';
+import { Box, Modal, Dialog, Avatar, Typography, DialogTitle, DialogActions, DialogContent } from '@mui/material';
+
+import { useAuthContext } from 'src/auth/hooks';
+
+import Iconify from 'src/components/iconify';
 
 // Modal Component
 const ThreadInfoModal = ({ open, onClose, threadId }) => {

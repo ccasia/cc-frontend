@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import { formatDistanceToNowStrict } from 'date-fns';
 
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';

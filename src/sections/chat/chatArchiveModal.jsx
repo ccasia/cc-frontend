@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Typography, Box, Button, Avatar } from '@mui/material';
+
+import { Box, Modal, Button, Avatar, Typography } from '@mui/material';
 
 const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
     threadId  }) => {
@@ -31,8 +32,7 @@ const ChatArchiveModal = ({ open, onClose, onArchive, archivedChats,
             margin: '0 auto 16px',
             backgroundColor: '#ffeb3b', 
           }}
-        >
-        </Avatar>
+         />
 
         {/* Confirmation Text */}
         <Typography variant="body1" sx={{ mb: 2 }}>

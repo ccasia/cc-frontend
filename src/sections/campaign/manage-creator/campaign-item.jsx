@@ -1,20 +1,15 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import { enqueueSnackbar } from 'notistack';
-import { useState, useEffect } from 'react';
-import { useMediaQuery } from '@mui/material';
 
-import { alpha, useTheme } from '@mui/material/styles';
-
-import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { Box , Card, Chip, Avatar, Typography, useMediaQuery, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Image from 'src/components/image';
+import Iconify from 'src/components/iconify';
 
 import CampaignModal from './campaign-modal';
-
-import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -327,11 +322,11 @@ export default function CampaignItem({ campaign, user }) {
         {renderCampaignInfo}
       </Card>
 
-      { <CampaignModal
+      <CampaignModal
         open={campaignInfo.value}
         handleClose={campaignInfo.onFalse}
         campaign={campaign}
-      /> }
+      />
     </>
   );
 }

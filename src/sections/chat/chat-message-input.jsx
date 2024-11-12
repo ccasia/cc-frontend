@@ -3,10 +3,11 @@ import EmojiPicker from 'emoji-picker-react';
 import { useRef, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import { Button } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
-import { Button } from '@mui/material';
+
 import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
