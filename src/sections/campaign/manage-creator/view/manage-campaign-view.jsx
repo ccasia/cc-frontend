@@ -11,6 +11,7 @@ import {
   InputBase,
   Typography,
   CircularProgress,
+  Divider,
 } from '@mui/material';
 
 import { useGetMyCampaign } from 'src/hooks/use-get-my-campaign';
@@ -26,12 +27,14 @@ import CompletedCampaignView from '../completed-campaign-view';
 
 const ManageCampaignView = () => {
   const [currentTab, setCurrentTab] = useState('myCampaign');
-
+  
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
 
   const { user } = useAuthContext();
   const { data: campaigns, isLoading } = useGetMyCampaign(user?.id);
+  
+  console.log(campaigns);
 
   // const { campaigns } = useGetCampaigns('creator');
   const settings = useSettingsContext();
@@ -101,6 +104,7 @@ const ManageCampaignView = () => {
           width: '100%',
           mb: { xs: 3, sm: 0 },
           display: { xs: 'flex', md: 'none' },
+          mt: -2,
         }}
       >
         {/* Search Box - Full width on mobile */}
@@ -274,6 +278,7 @@ const ManageCampaignView = () => {
           sx={{
             ml: 'auto',
             display: { xs: 'none', md: 'flex' },
+            mt: -2,
           }}
         >
           {/* Existing Desktop Search Box */}
@@ -287,7 +292,6 @@ const ManageCampaignView = () => {
               borderColor: 'divider',
               borderRadius: 1,
               bgcolor: 'background.paper',
-              // display: 'flex',
               alignItems: 'center',
               height: '42px',
             }}
@@ -414,6 +418,8 @@ const ManageCampaignView = () => {
           </Box>
         </Stack>
       </Stack>
+
+      <Divider sx={{ width: '100%', bgcolor: '#ebebeb', my: 1, mt: -0.15 }} />
     </>
   );
 

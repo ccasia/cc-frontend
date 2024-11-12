@@ -37,13 +37,13 @@ export const defaultSubmission = [
     stage: 1,
   },
   {
-    name: 'First Draft Submission 📝',
+    name: 'Draft Submission 📝',
     value: 'First Draft',
     type: 'FIRST_DRAFT',
     stage: 2,
   },
   {
-    name: 'Final Draft Submission 📝',
+    name: '2nd Draft Submission 📝',
     value: 'Final Draft',
     type: 'FINAL_DRAFT',
     stage: 3,
@@ -60,7 +60,11 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
- 
+  const [viewedStages, setViewedStages] = useState(() => {
+    // Initialize viewedStages from localStorage
+    return JSON.parse(localStorage.getItem('viewedStages')) || [];
+  });
+
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
   )?.isAgreementReady;
@@ -113,12 +117,12 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
     if (agreementSubmission?.status === 'APPROVED') {
       stages.unshift({ ...defaultSubmission[1] });
     }
- 
+
     // Show Final Draft if First Draft is in CHANGES_REQUIRED status
     if (firstDraftSubmission?.status === 'CHANGES_REQUIRED') {
       stages.unshift({ ...defaultSubmission[2] });
     }
- 
+
     // Show Posting if either First Draft or Final Draft is approved
     if (firstDraftSubmission?.status === 'APPROVED' || finalDraftSubmission?.status === 'APPROVED') {
       stages.unshift({ ...defaultSubmission[3] });
@@ -130,7 +134,25 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
       stage: stages.length - index // This makes the bottom item Stage 01
     }));
   };
- 
+
+  const handleStageClick = (stageType) => {
+    setSelectedStage(stageType);
+    if (!viewedStages.includes(stageType)) {
+      const updatedViewedStages = [...viewedStages, stageType];
+      setViewedStages(updatedViewedStages);
+      localStorage.setItem('viewedStages', JSON.stringify(updatedViewedStages));
+    }
+  };
+
+  const isNewStage = (stageType) => {
+    const stageValue = value(stageType);
+    return (
+      !viewedStages.includes(stageType) &&
+      stageValue?.status !== 'APPROVED' &&
+      !(stageType === 'FIRST_DRAFT' && stageValue?.status === 'CHANGES_REQUIRED')
+    );
+  };
+
   return (
     <Stack 
       direction={{ xs: 'column', md: 'row' }}
@@ -151,7 +173,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
           {/* Left Column - Navigation */}
           <Card 
             sx={{ 
-              width: { xs: '100%', md: '35%' },
+              width: { xs: '100%', md: '50%' },
               minWidth: { md: '320px' },
               maxWidth: { md: '600px' },
               boxShadow: 'none',
@@ -185,7 +207,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                     display: 'flex',
                     alignItems: 'center',
                   }}
-                  onClick={() => setSelectedStage(item.type)}
+                  onClick={() => handleStageClick(item.type)}
                 >
                   <Stack direction="row" spacing={2} alignItems="center" width="100%">
                     <Label 
@@ -233,25 +255,46 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                         sx={{ 
                           color: '#636366', 
                           display: 'block',
-                          ...(value(item.type)?.status === 'APPROVED' && {
+                          ...(
+                            value(item.type)?.status === 'APPROVED' || 
+                            (item.type === 'FIRST_DRAFT' && value(item.type)?.status === 'CHANGES_REQUIRED')
+                          ) && {
                             textDecoration: 'line-through',
                             color: '#b0b0b0',
-                          }),
+                          },
                         }}
                       >
                         Due: {dayjs(getDueDate(item.type)).format('D MMMM, YYYY')}
                       </Typography>
                     </Box>
- 
-                    <Iconify 
-                      icon="eva:arrow-ios-forward-fill" 
-                      sx={{ 
-                        color: 'text.secondary',
-                        width: 20,
-                        height: 20,
-                        ml: 1
-                      }} 
-                    />
+
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {isNewStage(item.type) && (
+                        <Label 
+                          sx={{ 
+                            bgcolor: 'transparent',
+                            color: '#eb4a26',
+                            border: '1px solid #eb4a26',
+                            borderBottom: '3px solid #eb4a26',
+                            borderRadius: 0.8,
+                            px: 0.6,
+                            py: 1.5,
+                            mr: 0.2
+                          }}
+                        >
+                          NEW
+                        </Label>
+                      )}
+                      <Iconify 
+                        icon="eva:arrow-ios-forward-fill" 
+                        sx={{ 
+                          color: 'text.secondary',
+                          width: 26,
+                          height: 26,
+                          ml: 1
+                        }} 
+                      />
+                    </Box>
                   </Stack>
                 </Box>
               ))}
@@ -261,7 +304,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
           {/* Right Column - Content */}
           <Card 
             sx={{ 
-              width: { xs: '100%', md: '65%' },
+              width: { xs: '100%', md: '60%' },
               flexGrow: 1,
               boxShadow: 'none',
               border: '1px solid',

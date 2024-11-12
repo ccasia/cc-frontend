@@ -57,6 +57,7 @@ export default function Upload({
         justifyContent: 'center',
         alignItems: 'center',
         cursor: 'pointer',
+        bgcolor: 'white',
         '&:hover': {
           opacity: 0.4,
         },
