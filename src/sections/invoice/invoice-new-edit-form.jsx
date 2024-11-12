@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
-import { useMemo } from 'react';
-import PropTypes from 'prop-types';
+import { useEffect, useMemo, useState } from 'react';
+import PropTypes, { object } from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -27,19 +28,27 @@ import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
 import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
+import XeroDialoge from './xero-dialoge';
 
 // ----------------------------------------------------------------------
 
 export default function InvoiceNewEditForm({ id, creators }) {
+  const { isLoading, invoice } = useGetInvoiceById(id);
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
-
+  const [open, setOpen] = useState(false);
+  const [contact, setContact] = useState({});
+  const [newContact, setNewContact] = useState(false);
   const loadingSave = useBoolean();
 
   const loadingSend = useBoolean();
-  const { campaigns } = useGetInvoiceById(id);
-  const currentInvoice = campaigns;
 
+  const [loading, setLoading] = useState(true);
+  const currentInvoice = invoice;
+
+  console.log('currentInvoice', currentInvoice);
+
+  // add the contact id to the invoice
   const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
     id: creator.user.id,
     name: creator.user.name,
@@ -49,6 +58,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
     company: creator.user.creator.employment,
     addressType: 'Home',
     primary: false,
+    contactId: creator.user.creator.xeroContactId || null,
   }));
 
   const NewInvoiceSchema = Yup.object().shape({
@@ -96,7 +106,8 @@ export default function InvoiceNewEditForm({ id, creators }) {
       dueDate: new Date(currentInvoice?.dueDate) || null,
       status: currentInvoice?.status || 'draft',
       invoiceFrom: currentInvoice?.invoiceFrom || null,
-      invoiceTo: currentInvoice?.invoiceTo || [
+      invoiceTo: currentInvoice?.invoiceTo ||
+      [
         {
           id: '1',
           primary: true,
@@ -127,7 +138,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
       },
       totalAmount: currentInvoice?.amount || 0,
     }),
-    [currentInvoice]
+    [invoice]
   );
 
   const methods = useForm({
@@ -141,6 +152,13 @@ export default function InvoiceNewEditForm({ id, creators }) {
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
+
+  useEffect(() => {
+    if (!isLoading) {
+      setLoading(false);
+    }
+    reset(defaultValues);
+  }, [invoice]);
 
   // const handleSaveAsDraft = handleSubmit(async (data) => {
   //   loadingSave.onTrue();
@@ -158,10 +176,22 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
+    if (
+      data.status === 'approved' &&
+      !currentInvoice.creator.xeroContactId &&
+      Object.keys(contact).length === 0 &&
+      !newContact
+    ) {
+      setOpen(true);
+      return;
+    }
+
     try {
       const response = axiosInstance.patch(endpoints.invoice.updateInvoice, {
         ...data,
         invoiceId: id,
+        contactId: contact,
+        newContact: newContact,
       });
       reset();
       loadingSend.onFalse();
@@ -220,6 +250,15 @@ export default function InvoiceNewEditForm({ id, creators }) {
     </Box>
   );
 
+  if (loading)
+    return (
+     
+        <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
+          <CircularProgress />
+        </Box>
+      
+    );
+
   return (
     <FormProvider methods={methods}>
       <Card>
@@ -252,6 +291,14 @@ export default function InvoiceNewEditForm({ id, creators }) {
           {currentInvoice ? 'Update' : 'Create'} & Send
         </LoadingButton>
       </Stack>
+      <XeroDialoge
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+        setContact={setContact}
+        setNewContact={setNewContact}
+      />
     </FormProvider>
   );
 }

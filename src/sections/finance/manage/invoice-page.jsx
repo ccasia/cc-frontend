@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import useGetInvoiceById from 'src/hooks/use-get-invoice';
@@ -7,9 +7,14 @@ import { InvoiceDetailsView } from 'src/sections/invoice/view';
 
 function InvoicePage() {
   const { id } = useParams();
-  const data = useGetInvoiceById(id);
 
-  return <InvoiceDetailsView data={data.campaigns} />;
+  const { invoice, isLoading } = useGetInvoiceById(id);
+
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+  return <InvoiceDetailsView invoice={invoice} />;
 }
 
 export default InvoicePage;

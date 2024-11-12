@@ -11,10 +11,11 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import InvoiceDetails from '../invoice-details';
+import InvoiceDetail from 'src/sections/creator/invoice/invoice-details';
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceDetailsView({ id, data }) {
+export default function InvoiceDetailsView({ id, invoice }) {
   const settings = useSettingsContext();
   const { user } = useAuthContext();
 
@@ -36,7 +37,7 @@ export default function InvoiceDetailsView({ id, data }) {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <CustomBreadcrumbs
+      {/* <CustomBreadcrumbs
         heading={data?.invoiceNumber}
         links={[
           {
@@ -50,9 +51,10 @@ export default function InvoiceDetailsView({ id, data }) {
           { name: data?.invoiceNumber },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
-      />
+      /> */}
 
-      <InvoiceDetails invoice={data} />
+      <InvoiceDetail invoiceId={invoice?.id} />
+      {/* <InvoiceDetails invoice={data} /> */}
     </Container>
   );
 }

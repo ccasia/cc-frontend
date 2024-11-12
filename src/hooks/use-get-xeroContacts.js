@@ -3,13 +3,12 @@ import { useMemo } from 'react';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
-const useGetInvoiceById = (id) => {
- 
-  const { data, isLoading } = useSWR(endpoints.invoice.getInvoiceById(id), fetcher);
+const useGetContacts = () => {
+  const { data, isLoading } = useSWR(endpoints.invoice.xeroGetContacts, fetcher);
 
   const memoizedValue = useMemo(
     () => ({
-      invoice: data,
+      contacts: data,
       isLoading,
     }),
     [data, isLoading]
@@ -17,4 +16,6 @@ const useGetInvoiceById = (id) => {
 
   return memoizedValue;
 };
-export default useGetInvoiceById;
+
+export default useGetContacts;
+

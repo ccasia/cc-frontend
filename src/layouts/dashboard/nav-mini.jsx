@@ -18,6 +18,8 @@ import { useNavData } from './config-navigation';
 
 export default function NavMini() {
   const { user } = useAuthContext();
+  // const { user } = useMockedUser();
+  console.log("mohand stash");
   const settings = useSettingsContext();
 
   const logo = (

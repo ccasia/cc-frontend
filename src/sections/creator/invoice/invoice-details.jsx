@@ -32,7 +32,7 @@ const InvoiceDetail = ({ invoiceId }) => {
 
   useEffect(() => {
     if (!isLoading && !data) {
-      enqueueSnackbar(error?.message, { variant: 'error' });
+      enqueueSnackbar(error?.message || "no invoice avalible", { variant: 'error' });
       router.push(paths.dashboard.creator.invoiceCreator);
     }
   }, [data, router, isLoading, error]);
@@ -118,7 +118,7 @@ const InvoiceDetail = ({ invoiceId }) => {
               fontWeight: 300,
             }}
           >
-            Invoice Details - {data.invoiceNumber.split('-')[1]}
+            Invoice Details - {data?.invoiceNumber.split('-')[1]}
           </Typography>
 
           <Stack direction="row" alignItems="center" spacing={1.5}>

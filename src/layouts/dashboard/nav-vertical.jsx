@@ -21,7 +21,13 @@ import { NavSectionVertical } from 'src/components/nav-section';
 
 import { NAV } from '../config-layout';
 import { useNavData } from './config-navigation';
+import NavToggleButton from '../common/nav-toggle-button';
+import { Badge, Button } from '@mui/material';
+import useGetTokenExpiry from 'src/hooks/use-get-token-expiry';
 
+import { endpoints } from 'src/utils/axios';
+
+import axios from 'axios';
 // ----------------------------------------------------------------------
 
 export default function NavVertical({ openNav, onCloseNav }) {
@@ -34,6 +40,26 @@ export default function NavVertical({ openNav, onCloseNav }) {
   const lgUp = useResponsive('up', 'lg');
 
   const navData = useNavData();
+
+  const { data } = useGetTokenExpiry();
+  console.log('user', user);
+
+  const date = new Date(data?.lastRefreshToken || new Date());
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  const formattedDate = formatter.format(date);
+
+  const handleActivateXero = async () => {
+    try {
+      const response = await axios.get(endpoints.invoice.xero, { withCredentials: true });
+      window.location.href = response.data.url;
+    } catch (error) {
+      console.error('Error connecting to Xero:', error);
+    }
+  };
 
   useEffect(() => {
     if (openNav) {
@@ -128,6 +154,43 @@ export default function NavVertical({ openNav, onCloseNav }) {
           currentRole: user?.role,
         }}
       />
+      {!data?.tokenStatus && user.role === 'admin' && user.admin.role.name === 'Finance' ? (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: 1,
+            borderTop: (theme) => `dashed 1px ${theme.palette.divider}`,
+          }}
+        >
+          <Typography variant="h6" sx={{ mx: 1, mb: 1 }}>
+            Update xero
+          </Typography>
+
+          <Button
+            onClick={handleActivateXero}
+            variant="contained"
+            color="info"
+            sx={{
+              mx: 1,
+              mb: 1,
+              width: 'calc(100% - 100px)',
+            }}
+          >
+            Click me
+          </Button>
+          <p
+            style={{
+              opacity: 0.5,
+            }}
+          >
+            {' '}
+            Last modified {formattedDate}
+          </p>
+        </Box>
+      ) : null}
 
       <Box sx={{ flexGrow: 1 }} />
     </Scrollbar>

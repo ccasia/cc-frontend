@@ -10,6 +10,7 @@ import { authRoutes } from './auth';
 import { adminRoutes } from './admin';
 import { publicRoutes } from './public';
 import { dashboardRoutes } from './dashboard';
+import VerfiyXero from 'src/sections/finance/verfiyXero';
 
 // ----------------------------------------------------------------------
 
@@ -35,6 +36,8 @@ export default function Router() {
 
     { path: '/auth/verify', element: <Verify /> },
     { path: '/auth/verify/:token', element: <VerifyConfirmation /> },
+    { path: '/dashboard/invoice/xeroVerfiy', element: <VerfiyXero /> },
+
     // No match 404
     { path: '*', element: <Navigate to="/404" replace /> },
     { path: '/adminInvite', element: <Navigate to="/404" replace /> },
