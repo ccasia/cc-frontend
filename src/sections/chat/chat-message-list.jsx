@@ -5,21 +5,17 @@ import Box from '@mui/material/Box';
 import Scrollbar from 'src/components/scrollbar';
 //  import Lightbox, { useLightBox } from 'src/components/lightbox';
 
-
 import { useMessagesScroll } from './hooks';
 import ChatMessageItem from './chat-message-item';
 
-
 // ----------------------------------------------------------------------
 
-export default function ChatMessageList({messages}){
-  
-  
+export default function ChatMessageList({ messages }) {
   const { messagesEndRef } = useMessagesScroll(messages);
- 
+
   return (
     <Scrollbar ref={messagesEndRef} sx={{ px: 3, py: 0.1, height: 1 }}>
-      <Box>
+      <Box sx={{ mt: 2 }}>
         {messages.map((message) => (
           <ChatMessageItem key={message.id} message={message} />
         ))}

@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import { formatDistanceToNowStrict } from 'date-fns';
 
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
@@ -7,7 +6,6 @@ import Typography from '@mui/material/Typography';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 
 // ----------------------------------------------------------------------
 
@@ -34,37 +32,34 @@ export default function ChatMessageItem({ message }) {
     >
       {!isMe && (
         <>
-          {sender?.name}
-          {(isAdmin || isSprAdmin) && (
-            <Label sx={{ ml: 0.5 }}>
-              {isSprAdmin ? 'Superadmin' : 'Admin'}
-            </Label>
-          )}
+          {sender?.name}  
+          {isAdmin && ` (Admin)`}
+          {isSprAdmin && ` (Superadmin)`}
         </>
       )}
     </Typography>
   );
 
-  const renderTimestamp = (
-    <Typography
-      noWrap
-      variant="caption"
-      sx={{
-        pt: 1,
-        mb: 1,
-        color: 'text.disabled',
-        ...(!isMe && {
-          mr: 'auto',
-        }),
-      }}
-    >
-      {message.createdAt
-        ? formatDistanceToNowStrict(new Date(message.createdAt), {
-            addSuffix: true,
-          })
-        : 'sent'}
-    </Typography>
-  );
+  // const renderTimestamp = (
+  //   <Typography
+  //     noWrap
+  //     variant="caption"
+  //     sx={{
+  //       pt: 1,
+  //       mb: 1,
+  //       color: 'text.disabled',
+  //       ...(!isMe && {
+  //         mr: 'auto',
+  //       }),
+  //     }}
+  //   >
+  //     {message.createdAt
+  //       ? formatDistanceToNowStrict(new Date(message.createdAt), {
+  //           addSuffix: true,
+  //         })
+  //       : 'sent'}
+  //   </Typography>
+  // );
 
   const renderBody = (
     <Stack
@@ -77,16 +72,12 @@ export default function ChatMessageItem({ message }) {
         bgcolor: 'background.neutral',
         ...(isMe && {
           color: 'grey.800',
-          bgcolor: 'primary.lighter',
+          bgcolor: '#F5F5F5',
         }),
-        ...(isAdmin && {
-          bgcolor: '#128c7e',
-          color: 'black',
-        }),
-        ...(isSprAdmin && {
-//           bgcolor: ' #128c7e ',
-          bgcolor: '#FFC300',
-          color: 'black',
+        ...(!isMe && {
+          color: '#FFFFFF',
+          bgcolor: '#1340FF',
+          mr: 'auto',
         }),
       }}
     >
@@ -101,7 +92,7 @@ export default function ChatMessageItem({ message }) {
   );
 
   return (
-    <Stack direction="row" justifyContent={isMe ? 'flex-end' : 'unset'} sx={{ mb: 5 }}>
+    <Stack direction="row" justifyContent={isMe ? 'flex-end' : 'unset'} sx={{ mb: 2 }}>
       {!isMe && (
         <Avatar alt={sender?.name} src={sender?.photoURL} sx={{ width: 32, height: 32, mr: 2 }} />
       )}
@@ -120,8 +111,9 @@ export default function ChatMessageItem({ message }) {
           }}
         >
           {renderBody}
+        
         </Stack>
-        {renderTimestamp}
+        {/* {renderTimestamp} */}
       </Stack>
     </Stack>
   );

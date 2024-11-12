@@ -25,11 +25,13 @@ export function fTimestamp(date) {
 }
 
 export function fToNow(date) {
-  return date
-    ? formatDistanceToNow(new Date(date), {
-        addSuffix: true,
-      })
-    : '';
+  if (!date) return '';
+
+  const distance = formatDistanceToNow(new Date(date), {
+    includeSeconds: true,
+  });
+  
+  return `${distance} ago`;
 }
 
 export function isBetween(inputDate, startDate, endDate) {

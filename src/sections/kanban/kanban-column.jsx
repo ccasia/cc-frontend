@@ -164,7 +164,7 @@ export default function KanbanColumn({ column, tasks, index, status }) {
             provided={provided}
           />
 
-          <Box sx={{ overflow: 'auto', height: '65vh', scrollbarWidth: 'none' }}>
+          <Box sx={{ overflow: 'auto', height: '60vh', scrollbarWidth: 'none' }}>
             <Droppable droppableId={column?.id} type="TASK">
               {(dropProvided, dropSnapshot) => (
                 <Stack
@@ -193,17 +193,6 @@ export default function KanbanColumn({ column, tasks, index, status }) {
                         status={status}
                       />
                     ))}
-                  {/* {column?.task.map((item, taskIndex) => (
-                    <KanbanTaskItem
-                      key={item?.id}
-                      index={taskIndex}
-                      column={column}
-                      task={item}
-                      onUpdateTask={handleUpdateTask}
-                      onDeleteTask={() => handleDeleteTask(item?.id)}
-                      status={status}
-                    />
-                  ))} */}
 
                   {dropProvided.placeholder}
                 </Stack>

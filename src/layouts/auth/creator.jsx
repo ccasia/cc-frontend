@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
@@ -10,6 +11,28 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 export default function AuthModernLayout({ children, image }) {
   const mdUp = useResponsive('up', 'md');
+  // const [backgroundImage, setBackgroundImage] = useState('');
+  const route = window.location.href;
+
+  // if (route.includes('register')) {
+  //   console.log('adasd');
+  // } else if (route.includes("login")) {
+
+  // }
+
+  const backgroundImage = useMemo(() => {
+    if (route.includes('register')) {
+      return '/background/register.jpg';
+    }
+    if (route.includes('forgot-password')) {
+      return '/background/forgotPass.jpg';
+    }
+    if (route.includes('login')) {
+      return '/background/login.jpg';
+    }
+
+    return '/background/newPass.jpg';
+  }, [route]);
 
   const renderContent = (
     <Stack
@@ -18,25 +41,25 @@ export default function AuthModernLayout({ children, image }) {
         mx: 'auto',
         maxWidth: 480,
         px: { xs: 2, md: 6 },
-        // px: 6,
-        // bgcolor: 'rebeccapurple',
       }}
     >
-      {/* <Logo
+      <Box
+        component="img"
+        src="/logo/newlogo.svg"
         sx={{
+          width: 50,
+          height: 50,
           mt: { xs: 2, md: 8 },
           mb: { xs: 10, md: 8 },
+          mx: 'auto',
         }}
-      /> */}
-
+      />
       <Card
         sx={{
-          py: { xs: 0, md: 0 },
-          px: { xs: 0, md: 0 },
           boxShadow: { md: 'none' },
           overflow: { md: 'unset' },
           bgcolor: { md: 'background.default' },
-          mt: 10,
+          mt: 5,
         }}
       >
         {children}
@@ -63,35 +86,12 @@ export default function AuthModernLayout({ children, image }) {
     </Stack>
   );
 
-  // return (
-  //   <Stack
-  //     component="main"
-  //     direction="row"
-  //     sx={{
-  //       minHeight: '100vh',
-  //       position: 'relative',
-  //       '&:before': {
-  //         width: 1,
-  //         height: 1,
-  //         zIndex: -1,
-  //         content: "''",
-  //         position: 'absolute',
-  //         backgroundSize: 'cover',
-  //         opacity: { xs: 0.24, md: 0 },
-  //         backgroundRepeat: 'no-repeat',
-  //         backgroundPosition: 'center center',
-  //         backgroundImage: 'url(/assets/background/overlay_4.jpg)',
-  //       },
-  //     }}
-  //   >
-  //     {renderContent}
-
-  //     {mdUp && renderSection}
-  //   </Stack>
   return (
     <Box
       sx={{
-        background: 'radial-gradient(circle, rgba(238,224,255,1) 0%, rgba(254,255,255,1) 70%)',
+        // background: 'radial-gradient(circle, rgba(238,224,255,1) 0%, rgba(254,255,255,1) 70%)',
+        background: `url(${backgroundImage}) no-repeat fixed center`,
+        backgroundSize: 'cover',
         height: '100vh',
         display: 'flex',
         justifyContent: 'center',

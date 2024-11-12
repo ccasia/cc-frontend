@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import { Box, Stack, Button } from '@mui/material';
 
@@ -10,7 +11,8 @@ import CampaignMyTasks from './campaign-myTask';
 import CampaignLogistics from './campaign-logistics';
 
 const CampaignDetailItem = ({ campaign }) => {
-  const [currentTab, setCurrentTab] = useState('tasks');
+  const location = useLocation();
+  const [currentTab, setCurrentTab] = useState(location.state?.tab || 'tasks');
 
   const openLogisticTab = () => {
     setCurrentTab('logistics');
@@ -78,7 +80,7 @@ const CampaignDetailItem = ({ campaign }) => {
 
         <Box mt={3}>
           {currentTab === 'tasks' && (
-            <CampaignMyTasks campaign={campaign} openLogisticTab={openLogisticTab} />
+            <CampaignMyTasks campaign={campaign} openLogisticTab={openLogisticTab} setCurrentTab={setCurrentTab} />
           )}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
           {/* {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />} */}

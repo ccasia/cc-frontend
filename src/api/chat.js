@@ -14,7 +14,9 @@ const options = {
 
 // Use SWR to fetch all threads
 export const useGetAllThreads = () => {
-  const { data, error, isLoading } = useSWR(endpoints.threads.getAll, fetcher);
+  const { data, error, isLoading } = useSWR(
+    endpoints.threads.getAll, 
+    fetcher);
 
   const threadrefetch = () => {
     mutate(endpoints.threads.getAll);
@@ -54,25 +56,25 @@ export const createThread = async (title, description, userIds) => {
 };
 
 // Function to archive a thread
-export const archiveThread = async (threadId) => {
+export const archiveUserThread = async (threadId) => {
   try {
     const response = await axios.put(endpoints.threads.archive(threadId));
-    mutate(endpoints.threads.getAll);
+    mutate(endpoints.threads.getAll); 
     return response.data.archived;
   } catch (error) {
-    console.error(`Error archiving thread with ID ${threadId}:`, error);
+    console.error(`Error archiving user thread with ID ${threadId}:`, error);
     throw error;
   }
 };
 
-// Function to unarchive a thread
-export const unarchiveThread = async (threadId) => {
+// Function to unarchive a user-specific thread
+export const unarchiveUserThread = async (threadId) => {
   try {
     const response = await axios.put(endpoints.threads.unarchive(threadId));
     mutate(endpoints.threads.getAll);
     return response.data.archived;
   } catch (error) {
-    console.error(`Error unarchiving thread with ID ${threadId}:`, error);
+    console.error(`Error unarchiving user thread with ID ${threadId}:`, error);
     throw error;
   }
 };

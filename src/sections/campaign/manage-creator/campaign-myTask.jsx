@@ -28,13 +28,13 @@ export const defaultSubmission = [
     stage: 1,
   },
   {
-    name: 'First Draft Submission 📝',
+    name: 'Draft Submission 📝',
     value: 'First Draft',
     type: 'FIRST_DRAFT',
     stage: 2,
   },
   {
-    name: 'Final Draft Submission 📝',
+    name: '2nd Draft Submission 📝',
     value: 'Final Draft',
     type: 'FINAL_DRAFT',
     stage: 3,
@@ -46,11 +46,15 @@ export const defaultSubmission = [
     stage: 4,
   },
 ];
-
-const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
+ 
+const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
+  const [viewedStages, setViewedStages] = useState(() => 
+    // Initialize viewedStages from localStorage
+     JSON.parse(localStorage.getItem('viewedStages')) || []
+  );
 
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
@@ -89,7 +93,6 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
     };
   }, [campaign, submissionMutate, socket]);
 
-
   const getVisibleStages = () => {
     const stages = [];
     const agreementSubmission = value('AGREEMENT_FORM');
@@ -105,30 +108,46 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
       stages.unshift({ ...defaultSubmission[1] });
     }
 
-    // Show Final Draft if First Draft is approved and not skipped
-    if (firstDraftSubmission?.status === 'APPROVED' && !value('FIRST_DRAFT')?.status === 'APPROVED') {
+    // Show Final Draft if First Draft is in CHANGES_REQUIRED status
+    if (firstDraftSubmission?.status === 'CHANGES_REQUIRED') {
       stages.unshift({ ...defaultSubmission[2] });
     }
 
-    // Show Posting if Final Draft is approved or First Draft is approved (when Final Draft is skipped)
-    if (finalDraftSubmission?.status === 'APPROVED' || 
-       (firstDraftSubmission?.status === 'APPROVED' && value('FIRST_DRAFT')?.status === 'APPROVED')) {
+    // Show Posting if either First Draft or Final Draft is approved
+    if (
+      firstDraftSubmission?.status === 'APPROVED' ||
+      finalDraftSubmission?.status === 'APPROVED'
+    ) {
       stages.unshift({ ...defaultSubmission[3] });
     }
 
     // Add sequential stage numbers starting from the bottom
     return stages.map((stage, index) => ({
       ...stage,
-      stage: stages.length - index // This makes the bottom item Stage 01
+      stage: stages.length - index, // This makes the bottom item Stage 01
     }));
   };
 
+  const handleStageClick = (stageType) => {
+    setSelectedStage(stageType);
+    if (!viewedStages.includes(stageType)) {
+      const updatedViewedStages = [...viewedStages, stageType];
+      setViewedStages(updatedViewedStages);
+      localStorage.setItem('viewedStages', JSON.stringify(updatedViewedStages));
+    }
+  };
+
+  const isNewStage = (stageType) => {
+    const stageValue = value(stageType);
+    return (
+      !viewedStages.includes(stageType) &&
+      stageValue?.status !== 'APPROVED' &&
+      !(stageType === 'FIRST_DRAFT' && stageValue?.status === 'CHANGES_REQUIRED')
+    );
+  };
+
   return (
-    <Stack 
-      direction={{ xs: 'column', md: 'row' }}
-      spacing={1}
-      sx={{ width: '100%' }}
-    >
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ width: '100%' }}>
       {campaign.status === 'PAUSED' ? (
         <Box component={Card} p={{ xs: 3, md: 20 }}>
           <Stack alignItems="center" justifyContent="center" spacing={2}>
@@ -141,23 +160,23 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
       ) : (
         <>
           {/* Left Column - Navigation */}
-          <Card 
-            sx={{ 
-              width: { xs: '100%', md: '35%' },
+          <Card
+            sx={{
+              width: { xs: '100%', md: '50%' },
               minWidth: { md: '320px' },
               maxWidth: { md: '600px' },
               boxShadow: 'none',
               ml: { xs: 0, md: -2 },
               mr: { xs: 0, md: -1.5 },
               mt: { xs: 0, md: -3.9 },
-              mb: { xs: 2, md: 0 }
+              mb: { xs: 2, md: 0 },
             }}
           >
             <Box
               sx={{
                 height: '100%',
                 py: 2,
-                px: { xs: 1, md: 0 }
+                px: { xs: 1, md: 0 },
               }}
             >
               {getVisibleStages().map((item, index) => (
@@ -177,51 +196,64 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                     display: 'flex',
                     alignItems: 'center',
                   }}
-                  onClick={() => setSelectedStage(item.type)}
+                  onClick={() => handleStageClick(item.type)}
                 >
                   <Stack direction="row" spacing={2} alignItems="center" width="100%">
-                    <Label 
-                      sx={{ 
+                    <Label
+                      sx={{
                         width: 32,
                         height: 32,
                         borderRadius: '50%',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        bgcolor: value(item.type)?.status === 'APPROVED' ? '#5abc6f' : '#f6c945',
+                        bgcolor:
+                          value(item.type)?.status === 'APPROVED' ||
+                          (item.type === 'FIRST_DRAFT' &&
+                            value(item.type)?.status === 'CHANGES_REQUIRED')
+                            ? '#5abc6f'
+                            : '#f6c945',
                       }}
                     >
-                      {value(item.type)?.status === 'APPROVED' ? (
-                        <Iconify icon="mingcute:check-circle-fill" sx={{ color: '#fff' }} width={20} />
+                      {value(item.type)?.status === 'APPROVED' ||
+                      (item.type === 'FIRST_DRAFT' &&
+                        value(item.type)?.status === 'CHANGES_REQUIRED') ? (
+                        <Iconify
+                          icon="mingcute:check-circle-fill"
+                          sx={{ color: '#fff' }}
+                          width={20}
+                        />
                       ) : (
                         <Iconify icon="mdi:clock" sx={{ color: '#fff' }} width={20} />
                       )}
                     </Label>
 
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
+                      <Typography
+                        variant="caption"
+                        sx={{
                           color: '#8e8e93',
                           display: 'block',
                           mb: 0.4,
                           textTransform: 'uppercase',
-                          fontWeight: 700
+                          fontWeight: 700,
                         }}
                       >
                         Stage {String(item.stage).padStart(2, '0')}
                       </Typography>
-                      
+
                       <Typography variant="subtitle1" sx={{ mb: 0.2 }}>
                         {item.name}
                       </Typography>
-                      
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: '#636366', 
+
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: '#636366',
                           display: 'block',
-                          ...(value(item.type)?.status === 'APPROVED' && {
+                          ...((value(item.type)?.status === 'APPROVED' ||
+                            (item.type === 'FIRST_DRAFT' &&
+                              value(item.type)?.status === 'CHANGES_REQUIRED')) && {
                             textDecoration: 'line-through',
                             color: '#b0b0b0',
                           }),
@@ -231,15 +263,33 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                       </Typography>
                     </Box>
 
-                    <Iconify 
-                      icon="eva:arrow-ios-forward-fill" 
-                      sx={{ 
-                        color: 'text.secondary',
-                        width: 20,
-                        height: 20,
-                        ml: 1
-                      }} 
-                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {isNewStage(item.type) && (
+                        <Label
+                          sx={{
+                            bgcolor: 'transparent',
+                            color: '#eb4a26',
+                            border: '1px solid #eb4a26',
+                            borderBottom: '3px solid #eb4a26',
+                            borderRadius: 0.8,
+                            px: 0.6,
+                            py: 1.5,
+                            mr: 0.2,
+                          }}
+                        >
+                          NEW
+                        </Label>
+                      )}
+                      <Iconify
+                        icon="eva:arrow-ios-forward-fill"
+                        sx={{
+                          color: 'text.secondary',
+                          width: 26,
+                          height: 26,
+                          ml: 1,
+                        }}
+                      />
+                    </Box>
                   </Stack>
                 </Box>
               ))}
@@ -247,9 +297,9 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
           </Card>
 
           {/* Right Column - Content */}
-          <Card 
-            sx={{ 
-              width: { xs: '100%', md: '65%' },
+          <Card
+            sx={{
+              width: { xs: '100%', md: '60%' },
               flexGrow: 1,
               boxShadow: 'none',
               border: '1px solid',
@@ -257,12 +307,12 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
               mr: { xs: 0, md: 0 },
               mt: { xs: 0, md: -2 },
               maxWidth: '100%',
-              overflow: 'hidden'
+              overflow: 'hidden',
             }}
           >
-            <Box 
-              sx={{ 
-                p: { xs: 2, md: 3 }
+            <Box
+              sx={{
+                p: { xs: 2, md: 3 },
               }}
             >
               {selectedStage === 'AGREEMENT_FORM' && (
@@ -282,6 +332,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                   submission={value('FIRST_DRAFT')}
                   getDependency={getDependency}
                   openLogisticTab={openLogisticTab}
+                  setCurrentTab={setCurrentTab}
                 />
               )}
               {selectedStage === 'FINAL_DRAFT' && (
@@ -291,6 +342,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab }) => {
                   submission={value('FINAL_DRAFT')}
                   fullSubmission={submissions}
                   getDependency={getDependency}
+                  setCurrentTab={setCurrentTab}
                 />
               )}
               {selectedStage === 'POSTING' && (
@@ -315,4 +367,5 @@ export default CampaignMyTasks;
 CampaignMyTasks.propTypes = {
   campaign: PropTypes.object,
   openLogisticTab: PropTypes.func,
+  setCurrentTab: PropTypes.func,
 };

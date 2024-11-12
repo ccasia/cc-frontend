@@ -28,6 +28,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -45,6 +46,8 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
   const [loading, setLoading] = useState(false);
   const { socket } = useSocketContext();
   const confirm = useBoolean();
+  const { user } = useAuthContext();
+  const removeVideo = useBoolean();
 
   const schema = Yup.object().shape({
     pitchVideo: Yup.string().required('Pitch video is required'),
@@ -61,8 +64,6 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   const a = watch('pitchVideo');
 
-  console.log(a);
-
   const onSubmit = handleSubmit(async (data) => {
     try {
       setLoading(true);
@@ -72,9 +73,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
         type: 'video',
         status: 'undecided',
       });
-      
-      console.log('Submitting pitch with status:', 'undecided');
-      
+
       mutate(endpoints.auth.me);
       mutate(endpoints.campaign.getMatchedCampaign);
       enqueueSnackbar(res?.data?.message);
@@ -118,16 +117,16 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
         try {
           // eslint-disable-next-line no-await-in-loop
-          const { data } = await axiosInstance.post('/api/campaign/uploadVideo', formData, {
+          await axiosInstance.post('/api/campaign/uploadVideo', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
             cancelToken: sources.current.token,
           });
 
-          if (data.publicUrl) {
-            setValue('pitchVideo', data.publicUrl);
-          }
+          // if (data.publicUrl) {
+          //   setValue('pitchVideo', data.publicUrl);
+          // }
 
           // setSource(data.publicUrl);
         } catch (error) {
@@ -181,15 +180,28 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
     return null;
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
     if (sources.current) {
       sources.current.cancel('Cancel');
       sources.current = null;
     }
-    setSource((prev) => prev.filter((item) => item.campaignId !== campaign.id));
-    setValue('pitchVideo', null);
-    socket?.off('video-upload', updateProgress);
-    socket?.off('video-upload-done', uploadDone);
+    try {
+      removeVideo.onTrue();
+      await axiosInstance.patch('/api/campaign/removePitchVideo', {
+        userId: user.id,
+        campaignId: campaign.id,
+      });
+      setSource((prev) => prev.filter((item) => item.campaignId !== campaign.id));
+      setValue('pitchVideo', null);
+      socket?.off('video-upload', updateProgress);
+      socket?.off('video-upload-done', uploadDone);
+    } catch (error) {
+      enqueueSnackbar('Error removing video', {
+        variant: 'error',
+      });
+    } finally {
+      removeVideo.onFalse();
+    }
   };
 
   useEffect(() => {
@@ -287,12 +299,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
               <IconButton
                 onClick={() => {
-                  // if (watch('pitchVideo')) {
-                  //   confirm.onTrue();
-                  // } else {
                   handleClose();
-                  // handleRemove();
-                  // }
                 }}
               >
                 <Iconify icon="hugeicons:cancel-01" width={20} />
@@ -317,6 +324,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
               sourceName={sourceName}
               remove={handleRemove}
               size={size}
+              removeVideo={removeVideo}
             />
           </Box>
 

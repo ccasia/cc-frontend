@@ -68,6 +68,7 @@ export default function KanbanColumnToolBar({
         sx={{ pt: 3 }}
       >
         <Label>{taskLength}</Label>
+
         <KanbanInputName
           inputRef={renameRef}
           placeholder="Section name"
@@ -75,9 +76,7 @@ export default function KanbanColumnToolBar({
           onChange={handleChangeName}
           onKeyUp={handleKeyUpUpdateColumn}
         />
-        {/* <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-          <Iconify icon="eva:more-horizontal-fill" />
-        </IconButton> */}
+
         <IconButton {...provided.dragHandleProps}>
           <Iconify icon="mdi:drag" width={18} />
         </IconButton>

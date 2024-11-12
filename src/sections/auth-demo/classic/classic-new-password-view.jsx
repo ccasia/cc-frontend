@@ -4,15 +4,14 @@ import { enqueueSnackbar } from 'notistack';
 import { useEffect, useCallback } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import { Box, FormLabel, ListItemText } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
-import { RouterLink } from 'src/routes/components';
 import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -61,8 +60,6 @@ export default function ClassicNewPasswordView() {
   const password = useBoolean();
 
   const NewPasswordSchema = Yup.object().shape({
-    // code: Yup.string().min(6, 'Code must be at least 6 characters').required('Code is required'),
-    // email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     password: Yup.string()
       .min(6, 'Password must be at least 6 characters')
       .required('Password is required'),
@@ -72,8 +69,6 @@ export default function ClassicNewPasswordView() {
   });
 
   const defaultValues = {
-    // code: '',
-    // email: '',
     password: '',
     confirmPassword: '',
   };
@@ -86,7 +81,7 @@ export default function ClassicNewPasswordView() {
 
   const {
     handleSubmit,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty, isValid },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
@@ -110,80 +105,73 @@ export default function ClassicNewPasswordView() {
 
   const renderForm = (
     <Stack spacing={3} alignItems="center">
-      {/* <RHFTextField
-        name="email"
-        label="Email"
-        placeholder="example@gmail.com"
-        InputLabelProps={{ shrink: true }}
-      /> */}
+      <Stack width={1}>
+        <FormLabel required>Password</FormLabel>
+        <RHFTextField
+          sx={{
+            '& .MuiInputBase-root': {
+              backgroundColor: '#FFF', // Replace with your desired color
+            },
+          }}
+          name="password"
+          placeholder="Password"
+          type={password.value ? 'text' : 'password'}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={password.onToggle} edge="end">
+                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Stack>
 
-      {/* <RHFCode name="code" /> */}
-
-      <RHFTextField
-        name="password"
-        label="Password"
-        type={password.value ? 'text' : 'password'}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton onClick={password.onToggle} edge="end">
-                <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-      />
-
-      <RHFTextField
-        name="confirmPassword"
-        label="Confirm New Password"
-        type={password.value ? 'text' : 'password'}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton onClick={password.onToggle} edge="end">
-                <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-      />
+      <Stack width={1}>
+        <FormLabel required>Confirm Password</FormLabel>
+        <RHFTextField
+          name="confirmPassword"
+          placeholder="Confirm New Password"
+          type={password.value ? 'text' : 'password'}
+          sx={{
+            '& .MuiInputBase-root': {
+              backgroundColor: '#FFF', // Replace with your desired color
+            },
+          }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={password.onToggle} edge="end">
+                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Stack>
 
       <LoadingButton
         fullWidth
+        sx={{
+          ...(isDirty &&
+            isValid && {
+              background: '#1340FF',
+              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+            }),
+          ...((!isDirty || !isValid) && {
+            background:
+              'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+          }),
+          pointerEvents: (!isDirty || !isValid) && 'none',
+        }}
         size="large"
         type="submit"
         variant="contained"
         loading={isSubmitting}
       >
-        Update Password
+        Submit
       </LoadingButton>
-
-      {/* <Typography variant="body2">
-        {`Don’t have a code? `}
-        <Link
-          variant="subtitle2"
-          sx={{
-            cursor: 'pointer',
-          }}
-        >
-          Resend code
-        </Link>
-      </Typography> */}
-
-      <Link
-        component={RouterLink}
-        href={paths.auth.jwt.login}
-        color="inherit"
-        variant="subtitle2"
-        sx={{
-          alignItems: 'center',
-          display: 'inline-flex',
-        }}
-      >
-        <Iconify icon="eva:arrow-ios-back-fill" width={16} />
-        Return to sign in
-      </Link>
     </Stack>
   );
 
@@ -203,31 +191,42 @@ export default function ClassicNewPasswordView() {
     </>
   );
 
-  // const renderExpired = (
-  //   <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-  //     <Image src="/assets/expired.png" width={200} />
-  //     <Box>
-  //       {/* <Typography variant="h5" color="warning.main">
-  //         Link Expired
-  //       </Typography> */}
-  //       <Button
-  //         fullWidth
-  //         variant="outlined"
-  //         sx={{
-  //           mt: 2,
-  //         }}
-  //       >
-  //         Resend Link
-  //       </Button>
-  //     </Box>
-  //   </Box>
-  // );
-
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
-      {renderHead}
+      <Box
+        sx={{
+          p: 3,
+          bgcolor: '#F4F4F4',
+          borderRadius: 2,
+        }}
+      >
+        <ListItemText
+          primary=" Set a new password 🔓"
+          secondary="Choose a new password for your account."
+          primaryTypographyProps={{
+            variant: 'h3',
+            fontWeight: 'bold',
+            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          }}
+          secondaryTypographyProps={{
+            variant: 'body2',
+            fontSize: 13,
+            color: 'text.secondary',
+            lineHeight: 1.2,
+          }}
+          sx={{
+            mb: 3,
+          }}
+        />
 
-      {renderForm}
+        <Box
+          sx={{
+            mt: 3,
+          }}
+        >
+          {renderForm}
+        </Box>
+      </Box>
     </FormProvider>
   );
 }
