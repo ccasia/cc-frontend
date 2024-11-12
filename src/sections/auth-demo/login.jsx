@@ -35,13 +35,11 @@ const Login = () => {
   const LoginSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     password: Yup.string().required('Password is required'),
-    
   });
 
   const defaultValues = {
     email: '',
     password: '',
-
   };
 
   const methods = useForm({
@@ -123,6 +121,8 @@ const Login = () => {
       <Box
         sx={{
           p: 3,
+          bgcolor: '#F4F4F4',
+          borderRadius: 2,
         }}
       >
         {/* <Box

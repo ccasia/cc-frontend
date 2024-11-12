@@ -18,14 +18,15 @@ const AdminForm = lazy(() => import('src/pages/auth/jwt/adminForm'));
 // ----------------------------------------------------------------------
 
 // CLASSIC
-const CreatorLogin = lazy(() => import('src/pages/auth-demo/modern/login'));
-const CreatorRegister = lazy(() => import('src/pages/auth-demo/modern/register'));
-const ForgotPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic/forgot-password'));
+// const CreatorLogin = lazy(() => import('src/pages/auth-demo/modern/login'));
+// const CreatorRegister = lazy(() => import('src/pages/auth-demo/modern/register'));
+// const ForgotPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic/forgot-password'));
 const VerifyClassicPage = lazy(() => import('src/pages/auth-demo/classic/verify'));
 const NewPasswordClassicPage = lazy(() => import('src/pages/auth-demo/classic/new-password'));
 
 const NewLoginPage = lazy(() => import('src/pages/auth-demo/new-login'));
 const NewRegisterPage = lazy(() => import('src/pages/auth-demo/new-register'));
+const ForgotPasswordClassicPage = lazy(() => import('src/pages/auth-demo/forget-password'));
 
 const authAdmin = {
   path: 'jwt',
@@ -111,16 +112,39 @@ const authCreator = {
       ),
     },
     {
+      path: 'forgot-password',
       element: (
-        <CompactLayout>
-          <Outlet />
-        </CompactLayout>
+        <AuthModernLayout>
+          <ForgotPasswordClassicPage />
+        </AuthModernLayout>
       ),
-      children: [
-        { path: 'forgot-password', element: <ForgotPasswordClassicPage /> },
-        { path: 'new-password', element: <NewPasswordClassicPage /> },
-      ],
     },
+    {
+      path: 'new-password',
+      element: (
+        <AuthModernLayout>
+          <NewPasswordClassicPage />
+        </AuthModernLayout>
+      ),
+    },
+    // {
+    //   element: (
+    //     <CompactLayout>
+    //       <Outlet />
+    //     </CompactLayout>
+    //   ),
+    //   children: [
+    //     // {
+    //     //   path: 'forgot-password',
+    //     //   element: (
+    //     //     <AuthModernLayout>
+    //     //       <ForgotPasswordClassicPage />
+    //     //     </AuthModernLayout>
+    //     //   ),
+    //     // },
+    //     // { path: 'new-password', element: <NewPasswordClassicPage /> },
+    //   ],
+    // },
   ],
 };
 

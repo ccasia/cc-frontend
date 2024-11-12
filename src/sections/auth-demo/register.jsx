@@ -216,7 +216,7 @@ const Register = () => {
           pointerEvents: !isDirty && 'none',
         }}
       >
-        Create account
+        Join Now
       </LoadingButton>
     </Stack>
   );
@@ -261,40 +261,9 @@ const Register = () => {
         sx={{
           p: 3,
           bgcolor: '#F4F4F4',
+          borderRadius: 2,
         }}
       >
-        {/* <Box
-          component="div"
-          sx={{
-            position: 'relative',
-            mb: 3,
-            width: 55,
-            height: 55,
-            borderRadius: 10,
-          }}
-        >
-          <Image
-            src="/assets/icons/auth/Vector.svg"
-            alt="Background Image"
-            style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: 'inherit',
-            }}
-          />
-          <Avatar
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 40,
-              height: 40,
-            }}
-            src="/assets/icons/auth/test.svg"
-          />
-        </Box> */}
-
         <Typography
           variant="h3"
           fontWeight="bold"
