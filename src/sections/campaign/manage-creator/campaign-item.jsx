@@ -2,7 +2,15 @@
 import PropTypes from 'prop-types';
 
 import { useTheme } from '@mui/material/styles';
-import { Box , Card, Chip, Avatar, Typography, useMediaQuery, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Card,
+  Chip,
+  Avatar,
+  Typography,
+  useMediaQuery,
+  CircularProgress,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -181,12 +189,14 @@ export default function CampaignItem({ campaign, user }) {
           left: 17,
         }}
       />
-      <Box sx={{ 
-        mt: 0.5,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start'
-      }}>
+      <Box
+        sx={{
+          mt: 0.5,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+        }}
+      >
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
             variant="h6"
@@ -221,7 +231,7 @@ export default function CampaignItem({ campaign, user }) {
           </Typography>
         </Box>
 
-        {campaign?.pitch?.status !== 'approved' ? (
+        {campaign?.pitch && campaign?.pitch?.status !== 'approved' ? (
           <Chip
             icon={<Iconify icon="mdi:clock" sx={{ width: 20, height: 20, mt: -0.2, ml: -0.5 }} />}
             label="PENDING APPROVAL"
@@ -238,12 +248,12 @@ export default function CampaignItem({ campaign, user }) {
               '& .MuiChip-label': {
                 padding: '0 8px 0 12px',
               },
-               '& .MuiChip-icon': {
-                 fontSize: 20,
-                 color: '#f7c945',
-                 width: 20,
-                 height: 20,
-               },
+              '& .MuiChip-icon': {
+                fontSize: 20,
+                color: '#f7c945',
+                width: 20,
+                height: 20,
+              },
               '&:hover': {
                 backgroundColor: theme.palette.common.white,
               },
