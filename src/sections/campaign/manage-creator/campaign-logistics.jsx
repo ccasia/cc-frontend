@@ -68,10 +68,33 @@ const CampaignLogistics = ({ campaign }) => {
           {creatorLogistics?.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} align="center" sx={{ padding: '20px' }}>
-                <Typography variant="h2" sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, fontSize: '3.5rem', fontWeight: 'normal', marginBottom: '10px' }}>
-                  👾
-                </Typography>
-                <Typography variant="h3" sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, fontSize: '2.5rem', fontWeight: 'normal', marginBottom: '10px' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px' }}>
+                  <Box sx={{ 
+                    backgroundColor: '#f0f0f0', 
+                    borderRadius: '50%', 
+                    width: { xs: '60px', md: '80px' },
+                    height: { xs: '60px', md: '80px' },
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                  }}>
+                    <Typography variant="h2" sx={{ 
+                      fontFamily: (theme) => theme.typography.fontSecondaryFamily, 
+                      fontSize: { xs: '2.5rem', md: '3rem' },
+                      fontWeight: 'normal', 
+                      marginBottom: '0' 
+                    }}>
+                      👾
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="h3" sx={{ 
+                  fontFamily: (theme) => theme.typography.fontSecondaryFamily, 
+                  fontSize: { xs: '1.8rem', md: '2rem' },
+                  fontWeight: 'normal', 
+                  marginTop: '10px', 
+                  marginBottom: '10px' 
+                }}>
                   No details to show
                 </Typography>
               </TableCell>
@@ -85,19 +108,22 @@ const CampaignLogistics = ({ campaign }) => {
                 <TableCell sx={{ padding: '20px 4px', color: 'black' }}>
                   <Box
                     sx={{
-                      border: '1.5px solid #203ff5',
-                      borderBottom: '4px solid #203ff5',
+                      border: { xs: '1px solid #203ff5', md: '1.5px solid #203ff5' },
+                      borderBottom: { xs: '4px solid #203ff5', md: '4px solid #203ff5' },
                       borderRadius: 1,
-                      p: 1,
-                      mb: 1,
+                      p: { xs: 1, md: 0.8 },
+                      mb: { xs: 1, md: 1 },
                       width: 'fit-content',
+                      display: 'flex',
+                      flexDirection: { xs: 'column', md: 'row' },
                     }}
                   >
                     <Typography
                       variant="body2"
                       sx={{
                         color: '#203ff5',
-                        fontWeight: 600,
+                        fontWeight: 500,
+                        fontSize: { xs: '0.65rem', md: '0.75rem' },
                       }}
                     >
                       {statusMapping[logistic?.status] || logistic?.status}
