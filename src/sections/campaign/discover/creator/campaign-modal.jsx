@@ -244,6 +244,8 @@ const CampaignModal = ({
             width: '100%',
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
+            overflow: 'visible',
+            zIndex: 1,
             '& .hover-controls': {
               opacity: 0,
               transition: 'opacity 0.2s ease-in-out',
@@ -276,8 +278,9 @@ const CampaignModal = ({
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
+              border: 'none',
+              margin: 0,
+              padding: 0,
             }}
           />
 
@@ -339,7 +342,7 @@ const CampaignModal = ({
               height: 72,
               border: '4px solid',
               borderColor: 'background.paper',
-              zIndex: 2,
+              zIndex: 1000,
             }}
           />
 
@@ -992,8 +995,8 @@ const CampaignModal = ({
         maxWidth={false}
         PaperProps={{
           sx: {
-            maxWidth: '90vw',
-            maxHeight: '90vh',
+            maxWidth: { xs: '90vw', md: '32vw' },
+            maxHeight: { xs: '90vh', md: '120vh' },
             m: 'auto',
             borderRadius: 2,
             overflow: 'hidden',
@@ -1005,18 +1008,13 @@ const CampaignModal = ({
           ref={dialogContentRef}
           sx={{
             p: 0,
+            m: 0,
             position: 'relative',
-            overflow: 'auto',
+            overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            '&::-webkit-scrollbar': {
-              width: '0.4em',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(0,0,0,.3)',
-              borderRadius: '4px',
-            },
+            justifyContent: 'center',
+            backgroundColor: 'transparent',
           }}
         >
           <IconButton
@@ -1040,7 +1038,7 @@ const CampaignModal = ({
               alignItems: 'flex-start',
               minHeight: '100%',
               width: '100%',
-              py: 2,
+              py: 0,
             }}
           >
             <Image
@@ -1049,8 +1047,13 @@ const CampaignModal = ({
               onLoad={handleImageLoad}
               sx={{
                 maxWidth: '100%',
-                height: 'auto',
+                maxHeight: '100%',
                 objectFit: 'contain',
+                borderRadius: 0,
+                border: 'none',
+                display: 'block',
+                margin: 0,
+                padding: 0,
               }}
             />
           </Box>
