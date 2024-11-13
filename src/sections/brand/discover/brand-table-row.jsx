@@ -21,8 +21,6 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
 
 const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) => {
   const { logo, name, email, phone, website, campaign, brand, id } = row;
@@ -69,7 +67,6 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Quick Edit" placement="top" arrow>
-            <IconButton onClick={() => router.push(paths.dashboard.company.companyEdit(id))}>
             <IconButton onClick={() => router.push(paths.dashboard.company.companyEdit(id))}>
               <Iconify icon="solar:pen-bold" />
             </IconButton>
