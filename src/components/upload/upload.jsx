@@ -58,6 +58,7 @@ export default function Upload({
         alignItems: 'center',
         cursor: 'pointer',
         bgcolor: 'white',
+        transition: 'all .1s linear',
         '&:hover': {
           opacity: 0.4,
         },
@@ -79,7 +80,7 @@ export default function Upload({
     >
       <input {...getInputProps()} />
 
-      {helperText && helperText}
+      {/* {helperText && helperText} */}
 
       <Stack alignItems="center" spacing={2}>
         <Box
@@ -93,9 +94,9 @@ export default function Upload({
             justifyContent: 'center',
           }}
         >
-          <Iconify 
-            icon="fluent:add-24-filled" 
-            width={26} 
+          <Iconify
+            icon="fluent:add-24-filled"
+            width={26}
             sx={{
               color: '#fff',
             }}
@@ -103,9 +104,10 @@ export default function Upload({
         </Box>
         <ListItemText
           primary="Choose a file or drag and drop here"
-          secondary={uploadType === 'pitch' 
-            ? "Upload a video that does not exceed 30 seconds"
-            : "Acceptable files: PDF, DOC | Max file size: 2MB"
+          secondary={
+            uploadType === 'pitch'
+              ? 'Upload a video that does not exceed 30 seconds'
+              : 'Acceptable files: JPG, PNG, SVG'
           }
           primaryTypographyProps={{
             textAlign: 'center',
@@ -179,11 +181,7 @@ export default function Upload({
       {removeSinglePreview}
 
       {helperText && (
-        <Typography
-          variant="caption"
-          color={hasError ? 'error' : 'text.secondary'}
-          sx={{ mt: 1 }}
-        >
+        <Typography variant="caption" color={hasError ? 'error' : 'text.secondary'} sx={{ mt: 1 }}>
           {helperText}
         </Typography>
       )}

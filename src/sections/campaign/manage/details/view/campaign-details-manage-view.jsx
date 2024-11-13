@@ -124,7 +124,7 @@ const CampaignDetailManageView = ({ id }) => {
   const isEditable = campaign?.status !== 'ACTIVE';
 
   const handleChangeStatus = async (status) => {
-    if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate) < dayjs()) {
+    if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate).isBefore(dayjs, 'date')) {
       enqueueSnackbar('You cannot publish a campaign that is already end.', {
         variant: 'error',
       });
@@ -136,11 +136,14 @@ const CampaignDetailManageView = ({ id }) => {
         status,
       });
 
-      if (status === 'ACTIVE') {
+      if (res?.data?.status === 'ACTIVE') {
         enqueueSnackbar('Campaign is now live!');
+      } else if (res?.data?.status === 'SCHEDULED') {
+        enqueueSnackbar('Campaign is scheduled!');
       } else {
         enqueueSnackbar('Campaign is paused');
       }
+
       mutate(endpoints.campaign.getCampaignById(id), (currentData) => {
         const newCampaign = {
           ...currentData,
@@ -151,6 +154,7 @@ const CampaignDetailManageView = ({ id }) => {
           newCampaign,
         };
       });
+
       loadingButton.onFalse();
     } catch (error) {
       enqueueSnackbar('Failed to change status', {
