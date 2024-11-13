@@ -2,6 +2,7 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 
+import { Icon } from '@iconify/react';
 import { mutate } from 'swr';
 import { useNavigate } from 'react-router-dom';
 import { IconButton, Button, Alert, Snackbar, Stack, Divider } from '@mui/material';
@@ -36,6 +37,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const [selectedContact, setSelectedContact] = useState();
   const [loading, setLoading] = useState(true);
   const [openInfoModal, setOpenInfoModal] = useState(false);
+  const [autoHideDuration, setAutoHideDuration] = useState(3000);
   const [openArchiveModal, setOpenArchiveModal] = useState(false);
   const { threads } = useGetAllThreads();
 
@@ -71,33 +73,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
     setOpenArchiveModal(false);
   };
 
-  // const handleArchive = (threadId) => {
-  //   if (archivedChats.includes(threadId)) {
-  //     setArchivedChats(archivedChats.filter((id) => id !== threadId));
-  //     console.log(`Thread ${threadId} removed from archived chats.`);
-  //   } else {
-  //     setArchivedChats([...archivedChats, threadId]);
-  //     console.log(`Thread ${threadId} added to archived chats.`);
-  //   }
-  // };
-  // const handleArchive = async (threadId) => {
-  //   try {
-  //     if (archivedChats.includes(threadId)) {
-  //       setArchivedChats(archivedChats.filter((id) => id !== threadId));
-  //       await unarchiveUserThread(threadId);
-  //       console.log(`Unarchived thread ${threadId}`);
-  //       setModalOpen(false);
-  //     } else {
-  //       setArchivedChats([...archivedChats, threadId]);
-  //       await archiveUserThread(threadId);
-  //       console.log(`Archived thread ${threadId}`);
-  //       setModalOpen(false);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error archiving/unarchiving thread:', error);
-  //   }
-  // };
-
   const handleArchive = async (threadId) => {
     try {
       setPreviousArchivedChats([...archivedChats]);
@@ -106,34 +81,34 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         setArchivedChats(archivedChats.filter((id) => id !== threadId));
         await unarchiveUserThread(threadId);
         console.log(`Unarchived Chat ${threadId}`);
-        setAlertMessage('Chat unarchived successfully!');
+        setAlertMessage('Chat unarchived');
         setAlertSeverity('success');
         setLastAction({ action: 'unarchive', threadId });
       } else {
         setArchivedChats([...archivedChats, threadId]);
         await archiveUserThread(threadId);
         console.log(`Archived Chat ${threadId}`);
-        setAlertMessage('Chat archived successfully!');
+        setAlertMessage('Chat archived');
         setAlertSeverity('success');
         setLastAction({ action: 'archive', threadId });
       }
 
-      setOpenAlert(true); // Show the alert
-      setOpenArchiveModal(false); // Close the modal
+      setOpenAlert(true); 
+      setOpenArchiveModal(false); 
     } catch (error) {
       console.error('Error archiving/unarchiving chat:', error);
       setAlertMessage('Error archiving/unarchiving chat.');
       setAlertSeverity('error');
-      setOpenAlert(true); // Show the error alert
+      setOpenAlert(true); 
     }
   };
 
   const handleUndo = () => {
+    setAutoHideDuration(5000);
     if (lastAction) {
       // Undo the last action
       setArchivedChats(previousArchivedChats);
 
-      // Optionally, re-perform the undo action on the server side (like unarchiving or archiving the thread again)
       if (lastAction.action === 'archive') {
         unarchiveUserThread(lastAction.threadId);
         setAlertMessage('Undo: Chat unarchived!');
@@ -143,17 +118,17 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
       }
 
       setAlertSeverity('success');
-      setOpenAlert(true); // Show the undo confirmation
-      setLastAction(null); // Reset last action after undo
+      setOpenAlert(true); 
+      setLastAction(null); 
     }
   };
 
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'superadmin';
 
-  if (error) {
-    return <Typography variant="h6">Error loading thread</Typography>;
-  }
+  // if (error) {
+  //   return <Typography variant="h6">Error loading thread</Typography>;
+  // }
 
   useEffect(() => {
     async function fetchUsers() {
@@ -163,7 +138,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         setContacts(filteredContacts);
       } catch (error) {
         console.error('Error fetching users:', error);
-        // Handle error fetching users
       } finally {
         setLoading(false);
       }
@@ -177,9 +151,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   useEffect(() => {}, [selectedContact]);
 
   const handleChange = (_event, newValue) => {
-    console.log('newValue:', newValue);
     setSelectedContact(newValue);
-    console.log('selectedContact:', newValue);
     createThread(newValue);
   };
 
@@ -203,7 +175,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
       });
 
       if (existingThread) {
-        //  console.log('Thread already exists:', existingThread);
         navigate(`/dashboard/chat/thread/${existingThread.id}`);
       } else {
         const response = await axiosInstance.post(endpoints.threads.create, {
@@ -223,26 +194,32 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
     }
   };
 
-  console.log("Archived chats:", archivedChats);
-  //  console.log ("Thread Id", threadId)
-  //  console.log ("Thread", thread)
-
   return (
     <>
       <Snackbar
         open={openAlert}
-        autoHideDuration={3000}
+        autoHideDuration={autoHideDuration}
         onClose={() => setOpenAlert(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        action={
-          lastAction && (
-            <Button color="secondary" size="small" onClick={handleUndo}>
-              Undo
-            </Button>
-          )
-        }
       >
-        <Alert onClose={() => setOpenAlert(false)} severity={alertSeverity}>
+        <Alert severity={alertSeverity}
+           iconMapping={{
+            success: 
+            <Icon icon="tdesign:wave-bye-filled" 
+            width="24" height="24"  
+            style={{color: '#ffae00'}} />
+          }}
+          sx={alertSeverity === 'success' && { 
+            backgroundColor: '#ffffff', 
+            color: '#000000',
+            '& .MuiAlert-message': { fontWeight: 'bold' }
+          }}
+      
+         action={
+          <Button onClick={handleUndo} color="secondary" size="small">
+            UNDO
+          </Button>
+        }>
           {alertMessage}
         </Alert>
       </Snackbar>
