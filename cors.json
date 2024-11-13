@@ -7,7 +7,7 @@
       "https://app.cultcreativeasia.com",
       "https://staging.cultcreativeasia.com"
     ],
-    "method": ["GET"],
+    "method": ["GET", "POST", "HEAD", "PUT"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type"]
   }
