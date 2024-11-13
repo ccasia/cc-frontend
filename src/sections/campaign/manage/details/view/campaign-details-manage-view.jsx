@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import { useTheme } from '@emotion/react';
 import { Page, Document } from 'react-pdf';
-import { RiseLoader } from 'react-spinners';
 import { enqueueSnackbar } from 'notistack';
 
 import { LoadingButton } from '@mui/lab';
@@ -29,6 +28,7 @@ import {
   ListItemIcon,
   DialogActions,
   DialogContent,
+  CircularProgress,
   DialogContentText,
 } from '@mui/material';
 
@@ -50,6 +50,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 
 import { EditTimeline } from './EditTimeline';
 import { EditDosAndDonts } from './EditDosAndDonts';
+import EditCampaignAdmin from './EditCampaignAdmin';
 import { EditCampaignInfo } from './EditCampaignInfo';
 import { EditRequirements } from './EditRequirements';
 import EditCampaignImages from './EditCampaignImages';
@@ -106,6 +107,7 @@ const CampaignDetailManageView = ({ id }) => {
     timeline: false,
     campaignAgreement: false,
     campaignImages: false,
+    campaignAdmin: false,
   });
 
   const onClose = (data) => {
@@ -571,6 +573,17 @@ const CampaignDetailManageView = ({ id }) => {
   const renderAdminManager = (
     <Box component={Card} p={2}>
       <Typography variant="h5">Admin Manager</Typography>
+      {isEditable && (
+        <EditButton
+          tooltip="Edit Campaign Admin"
+          onClick={() =>
+            setOpen((prev) => ({
+              ...prev,
+              campaignAdmin: true,
+            }))
+          }
+        />
+      )}
       <List>
         {campaign?.campaignAdmin?.map((item, index) => (
           <ListItem key={index}>
@@ -578,6 +591,12 @@ const CampaignDetailManageView = ({ id }) => {
           </ListItem>
         ))}
       </List>
+
+      <EditCampaignAdmin
+        open={open.campaignAdmin}
+        onClose={() => onClose('campaignAdmin')}
+        campaign={campaign}
+      />
     </Box>
   );
 
@@ -779,7 +798,22 @@ const CampaignDetailManageView = ({ id }) => {
           </>
         ) : (
           <Grid item xs={12} textAlign="center" mt={20}>
-            <RiseLoader color="#36d7b7" />
+            <Box
+              sx={{
+                position: 'relative',
+                top: 200,
+                textAlign: 'center',
+              }}
+            >
+              <CircularProgress
+                thickness={7}
+                size={25}
+                sx={{
+                  color: theme.palette.common.black,
+                  strokeLinecap: 'round',
+                }}
+              />
+            </Box>
           </Grid>
         )}
       </Grid>
