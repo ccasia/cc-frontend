@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -21,6 +20,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import { useRouter } from 'src/routes/hooks';
 
 const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) => {
   const { logo, name, email, phone, website, campaign, brand, id } = row;
