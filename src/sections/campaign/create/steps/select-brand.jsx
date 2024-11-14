@@ -36,64 +36,62 @@ const SelectBrand = ({ openBrand, openCompany }) => {
         p: 2,
       }}
     >
-      <Box>
-        <RHFAutocomplete
-          name="client"
-          label="Select or Create Client"
-          options={data || []}
-          loading={isLoading}
-          freeSolo
-          getOptionLabel={(option) => {
-            // Add "xxx" option created dynamically
-            if (option.inputValue) {
-              return option.inputValue;
-            }
-            // Regular option
-            return option.name;
-          }}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          selectOnFocus
-          clearOnBlur
-          renderOption={(props, option) => {
-            //   eslint-disable-next-line react/prop-types
-            const { ...optionProps } = props;
+      <RHFAutocomplete
+        name="client"
+        label="Select or Create Client"
+        options={data || []}
+        loading={isLoading}
+        freeSolo
+        getOptionLabel={(option) => {
+          // Add "xxx" option created dynamically
+          if (option.inputValue) {
+            return option.inputValue;
+          }
+          // Regular option
+          return option.name;
+        }}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        selectOnFocus
+        clearOnBlur
+        renderOption={(props, option) => {
+          //   eslint-disable-next-line react/prop-types
+          const { ...optionProps } = props;
 
-            return (
-              <Stack
-                component="li"
-                direction="row"
-                spacing={1}
-                p={1}
-                {...optionProps}
-                key={option?.id}
-              >
-                <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
-                <ListItemText primary={option.name} />
-              </Stack>
-            );
-          }}
-          filterOptions={(options, params) => {
-            const { inputValue } = params;
+          return (
+            <Stack
+              component="li"
+              direction="row"
+              spacing={1}
+              p={1}
+              {...optionProps}
+              key={option?.id}
+            >
+              <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+              <ListItemText primary={option.name} />
+            </Stack>
+          );
+        }}
+        filterOptions={(options, params) => {
+          const { inputValue } = params;
 
-            const filtered = filter(options, params);
+          const filtered = filter(options, params);
 
-            // Suggest the creation of a new value
-            const isExisting = options.some((option) =>
-              option.name.toLowerCase().includes(inputValue.toLowerCase())
-            );
+          // Suggest the creation of a new value
+          const isExisting = options.some((option) =>
+            option.name.toLowerCase().includes(inputValue.toLowerCase())
+          );
 
-            if (inputValue !== '' && !isExisting) {
-              filtered.push({
-                inputValue,
-                name: `Add "${inputValue}"`,
-              });
-            }
+          if (inputValue !== '' && !isExisting) {
+            filtered.push({
+              inputValue,
+              name: `Add "${inputValue}"`,
+            });
+          }
 
-            return filtered;
-          }}
-        />
-        {client && <RHFCheckbox name="hasBrand" size="small" label="has a brand?" />}
-      </Box>
+          return filtered;
+        }}
+      />
+      {client && <RHFCheckbox name="hasBrand" size="small" label="has a brand?" />}
 
       {client && hasBrand && (
         <Box mt={2}>

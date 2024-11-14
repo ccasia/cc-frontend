@@ -80,8 +80,6 @@ export default function Upload({
     >
       <input {...getInputProps()} />
 
-      {/* {helperText && helperText} */}
-
       <Stack alignItems="center" spacing={2}>
         <Box
           sx={{
@@ -102,23 +100,39 @@ export default function Upload({
             }}
           />
         </Box>
-        <ListItemText
-          primary="Choose a file or drag and drop here"
-          secondary={
-            uploadType === 'pitch'
-              ? 'Upload a video that does not exceed 30 seconds'
-              : 'Acceptable files: JPG, PNG, SVG'
-          }
-          primaryTypographyProps={{
-            textAlign: 'center',
-            variant: 'h5',
-          }}
-          secondaryTypographyProps={{
-            textAlign: 'center',
-            variant: 'body1',
-            color: '#8E8E93',
-          }}
-        />
+        {Object.keys(other.accept).includes('application/vnd.ms-powerpoint') ? (
+          <ListItemText
+            primary="Choose a file or drag and drop here"
+            secondary="Acceptable files: PDF, Powerpoint"
+            primaryTypographyProps={{
+              textAlign: 'center',
+              variant: 'h5',
+            }}
+            secondaryTypographyProps={{
+              textAlign: 'center',
+              variant: 'body1',
+              color: '#8E8E93',
+            }}
+          />
+        ) : (
+          <ListItemText
+            primary="Choose a file or drag and drop here"
+            secondary={
+              uploadType === 'pitch'
+                ? 'Upload a video that does not exceed 30 seconds'
+                : 'Acceptable files: JPG, PNG, SVG'
+            }
+            primaryTypographyProps={{
+              textAlign: 'center',
+              variant: 'h5',
+            }}
+            secondaryTypographyProps={{
+              textAlign: 'center',
+              variant: 'body1',
+              color: '#8E8E93',
+            }}
+          />
+        )}
       </Stack>
     </Box>
   );
