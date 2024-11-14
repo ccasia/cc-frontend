@@ -1,21 +1,21 @@
 import dayjs from 'dayjs';
+import { pdfjs } from 'react-pdf';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { Page, pdfjs, Document } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
 import {
   Box,
   List,
+  Chip,
   Stack,
   Paper,
   Table,
-  Button,
+  Avatar,
   Divider,
   ListItem,
   TableRow,
-  Collapse,
   TableHead,
   TableCell,
   TableBody,
@@ -29,11 +29,24 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import Iconify from 'src/components/iconify';
 import Carousel from 'src/components/carousel/carousel';
+import { MultiFilePreview } from 'src/components/upload';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url
 ).toString();
+
+const ChipStyle = {
+  bgcolor: '#e4e4e4',
+  color: '#636366',
+  borderRadius: 16,
+  '& .MuiChip-label': {
+    fontWeight: 700,
+    px: 1.5,
+    py: 0.5,
+  },
+  '&:hover': { bgcolor: '#e4e4e4' },
+};
 
 const CampaignDetailContent = ({ campaign }) => {
   const pdf = useBoolean();
@@ -45,44 +58,9 @@ const CampaignDetailContent = ({ campaign }) => {
     </Box>
   );
 
-  // const renderGallery =
-  //   campaign?.campaignBrief?.images.length < 2 ? (
-  //     <Image
-  //       src={campaign?.campaignBrief?.images[0]}
-  //       alt="test"
-  //       ratio="16/9"
-  //       sx={{ borderRadius: 2, cursor: 'pointer' }}
-  //     />
-  //   ) : (
-  //     <Box
-  //       display="grid"
-  //       gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-  //       gap={1}
-  //       mb={5}
-  //     >
-  //       <Image
-  //         src={campaign?.campaignBrief?.images[0]}
-  //         alt="test"
-  //         ratio="1/1"
-  //         sx={{ borderRadius: 2, cursor: 'pointer' }}
-  //       />
-  //       {/* <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1}> */}
-  //       {campaign?.campaignBrief?.images.slice(1).map((elem, index) => (
-  //         <Image
-  //           key={index}
-  //           src={elem}
-  //           alt="test"
-  //           ratio="1/1"
-  //           sx={{ borderRadius: 2, cursor: 'pointer' }}
-  //         />
-  //       ))}
-  //       {/* </Box> */}
-  //     </Box>
-  //   );
-
   const renderOverview = (
-    <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-      <Stack direction="row" spacing={1} alignItems="start">
+    <Box display="grid" gridTemplateColumns="repeat(1, 1fr)" gap={2}>
+      {/* <Stack direction="row" spacing={1} alignItems="start">
         <Iconify icon="mdi:clock" width={18} />
         <Stack>
           <ListItemText
@@ -157,11 +135,65 @@ const CampaignDetailContent = ({ campaign }) => {
             }}
           />
         </Stack>
+      </Stack> */}
+
+      <Stack spacing={2} sx={{ mt: 1 }} direction="row" justifyContent="space-between">
+        {/* Client Info */}
+        <Box>
+          <Typography
+            variant="body2"
+            sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650, fontSize: '0.8rem' }}
+          >
+            Client
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Avatar
+              src={campaign?.company?.logo}
+              alt={campaign?.company?.name}
+              sx={{
+                width: 36,
+                height: 36,
+                border: '2px solid',
+                borderColor: 'background.paper',
+              }}
+            />
+            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8rem' }}>
+              {campaign?.company?.name || 'Company Name'}
+            </Typography>
+          </Stack>
+        </Box>
+
+        {/* Duration & Industry */}
+        <Box>
+          <Typography
+            variant="body2"
+            sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650, fontSize: '0.8rem' }}
+          >
+            Duration
+          </Typography>
+          <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+            {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
+          </Typography>
+        </Box>
+
+        <Box>
+          <Typography
+            variant="body2"
+            sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650, fontSize: '0.8rem' }}
+          >
+            Industry
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            <Chip
+              label={campaign?.campaignBrief?.industries || 'Not specified'}
+              size="small"
+              sx={{ ...ChipStyle, height: 24, '& .MuiChip-label': { fontSize: '0.8rem' } }}
+            />
+          </Box>
+        </Box>
       </Stack>
     </Box>
   );
-
-  // const formatDays = (days) => (days === 1 ? 'day' : 'days');
 
   const renderInformation = (
     <Stack spacing={5}>
@@ -276,6 +308,21 @@ const CampaignDetailContent = ({ campaign }) => {
     </Stack>
   );
 
+  const renderAttachmentFiles = (
+    <Box>
+      <Typography variant="h5">Attachments</Typography>
+      <MultiFilePreview
+        files={
+          campaign?.campaignBrief?.otherAttachments.length > 0
+            ? // eslint-disable-next-line no-unsafe-optional-chaining
+              [...campaign?.campaignBrief?.otherAttachments, campaign?.campaignBrief?.agreementFrom]
+            : [campaign?.campaignBrief?.agreementFrom]
+        }
+        thumbnail
+      />
+    </Box>
+  );
+
   return (
     <>
       {renderGallery}
@@ -290,7 +337,9 @@ const CampaignDetailContent = ({ campaign }) => {
           }}
         />
 
-        <Stack gap={1.5}>
+        {renderAttachmentFiles}
+
+        {/* <Stack gap={1.5}>
           <Typography variant="h5">Agreement Form</Typography>
           <Button variant="contained" onClick={pdf.onToggle}>
             {pdf.value ? 'Collapse' : 'View'}
@@ -325,7 +374,7 @@ const CampaignDetailContent = ({ campaign }) => {
               </Box>
             </Box>
           </Collapse>
-        </Stack>
+        </Stack> */}
       </Stack>
     </>
   );

@@ -31,7 +31,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/components/hook-form';
 
 export const EditTimeline = ({ open, campaign, onClose }) => {
-  const { campaignTimeline } = campaign && campaign;
+  // const { campaignTimeline } = campaign && campaign;
   const [isLoading, setIsLoading] = useState(false);
   const { data: timelineData, isLoading: timelineLoading } = useGetAllTimelineType();
   const [query, setQuery] = useState('');
@@ -68,7 +68,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
     reset({
       timeline:
         campaign &&
-        campaignTimeline
+        campaign?.campaignTimeline
           .sort((a, b) => a.order - b.order)
           .map((item) => ({
             ...item,
@@ -80,7 +80,7 @@ export const EditTimeline = ({ open, campaign, onClose }) => {
           })),
     });
     setValue('campaignStartDate', dayjs(campaign?.campaignBrief?.startDate));
-  }, [campaign, campaignTimeline, reset, setValue]);
+  }, [campaign, reset, setValue]);
 
   const updateTimelineDates = useCallback(() => {
     let currentStartDate = dayjs(startDate);

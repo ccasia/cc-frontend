@@ -46,9 +46,11 @@ import withPermission from 'src/auth/guard/withPermissions';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Carousel from 'src/components/carousel/carousel';
+import { MultiFilePreview } from 'src/components/upload';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import { EditTimeline } from './EditTimeline';
+import EditAttachments from './EditAttachment';
 import { EditDosAndDonts } from './EditDosAndDonts';
 import EditCampaignAdmin from './EditCampaignAdmin';
 import { EditCampaignInfo } from './EditCampaignInfo';
@@ -108,6 +110,7 @@ const CampaignDetailManageView = ({ id }) => {
     campaignAgreement: false,
     campaignImages: false,
     campaignAdmin: false,
+    campaignAttachments: false,
   });
 
   const onClose = (data) => {
@@ -124,7 +127,7 @@ const CampaignDetailManageView = ({ id }) => {
   const isEditable = campaign?.status !== 'ACTIVE';
 
   const handleChangeStatus = async (status) => {
-    if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate) < dayjs()) {
+    if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate).isBefore(dayjs, 'date')) {
       enqueueSnackbar('You cannot publish a campaign that is already end.', {
         variant: 'error',
       });
@@ -136,11 +139,14 @@ const CampaignDetailManageView = ({ id }) => {
         status,
       });
 
-      if (status === 'ACTIVE') {
+      if (res?.data?.status === 'ACTIVE') {
         enqueueSnackbar('Campaign is now live!');
+      } else if (res?.data?.status === 'SCHEDULED') {
+        enqueueSnackbar('Campaign is scheduled!');
       } else {
         enqueueSnackbar('Campaign is paused');
       }
+
       mutate(endpoints.campaign.getCampaignById(id), (currentData) => {
         const newCampaign = {
           ...currentData,
@@ -151,6 +157,7 @@ const CampaignDetailManageView = ({ id }) => {
           newCampaign,
         };
       });
+
       loadingButton.onFalse();
     } catch (error) {
       enqueueSnackbar('Failed to change status', {
@@ -703,6 +710,40 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
+  const renderAttachments = (
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Other Attachments</Typography>
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Campaign Attachments"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignAttachments: true,
+              }))
+            }
+          />
+        )}
+        {campaign?.campaignBrief?.otherAttachments?.length ? (
+          <Box my={1} overflow="auto">
+            <MultiFilePreview files={campaign?.campaignBrief?.otherAttachments} thumbnail />
+          </Box>
+        ) : (
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+            }}
+          >
+            No attachments found.
+          </Typography>
+        )}
+      </Box>
+      {isEditable && <EditAttachments open={open} campaign={campaign} onClose={onClose} />}
+    </>
+  );
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -793,6 +834,7 @@ const CampaignDetailManageView = ({ id }) => {
                 {renderRequirement}
                 {renderTimeline}
                 {renderAdminManager}
+                {renderAttachments}
               </Stack>
             </Grid>
           </>

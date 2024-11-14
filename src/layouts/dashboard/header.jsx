@@ -94,19 +94,19 @@ export default function Header({ onOpenNav, isOnline }) {
     <AppBar
       sx={{
         position: 'sticky',
-        top: 0,
+        // top: 0,
         borderBottom: 1,
         borderColor: grey[200],
         height: HEADER.H_MOBILE,
         zIndex: theme.zIndex.appBar + 1,
         ...bgBlur({
           color: theme.palette.background.paper,
-          // color: theme.palette.grey[400],
         }),
         transition: theme.transitions.create(['height'], {
           duration: theme.transitions.duration.shorter,
         }),
         ...(lgUp && {
+          // bgcolor: theme.palette.background.paper,
           // width: `calc(100% - ${NAV.W_VERTICAL + 32}px)`,
           height: HEADER.H_DESKTOP,
           ...(offsetTop && {
