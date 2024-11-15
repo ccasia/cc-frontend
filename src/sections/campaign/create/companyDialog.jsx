@@ -120,8 +120,7 @@ export default function CreateCompany({ setCompany, open, onClose, companyName }
       setCompany(res?.data?.company?.company);
       onClose();
 
-
-      console.log("DASDSADSAD", res?.data?.company);
+      console.log('DASDSADSAD', res?.data?.company);
       enqueueSnackbar('Company created successfully', { variant: 'success' });
     } catch (error) {
       enqueueSnackbar(error?.message, {
