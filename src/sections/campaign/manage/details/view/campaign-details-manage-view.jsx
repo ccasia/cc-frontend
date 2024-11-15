@@ -1,10 +1,10 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
 import { useTheme } from '@emotion/react';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
+import { useMemo, useState, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -85,6 +85,10 @@ EditButton.propTypes = {
 
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading } = useGetCampaignById(id);
+  const [url, setUrl] = useState('');
+  const loading = useBoolean();
+  const copyDialog = useBoolean();
+  const copy = useBoolean();
 
   const [pages, setPages] = useState();
 
@@ -118,6 +122,35 @@ const CampaignDetailManageView = ({ id }) => {
       ...prev,
       [data]: false,
     }));
+  };
+
+  const generateSpreadSheet = useCallback(async () => {
+    try {
+      loading.onTrue();
+      const res = await axiosInstance.post(endpoints.campaign.spreadsheet, {
+        campaignId: campaign?.id,
+      });
+      setUrl(res?.data?.url);
+      enqueueSnackbar(res?.data?.message);
+      copyDialog.onTrue();
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      loading.onFalse();
+    }
+  }, [campaign, loading, copyDialog]);
+
+  const copyURL = () => {
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        copy.onTrue();
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+      });
   };
 
   const refreshPdf = () => {
@@ -744,6 +777,52 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
+  const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
+
+  const copyDialogContainer = (
+    <Dialog
+      open={copyDialog.value}
+      maxWidth="md"
+      fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          p: 2,
+        },
+      }}
+    >
+      <Box
+        sx={{
+          p: 1,
+          bgcolor: theme.palette.background.paper,
+          border: 1,
+          borderRadius: 1,
+          borderColor: '#EBEBEB',
+        }}
+      >
+        <Stack direction="row" alignItems="center">
+          <Typography sx={{ flexGrow: 1, color: 'text.secondary' }} variant="subtitle2">
+            {url || 'No url found.'}
+          </Typography>
+          {!copy.value ? (
+            <IconButton onClick={copyURL}>
+              <Iconify icon="solar:copy-line-duotone" />
+            </IconButton>
+          ) : (
+            <IconButton disabled>
+              <Iconify icon="charm:tick" color="success.main" />
+            </IconButton>
+          )}
+        </Stack>
+      </Box>
+
+      <DialogActions>
+        <Button onClick={copyDialog.onFalse} size="small" variant="outlined" sx={{ mx: 'auto' }}>
+          Done
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -808,6 +887,21 @@ const CampaignDetailManageView = ({ id }) => {
                 Pause
               </LoadingButton>
             )}
+
+            {!isCampaignHasSpreadSheet && (
+              <LoadingButton
+                startIcon={<Iconify icon="lucide:file-spreadsheet" />}
+                variant="outlined"
+                size="small"
+                sx={{
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                }}
+                onClick={generateSpreadSheet}
+                loading={loading.value}
+              >
+                Generate Spreadsheet
+              </LoadingButton>
+            )}
           </Stack>
         }
         sx={{
@@ -861,6 +955,7 @@ const CampaignDetailManageView = ({ id }) => {
       </Grid>
 
       {confirmationModal}
+      {copyDialogContainer}
     </Container>
   );
 };

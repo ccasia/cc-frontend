@@ -10,6 +10,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import { MultiFilePreview } from 'src/components/upload';
 
 const ChipStyle = {
   bgcolor: '#e4e4e4',
@@ -436,6 +437,85 @@ const CampaignInfo = ({ campaign }) => {
                 </Stack>
               ))}
             </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              ...BoxStyle,
+              mr: { xs: 0, md: 0 },
+              mt: 2,
+              width: '100%',
+            }}
+          >
+            <Box className="header">
+              <Iconify
+                icon="mdi:files"
+                sx={{
+                  color: '#203ff5',
+                  width: 18,
+                  height: 18,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}
+              >
+                Other Attachments
+              </Typography>
+            </Box>
+            {campaign?.campaignBrief?.otherAttachments?.length > 0 ? (
+              <MultiFilePreview files={campaign?.campaignBrief?.otherAttachments} thumbnail />
+            ) : (
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  textAlign: 'center',
+                }}
+              >
+                No attachments
+              </Typography>
+            )}
+
+            {/* <Stack spacing={1}>
+              {campaign?.campaignAdmin?.map((elem) => (
+                <Stack
+                  key={elem.id}
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ py: 0.75 }}
+                >
+                  <Avatar src={elem.admin.user.photoURL} sx={{ width: 32, height: 32 }} />
+                  <Typography variant="body2" sx={{ flex: 1, fontSize: '0.8rem' }}>
+                    {elem.admin.user.name}
+                  </Typography>
+                  <Box
+                    onClick={() => handleChatClick(elem.admin)}
+                    sx={{
+                      cursor: 'pointer',
+                      px: 1.5,
+                      py: 0.5,
+                      border: '1px solid #e7e7e7',
+                      borderBottom: '3px solid #e7e7e7',
+                      borderRadius: 1,
+                      color: '#203ff5',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      '&:hover': {
+                        bgcolor: 'rgba(32, 63, 245, 0.04)',
+                      },
+                    }}
+                  >
+                    Message
+                  </Box>
+                </Stack>
+              ))}
+            </Stack> */}
           </Box>
         </Stack>
       </Stack>
