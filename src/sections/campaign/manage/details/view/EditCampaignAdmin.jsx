@@ -40,7 +40,7 @@ const EditCampaignAdmin = ({ open, campaign, onClose }) => {
 
   const methods = useForm({
     defaultValues: {
-      admins: [...existedAdmins],
+      admins: existedAdmins?.length ? [...existedAdmins] : [],
     },
   });
 
