@@ -77,8 +77,8 @@ const SelectBrand = ({ openBrand, openCompany }) => {
           const filtered = filter(options, params);
 
           // Suggest the creation of a new value
-          const isExisting = options.some((option) =>
-            option.name.toLowerCase().includes(inputValue.toLowerCase())
+          const isExisting = options.some((option) => 
+            option.name.toLowerCase() === inputValue.toLowerCase()
           );
 
           if (inputValue !== '' && !isExisting) {
@@ -91,7 +91,7 @@ const SelectBrand = ({ openBrand, openCompany }) => {
           return filtered;
         }}
       />
-      {client && <RHFCheckbox name="hasBrand" size="small" label="has a brand?" />}
+      {client && <RHFCheckbox name="hasBrand" size="small" label="Is it an agency?" />}
 
       {client && hasBrand && (
         <Box mt={2}>
@@ -136,8 +136,8 @@ const SelectBrand = ({ openBrand, openCompany }) => {
               const filtered = filter(options, params);
 
               // Suggest the creation of a new value
-              const isExisting = options.some((option) =>
-                option.name.toLowerCase().includes(inputValue.toLowerCase())
+              const isExisting = options.some((option) => 
+                option.name.toLowerCase() === inputValue.toLowerCase()
               );
 
               if (inputValue !== '' && !isExisting) {
