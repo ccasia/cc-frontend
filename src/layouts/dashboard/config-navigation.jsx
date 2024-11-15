@@ -171,22 +171,22 @@ export function useNavData() {
               },
             ],
           },
-          {
-            roles: ['superadmin', 'CSM'],
-            title: 'Clients',
-            path: paths.dashboard.company.root,
-            icon: <Iconify icon="mdi:company" width={25} />,
-            children: [
-              {
-                title: 'List',
-                path: paths.dashboard.company.discover,
-              },
-              {
-                title: 'Create',
-                path: paths.dashboard.company.create,
-              },
-            ],
-          },
+          // {
+          //   roles: ['superadmin', 'CSM'],
+          //   title: 'Clients',
+          //   path: paths.dashboard.company.root,
+          //   icon: <Iconify icon="mdi:company" width={25} />,
+          //   children: [
+          //     {
+          //       title: 'List',
+          //       path: paths.dashboard.company.discover,
+          //     },
+          //     {
+          //       title: 'Create',
+          //       path: paths.dashboard.company.create,
+          //     },
+          //   ],
+          // },
           {
             roles: ['superadmin'],
             title: 'Roles',
