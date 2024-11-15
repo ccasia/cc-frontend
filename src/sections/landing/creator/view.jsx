@@ -72,32 +72,33 @@ export default function BasicTable() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {creators?.map((row) => (
-              <TableRow key={row.name} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                <TableCell component="th" scope="row">
-                  {row.name}
-                </TableCell>
-                <TableCell>{row.email}</TableCell>
-                <TableCell>{row.pronoun}</TableCell>
-                <TableCell>{row.nationality}</TableCell>
-                <TableCell>{row.location}</TableCell>
-                <TableCell>{row.instaUsername}</TableCell>
-                <TableCell>{row.tiktokUsername}</TableCell>
-                <TableCell>
-                  {row.otherinterestsString
-                    ? row.otherinterestsString
-                    : JSON.stringify(row.interests)}
-                </TableCell>
-                <TableCell>{row.phoneNumber}</TableCell>
-                <TableCell>
-                  {row.otherlanguagesString
-                    ? row.otherlanguagesString
-                    : JSON.stringify(row.languages)}
-                </TableCell>
-                <TableCell>{dayjs(row.dateOfBirth).format('LL')}</TableCell>
-                <TableCell>{row.employmentType}</TableCell>
-              </TableRow>
-            ))}
+            {creators?.length > 0 &&
+              creators?.map((row) => (
+                <TableRow key={row.name} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                  <TableCell component="th" scope="row">
+                    {row.name}
+                  </TableCell>
+                  <TableCell>{row.email}</TableCell>
+                  <TableCell>{row.pronoun}</TableCell>
+                  <TableCell>{row.nationality}</TableCell>
+                  <TableCell>{row.location}</TableCell>
+                  <TableCell>{row.instaUsername}</TableCell>
+                  <TableCell>{row.tiktokUsername}</TableCell>
+                  <TableCell>
+                    {row.otherinterestsString
+                      ? row.otherinterestsString
+                      : JSON.stringify(row.interests)}
+                  </TableCell>
+                  <TableCell>{row.phoneNumber}</TableCell>
+                  <TableCell>
+                    {row.otherlanguagesString
+                      ? row.otherlanguagesString
+                      : JSON.stringify(row.languages)}
+                  </TableCell>
+                  <TableCell>{dayjs(row.dateOfBirth).format('LL')}</TableCell>
+                  <TableCell>{row.employmentType}</TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>

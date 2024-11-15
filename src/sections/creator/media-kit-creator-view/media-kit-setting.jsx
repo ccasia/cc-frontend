@@ -24,10 +24,10 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { interestsLists } from 'src/contants/interestLists';
+
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
-
-import { interestsList } from '../form/creatorForm';
 
 const MediaKitSetting = ({ open, handleClose, user }) => {
   const style = {
@@ -133,7 +133,7 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
                 fullWidth
                 freeSolo={false}
                 disableCloseOnSelect
-                options={interestsList.map((option) => option)}
+                options={interestsLists.map((option) => option)}
                 getOptionLabel={(option) => option}
                 renderOption={(props, option) => (
                   <li {...props} key={option}>

@@ -1,11 +1,10 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
 import { useTheme } from '@emotion/react';
 import { Page, Document } from 'react-pdf';
-import { RiseLoader } from 'react-spinners';
 import { enqueueSnackbar } from 'notistack';
+import { useMemo, useState, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -14,6 +13,7 @@ import {
   Chip,
   Grid,
   List,
+  Link,
   Stack,
   Avatar,
   Dialog,
@@ -29,6 +29,7 @@ import {
   ListItemIcon,
   DialogActions,
   DialogContent,
+  CircularProgress,
   DialogContentText,
 } from '@mui/material';
 
@@ -46,10 +47,14 @@ import withPermission from 'src/auth/guard/withPermissions';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Carousel from 'src/components/carousel/carousel';
+import { MultiFilePreview } from 'src/components/upload';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import { EditTimeline } from './EditTimeline';
+import EditReferences from './EditReferences';
+import EditAttachments from './EditAttachment';
 import { EditDosAndDonts } from './EditDosAndDonts';
+import EditCampaignAdmin from './EditCampaignAdmin';
 import { EditCampaignInfo } from './EditCampaignInfo';
 import { EditRequirements } from './EditRequirements';
 import EditCampaignImages from './EditCampaignImages';
@@ -81,7 +86,11 @@ EditButton.propTypes = {
 };
 
 const CampaignDetailManageView = ({ id }) => {
-  const { campaign, campaignLoading } = useGetCampaignById(id);
+  const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+  const [url, setUrl] = useState('');
+  const loading = useBoolean();
+  const copyDialog = useBoolean();
+  const copy = useBoolean();
 
   const [pages, setPages] = useState();
 
@@ -106,6 +115,9 @@ const CampaignDetailManageView = ({ id }) => {
     timeline: false,
     campaignAgreement: false,
     campaignImages: false,
+    campaignAdmin: false,
+    campaignAttachments: false,
+    campaignReferences: false,
   });
 
   const onClose = (data) => {
@@ -115,6 +127,36 @@ const CampaignDetailManageView = ({ id }) => {
     }));
   };
 
+  const generateSpreadSheet = useCallback(async () => {
+    try {
+      loading.onTrue();
+      const res = await axiosInstance.post(endpoints.campaign.spreadsheet, {
+        campaignId: campaign?.id,
+      });
+      setUrl(res?.data?.url);
+      enqueueSnackbar(res?.data?.message);
+      copyDialog.onTrue();
+      campaignMutate();
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      loading.onFalse();
+    }
+  }, [campaign, loading, copyDialog, campaignMutate]);
+
+  const copyURL = () => {
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        copy.onTrue();
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+      });
+  };
+
   const refreshPdf = () => {
     mutate(endpoints.campaign.getCampaignById(id));
   };
@@ -122,7 +164,7 @@ const CampaignDetailManageView = ({ id }) => {
   const isEditable = campaign?.status !== 'ACTIVE';
 
   const handleChangeStatus = async (status) => {
-    if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate) < dayjs()) {
+    if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate).isBefore(dayjs, 'date')) {
       enqueueSnackbar('You cannot publish a campaign that is already end.', {
         variant: 'error',
       });
@@ -134,11 +176,14 @@ const CampaignDetailManageView = ({ id }) => {
         status,
       });
 
-      if (status === 'ACTIVE') {
+      if (res?.data?.status === 'ACTIVE') {
         enqueueSnackbar('Campaign is now live!');
+      } else if (res?.data?.status === 'SCHEDULED') {
+        enqueueSnackbar('Campaign is scheduled!');
       } else {
         enqueueSnackbar('Campaign is paused');
       }
+
       mutate(endpoints.campaign.getCampaignById(id), (currentData) => {
         const newCampaign = {
           ...currentData,
@@ -149,6 +194,7 @@ const CampaignDetailManageView = ({ id }) => {
           newCampaign,
         };
       });
+
       loadingButton.onFalse();
     } catch (error) {
       enqueueSnackbar('Failed to change status', {
@@ -571,6 +617,17 @@ const CampaignDetailManageView = ({ id }) => {
   const renderAdminManager = (
     <Box component={Card} p={2}>
       <Typography variant="h5">Admin Manager</Typography>
+      {isEditable && (
+        <EditButton
+          tooltip="Edit Campaign Admin"
+          onClick={() =>
+            setOpen((prev) => ({
+              ...prev,
+              campaignAdmin: true,
+            }))
+          }
+        />
+      )}
       <List>
         {campaign?.campaignAdmin?.map((item, index) => (
           <ListItem key={index}>
@@ -578,6 +635,12 @@ const CampaignDetailManageView = ({ id }) => {
           </ListItem>
         ))}
       </List>
+
+      <EditCampaignAdmin
+        open={open.campaignAdmin}
+        onClose={() => onClose('campaignAdmin')}
+        campaign={campaign}
+      />
     </Box>
   );
 
@@ -684,6 +747,131 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
+  const renderAttachments = (
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Other Attachments</Typography>
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Campaign Attachments"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignAttachments: true,
+              }))
+            }
+          />
+        )}
+        {campaign?.campaignBrief?.otherAttachments?.length ? (
+          <Box my={1} overflow="auto">
+            <MultiFilePreview files={campaign?.campaignBrief?.otherAttachments} thumbnail />
+          </Box>
+        ) : (
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+            }}
+          >
+            No attachments found.
+          </Typography>
+        )}
+      </Box>
+      {isEditable && <EditAttachments open={open} campaign={campaign} onClose={onClose} />}
+    </>
+  );
+
+  const renderReferenceLinks = (
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Reference Links</Typography>
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Campaign Reference"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignReferences: true,
+              }))
+            }
+          />
+        )}
+
+        {campaign?.campaignBrief?.referencesLinks?.length > 0 ? (
+          <List>
+            {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
+              <ListItem key={index}>
+                <ListItemIcon>
+                  <Iconify icon="ix:reference" />
+                </ListItemIcon>
+                <Link
+                  key={index}
+                  href={link}
+                  target="_blank"
+                  sx={{ overflowX: 'auto', scrollbarWidth: 'none' }}
+                >
+                  {link}
+                </Link>
+              </ListItem>
+            ))}
+          </List>
+        ) : (
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            No references found.
+          </Typography>
+        )}
+      </Box>
+
+      {isEditable && <EditReferences open={open} campaign={campaign} onClose={onClose} />}
+    </>
+  );
+
+  const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
+
+  const copyDialogContainer = (
+    <Dialog
+      open={copyDialog.value}
+      maxWidth="md"
+      fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          p: 2,
+        },
+      }}
+    >
+      <Box
+        sx={{
+          p: 1,
+          bgcolor: theme.palette.background.paper,
+          border: 1,
+          borderRadius: 1,
+          borderColor: '#EBEBEB',
+        }}
+      >
+        <Stack direction="row" alignItems="center">
+          <Typography sx={{ flexGrow: 1, color: 'text.secondary' }} variant="subtitle2">
+            {url || 'No url found.'}
+          </Typography>
+          {!copy.value ? (
+            <IconButton onClick={copyURL}>
+              <Iconify icon="solar:copy-line-duotone" />
+            </IconButton>
+          ) : (
+            <IconButton disabled>
+              <Iconify icon="charm:tick" color="success.main" />
+            </IconButton>
+          )}
+        </Stack>
+      </Box>
+
+      <DialogActions>
+        <Button onClick={copyDialog.onFalse} size="small" variant="outlined" sx={{ mx: 'auto' }}>
+          Done
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -748,6 +936,21 @@ const CampaignDetailManageView = ({ id }) => {
                 Pause
               </LoadingButton>
             )}
+
+            {!isCampaignHasSpreadSheet && (
+              <LoadingButton
+                startIcon={<Iconify icon="lucide:file-spreadsheet" />}
+                variant="outlined"
+                size="small"
+                sx={{
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                }}
+                onClick={generateSpreadSheet}
+                loading={loading.value}
+              >
+                Generate Spreadsheet
+              </LoadingButton>
+            )}
           </Stack>
         }
         sx={{
@@ -774,17 +977,35 @@ const CampaignDetailManageView = ({ id }) => {
                 {renderRequirement}
                 {renderTimeline}
                 {renderAdminManager}
+                {renderAttachments}
+                {renderReferenceLinks}
               </Stack>
             </Grid>
           </>
         ) : (
           <Grid item xs={12} textAlign="center" mt={20}>
-            <RiseLoader color="#36d7b7" />
+            <Box
+              sx={{
+                position: 'relative',
+                top: 200,
+                textAlign: 'center',
+              }}
+            >
+              <CircularProgress
+                thickness={7}
+                size={25}
+                sx={{
+                  color: theme.palette.common.black,
+                  strokeLinecap: 'round',
+                }}
+              />
+            </Box>
           </Grid>
         )}
       </Grid>
 
       {confirmationModal}
+      {copyDialogContainer}
     </Container>
   );
 };

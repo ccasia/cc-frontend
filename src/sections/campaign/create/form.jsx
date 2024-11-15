@@ -18,7 +18,7 @@ import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import StepLabel from '@mui/material/StepLabel';
-import { Stack, StepContent } from '@mui/material';
+import { Stack, Typography, StepContent } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -38,6 +38,7 @@ import GeneralCampaign from './steps/general-campaign';
 import CampaignDetails from './steps/campaign-details';
 import CampaignImageUpload from './steps/image-upload';
 import CampaignAdminManager from './steps/admin-manager';
+import OtherAttachments from './steps/other-attachments';
 import TimelineTypeModal from './steps/timeline-type-modal';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -53,6 +54,7 @@ const steps = [
   'Timeline',
   'Admin Manager',
   'Agreement Form',
+  'Other Attachment',
 ];
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
@@ -222,6 +224,8 @@ function CreateCampaignForm() {
         return timelineSchema;
       case 5:
         return campaignAdminSchema;
+      case 6:
+        return campaignAdminSchema;
       default:
         return campaignSchema;
     }
@@ -272,6 +276,8 @@ function CreateCampaignForm() {
     ],
     campaignTasksAdmin: [],
     campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
+    otherAttachments: [],
+    referencesLinks: [],
   };
 
   const methods = useForm({
@@ -281,23 +287,18 @@ function CreateCampaignForm() {
     mode: 'onChange',
   });
 
-  const { handleSubmit, getValues, reset, control, setValue, watch, trigger } = methods;
+  const {
+    handleSubmit,
+    getValues,
+    reset,
+    control,
+    setValue,
+    watch,
+    trigger,
+    formState: { errors },
+  } = methods;
 
   const values = watch();
-
-  // useEffect(() => {
-  //   const handleBeforeUnload = (e) => {
-  //     e.preventDefault();
-
-  //     e.returnValue = ''; // Required for Chrome to show the alert
-  //   };
-
-  //   window.addEventListener('beforeunload', handleBeforeUnload);
-
-  //   return () => {
-  //     window.removeEventListener('beforeunload', handleBeforeUnload);
-  //   };
-  // }, []);
 
   const {
     append: doAppend,
@@ -338,9 +339,11 @@ function CreateCampaignForm() {
     }
   }, [brandState, setValue]);
 
-  const handleNext = async () => {
-    const result = await trigger();
+  const isStepOptional = (step) => step === 7;
 
+  const handleNext = async () => {
+    // setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    const result = await trigger();
     if (result) {
       localStorage.setItem('activeStep', activeStep + 1);
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -412,6 +415,11 @@ function CreateCampaignForm() {
       formData.append('campaignImages', data.campaignImages[i]);
     }
 
+    // eslint-disable-next-line guard-for-in, no-restricted-syntax
+    for (const i in data.otherAttachments) {
+      formData.append('otherAttachments', data.otherAttachments[i]);
+    }
+
     try {
       setIsLoading(true);
       const res = await axiosInstance.post(endpoints.campaign.createCampaign, formData, {
@@ -452,6 +460,8 @@ function CreateCampaignForm() {
           return <CampaignAdminManager />;
         case 6:
           return <CampaignFormUpload pdfModal={pdfModal} />;
+        case 7:
+          return <OtherAttachments />;
         default:
           return <SelectBrand />;
       }
@@ -484,6 +494,9 @@ function CreateCampaignForm() {
           {steps.map((label, index) => {
             const stepProps = {};
             const labelProps = {};
+            if (isStepOptional(index)) {
+              labelProps.optional = <Typography variant="caption">Optional</Typography>;
+            }
             return (
               <Step key={label} {...stepProps}>
                 <StepLabel {...labelProps}>{label}</StepLabel>

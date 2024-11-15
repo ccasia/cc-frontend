@@ -12,6 +12,9 @@ import {
   ListItemText,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Label from 'src/components/label';
@@ -22,11 +25,12 @@ import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
 
 const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) => {
+
   const { logo, name, email, phone, website, campaign, brand, id} = row;
 
   const confirm = useBoolean();
 
-  const quickEdit = useBoolean();
+  const router = useRouter();
 
   const router = useRouter();
 

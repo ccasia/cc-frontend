@@ -192,15 +192,6 @@ const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) =
         }}
         height={500}
       >
-        {/* <Box
-          sx={{
-            // scale,
-            transformOrigin: 'top left',
-            // width: `${100 / scale}%`,
-            textAlign: 'center',
-            // bgcolor: 'black',
-          }}
-        > */}
         <Box textAlign="center">
           <Box display="inline-flex">
             <Document file={file} onLoadSuccess={onLoadSuccess} renderMode="canvas">
