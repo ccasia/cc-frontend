@@ -597,6 +597,7 @@ const CampaignModal = ({
                     height: '42px',
                     boxShadow: 'none',
                     textTransform: 'none',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   Pitch Now

@@ -431,10 +431,10 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               <Box>
                 <Alert
                   severity="warning"
-                  icon={<Iconify icon="solar:danger-triangle-bold" width={20} />}
+                  icon={<Iconify icon="solar:danger-triangle-bold" width={20} sx={{ mt: 0.2 }} />}
                   sx={{
                     mb: 2,
-                    ml: -1,
+                    ml: -1.2,
                     p: 1.5,
                     borderRadius: 1.5,
                     border: '1px solid',
@@ -453,7 +453,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                         fontWeight: 600,
                       }}
                     >
-                      Changes Required
+                      Feedback
                     </Typography>
 
                     {submission?.feedback?.length > 0 && (
@@ -809,20 +809,20 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               <LoadingButton
                 loading={loading}
                 variant="contained"
-                disabled={!agreementForm}
+                disabled={!agreementForm || uploadProgress < 100}
                 onClick={onSubmit}
                 sx={{
                   fontSize: '0.95rem',
                   fontWeight: 600,
-                  bgcolor: agreementForm ? '#203ff5' : '#b0b0b1 !important',
+                  bgcolor: (agreementForm && uploadProgress === 100) ? '#203ff5' : '#b0b0b1 !important',
                   color: '#ffffff !important',
                   borderBottom: 3.5,
-                  borderBottomColor: agreementForm ? '#112286' : '#9e9e9f',
+                  borderBottomColor: (agreementForm && uploadProgress === 100) ? '#112286' : '#9e9e9f',
                   borderRadius: 1.5,
                   px: 2.5,
                   py: 1.2,
                   '&:hover': {
-                    bgcolor: agreementForm ? '#203ff5' : '#b0b0b1',
+                    bgcolor: (agreementForm && uploadProgress === 100) ? '#203ff5' : '#b0b0b1',
                     opacity: 0.9,
                   },
                 }}
@@ -851,15 +851,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     variant="body2"
                     noWrap
                     sx={{ 
+                      fontWeight: 'bold',
                       color: 'text.secondary',
-                      maxWidth: '300px',
+                      maxWidth: '400px',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                       mt: 0.5
                     }}
                   >
-                    {campaign?.agreement?.agreementUrl?.split('/').pop() || 'Document.pdf'}
+                    {agreementForm?.name || 'Document.pdf'}
                   </Typography>
                 </Box>
 

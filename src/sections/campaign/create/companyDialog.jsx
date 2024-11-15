@@ -2,13 +2,15 @@ import * as Yup from 'yup';
 import { mutate } from 'swr';
 import { useEffect, useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { formatIncompletePhoneNumber } from 'libphonenumber-js';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import { TextField } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
@@ -59,7 +61,9 @@ export default function CreateCompany({ setCompany, open, onClose, companyName }
     handleSubmit,
     setValue,
     formState: { isSubmitting },
+    control,
   } = methods;
+
 
   const handleDrop = useCallback(
     (acceptedFiles) => {
@@ -75,9 +79,14 @@ export default function CreateCompany({ setCompany, open, onClose, companyName }
     [setValue]
   );
 
-  const handlePhoneChange = (event) => {
-    setPhoneError('');
-    methods.setValue('companyPhone', event.target.value);
+//   const handlePhoneChange = (event) => {
+//     setPhoneError('');
+//     methods.setValue('companyPhone', event.target.value);
+
+  const handlePhoneChange = (event, onChange) => {
+    const formattedNumber = formatIncompletePhoneNumber(event.target.value, 'MY');
+    onChange(formattedNumber);
+
   };
 
   const onSubmit = handleSubmit(async (data) => {
@@ -179,16 +188,42 @@ export default function CreateCompany({ setCompany, open, onClose, companyName }
             >
               <RHFTextField name="companyName" label="Name" />
               <RHFTextField name="companyEmail" label="Email" />
-              <RHFTextField 
-                name="companyPhone" 
-                label="Phone" 
-                error={!!phoneError}
-                helperText={phoneError}
-                onChange={handlePhoneChange}
-                value={methods.watch('companyPhone')}
-              />
+              <Controller
+              name="companyPhone"
+              control={control}
+              defaultValue=""
+              rules={{ required: 'Phone number is required' }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  placeholder="Phone Number"
+                  variant="outlined"
+                  fullWidth
+                  error={!!fieldState.error}
+                  helperText={fieldState.error ? fieldState.error.message : ''}
+                  onChange={(event) => handlePhoneChange(event, field.onChange)}
+                />
+              )}
+            />
+//               <RHFTextField 
+//                 name="companyPhone" 
+//                 label="Phone" 
+//                 error={!!phoneError}
+//                 helperText={phoneError}
+//                 onChange={handlePhoneChange}
+//                 value={methods.watch('companyPhone')}
+//               />
               <RHFTextField name="companyWebsite" label="Website" />
-            </Box>
+           
+
+// //             <RHFTextField name="name" label="Name" fullWidth />
+// //             <RHFTextField name="email" label="Email" fullWidth />
+            {/* <RHFTextField name="phone" label="Phone" /> */}
+
+            
+//             <RHFTextField name="website" label="Website" fullWidth />
+           </Box>
+
           </Box>
 
           <DialogActions sx={{ mt: 3 }}>

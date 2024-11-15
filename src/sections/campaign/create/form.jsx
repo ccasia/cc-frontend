@@ -277,6 +277,7 @@ function CreateCampaignForm() {
     campaignTasksAdmin: [],
     campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
     otherAttachments: [],
+    referencesLinks: [],
   };
 
   const methods = useForm({
@@ -296,8 +297,6 @@ function CreateCampaignForm() {
     trigger,
     formState: { errors },
   } = methods;
-
-  console.log(errors);
 
   const values = watch();
 

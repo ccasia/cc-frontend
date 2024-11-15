@@ -3,7 +3,17 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 
-import { Box, Chip, Stack, Avatar, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  List,
+  Link,
+  Stack,
+  Avatar,
+  ListItem,
+  Typography,
+  ListItemIcon,
+} from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -217,16 +227,23 @@ const CampaignInfo = ({ campaign }) => {
             <Stack spacing={1} sx={{ pl: 0.5 }}>
               {campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
                 <Stack key={index} direction="row" spacing={1} alignItems="center">
-                  <Iconify
-                    icon="octicon:dot-fill-16"
-                    sx={{
-                      color: '#000000',
-                      width: 12,
-                      height: 12,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Typography variant="body2">{item.value}</Typography>
+                  {item.value && (
+                    <Iconify
+                      icon="octicon:dot-fill-16"
+                      sx={{
+                        color: '#000000',
+                        width: 12,
+                        height: 12,
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  <Typography
+                    variant={item?.value ? 'body2' : 'caption'}
+                    color={item?.value && 'text.secondayr'}
+                  >
+                    {item?.value || 'No campaign do.'}
+                  </Typography>
                 </Stack>
               ))}
             </Stack>
@@ -255,22 +272,77 @@ const CampaignInfo = ({ campaign }) => {
               </Typography>
             </Box>
 
-            <Stack spacing={1} sx={{ pl: 0.5 }}>
-              {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
-                <Stack key={index} direction="row" spacing={1} alignItems="center">
-                  <Iconify
-                    icon="octicon:dot-fill-16"
-                    sx={{
-                      color: '#000000',
-                      width: 12,
-                      height: 12,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Typography variant="body2">{item.value}</Typography>
-                </Stack>
-              ))}
-            </Stack>
+            {campaign?.campaignBrief?.campaigns_dont?.length > 0 ? (
+              <Stack spacing={1} sx={{ pl: 0.5 }}>
+                {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
+                  <Stack key={index} direction="row" spacing={1} alignItems="center">
+                    {item.value && (
+                      <Iconify
+                        icon="octicon:dot-fill-16"
+                        sx={{
+                          color: '#000000',
+                          width: 12,
+                          height: 12,
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <Typography
+                      variant={item?.value ? 'body2' : 'caption'}
+                      color={item?.value && 'text.secondayr'}
+                    >
+                      {item?.value || "No campaign don't"}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                No data found.
+              </Typography>
+            )}
+          </Box>
+
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="ep:guide"
+                sx={{
+                  color: '#203ff5',
+                  width: 20,
+                  height: 20,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                }}
+              >
+                {'References Links'.toUpperCase()}
+              </Typography>
+            </Box>
+
+            {campaign?.campaignBrief?.referencesLinks?.length > 0 ? (
+              <List>
+                {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
+                  <ListItem key={index}>
+                    <ListItemIcon>
+                      <Iconify icon="ix:reference" />
+                    </ListItemIcon>
+                    <Link key={index} href={link} target="_blank">
+                      {link}
+                    </Link>
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                No references found.
+              </Typography>
+            )}
           </Box>
         </Stack>
 
@@ -439,6 +511,7 @@ const CampaignInfo = ({ campaign }) => {
             </Stack>
           </Box>
 
+          {/* Campaign attachments */}
           <Box
             sx={{
               ...BoxStyle,
@@ -464,7 +537,7 @@ const CampaignInfo = ({ campaign }) => {
                   fontSize: '0.8rem',
                 }}
               >
-                Other Attachments
+                {'Other Attachments'.toUpperCase()}
               </Typography>
             </Box>
             {campaign?.campaignBrief?.otherAttachments?.length > 0 ? (
