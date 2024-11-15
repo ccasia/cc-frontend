@@ -47,7 +47,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 const steps = [
-  'Select Client or Brand',
+  'Select Client or Agency',
   'General Campaign Information',
   'Campaign Details',
   'Campaign Images',

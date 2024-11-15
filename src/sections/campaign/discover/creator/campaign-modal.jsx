@@ -448,13 +448,26 @@ const CampaignModal = ({
               {!isFormCompleted ? (
                 <Button
                   variant="contained"
-                  color="warning"
-                  sx={{
-                    px: 5,
-                  }}
                   onClick={dialog.onTrue}
+                  sx={{
+                    backgroundColor: '#273eec',
+                    color: 'white',
+                    borderBottom: '5px solid #152382 !important',
+                    border: 'none',
+                    '&:hover': {
+                      backgroundColor: '#f57c00',
+                      borderBottom: '5px solid #b26a00 !important',
+                    },
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                    padding: { xs: '4px 12px', sm: '6px 18px' },
+                    minWidth: '100px',
+                    height: '42px',
+                    boxShadow: 'none',
+                    textTransform: 'none',
+                    fontWeight: 650,
+                  }}
                 >
-                  Complete profile
+                  Complete Profile
                 </Button>
               ) : hasPitched ? (
                 existingPitch.status === 'approved' ? (
