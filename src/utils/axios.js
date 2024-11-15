@@ -155,6 +155,7 @@ export const endpoints = {
   },
   campaign: {
     createCampaign: '/api/campaign/createCampaign',
+    spreadsheet: '/api/campaign/spreadsheet',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
     updateOrCreateDefaultTimeline: '/api/campaign/updateOrCreateDefaultTimeline',
     getDefaultTimeline: '/api/campaign/defaultTimeline',
