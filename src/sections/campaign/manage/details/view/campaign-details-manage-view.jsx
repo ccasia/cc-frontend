@@ -13,6 +13,7 @@ import {
   Chip,
   Grid,
   List,
+  Link,
   Stack,
   Avatar,
   Dialog,
@@ -50,6 +51,7 @@ import { MultiFilePreview } from 'src/components/upload';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import { EditTimeline } from './EditTimeline';
+import EditReferences from './EditReferences';
 import EditAttachments from './EditAttachment';
 import { EditDosAndDonts } from './EditDosAndDonts';
 import EditCampaignAdmin from './EditCampaignAdmin';
@@ -115,6 +117,7 @@ const CampaignDetailManageView = ({ id }) => {
     campaignImages: false,
     campaignAdmin: false,
     campaignAttachments: false,
+    campaignReferences: false,
   });
 
   const onClose = (data) => {
@@ -778,6 +781,51 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
+  const renderReferenceLinks = (
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Reference Links</Typography>
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Campaign Reference"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignReferences: true,
+              }))
+            }
+          />
+        )}
+
+        {campaign?.campaignBrief?.referencesLinks?.length > 0 ? (
+          <List>
+            {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
+              <ListItem key={index}>
+                <ListItemIcon>
+                  <Iconify icon="ix:reference" />
+                </ListItemIcon>
+                <Link
+                  key={index}
+                  href={link}
+                  target="_blank"
+                  sx={{ overflowX: 'auto', scrollbarWidth: 'none' }}
+                >
+                  {link}
+                </Link>
+              </ListItem>
+            ))}
+          </List>
+        ) : (
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            No references found.
+          </Typography>
+        )}
+      </Box>
+
+      {isEditable && <EditReferences open={open} campaign={campaign} onClose={onClose} />}
+    </>
+  );
+
   const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
 
   const copyDialogContainer = (
@@ -930,6 +978,7 @@ const CampaignDetailManageView = ({ id }) => {
                 {renderTimeline}
                 {renderAdminManager}
                 {renderAttachments}
+                {renderReferenceLinks}
               </Stack>
             </Grid>
           </>

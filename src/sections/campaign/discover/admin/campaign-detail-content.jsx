@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
+import React from 'react';
 import { pdfjs } from 'react-pdf';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
@@ -9,6 +9,7 @@ import {
   Box,
   List,
   Chip,
+  Link,
   Stack,
   Paper,
   Table,
@@ -24,8 +25,6 @@ import {
   ListItemText,
   TableContainer,
 } from '@mui/material';
-
-import { useBoolean } from 'src/hooks/use-boolean';
 
 import Iconify from 'src/components/iconify';
 import Carousel from 'src/components/carousel/carousel';
@@ -49,8 +48,8 @@ const ChipStyle = {
 };
 
 const CampaignDetailContent = ({ campaign }) => {
-  const pdf = useBoolean();
-  const [pages, setPages] = useState();
+  // const pdf = useBoolean();
+  // const [pages, setPages] = useState();
 
   const renderGallery = (
     <Box>
@@ -323,6 +322,30 @@ const CampaignDetailContent = ({ campaign }) => {
     </Box>
   );
 
+  const renderReferencesLinks = (
+    <Box>
+      <Typography variant="h5">References</Typography>
+      {campaign?.campaignBrief?.referencesLinks?.length > 0 ? (
+        <List>
+          {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
+            <ListItem key={index}>
+              <ListItemIcon>
+                <Iconify icon="ix:reference" />
+              </ListItemIcon>
+              <Link key={index} href={link} target="_blank">
+                {link}
+              </Link>
+            </ListItem>
+          ))}
+        </List>
+      ) : (
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          No references found.
+        </Typography>
+      )}
+    </Box>
+  );
+
   return (
     <>
       {renderGallery}
@@ -338,6 +361,15 @@ const CampaignDetailContent = ({ campaign }) => {
         />
 
         {renderAttachmentFiles}
+
+        <Divider
+          sx={{
+            borderStyle: 'dashed',
+            my: 2,
+          }}
+        />
+
+        {renderReferencesLinks}
 
         {/* <Stack gap={1.5}>
           <Typography variant="h5">Agreement Form</Typography>

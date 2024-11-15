@@ -3,7 +3,17 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 
-import { Box, Chip, Stack, Avatar, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  List,
+  Link,
+  Stack,
+  Avatar,
+  ListItem,
+  Typography,
+  ListItemIcon,
+} from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -272,6 +282,48 @@ const CampaignInfo = ({ campaign }) => {
               ))}
             </Stack>
           </Box>
+
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="ep:guide"
+                sx={{
+                  color: '#203ff5',
+                  width: 20,
+                  height: 20,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                }}
+              >
+                References Links
+              </Typography>
+            </Box>
+
+            {campaign?.campaignBrief?.referencesLinks?.length > 0 ? (
+              <List>
+                {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
+                  <ListItem key={index}>
+                    <ListItemIcon>
+                      <Iconify icon="ix:reference" />
+                    </ListItemIcon>
+                    <Link key={index} href={link} target="_blank">
+                      {link}
+                    </Link>
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                No references found.
+              </Typography>
+            )}
+          </Box>
         </Stack>
 
         {/* Right Column */}
@@ -439,6 +491,7 @@ const CampaignInfo = ({ campaign }) => {
             </Stack>
           </Box>
 
+          {/* Campaign attachments */}
           <Box
             sx={{
               ...BoxStyle,
