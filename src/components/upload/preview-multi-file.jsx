@@ -15,11 +15,29 @@ import FileThumbnail, { fileData } from '../file-thumbnail';
 // ----------------------------------------------------------------------
 
 export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
+  const onDownload = (file) => {
+    // Create an anchor element
+    const link = document.createElement('a');
+
+    // Set the download URL to the file URL provided
+    link.href = file;
+
+    // Set the filename for the download
+    link.download = file || file.split('/').pop(); // Use the filename passed or extract from the URL
+
+    // Trigger the click to start the download
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+
+    // Remove the link after the download is triggered
+    document.body.removeChild(link);
+  };
+
   return (
     <AnimatePresence initial={false}>
       {files?.map((file) => {
         const { key, name = '', size = 0 } = fileData(file);
-
         const isNotFormatFile = typeof file === 'string';
 
         if (thumbnail) {
@@ -48,6 +66,7 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                 file={file}
                 sx={{ position: 'absolute' }}
                 imgSx={{ position: 'absolute' }}
+                onDownload={() => onDownload(file)}
               />
 
               {onRemove && (

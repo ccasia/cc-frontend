@@ -42,20 +42,16 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const { threads } = useGetAllThreads();
 
   useEffect(() => {
-  if (threads) {
-    // Extract archived status from threads
-    const archivedThreadIds = threads
-      .filter(thread => 
-        thread.UserThread.some(ut => ut.userId === user.id && ut.archived)
-      )
-      .map(thread => thread.id);
+    if (threads) {
+      // Extract archived status from threads
+      const archivedThreadIds = threads
+        .filter((thread) => thread.UserThread.some((ut) => ut.userId === user.id && ut.archived))
+        .map((thread) => thread.id);
 
-    setArchivedChats(archivedThreadIds); 
-    console.log("Archvied", archivedThreadIds)
-  }
-}, [threads]);
-
- 
+      setArchivedChats(archivedThreadIds);
+      console.log('Archvied', archivedThreadIds);
+    }
+  }, [threads]);
 
   const handleOpenInfoModal = () => {
     setOpenInfoModal(true);
@@ -287,65 +283,64 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
           )}
         </Box>
 
-        {(isAdmin) && contacts.length > 0 && (
-        <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-        }}
-      >
-      
-      
-    
-        {/* Autocomplete component */}
-        <Autocomplete
-          sx={{ minWidth: 320 }}
-          popupIcon={null}
-          disablePortal
-          noOptionsText={<SearchNotFound query={contacts} />}
-          onChange={handleChange}
-          options={contacts}
-          getOptionLabel={(recipient) => recipient.name}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Search for creators"
-              InputProps={{
-                ...params.InputProps,
-                startAdornment: (
-                  <>
-                     <Iconify icon="material-symbols:search-rounded" style={{  color: 'black', marginRight: '8px' }} />
-                    {params.InputProps.startAdornment}
-                  </>
-                )
-              }}
-            />
-          )}
-          renderOption={(props, recipient, { selected }) => (
-            <li {...props} key={recipient.id}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <Avatar
-                  alt={recipient.name}
-                  src={recipient.photoURL}
-                  sx={{ width: 32, height: 32, mr: 1 }}
+        {/* {isAdmin && contacts.length > 0 && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <Autocomplete
+              sx={{ minWidth: 320 }}
+              popupIcon={null}
+              disablePortal
+              noOptionsText={<SearchNotFound query={contacts} />}
+              onChange={handleChange}
+              options={contacts}
+              getOptionLabel={(recipient) => recipient.name}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Search for creators"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <>
+                        <Iconify
+                          icon="material-symbols:search-rounded"
+                          style={{ color: 'black', marginRight: '8px' }}
+                        />
+                        {params.InputProps.startAdornment}
+                      </>
+                    ),
+                  }}
                 />
-                <div>
-                  <Typography variant="body1">{recipient.name}</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {recipient.email}
-                  </Typography>
-                </div>
-              </Box>
-            </li>
-          )}
-        />
-      </Box>
-    )}
+              )}
+              renderOption={(props, recipient, { selected }) => (
+                <li {...props} key={recipient.id}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Avatar
+                      alt={recipient.name}
+                      src={recipient.photoURL}
+                      sx={{ width: 32, height: 32, mr: 1 }}
+                    />
+                    <div>
+                      <Typography variant="body1">{recipient.name}</Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        {recipient.email}
+                      </Typography>
+                    </div>
+                  </Box>
+                </li>
+              )}
+            />
+          </Box>
+        )} */}
         {/* Flex End: Icon buttons */}
         <Box paddingLeft={1} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Button
@@ -380,6 +375,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
             onClose={handleCloseInfoModal}
             threadId={threadId}
           />
+
           <ChatArchiveModal
             open={openArchiveModal}
             onClose={handleCloseArchiveModal}
@@ -390,8 +386,8 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         </Box>
       </Box>
     </>
-
-)}
+  );
+}
 
 ChatHeaderCompose.propTypes = {
   currentUserId: PropTypes.string,

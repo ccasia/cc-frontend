@@ -6,14 +6,13 @@ import { Box, Typography } from '@mui/material';
 
 import { endpoints } from 'src/utils/axios';
 
-import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import CampaignItem from './campaign-item';
 
 const ActiveCampaignView = ({ searchQuery, campaigns }) => {
   // const { campaigns: data, isLoading } = useGetCampaigns('creator');
-  const { user } = useAuthContext();
+  // const { user } = useAuthContext();
   const { socket } = useSocketContext();
 
   // const filteredCampaigns = useMemo(

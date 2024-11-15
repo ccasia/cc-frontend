@@ -20,6 +20,14 @@ const iconUrl = (icon) => `/assets/icons/files/${icon}.svg`;
 export function fileFormat(fileUrl) {
   let format;
 
+  if (fileUrl.includes('pdf')) {
+    return 'pdf';
+  }
+
+  if (fileUrl.includes('ppt')) {
+    return 'powerpoint';
+  }
+
   switch (fileUrl?.includes(fileTypeByUrl(fileUrl))) {
     case FORMAT_TEXT.includes(fileTypeByUrl(fileUrl)):
       format = 'txt';
@@ -106,6 +114,7 @@ export function fileThumb(fileUrl) {
     default:
       thumb = iconUrl('ic_file');
   }
+
   return thumb;
 }
 

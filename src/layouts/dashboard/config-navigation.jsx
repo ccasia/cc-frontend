@@ -106,11 +106,6 @@ export function useNavData() {
             icon: <Iconify icon="material-symbols:explore-outline" width={25} />,
             children: [
               {
-                // title: 'Manage Campaign',
-                title: 'Lists',
-                path: paths.dashboard.campaign.view,
-              },
-              {
                 roles: ['superadmin', 'CSM'],
                 title: 'Create',
                 path: paths.dashboard.campaign.create,
@@ -119,6 +114,11 @@ export function useNavData() {
                 roles: ['superadmin', 'CSM'],
                 title: 'Edit',
                 path: paths.dashboard.campaign.manage,
+              },
+              {
+                // title: 'Manage Campaign',
+                title: 'Lists',
+                path: paths.dashboard.campaign.view,
               },
               {
                 roles: ['superadmin'],
@@ -171,22 +171,22 @@ export function useNavData() {
               },
             ],
           },
-          {
-            roles: ['superadmin', 'CSM'],
-            title: 'Clients',
-            path: paths.dashboard.company.root,
-            icon: <Iconify icon="mdi:company" width={25} />,
-            children: [
-              {
-                title: 'List',
-                path: paths.dashboard.company.discover,
-              },
-              {
-                title: 'Create',
-                path: paths.dashboard.company.create,
-              },
-            ],
-          },
+          // {
+          //   roles: ['superadmin', 'CSM'],
+          //   title: 'Clients',
+          //   path: paths.dashboard.company.root,
+          //   icon: <Iconify icon="mdi:company" width={25} />,
+          //   children: [
+          //     {
+          //       title: 'List',
+          //       path: paths.dashboard.company.discover,
+          //     },
+          //     {
+          //       title: 'Create',
+          //       path: paths.dashboard.company.create,
+          //     },
+          //   ],
+          // },
           {
             roles: ['superadmin'],
             title: 'Roles',

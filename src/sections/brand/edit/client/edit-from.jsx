@@ -1,12 +1,16 @@
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
+import { Controller } from 'react-hook-form';
+import { formatIncompletePhoneNumber } from 'libphonenumber-js';
 
-import { Box, Stack, Button, Typography } from '@mui/material';
+import { Box, Stack, Button, TextField, Typography } from '@mui/material';
+
+// import { Box, Stack, Button, TextField, Typography } from '@mui/material';
 
 import { RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
 
 const CompanyEditForm = ({ company, fieldsArray, methods }) => {
-  const { fields, append } = fieldsArray;
+  const { fields, append, control } = fieldsArray;
 
   const { setValue } = methods;
 
@@ -25,6 +29,11 @@ const CompanyEditForm = ({ company, fieldsArray, methods }) => {
     [setValue]
   );
 
+  const handlePhoneChange = (event, onChange) => {
+    const formattedNumber = formatIncompletePhoneNumber(event.target.value, 'MY');
+    onChange(formattedNumber);
+  };
+
   return (
     <Stack spacing={5} mt={2}>
       <RHFUploadAvatar name="companyLogo" onDrop={handleDrop} />
@@ -41,7 +50,23 @@ const CompanyEditForm = ({ company, fieldsArray, methods }) => {
       >
         <RHFTextField name="companyName" label="Company name" />
         <RHFTextField name="companyEmail" label="Company email" />
-        <RHFTextField name="companyPhone" label="Company phone" />
+        <Controller
+          name="companyPhone"
+          control={control}
+          defaultValue=""
+          rules={{ required: 'Phone number is required' }}
+          render={({ field, fieldState }) => (
+            <TextField
+              {...field}
+              placeholder="Phone Number"
+              variant="outlined"
+              fullWidth
+              error={!!fieldState.error}
+              helperText={fieldState.error ? fieldState.error.message : ''}
+              onChange={(event) => handlePhoneChange(event, field.onChange)}
+            />
+          )}
+        />
         <RHFTextField name="companyAddress" label="Company address" />
         <RHFTextField name="companyWebsite" label="Company webiste" />
         <RHFTextField name="companyAbout" label="Company about" />

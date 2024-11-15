@@ -24,7 +24,7 @@ import UserQuickEditForm from './user-quick-edit-form';
 // ----------------------------------------------------------------------
 
 export default function UserTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
-  const { name, admin, country, phoneNumber, status, photoURL } = row;
+  const { name, admin, country, phoneNumber, status, photoURL, role } = row;
 
   const confirm = useBoolean();
 
@@ -88,10 +88,15 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Quick Edit" placement="top" arrow>
-            <IconButton color={quickEdit.value ? 'inherit' : 'default'} onClick={quickEdit.onTrue}>
+            <IconButton
+              color={quickEdit.value ? 'inherit' : 'default'}
+              onClick={quickEdit.onTrue}
+              disabled={role === 'admin'}
+            >
               <Iconify icon="solar:pen-bold" />
             </IconButton>
           </Tooltip>
+
           <Tooltip title="Delete" placement="top" arrow>
             <IconButton
               onClick={() => {
@@ -99,6 +104,7 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
                 popover.onClose();
               }}
               sx={{ color: 'error.main' }}
+              disabled={role === 'admin'}
             >
               <Iconify icon="solar:trash-bin-trash-bold" />
             </IconButton>

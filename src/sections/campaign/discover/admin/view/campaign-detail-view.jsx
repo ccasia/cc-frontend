@@ -1,32 +1,12 @@
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import {
-  Tab,
-  Box,
-  Tabs,
-  List,
-  Card,
-  Stack,
-  Popper,
-  Button,
-  Divider,
-  ListItem,
-  Container,
-  IconButton,
-  Typography,
-  ListItemText,
-  ListItemIcon,
-} from '@mui/material';
+import { Tab, Tabs, Stack, Button, Container } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
-
-import { timelineHelper } from 'src/utils/timelineHelper';
-import { filterTimelineAdmin } from 'src/utils/filterTimeline';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -51,7 +31,7 @@ const CampaignDetailView = ({ id }) => {
   const reminderRef = useRef(null);
 
   const open = Boolean(anchorEl);
-  const idd = open ? 'simple-popper' : undefined;
+  // const idd = open ? 'simple-popper' : undefined;
 
   // const currentCampaign = useMemo(
   //   () => !isLoading && campaigns.find((campaign) => campaign.id === id),
@@ -63,29 +43,29 @@ const CampaignDetailView = ({ id }) => {
     [campaigns, id, isLoading]
   );
 
-  let timeline =
-    currentCampaign?.defaultcampaignTimeline || currentCampaign?.customcampaignTimeline;
+  // let timeline =
+  //   currentCampaign?.defaultcampaignTimeline || currentCampaign?.customcampaignTimeline;
 
-  timeline = filterTimelineAdmin(timeline);
+  // timeline = filterTimelineAdmin(timeline);
 
-  const isDue = (dueDate) => {
-    const startReminderDate = dayjs(dueDate).subtract(2, 'day');
+  // const isDue = (dueDate) => {
+  //   const startReminderDate = dayjs(dueDate).subtract(2, 'day');
 
-    if (startReminderDate <= dayjs() && dayjs() < dayjs(dueDate)) {
-      return true;
-    }
-    return false;
-  };
+  //   if (startReminderDate <= dayjs() && dayjs() < dayjs(dueDate)) {
+  //     return true;
+  //   }
+  //   return false;
+  // };
 
-  const isDone = (dueDate) => {
-    const today = dayjs();
+  // const isDone = (dueDate) => {
+  //   const today = dayjs();
 
-    if (today > dayjs(dueDate)) {
-      return true;
-    }
+  //   if (today > dayjs(dueDate)) {
+  //     return true;
+  //   }
 
-    return false;
-  };
+  //   return false;
+  // };
 
   const [currentTab, setCurrentTab] = useState(
     localStorage.getItem('campaigndetail') || 'campaign-content'
@@ -154,197 +134,197 @@ const CampaignDetailView = ({ id }) => {
   }, [open]);
 
   // eslint-disable-next-line no-unused-vars
-  const renderReminder = (
-    <>
-      <IconButton
-        ref={reminderRef}
-        id="reminder"
-        sx={{
-          position: 'fixed',
-          bottom: 30,
-          right: 30,
-          border: (theme) => `1px solid ${theme.palette.background.paper}`,
-          bgcolor: (theme) => `${theme.palette.background.paper}`,
-        }}
-        onClick={(event) => {
-          setAnchorEl(anchorEl ? null : event.currentTarget);
-        }}
-      >
-        <Iconify icon="hugeicons:apple-reminder" width={30} />
-      </IconButton>
-      <Popper id={idd} open={open} anchorEl={anchorEl} placement="top-end">
-        <Box
-          sx={{
-            p: 2,
-            bgcolor: 'background.paper',
-            mb: 1,
+  // const renderReminder = (
+  //   <>
+  //     <IconButton
+  //       ref={reminderRef}
+  //       id="reminder"
+  //       sx={{
+  //         position: 'fixed',
+  //         bottom: 30,
+  //         right: 30,
+  //         border: (theme) => `1px solid ${theme.palette.background.paper}`,
+  //         bgcolor: (theme) => `${theme.palette.background.paper}`,
+  //       }}
+  //       onClick={(event) => {
+  //         setAnchorEl(anchorEl ? null : event.currentTarget);
+  //       }}
+  //     >
+  //       <Iconify icon="hugeicons:apple-reminder" width={30} />
+  //     </IconButton>
+  //     <Popper id={idd} open={open} anchorEl={anchorEl} placement="top-end">
+  //       <Box
+  //         sx={{
+  //           p: 2,
+  //           bgcolor: 'background.paper',
+  //           mb: 1,
 
-            width: {
-              xs: 250,
-              md: 450,
-            },
-            border: (theme) => `1px solid ${theme.palette.primary.light}`,
-            position: 'relative',
-          }}
-          component={Card}
-        >
-          <Stack alignItems="center" direction="row" justifyContent="space-between">
-            <Stack alignItems="center" spacing={1} direction="row">
-              <Iconify icon="material-symbols:info-outline" />
-              <Typography variant="h5">Reminders</Typography>
-            </Stack>
-            <Typography variant="caption">{dayjs().format('ll')}</Typography>
-          </Stack>
-          <Divider
-            sx={{
-              borderStyle: 'dashed',
-              my: 1.5,
-            }}
-          />
-          <List>
-            <ListItem>
-              {isDue(
-                timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.filterPitch)
-              ) && (
-                <ListItemIcon>
-                  <Iconify icon="clarity:warning-solid" color="warning.main" />
-                </ListItemIcon>
-              )}
-              {isDone(
-                timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.filterPitch)
-              ) && (
-                <ListItemIcon>
-                  <Iconify icon="hugeicons:tick-04" color="success.main" />
-                </ListItemIcon>
-              )}
-              <ListItemText
-                primary="Filter Pitch"
-                secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.filterPitch)}`}
-                primaryTypographyProps={{
-                  variant: 'subtitle2',
-                }}
-                secondaryTypographyProps={{
-                  variant: 'caption',
-                }}
-              />
-            </ListItem>
-            <ListItem>
-              {isDue(
-                timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlisted)
-              ) && (
-                <ListItemIcon>
-                  <Iconify icon="clarity:warning-solid" color="warning.main" />
-                </ListItemIcon>
-              )}
-              {isDone(
-                timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlisted)
-              ) && (
-                <ListItemIcon>
-                  <Iconify icon="hugeicons:tick-04" color="success.main" />
-                </ListItemIcon>
-              )}
-              <ListItemText
-                primary="Shortlist Creator"
-                secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlisted)}`}
-                primaryTypographyProps={{
-                  variant: 'subtitle2',
-                }}
-                secondaryTypographyProps={{
-                  variant: 'caption',
-                }}
-              />
-            </ListItem>
-            <ListItem>
-              {isDue(
-                timelineHelper(
-                  currentCampaign?.campaignBrief?.startDate,
-                  timeline?.feedBackFirstDraft
-                )
-              ) && (
-                <ListItemIcon>
-                  <Iconify icon="clarity:warning-solid" color="warning.main" />
-                </ListItemIcon>
-              )}
-              {isDone(
-                timelineHelper(
-                  currentCampaign?.campaignBrief?.startDate,
-                  timeline?.feedBackFirstDraft
-                )
-              ) && (
-                <ListItemIcon>
-                  <Iconify icon="hugeicons:tick-04" color="success.main" />
-                </ListItemIcon>
-              )}
-              <ListItemText
-                primary="Feedback First Draft"
-                secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.feedBackFirstDraft)}`}
-                primaryTypographyProps={{
-                  variant: 'subtitle2',
-                }}
-                secondaryTypographyProps={{
-                  variant: 'caption',
-                }}
-              />
-            </ListItem>
-            <ListItem>
-              {isDue(
-                timelineHelper(
-                  currentCampaign?.campaignBrief?.startDate,
-                  timeline?.feedBackFinalDraft
-                )
-              ) && (
-                <ListItemIcon>
-                  <Iconify icon="clarity:warning-solid" color="warning.main" />
-                </ListItemIcon>
-              )}
-              {isDone(
-                timelineHelper(
-                  currentCampaign?.campaignBrief?.startDate,
-                  timeline?.feedBackFinalDraft
-                )
-              ) && (
-                <ListItemIcon>
-                  <Iconify icon="hugeicons:tick-04" color="success.main" />
-                </ListItemIcon>
-              )}
-              <ListItemText
-                primary="Feedback First Draft"
-                secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.feedBackFinalDraft)}`}
-                primaryTypographyProps={{
-                  variant: 'subtitle2',
-                }}
-                secondaryTypographyProps={{
-                  variant: 'caption',
-                }}
-              />
-            </ListItem>
-            <ListItem>
-              {isDue(timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.qc)) && (
-                <ListItemIcon>
-                  <Iconify icon="clarity:warning-solid" color="warning.main" />
-                </ListItemIcon>
-              )}
-              {isDone(timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.qc)) && (
-                <ListItemIcon>
-                  <Iconify icon="hugeicons:tick-04" color="success.main" />
-                </ListItemIcon>
-              )}
-              <ListItemText
-                primary="Feedback First Draft"
-                secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.qc)}`}
-                primaryTypographyProps={{
-                  variant: 'subtitle2',
-                }}
-                secondaryTypographyProps={{
-                  variant: 'caption',
-                }}
-              />
-            </ListItem>
-          </List>
-        </Box>
-      </Popper>
-    </>
-  );
+  //           width: {
+  //             xs: 250,
+  //             md: 450,
+  //           },
+  //           border: (theme) => `1px solid ${theme.palette.primary.light}`,
+  //           position: 'relative',
+  //         }}
+  //         component={Card}
+  //       >
+  //         <Stack alignItems="center" direction="row" justifyContent="space-between">
+  //           <Stack alignItems="center" spacing={1} direction="row">
+  //             <Iconify icon="material-symbols:info-outline" />
+  //             <Typography variant="h5">Reminders</Typography>
+  //           </Stack>
+  //           <Typography variant="caption">{dayjs().format('ll')}</Typography>
+  //         </Stack>
+  //         <Divider
+  //           sx={{
+  //             borderStyle: 'dashed',
+  //             my: 1.5,
+  //           }}
+  //         />
+  //         <List>
+  //           <ListItem>
+  //             {isDue(
+  //               timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.filterPitch)
+  //             ) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="clarity:warning-solid" color="warning.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             {isDone(
+  //               timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.filterPitch)
+  //             ) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="hugeicons:tick-04" color="success.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             <ListItemText
+  //               primary="Filter Pitch"
+  //               secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.filterPitch)}`}
+  //               primaryTypographyProps={{
+  //                 variant: 'subtitle2',
+  //               }}
+  //               secondaryTypographyProps={{
+  //                 variant: 'caption',
+  //               }}
+  //             />
+  //           </ListItem>
+  //           <ListItem>
+  //             {isDue(
+  //               timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlisted)
+  //             ) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="clarity:warning-solid" color="warning.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             {isDone(
+  //               timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlisted)
+  //             ) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="hugeicons:tick-04" color="success.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             <ListItemText
+  //               primary="Shortlist Creator"
+  //               secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.shortlisted)}`}
+  //               primaryTypographyProps={{
+  //                 variant: 'subtitle2',
+  //               }}
+  //               secondaryTypographyProps={{
+  //                 variant: 'caption',
+  //               }}
+  //             />
+  //           </ListItem>
+  //           <ListItem>
+  //             {isDue(
+  //               timelineHelper(
+  //                 currentCampaign?.campaignBrief?.startDate,
+  //                 timeline?.feedBackFirstDraft
+  //               )
+  //             ) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="clarity:warning-solid" color="warning.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             {isDone(
+  //               timelineHelper(
+  //                 currentCampaign?.campaignBrief?.startDate,
+  //                 timeline?.feedBackFirstDraft
+  //               )
+  //             ) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="hugeicons:tick-04" color="success.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             <ListItemText
+  //               primary="Feedback First Draft"
+  //               secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.feedBackFirstDraft)}`}
+  //               primaryTypographyProps={{
+  //                 variant: 'subtitle2',
+  //               }}
+  //               secondaryTypographyProps={{
+  //                 variant: 'caption',
+  //               }}
+  //             />
+  //           </ListItem>
+  //           <ListItem>
+  //             {isDue(
+  //               timelineHelper(
+  //                 currentCampaign?.campaignBrief?.startDate,
+  //                 timeline?.feedBackFinalDraft
+  //               )
+  //             ) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="clarity:warning-solid" color="warning.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             {isDone(
+  //               timelineHelper(
+  //                 currentCampaign?.campaignBrief?.startDate,
+  //                 timeline?.feedBackFinalDraft
+  //               )
+  //             ) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="hugeicons:tick-04" color="success.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             <ListItemText
+  //               primary="Feedback First Draft"
+  //               secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.feedBackFinalDraft)}`}
+  //               primaryTypographyProps={{
+  //                 variant: 'subtitle2',
+  //               }}
+  //               secondaryTypographyProps={{
+  //                 variant: 'caption',
+  //               }}
+  //             />
+  //           </ListItem>
+  //           <ListItem>
+  //             {isDue(timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.qc)) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="clarity:warning-solid" color="warning.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             {isDone(timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.qc)) && (
+  //               <ListItemIcon>
+  //                 <Iconify icon="hugeicons:tick-04" color="success.main" />
+  //               </ListItemIcon>
+  //             )}
+  //             <ListItemText
+  //               primary="Feedback First Draft"
+  //               secondary={`Due ${timelineHelper(currentCampaign?.campaignBrief?.startDate, timeline?.qc)}`}
+  //               primaryTypographyProps={{
+  //                 variant: 'subtitle2',
+  //               }}
+  //               secondaryTypographyProps={{
+  //                 variant: 'caption',
+  //               }}
+  //             />
+  //           </ListItem>
+  //         </List>
+  //       </Box>
+  //     </Popper>
+  //   </>
+  // );
 
   const renderTabContent = {
     overview: <CampaignOverview campaign={currentCampaign} />,
@@ -383,25 +363,48 @@ const CampaignDetailView = ({ id }) => {
           { name: currentCampaign?.name },
         ]}
         action={
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={
-              <Iconify
-                icon="material-symbols-light:bookmark-manager-outline-rounded"
-                width={19}
-                sx={{ ml: 1 }}
-              />
-            }
-            onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
-            sx={{
-              mb: 3,
-              borderRadius: 1,
-              boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
-            }}
-          >
-            Edit
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Iconify icon="tabler:external-link" width={19} sx={{ ml: 1 }} />}
+              onClick={() => {
+                const a = document.createElement('a');
+                a.href = currentCampaign?.spreadSheetURL;
+                a.target = '_blank';
+                a.click();
+                document.body.removeChild(a);
+              }}
+              sx={{
+                mb: 3,
+                borderRadius: 1,
+                boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
+              }}
+              disabled={!currentCampaign?.spreadSheetURL}
+            >
+              Google Sheet
+            </Button>
+
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={
+                <Iconify
+                  icon="material-symbols-light:bookmark-manager-outline-rounded"
+                  width={19}
+                  sx={{ ml: 1 }}
+                />
+              }
+              onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
+              sx={{
+                mb: 3,
+                borderRadius: 1,
+                boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
+              }}
+            >
+              Edit
+            </Button>
+          </Stack>
         }
       />
 

@@ -18,7 +18,6 @@ import Main from './main';
 import Header from './header';
 import NavMini from './nav-mini';
 import NavVertical from './nav-vertical';
-import NavHorizontal from './nav-horizontal';
 
 // ----------------------------------------------------------------------
 
@@ -47,109 +46,30 @@ export default function DashboardLayout({ children }) {
 
   const nav = useBoolean();
 
-  const isHorizontal = settings.themeLayout === 'horizontal';
+  // const isHorizontal = settings.themeLayout === 'horizontal';
 
   const isMini = settings.themeLayout === 'mini';
 
   const renderNavMini = <NavMini />;
 
-  const renderHorizontal = <NavHorizontal />;
+  // const renderHorizontal = <NavHorizontal />;
 
   const renderNavVertical = <NavVertical openNav={nav.value} onCloseNav={nav.onFalse} />;
 
-  if (isHorizontal) {
-    return (
-      <>
-        <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
+  // if (isHorizontal) {
+  //   return (
+  //     <>
+  //       <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
-        {lgUp ? renderHorizontal : renderNavVertical}
+  //       {lgUp ? renderHorizontal : renderNavVertical}
 
-        <Main>{children}</Main>
-      </>
-    );
-  }
+  //       <Main>{children}</Main>
+  //     </>
+  //   );
+  // }
 
   if (isMini) {
     return (
-      <>
-        {/* <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
-
-        <Box
-          sx={{
-            minHeight: 1,
-            display: 'flex',
-            flexDirection: { xs: 'column', lg: 'row' },
-          }}
-        >
-          {lgUp ? renderNavMini : renderNavVertical}
-
-          <Main>{children}</Main>
-        </Box> */}
-        <Box
-          sx={{
-            minHeight: 1,
-            display: 'flex',
-            flexDirection: { xs: 'column', lg: 'row' },
-          }}
-        >
-          {lgUp ? renderNavMini : renderNavVertical}
-
-          {/* <Box
-            sx={{
-              flexGrow: 1,
-              bgcolor: (theme) => theme.palette.background.default,
-              height: '100vh',
-              width: '100%',
-              py: lgUp && 2,
-              pr: lgUp && 2,
-            }}
-          >
-            <Box
-              sx={{
-                bgcolor: (theme) => theme.palette.background.paper,
-                width: 1,
-                height: 1,
-                borderRadius: 2,
-                overflow: 'auto',
-              }}
-            >
-              <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
-
-              <Main sx={{ mt: 2 }}>{children}</Main>
-            </Box>
-          </Box> */}
-          <Box
-            sx={{
-              width: 1,
-              height: '95vh',
-              borderRadius: 2,
-              my: 'auto',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
-
-            <Box
-              sx={{
-                scrollbarWidth: 'none',
-                overflow: 'auto',
-                height: 1,
-              }}
-            >
-              <Main sx={{ py: 2 }}>{children}</Main>
-            </Box>
-          </Box>
-        </Box>
-      </>
-    );
-  }
-
-  return (
-    <>
-      {/* <Header onOpenNav={nav.onTrue} isOnline={isOnline} /> */}
-
       <Box
         sx={{
           minHeight: 1,
@@ -158,64 +78,69 @@ export default function DashboardLayout({ children }) {
           pr: lgUp && 2,
         }}
       >
-        {renderNavVertical}
+        {lgUp ? renderNavMini : renderNavVertical}
 
         <Box
           sx={{
-            width: 1,
-            height: '100vh',
-            // overflow: 'hidden',
             ...(lgUp && {
               width: 1,
               height: '95vh',
               borderRadius: 2,
               my: 'auto',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
+              overflow: 'auto',
+              position: 'relative',
+              bgcolor: (theme) => theme.palette.background.paper,
             }),
           }}
         >
           <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
-          <Box
-            sx={{
-              scrollbarWidth: 'none',
-              overflow: 'auto',
-              height: 1,
-            }}
-          >
-            <Main sx={{ py: 2 }}>{children}</Main>
-          </Box>
+          <Main sx={{ py: 2 }}>{children}</Main>
         </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        minHeight: 1,
+        display: 'flex',
+        flexDirection: { xs: 'column', lg: 'row' },
+        pr: lgUp && 2,
+      }}
+    >
+      {renderNavVertical}
+
+      <Box
+        sx={{
+          ...(lgUp && {
+            width: 1,
+            height: '95vh',
+            borderRadius: 2,
+            my: 'auto',
+            overflow: 'auto',
+            position: 'relative',
+            bgcolor: (theme) => theme.palette.background.paper,
+          }),
+        }}
+      >
+        <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
         {/* <Box
-          sx={{
-            // bgcolor: (theme) => theme.palette.background.default,
-            height: 1,
-            width: '100%',
-            p: lgUp && 2,
-            // bgcolor: 'black',
-          }}
-        >
-          <Box
             sx={{
-              bgcolor: (theme) => theme.palette.background.paper,
-              height: 1,
-              width: 1,
-              borderRadius: 2,
               scrollbarWidth: 'none',
               overflow: 'auto',
-              pt: 10,
+              height: 1,
+              bgcolor: 'wheat',
+              p: 2,
+              m: 2,
             }}
-          >
-            <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
-
-            <Main>{children}</Main>
-          </Box>
-        </Box> */}
+          > */}
+        <Main sx={{ py: 2 }}>{children}</Main>
+        {/* </Box> */}
       </Box>
-    </>
+    </Box>
   );
 }
 

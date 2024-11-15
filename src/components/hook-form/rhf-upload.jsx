@@ -58,6 +58,37 @@ RHFUploadBox.propTypes = {
 export function RHFUpload({ name, multiple, type, helperText, uploadType, ...other }) {
   const { control } = useFormContext();
 
+
+  // Only accept pdf and powerpoint filetype
+  if (type === 'otherAttachment') {
+    return (
+      <Controller
+        name={name}
+        control={control}
+        render={({ field, fieldState: { error } }) => (
+          <Upload
+            multiple
+            accept={{
+              'application/pdf': [], // Accept PDF files
+              'application/vnd.ms-powerpoint': [], // Accept .ppt files
+              'application/vnd.openxmlformats-officedocument.presentationml.presentation': [],
+            }}
+            files={field.value}
+            error={!!error}
+            helperText={
+              (!!error || helperText) && (
+                <FormHelperText error={!!error} sx={{ px: 2 }}>
+                  {error ? error?.message : helperText}
+                </FormHelperText>
+              )
+            }
+            {...other}
+          />
+        )}
+      />
+    );
+  }
+
   return (
     <Controller
       name={name}

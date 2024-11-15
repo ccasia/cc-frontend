@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
+
 import {
   Box,
-  Button,
   Modal,
+  Button,
   Dialog,
   Avatar,
   Typography,
@@ -12,22 +14,26 @@ import {
   DialogContent,
 } from '@mui/material';
 
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'src/routes/hooks';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import { useGetThreadById } from 'src/api/chat';
 import { useAuthContext } from 'src/auth/hooks';
-import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import Iconify from 'src/components/iconify';
 
 // Modal Component
-const ThreadInfoModal = ({ open, onClose, threadId}) => {
+const ThreadInfoModal = ({ open, onClose, threadId }) => {
   const user = useAuthContext();
   const { thread, loading, error } = useGetThreadById(threadId);
-  
-  const navigate = useNavigate();
-  
+
+  // const navigate = useNavigate();
+  const router = useRouter();
+
   const currentUserId = user?.user.id;
-  const otherUserId = thread?.UserThread?.find(member => member.userId !== currentUserId)?.userId;
-  const isGroup = thread?.isGroup; 
+  const otherUserId = thread?.UserThread?.find((member) => member.userId !== currentUserId)?.userId;
+  const isGroup = thread?.isGroup;
 
   if (!otherUserId) {
     console.error('No valid other user found in the group.');
@@ -36,41 +42,38 @@ const ThreadInfoModal = ({ open, onClose, threadId}) => {
 
   const createThread = async () => {
     try {
-    const existingThreadResponse = await axiosInstance.get(endpoints.threads.getAll);
-    const existingThread = existingThreadResponse.data.find((thread) => {
-      const userIdsInThread = thread.UserThread.map((userThread) => userThread.userId);
-      return (
-        userIdsInThread.includes(currentUserId) &&
-        userIdsInThread.includes(otherUserId) &&
-        !thread.isGroup 
-      );
-    });
-
-    if (existingThread) {
-      navigate(`/dashboard/chat/thread/${existingThread.id}`);
-      onClose();
-    } else {
-     
-      const response = await axiosInstance.post(endpoints.threads.create, {
-        title: `Chat between ${user.name} & ${otherUserName}`, 
-        description: '',
-        userIds: [currentUserId, otherUserId], 
-        isGroup: false, 
+      const existingThreadResponse = await axiosInstance.get(endpoints.threads.getAll);
+      const existingThread = existingThreadResponse.data.find((item) => {
+        const userIdsInThread = item.UserThread.map((userThread) => userThread.userId);
+        return (
+          userIdsInThread.includes(currentUserId) &&
+          userIdsInThread.includes(otherUserId) &&
+          !thread.isGroup
+        );
       });
 
-      mutate(endpoints.threads.getAll); 
-      navigate(`/dashboard/chat/thread/${response.data.id}`);
-      onClose();
-    }
-  } catch (error) {
-    console.error('Error creating thread:', error);
-  }
-  };
-  
-  if (!open) return null;
+      if (existingThread) {
+        router.push(`/dashboard/chat/thread/${existingThread.id}`);
+        onClose();
+      } else {
+        const response = await axiosInstance.post(endpoints.threads.create, {
+          title: `Private Chat between ${user.name}}`,
+          description: '',
+          userIds: [currentUserId, otherUserId],
+          isGroup: false,
+        });
 
+        mutate(endpoints.threads.getAll);
+        router.push(`/dashboard/chat/thread/${response.data.id}`);
+        onClose();
+      }
+    } catch (err) {
+      console.error('Error creating thread:', err);
+    }
+  };
 
   if (error) {
+    // eslint-disable-next-line consistent-return
     return (
       <Dialog open={open} onClose={onClose}>
         <DialogTitle>Error</DialogTitle>
@@ -88,6 +91,7 @@ const ThreadInfoModal = ({ open, onClose, threadId}) => {
     );
   }
 
+  // eslint-disable-next-line consistent-return
   return (
     <Modal
       open={open}
@@ -120,10 +124,7 @@ const ThreadInfoModal = ({ open, onClose, threadId}) => {
             padding: '16px',
           }}
         >
-          <Typography 
-            variant="h6">
-              {isGroup ? 'Group Info' : 'Chat Info'}
-          </Typography>
+          <Typography variant="h6">{isGroup ? 'Group Info' : 'Chat Info'}</Typography>
           <Button
             onClick={onClose}
             sx={{
@@ -210,33 +211,33 @@ const ThreadInfoModal = ({ open, onClose, threadId}) => {
                         {member.userId === user.user.id ? 'You' : member.user.name}
                       </Typography>
                     </Box>
-                    {member.user.role === 'admin' &&  member.userId !== user.user.id && (
+                    {member.user.role === 'admin' && member.userId !== user.user.id && (
                       <>
-                      <Typography variant="caption" sx={{ color: '#555' }}>
-                        ADMIN
-                      </Typography>
-                      <Button 
-                      onClick={createThread}
-                      disabled={member.userId === user.user.id}
-                      variant='oulined' sx={{ 
-                      color: '#1340FF',
-                      boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.2)', 
-                      '&:hover': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                        boxShadow: '0px 6px 8px rgba(0, 0, 0, 0.3)', 
-                      }
-                    }}>
-                      Message
-                    </Button>
-                    </>
-                  
-                  )}
+                        <Typography variant="caption" sx={{ color: '#555' }}>
+                          ADMIN
+                        </Typography>
+                        <Button
+                          onClick={createThread}
+                          disabled={member.userId === user.user.id}
+                          variant="oulined"
+                          sx={{
+                            color: '#1340FF',
+                            boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.2)',
+                            '&:hover': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                              boxShadow: '0px 6px 8px rgba(0, 0, 0, 0.3)',
+                            },
+                          }}
+                        >
+                          Message
+                        </Button>
+                      </>
+                    )}
                   </Box>
                 ))}
               </Box>
             </>
           ) : (
-
             // Single Chat Info
             <Box
               sx={{

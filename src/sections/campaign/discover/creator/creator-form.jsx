@@ -105,11 +105,36 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
         </Box>
       </Box>
 
-      <Stack direction="row" alignItems="center" justifyContent="end" spacing={1} mt={2}>
-        <Button size="small" variant="outlined" onClick={backdrop?.onFalse}>
+      <Stack direction="row" alignItems="center" justifyContent="end" spacing={2} mt={3}>
+        <Button 
+          size="medium"
+          variant="outlined"
+          onClick={backdrop?.onFalse}
+          sx={{
+            minWidth: 120,
+            borderColor: 'grey.400',
+            color: 'grey.600',
+            '&:hover': {
+              borderColor: 'grey.500',
+              bgcolor: 'grey.50',
+            },
+          }}
+        >
           Later
         </Button>
-        <LoadingButton size="small" variant="contained" type="submit" loading={loading.value}>
+        <LoadingButton 
+          size="medium"
+          variant="contained"
+          type="submit"
+          loading={loading.value}
+          sx={{
+            minWidth: 120,
+            bgcolor: 'primary.main',
+            '&:hover': {
+              bgcolor: 'primary.dark',
+            },
+          }}
+        >
           Submit
         </LoadingButton>
       </Stack>
@@ -117,7 +142,7 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
   ) : (
     <Dialog open={dialog.value} onClose={dialog.onFalse} maxWidth="sm" fullWidth>
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>Complete this form</DialogTitle>
+        <DialogTitle>Complete This Form</DialogTitle>
         <DialogContent>
           <Box
             display="grid"
@@ -149,11 +174,36 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
             </Box>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button size="small" variant="outlined" onClick={dialog.onFalse}>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            size="medium"
+            variant="outlined"
+            onClick={dialog.onFalse}
+            sx={{
+              minWidth: 120,
+              borderColor: 'grey.400',
+              color: 'grey.600',
+              '&:hover': {
+                borderColor: 'grey.500',
+                bgcolor: 'grey.50',
+              },
+            }}
+          >
             Close
           </Button>
-          <LoadingButton size="small" variant="contained" type="submit" loading={loading.value}>
+          <LoadingButton
+            size="medium"
+            variant="contained"
+            type="submit"
+            loading={loading.value}
+            sx={{
+              minWidth: 120,
+              bgcolor: 'primary.main',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+              },
+            }}
+          >
             Submit
           </LoadingButton>
         </DialogActions>

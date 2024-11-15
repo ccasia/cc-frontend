@@ -12,6 +12,9 @@ import {
   ListItemText,
 } from '@mui/material';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Label from 'src/components/label';
@@ -20,11 +23,11 @@ import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 
 const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) => {
-  const { logo, name, email, phone, website, campaign, brand } = row;
+  const { logo, name, email, phone, website, campaign, brand, id } = row;
 
   const confirm = useBoolean();
 
-  const quickEdit = useBoolean();
+  const router = useRouter();
 
   const popover = usePopover();
 
@@ -64,7 +67,7 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Quick Edit" placement="top" arrow>
-            <IconButton color={quickEdit.value ? 'inherit' : 'default'} onClick={quickEdit.onTrue}>
+            <IconButton onClick={() => router.push(paths.dashboard.company.companyEdit(id))}>
               <Iconify icon="solar:pen-bold" />
             </IconButton>
           </Tooltip>

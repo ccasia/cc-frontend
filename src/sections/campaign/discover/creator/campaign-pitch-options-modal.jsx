@@ -6,7 +6,6 @@ import {
   Box,
   Stack,
   Dialog,
-  Button,
   Typography,
   IconButton,
   DialogTitle,
@@ -208,19 +207,19 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
           </Box>
         </Stack> */}
       </Dialog>
-      {open && (
-        <Button
-          variant="contained"
-          onClick={handlePitchClick}
-          sx={{
-            position: 'absolute',
-            bottom: 16,
-            right: 16,
-          }}
-        >
-          {hasDraft ? 'Draft' : 'Pitch Yourself'}
-        </Button>
-      )}
+      {/* {open && (
+        // <Button
+        //   variant="contained"
+        //   onClick={handlePitchClick}
+        //   sx={{
+        //     position: 'absolute',
+        //     bottom: 16,
+        //     right: 16,
+        //   }}
+        // >
+        //   {hasDraft ? 'Draft' : 'Pitch Yourself'}
+        // </Button>
+      )} */}
       <CampaignPitchTextModal open={text.value} handleClose={text.onFalse} campaign={campaign} />
       <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} />
     </>

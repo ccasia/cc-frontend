@@ -40,7 +40,6 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
   const [signURL, setSignURL] = useState('');
   const [annotations, setAnnotations] = useState([]);
   const loading = useBoolean();
-  // const signRef = useRef(null);
 
   const smDown = useResponsive('down', 'sm');
 
