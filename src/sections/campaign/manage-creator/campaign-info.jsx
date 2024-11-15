@@ -227,16 +227,23 @@ const CampaignInfo = ({ campaign }) => {
             <Stack spacing={1} sx={{ pl: 0.5 }}>
               {campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
                 <Stack key={index} direction="row" spacing={1} alignItems="center">
-                  <Iconify
-                    icon="octicon:dot-fill-16"
-                    sx={{
-                      color: '#000000',
-                      width: 12,
-                      height: 12,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Typography variant="body2">{item.value}</Typography>
+                  {item.value && (
+                    <Iconify
+                      icon="octicon:dot-fill-16"
+                      sx={{
+                        color: '#000000',
+                        width: 12,
+                        height: 12,
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  <Typography
+                    variant={item?.value ? 'body2' : 'caption'}
+                    color={item?.value && 'text.secondayr'}
+                  >
+                    {item?.value || 'No campaign do.'}
+                  </Typography>
                 </Stack>
               ))}
             </Stack>
@@ -265,22 +272,35 @@ const CampaignInfo = ({ campaign }) => {
               </Typography>
             </Box>
 
-            <Stack spacing={1} sx={{ pl: 0.5 }}>
-              {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
-                <Stack key={index} direction="row" spacing={1} alignItems="center">
-                  <Iconify
-                    icon="octicon:dot-fill-16"
-                    sx={{
-                      color: '#000000',
-                      width: 12,
-                      height: 12,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <Typography variant="body2">{item.value}</Typography>
-                </Stack>
-              ))}
-            </Stack>
+            {campaign?.campaignBrief?.campaigns_dont?.length > 0 ? (
+              <Stack spacing={1} sx={{ pl: 0.5 }}>
+                {campaign?.campaignBrief?.campaigns_dont?.map((item, index) => (
+                  <Stack key={index} direction="row" spacing={1} alignItems="center">
+                    {item.value && (
+                      <Iconify
+                        icon="octicon:dot-fill-16"
+                        sx={{
+                          color: '#000000',
+                          width: 12,
+                          height: 12,
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <Typography
+                      variant={item?.value ? 'body2' : 'caption'}
+                      color={item?.value && 'text.secondayr'}
+                    >
+                      {item?.value || "No campaign don't"}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                No data found.
+              </Typography>
+            )}
           </Box>
 
           <Box sx={BoxStyle}>
@@ -301,7 +321,7 @@ const CampaignInfo = ({ campaign }) => {
                   fontSize: '0.875rem',
                 }}
               >
-                References Links
+                {'References Links'.toUpperCase()}
               </Typography>
             </Box>
 
@@ -517,7 +537,7 @@ const CampaignInfo = ({ campaign }) => {
                   fontSize: '0.8rem',
                 }}
               >
-                Other Attachments
+                {'Other Attachments'.toUpperCase()}
               </Typography>
             </Box>
             {campaign?.campaignBrief?.otherAttachments?.length > 0 ? (
