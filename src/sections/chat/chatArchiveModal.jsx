@@ -78,6 +78,6 @@ ChatArchiveModal.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   onArchive: PropTypes.func,
-  archivedChats: PropTypes.func,
+  archivedChats: PropTypes.array,
   threadId: PropTypes.string,
 };

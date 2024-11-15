@@ -83,6 +83,24 @@ export default function NotificationsPopover() {
       console.log(error);
     }
   };
+  
+  const handleMarkAsRead = async (notificationId) => {
+    console.log('Marking notification as read with ID:', notificationId);
+    
+    try {
+      await axiosInstance.patch(endpoints.notification.markAsRead(notificationId));
+  
+      // Update the state to reflect that the specific notification is read
+      const newData = data.notifications.map((notification) =>
+        notification.id === notificationId ? { ...notification, read: true, readAt: new Date() } : notification
+      );
+  
+      // // Mutate the state with the updated notification data
+      mutate(endpoints.notification.root, { notifications: newData }, false);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
 
   // const archiveAll = async () => {
   //   try {
@@ -201,16 +219,13 @@ export default function NotificationsPopover() {
               mr: 0,
             },
           }}
-          value={tab.value}
+          value={tab.value} 
           label={tab.label}
           icon={
             tab.value === 'unread' && (
               <Label>
                 {/* {tab.value === 'all' && `(${data?.notifications?.filter((item) => !item.archive)?.length})`} */}
                 {tab.value === 'unread' && totalUnRead}
-
-                {/* {tab.value === 'archived' &&
-                `(${data?.notifications.filter((notification) => notification.archive).length})`} */}
               </Label>
             )
           }
@@ -271,7 +286,7 @@ export default function NotificationsPopover() {
             })
             .sort((a, b) => dayjs(b.notification.createdAt).diff(dayjs(a.notification.createdAt)))
             .map((notification) => (
-              <NotificationItem key={notification.id} notification={notification} />
+              <NotificationItem key={notification.id} notification={notification} markAsRead={handleMarkAsRead} />
             ))}
         </List>
       )}
