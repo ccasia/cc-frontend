@@ -195,7 +195,7 @@ const CampaignListView = () => {
       </Box>
 
       {!isLoading ? (
-        filteredData.length > 0 ? (
+        filteredData?.length > 0 ? (
           <Box
             sx={{
               display: 'grid',
