@@ -118,7 +118,7 @@ const EditCampaignAdmin = ({ open, campaign, onClose }) => {
 
         <DialogActions>
           <Button onClick={onClose} size="small" variant="outlined">
-            Cancel
+            Close
           </Button>
           <LoadingButton
             type="submit"

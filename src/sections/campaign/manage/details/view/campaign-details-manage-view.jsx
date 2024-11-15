@@ -1,10 +1,10 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
 import { useTheme } from '@emotion/react';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
+import { useMemo, useState, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -13,6 +13,7 @@ import {
   Chip,
   Grid,
   List,
+  Link,
   Stack,
   Avatar,
   Dialog,
@@ -50,6 +51,7 @@ import { MultiFilePreview } from 'src/components/upload';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import { EditTimeline } from './EditTimeline';
+import EditReferences from './EditReferences';
 import EditAttachments from './EditAttachment';
 import { EditDosAndDonts } from './EditDosAndDonts';
 import EditCampaignAdmin from './EditCampaignAdmin';
@@ -84,7 +86,11 @@ EditButton.propTypes = {
 };
 
 const CampaignDetailManageView = ({ id }) => {
-  const { campaign, campaignLoading } = useGetCampaignById(id);
+  const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+  const [url, setUrl] = useState('');
+  const loading = useBoolean();
+  const copyDialog = useBoolean();
+  const copy = useBoolean();
 
   const [pages, setPages] = useState();
 
@@ -111,6 +117,7 @@ const CampaignDetailManageView = ({ id }) => {
     campaignImages: false,
     campaignAdmin: false,
     campaignAttachments: false,
+    campaignReferences: false,
   });
 
   const onClose = (data) => {
@@ -118,6 +125,36 @@ const CampaignDetailManageView = ({ id }) => {
       ...prev,
       [data]: false,
     }));
+  };
+
+  const generateSpreadSheet = useCallback(async () => {
+    try {
+      loading.onTrue();
+      const res = await axiosInstance.post(endpoints.campaign.spreadsheet, {
+        campaignId: campaign?.id,
+      });
+      setUrl(res?.data?.url);
+      enqueueSnackbar(res?.data?.message);
+      copyDialog.onTrue();
+      campaignMutate();
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      loading.onFalse();
+    }
+  }, [campaign, loading, copyDialog, campaignMutate]);
+
+  const copyURL = () => {
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        copy.onTrue();
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+      });
   };
 
   const refreshPdf = () => {
@@ -744,6 +781,97 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
+  const renderReferenceLinks = (
+    <>
+      <Box component={Card} p={2}>
+        <Typography variant="h5">Reference Links</Typography>
+        {isEditable && (
+          <EditButton
+            tooltip="Edit Campaign Reference"
+            onClick={() =>
+              setOpen((prev) => ({
+                ...prev,
+                campaignReferences: true,
+              }))
+            }
+          />
+        )}
+
+        {campaign?.campaignBrief?.referencesLinks?.length > 0 ? (
+          <List>
+            {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
+              <ListItem key={index}>
+                <ListItemIcon>
+                  <Iconify icon="ix:reference" />
+                </ListItemIcon>
+                <Link
+                  key={index}
+                  href={link}
+                  target="_blank"
+                  sx={{ overflowX: 'auto', scrollbarWidth: 'none' }}
+                >
+                  {link}
+                </Link>
+              </ListItem>
+            ))}
+          </List>
+        ) : (
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            No references found.
+          </Typography>
+        )}
+      </Box>
+
+      {isEditable && <EditReferences open={open} campaign={campaign} onClose={onClose} />}
+    </>
+  );
+
+  const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
+
+  const copyDialogContainer = (
+    <Dialog
+      open={copyDialog.value}
+      maxWidth="md"
+      fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          p: 2,
+        },
+      }}
+    >
+      <Box
+        sx={{
+          p: 1,
+          bgcolor: theme.palette.background.paper,
+          border: 1,
+          borderRadius: 1,
+          borderColor: '#EBEBEB',
+        }}
+      >
+        <Stack direction="row" alignItems="center">
+          <Typography sx={{ flexGrow: 1, color: 'text.secondary' }} variant="subtitle2">
+            {url || 'No url found.'}
+          </Typography>
+          {!copy.value ? (
+            <IconButton onClick={copyURL}>
+              <Iconify icon="solar:copy-line-duotone" />
+            </IconButton>
+          ) : (
+            <IconButton disabled>
+              <Iconify icon="charm:tick" color="success.main" />
+            </IconButton>
+          )}
+        </Stack>
+      </Box>
+
+      <DialogActions>
+        <Button onClick={copyDialog.onFalse} size="small" variant="outlined" sx={{ mx: 'auto' }}>
+          Done
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -808,6 +936,21 @@ const CampaignDetailManageView = ({ id }) => {
                 Pause
               </LoadingButton>
             )}
+
+            {!isCampaignHasSpreadSheet && (
+              <LoadingButton
+                startIcon={<Iconify icon="lucide:file-spreadsheet" />}
+                variant="outlined"
+                size="small"
+                sx={{
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                }}
+                onClick={generateSpreadSheet}
+                loading={loading.value}
+              >
+                Generate Spreadsheet
+              </LoadingButton>
+            )}
           </Stack>
         }
         sx={{
@@ -835,6 +978,7 @@ const CampaignDetailManageView = ({ id }) => {
                 {renderTimeline}
                 {renderAdminManager}
                 {renderAttachments}
+                {renderReferenceLinks}
               </Stack>
             </Grid>
           </>
@@ -861,6 +1005,7 @@ const CampaignDetailManageView = ({ id }) => {
       </Grid>
 
       {confirmationModal}
+      {copyDialogContainer}
     </Container>
   );
 };

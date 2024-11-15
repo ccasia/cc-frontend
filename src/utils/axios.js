@@ -155,6 +155,7 @@ export const endpoints = {
   },
   campaign: {
     createCampaign: '/api/campaign/createCampaign',
+    spreadsheet: '/api/campaign/spreadsheet',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
     updateOrCreateDefaultTimeline: '/api/campaign/updateOrCreateDefaultTimeline',
     getDefaultTimeline: '/api/campaign/defaultTimeline',
@@ -200,6 +201,7 @@ export const endpoints = {
     editCampaignDosAndDonts: '/api/campaign/editCampaignDosandDonts',
     editCampaignImages: (id) => `/api/campaign/editCampaignImages/${id}`,
     editCampaignAttachments: (id) => `/api/campaign/editCampaignAttachments/${id}`,
+    editCampaignReference: (id) => `/api/campaign/editCampaignReference/${id}`,
     editCampaignTimeline: (id) => `/api/campaign/editCampaignTimeline/${id}`,
     editCampaignAdmins: (id) => `/api/campaign/editCampaignAdmins/${id}`,
     creator: {
