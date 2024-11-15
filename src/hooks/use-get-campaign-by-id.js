@@ -10,7 +10,7 @@ const options = {
 };
 
 export const useGetCampaignById = (id) => {
-  const { data, error, isLoading } = useSWR(
+  const { data, error, mutate, isLoading } = useSWR(
     endpoints.campaign.getCampaignById(id),
     fetcher,
     options
@@ -21,8 +21,9 @@ export const useGetCampaignById = (id) => {
       campaign: data,
       campaignError: error,
       campaignLoading: isLoading,
+      mutate
     }),
-    [data, error, isLoading]
+    [data, error, isLoading, mutate]
   );
 
   return memoizedValue;

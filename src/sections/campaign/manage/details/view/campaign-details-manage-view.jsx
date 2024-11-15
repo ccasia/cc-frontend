@@ -84,7 +84,7 @@ EditButton.propTypes = {
 };
 
 const CampaignDetailManageView = ({ id }) => {
-  const { campaign, campaignLoading } = useGetCampaignById(id);
+  const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
   const [url, setUrl] = useState('');
   const loading = useBoolean();
   const copyDialog = useBoolean();
@@ -133,6 +133,7 @@ const CampaignDetailManageView = ({ id }) => {
       setUrl(res?.data?.url);
       enqueueSnackbar(res?.data?.message);
       copyDialog.onTrue();
+      campaignMutate();
     } catch (error) {
       enqueueSnackbar(error?.message, {
         variant: 'error',
@@ -140,7 +141,7 @@ const CampaignDetailManageView = ({ id }) => {
     } finally {
       loading.onFalse();
     }
-  }, [campaign, loading, copyDialog]);
+  }, [campaign, loading, copyDialog, campaignMutate]);
 
   const copyURL = () => {
     navigator.clipboard

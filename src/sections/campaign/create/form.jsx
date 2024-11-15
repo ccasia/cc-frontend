@@ -343,12 +343,12 @@ function CreateCampaignForm() {
   const isStepOptional = (step) => step === 7;
 
   const handleNext = async () => {
-    // setActiveStep((prevActiveStep) => prevActiveStep + 1);
-    const result = await trigger();
-    if (result) {
-      localStorage.setItem('activeStep', activeStep + 1);
-      setActiveStep((prevActiveStep) => prevActiveStep + 1);
-    }
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    // const result = await trigger();
+    // if (result) {
+    //   localStorage.setItem('activeStep', activeStep + 1);
+    //   setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    // }
   };
 
   const handleBack = () => {
