@@ -134,12 +134,13 @@ export default function NavVertical({ openNav, onCloseNav }) {
             borderColor: grey[300],
             boxShadow: 3,
           }}
-          onClick={() =>
+          onClick={() => {
+            onCloseNav();
             settings.onUpdate(
               'themeLayout',
               settings.themeLayout === 'vertical' ? 'mini' : 'vertical'
-            )
-          }
+            );
+          }}
         >
           <Iconify icon="radix-icons:double-arrow-left" color="black" width={18} />
         </IconButton>
