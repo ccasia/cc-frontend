@@ -1,17 +1,13 @@
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
 import { Controller } from 'react-hook-form';
-
-
-import { Box, Stack, Button, Typography, TextField } from '@mui/material';
-
 import { formatIncompletePhoneNumber } from 'libphonenumber-js';
+
+import { Box, Stack, Button, TextField, Typography } from '@mui/material';
 
 // import { Box, Stack, Button, TextField, Typography } from '@mui/material';
 
-
 import { RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
-import { formatIncompletePhoneNumber } from 'libphonenumber-js';
 
 const CompanyEditForm = ({ company, fieldsArray, methods }) => {
   const { fields, append, control } = fieldsArray;
