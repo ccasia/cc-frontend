@@ -77,8 +77,8 @@ const SelectBrand = ({ openBrand, openCompany }) => {
           const filtered = filter(options, params);
 
           // Suggest the creation of a new value
-          const isExisting = options.some((option) => 
-            option.name.toLowerCase() === inputValue.toLowerCase()
+          const isExisting = options.some(
+            (option) => option.name.toLowerCase() === inputValue.toLowerCase()
           );
 
           if (inputValue !== '' && !isExisting) {
@@ -136,8 +136,8 @@ const SelectBrand = ({ openBrand, openCompany }) => {
               const filtered = filter(options, params);
 
               // Suggest the creation of a new value
-              const isExisting = options.some((option) => 
-                option.name.toLowerCase() === inputValue.toLowerCase()
+              const isExisting = options.some(
+                (option) => option.name.toLowerCase() === inputValue.toLowerCase()
               );
 
               if (inputValue !== '' && !isExisting) {
