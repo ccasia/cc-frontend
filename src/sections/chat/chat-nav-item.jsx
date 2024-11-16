@@ -215,10 +215,10 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
 
 ChatNavItem.propTypes = {
   collapse: PropTypes.bool,
-  onArchive: PropTypes.func.isRequired,
+  //  onArchive: PropTypes.func,
   conversation: PropTypes.object,
   latestMessage: PropTypes.object,
-  messages: PropTypes.array.isRequired,
+  //  messages: PropTypes.array,
   onCloseMobile: PropTypes.func,
   selected: PropTypes.bool,
 };
