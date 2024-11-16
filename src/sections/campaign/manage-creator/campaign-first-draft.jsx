@@ -110,6 +110,7 @@ const CampaignFirstDraft = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const inQueue = useBoolean();
 
   const methods = useForm({
     defaultValues: {
@@ -225,36 +226,45 @@ const CampaignFirstDraft = ({
   );
 
   useEffect(() => {
-    if (socket) {
-      socket?.on('progress', (data) => {
-        if (submission?.id === data.submissionId) {
-          setIsProcessing(true);
-          setProgress(data.progress);
-          setProgressName(data.name);
+    if (!socket) return; // Early return if socket is not available
 
-          if (data.progress === 100) {
-            mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+    const handleProgress = (data) => {
+      if (submission?.id !== data.submissionId) return; // Check if submissionId matches
+      inQueue.onFalse();
+      setProgress(data.progress);
 
-            mutate(endpoints.kanban.root);
-            setIsProcessing(false);
-            reset();
-            setProgressName('');
-            setPreview('');
-            localStorage.removeItem('preview');
-          } else if (progress === 0) {
-            setIsProcessing(false);
-            reset();
-            setPreview('');
-            setProgressName('');
-            localStorage.removeItem('preview');
-          }
+      if (data.progress === 100 || data.progress === 0) {
+        setIsProcessing(false);
+        reset();
+        setPreview('');
+        setProgressName('');
+        localStorage.removeItem('preview');
+
+        if (data.progress === 100) {
+          mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
         }
-      });
-    }
-    return () => {
-      socket?.off('progress');
+      } else {
+        setIsProcessing(true);
+      }
     };
-  }, [socket, submission, reset, progress, campaign, user]);
+
+    socket.on('progress', handleProgress);
+    socket.on('statusQueue', (data) => {
+      if (data?.status === 'queue') {
+        inQueue.onTrue();
+      }
+    });
+
+    socket.emit('checkQueue', { submissionId: submission?.id });
+
+    // Cleanup on component unmount
+    // eslint-disable-next-line consistent-return
+    return () => {
+      socket.off('progress', handleProgress);
+      socket.off('statusQueue');
+      socket.off('checkQueue');
+    };
+  }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   const handleCancel = () => {
     if (isProcessing) {
@@ -332,6 +342,7 @@ const CampaignFirstDraft = ({
             )}
             {submission?.status === 'IN_PROGRESS' && (
               <>
+                {inQueue.value && <Typography>In queue</Typography>}
                 {isProcessing ? (
                   <Stack justifyContent="center" alignItems="center" gap={1}>
                     <Box

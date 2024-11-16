@@ -79,7 +79,14 @@ const generateThumbnail = (file) =>
     });
   });
 
-const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, fullSubmission, setCurrentTab }) => {
+const CampaignFinalDraft = ({
+  campaign,
+  timeline,
+  submission,
+  getDependency,
+  fullSubmission,
+  setCurrentTab,
+}) => {
   const [preview, setPreview] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressName, setProgressName] = useState('');
@@ -92,6 +99,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   const { socket } = useSocketContext();
   const [progress, setProgress] = useState(0);
   const display = useBoolean();
+  const inQueue = useBoolean();
 
   const { user } = useAuthContext();
 
@@ -191,6 +199,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
       setSubmitStatus('success');
+      inQueue.onTrue();
     } catch (error) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       enqueueSnackbar('Failed to submit draft', {
@@ -215,33 +224,45 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
   );
 
   useEffect(() => {
-    if (socket) {
-      socket?.on('progress', (data) => {
-        if (submission?.id === data.submissionId) {
-          setIsProcessing(true);
-          setProgress(data.progress);
+    if (!socket) return; // Early return if socket is not available
 
-          if (data.progress === 100) {
-            mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-            setIsProcessing(false);
-            reset();
-            setPreview('');
-            setProgressName('');
-            localStorage.removeItem('preview');
-          } else if (progress === 0) {
-            setIsProcessing(false);
-            reset();
-            setPreview('');
-            setProgressName('');
-            localStorage.removeItem('preview');
-          }
+    const handleProgress = (data) => {
+      if (submission?.id !== data.submissionId) return; // Check if submissionId matches
+      inQueue.onFalse();
+      setProgress(data.progress);
+
+      if (data.progress === 100 || data.progress === 0) {
+        setIsProcessing(false);
+        reset();
+        setPreview('');
+        setProgressName('');
+        localStorage.removeItem('preview');
+
+        if (data.progress === 100) {
+          mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
         }
-      });
-    }
-    return () => {
-      socket?.off('progress');
+      } else {
+        setIsProcessing(true);
+      }
     };
-  }, [socket, submission, reset, progress, campaign, user]);
+
+    socket.on('progress', handleProgress);
+    socket.on('statusQueue', (data) => {
+      if (data?.status === 'queue') {
+        inQueue.onTrue();
+      }
+    });
+
+    socket.emit('checkQueue', { submissionId: submission?.id });
+
+    // Cleanup on component unmount
+    // eslint-disable-next-line consistent-return
+    return () => {
+      socket.off('progress', handleProgress);
+      socket.off('statusQueue');
+      socket.off('checkQueue');
+    };
+  }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   return (
     previewSubmission?.status === 'CHANGES_REQUIRED' && (
@@ -304,6 +325,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
 
         {submission?.status === 'IN_PROGRESS' && (
           <>
+            {inQueue.value && <Typography>In Queue</Typography>}
             {isProcessing ? (
               <Stack justifyContent="center" alignItems="center" gap={1}>
                 <Box
@@ -422,114 +444,7 @@ const CampaignFinalDraft = ({ campaign, timeline, submission, getDependency, ful
                 Preview Draft
               </Button>
             </Box>
-            {/* <Alert severity="warning">
-              <Typography variant="subtitle2" sx={{ textDecoration: 'underline', mb: 2 }}>
-                Changes Required
-              </Typography>
-              <Timeline
-                sx={{
-                  [`& .${timelineOppositeContentClasses.root}`]: {
-                    flex: 0.2,
-                  },
-                  [theme.breakpoints.down('sm')]: {
-                    padding: 0,
-                  },
-                }}
-              >
-                {submission?.feedback
-                  ?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                  .map((feedback, index) => (
-                    <TimelineItem
-                      key={index}
-                      sx={{
-                        [theme.breakpoints.down('sm')]: {
-                          flexDirection: 'column',
-                          '&::before': {
-                            display: 'none',
-                          },
-                        },
-                      }}
-                    >
-                      <TimelineOppositeContent
-                        color="textSecondary"
-                        sx={{
-                          [theme.breakpoints.down('sm')]: {
-                            padding: '6px 16px',
-                          },
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontWeight: index === 0 ? 'bold' : 'normal',
-                            opacity: index === 0 ? 1 : 0.7,
-                          }}
-                        >
-                          {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
-                        </Typography>
-                      </TimelineOppositeContent>
-                      <TimelineSeparator>
-                        <TimelineDot />
-                        {index !== submission.feedback.length - 1 && <TimelineConnector />}
-                      </TimelineSeparator>
-                      <TimelineContent
-                        sx={{
-                          [theme.breakpoints.down('sm')]: {
-                            padding: '6px 16px 16px',
-                          },
-                        }}
-                      >
-                        <Typography
-                          variant="subtitle1"
-                          color="text.secondary"
-                          sx={{
-                            whiteSpace: 'pre-line',
-                            fontWeight: index === 0 ? 'bold' : 'normal',
-                            opacity: index === 0 ? 1 : 0.7,
-                          }}
-                        >
-                          {feedback.content}
-                        </Typography>
-                        <Box
-                          sx={{
-                            border: '1.5px solid #203ff5',
-                            borderBottom: '4px solid #203ff5',
-                            borderRadius: 1,
-                            p: 1,
-                            mb: 1,
-                            width: 'fit-content',
-                            backgroundColor: 'white',
-                          }}
-                        >
-                          <Typography variant="caption" color="text.disabled">
-                            Reasons for changes:
-                          </Typography>
-                          <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ p: 1 }}>
-                            {feedback.reasons?.map((item, idx) => (
-                              <Label
-                                key={idx}
-                                sx={{
-                                  fontWeight: index === 0 ? 'bold' : 'normal',
-                                  opacity: index === 0 ? 1 : 0.7,
-                                  [theme.breakpoints.down('sm')]: {
-                                    fontSize: '0.75rem',
-                                    padding: '2px 4px',
-                                  },
-                                }}
-                              >
-                                {item}
-                              </Label>
-                            ))}
-                          </Stack>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {dayjs(feedback.createdAt).format('MMM D, YYYY HH:mm')}
-                        </Typography>
-                      </TimelineContent>
-                    </TimelineItem>
-                  ))}
-              </Timeline>
-            </Alert> */}
+
             {isProcessing ? (
               <Stack justifyContent="center" alignItems="center" gap={1}>
                 <Box
