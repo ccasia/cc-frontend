@@ -58,6 +58,10 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // const agreementStatus = campaign?.shortlisted?.find(
+  //   (item) => item?.userId === user?.id
+  // )?.isAgreementReady;
+
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
   )?.isAgreementReady;

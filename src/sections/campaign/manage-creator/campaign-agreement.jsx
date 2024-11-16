@@ -256,16 +256,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         </Box>
       ) : (
         <>
-          <Box 
-            sx={{ 
-              display: 'flex', 
+          <Box
+            sx={{
+              display: 'flex',
               flexDirection: { xs: 'column', sm: 'row' },
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              mb: 2, 
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
               mt: { xs: 0, sm: -2 },
               ml: { xs: 0, sm: -1.2 },
-              textAlign: { xs: 'center', sm: 'left' }
+              textAlign: { xs: 'center', sm: 'left' },
             }}
           >
             <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
@@ -358,7 +358,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                         pageNumber={index + 1}
                         renderAnnotationLayer={false}
                         renderTextLayer={false}
-                        width={isSmallScreen ? undefined : 800} 
+                        width={isSmallScreen ? undefined : 800}
                       />
                     ))}
                   </Document>
@@ -625,7 +625,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                       width: 24,
                       height: 24,
                       color: '#636366',
-                    }
+                    },
                   }}
                 >
                   <Iconify icon="hugeicons:cancel-01" width={24} />
@@ -676,7 +676,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                             maxWidth: '300px',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {agreementForm.name}
@@ -814,15 +814,17 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 sx={{
                   fontSize: '0.95rem',
                   fontWeight: 600,
-                  bgcolor: (agreementForm && uploadProgress === 100) ? '#203ff5' : '#b0b0b1 !important',
+                  bgcolor:
+                    agreementForm && uploadProgress === 100 ? '#203ff5' : '#b0b0b1 !important',
                   color: '#ffffff !important',
                   borderBottom: 3.5,
-                  borderBottomColor: (agreementForm && uploadProgress === 100) ? '#112286' : '#9e9e9f',
+                  borderBottomColor:
+                    agreementForm && uploadProgress === 100 ? '#112286' : '#9e9e9f',
                   borderRadius: 1.5,
                   px: 2.5,
                   py: 1.2,
                   '&:hover': {
-                    bgcolor: (agreementForm && uploadProgress === 100) ? '#203ff5' : '#b0b0b1',
+                    bgcolor: agreementForm && uploadProgress === 100 ? '#203ff5' : '#b0b0b1',
                     opacity: 0.9,
                   },
                 }}
@@ -836,28 +838,28 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             <DialogTitle>
               <Stack direction="row" alignItems="center" gap={2}>
                 <Box>
-                  <Typography 
+                  <Typography
                     variant="h5"
-                    sx={{ 
+                    sx={{
                       fontFamily: 'Instrument Serif, serif',
                       fontSize: { xs: '2rem', sm: '2.4rem' },
-                      fontWeight: 550
+                      fontWeight: 550,
                     }}
                   >
                     Preview Document
                   </Typography>
-                  
-                  <Typography 
+
+                  <Typography
                     variant="body2"
                     noWrap
-                    sx={{ 
+                    sx={{
                       fontWeight: 'bold',
                       color: 'text.secondary',
                       maxWidth: '400px',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
-                      mt: 0.5
+                      mt: 0.5,
                     }}
                   >
                     {agreementForm?.name || 'Document.pdf'}
@@ -866,13 +868,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
                 <IconButton
                   onClick={() => setPreview('')}
-                  sx={{ 
+                  sx={{
                     ml: 'auto',
-                    '& svg': { 
+                    '& svg': {
                       width: 24,
                       height: 24,
-                      color: '#636366'
-                    }
+                      color: '#636366',
+                    },
                   }}
                 >
                   <Iconify icon="hugeicons:cancel-01" width={24} />
@@ -883,9 +885,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             <Divider sx={{ width: '95%', mx: 'auto' }} />
 
             <DialogContent sx={{ p: 3 }}>
-              <Box 
-                sx={{ 
-                  height: 600, 
+              <Box
+                sx={{
+                  height: 600,
                   overflow: 'auto',
                   '&::-webkit-scrollbar': {
                     width: '8px',
@@ -896,10 +898,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   },
                 }}
               >
-                <Document
-                  file={preview}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                >
+                <Document file={preview} onLoadSuccess={onDocumentLoadSuccess}>
                   {Array.from(new Array(numPages), (el, index) => (
                     <Page
                       key={index}
@@ -916,21 +915,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         </>
       )}
 
-      <Dialog 
-        open={display.value} 
-        onClose={display.onFalse} 
-        fullWidth 
-        maxWidth="md"
-      >
+      <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
         <DialogTitle>
           <Stack direction="row" alignItems="center" gap={2}>
             <Box>
-              <Typography 
+              <Typography
                 variant="h5"
-                sx={{ 
+                sx={{
                   fontFamily: 'Instrument Serif, serif',
                   fontSize: { xs: '2rem', sm: '2.4rem' },
-                  fontWeight: 550
+                  fontWeight: 550,
                 }}
               >
                 Preview Document
@@ -939,13 +933,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
             <IconButton
               onClick={display.onFalse}
-              sx={{ 
+              sx={{
                 ml: 'auto',
-                '& svg': { 
+                '& svg': {
                   width: 24,
                   height: 24,
-                  color: '#636366'
-                }
+                  color: '#636366',
+                },
               }}
             >
               <Iconify icon="hugeicons:cancel-01" width={24} />
@@ -956,9 +950,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         <Divider sx={{ width: '95%', mx: 'auto' }} />
 
         <DialogContent sx={{ p: 3 }}>
-          <Box 
-            sx={{ 
-              height: 600, 
+          <Box
+            sx={{
+              height: 600,
               overflow: 'auto',
               '&::-webkit-scrollbar': {
                 width: '8px',
@@ -969,10 +963,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
               },
             }}
           >
-            <Document
-              file={submission?.content}
-              onLoadSuccess={onDocumentLoadSuccess}
-            >
+            <Document file={submission?.content} onLoadSuccess={onDocumentLoadSuccess}>
               {Array.from(new Array(numPages), (el, index) => (
                 <Page
                   key={index}
@@ -1002,7 +993,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     borderRadius: '50%',
                     bgcolor: '#f4b84a',
                     fontSize: '50px',
-                    mb: -2
+                    mb: -2,
                   }}
                 >
                   🛫
