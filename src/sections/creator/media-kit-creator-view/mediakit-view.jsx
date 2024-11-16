@@ -339,29 +339,6 @@ const MediaKitCreator = () => {
             },
           }}
         >
-          {/* <Stack direction="row" alignItems="center" spacing={1}>
-            <AvatarIcon icon="solar:chart-bold" />
-            <Stack>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                ENGAGEMENT RATE
-              </Typography>
-              <Typography
-                variant="h3"
-                key={currentTab}
-                component={m.div}
-                initial={{ scale: 0.5 }}
-                animate={{ scale: 1 }}
-                transition={{
-                  duration: 1,
-                  type: 'spring',
-                }}
-              >
-                {socialMediaAnalytics.engagement_rate
-                  ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
-                  : 'No data'}
-              </Typography>
-            </Stack>
-          </Stack> */}
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <Avatar
               sx={{
