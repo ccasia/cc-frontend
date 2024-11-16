@@ -5,7 +5,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
-import Iconify from 'src/components/iconify';
 
 // import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -14,6 +13,7 @@ import { fToNow } from 'src/utils/format-time';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -21,17 +21,9 @@ export default function NotificationItem({ notification, markAsRead }) {
   const { user } = useAuthContext();
   const router = useRouter();
 
-  
   const handleViewClick = () => {
-    
-  
-    //  console.log("Correct ID:", notification.id);
-
-    //  console.log ( "WRONG Id", notification.notificationId);
-    
     const { entity, campaignId, threadId, creatorId, invoiceId } = notification.notification ?? {};
 
-    
     let link = '';
 
     // the cases are entity
@@ -101,7 +93,7 @@ export default function NotificationItem({ notification, markAsRead }) {
     }
 
     if (notification.read === false) {
-      markAsRead(notification.id); 
+      markAsRead(notification.id);
     }
 
     if (link) {
@@ -120,6 +112,7 @@ export default function NotificationItem({ notification, markAsRead }) {
       }}
     />
   );
+
   const renderText = (
     <ListItemText
       secondary={notification.notification.message}
@@ -154,12 +147,14 @@ export default function NotificationItem({ notification, markAsRead }) {
 
   const renderReadStatus = notification.read && (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography variant="body2" color="textSecondary">Read</Typography>
-      <Iconify  
-      icon="mdi:tick-all" 
-      width="24" 
-      height="24" 
-      style={{ color: 'black', marginRight: '4px' }} 
+      <Typography variant="body2" color="textSecondary">
+        Read
+      </Typography>
+      <Iconify
+        icon="mdi:tick-all"
+        width="24"
+        height="24"
+        style={{ color: 'black', marginRight: '4px' }}
       />
     </Box>
   );
@@ -242,16 +237,14 @@ export default function NotificationItem({ notification, markAsRead }) {
               >
                 {renderUnReadBadge}
                 {renderOther}
-             
               </Box>
             </Box>
 
             <Stack spacing={1} sx={{ flexGrow: 1 }}>
               {renderText}
               {renderViewSignUp}
-              {renderReadStatus}
+              {/* {renderReadStatus} */}
             </Stack>
-           
           </Box>
         </Box>
 

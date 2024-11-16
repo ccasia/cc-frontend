@@ -89,13 +89,13 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         setLastAction({ action: 'archive', threadId });
       }
 
-      setOpenAlert(true); 
-      setOpenArchiveModal(false); 
+      setOpenAlert(true);
+      setOpenArchiveModal(false);
     } catch (error) {
       console.error('Error archiving/unarchiving chat:', error);
       setAlertMessage('Error archiving/unarchiving chat.');
       setAlertSeverity('error');
-      setOpenAlert(true); 
+      setOpenAlert(true);
     }
   };
 
@@ -114,8 +114,8 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
       }
 
       setAlertSeverity('success');
-      setOpenAlert(true); 
-      setLastAction(null); 
+      setOpenAlert(true);
+      setLastAction(null);
     }
   };
 
@@ -198,24 +198,31 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         onClose={() => setOpenAlert(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={alertSeverity}
-           iconMapping={{
-            success: 
-            <Icon icon="tdesign:wave-bye-filled" 
-            width="24" height="24"  
-            style={{color: '#ffae00'}} />
+        <Alert
+          severity={alertSeverity}
+          iconMapping={{
+            success: (
+              <Icon
+                icon="tdesign:wave-bye-filled"
+                width="24"
+                height="24"
+                style={{ color: '#ffae00' }}
+              />
+            ),
           }}
-          sx={alertSeverity === 'success' && { 
-            backgroundColor: '#ffffff', 
-            color: '#000000',
-            '& .MuiAlert-message': { fontWeight: 'bold' }
-          }}
-      
-         action={
-          <Button onClick={handleUndo} color="secondary" size="small">
-            UNDO
-          </Button>
-        }>
+          sx={
+            alertSeverity === 'success' && {
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              '& .MuiAlert-message': { fontWeight: 'bold' },
+            }
+          }
+          action={
+            <Button onClick={handleUndo} color="secondary" size="small">
+              UNDO
+            </Button>
+          }
+        >
           {alertMessage}
         </Alert>
       </Snackbar>

@@ -242,6 +242,7 @@ export const endpoints = {
     root: '/api/notification',
     read: '/api/notification/markRead',
     archive: '/api/notification/archiveAll',
+    markAsRead: (id) => `/api/notification/${id}/mark-read`,
   },
   roles: {
     root: '/api/role',
