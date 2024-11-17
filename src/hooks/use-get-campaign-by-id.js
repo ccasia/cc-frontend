@@ -21,7 +21,7 @@ export const useGetCampaignById = (id) => {
       campaign: data,
       campaignError: error,
       campaignLoading: isLoading,
-      mutate
+      mutate,
     }),
     [data, error, isLoading, mutate]
   );

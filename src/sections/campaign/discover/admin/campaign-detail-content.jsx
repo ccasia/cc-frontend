@@ -51,6 +51,8 @@ const CampaignDetailContent = ({ campaign }) => {
   // const pdf = useBoolean();
   // const [pages, setPages] = useState();
 
+  console.log(campaign);
+
   const renderGallery = (
     <Box>
       <Carousel images={campaign?.campaignBrief?.images} />
@@ -314,8 +316,8 @@ const CampaignDetailContent = ({ campaign }) => {
         files={
           campaign?.campaignBrief?.otherAttachments.length > 0
             ? // eslint-disable-next-line no-unsafe-optional-chaining
-              [...campaign?.campaignBrief?.otherAttachments, campaign?.campaignBrief?.agreementFrom]
-            : [campaign?.campaignBrief?.agreementFrom]
+              [...campaign?.campaignBrief?.otherAttachments, campaign?.agreementTemplate?.url]
+            : [campaign?.agreementTemplate?.url]
         }
         thumbnail
       />

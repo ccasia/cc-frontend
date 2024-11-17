@@ -27,7 +27,6 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
   const { user } = useAuthContext();
-  // const { data: agreements, isLoading } = useGetAgreements(campaign?.id);
 
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
@@ -61,7 +60,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
       mutate(endpoints.campaign.creatorAgreement(agreement.campaignId));
       // enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar('Error', { variant: error?.message });
+      enqueueSnackbar('Error', { variant: 'error' });
     }
   };
 
@@ -85,9 +84,9 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
           AGREEMENT_ENDDATE={dayjs(campaign?.campaignBrief?.endDate).format('LL')}
           NOW_DATE={dayjs().format('LL')}
           VERSION_NUMBER="V1"
-          ADMIN_IC_NUMBER={user?.agreementTemplate?.adminICNumber}
-          ADMIN_NAME={user?.agreementTemplate?.adminName}
-          SIGNATURE={user?.agreementTemplate?.signURL}
+          ADMIN_IC_NUMBER={campaign?.agreementTemplate?.adminICNumber}
+          ADMIN_NAME={campaign?.agreementTemplate?.adminName}
+          SIGNATURE={campaign?.agreementTemplate?.signURL}
         />
       ).toBlob();
 

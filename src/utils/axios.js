@@ -269,6 +269,7 @@ export const endpoints = {
     getCreatorInvoice: `/api/invoice/creatorInvoice`,
   },
   agreementTemplate: {
+    all: '/api/campaign/template',
     byId: (id) => `/api/campaign/template/${id}`,
   },
 };

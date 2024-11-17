@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import { mutate } from 'swr';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { PDFDocument } from 'pdf-lib';
@@ -58,7 +59,7 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
     mode: 'onChange',
   });
 
-  const { handleSubmit, watch } = methods;
+  const { handleSubmit, watch, reset } = methods;
 
   const { name, icNumber } = watch();
 
@@ -161,6 +162,14 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
       if (setAgreementForm) {
         setAgreementForm('agreementFrom', res?.data?.templateURL);
       }
+
+      if (campaignId) {
+        mutate(endpoints.campaign.getCampaignById(campaignId));
+      }
+
+      setSignURL('');
+      setAnnotations([]);
+      reset();
       enqueueSnackbar(res?.data?.message);
       onClose();
     } catch (error) {

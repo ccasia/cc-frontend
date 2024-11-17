@@ -31,41 +31,11 @@ const CampaignDetailView = ({ id }) => {
   const reminderRef = useRef(null);
 
   const open = Boolean(anchorEl);
-  // const idd = open ? 'simple-popper' : undefined;
-
-  // const currentCampaign = useMemo(
-  //   () => !isLoading && campaigns.find((campaign) => campaign.id === id),
-  //   [campaigns, id, isLoading]
-  // );
 
   const currentCampaign = useMemo(
     () => !isLoading && campaigns.find((campaign) => campaign.id === id),
     [campaigns, id, isLoading]
   );
-
-  // let timeline =
-  //   currentCampaign?.defaultcampaignTimeline || currentCampaign?.customcampaignTimeline;
-
-  // timeline = filterTimelineAdmin(timeline);
-
-  // const isDue = (dueDate) => {
-  //   const startReminderDate = dayjs(dueDate).subtract(2, 'day');
-
-  //   if (startReminderDate <= dayjs() && dayjs() < dayjs(dueDate)) {
-  //     return true;
-  //   }
-  //   return false;
-  // };
-
-  // const isDone = (dueDate) => {
-  //   const today = dayjs();
-
-  //   if (today > dayjs(dueDate)) {
-  //     return true;
-  //   }
-
-  //   return false;
-  // };
 
   const [currentTab, setCurrentTab] = useState(
     localStorage.getItem('campaigndetail') || 'campaign-content'

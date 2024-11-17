@@ -87,6 +87,7 @@ EditButton.propTypes = {
 
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+
   const [url, setUrl] = useState('');
   const loading = useBoolean();
   const copyDialog = useBoolean();
@@ -697,9 +698,9 @@ const CampaignDetailManageView = ({ id }) => {
               display: 'inline-block',
             }}
           >
-            {campaign?.campaignBrief?.agreementFrom && (
+            {campaign?.agreementTemplate ? (
               <Document
-                file={campaign?.campaignBrief?.agreementFrom}
+                file={campaign?.agreementTemplate?.url}
                 onLoadSuccess={({ numPages }) => setPages(numPages)}
                 renderMode="canvas"
               >
@@ -716,11 +717,22 @@ const CampaignDetailManageView = ({ id }) => {
                     ))}
                 </Stack>
               </Document>
+            ) : (
+              <Typography variant="caption" color="text-secondary">
+                No agreement template found
+              </Typography>
             )}
           </Box>
         </Box>
       </Box>
-      {isEditable && <EditAgreementTemplate open={open} campaign={campaign} onClose={onClose} />}
+      {isEditable && (
+        <EditAgreementTemplate
+          open={open}
+          campaign={campaign}
+          onClose={onClose}
+          campaignMutate={campaignMutate}
+        />
+      )}
     </>
   );
 

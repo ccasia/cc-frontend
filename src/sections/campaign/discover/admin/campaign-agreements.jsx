@@ -4,7 +4,8 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
-import { Box ,
+import {
+  Box,
   Table,
   Stack,
   Button,
