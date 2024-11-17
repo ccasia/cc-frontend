@@ -58,7 +58,6 @@ RHFUploadBox.propTypes = {
 export function RHFUpload({ name, multiple, type, helperText, uploadType, ...other }) {
   const { control } = useFormContext();
 
-
   // Only accept pdf and powerpoint filetype
   if (type === 'otherAttachment') {
     return (

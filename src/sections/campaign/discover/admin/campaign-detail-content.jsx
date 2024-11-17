@@ -312,15 +312,21 @@ const CampaignDetailContent = ({ campaign }) => {
   const renderAttachmentFiles = (
     <Box>
       <Typography variant="h5">Attachments</Typography>
-      <MultiFilePreview
-        files={
-          campaign?.campaignBrief?.otherAttachments.length > 0
-            ? // eslint-disable-next-line no-unsafe-optional-chaining
-              [...campaign?.campaignBrief?.otherAttachments, campaign?.agreementTemplate?.url]
-            : [campaign?.agreementTemplate?.url]
-        }
-        thumbnail
-      />
+      {campaign?.campaignBrief?.otherAttachments.length > 0 || campaign?.agreementTemplate?.url ? (
+        <MultiFilePreview
+          files={
+            campaign?.campaignBrief?.otherAttachments.length > 0
+              ? // eslint-disable-next-line no-unsafe-optional-chaining
+                [...campaign?.campaignBrief?.otherAttachments, campaign?.agreementTemplate?.url]
+              : [campaign?.agreementTemplate?.url]
+          }
+          thumbnail
+        />
+      ) : (
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          No attachments found.
+        </Typography>
+      )}
     </Box>
   );
 

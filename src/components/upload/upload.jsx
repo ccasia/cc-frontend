@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import { useDropzone } from 'react-dropzone';
 
@@ -100,10 +101,25 @@ export default function Upload({
             }}
           />
         </Box>
+
         {Object.keys(other.accept).includes('application/vnd.ms-powerpoint') ? (
           <ListItemText
             primary="Choose a file or drag and drop here"
             secondary="Acceptable files: PDF, Powerpoint"
+            primaryTypographyProps={{
+              textAlign: 'center',
+              variant: 'h5',
+            }}
+            secondaryTypographyProps={{
+              textAlign: 'center',
+              variant: 'body1',
+              color: '#8E8E93',
+            }}
+          />
+        ) : Object.keys(other.accept)[0].includes('video') ? (
+          <ListItemText
+            primary="Choose a file or drag and drop here"
+            secondary="Acceptable files: MP4, MOV"
             primaryTypographyProps={{
               textAlign: 'center',
               variant: 'h5',
