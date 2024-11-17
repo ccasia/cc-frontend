@@ -50,7 +50,7 @@ const AgreementTemplates = () => {
   const editor = useBoolean();
 
   return (
-    <Box>
+    <Box sx={{ height: 1 }}>
       <Box my={2} textAlign="end">
         <Button
           variant="outlined"
@@ -67,8 +67,8 @@ const AgreementTemplates = () => {
       {isLoading && <Typography>Loading...</Typography>}
 
       {!isLoading && data?.length ? (
-        <TableContainer sx={{ height: 1, overflow: 'auto' }}>
-          <Table>
+        <TableContainer sx={{ height: 500, overflow: 'auto' }}>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
                 <StyledTableCell
@@ -90,7 +90,7 @@ const AgreementTemplates = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data?.map((template, index) => (
+              {[...data, ...data]?.map((template, index) => (
                 <TableRow key={template?.id}>
                   <TableCell align="center">{index + 1}</TableCell>
                   <TableCell align="center">{template?.adminName}</TableCell>
