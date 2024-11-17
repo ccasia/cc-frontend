@@ -127,18 +127,7 @@ export default function DashboardLayout({ children }) {
       >
         <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
-        {/* <Box
-            sx={{
-              scrollbarWidth: 'none',
-              overflow: 'auto',
-              height: 1,
-              bgcolor: 'wheat',
-              p: 2,
-              m: 2,
-            }}
-          > */}
         <Main sx={{ py: 2 }}>{children}</Main>
-        {/* </Box> */}
       </Box>
     </Box>
   );

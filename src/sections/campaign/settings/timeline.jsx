@@ -4,8 +4,9 @@ import { m } from 'framer-motion';
 import { enqueueSnackbar } from 'notistack';
 import React, { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, FormProvider, useFieldArray } from 'react-hook-form';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
@@ -24,7 +25,6 @@ import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import TimelineTypeModal from './timeline-type-modal';
@@ -64,7 +64,14 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
     },
   });
 
-  const { handleSubmit, reset, control, watch, setValue } = methods;
+  const {
+    handleSubmit,
+    reset,
+    control,
+    watch,
+    setValue,
+    formState: { isDirty, isSubmitting },
+  } = methods;
 
   const { fields, remove, append, insert } = useFieldArray({
     control,
@@ -128,152 +135,281 @@ const Timeline = ({ timelineType, isSmallScreen }) => {
 
   return (
     <>
-      <Typography variant="h5" mb={3}>
-        Default Timeline
-      </Typography>
-      <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Box
-          display="grid"
-          columnGap={2}
-          rowGap={2}
-          gridTemplateColumns={{
-            sm: 'repeat(1, 1fr)',
-          }}
-          maxHeight={400}
-          overflow="auto"
-          py={2}
-        >
-          {fields.map((item, index) => (
-            <Box
-              key={item.id}
-              component={m.div}
-              initial={{ opacity: 0, top: 0.5 }}
-              animate={{ opacity: 1, top: 1 }}
-              transition={{ duration: 0.5 }}
+      <Box height={1}>
+        {/* <FormProvider methods={methods} onSubmit={onSubmit}>
+          <Stack spacing={2}>
+            <Button
+              onClick={timelineModal.onTrue}
+              variant="contained"
+              size="small"
+              startIcon={<Iconify icon="material-symbols-light:manage-history" />}
+              sx={{
+                ml: 'auto',
+              }}
             >
-              <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
-                {!isLoading && (
-                  <RHFAutocomplete
-                    name={`timeline[${index}].timeline_type`}
-                    onChange={(event, newValue) => {
-                      console.log(newValue);
-                      handleChange(newValue, index);
-                      setQuery(newValue);
-                    }}
-                    fullWidth
-                    freeSolo
-                    options={options}
-                    getOptionLabel={(option) => option.name}
-                    label="Timeline Type"
-                    filterOptions={(a, state) => {
-                      const filtered = a.filter((option) =>
-                        option.name.toLowerCase().includes(state.inputValue.toLowerCase())
-                      );
+              Manage Timeline Type
+            </Button>
 
-                      if (
-                        state.inputValue !== '' &&
-                        !options.some((option) => option.name === state.inputValue)
-                      ) {
-                        filtered.push({ name: `Create new: ${state.inputValue}` });
+            <Stack spacing={2} flexGrow={1}>
+            {fields.map((item, index) => (
+              <Box
+                key={item.id}
+                component={m.div}
+                initial={{ opacity: 0, top: 0.5 }}
+                animate={{ opacity: 1, top: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
+                  {!isLoading && (
+                    <RHFAutocomplete
+                      name={`timeline[${index}].timeline_type`}
+                      onChange={(event, newValue) => {
+                        console.log(newValue);
+                        handleChange(newValue, index);
+                        setQuery(newValue);
+                      }}
+                      fullWidth
+                      freeSolo
+                      options={options}
+                      getOptionLabel={(option) => option.name}
+                      label="Timeline Type"
+                      filterOptions={(a, state) => {
+                        const filtered = a.filter((option) =>
+                          option.name.toLowerCase().includes(state.inputValue.toLowerCase())
+                        );
+
+                        if (
+                          state.inputValue !== '' &&
+                          !options.some((option) => option.name === state.inputValue)
+                        ) {
+                          filtered.push({ name: `Create new: ${state.inputValue}` });
+                        }
+
+                        return filtered;
+                      }}
+                      renderOption={(props, option) => {
+                        const { key, ...optionProps } = props;
+                        return (
+                          <MenuItem key={key} {...optionProps}>
+                            {option.name}
+                          </MenuItem>
+                        );
+                      }}
+                      sx={{
+                        '& .MuiInputBase-root': {
+                          cursor: 'not-allowed', // Change cursor to indicate disabled state
+                        },
+                      }}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      helperText={
+                        errorTimeline.value && (
+                          <Typography variant="caption" color="error">
+                            Please select other timeline
+                          </Typography>
+                        )
                       }
+                    />
+                  )}
 
-                      return filtered;
+                  <RHFTextField
+                    name={`timeline[${index}].duration`}
+                    label="Duration"
+                    type="number"
+                    placeholder="Eg: 2"
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">days</InputAdornment>,
                     }}
-                    renderOption={(props, option) => {
-                      const { key, ...optionProps } = props;
-                      return (
-                        <MenuItem key={key} {...optionProps}>
-                          {option.name}
-                        </MenuItem>
-                      );
-                    }}
-                    sx={{
-                      '& .MuiInputBase-root': {
-                        cursor: 'not-allowed', // Change cursor to indicate disabled state
-                      },
-                    }}
-                    isOptionEqualToValue={(option, value) => option.id === value.id}
-                    helperText={
-                      errorTimeline.value && (
-                        <Typography variant="caption" color="error">
-                          Please select other timeline
-                        </Typography>
-                      )
-                    }
                   />
-                )}
 
-                <RHFTextField
-                  name={`timeline[${index}].duration`}
-                  label="Duration"
-                  type="number"
-                  placeholder="Eg: 2"
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">days</InputAdornment>,
-                  }}
-                />
+                  <RHFSelect name={`timeline[${index}].for`} label="For">
+                    <MenuItem value="admin">Admin</MenuItem>
+                    <MenuItem value="creator">Creator</MenuItem>
+                  </RHFSelect>
 
-                <RHFSelect name={`timeline[${index}].for`} label="For">
-                  <MenuItem value="admin">Admin</MenuItem>
-                  <MenuItem value="creator">Creator</MenuItem>
-                </RHFSelect>
+                  <IconButton color="error" onClick={() => handleRemove(index, item)}>
+                    <Iconify icon="uil:trash" />
+                  </IconButton>
+                </Stack>
+                <Stack direction="row" alignItems="center" mt={2} gap={1}>
+                  <IconButton
+                    onClick={() => {
+                      insert(index + 1, {
+                        timeline_type: { id: '', name: '' },
+                        duration: null,
+                        for: '',
+                      });
+                    }}
+                  >
+                    <Iconify icon="carbon:add-filled" />
+                  </IconButton>
+                  <Divider sx={{ borderStyle: 'dashed', flexGrow: 1 }} />
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
 
-                <IconButton color="error" onClick={() => handleRemove(index, item)}>
-                  <Iconify icon="uil:trash" />
-                </IconButton>
-              </Stack>
-              <Stack direction="row" alignItems="center" mt={2} gap={1}>
-                <IconButton
-                  onClick={() => {
-                    insert(index + 1, {
-                      timeline_type: { id: '', name: '' },
-                      duration: null,
-                      for: '',
-                    });
-                  }}
-                >
-                  <Iconify icon="carbon:add-filled" />
-                </IconButton>
-                <Divider sx={{ borderStyle: 'dashed', flexGrow: 1 }} />
-              </Stack>
+            <Box
+              sx={{
+                mt: 2,
+                textAlign: 'end',
+              }}
+            >
+              <LoadingButton
+                variant="outlined"
+                color="primary"
+                type="submit"
+                fullWidth={!!isSmallScreen}
+                disabled={!isDirty}
+                loading={isSubmitting}
+              >
+                Save
+              </LoadingButton>
             </Box>
-          ))}
-        </Box>
+          </Stack>
+        </FormProvider> */}
 
-        <Box
-          sx={{
-            mt: 2,
-            textAlign: 'end',
-            position: 'absolute',
-            bottom: 10,
-            right: 30,
-          }}
-        >
-          <Button
-            variant="outlined"
-            color="primary"
-            type="submit"
-            fullWidth={!!isSmallScreen}
-            disabled={defaultTimelines?.length === test.length}
-          >
-            Save
-          </Button>
-        </Box>
-      </FormProvider>
+        <FormProvider {...methods}>
+          <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ height: 1 }}>
+            <Stack spacing={2} overflow="hidden">
+              <Button
+                onClick={timelineModal.onTrue}
+                variant="contained"
+                size="small"
+                startIcon={<Iconify icon="material-symbols-light:manage-history" />}
+                sx={{
+                  ml: 'auto',
+                  flex: 1,
+                }}
+              >
+                Manage Timeline Type
+              </Button>
 
-      <Button
-        sx={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-        }}
-        onClick={timelineModal.onTrue}
-        variant="contained"
-        size="small"
-        startIcon={<Iconify icon="material-symbols-light:manage-history" />}
-      >
-        Manage Timeline Type
-      </Button>
+              <Stack
+                spacing={2}
+                maxHeight={460}
+                overflow="auto"
+                py={1}
+                sx={{ scrollbarWidth: 'none' }}
+              >
+                {fields.map((item, index) => (
+                  <Box
+                    key={item.id}
+                    component={m.div}
+                    initial={{ opacity: 0, top: 0.5 }}
+                    animate={{ opacity: 1, top: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <Stack direction={{ xs: 'column', md: 'row' }} gap={1} alignItems="center">
+                      {!isLoading && (
+                        <RHFAutocomplete
+                          name={`timeline[${index}].timeline_type`}
+                          onChange={(event, newValue) => {
+                            console.log(newValue);
+                            handleChange(newValue, index);
+                            setQuery(newValue);
+                          }}
+                          fullWidth
+                          freeSolo
+                          options={options}
+                          getOptionLabel={(option) => option.name}
+                          label="Timeline Type"
+                          filterOptions={(a, state) => {
+                            const filtered = a.filter((option) =>
+                              option.name.toLowerCase().includes(state.inputValue.toLowerCase())
+                            );
+
+                            if (
+                              state.inputValue !== '' &&
+                              !options.some((option) => option.name === state.inputValue)
+                            ) {
+                              filtered.push({ name: `Create new: ${state.inputValue}` });
+                            }
+
+                            return filtered;
+                          }}
+                          renderOption={(props, option) => {
+                            const { key, ...optionProps } = props;
+                            return (
+                              <MenuItem key={key} {...optionProps}>
+                                {option.name}
+                              </MenuItem>
+                            );
+                          }}
+                          sx={{
+                            '& .MuiInputBase-root': {
+                              cursor: 'not-allowed', // Change cursor to indicate disabled state
+                            },
+                          }}
+                          isOptionEqualToValue={(option, value) => option.id === value.id}
+                          helperText={
+                            errorTimeline.value && (
+                              <Typography variant="caption" color="error">
+                                Please select other timeline
+                              </Typography>
+                            )
+                          }
+                        />
+                      )}
+
+                      <RHFTextField
+                        name={`timeline[${index}].duration`}
+                        label="Duration"
+                        type="number"
+                        placeholder="Eg: 2"
+                        InputProps={{
+                          endAdornment: <InputAdornment position="end">days</InputAdornment>,
+                        }}
+                      />
+
+                      <RHFSelect name={`timeline[${index}].for`} label="For">
+                        <MenuItem value="admin">Admin</MenuItem>
+                        <MenuItem value="creator">Creator</MenuItem>
+                      </RHFSelect>
+
+                      <IconButton color="error" onClick={() => handleRemove(index, item)}>
+                        <Iconify icon="uil:trash" />
+                      </IconButton>
+                    </Stack>
+                    <Stack direction="row" alignItems="center" mt={2} gap={1}>
+                      <IconButton
+                        onClick={() => {
+                          insert(index + 1, {
+                            timeline_type: { id: '', name: '' },
+                            duration: null,
+                            for: '',
+                          });
+                        }}
+                      >
+                        <Iconify icon="carbon:add-filled" />
+                      </IconButton>
+                      <Divider sx={{ borderStyle: 'dashed', flexGrow: 1 }} />
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+
+              <Box
+                sx={{
+                  textAlign: 'end',
+                  flex: 1,
+                }}
+              >
+                <LoadingButton
+                  variant="outlined"
+                  color="primary"
+                  type="submit"
+                  fullWidth={!!isSmallScreen}
+                  disabled={!isDirty}
+                  loading={isSubmitting}
+                >
+                  Save
+                </LoadingButton>
+              </Box>
+            </Stack>
+          </Box>
+        </FormProvider>
+      </Box>
+
       <TimelineTypeModal
         open={timelineModal.value}
         handleClose={timelineModal.onFalse}
