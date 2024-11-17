@@ -53,7 +53,9 @@ export default function Upload({
   const renderPlaceholder = (
     <Box
       component="div"
-      {...getRootProps()}
+      {...getRootProps({
+        className: 'dropzone',
+      })}
       onClick={open}
       sx={{
         display: 'flex',
