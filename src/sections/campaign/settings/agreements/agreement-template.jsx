@@ -90,7 +90,7 @@ const AgreementTemplates = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {[...data, ...data]?.map((template, index) => (
+              {data?.map((template, index) => (
                 <TableRow key={template?.id}>
                   <TableCell align="center">{index + 1}</TableCell>
                   <TableCell align="center">{template?.adminName}</TableCell>
