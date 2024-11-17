@@ -67,7 +67,7 @@ const AgreementTemplates = () => {
       {isLoading && <Typography>Loading...</Typography>}
 
       {!isLoading && data?.length ? (
-        <TableContainer>
+        <TableContainer sx={{ height: 1, overflow: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow>
