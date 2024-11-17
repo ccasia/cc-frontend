@@ -50,6 +50,7 @@ export default function Upload({
 
   const renderPlaceholder = (
     <Box
+      component="div"
       {...getRootProps()}
       sx={{
         display: 'flex',
