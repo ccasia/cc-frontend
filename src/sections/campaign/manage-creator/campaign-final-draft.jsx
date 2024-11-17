@@ -602,7 +602,7 @@ const CampaignFinalDraft = ({
             <FormProvider methods={methods} onSubmit={onSubmit}>
               <Stack spacing={3} sx={{ pt: 1 }}>
                 <Box>
-                  {localStorage.getItem('preview') ? (
+                  {localStorage.getItem('preview') || preview ? (
                     <Box sx={{ position: 'relative' }}>
                       <Stack
                         spacing={2}

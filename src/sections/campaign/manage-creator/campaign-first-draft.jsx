@@ -758,7 +758,7 @@ const CampaignFirstDraft = ({
               >
                 <FormProvider methods={methods} onSubmit={onSubmit}>
                   <Stack gap={2}>
-                    {localStorage.getItem('preview') ? (
+                    {localStorage.getItem('preview') || preview ? (
                       <Box sx={{ mt: 0.5 }}>
                         <Stack
                           direction="row"
