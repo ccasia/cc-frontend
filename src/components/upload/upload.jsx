@@ -36,11 +36,12 @@ export default function Upload({
   sx,
   ...other
 }) {
-  const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections } = useDropzone({
-    multiple,
-    disabled,
-    ...other,
-  });
+  const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections, open } =
+    useDropzone({
+      multiple,
+      disabled,
+      ...other,
+    });
 
   const hasFile = !!file && !multiple;
 
@@ -51,6 +52,7 @@ export default function Upload({
   const renderPlaceholder = (
     <Box
       component="div"
+      onClick={open}
       {...getRootProps()}
       sx={{
         display: 'flex',
