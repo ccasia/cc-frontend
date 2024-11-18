@@ -111,6 +111,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
       const res = await axiosInstance.patch(endpoints.submission.admin.draft, {
         ...data,
         submissionId: submission.id,
+        userId: creator?.user?.id,
       });
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
