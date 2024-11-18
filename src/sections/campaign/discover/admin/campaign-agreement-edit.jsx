@@ -16,7 +16,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
 
 import { useSettingsContext } from 'src/components/settings';
@@ -26,7 +25,8 @@ import { RHFCheckbox, RHFTextField } from 'src/components/hook-form';
 const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
-  const { user } = useAuthContext();
+
+  console.log(campaign);
 
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
@@ -58,7 +58,6 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
     try {
       await axiosInstance.patch(endpoints.campaign.sendAgreement, agreement);
       mutate(endpoints.campaign.creatorAgreement(agreement.campaignId));
-      // enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Error', { variant: 'error' });
     }
