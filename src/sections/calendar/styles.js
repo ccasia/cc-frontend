@@ -10,7 +10,7 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
   '& .fc': {
     '--fc-border-color': alpha(theme.palette.grey[500], 0.16),
     '--fc-now-indicator-color': theme.palette.error.main,
-    '--fc-today-bg-color': alpha(theme.palette.grey[500], 0.08),
+    '--fc-today-bg-color': alpha(theme.palette.grey[0], 0.08),
     '--fc-page-bg-color': theme.palette.background.default,
     '--fc-neutral-bg-color': theme.palette.background.neutral,
     '--fc-list-event-hover-bg-color': theme.palette.action.hover,
@@ -21,12 +21,17 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
   '& .fc a': { color: theme.palette.text.primary },
 
   // Table Head
-  '& .fc .fc-col-header ': {
+  '& .fc .fc-col-header': {
     boxShadow: `inset 0 -1px 0 ${theme.palette.divider}`,
-    '& th': { borderColor: 'transparent' },
+    backgroundColor: alpha(theme.palette.grey[500], 0.10),
+    '& th': {
+      borderColor: alpha(theme.palette.grey[500], 0.16),
+      textAlign: 'right',
+    },
     '& .fc-col-header-cell-cushion': {
       ...theme.typography.subtitle2,
-      padding: '13px 0',
+      padding: '10px 7px',
+      textAlign: 'right',
     },
   },
 
@@ -65,18 +70,20 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
     },
   },
   '& .fc .fc-event .fc-event-main-frame': {
-    fontSize: 13,
-    lineHeight: '20px',
+    fontSize: 12,
+    lineHeight: '10px',
     filter: 'brightness(0.48)',
   },
   '& .fc .fc-daygrid-event .fc-event-title': {
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     textOverflow: 'ellipsis',
+    color: 'currentColor',
   },
   '& .fc .fc-event .fc-event-time': {
     overflow: 'unset',
     fontWeight: theme.typography.fontWeightBold,
+    color: 'currentColor',
   },
 
   // Popover
@@ -133,6 +140,29 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
       color: theme.palette.text.primary,
       fontWeight: theme.typography.fontWeightMedium,
     },
+  },
+
+  // Highlight Today
+  '& .fc .fc-day-today': {
+    backgroundColor: 'transparent', 
+    position: 'relative', 
+  },
+  '& .fc .fc-day-today .fc-daygrid-day-number': {
+    width: '30px',
+    height: '30px',
+    display: 'flex',
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: '#1340FF', 
+    color: '#FFFFFF', 
+    borderRadius: '50%',
+    fontWeight: theme.typography.fontWeightBold, 
+    position: 'absolute', 
+    top: '5px', 
+    right: '5px',
+    lineHeight: '1', 
+    padding: '0', 
+    boxSizing: 'border-box',
   },
 
   // Week & Day View

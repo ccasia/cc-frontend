@@ -1,10 +1,11 @@
-import Calendar from '@fullcalendar/react'; // => request placed at the top
+import Calendar from '@fullcalendar/react';
 import listPlugin from '@fullcalendar/list';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import timelinePlugin from '@fullcalendar/timeline';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import interactionPlugin from '@fullcalendar/interaction';
+import { Divider } from '@mui/material';
 
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -15,10 +16,7 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-
-import { isAfter, isBetween } from 'src/utils/format-time';
 
 import { updateEvent, useGetEvents } from 'src/api/calendar';
 import { CALENDAR_COLOR_OPTIONS } from 'src/_mock/_calendar';
@@ -29,98 +27,46 @@ import { useSettingsContext } from 'src/components/settings';
 import { StyledCalendar } from '../styles';
 import CalendarForm from '../calendar-form';
 import { useEvent, useCalendar } from '../hooks';
-import CalendarToolbar from '../calendar-toolbar';
-import CalendarFilters from '../calendar-filters';
-import CalendarFiltersResult from '../calendar-filters-result';
-
-// ----------------------------------------------------------------------
-
-const defaultFilters = {
-  colors: [],
-  startDate: null,
-  endDate: null,
-};
+import EventDetails from './calendar-view-details';
 
 // ----------------------------------------------------------------------
 
 export default function CalendarView() {
   const theme = useTheme();
-
   const settings = useSettingsContext();
-
   const smUp = useResponsive('up', 'sm');
 
-  const openFilters = useBoolean();
-
-  const [filters, setFilters] = useState(defaultFilters);
-
-  const { events, eventsLoading } = useGetEvents();
-
-  const dateError = isAfter(filters.startDate, filters.endDate);
-
+  const { events } = useGetEvents();
   const {
     calendarRef,
-    //
     view,
     date,
-    //
     onDatePrev,
     onDateNext,
     onDateToday,
     onDropEvent,
-    onChangeView,
     onSelectRange,
-    onClickEvent,
     onResizeEvent,
     onInitialView,
-    //
     openForm,
-    onOpenForm,
     onCloseForm,
-    //
     selectEventId,
     selectedRange,
-    //
-    onClickEventInFilters,
   } = useCalendar();
 
   const currentEvent = useEvent(events, selectEventId, selectedRange, openForm);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null); 
 
   useEffect(() => {
     onInitialView();
   }, [onInitialView]);
 
-  const handleFilters = useCallback((name, value) => {
-    setFilters((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-  }, []);
-
-  const handleResetFilters = useCallback(() => {
-    setFilters(defaultFilters);
-  }, []);
-
-  const canReset = !!filters.colors.length || (!!filters.startDate && !!filters.endDate);
-
-  const dataFiltered = applyFilter({
-    inputData: events,
-    filters,
-    dateError,
-  });
-
-  const renderResults = (
-    <CalendarFiltersResult
-      filters={filters}
-      onFilters={handleFilters}
-      //
-      canReset={canReset}
-      onResetFilters={handleResetFilters}
-      //
-      results={dataFiltered.length}
-      sx={{ mb: { xs: 3, md: 5 } }}
-    />
-  );
+  const handleEventClick = (eventInfo) => {
+    console.log('Event Info:', eventInfo.event);
+    setSelectedEvent(eventInfo.event); 
+    setDrawerOpen(true); 
+  };
 
   return (
     <>
@@ -130,7 +76,7 @@ export default function CalendarView() {
           alignItems="center"
           justifyContent="space-between"
           sx={{
-            mb: { xs: 3, md: 5 },
+            mb: { xs: 3, md: 2 },
           }}
         >
           <Typography
@@ -139,32 +85,46 @@ export default function CalendarView() {
               fontFamily: theme.typography.fontSecondaryFamily,
             }}
           >
-            Calendar
+            {date.toLocaleString('default', { month: 'long' })} {date.getFullYear()}
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-            onClick={onOpenForm}
-          >
-            New Event
-          </Button>
-        </Stack>
 
-        {canReset && renderResults}
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Button
+              size="small"
+              onClick={onDateToday}
+              sx={{
+                boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+              }}
+            >
+              Today
+            </Button>
+            <Button
+              size="small"
+              onClick={onDatePrev}
+              sx={{
+                boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+                padding: '4px 8px',
+                minWidth: '30px',
+              }}
+            >
+              <Iconify icon="eva:arrow-ios-back-fill" />
+            </Button>
+            <Button
+              size="small"
+              onClick={onDateNext}
+              sx={{
+                boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+                padding: '4px 8px',
+                minWidth: '30px',
+              }}
+            >
+              <Iconify icon="eva:arrow-ios-forward-fill" />
+            </Button>
+          </Stack>
+        </Stack>
 
         <Card>
           <StyledCalendar>
-            <CalendarToolbar
-              date={date}
-              view={view}
-              loading={eventsLoading}
-              onNextDate={onDateNext}
-              onPrevDate={onDatePrev}
-              onToday={onDateToday}
-              onChangeView={onChangeView}
-              onOpenFilters={openFilters.onTrue}
-            />
-
             <Calendar
               weekends
               editable
@@ -178,10 +138,10 @@ export default function CalendarView() {
               initialView={view}
               dayMaxEventRows={3}
               eventDisplay="block"
-              events={dataFiltered}
+              events={events}
               headerToolbar={false}
               select={onSelectRange}
-              eventClick={onClickEvent}
+              eventClick={handleEventClick} 
               height={smUp ? 720 : 'auto'}
               eventDrop={(arg) => {
                 onDropEvent(arg, updateEvent);
@@ -196,6 +156,23 @@ export default function CalendarView() {
                 timeGridPlugin,
                 interactionPlugin,
               ]}
+              eventContent={(eventInfo) => {
+                const { start, end, title } = eventInfo.event;
+                const startTime = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '');
+                const endTime = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '');
+                return (
+                  <div style={{
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                    fontSize: '0.8rem',
+                    fontWeight: '500',
+                  }}>
+                    ({startTime}-{endTime}) {title}
+                  </div>
+                );
+              }}
             />
           </StyledCalendar>
         </Card>
@@ -212,7 +189,31 @@ export default function CalendarView() {
         }}
       >
         <DialogTitle sx={{ minHeight: 76 }}>
-          {openForm && <> {currentEvent?.id ? 'Edit Event' : 'Add Event'}</>}
+          {openForm && (
+            <div style={{
+              width: '200px',
+              height: '40px',
+              fontFamily: 'Instrument Serif',
+              fontStyle: 'normal',
+              fontWeight: 400,
+              fontSize: '36px',
+              lineHeight: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              color: '#231F20',
+              flex: 'none',
+              order: 0,
+              flexGrow: 0,
+            }}>
+              <span role="img" aria-label="calendar" style={{ marginRight: '8px' }}>📅</span>
+              {currentEvent?.id ? 'Edit Event' : 'New Event'}
+            </div>
+          )}
+          <Divider
+            sx={{
+              my: 2,
+            }}
+          />
         </DialogTitle>
 
         <CalendarForm
@@ -222,44 +223,12 @@ export default function CalendarView() {
         />
       </Dialog>
 
-      <CalendarFilters
-        open={openFilters.value}
-        onClose={openFilters.onFalse}
-        //
-        filters={filters}
-        onFilters={handleFilters}
-        //
-        canReset={canReset}
-        onResetFilters={handleResetFilters}
-        //
-        dateError={dateError}
-        //
-        events={events}
+      <EventDetails
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        currentEvent={selectedEvent}
         colorOptions={CALENDAR_COLOR_OPTIONS}
-        onClickEvent={onClickEventInFilters}
       />
     </>
   );
-}
-
-// ----------------------------------------------------------------------
-
-function applyFilter({ inputData, filters, dateError }) {
-  const { colors, startDate, endDate } = filters;
-
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-
-  inputData = stabilizedThis.map((el) => el[0]);
-
-  if (colors.length) {
-    inputData = inputData.filter((event) => colors.includes(event.color));
-  }
-
-  if (!dateError) {
-    if (startDate && endDate) {
-      inputData = inputData.filter((event) => isBetween(event.start, startDate, endDate));
-    }
-  }
-
-  return inputData;
 }

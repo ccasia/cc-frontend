@@ -1,25 +1,25 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import { useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogActions from '@mui/material/DialogActions';
 import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined'
 
 import { isAfter, fTimestamp } from 'src/utils/format-time';
 
-import { createEvent, deleteEvent, updateEvent } from 'src/api/calendar';
+import { createEvent, updateEvent } from 'src/api/calendar';
 
-import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import { ColorPicker } from 'src/components/color-utils';
 import FormProvider, { RHFSwitch, RHFTextField } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
@@ -30,7 +30,6 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
   const EventSchema = Yup.object().shape({
     title: Yup.string().max(255).required('Title is required'),
     description: Yup.string().max(5000, 'Description must be at most 5000 characters'),
-    // not required
     color: Yup.string(),
     allDay: Yup.boolean(),
     start: Yup.mixed(),
@@ -39,7 +38,10 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
 
   const methods = useForm({
     resolver: yupResolver(EventSchema),
-    defaultValues: currentEvent,
+    defaultValues: {
+      ...currentEvent,
+      color: currentEvent?.color || null,
+    },
   });
 
   const {
@@ -69,11 +71,11 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
       if (!dateError) {
         if (currentEvent?.id) {
           await updateEvent(eventData);
-          enqueueSnackbar('Update success!');
+          enqueueSnackbar('Event details updated!');
         } else {
           // await createEvent(eventData);
           await createEvent(eventData);
-          enqueueSnackbar('Create success!');
+          enqueueSnackbar('New event added!');
         }
         onClose();
         reset();
@@ -83,95 +85,177 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
     }
   });
 
-  const onDelete = useCallback(async () => {
-    try {
-      await deleteEvent(`${currentEvent?.id}`);
-      enqueueSnackbar('Delete success!');
-      onClose();
-    } catch (error) {
-      console.error(error);
-    }
-  }, [enqueueSnackbar, onClose, currentEvent]);
-
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Stack spacing={3} sx={{ px: 3 }}>
-        <RHFTextField name="title" label="Title" />
+      <Stack spacing={1} sx={{ px: 3 }}>
+        
+        <RHFTextField name="title" label="Title" sx={{ mb:1  }} />
 
-        <RHFTextField name="description" label="Description" multiline rows={3} />
+        <RHFTextField name="description" label="Event Description..." multiline rows={3} />
 
-        <RHFSwitch name="allDay" label="All day" />
+        <RHFSwitch name="allDay" label="All day" sx={{ mt: 2 }} />
 
-        <Controller
-          name="start"
-          control={control}
-          render={({ field }) => (
-            <MobileDateTimePicker
-              {...field}
-              value={new Date(field.value)}
-              onChange={(newValue) => {
-                if (newValue) {
-                  field.onChange(fTimestamp(newValue));
-                }
-              }}
-              label="Start date"
-              format="dd/MM/yyyy hh:mm a"
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                },
-              }}
-            />
-          )}
-        />
+        <Stack direction="row" spacing={1} sx={{ mt: 2 , mb :2}}>
+          <Controller
+            name="start"
+            control={control}
+            render={({ field }) => (
+              <MobileDateTimePicker
+                {...field}
+                value={new Date(field.value)}
+                onChange={(newValue) => {
+                  if (newValue) {
+                    field.onChange(fTimestamp(newValue));
+                  }
+                }}
+                label="Start date"
+                format="dd MMM, h:mm a"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    InputProps: {
+                      endAdornment: (
+                        <InputAdornment 
+                          position="end" 
+                          sx={{
+                            width: '24px',
+                            height: '24px',
+                            flex: 'none',
+                            paddingRight: '10px',
+                          }}
+                        >
+                          <IconButton sx={{ color: "#1340FF" }}>
+                            <CalendarTodayOutlinedIcon />
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  },
+                }}
+              />
+            )}
+          />
 
-        <Controller
-          name="end"
-          control={control}
-          render={({ field }) => (
-            <MobileDateTimePicker
-              {...field}
-              value={new Date(field.value)}
-              onChange={(newValue) => {
-                if (newValue) {
-                  field.onChange(fTimestamp(newValue));
-                }
-              }}
-              label="End date"
-              format="dd/MM/yyyy hh:mm a"
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  error: dateError,
-                  helperText: dateError && 'End date must be later than start date',
-                },
-              }}
-            />
-          )}
-        />
+          <Controller
+            name="end"
+            control={control}
+            render={({ field }) => (
+              <MobileDateTimePicker
+                {...field}
+                value={new Date(field.value)}
+                onChange={(newValue) => {
+                  if (newValue) {
+                    field.onChange(fTimestamp(newValue));
+                  }
+                }}
+                label="End date"
+                format="dd MMM, h:mm a"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: dateError,
+                    helperText: dateError && 'End date must be later than start date',
+                    InputProps: {
+                      endAdornment: (
+                        <InputAdornment 
+                        position="end" 
+                        sx={{
+                          width: '24px',
+                          height: '24px',
+                          flex: 'none',
+                          paddingRight: '10px'
+                        }}>
+                          <IconButton sx={{ color: "#1340FF" }}>
+                            <CalendarTodayOutlinedIcon />
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  },
+                }}
+              />
+            )}
+          />
+        </Stack>
 
         <Controller
           name="color"
+          label="Select Color"
           control={control}
           render={({ field }) => (
-            <ColorPicker
-              selected={field.value}
-              onSelectColor={(color) => field.onChange(color)}
-              colors={colorOptions}
-            />
+            <Select
+              {...field}
+              value={field.value || ""}
+              onChange={(event) => {
+                field.onChange(event.target.value || null);
+              }}
+              fullWidth
+              displayEmpty
+              renderValue={(selected) => {
+                const selectedOption = colorOptions.find(option => option.color === selected);
+                return (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {selectedOption ? (
+                      <>
+                        <Box
+                          sx={{
+                            backgroundColor: selectedOption.color,
+                            borderRadius: 1,
+                            padding: '2px 8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            height: '25px',
+                            marginRight: '8px',
+                          }}
+                        >
+                          <span style={{
+                            color: (theme) => theme.palette.getContrastText(selectedOption.color),
+                            fontSize: '12px',
+                            textAlign: 'center',
+                          }}>
+                            {selectedOption.label}
+                          </span>
+                        </Box>
+                      </>
+                    ) : (
+                      <span style={{ color: 'gray', fontSize: '12px' }}>Select Color</span>
+                    )}
+                  </Box>
+                );
+              }}
+            >
+              {colorOptions.map(({ color, label }) => (
+                <MenuItem key={color} value={color}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        backgroundColor: color,
+                        borderRadius: 1,
+                        padding: '2px 8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '25px',
+                      }}
+                    >
+                      <span style={{
+                        color: (theme) => theme.palette.getContrastText(color),
+                        fontSize: '12px',
+                        textAlign: 'center',
+                      }}>
+                        {label}
+                      </span>
+                    </Box>
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
           )}
         />
       </Stack>
 
       <DialogActions>
-        {!!currentEvent?.id && (
-          <Tooltip title="Delete Event">
-            <IconButton onClick={onDelete}>
-              <Iconify icon="solar:trash-bin-trash-bold" />
-            </IconButton>
-          </Tooltip>
-        )}
-
         <Box sx={{ flexGrow: 1 }} />
 
         <Button variant="outlined" color="inherit" onClick={onClose}>
