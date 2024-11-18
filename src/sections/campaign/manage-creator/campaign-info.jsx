@@ -398,8 +398,8 @@ const CampaignInfo = ({ campaign }) => {
                 </Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Avatar
-                    src={campaign?.company?.logo}
-                    alt={campaign?.company?.name}
+                    src={campaign?.company?.logo ?? campaign?.brand?.logo}
+                    alt={campaign?.company?.name ?? campaign?.brand?.name}
                     sx={{
                       width: 36,
                       height: 36,
@@ -408,7 +408,7 @@ const CampaignInfo = ({ campaign }) => {
                     }}
                   />
                   <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8rem' }}>
-                    {campaign?.company?.name || 'Company Name'}
+                    {campaign?.company?.name ?? campaign?.brand?.name ?? 'Company Name'}
                   </Typography>
                 </Stack>
               </Box>
