@@ -26,8 +26,6 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
 
-  console.log(campaign);
-
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
     default: yup.boolean(),
