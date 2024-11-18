@@ -81,9 +81,9 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
           AGREEMENT_ENDDATE={dayjs(campaign?.campaignBrief?.endDate).format('LL')}
           NOW_DATE={dayjs().format('LL')}
           VERSION_NUMBER="V1"
-          ADMIN_IC_NUMBER={campaign?.agreementTemplate?.adminICNumber}
-          ADMIN_NAME={campaign?.agreementTemplate?.adminName}
-          SIGNATURE={campaign?.agreementTemplate?.signURL}
+          ADMIN_IC_NUMBER={campaign?.agreementTemplate?.adminICNumber ?? 'Default'}
+          ADMIN_NAME={campaign?.agreementTemplate?.adminName ?? 'Default'}
+          SIGNATURE={campaign?.agreementTemplate?.signURL ?? 'Default'}
         />
       ).toBlob();
 
