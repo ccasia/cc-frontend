@@ -55,7 +55,7 @@ const LoadingDots = () => {
     const interval = setInterval(() => {
       setDots((prev) => {
         if (prev === '...') return '';
-        return `${prev  }.`;
+        return `${prev}.`;
       });
     }, 500);
 
@@ -164,12 +164,12 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     setSubmitStatus('submitting');
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       const res = await axiosInstance.post(endpoints.submission.creator.postSubmission, {
         ...data,
         submissionId: submission?.id,
       });
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       // enqueueSnackbar(res?.data?.message);
       mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
       mutate(endpoints.kanban.root);
@@ -177,7 +177,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
       reset();
       setSubmitStatus('success');
     } catch (error) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       // enqueueSnackbar('Error submitting post link', {
       //   variant: 'error',
       // });
@@ -190,39 +190,37 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     setSubmitStatus('');
   };
 
-  console.log(submission)
-
   return (
     <>
       {previewSubmission?.status === 'APPROVED' && (
         <Box p={1.5} sx={{ pb: 0 }}>
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            mb: 2, 
-            mt: { xs: 0, sm: -2 },
-            ml: { xs: 0, sm: -1.2 },
-            textAlign: { xs: 'center', sm: 'left' }
-          }}
-        >
-          <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
-            Posting Link Submission 🔗
-          </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
-            Due: {dayjs(submission?.endDate).format('MMM DD, YYYY')}
-          </Typography>
-        </Box>
-          
-          <Box 
-            sx={{ 
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+              mt: { xs: 0, sm: -2 },
+              ml: { xs: 0, sm: -1.2 },
+              textAlign: { xs: 'center', sm: 'left' },
+            }}
+          >
+            <Typography variant="h4" sx={{ fontWeight: 600, color: '#221f20' }}>
+              Posting Link Submission 🔗
+            </Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              Due: {dayjs(submission?.endDate).format('MMM DD, YYYY')}
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
               borderBottom: '1px solid',
               borderColor: 'divider',
               mb: 3,
               mx: -1.5,
-            }} 
+            }}
           />
 
           <Stack gap={2}>
@@ -253,14 +251,14 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
           {submission?.status === 'IN_PROGRESS' && (
             <Stack spacing={1}>
               {/* {renderPostingTimeline} */}
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   borderBottom: '1px solid',
                   borderColor: 'divider',
                   mb: 2,
                   mt: 8,
                   mx: -1.5,
-                }} 
+                }}
               />
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
@@ -295,7 +293,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                 onClick={() => router.push(paths.dashboard.finance.invoiceDetail(invoiceId))}
                 sx={{
                   bgcolor: '#203ff5',
-                  color: 'white', 
+                  color: 'white',
                   borderBottom: 3.5,
                   borderBottomColor: '#112286',
                   borderRadius: 1.5,
@@ -316,14 +314,14 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
             <>
               {renderRejectMessage}
               <Stack spacing={1} my={1.5}>
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     borderBottom: '1px solid',
                     borderColor: 'divider',
                     mt: 2,
                     mb: 2,
                     mx: -1.5,
-                  }} 
+                  }}
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button
@@ -352,11 +350,11 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         </Box>
       )}
 
-      <Dialog 
-        open={openPostingModal} 
-        fullWidth 
+      <Dialog
+        open={openPostingModal}
+        fullWidth
         maxWidth={false}
-        sx={{ 
+        sx={{
           maxWidth: '780px',
           margin: 'auto',
           width: '90%',
@@ -368,25 +366,25 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
           }}
         >
           <Stack direction="row" alignItems="center" gap={2}>
-            <Typography 
+            <Typography
               variant="h5"
-              sx={{ 
+              sx={{
                 fontFamily: 'Instrument Serif, serif',
                 fontSize: { xs: '2rem', sm: '2.4rem' },
-                fontWeight: 550
+                fontWeight: 550,
               }}
             >
               Submit Link
             </Typography>
             <IconButton
               onClick={() => setOpenPostingModal(false)}
-              sx={{ 
+              sx={{
                 ml: 'auto',
-                '& svg': { 
+                '& svg': {
                   width: 24,
                   height: 24,
-                  color: '#636366'
-                }
+                  color: '#636366',
+                },
               }}
             >
               <Iconify icon="hugeicons:cancel-01" width={24} />
@@ -402,7 +400,10 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
           <FormProvider methods={methods} onSubmit={onSubmit}>
             <Stack spacing={2} alignItems="flex-start">
               <Typography variant="subtitle2" sx={{ mb: -0.5, ml: 0.25 }}>
-                Posting Link <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                Posting Link{' '}
+                <Box component="span" sx={{ color: 'error.main' }}>
+                  *
+                </Box>
               </Typography>
               <TextField
                 name="postingLink"
@@ -414,10 +415,10 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   bgcolor: '#ffffff',
                 }}
               />
-              <Button 
-                variant="contained" 
-                size="medium" 
-                type="submit" 
+              <Button
+                variant="contained"
+                size="medium"
+                type="submit"
                 sx={{
                   fontSize: '0.95rem',
                   fontWeight: 600,
@@ -430,8 +431,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   py: 1.2,
                   mb: 3.5,
                   mt: 2,
-                  ml: 'auto', 
-                  alignSelf: 'flex-end', 
+                  ml: 'auto',
+                  alignSelf: 'flex-end',
                   '&:hover': {
                     bgcolor: postingLinkValue ? '#203ff5' : '#b0b0b1',
                     opacity: postingLinkValue ? 0.9 : 1,
@@ -446,15 +447,15 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         </DialogContent>
       </Dialog>
 
-      <Dialog 
-        open={showSubmitDialog} 
+      <Dialog
+        open={showSubmitDialog}
         maxWidth="xs"
         fullWidth
         sx={{
           '& .MuiDialog-paper': {
             width: { xs: '95%', sm: '400px' },
             margin: { xs: '16px', sm: '32px' },
-          }
+          },
         }}
       >
         <DialogContent>
@@ -471,22 +472,23 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     borderRadius: '50%',
                     bgcolor: '#f4b84a',
                     fontSize: { xs: '40px', sm: '50px' },
-                    mb: -2
+                    mb: -2,
                   }}
                 >
                   🛫
                 </Box>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+                <Typography
+                  variant="h6"
+                  sx={{
                     display: 'flex',
                     fontFamily: 'Instrument Serif, serif',
                     fontSize: { xs: '1.5rem', sm: '2.5rem' },
                     fontWeight: 550,
-                    textAlign: 'center'
+                    textAlign: 'center',
                   }}
                 >
-                  Submitting link<LoadingDots />
+                  Submitting link
+                  <LoadingDots />
                 </Typography>
               </>
             )}
@@ -502,29 +504,29 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     borderRadius: '50%',
                     bgcolor: '#e0fe52',
                     fontSize: { xs: '40px', sm: '50px' },
-                    mb: -2
+                    mb: -2,
                   }}
                 >
                   🥳
                 </Box>
                 <Stack spacing={1} alignItems="center">
-                  <Typography 
+                  <Typography
                     variant="h6"
-                    sx={{ 
+                    sx={{
                       fontFamily: 'Instrument Serif, serif',
                       fontSize: { xs: '1.5rem', sm: '2.5rem' },
                       fontWeight: 550,
-                      textAlign: 'center'
+                      textAlign: 'center',
                     }}
                   >
                     Campaign Completed
                   </Typography>
-                  <Typography 
+                  <Typography
                     variant="body1"
-                    sx={{ 
+                    sx={{
                       color: '#636366',
                       mt: -1,
-                      textAlign: 'center'
+                      textAlign: 'center',
                     }}
                   >
                     Woohoo! You have completed this campaign!
@@ -544,25 +546,25 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     borderRadius: '50%',
                     bgcolor: 'error.lighter',
                     fontSize: { xs: '30px', sm: '40px' },
-                    mb: { xs: 1, sm: 2 }
+                    mb: { xs: 1, sm: 2 },
                   }}
                 >
-                  <Iconify 
-                    icon="mdi:error" 
-                    sx={{ 
-                      width: { xs: 40, sm: 60 }, 
-                      height: { xs: 40, sm: 60 }, 
-                      color: 'error.main' 
-                    }} 
+                  <Iconify
+                    icon="mdi:error"
+                    sx={{
+                      width: { xs: 40, sm: 60 },
+                      height: { xs: 40, sm: 60 },
+                      color: 'error.main',
+                    }}
                   />
                 </Box>
-                <Typography 
+                <Typography
                   variant="h6"
-                  sx={{ 
+                  sx={{
                     fontFamily: 'Instrument Serif, serif',
                     fontSize: { xs: '1.5rem', sm: '1.8rem' },
                     fontWeight: 550,
-                    textAlign: 'center'
+                    textAlign: 'center',
                   }}
                 >
                   Submission Failed
@@ -573,7 +575,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         </DialogContent>
         {(submitStatus === 'success' || submitStatus === 'error') && (
           <DialogActions sx={{ pb: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 } }}>
-            <Button 
+            <Button
               onClick={handleCloseSubmitDialog}
               variant="contained"
               fullWidth

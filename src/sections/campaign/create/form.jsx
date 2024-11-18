@@ -32,6 +32,7 @@ import FormProvider from 'src/components/hook-form';
 import CreateBrand from './brandDialog';
 import CreateCompany from './companyDialog';
 import SelectBrand from './steps/select-brand';
+import CampaignType from './steps/campaign-type';
 import SelectTimeline from './steps/select-timeline';
 import CampaignFormUpload from './steps/form-upload';
 import GeneralCampaign from './steps/general-campaign';
@@ -51,6 +52,7 @@ const steps = [
   'General Campaign Information',
   'Campaign Details',
   'Campaign Images',
+  'Campaign Type',
   'Timeline',
   'Admin Manager',
   'Agreement Form',
@@ -210,6 +212,10 @@ function CreateCampaignForm() {
       }),
   });
 
+  const campaignTypeSchema = Yup.object().shape({
+    campaignType: Yup.string().required('Campaign type is required.'),
+  });
+
   const getSchemaForStep = (step) => {
     switch (step) {
       case 0:
@@ -221,10 +227,12 @@ function CreateCampaignForm() {
       case 3:
         return campaignImagesSchema;
       case 4:
-        return timelineSchema;
+        return campaignTypeSchema;
       case 5:
-        return campaignAdminSchema;
+        return timelineSchema;
       case 6:
+        return campaignAdminSchema;
+      case 7:
         return campaignAdminSchema;
       default:
         return campaignSchema;
@@ -264,20 +272,21 @@ function CreateCampaignForm() {
     adminManager: [],
     agreementFrom: null,
     timeline: [
-      {
-        timeline_type: {},
-        id: '',
-        duration: undefined,
-        for: 'creator',
-        startDate: '',
-        endDate: '',
-        isSubmissionNeeded: false,
-      },
+      // {
+      //   timeline_type: {},
+      //   id: '',
+      //   duration: undefined,
+      //   for: 'creator',
+      //   startDate: '',
+      //   endDate: '',
+      //   isSubmissionNeeded: false,
+      // },
     ],
     campaignTasksAdmin: [],
     campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
     otherAttachments: [],
     referencesLinks: [],
+    campaignType: '',
   };
 
   const methods = useForm({
@@ -339,7 +348,7 @@ function CreateCampaignForm() {
     }
   }, [brandState, setValue]);
 
-  const isStepOptional = (step) => step === 7;
+  const isStepOptional = (step) => step === 8;
 
   const handleNext = async () => {
     // setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -455,12 +464,14 @@ function CreateCampaignForm() {
         case 3:
           return <CampaignImageUpload />;
         case 4:
-          return <SelectTimeline />;
+          return <CampaignType />;
         case 5:
-          return <CampaignAdminManager />;
+          return <SelectTimeline />;
         case 6:
-          return <CampaignFormUpload pdfModal={pdfModal} />;
+          return <CampaignAdminManager />;
         case 7:
+          return <CampaignFormUpload pdfModal={pdfModal} />;
+        case 8:
           return <OtherAttachments />;
         default:
           return <SelectBrand />;
