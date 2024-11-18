@@ -12,6 +12,7 @@ import ListItemText from '@mui/material/ListItemText';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { countries } from 'src/assets/data';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -24,7 +25,9 @@ import UserQuickEditForm from './user-quick-edit-form';
 // ----------------------------------------------------------------------
 
 export default function UserTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow }) {
-  const { name, admin, country, phoneNumber, status, photoURL, role } = row;
+  const { name, admin, country, phoneNumber, status, photoURL } = row;
+
+  const { user } = useAuthContext();
 
   const confirm = useBoolean();
 
@@ -91,7 +94,7 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
             <IconButton
               color={quickEdit.value ? 'inherit' : 'default'}
               onClick={quickEdit.onTrue}
-              disabled={role === 'admin'}
+              disabled={user?.role === 'admin'}
             >
               <Iconify icon="solar:pen-bold" />
             </IconButton>
@@ -104,7 +107,7 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
                 popover.onClose();
               }}
               sx={{ color: 'error.main' }}
-              disabled={role === 'admin'}
+              disabled={user?.role === 'admin'}
             >
               <Iconify icon="solar:trash-bin-trash-bold" />
             </IconButton>
