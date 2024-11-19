@@ -13,7 +13,7 @@ export default function ChatMessageItem({ message }) {
   const { user } = useAuthContext();
 
   const isMe = user?.id === message.senderId;
-  const { content: body, sender } = message;
+  const { content: body, sender, file } = message;
 
   const isAdmin = sender?.role === 'admin';
   const isSprAdmin = sender?.role === 'superadmin';
@@ -60,6 +60,51 @@ export default function ChatMessageItem({ message }) {
   //       : 'sent'}
   //   </Typography>
   // );
+
+  const renderMediaBody = (fileType, fileURL) => {
+    if (!fileType || !fileURL) return null;
+   
+    if (fileType.startsWith('image')) {
+      // Render Image
+      return (
+        <img
+          src={fileURL}
+          alt="Image message"
+          style={{ maxWidth: '320px', maxHeight: '200px', objectFit: 'cover' }}
+        />
+      );
+    }
+  
+    if (fileType.startsWith('video')) {
+      // Render Video
+      return (
+        <video width="320" controls>
+          <source src={fileURL} type={fileType} />
+          Your browser does not support the video tag.
+        </video>
+      );
+    }
+  
+    if (fileType === 'application/pdf') {
+      // Render PDF
+      return (
+        <iframe
+          src={fileURL}
+          width="320"
+          height="240"
+          title="PDF preview"
+        >
+          Your browser does not support PDFs.
+        </iframe>
+      );
+    }
+  
+    return null;
+  };
+  
+  // Usage inside your message item component:
+ 
+  
 
   const renderBody = (
     <Stack
@@ -110,7 +155,11 @@ export default function ChatMessageItem({ message }) {
             },
           }}
         >
-          {renderBody}
+         {renderMediaBody(message.fileType, message.file)}
+
+         {/* Render text separately */}
+        {renderBody}
+
         
         </Stack>
         {/* {renderTimestamp} */}
