@@ -30,10 +30,6 @@ export default function InvoiceToolbar({ invoice, currentStatus }) {
 
   const user = useAuthContext();
 
-  // const handleEdit = useCallback(() => {
-  //   router.push(paths.dashboard.invoice.edit(invoice?.id));
-  // }, [invoice.id, router]);
-
   return (
     <>
       <Stack
@@ -78,42 +74,7 @@ export default function InvoiceToolbar({ invoice, currentStatus }) {
               </Tooltip>
             )}
           </PDFDownloadLink>
-
-          {/* <Tooltip title="Print">
-            <IconButton>
-              <Iconify icon="solar:printer-minimalistic-bold" />
-            </IconButton>
-          </Tooltip> */}
-
-          {/* <Tooltip title="Send">
-            <IconButton>
-              <Iconify icon="iconamoon:send-fill" />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Share">
-            <IconButton>
-              <Iconify icon="solar:share-bold" />
-            </IconButton>
-          </Tooltip> */}
         </Stack>
-
-        {/* <TextField
-          fullWidth
-          select
-          label="Status"
-          value={currentStatus}
-          onChange={onChangeStatus}
-          sx={{
-            maxWidth: 160,
-          }}
-        >
-          {statusOptions?.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField> */}
       </Stack>
 
       <Dialog fullScreen open={view.value}>

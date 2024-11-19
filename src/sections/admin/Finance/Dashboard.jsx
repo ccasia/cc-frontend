@@ -91,9 +91,9 @@ const Dashboard = () => {
 
   // Function to calculate statistics from the data
   const calculateStats = (invoiceData) => {
-    const totalPaidInvoices = invoiceData.filter((item) => item.status === 'paid').length;
+    const totalPaidInvoices = invoiceData.filter((item) => item.status === 'paid')?.length;
     const totalRevenue = invoiceData
-      .filter((item) => item.status === 'paid')
+      .filter((item) => item.status === 'approved')
       .reduce(
         (acc, item) => acc + parseFloat(item?.amount.toString().replace('RM', '').replace(',', '')),
         0
@@ -111,7 +111,7 @@ const Dashboard = () => {
 
     const overdueInvoices = invoiceData.filter((item) => item.status === 'overdue').length;
     const overdueAmount = invoiceData
-      .filter((item) => item.status === 'overdue')
+      .filter((item) => item.status === 'draft')
       .reduce(
         (acc, item) =>
           acc + parseFloat(item?.amount?.toString().replace('RM', '').replace(',', '')),
@@ -144,7 +144,7 @@ const Dashboard = () => {
     );
 
   return (
-    <Container maxWidth="lg" sx={{ maxHeight: '0vh' }}>
+    <Container maxWidth="lg">
       <Typography variant="h4" gutterBottom sx={{ mb: 2 }}>
         Finance Dashboard
       </Typography>

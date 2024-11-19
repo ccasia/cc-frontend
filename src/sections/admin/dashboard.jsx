@@ -7,7 +7,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import { useSettingsContext } from 'src/components/settings';
 
-const DashboardFinance = lazy(() => import('./finance/Dashboard'));
+const DashboardFinance = lazy(() => import('./Finance/Dashboard'));
 const DashboardSuperadmin = lazy(() => import('./dashboard-superadmin'));
 
 const DashboardAdmin = () => {
