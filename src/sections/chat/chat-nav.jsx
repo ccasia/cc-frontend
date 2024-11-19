@@ -16,11 +16,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import ClickAwayListener from '@mui/material/ClickAwayListener';
-import { Icon } from '@iconify/react';
 
-import { useGetAllThreads } from 'src/api/chat';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -30,9 +26,9 @@ import Scrollbar from 'src/components/scrollbar';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useCollapseNav } from './hooks';
 import ChatNavItem from './chat-nav-item';
-import ChatNavAccount from './chat-nav-account';
+
 import { useAuthContext } from 'src/auth/hooks';
-import SearchNotFound from 'src/components/search-not-found';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { mutate } from 'swr';
 
@@ -42,7 +38,7 @@ const NAV_WIDTH = 320;
 
 const NAV_COLLAPSE_WIDTH = 96;
 
-export default function ChatNav({}) {
+export default function ChatNav({ currentuserInThreads}) {
   const theme = useTheme();
   const { user } = useAuthContext();
   const router = useRouter();
@@ -50,11 +46,12 @@ export default function ChatNav({}) {
   const mdUp = useResponsive('up', 'md');
   const [latestMessages, setLatestMessages] = useState({});
   const [sortedThread, setSortedThreads] = useState([]);
-  const { threads, threadrefetch } = useGetAllThreads();
+ 
   const [selectedThreadId, setSelectedThreadId] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [selected, setSelected] = useState('all');
-  const [selectedContact, setSelectedContact] = useState();
+ 
+  
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'superadmin';
 
@@ -62,9 +59,6 @@ export default function ChatNav({}) {
     setSelected(value);
   };
 
-  const handleClick = () => {
-    onSelectThread(threads.id);
-  };
 
   const {
     collapseDesktop,
@@ -97,10 +91,9 @@ export default function ChatNav({}) {
   }, [socket]);
 
   useEffect(() => {
-    const sorted = sortThreadsByLatestMessage(threads || []);
+    const sorted = sortThreadsByLatestMessage(currentuserInThreads || []);
     setSortedThreads(sorted);
-    threadrefetch();
-  }, [threads, latestMessages]);
+  }, [currentuserInThreads, latestMessages]);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -115,8 +108,8 @@ export default function ChatNav({}) {
     fetchUsers();
   }, [user]);
 
-  const sortThreadsByLatestMessage = (threads) => {
-    return threads.slice().sort((a, b) => {
+  const sortThreadsByLatestMessage = (currentuserInThreads) => {
+    return currentuserInThreads.slice().sort((a, b) => {
       const aLastMessageTime = new Date(latestMessages[a.id]?.createdAt).getTime();
       const bLastMessageTime = new Date(latestMessages[b.id]?.createdAt).getTime();
       return bLastMessageTime - aLastMessageTime;
@@ -161,18 +154,23 @@ export default function ChatNav({}) {
     </IconButton>
   );
 
-  const sortedThreads = sortThreadsByLatestMessage(threads || []);
-
+  const sortedThreads = sortThreadsByLatestMessage(currentuserInThreads || []);
+ 
   const renderList = (
     <>
-      {threads &&
+      {currentuserInThreads &&
         sortedThreads.map((thread) => {
-          const userThread = thread.UserThread.find((ut) => ut.userId === user.id);
+          // const userThread = thread.UserThread.find((ut) => ut.userId === user.id);
 
+
+          if (!currentuserInThreads) return null;
+
+          const userThread = thread.UserThread.find((ut) => ut.userId === user.id); 
           if (!userThread) return null;
 
           const isArchived = userThread.archived;
 
+          //  console.log ("Is archived", isArchived)
           if ((selected === 'archived' && isArchived) || (selected === 'all' && !isArchived)) {
             return (
               <ChatNavItem
@@ -182,7 +180,6 @@ export default function ChatNav({}) {
                 selected={thread.id === selectedThreadId}
                 onCloseMobile={onCloseMobile}
                 onClick={() => handleClick(thread.id)}
-                // onArchive={() => handleArchive(thread.id)}
                 latestMessage={latestMessages?.[thread.id]}
               />
             );
@@ -318,7 +315,6 @@ export default function ChatNav({}) {
             disablePortal
             noOptionsText={
               'No creator found'
-              // <SearchNotFound query={contacts.length > 0 ? '' : 'No contacts found'} />
             }
             onChange={handleChange}
             options={contacts || []}
@@ -413,7 +409,5 @@ export default function ChatNav({}) {
 
 ChatNav.propTypes = {
   contacts: PropTypes.array,
-  // conversations: PropTypes.object,
   loading: PropTypes.bool,
-  // selectedConversationId: PropTypes.string,
 };

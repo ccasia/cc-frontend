@@ -6,7 +6,7 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
-import ListItemText from '@mui/material/ListItemText';
+
 import ListItemButton from '@mui/material/ListItemButton';
 import Iconify from 'src/components/iconify';
 
@@ -15,8 +15,6 @@ import { useRouter } from 'src/routes/hooks';
 
 import {
   useGetThreadById,
-  archiveUserThread,
-  unarchiveUserThread,
   useGetUnreadMessageCount,
 } from 'src/api/chat';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -62,23 +60,9 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
     setAnchorEl(null);
   };
 
-  // const handleArchiveClick = async () => {
-  //   try {
-  //     if (userThreadData.archived) {
-  //       await unarchiveUserThread(threadData.id);
-  //     } else {
-  //       await archiveUserThread(threadData.id);
-  //     }
-  //     onArchive(threadData.id);
-  //     handleMenuClose();
-  //   } catch (error) {
-  //     console.error('Error archiving/unarchiving thread:', error);
-  //   }
-  // };
 
   const latestMessage = thread.latestMessage;
 
-  //  console.log('messages', latestMessage)
   const renderInfo = (
     <>
       <Badge
@@ -182,43 +166,14 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
         {renderInfo}
       </ListItemButton>
 
-      {/* Menu for Actions */}
-      {/* <IconButton onClick={handleMenuOpen}>
-      <Icon icon="bi:three-dots-vertical" />
-    </IconButton>
-    <Menu
-      anchorEl={anchorEl}
-      open={Boolean(anchorEl)}
-      onClose={handleMenuClose}
-      anchorOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
-      transformOrigin={{
-        vertical: 'top',
-        horizontal: 'right',
-      }}
-      PaperProps={{
-        style: {
-          width: 100,
-        },
-      }}
-    >
-      <MenuItem onClick={handleArchiveClick}>
-        <Iconify width={16} icon="material-symbols:archive-outline" />
-        <ListItemText> {userThreadData?.archived ? 'Unarchive' : 'Archive'} </ListItemText>
-      </MenuItem>
-    </Menu> */}
     </>
   );
 }
 
 ChatNavItem.propTypes = {
   collapse: PropTypes.bool,
-  //  onArchive: PropTypes.func,
   conversation: PropTypes.object,
   latestMessage: PropTypes.object,
-  //  messages: PropTypes.array,
   onCloseMobile: PropTypes.func,
   selected: PropTypes.bool,
 };
