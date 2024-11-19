@@ -521,7 +521,15 @@ export default function UserListView({ admins }) {
                       'default'
                     }
                   >
-                    {['active', 'pending', 'banned', 'rejected'].includes(tab.value)
+                    {[
+                      'active',
+                      'pending',
+                      'banned',
+                      'rejected',
+                      'blacklisted',
+                      'suspended',
+                      'spam',
+                    ].includes(tab.value)
                       ? tableData.filter((item) => item.status === tab.value).length
                       : tableData.length}
                   </Label>

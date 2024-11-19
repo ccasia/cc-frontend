@@ -107,7 +107,9 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const agreementForm = watch('agreementForm');
 
   const onDrop = (files) => {
-    setValue('agreementForm', files[0]);
+    const file = files[0];
+
+    setValue('agreementForm', file);
     setUploadProgress(0);
     const interval = setInterval(() => {
       setUploadProgress((prev) => {
@@ -149,6 +151,8 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       })
     );
 
+    console.log(formData);
+
     try {
       setLoading(true);
       const res = await axiosInstance.post(endpoints.submission.creator.agreement, formData, {
@@ -168,7 +172,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
       setSubmitStatus('success');
     } catch (error) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
+      console.log(error);
       enqueueSnackbar('Submission of agreement failed', {
         variant: 'error',
       });

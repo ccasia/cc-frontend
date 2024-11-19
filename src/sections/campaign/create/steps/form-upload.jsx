@@ -28,8 +28,6 @@ const CampaignFormUpload = ({ pdfModal }) => {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const lgUp = useResponsive('up', 'sm');
 
-  // const { user } = useAuthContext();
-
   const { data: templates, templateLoading } = useGetTemplate();
 
   const { setValue, watch } = useFormContext();

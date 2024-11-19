@@ -40,6 +40,7 @@ const SelectTimeline = () => {
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
   const existingTimeline = watch('timeline');
+  const campaignType = watch('campaignType');
 
   const timelineMethods = useFieldArray({
     name: 'timeline',
@@ -52,6 +53,20 @@ const SelectTimeline = () => {
 
   const processedTimelines = useMemo(() => {
     if (!defaultTimelines) return [];
+    if (campaignType === 'ugc') {
+      return defaultTimelines
+        .filter((timeline) => timeline?.timelineType?.name !== 'Posting')
+        .sort((a, b) => a.order - b.order)
+        .map((elem) => ({
+          timeline_type: { id: elem?.timelineType?.id, name: elem?.timelineType?.name },
+          id: elem?.id,
+          duration: elem.duration,
+          for: elem?.for,
+          startDate: '',
+          endDate: '',
+        }));
+    }
+
     return defaultTimelines
       .sort((a, b) => a.order - b.order)
       .map((elem) => ({
@@ -62,7 +77,7 @@ const SelectTimeline = () => {
         startDate: '',
         endDate: '',
       }));
-  }, [defaultTimelines]);
+  }, [defaultTimelines, campaignType]);
 
   const timelines = watch('timeline');
 
@@ -120,6 +135,7 @@ const SelectTimeline = () => {
     }
   };
 
+  // Process end date based on start date
   useEffect(() => {
     if (timelineEndDate) {
       setValue('campaignEndDate', dayjs(timelineEndDate).format('ddd LL'));
@@ -127,22 +143,33 @@ const SelectTimeline = () => {
   }, [setValue, timelineEndDate]);
 
   useEffect(() => {
-    setValue('timeline', processedTimelines);
-  }, [processedTimelines, setValue]);
+    if (existingTimeline.length < 1) {
+      setValue('timeline', processedTimelines);
+    }
+  }, [processedTimelines, setValue, existingTimeline]);
 
   useEffect(() => {
     updateTimelineDates();
   }, [startDate, existingTimeline.length, updateTimelineDates]);
 
   useEffect(() => {
-    if (endDate && startDate && endDate < startDate) {
-      setDateError(true);
-    } else {
-      setDateError(false);
-    }
-  }, [startDate, endDate]);
+    // Check if campaign type is 'ugc' and remove timelines with 'Posting'
+    if (existingTimeline?.length > 0) {
+      if (campaignType === 'ugc') {
+        const removedPostingTimelines =
+          timelines?.filter((timeline) => timeline?.timeline_type?.name !== 'Posting') || []; // If timelines is undefined, default to an empty array
 
-  const renderTimelineForm = () => (
+        setValue('timeline', removedPostingTimelines);
+      }
+
+      if (campaignType === 'normal') {
+        setValue('timeline', processedTimelines);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignType]);
+
+  const renderTimelineForm = (
     <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1,fr)', md: 'repeat(1, 1fr)' }} gap={1}>
       <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ md: 'center' }} mb={2} gap={2}>
         <Typography sx={{ textAlign: 'start' }} variant="h6">
@@ -327,6 +354,7 @@ const SelectTimeline = () => {
             />
             <RHFTextField name="campaignEndDate" disabled />
           </Stack>
+
           {dateError && (
             <Typography variant="caption" color="red">
               End date cannot be less than Start Date
@@ -341,9 +369,7 @@ const SelectTimeline = () => {
           }}
         />
 
-        {/* {JSON.stringify(fields)} */}
-
-        {renderTimelineForm()}
+        {renderTimelineForm}
       </Box>
     )
   );
