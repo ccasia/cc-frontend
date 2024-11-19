@@ -58,10 +58,6 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // const agreementStatus = campaign?.shortlisted?.find(
-  //   (item) => item?.userId === user?.id
-  // )?.isAgreementReady;
-
   const agreementStatus = user?.shortlisted?.find(
     (item) => item?.campaignId === campaign?.id
   )?.isAgreementReady;
@@ -102,11 +98,11 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   }, [campaign, submissionMutate, socket]);
 
   const getVisibleStages = () => {
-    const stages = [];
+    let stages = [];
     const agreementSubmission = value('AGREEMENT_FORM');
     const firstDraftSubmission = value('FIRST_DRAFT');
     const finalDraftSubmission = value('FINAL_DRAFT');
-    // const postingSubmission = value('POSTING');
+    const postingSubmission = value('POSTING');
 
     // Always show Agreement stage (will be last and always Stage 01)
     stages.unshift({ ...defaultSubmission[0] });
@@ -127,6 +123,10 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       finalDraftSubmission?.status === 'APPROVED'
     ) {
       stages.unshift({ ...defaultSubmission[3] });
+    }
+
+    if (!postingSubmission) {
+      stages = stages.filter((stage) => stage.value !== 'Posting');
     }
 
     // Add sequential stage numbers starting from the bottom

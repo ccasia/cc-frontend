@@ -2,11 +2,11 @@ import dayjs from 'dayjs';
 import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { pdf } from '@react-pdf/renderer';
 import { enqueueSnackbar } from 'notistack';
 import { SyncLoader } from 'react-spinners';
+import React, { useMemo, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -16,7 +16,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
 
 import { useSettingsContext } from 'src/components/settings';
@@ -26,7 +25,6 @@ import { RHFCheckbox, RHFTextField } from 'src/components/hook-form';
 const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
-  const { user } = useAuthContext();
 
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
@@ -58,11 +56,19 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
     try {
       await axiosInstance.patch(endpoints.campaign.sendAgreement, agreement);
       mutate(endpoints.campaign.creatorAgreement(agreement.campaignId));
-      // enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Error', { variant: 'error' });
     }
   };
+
+  const extractAgremmentsInfo = useMemo(() => {
+    if (campaign?.agreementTemplate) return campaign.agreementTemplate;
+
+    return campaign?.campaignAdmin?.reduce(
+      (foundTemplate, item) => foundTemplate || item?.admin?.user?.agreementTemplate || null,
+      null
+    );
+  }, [campaign]);
 
   const onSubmit = handleSubmit(async (data) => {
     loading.onTrue();
@@ -84,9 +90,9 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
           AGREEMENT_ENDDATE={dayjs(campaign?.campaignBrief?.endDate).format('LL')}
           NOW_DATE={dayjs().format('LL')}
           VERSION_NUMBER="V1"
-          ADMIN_IC_NUMBER={campaign?.agreementTemplate?.adminICNumber}
-          ADMIN_NAME={campaign?.agreementTemplate?.adminName}
-          SIGNATURE={campaign?.agreementTemplate?.signURL}
+          ADMIN_IC_NUMBER={extractAgremmentsInfo?.adminICNumber ?? 'Default'}
+          ADMIN_NAME={extractAgremmentsInfo?.adminName ?? 'Default'}
+          SIGNATURE={extractAgremmentsInfo?.signURL ?? 'Default'}
         />
       ).toBlob();
 

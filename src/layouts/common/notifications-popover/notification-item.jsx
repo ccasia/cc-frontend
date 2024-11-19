@@ -29,10 +29,9 @@ export default function NotificationItem({ notification, markAsRead }) {
     // the cases are entity
     switch (entity) {
       case 'Pitch':
-        link =
-          user.role === 'admin'
-            ? `/dashboard/campaign/discover/detail/${campaignId}`
-            : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`;
+        link = user.role.includes('admin')
+          ? `/dashboard/campaign/discover/detail/${campaignId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`;
         break;
 
       case 'Shortlist':
@@ -40,23 +39,20 @@ export default function NotificationItem({ notification, markAsRead }) {
         break;
 
       case 'Agreement':
-        link =
-          user.role === 'admin'
-            ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
-            : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        link = user.role.includes('admin')
+          ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
         break;
 
       case 'Draft':
-        link =
-          user.role === 'admin'
-            ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
-            : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        link = user.role.includes('admin')
+          ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
         break;
       case 'Post':
-        link =
-          user.role === 'admin'
-            ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
-            : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        link = user.role.includes('admin')
+          ? `/dashboard/campaign/discover/detail/${campaignId}/creator/${creatorId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
         break;
 
       case 'Chat':
@@ -68,23 +64,21 @@ export default function NotificationItem({ notification, markAsRead }) {
         break;
 
       case 'Status':
-        link =
-          user.role === 'admin'
-            ? `/dashboard/campaign/manage/${campaignId}`
-            : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
+        link = user.role.includes('admin')
+          ? `/dashboard/campaign/manage/${campaignId}`
+          : `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
         break;
 
       case 'Timeline':
-        if (user.role === 'creator') {
+        if (user.role.includes('creator')) {
           link = `/dashboard/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${campaignId}`;
         }
         break;
 
       case 'Invoice':
-        link =
-          user.role === 'admin'
-            ? `/dashboard/invoice/creator-list/${campaignId}`
-            : `/dashboard/invoiceCreator/${invoiceId}`;
+        link = user.role.includes('admin')
+          ? `/dashboard/invoice/creator-list/${campaignId}`
+          : `/dashboard/invoiceCreator/${invoiceId}`;
         break;
 
       default:

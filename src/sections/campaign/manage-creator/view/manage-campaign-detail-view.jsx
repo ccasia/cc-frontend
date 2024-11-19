@@ -27,8 +27,6 @@ const ManageCampaignDetailView = ({ id }) => {
     revalidateOnMount: true,
   });
 
-  console.log(data);
-
   // Check if user is shortlisted
   const checkIfUserIsShortlisted = useCallback(() => {
     if (data && !data.shortlisted.some((item) => item.userId === user?.id)) {

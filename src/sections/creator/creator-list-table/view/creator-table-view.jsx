@@ -251,7 +251,15 @@ function CreatorTableView() {
                       'default'
                     }
                   >
-                    {['active', 'pending', 'banned', 'rejected'].includes(tab.value)
+                    {[
+                      'active',
+                      'pending',
+                      'banned',
+                      'rejected',
+                      'blacklisted',
+                      'suspended',
+                      'spam',
+                    ].includes(tab.value)
                       ? tableData?.filter((user) => user.status === tab.value).length
                       : tableData?.length}
                   </Label>

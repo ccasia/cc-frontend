@@ -33,9 +33,11 @@ const CampaignDetailView = ({ id }) => {
   const open = Boolean(anchorEl);
 
   const currentCampaign = useMemo(
-    () => !isLoading && campaigns.find((campaign) => campaign.id === id),
+    () => !isLoading && campaigns?.find((campaign) => campaign.id === id),
     [campaigns, id, isLoading]
   );
+
+  // const dialog = useBoolean(!currentCampaign?.agreementTemplate);
 
   const [currentTab, setCurrentTab] = useState(
     localStorage.getItem('campaigndetail') || 'campaign-content'
@@ -354,6 +356,12 @@ const CampaignDetailView = ({ id }) => {
             >
               Google Sheet
             </Button>
+
+            {/* {!campaigns?.agreementTemplate && (
+              <Dialog open={dialog.value} onClose={dialog.onFalse}>
+                <DialogContent>adsas</DialogContent>
+              </Dialog>
+            )} */}
 
             <Button
               variant="outlined"

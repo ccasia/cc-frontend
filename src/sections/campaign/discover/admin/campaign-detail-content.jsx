@@ -26,6 +26,7 @@ import {
   TableContainer,
 } from '@mui/material';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Carousel from 'src/components/carousel/carousel';
 import { MultiFilePreview } from 'src/components/upload';
@@ -50,8 +51,6 @@ const ChipStyle = {
 const CampaignDetailContent = ({ campaign }) => {
   // const pdf = useBoolean();
   // const [pages, setPages] = useState();
-
-  console.log(campaign);
 
   const renderGallery = (
     <Box>
@@ -198,12 +197,26 @@ const CampaignDetailContent = ({ campaign }) => {
 
   const renderInformation = (
     <Stack spacing={5}>
-      <ListItemText
-        primary={campaign?.name}
-        secondary={campaign?.description}
-        primaryTypographyProps={{ variant: 'h4' }}
-        secondaryTypographyProps={{ variant: 'subtitle2' }}
-      />
+      <Stack direction="row" alignItems="start" spacing={1} justifyContent="flex-start">
+        <ListItemText
+          primary={campaign?.name}
+          secondary={campaign?.description}
+          primaryTypographyProps={{ variant: 'h4' }}
+          secondaryTypographyProps={{ variant: 'subtitle2' }}
+        />
+        <Label
+          sx={{
+            border: 2,
+            borderColor: '#2a9d8f',
+            boxShadow: '0px -3px 0px 0px #2a9d8f inset',
+            width: 100,
+            height: 30,
+            color: '#2a9d8f',
+          }}
+        >
+          {campaign?.campaignType?.toUpperCase()}
+        </Label>
+      </Stack>
 
       <Divider
         sx={{
