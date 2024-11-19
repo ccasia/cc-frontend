@@ -1,12 +1,28 @@
 import PropTypes from 'prop-types';
+import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Tab, Tabs, Stack, Button, Container } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import {
+  Tab,
+  Box,
+  Tabs,
+  Stack,
+  Button,
+  Dialog,
+  Container,
+  Typography,
+  IconButton,
+  DialogActions,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -26,15 +42,24 @@ import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-cr
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
-  const { campaigns, isLoading } = useGetCampaigns();
+  const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
+  const loading = useBoolean();
+  const [url, setUrl] = useState('');
+  const copyDialog = useBoolean();
+  const copy = useBoolean();
 
   const open = Boolean(anchorEl);
 
   const currentCampaign = useMemo(
     () => !isLoading && campaigns?.find((campaign) => campaign.id === id),
     [campaigns, id, isLoading]
+  );
+
+  const isCampaignHasSpreadSheet = useMemo(
+    () => currentCampaign?.spreadSheetURL,
+    [currentCampaign]
   );
 
   // const dialog = useBoolean(!currentCampaign?.agreementTemplate);
@@ -298,6 +323,25 @@ const CampaignDetailView = ({ id }) => {
   //   </>
   // );
 
+  const generateSpreadSheet = useCallback(async () => {
+    try {
+      loading.onTrue();
+      const res = await axiosInstance.post(endpoints.campaign.spreadsheet, {
+        campaignId: currentCampaign?.id,
+      });
+      setUrl(res?.data?.url);
+      enqueueSnackbar(res?.data?.message);
+      copyDialog.onTrue();
+      campaignMutate();
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      loading.onFalse();
+    }
+  }, [loading, copyDialog, campaignMutate, currentCampaign]);
+
   const renderTabContent = {
     overview: <CampaignOverview campaign={currentCampaign} />,
     'campaign-content': <CampaignDetailContent campaign={currentCampaign} />,
@@ -324,6 +368,61 @@ const CampaignDetailView = ({ id }) => {
   };
 
   // Render the current tab component based on the `currentTab` value
+
+  const copyURL = () => {
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        copy.onTrue();
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+      });
+  };
+
+  const copyDialogContainer = (
+    <Dialog
+      open={copyDialog.value}
+      maxWidth="md"
+      fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          p: 2,
+        },
+      }}
+    >
+      <Box
+        sx={{
+          p: 1,
+          bgcolor: (theme) => theme.palette.background.paper,
+          border: 1,
+          borderRadius: 1,
+          borderColor: '#EBEBEB',
+        }}
+      >
+        <Stack direction="row" alignItems="center">
+          <Typography sx={{ flexGrow: 1, color: 'text.secondary' }} variant="subtitle2">
+            {url || 'No url found.'}
+          </Typography>
+          {!copy.value ? (
+            <IconButton onClick={copyURL}>
+              <Iconify icon="solar:copy-line-duotone" />
+            </IconButton>
+          ) : (
+            <IconButton disabled>
+              <Iconify icon="charm:tick" color="success.main" />
+            </IconButton>
+          )}
+        </Stack>
+      </Box>
+
+      <DialogActions>
+        <Button onClick={copyDialog.onFalse} size="small" variant="outlined" sx={{ mx: 'auto' }}>
+          Done
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -354,14 +453,23 @@ const CampaignDetailView = ({ id }) => {
               }}
               disabled={!currentCampaign?.spreadSheetURL}
             >
-              Google Sheet
+              Google spreadsheet
             </Button>
 
-            {/* {!campaigns?.agreementTemplate && (
-              <Dialog open={dialog.value} onClose={dialog.onFalse}>
-                <DialogContent>adsas</DialogContent>
-              </Dialog>
-            )} */}
+            {!isCampaignHasSpreadSheet && (
+              <LoadingButton
+                startIcon={<Iconify icon="lucide:file-spreadsheet" />}
+                variant="outlined"
+                size="small"
+                sx={{
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                }}
+                onClick={generateSpreadSheet}
+                loading={loading.value}
+              >
+                Generate new spreadsheet
+              </LoadingButton>
+            )}
 
             <Button
               variant="outlined"
@@ -388,6 +496,7 @@ const CampaignDetailView = ({ id }) => {
 
       {renderTabs}
       {(!isLoading ? renderTabContent[currentTab] : <LoadingScreen />) || null}
+      {copyDialogContainer}
     </Container>
   );
 };
