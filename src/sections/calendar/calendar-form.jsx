@@ -29,7 +29,7 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
 
   const EventSchema = Yup.object().shape({
     title: Yup.string().max(255).required('Title is required'),
-    description: Yup.string().max(5000, 'Description must be at most 5000 characters'),
+    description: Yup.string().max(5000, 'Description must be at most 5000 characters').nullable().notRequired(), 
     color: Yup.string(),
     allDay: Yup.boolean(),
     start: Yup.mixed(),
@@ -209,11 +209,14 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
                             marginRight: '8px',
                           }}
                         >
-                          <span style={{
-                            color: (theme) => theme.palette.getContrastText(selectedOption.color),
-                            fontSize: '12px',
-                            textAlign: 'center',
-                          }}>
+                          <span
+                            style={{
+                              color: selectedOption.labelColor, // Use the selected option's labelColor
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              textAlign: 'center',
+                            }}
+                          >
                             {selectedOption.label}
                           </span>
                         </Box>
@@ -225,7 +228,7 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
                 );
               }}
             >
-              {colorOptions.map(({ color, label }) => (
+              {colorOptions.map(({ color, label, labelColor }) => (
                 <MenuItem key={color} value={color}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Box
@@ -239,11 +242,14 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
                         height: '25px',
                       }}
                     >
-                      <span style={{
-                        color: (theme) => theme.palette.getContrastText(color),
-                        fontSize: '12px',
-                        textAlign: 'center',
-                      }}>
+                      <span
+                        style={{
+                          color: labelColor, 
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          textAlign: 'center',
+                        }}
+                      >
                         {label}
                       </span>
                     </Box>

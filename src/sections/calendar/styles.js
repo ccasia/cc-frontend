@@ -1,4 +1,5 @@
 import { alpha, styled } from '@mui/material/styles';
+import { position } from 'stylis';
 
 // ----------------------------------------------------------------------
 
@@ -30,7 +31,7 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
     },
     '& .fc-col-header-cell-cushion': {
       ...theme.typography.subtitle2,
-      padding: '10px 7px',
+      padding: '7px 7px',
       textAlign: 'right',
     },
   },
@@ -41,6 +42,9 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
     backgroundColor: 'transparent',
     color: theme.palette.text.secondary,
   },
+  '& .fc fc-list-empty-cushion': {
+    position: 'center'
+  },
 
   // Event
   '& .fc .fc-event': {
@@ -50,17 +54,16 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
   '& .fc .fc-event .fc-event-main': {
     padding: '2px 4px',
     borderRadius: 6,
-    backgroundColor: theme.palette.common.white,
+    backgroundColor: 'currentColor',
     '&:before': {
       top: 0,
       left: 0,
       width: '100%',
       content: "''",
-      opacity: 0.24,
+      opacity: 0.7,
       height: '100%',
       borderRadius: 6,
       position: 'absolute',
-      backgroundColor: 'currentColor',
       transition: theme.transitions.create(['opacity']),
       '&:hover': {
         '&:before': {
@@ -78,12 +81,10 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     textOverflow: 'ellipsis',
-    color: 'currentColor',
   },
   '& .fc .fc-event .fc-event-time': {
     overflow: 'unset',
     fontWeight: theme.typography.fontWeightBold,
-    color: 'currentColor',
   },
 
   // Popover
@@ -94,6 +95,9 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
     boxShadow: theme.customShadows.dropdown,
     borderRadius: theme.shape.borderRadius * 1.5,
     backgroundColor: theme.palette.background.paper,
+  },
+  '& .fc .fc-more-popover-misc': {
+    display: 'none'
   },
   '& .fc .fc-popover-header': {
     ...theme.typography.subtitle2,
@@ -142,6 +146,12 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
       fontWeight: theme.typography.fontWeightMedium,
     },
   },
+  '& .fc .fc-scroller': {
+    display: 'hidden'
+  },
+  '& .fc-scroller-harness.fc-scroller-harness-liquid > .fc-scroller.fc-scroller-liquid-absolute': {
+    overflow: 'hidden !important'
+  },
 
   // Highlight Today
   '& .fc .fc-day-today': {
@@ -168,17 +178,16 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
     boxSizing: 'border-box',
     zIndex: 2,
   },
-
   '& .fc .fc-daygrid-day.fc-day-today .fc-event': {
     zIndex: 1,
     top: '35px', 
     paddingLeft: '5px',
   },
-
   '& .fc .fc-day-today .fc-daygrid-more-link': {
     ...theme.typography.caption,
     color: theme.palette.text.secondary,
     top: '35px',
+    marginBottom: '35px',
     '&:hover': {
       backgroundColor: 'unset',
       textDecoration: 'underline',
@@ -196,22 +205,22 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
     ...theme.typography.body2,
   },
 
-// Agenda View
- '& .fc-direction-ltr .fc-list-day-text, .fc-direction-rtl .fc-list-day-side-text, .fc-direction-ltr .fc-list-day-side-text, .fc-direction-rtl .fc-list-day-text': {
-  ...theme.typography.subtitle2,
-},
-'& .fc-direction-ltr': {
-  overflow:'auto'
-},
-'& .fc .fc-list-event': {
-  ...theme.typography.body2,
-  '& .fc-list-event-time': {
-    color: theme.palette.text.secondary,
+  // Agenda View
+  '& .fc-direction-ltr .fc-list-day-text, .fc-direction-rtl .fc-list-day-side-text, .fc-direction-ltr .fc-list-day-side-text, .fc-direction-rtl .fc-list-day-text': {
+    ...theme.typography.subtitle2,
   },
-},
-'& .fc .fc-list-table': {
-  '& th, td': {
-    borderColor: 'transparent',
+  '& .fc-direction-ltr': {
+    overflow:'auto'
   },
-},
+  '& .fc .fc-list-event': {
+    ...theme.typography.body2,
+    '& .fc-list-event-time': {
+      color: theme.palette.text.secondary,
+    },
+  },
+  '& .fc .fc-list-table': {
+    '& th, td': {
+      borderColor: 'transparent',
+    },
+  },
 }));

@@ -165,23 +165,24 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
                 <Typography variant="body2" sx={{ color: theme => theme.palette.grey[600], marginRight: '8px' }}>
                   Label:
                 </Typography>
-                {colorOptions.map(({ color, label }) => {
+                {colorOptions.map(({ color, label, labelColor }) => {
                   return eventDetails.color === color ? (
                     <Box key={color} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Box
-                        sx={{
-                          backgroundColor: color,
-                          borderRadius: 1,
-                          padding: '2px 8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          height: '25px',
-                        }}
-                      >
-                        <span style={{
-                          color: theme.palette.getContrastText(color),
+                      sx={{
+                        backgroundColor: color,
+                        borderRadius: 1,
+                        padding: '2px 8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '25px',
+                      }}>
+                      <span
+                        style={{
+                          color: labelColor, // Use the defined labelColor
                           fontSize: '12px',
+                          fontWeight: '700',
                           textAlign: 'center',
                         }}>
                           {label}

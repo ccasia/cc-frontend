@@ -16,6 +16,7 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 
+
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { updateEvent, useGetEvents } from 'src/api/calendar';
@@ -33,7 +34,9 @@ import EventDetails from './calendar-view-details';
 
 export default function CalendarView() {
   const theme = useTheme();
+
   const settings = useSettingsContext();
+
   const smUp = useResponsive('up', 'sm');
 
   const { events } = useGetEvents();
@@ -141,7 +144,7 @@ export default function CalendarView() {
               events={events}
               headerToolbar={false}
               select={onSelectRange}
-              eventClick={handleEventClick} 
+              eventClick={handleEventClick}
               height={smUp ? 720 : 'auto'}
               eventDrop={(arg) => {
                 onDropEvent(arg, updateEvent);
@@ -156,19 +159,72 @@ export default function CalendarView() {
                 timeGridPlugin,
                 interactionPlugin,
               ]}
+              dayCellContent={(dayInfo) => {
+                const date = new Date(dayInfo.date);
+                const isFirstOfMonth = date.getDate() === 1;
+
+                // Check if the date is the first of the month
+                if (isFirstOfMonth) {
+                  const formattedDate = `${date.getDate()}${date.toLocaleString('default', {
+                    month: 'short',
+                  })}`;
+                  return (
+                    <div>{formattedDate}</div>
+                  );
+                }
+                return <div>{date.getDate()}</div>;
+              }}
+
+              //Content format for different media screen
               eventContent={(eventInfo) => {
-                const { start, end, title } = eventInfo.event;
-                const startTime = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '');
-                const endTime = end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '');
+                const { start, end, title, backgroundColor } = eventInfo.event;
+                const isSmallScreen = window.innerWidth < 600;
+
+                const labelColor = CALENDAR_COLOR_OPTIONS.find(
+                  (option) => option.color === backgroundColor
+                )?.labelColor || 'black'; 
+
+                const eventTitleStyle = {
+                  '--label-color': labelColor, 
+                  color: 'var(--label-color)', 
+                };
+
+                if (isSmallScreen) {
+                  return (
+                    <div
+                      style={{
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        textOverflow: 'ellipsis',
+                        maxWidth: '100%',
+                        fontSize: '0.8rem',
+                        fontWeight: '500',
+                      }}
+                    >
+                      {title}
+                    </div>
+                  );
+                }
+
+                const startTime = start
+                  .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                  .replace(' ', '');
+                const endTime = end
+                  .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                  .replace(' ', '');
+
                 return (
-                  <div style={{
-                    overflow: 'hidden',
-                    whiteSpace: 'nowrap',
-                    textOverflow: 'ellipsis',
-                    maxWidth: '100%',
-                    fontSize: '0.8rem',
-                    fontWeight: '500',
-                  }}>
+                  <div
+                    style={{
+                      ...eventTitleStyle,
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
+                      fontSize: '0.8rem',
+                      fontWeight: '500',
+                    }}
+                  >
                     ({startTime}-{endTime}) {title}
                   </div>
                 );
@@ -190,23 +246,19 @@ export default function CalendarView() {
       >
         <DialogTitle sx={{ minHeight: 76 }}>
           {openForm && (
-            <div style={{
-              width: '200px',
-              height: '40px',
-              fontFamily: 'Instrument Serif',
-              fontStyle: 'normal',
-              fontWeight: 400,
-              fontSize: '36px',
-              lineHeight: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              color: '#231F20',
-              flex: 'none',
-              order: 0,
-              flexGrow: 0,
-            }}>
+            <div
+              style={{
+                width: '200px',
+                height: '40px',
+                fontFamily: 'Instrument Serif',
+                fontStyle: 'normal',
+                fontWeight: 400,
+                fontSize: '36px',
+                lineHeight: '40px',
+              }}
+            >
               <span role="img" aria-label="calendar" style={{ marginRight: '8px' }}>📅</span>
-              {currentEvent?.id ? 'Edit Event' : 'New Event'}
+              New Event
             </div>
           )}
           <Divider
