@@ -212,6 +212,10 @@ function CreateCampaignForm() {
       }),
   });
 
+  const agreementSchema = Yup.object().shape({
+    agreementFrom: Yup.object().required('Campaign agreement is required.'),
+  });
+
   const campaignTypeSchema = Yup.object().shape({
     campaignType: Yup.string().required('Campaign type is required.'),
   });
@@ -233,7 +237,7 @@ function CreateCampaignForm() {
       case 6:
         return campaignAdminSchema;
       case 7:
-        return campaignAdminSchema;
+        return agreementSchema;
       default:
         return campaignSchema;
     }
@@ -308,6 +312,7 @@ function CreateCampaignForm() {
   } = methods;
 
   const values = watch();
+
 
   const {
     append: doAppend,
