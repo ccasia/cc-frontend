@@ -5,7 +5,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import Box from '@mui/material/Box';
-import { Button } from '@mui/material';
+import { Button, Typography } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
@@ -102,7 +102,7 @@ export default function ChatMessageInput({ disabled, threadId  }) {
       });
     };
   
-    console.log("Sending file:", file);
+    //  console.log("Sending file:", file);
   
     // Only proceed if there is content or a file to send
     if (trimmedMessage !== '' || file) {
@@ -115,21 +115,6 @@ export default function ChatMessageInput({ disabled, threadId  }) {
   
   
   
-  // const handleSendMessage = useCallback(() => {
-  //   const trimmedMessage = message.trim();
-  //   console.count("counter");
-
-  //   console.log("Sending message with content:", trimmedMessage);
-  //   console.log("Sending file:", file);
-  //   if (trimmedMessage !== '' || file) {
-  //     onSendMessage(trimmedMessage, file);  
-  //     setMessage('');  
-  //     setFile(null);  
-  //     setFilePreview(null);
-  //   }
-  // }, [message, file, onSendMessage]);
-
-  
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -137,10 +122,6 @@ export default function ChatMessageInput({ disabled, threadId  }) {
       handleSendMessage(); // Send the message
     }
   };
-
-  // const handleChangeMessage = useCallback((event) => {
-  //   setMessage(event.target.value);
-  // }, []);
 
   const toggleEmojiPicker = () => {
     setShowEmojiPicker((prev) => !prev);
@@ -150,7 +131,6 @@ export default function ChatMessageInput({ disabled, threadId  }) {
     setMessage((prev) => prev + emojiData.emoji);
     setShowEmojiPicker(false);
 
-    // Refocus the input field after selecting an emoji
     inputRef.current.focus();
   };
 
@@ -168,7 +148,14 @@ export default function ChatMessageInput({ disabled, threadId  }) {
       }}
     >
 
-      <IconButton onClick={toggleEmojiPicker} sx={{ alignSelf: 'center' }}>
+      <IconButton 
+      onClick={toggleEmojiPicker} 
+      sx={{ 
+        alignSelf: 'center', 
+        borderRadius: 1,
+        boxShadow: 8,
+        }}
+      >
         <Iconify icon="eva:smiling-face-fill" />
       </IconButton>
       {showEmojiPicker && (
@@ -187,64 +174,166 @@ export default function ChatMessageInput({ disabled, threadId  }) {
           <EmojiPicker onEmojiClick={handleEmojiSelect} />
         </Box>
       )}
-      <InputBase
-        multiline
-        value={message}
-        onKeyDown={handleKeyDown} // Handles sending the message only on Enter
-        onChange={handleChangeMessage}
-        placeholder="Type your message here"
-        disabled={disabled}
-        inputRef={inputRef} // Attach the ref to the input field
-        sx={{
-          maxHeight: 100,
-          flexGrow: 1,
-          overflow: 'auto',
-        }}
 
-      />
-     {filePreview && (
-        <Box
-          sx={{
-            maxWidth: 100,
-            maxHeight: 100,
-            overflow: 'hidden',
-            borderRadius: 1,
-            mb: 2,
-          }}
-        >
-          <img
-            src={filePreview}
-            alt="File Preview"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-          />
-        </Box>
-      )}
-      
-        <Button variant="outlined" component="label" color="secondary" sx={{ alignSelf: 'center' }}>
-        Upload File
+     <IconButton  component="label" 
+      sx={{
+        marginRight:"4px",
+        alignSelf: 'center',
+        borderRadius: 1,
+        boxShadow: 8,
+        }}
+      >
+        <Iconify icon="material-symbols:attach-file" /> 
         <input
           type="file"
           hidden
-          onChange={handleFileChange}  // Update the file state
+          accept="application/pdf" 
+          onChange={handleFileChange} 
         />
-      </Button>
-      <Button  
-      color="secondary" 
-      onClick={handleSendMessage} 
-      sx={{ alignSelf: 'center' }}
-      disabled={!message.trim() && !file} 
+      </IconButton>  
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          borderRadius: 1,
+          boxShadow: 8, 
+          paddingLeft: 2,
+          paddingTop: 1,
+          paddingBottom: 1,
+          flexGrow: 1,
+          margin: '4px',
+        }}
       >
-        Send
-      </Button>
+          <InputBase
+            multiline
+            value={message}
+            onKeyDown={handleKeyDown} 
+            onChange={handleChangeMessage}
+            placeholder="Type your message here"
+            disabled={disabled}
+            inputRef={inputRef} 
+            sx={{
+              maxHeight: 100,
+              flexGrow: 1,
+              overflow: 'auto',
+            }}
+
+          />
+        
+        {filePreview  && (
+            <Box
+              sx={{
+                maxWidth: 300,
+                maxHeight: 80,
+                overflow: 'hidden',
+                borderRadius: 1,
+                p: 4,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              {/* Determine preview based on file type */}
+              {file.type.startsWith('image/') && (
+                <img
+                  src={filePreview}
+                  alt="Image Preview"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              )}
+
+              {file.type.startsWith('video/') && (
+                <video
+                  src={filePreview}
+                  controls
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                >
+                  <track
+                    kind="captions"
+                    srcLang="en"
+                    label="English captions"
+                    src=""
+                    default
+                  />
+                </video>
+              )}
+
+              {file.type === 'application/pdf' && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    padding: '4px',
+                    overflow: 'hidden',
+                    maxWidth: '100%',
+                  }}
+                >
+                  <Iconify icon="mdi:file-pdf-box" sx={{ color: 'red', mr: 1, fontSize: '24px' }} /> {/* PDF icon */}
+                  <Typography
+                    variant="body2"
+                    noWrap
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '100%',
+                    }}
+                  >
+                    {file.name}
+                  </Typography>
+                </Box>
+              )}
+
+              {!file.type.startsWith('image/') && !file.type.startsWith('video/') && file.type !== 'application/pdf' && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    textAlign: 'center',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '100%',
+                  }}
+                >
+                  Unsupported file: {file.name}
+                </Typography>
+              )}
+            </Box>
+          )}
+
+
+          <IconButton  component="label">
+            <Iconify icon="mdi:camera" /> 
+            <input
+              type="file"
+              hidden
+              accept="image/*,video/*" 
+              onChange={handleFileChange} 
+            />
+          </IconButton>     
+          <Button  
+          color="secondary" 
+          onClick={handleSendMessage} 
+          sx={{ alignSelf: 'center' }}
+          disabled={!message.trim() && !file} 
+          >
+            Send
+          </Button>
+      </Box>
     </Stack>
   );
 }
 
 ChatMessageInput.propTypes = {
   disabled: PropTypes.bool,
-  onSendMessage: PropTypes.func.isRequired,
 };
