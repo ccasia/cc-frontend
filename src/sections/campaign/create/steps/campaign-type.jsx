@@ -32,7 +32,9 @@ const CampaignType = () => {
       >
         <MenuItem value="normal">Normal</MenuItem>
         <MenuItem value="ugc">UGC</MenuItem>
-        <MenuItem value="seeded">Seeded</MenuItem>
+        {/* <MenuItem value="seeded" disabled>
+          Seeded
+        </MenuItem> */}
       </RHFSelect>
     </Box>
   );

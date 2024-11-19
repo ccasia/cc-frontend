@@ -4,15 +4,15 @@ import { useMemo } from 'react';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 const useGetInvoiceById = (id) => {
- 
-  const { data, isLoading } = useSWR(endpoints.invoice.getInvoiceById(id), fetcher);
+  const { data, isLoading, mutate } = useSWR(endpoints.invoice.getInvoiceById(id), fetcher);
 
   const memoizedValue = useMemo(
     () => ({
       invoice: data,
       isLoading,
+      mutate,
     }),
-    [data, isLoading]
+    [data, isLoading, mutate]
   );
 
   return memoizedValue;

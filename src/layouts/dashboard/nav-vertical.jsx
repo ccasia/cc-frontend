@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
 import { grey } from '@mui/material/colors';
-import { Button, Avatar, Typography, IconButton } from '@mui/material';
+import { Avatar, Typography, IconButton } from '@mui/material';
 
 import { usePathname } from 'src/routes/hooks';
 
@@ -152,7 +152,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
           currentRole: user?.role,
         }}
       />
-      {!data?.tokenStatus && user.role === 'admin' && user.admin.role.name === 'Finance' ? (
+      {/* {!data?.tokenStatus && user.role === 'admin' && user.admin.role.name === 'Finance' ? (
         <Box
           sx={{
             display: 'flex',
@@ -188,7 +188,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
             Last modified {formattedDate}
           </p>
         </Box>
-      ) : null}
+      ) : null} */}
 
       <Box sx={{ flexGrow: 1 }} />
     </Scrollbar>

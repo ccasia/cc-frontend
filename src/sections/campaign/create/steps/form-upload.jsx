@@ -30,19 +30,15 @@ const CampaignFormUpload = ({ pdfModal }) => {
 
   const { data: templates, templateLoading } = useGetTemplate();
 
-  const { setValue, watch } = useFormContext();
+  const {
+    setValue,
+    watch,
+    formState: { errors },
+  } = useFormContext();
 
   const agreementUrl = watch('agreementFrom');
 
-  // useEffect(() => {
-  //   if (!templateLoading && data) {
-  //     setValue('agreementForm', data?.template?.url);
-  //   }
-  // }, [data, setValue, templateLoading]);
-
-  // const refreshPdf = () => {
-  //   mutate(endpoints.agreementTemplate.byId(user?.id));
-  // };
+  const error = errors?.agreementFrom;
 
   const onSelectAgreement = (template) => {
     setSelectedTemplate(template?.id);
@@ -55,6 +51,12 @@ const CampaignFormUpload = ({ pdfModal }) => {
         <Box display="flex" justifyContent="center">
           <CircularProgress size={30} />
         </Box>
+      )}
+
+      {error && (
+        <Alert severity="error" variant="outlined">
+          Please select one template before proceed.
+        </Alert>
       )}
 
       {!templateLoading && !templates?.length < 0 ? (

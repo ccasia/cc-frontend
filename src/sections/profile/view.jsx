@@ -41,6 +41,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 
 import CreatorProfile from 'src/sections/creator/profile/general';
 
+import API from './api';
 import UploadPhoto from './dropzone';
 import AccountSecurity from './security';
 import { Billing } from '../creator/profile/billing';
@@ -240,6 +241,7 @@ const Profile = () => {
         value="security"
         icon={<Iconify icon="ic:round-vpn-key" width={24} />}
       />
+      <Tab label="API" value="api" icon={<Iconify icon="material-symbols:api" width={24} />} />
     </Tabs>
   );
 
@@ -297,6 +299,8 @@ const Profile = () => {
           {renderForm}
         </Grid>
       )}
+      {user.admin.role.name === 'Finance' && currentTab === 'api' && <API />}
+      {/* {currentTab === 'api' && <API />} */}
     </>
   );
 

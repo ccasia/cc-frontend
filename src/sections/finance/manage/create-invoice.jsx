@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useParams } from 'react-router-dom';
 
 import { Container } from '@mui/material';
@@ -13,11 +14,11 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcru
 // import InvoiceNewEditForm from 'src/sections/invoice/view/invoice-new-edit-form';
 import InvoiceNewEditForm from 'src/sections/invoice/invoice-new-edit-form';
 
-function CreateInvoice() {
+function CreateInvoice({ invoiceId }) {
   const settings = useSettingsContext();
   const { id } = useParams();
 
-  const data = useGetPitchById(id);
+  const data = useGetPitchById(id || invoiceId);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -39,9 +40,13 @@ function CreateInvoice() {
         }}
       />
 
-      <InvoiceNewEditForm id={id} creators={data} />
+      <InvoiceNewEditForm id={id || invoiceId} creators={data} />
     </Container>
   );
 }
 
 export default CreateInvoice;
+
+CreateInvoice.propTypes = {
+  invoiceId: PropTypes.string,
+};

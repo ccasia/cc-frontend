@@ -1,5 +1,4 @@
 import useSWR from 'swr';
-import axios from 'axios';
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -10,12 +9,14 @@ import { paths } from 'src/routes/paths';
 
 import useGetCampaignsFinance from 'src/hooks/use-get-campaign-finance';
 
-import { fetcher, endpoints } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
+
+import { useGetAllInvoices } from 'src/api/invoices';
 
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
-import CampaignLists from 'src/sections/campaign/discover/admin/campaign-list';
+import InvoiceLists from '../invoices-list';
 
 function CampaignPage() {
   const settings = useSettingsContext();
@@ -23,6 +24,8 @@ function CampaignPage() {
   const location = useLocation();
 
   const { campaigns } = useGetCampaignsFinance();
+  const { data: invoices, isLoading: invoicesLoading } = useGetAllInvoices();
+
   const { data: invoiceData, isLoading } = useSWR(endpoints.invoice.ConnectToXero, fetcher, {
     revalidateOnFocus: true,
     revalidateOnMount: true,
@@ -32,11 +35,12 @@ function CampaignPage() {
   useEffect(() => {
     const fetchToken = async () => {
       const searchParams = new URLSearchParams(location.search);
+
       const code = searchParams.get('code'); // Get the authorization code
       if (code) {
         try {
           // Call the backend to exchange the authorization code for the access token
-          const { data } = await axios.get(endpoints.invoice.xeroCallback(code), {
+          const { data } = await axiosInstance.get(endpoints.invoice.xeroCallback(code), {
             withCredentials: true,
           });
 
@@ -49,7 +53,6 @@ function CampaignPage() {
 
     fetchToken();
   }, [navigate, location]);
-  // const { campaigns, isLoading } = useGetCampaignsFinance();
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -67,10 +70,9 @@ function CampaignPage() {
         }}
       />
 
-      {!isLoading ? (
-        <CampaignLists campaigns={campaigns} />
+      {!invoicesLoading && invoices?.length ? (
+        <InvoiceLists invoices={invoices} />
       ) : (
-        // </Stack>
         <Box
           sx={{
             position: 'relative',

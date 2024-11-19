@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy } from 'react';
 
 import { Container } from '@mui/material';
 
@@ -7,8 +7,7 @@ import { paths } from 'src/routes/paths';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
-import DashboardFinance from 'src/sections/admin/finance/Dashboard';
-// const DashboardFinance = lazy(() => import('./finance/Dashboard'));
+const DashboardFinance = lazy(() => import('../admin/Finance/Dashboard'));
 
 function FianaceDiscover() {
   const settings = useSettingsContext();

@@ -114,7 +114,7 @@ export default function AgreementTemplate({
       <Page size="A4" style={styles.page}>
         <View style={{ marginHorizontal: 30 }}>
           <Image src="/logo.png" style={styles.image} />
-          <Text style={styles.title}>FREELANCE CONTENT CREATOR AGREEMENTT</Text>
+          <Text style={styles.title}>FREELANCE CONTENT CREATOR AGREEMENT</Text>
           <Text
             style={{
               fontSize: 13,

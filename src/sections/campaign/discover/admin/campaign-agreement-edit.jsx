@@ -81,7 +81,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
           FREELANCER_FULL_NAME={agreement?.user?.name}
           ADDRESS={agreement?.user?.creator?.address}
           ccEmail="hello@cultcreative.com"
-          ccPhoneNumber="123123123"
+          ccPhoneNumber="+60162678757"
           effectiveDate={dayjs(campaign?.campaignBrief?.startDate).format('LL')}
           creatorPayment={data.paymentAmount.toString()}
           CREATOR_NAME={agreement?.user?.name}
