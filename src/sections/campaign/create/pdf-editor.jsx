@@ -159,8 +159,9 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
           },
         }
       );
+
       if (setAgreementForm) {
-        setAgreementForm('agreementFrom', res?.data?.templateURL);
+        setAgreementForm('agreementFrom', res?.data?.agreementTemplate);
       }
 
       if (campaignId) {

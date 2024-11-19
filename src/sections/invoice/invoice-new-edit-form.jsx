@@ -12,8 +12,6 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useRouter } from 'src/routes/hooks';
-
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetInvoiceById from 'src/hooks/use-get-invoice';
 
@@ -25,7 +23,6 @@ import { useSnackbar } from 'src/components/snackbar';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
-import XeroDialoge from './xero-dialoge';
 import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
 import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
@@ -33,22 +30,17 @@ import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
 // ----------------------------------------------------------------------
 
 export default function InvoiceNewEditForm({ id, creators }) {
-  const { isLoading, invoice } = useGetInvoiceById(id);
-  const router = useRouter();
+  const { isLoading, invoice, mutate } = useGetInvoiceById(id);
+
   const { enqueueSnackbar } = useSnackbar();
   const [open, setOpen] = useState(false);
   const [contact, setContact] = useState({});
-  const [newContact, setNewContact] = useState(false);
-  const loadingSave = useBoolean();
+  // const [newContact, setNewContact] = useState(false);
 
   const loadingSend = useBoolean();
 
   const [loading, setLoading] = useState(true);
-  const currentInvoice = invoice;
 
-  console.log('currentInvoice', currentInvoice);
-
-  // add the contact id to the invoice
   const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
     id: creator.user.id,
     name: creator.user.name,
@@ -101,12 +93,12 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
   const defaultValues = useMemo(
     () => ({
-      invoiceNumber: currentInvoice?.invoiceNumber || generateRandomInvoiceNumber(),
-      createDate: currentInvoice?.createDate || new Date(),
-      dueDate: new Date(currentInvoice?.dueDate) || null,
-      status: currentInvoice?.status || 'draft',
-      invoiceFrom: currentInvoice?.invoiceFrom || null,
-      invoiceTo: currentInvoice?.invoiceTo || [
+      invoiceNumber: invoice?.invoiceNumber || generateRandomInvoiceNumber(),
+      createDate: invoice?.createDate || new Date(),
+      dueDate: new Date(invoice?.dueDate) || null,
+      status: invoice?.status || 'draft',
+      invoiceFrom: invoice?.invoiceFrom || null,
+      invoiceTo: invoice?.invoiceTo || [
         {
           id: '1',
           primary: true,
@@ -119,7 +111,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
           addressType: 'Hq',
         },
       ],
-      items: [currentInvoice?.task] || [
+      items: [invoice?.task] || [
         {
           title: '',
           description: '',
@@ -129,15 +121,15 @@ export default function InvoiceNewEditForm({ id, creators }) {
           total: 0,
         },
       ],
-      bankInfo: currentInvoice?.bankAcc || {
+      bankInfo: invoice?.bankAcc || {
         bankName: '',
         payTo: '',
         accountNumber: '',
         accountEmail: '',
       },
-      totalAmount: currentInvoice?.amount || 0,
+      totalAmount: invoice?.amount || 0,
     }),
-    [currentInvoice]
+    [invoice]
   );
 
   const methods = useForm({
@@ -159,40 +151,34 @@ export default function InvoiceNewEditForm({ id, creators }) {
     reset(defaultValues);
   }, [defaultValues, isLoading, reset]);
 
-  // const handleSaveAsDraft = handleSubmit(async (data) => {
-  //   loadingSave.onTrue();
-
-  //   try {
-  //     await new Promise((resolve) => setTimeout(resolve, 500));
-  //     reset();
-  //     loadingSave.onFalse();
-  //     router.push(paths.dashboard.invoice.root);
-  //   } catch (error) {
-  //     console.error(error);
-  //     loadingSave.onFalse();
-  //   }
-  // });
-
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
-    if (
-      data.status === 'approved' &&
-      !currentInvoice.creator.xeroContactId &&
-      Object.keys(contact).length === 0 &&
-      !newContact
-    ) {
-      setOpen(true);
-      return;
+    let newContact;
+    // if (
+    //   data.status === 'approved' &&
+    //   !invoice.creator.xeroContactId &&
+    //   Object.keys(contact).length === 0 &&
+    //   !newContact
+    // ) {
+    //   setOpen(true);
+    //   return;
+    // }
+
+    if (!invoice.creator.xeroContactId) {
+      newContact = true;
+    } else {
+      newContact = false;
     }
 
     try {
-      const response = axiosInstance.patch(endpoints.invoice.updateInvoice, {
+      await axiosInstance.patch(endpoints.invoice.updateInvoice, {
         ...data,
         invoiceId: id,
         contactId: contact,
         newContact,
       });
       reset();
+      mutate();
       loadingSend.onFalse();
       enqueueSnackbar('Invoice Updated Successfully !', { variant: 'success' });
     } catch (error) {
@@ -200,6 +186,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
       enqueueSnackbar('Failed to send invoice', { variant: 'error' });
     }
   });
+
   const values = watch();
 
   const bankAccount = (
@@ -258,7 +245,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
   return (
     <FormProvider methods={methods}>
-      <Card>
+      <Card sx={{ p: 1 }}>
         <InvoiceNewEditAddress creators={creatorList} />
 
         <InvoiceNewEditStatusDate />
@@ -266,36 +253,32 @@ export default function InvoiceNewEditForm({ id, creators }) {
         {bankAccount}
 
         <InvoiceNewEditDetails />
+
+        {invoice?.status !== 'approved' && (
+          <Stack justifyContent="flex-end" direction="row" spacing={2} sx={{ mt: 3 }}>
+            <LoadingButton
+              size="large"
+              variant="outlined"
+              loading={loadingSend.value && isSubmitting}
+              onClick={handleCreateAndSend}
+              sx={{
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              }}
+            >
+              {invoice ? 'Update' : 'Create'} & Send
+            </LoadingButton>
+          </Stack>
+        )}
       </Card>
 
-      <Stack justifyContent="flex-end" direction="row" spacing={2} sx={{ mt: 3 }}>
-        {/* <LoadingButton
-          color="inherit"
-          size="large"
-          variant="outlined"
-          loading={loadingSave.value && isSubmitting}
-          onClick={handleSaveAsDraft}
-        >
-          Save as Draft
-        </LoadingButton> */}
-
-        <LoadingButton
-          size="large"
-          variant="contained"
-          loading={loadingSend.value && isSubmitting}
-          onClick={handleCreateAndSend}
-        >
-          {currentInvoice ? 'Update' : 'Create'} & Send
-        </LoadingButton>
-      </Stack>
-      <XeroDialoge
+      {/* <XeroDialoge
         open={open}
         onClose={() => {
           setOpen(false);
         }}
         setContact={setContact}
         setNewContact={setNewContact}
-      />
+      /> */}
     </FormProvider>
   );
 }

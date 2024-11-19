@@ -8,6 +8,7 @@ import {
   Box,
   Table,
   Paper,
+  Stack,
   Select,
   Button,
   MenuItem,
@@ -50,9 +51,9 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
 
   const filteredData = localData?.filter((item) => {
     const matchesQuery =
-      item.campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      item?.campaign?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item?.user?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item?.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
 
     // Amount filter logic
@@ -132,7 +133,10 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
           </Select>
         </FormControl>
       </Box>
-      <TableContainer component={Paper} sx={{ maxHeight: 500, overflow: 'auto' }}>
+      <TableContainer
+        component={Paper}
+        sx={{ maxHeight: 500, overflow: 'auto', scrollbarWidth: 'none' }}
+      >
         <Table stickyHeader>
           <TableHead>
             <TableRow>
@@ -167,20 +171,20 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                     variant="body2"
                     sx={{ whiteSpace: 'normal', wordWrap: 'break-word', maxWidth: 250 }}
                   >
-                    {item.campaign.name}
+                    {item?.campaign?.name}
                   </Typography>
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {item.user.name}
+                  {item?.creator?.user?.name}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {item.invoiceNumber}
+                  {item?.invoiceNumber}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {dayjs(item.date).format('LL')}
+                  {dayjs(item?.date).format('LL')}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {formatAmount(item.amount)}
+                  {formatAmount(item?.amount)}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
                   <FormControl fullWidth size="small">
@@ -189,15 +193,17 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                       onChange={(e) => handleStatusChangeInTable(item.id, e.target.value)}
                       sx={{ textAlign: 'center' }}
                     >
+                      <MenuItem value="draft">Draft</MenuItem>
                       <MenuItem value="paid">Paid</MenuItem>
                       <MenuItem value="pending">Pending</MenuItem>
                       <MenuItem value="overdue">Overdue</MenuItem>
+                      <MenuItem value="approved">Approved</MenuItem>
                     </Select>
                   </FormControl>
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  {item.status === 'Overdue' && (
-                    <>
+                  {item.status === 'overdue' && (
+                    <Stack>
                       <Button
                         variant="outlined"
                         startIcon={<Iconify icon="eva:eye-outline" width={20} />}
@@ -218,10 +224,10 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                       >
                         Notify
                       </Button>
-                    </>
+                    </Stack>
                   )}
-                  {item.status === 'Pending' && (
-                    <>
+                  {item.status === 'pending' && (
+                    <Stack>
                       <Button
                         variant="outlined"
                         sx={{
@@ -242,9 +248,9 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                       >
                         Paid
                       </Button>
-                    </>
+                    </Stack>
                   )}
-                  {item.status !== 'Overdue' && item.status !== 'Pending' && (
+                  {item.status !== 'overdue' && item.status !== 'pending' && (
                     <>
                       <Button
                         variant="outlined"

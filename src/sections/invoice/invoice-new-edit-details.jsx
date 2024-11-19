@@ -24,8 +24,6 @@ export default function InvoiceNewEditDetails() {
 
   const values = watch();
 
-  console.log(values);
-
   const totalOnRow = values.items.map((item) => item?.price);
 
   const subTotal = sum(totalOnRow);
@@ -70,40 +68,6 @@ export default function InvoiceNewEditDetails() {
       alignItems="flex-end"
       sx={{ mt: 3, textAlign: 'right', typography: 'body2' }}
     >
-      {/* <Stack direction="row">
-        <Box sx={{ color: 'text.secondary' }}>Subtotal</Box>
-        <Box sx={{ width: 160, typography: 'subtitle2' }}>{fCurrency(subTotal) || '-'}</Box>
-      </Stack> */}
-
-      {/* <Stack direction="row">
-        <Box sx={{ color: 'text.secondary' }}>Shipping</Box>
-        <Box
-          sx={{
-            width: 160,
-            ...(values.shipping && { color: 'error.main' }),
-          }}
-        >
-          {values.shipping ? `- ${fCurrency(values.shipping)}` : '-'}
-        </Box>
-      </Stack> */}
-
-      {/* <Stack direction="row">
-        <Box sx={{ color: 'text.secondary' }}>Discount</Box>
-        <Box
-          sx={{
-            width: 160,
-            ...(values.discount && { color: 'error.main' }),
-          }}
-        >
-          {values.discount ? `- ${fCurrency(values.discount)}` : '-'}
-        </Box>
-      </Stack> */}
-
-      {/* <Stack direction="row">
-        <Box sx={{ color: 'text.secondary' }}>Taxes</Box>
-        <Box sx={{ width: 160 }}>{values.taxes ? fCurrency(values.taxes) : '-'}</Box>
-      </Stack> */}
-
       <Stack direction="row" sx={{ typography: 'subtitle1' }}>
         <Box>Total</Box>
         <Box sx={{ width: 160 }}>{`RM${totalAmount}` || '-'}</Box>
@@ -190,9 +154,9 @@ export default function InvoiceNewEditDetails() {
                 label="Total"
                 placeholder="0.00"
                 value={
-                  Number(values.items[index].total) === 0
+                  Number(values.items[index]?.total) === 0
                     ? ''
-                    : Number(values.items[index].total).toFixed(2)
+                    : Number(values.items[index]?.total).toFixed(2)
                 }
                 onChange={(event) => handleChangePrice(event, index)}
                 InputProps={{

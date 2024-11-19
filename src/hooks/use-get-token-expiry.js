@@ -4,9 +4,9 @@ import { useMemo } from 'react';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 const useGetTokenExpiry = () => {
-  const { data } = useSWR(endpoints.invoice.xeroCheckRefreshToken, fetcher);
+  const { data, isLoading } = useSWR(endpoints.invoice.xeroCheckRefreshToken, fetcher);
 
-  const memoizedValue = useMemo(() => ({ data}), [data]);
+  const memoizedValue = useMemo(() => ({ data, isLoading }), [data, isLoading]);
 
   return memoizedValue;
 };
