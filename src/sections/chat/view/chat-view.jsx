@@ -6,8 +6,6 @@ import { Box, Avatar } from '@mui/material';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 
-import { useSearchParams } from 'src/routes/hooks';
-
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllThreads } from 'src/api/chat';
 import { useUnreadMessageCount } from 'src/context/UnreadMessageCountContext';
@@ -23,29 +21,30 @@ export default function ChatView() {
   // const router = useRouter();
   const { user } = useAuthContext();
   const settings = useSettingsContext();
-  const searchParams = useSearchParams();
+ 
   const unreadMessageCount = useUnreadMessageCount();
-  const selectedConversationId = searchParams.get('id') || '';
-  const { threads, loading, error } = useGetAllThreads(); // Fetch all threads using hook
+ 
+  const { threads, loading} = useGetAllThreads(); 
 
   // Filter threads to find those that the user is part of
-  const userThreads = threads?.filter((thread) =>
-    thread.UserThread.some((ut) => ut.userId === user.id)
-  );
+  const currentuserInThreads = Array.isArray(threads)
+  ? threads.filter((thread) =>
+      thread?.UserThread?.some((ut) => ut.userId === user.id)
+    )
+  : []; 
 
-  // Check if user has threads
-  const hasThreads = userThreads && userThreads.length > 0;
+
+  const hasThreads = currentuserInThreads && currentuserInThreads.length > 0;
 
   const { id } = useParams();
 
   const renderContent = () => {
     if (id) {
       // If there is an active thread
-      return <ThreadMessages threadId={id} />;
+      return <ThreadMessages threadId={id} currentuserInThreads={currentuserInThreads} />;
     }
 
     if (loading) {
-      // If loading threads
       return (
         <Box
           display="flex"
@@ -172,7 +171,7 @@ export default function ChatView() {
 
   // Renders the navigation
 
-  const renderNav = <ChatNav contacts={[]} selectedConversationId={selectedConversationId} />;
+  const renderNav = <ChatNav currentuserInThreads={currentuserInThreads} />;
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
@@ -196,7 +195,16 @@ export default function ChatView() {
       </Box>
 
       <Stack direction="row" sx={{ height: '72vh' }} gap={2}>
-        <Box sx={{ border: 1, borderRadius: 2, borderColor: '#EBEBEB' }}>{renderNav}</Box>
+        <Box 
+        sx={{ 
+          border: 1, 
+          borderRadius: 2, 
+          borderColor: '#EBEBEB' 
+          }}
+          >
+          {renderNav}
+        
+        </Box>
 
         <Stack
           sx={{

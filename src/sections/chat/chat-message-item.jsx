@@ -102,11 +102,7 @@ export default function ChatMessageItem({ message }) {
     return null;
   };
   
-  // Usage inside your message item component:
- 
-  
-
-  const renderBody = (
+  const renderBody = body && (
     <Stack
       sx={{
         p: 1,
@@ -144,8 +140,8 @@ export default function ChatMessageItem({ message }) {
       <Stack alignItems="start">
         {renderInfo}
         <Stack
-          direction="row"
-          alignItems="center"
+          direction="column"
+          alignItems="flex-end"
           sx={{
             position: 'relative',
             '&:hover': {
@@ -155,12 +151,10 @@ export default function ChatMessageItem({ message }) {
             },
           }}
         >
-         {renderMediaBody(message.fileType, message.file)}
+          {renderMediaBody(message.fileType, message.file)}
 
-         {/* Render text separately */}
-        {renderBody}
-
-        
+          {renderBody && renderBody}
+                  
         </Stack>
         {/* {renderTimestamp} */}
       </Stack>

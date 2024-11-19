@@ -141,7 +141,7 @@ export default function ChatMessageInput({ disabled, threadId  }) {
       alignItems="normal"
       overflow="hidden"
       sx={{
-        borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
+        borderTop: (theme) => `solid 2px ${theme.palette.divider}`,
         px: 1,
         minHeight: 56,
         maxHeight: 100,

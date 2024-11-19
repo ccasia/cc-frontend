@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'src/routes/hooks';
+import axiosInstance, { endpoints } from 'src/utils/axios';
+//  import { useParams } from 'src/routes/hooks';
 import Stack from '@mui/material/Stack';
 import PropTypes from 'prop-types';
 import { Divider, Typography } from '@mui/material';
@@ -9,42 +10,63 @@ import ChatMessageInput from '../chat-message-input';
 import ChatMessageList from '../chat-message-list';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useAuthContext } from 'src/auth/hooks';
-import { markMessagesAsSeen, useTotalUnreadCount, useGetAllThreads } from 'src/api/chat';
+import { markMessagesAsSeen, useTotalUnreadCount} from 'src/api/chat';
 
-const ThreadMessages = ({ threadId }) => {
+const ThreadMessages = ({ threadId, currentuserInThreads }) => {
   const { socket } = useSocketContext();
-  const [latestMessages, setLatestMessages] = useState({});
   const [threadMessages, setThreadMessages] = useState({});
   const { user } = useAuthContext();
   const { triggerRefetch } = useTotalUnreadCount();
-  const { threads, threadrefetch } = useGetAllThreads();
+  
   const [campaignStatus, setCampaignStatus] = useState(null);
+ 
+  
 
   useEffect(() => {
-    // Listen for existing messages
-    socket?.on('existingMessages', ({ threadId, oldMessages }) => {
-      setThreadMessages((prevThreadMessages) => ({
-        ...prevThreadMessages,
-        [threadId]: oldMessages,
-      }));
-    });
-
-    // Join the room
     socket?.emit('room', threadId);
-
-    // Listen for incoming messages
+    console.log("Connected to room", threadId);
+    
     socket?.on('message', (message) => {
+      console.log('Received raw message from socket:', message);
+
+
+      const formattedMessage = {
+        ...message,
+        content: message.content,
+        file: message.file || null, 
+      };
+  
+      console.log('Recievied Formatted message:', formattedMessage); 
+  
+      console.log("complete message", message)
+
+      // Update the thread messages in state
       setThreadMessages((prevThreadMessages) => {
         const { threadId: messageThreadId } = message;
+        console.log('Updating messages for threadId:', messageThreadId);
+    
         return {
           ...prevThreadMessages,
-          [messageThreadId]: [...(prevThreadMessages[messageThreadId] || []), message],
+          [messageThreadId]: [
+            ...(prevThreadMessages[messageThreadId] || []),
+            formattedMessage,
+          ],
         };
       });
+    
+      // Mark the message as seen if it's for the current thread
       if (message.threadId === threadId) {
         markAsSeen();
       }
     });
+    // Listen for existing messages
+    socket?.on('existingMessages', ({ threadId, oldMessages }) => {
+      console.log("Listening for existing messages")
+      setThreadMessages((prevThreadMessages) => ({
+        ...prevThreadMessages,
+        [threadId]: oldMessages,
+      }));
+    });    
 
     const markAsSeen = async () => {
       try {
@@ -57,35 +79,26 @@ const ThreadMessages = ({ threadId }) => {
 
     markAsSeen();
 
-    const thread = threads?.find((t) => t.id === threadId);
+    const thread = currentuserInThreads?.find((t) => t.id === threadId);
     if (thread && thread.campaign) {
       setCampaignStatus(thread.campaign.status);
     }
 
-    // Cleanup on component unmount
     return () => {
-      socket?.off('message');
+      socket?.off('latestMessage');
       socket?.off('existingMessages');
     };
   }, [socket, threadId]);
 
-  const handleSendMessage = useCallback(
-    (content) => {
-      const { id: senderId, role, name, photoURL } = user;
-      const createdAt = new Date().toISOString();
-      threadrefetch;
-      socket?.emit('sendMessage', { senderId, threadId, content, role, name, photoURL, createdAt });
-    },
-    [socket, threadId, user, threadrefetch]
-  );
+ 
 
   const messages = threadMessages[threadId] || [];
-  const thread = threads?.find((t) => t.id === threadId);
+  const thread = currentuserInThreads?.find((t) => t.id === threadId);
   const isGroup = thread?.isGroup;
 
   return (
     <Stack sx={{ width: 1, height: 1, overflow: 'hidden' }}>
-      <ChatHeaderCompose currentUserId={user.id} threadId={threadId} />
+      <ChatHeaderCompose currentUserId={user.id} threadId={threadId} currentuserInThreads={currentuserInThreads} />
 
       <Divider sx={{ width: '97%', mx: 'auto' }} />
 
@@ -106,7 +119,9 @@ const ThreadMessages = ({ threadId }) => {
           The campaign has ended.
         </Typography>
       ) : (
-        <ChatMessageInput threadId={threadId} onSendMessage={handleSendMessage} />
+        <ChatMessageInput 
+        threadId={threadId} 
+        />
       )}
     </Stack>
   );
