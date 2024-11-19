@@ -90,6 +90,7 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
   '& .fc .fc-popover': {
     border: 0,
     overflow: 'hidden',
+    maxWidth: '300px',
     boxShadow: theme.customShadows.dropdown,
     borderRadius: theme.shape.borderRadius * 1.5,
     backgroundColor: theme.palette.background.paper,
@@ -144,8 +145,10 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
 
   // Highlight Today
   '& .fc .fc-day-today': {
-    backgroundColor: 'transparent', 
-    position: 'relative', 
+    opacity: 1,
+    '& .fc-daygrid-day-number': {
+      color: theme.palette.text.disabled,
+    },
   },
   '& .fc .fc-day-today .fc-daygrid-day-number': {
     width: '30px',
@@ -163,6 +166,25 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
     lineHeight: '1', 
     padding: '0', 
     boxSizing: 'border-box',
+    zIndex: 2,
+  },
+
+  '& .fc .fc-daygrid-day.fc-day-today .fc-event': {
+    zIndex: 1,
+    top: '35px', 
+    paddingLeft: '5px',
+  },
+
+  '& .fc .fc-day-today .fc-daygrid-more-link': {
+    ...theme.typography.caption,
+    color: theme.palette.text.secondary,
+    top: '35px',
+    '&:hover': {
+      backgroundColor: 'unset',
+      textDecoration: 'underline',
+      color: theme.palette.text.primary,
+      fontWeight: theme.typography.fontWeightMedium,
+    },
   },
 
   // Week & Day View
@@ -174,20 +196,22 @@ export const StyledCalendar = styled('div')(({ theme }) => ({
     ...theme.typography.body2,
   },
 
-  // Agenda View
-  '& .fc-direction-ltr .fc-list-day-text, .fc-direction-rtl .fc-list-day-side-text, .fc-direction-ltr .fc-list-day-side-text, .fc-direction-rtl .fc-list-day-text':
-    {
-      ...theme.typography.subtitle2,
-    },
-  '& .fc .fc-list-event': {
-    ...theme.typography.body2,
-    '& .fc-list-event-time': {
-      color: theme.palette.text.secondary,
-    },
+// Agenda View
+ '& .fc-direction-ltr .fc-list-day-text, .fc-direction-rtl .fc-list-day-side-text, .fc-direction-ltr .fc-list-day-side-text, .fc-direction-rtl .fc-list-day-text': {
+  ...theme.typography.subtitle2,
+},
+'& .fc-direction-ltr': {
+  overflow:'auto'
+},
+'& .fc .fc-list-event': {
+  ...theme.typography.body2,
+  '& .fc-list-event-time': {
+    color: theme.palette.text.secondary,
   },
-  '& .fc .fc-list-table': {
-    '& th, td': {
-      borderColor: 'transparent',
-    },
+},
+'& .fc .fc-list-table': {
+  '& th, td': {
+    borderColor: 'transparent',
   },
+},
 }));
