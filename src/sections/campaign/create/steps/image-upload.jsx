@@ -51,7 +51,6 @@ const CampaignImageUpload = () => {
           )
         }
         onRemoveAll={() => setValue('campaignImages', [], { shouldValidate: true })}
-        // onUpload={() => console.info('ON UPLOAD')}
       />
     </Box>
   );

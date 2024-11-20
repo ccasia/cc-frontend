@@ -4,8 +4,6 @@ import PropTypes from 'prop-types';
 
 import { Box, Card, Chip, Stack, Divider, MenuItem, IconButton, Typography } from '@mui/material';
 
-import { useResponsive } from 'src/hooks/use-responsive';
-
 import { formatText } from 'src/utils/format-test';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -18,7 +16,7 @@ import CustomPopover from 'src/components/custom-popover/custom-popover';
 import { CampaignLog } from './CampaignLog';
 
 const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
-  const smUp = useResponsive('up', 'sm');
+  // const smUp = useResponsive('up', 'sm');
 
   const { user } = useAuthContext();
   const popover = usePopover();
@@ -33,22 +31,6 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
           p: 2,
         }}
       >
-        {/* {smUp && (
-          <Box
-            sx={{
-              p: 0.5,
-              height: 200,
-            }}
-          >
-            <img
-              src={campaign?.campaignBrief?.images[0]}
-              alt="test"
-              width="100%"
-              height="100%"
-              style={{ borderRadius: 10, objectFit: 'cover' }}
-            />
-          </Box>
-        )} */}
         <Box
           sx={{
             p: 0.5,
@@ -74,11 +56,12 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
           }}
         >
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            {campaign?.stage === 'publish' ? (
-              <Label color="primary">{campaign?.stage}</Label>
+            {/* {campaign?.status === 'active' ? (
+              <Label color="primary">{campaign?.status}</Label>
             ) : (
-              <Label color="warning">{campaign?.stage}</Label>
-            )}
+              <Label color="warning">{campaign?.status}</Label>
+            )} */}
+            <Label color="info">{campaign?.campaignType}</Label>
             <Typography variant="caption" color="text.disabled">
               Created on {dayjs(campaign?.createdAt).format('LL')}
             </Typography>

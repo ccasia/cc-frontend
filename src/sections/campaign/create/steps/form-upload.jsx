@@ -1,7 +1,9 @@
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { useFormContext } from 'react-hook-form';
+import React, { useState, useCallback } from 'react';
 
 import {
   Box,
@@ -20,13 +22,16 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetTemplate } from 'src/hooks/use-get-template';
 
+import AgreementTemplate from 'src/template/agreement';
+
 import Iconify from 'src/components/iconify';
 
 const CampaignFormUpload = ({ pdfModal }) => {
   const [pages, setPages] = useState();
   const templateModal = useBoolean();
-  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState({});
   const lgUp = useResponsive('up', 'sm');
+  const [displayPdf, setDisplayPdf] = useState('');
 
   const { data: templates, templateLoading } = useGetTemplate();
 
@@ -40,9 +45,36 @@ const CampaignFormUpload = ({ pdfModal }) => {
 
   const error = errors?.agreementFrom;
 
-  const onSelectAgreement = (template) => {
-    setSelectedTemplate(template?.id);
-    setValue('agreementFrom', template);
+  const generateNewAgreement = useCallback(async (template) => {
+    try {
+      if (template) {
+        const blob = await pdf(
+          <AgreementTemplate
+            DATE={dayjs().format('LL')}
+            ccEmail="hello@cultcreative.com"
+            ccPhoneNumber="+60162678757"
+            NOW_DATE={dayjs().format('LL')}
+            VERSION_NUMBER="V1"
+            ADMIN_IC_NUMBER={template?.adminICNumber ?? 'Default'}
+            ADMIN_NAME={template?.adminName ?? 'Default'}
+            SIGNATURE={template?.signURL ?? 'Default'}
+          />
+        ).toBlob();
+        return blob;
+      }
+      return null;
+    } catch (err) {
+      console.log(err);
+      return err;
+    }
+  }, []);
+
+  const onSelectAgreement = async (template) => {
+    const newAgreement = await generateNewAgreement(template);
+    setDisplayPdf(newAgreement);
+    setSelectedTemplate(template);
+    setValue('agreementFrom', { ...template, url: newAgreement });
+    templateModal.onFalse();
   };
 
   return (
@@ -86,42 +118,6 @@ const CampaignFormUpload = ({ pdfModal }) => {
         </>
       )}
 
-      {/* <Box textAlign="center" my={4}>
-            <Button
-              size="medium"
-              variant="contained"
-              onClick={pdfModal.onTrue}
-              startIcon={<Iconify icon="icon-park-outline:agreement" width={20} />}
-            >
-              Generate a new Agreement Template
-            </Button>
-          </Box> */}
-
-      {/* {!templateLoading && data && (
-        <>
-          <Alert severity="success" variant="outlined">
-            Template found
-          </Alert>
-
-          <Box
-            my={2}
-            sx={{
-              display: 'flex',
-              gap: 1,
-              justifyContent: 'end',
-            }}
-          >
-            <Button size="small" variant="contained" onClick={refreshPdf}>
-              Refresh
-            </Button>
-            <Button size="small" variant="contained" onClick={pdfModal.onTrue}>
-              Regenerate agreement template
-            </Button>
-          </Box>
-
-        </>
-      )} */}
-
       {agreementUrl && (
         <Box
           my={4}
@@ -140,7 +136,7 @@ const CampaignFormUpload = ({ pdfModal }) => {
               scrollbarWidth: 'none',
             }}
           >
-            <Document file={agreementUrl.url} onLoadSuccess={({ numPages }) => setPages(numPages)}>
+            <Document file={agreementUrl?.url} onLoadSuccess={({ numPages }) => setPages(numPages)}>
               <Stack spacing={2}>
                 {Array(pages)
                   .fill()
@@ -207,9 +203,9 @@ const CampaignFormUpload = ({ pdfModal }) => {
                   height={400}
                   // width={{ md: 360 }}
                   sx={{
-                    border: selectedTemplate === template?.id ? 4 : 1,
+                    border: selectedTemplate?.id === template?.id ? 4 : 1,
                     borderRadius: 2,
-                    borderColor: selectedTemplate === template?.id && 'green',
+                    borderColor: selectedTemplate?.id === template?.id && 'green',
                     cursor: 'pointer',
                     transition: 'transform 0.3s ease-in-out',
                     position: 'relative',
@@ -227,7 +223,7 @@ const CampaignFormUpload = ({ pdfModal }) => {
                   onClick={() => onSelectAgreement(template)}
                 >
                   <Radio
-                    checked={selectedTemplate === template?.id}
+                    checked={selectedTemplate?.id === template?.id}
                     onChange={() => onSelectAgreement(template)}
                     value={template?.id}
                     name="template-selection"

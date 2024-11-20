@@ -77,6 +77,7 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                     p: 0.5,
                     top: 4,
                     right: 4,
+                    zIndex: 1000,
                     position: 'absolute',
                     color: 'common.white',
                     bgcolor: (theme) => alpha(theme.palette.grey[900], 0.48),

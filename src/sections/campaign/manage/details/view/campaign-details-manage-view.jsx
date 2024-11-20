@@ -948,21 +948,6 @@ const CampaignDetailManageView = ({ id }) => {
                 Pause
               </LoadingButton>
             )}
-
-            {/* {!isCampaignHasSpreadSheet && (
-              <LoadingButton
-                startIcon={<Iconify icon="lucide:file-spreadsheet" />}
-                variant="outlined"
-                size="small"
-                sx={{
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                }}
-                onClick={generateSpreadSheet}
-                loading={loading.value}
-              >
-                Generate Spreadsheet
-              </LoadingButton>
-            )} */}
           </Stack>
         }
         sx={{
@@ -1017,7 +1002,6 @@ const CampaignDetailManageView = ({ id }) => {
       </Grid>
 
       {confirmationModal}
-      {/* {copyDialogContainer} */}
     </Container>
   );
 };
