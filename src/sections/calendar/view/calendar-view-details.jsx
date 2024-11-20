@@ -180,7 +180,7 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
                       }}>
                       <span
                         style={{
-                          color: labelColor, // Use the defined labelColor
+                          color: labelColor, 
                           fontSize: '12px',
                           fontWeight: '700',
                           textAlign: 'center',

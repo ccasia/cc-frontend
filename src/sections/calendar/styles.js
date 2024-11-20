@@ -1,5 +1,4 @@
 import { alpha, styled } from '@mui/material/styles';
-import { position } from 'stylis';
 
 // ----------------------------------------------------------------------
 

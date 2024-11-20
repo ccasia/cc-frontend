@@ -211,7 +211,7 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
                         >
                           <span
                             style={{
-                              color: selectedOption.labelColor, // Use the selected option's labelColor
+                              color: selectedOption.labelColor, 
                               fontSize: '12px',
                               fontWeight: '700',
                               textAlign: 'center',

@@ -263,7 +263,7 @@ export default function CalendarView() {
           )}
           <Divider
             sx={{
-              my: 2,
+              my: 2 ,
             }}
           />
         </DialogTitle>
