@@ -86,6 +86,7 @@ export const endpoints = {
     xeroCheckRefreshToken: '/api/auth/checkRefreshToken',
     forgetPassword: '/api/user/forget-password',
     checkToken: (token) => `/api/user/forget-password-token/${token}`,
+    resendVerificationLink: `/api/auth/resendVerificationLinkCreator`,
   },
   creators: {
     getCreators: '/api/creator/getAllCreators',
