@@ -143,17 +143,15 @@ export function fileData(file) {
     };
   }
 
-  console.log('FILE', file);
-
   // File
   return {
     key: file?.preview,
-    name: file.name,
-    size: file.size,
-    path: file.path,
-    type: file.type,
-    preview: file.preview,
-    lastModified: file.lastModified,
-    lastModifiedDate: file.lastModifiedDate,
+    name: file?.name,
+    size: file?.size,
+    path: file?.path,
+    type: file?.type,
+    preview: file?.preview,
+    lastModified: file?.lastModified,
+    lastModifiedDate: file?.lastModifiedDate,
   };
 }
