@@ -241,7 +241,9 @@ const Profile = () => {
         value="security"
         icon={<Iconify icon="ic:round-vpn-key" width={24} />}
       />
-      <Tab label="API" value="api" icon={<Iconify icon="material-symbols:api" width={24} />} />
+      {user?.admin?.role?.name === 'Finance' && (
+        <Tab label="API" value="api" icon={<Iconify icon="material-symbols:api" width={24} />} />
+      )}
     </Tabs>
   );
 
