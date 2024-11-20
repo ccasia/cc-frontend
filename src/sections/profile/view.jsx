@@ -299,7 +299,7 @@ const Profile = () => {
           {renderForm}
         </Grid>
       )}
-      {user.admin.role.name === 'Finance' && currentTab === 'api' && <API />}
+      {user?.admin?.role?.name === 'Finance' && currentTab === 'api' && <API />}
       {/* {currentTab === 'api' && <API />} */}
     </>
   );
