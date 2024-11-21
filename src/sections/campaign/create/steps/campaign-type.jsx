@@ -24,7 +24,7 @@ const CampaignType = () => {
   }, [isPostingExist, setValue]);
 
   return (
-    <Box sx={{ mb: 2 }}>
+    <Box sx={{ mb: 2, py: 2 }}>
       <RHFSelect
         name="campaignType"
         label="Campaign Type"

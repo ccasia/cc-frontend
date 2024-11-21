@@ -15,6 +15,7 @@ import FormHelperText from '@mui/material/FormHelperText';
 
 export function RHFSelect({
   name,
+  label,
   native,
   maxHeight = 220,
   helperText,
@@ -32,7 +33,7 @@ export function RHFSelect({
       render={({ field, fieldState: { error } }) => (
         <TextField
           {...field}
-          label={name}
+          label={label}
           select
           fullWidth
           value={multiple ? field.value || [''] : field.value || ''}
@@ -70,6 +71,7 @@ RHFSelect.propTypes = {
   name: PropTypes.string,
   native: PropTypes.bool,
   multiple: PropTypes.bool,
+  label: PropTypes.string,
 };
 
 // ----------------------------------------------------------------------
@@ -97,7 +99,18 @@ export function RHFMultiSelect({
       return (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
           {selectedItems.map((item) => (
-            <Chip key={item.value} size="small" label={item.label} />
+            <Chip
+              key={item.value}
+              size="small"
+              variant="outlined"
+              label={item.label}
+              sx={{
+                border: 1,
+                borderColor: '#EBEBEB',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                py: 2,
+              }}
+            />
           ))}
         </Box>
       );

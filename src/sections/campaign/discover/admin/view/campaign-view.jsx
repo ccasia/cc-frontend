@@ -5,6 +5,7 @@ import {
   Stack,
   Avatar,
   Button,
+  Dialog,
   Container,
   TextField,
   Autocomplete,
@@ -25,6 +26,8 @@ import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
+import CreateCampaignForm from 'src/sections/campaign/create/form';
+
 import CampaignLists from '../campaign-list';
 import CampaignFilter from '../campaign-filter';
 
@@ -37,6 +40,7 @@ const CampaignView = () => {
   const settings = useSettingsContext();
   const { campaigns, isLoading } = useGetCampaigns();
   const { data: brandOptions } = useGetCampaignBrandOption();
+  const create = useBoolean();
 
   const router = useRouter();
   const [filters, setFilters] = useState(defaultFilters);
@@ -74,6 +78,21 @@ const CampaignView = () => {
         sx={{
           mb: { xs: 3, md: 5 },
         }}
+        // Temporary
+        action={
+          <Button
+            startIcon={
+              <Iconify width={25} icon="material-symbols-light:campaign-outline-rounded" />
+            }
+            variant="outlined"
+            sx={{
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            }}
+            onClick={create.onTrue}
+          >
+            Create campaign
+          </Button>
+        }
       />
 
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
@@ -173,6 +192,25 @@ const CampaignView = () => {
         reset={handleResetFitlers}
         brands={brandOptions}
       />
+
+      <Dialog
+        fullWidth
+        fullScreen
+        PaperProps={{
+          sx: {
+            bgcolor: '#FFF',
+            borderRadius: 2,
+            p: 4,
+            m: 2,
+            height: '97vh',
+            overflow: 'hidden',
+          },
+        }}
+        scroll="paper"
+        open={create.value}
+      >
+        <CreateCampaignForm onClose={create.onFalse} />
+      </Dialog>
     </Container>
   );
 };
