@@ -73,10 +73,7 @@ function Group({ subheader, items, slotProps, whoCanSee }) {
             {subheader}
           </ListSubheader>
 
-          <Collapse in={open}>
-            {/* <NavList key={items[0]?.title} data={items[0]} depth={1} slotProps={slotProps} /> */}
-            {renderContent}
-          </Collapse>
+          <Collapse in={open}>{renderContent}</Collapse>
         </>
       ) : (
         renderContent
