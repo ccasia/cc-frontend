@@ -219,7 +219,7 @@ const MediaKitCreator = () => {
           >
             {user?.name}
           </Typography>
-          <Iconify icon="material-symbols:verified" color="info.main" width={20} />
+          {/* <Iconify icon="material-symbols:verified" color="info.main" width={20} /> */}
         </Stack>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="body2" color="text.secondary">

@@ -269,10 +269,10 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
                     >
                       <Stack direction={'row'} alignItems={'center'} spacing={0.5}>
                         <Typography variant="subtitle1">{otherUserName}</Typography>
-                        <Iconify
+                        {/* <Iconify
                           icon="material-symbols:verified"
                           style={{ color: '#1340FF', paddingLeft: 1 }}
-                        />
+                        /> */}
                       </Stack>
                     </Typography>
                     <Typography
