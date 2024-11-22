@@ -139,6 +139,25 @@ export default function RHFAutocomplete({
                 }}
               />
             )}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => {
+                const { key, ...tagProps } = getTagProps({ index });
+                return (
+                  <Chip
+                    variant="outlined"
+                    sx={{
+                      border: 1,
+                      borderColor: '#EBEBEB',
+                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      py: 2,
+                    }}
+                    label={option}
+                    key={key}
+                    {...tagProps}
+                  />
+                );
+              })
+            }
             {...other}
           />
         );

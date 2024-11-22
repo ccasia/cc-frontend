@@ -1,10 +1,27 @@
-import React, { useMemo, useState } from 'react';
+
+import React, { useState, useCallback } from 'react';
+
+import {
+  Box,
+  Stack,
+  Avatar,
+  Button,
+  Dialog,
+  Container,
+  TextField,
+  Autocomplete,
+  ListItemText,
+  InputAdornment,
+  CircularProgress,
+} from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+// import React, { useMemo, useState } from 'react';
 
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useTheme } from '@mui/material/styles';
-import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
-
+// import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 import { useRouter } from 'src/routes/hooks';
 
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
@@ -12,6 +29,8 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
+
+import CreateCampaignForm from 'src/sections/campaign/create/form';
 
 import CampaignLists from '../campaign-list';
 
@@ -23,6 +42,8 @@ const defaultFilters = {
 const CampaignView = () => {
   const settings = useSettingsContext();
   const { campaigns, isLoading } = useGetCampaigns();
+  const { data: brandOptions } = useGetCampaignBrandOption();
+  const create = useBoolean();
   const [filter, setFilter] = useState('active');
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -62,6 +83,87 @@ const CampaignView = () => {
   }, [filter, activeCampaigns, completedCampaigns]);
 
   return (
+//     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
+//       <CustomBreadcrumbs
+//         heading="Campaigns"
+//         links={[
+//           { name: 'Dashboard', href: paths.dashboard.root },
+//           {
+//             name: 'Campaigns',
+//             href: paths.dashboard.campaign.root,
+//           },
+//           { name: 'List' },
+//         ]}
+//         sx={{
+//           mb: { xs: 3, md: 5 },
+//         }}
+//         // Temporary
+//         action={
+//           <Button
+//             startIcon={
+//               <Iconify width={25} icon="material-symbols-light:campaign-outline-rounded" />
+//             }
+//             variant="outlined"
+//             sx={{
+//               boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+//             }}
+//             onClick={create.onTrue}
+//           >
+//             Create campaign
+//           </Button>
+//         }
+//       />
+
+//       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+//         {campaigns && (
+//           <Autocomplete
+//             freeSolo
+//             sx={{ width: { xs: 1, sm: 260 } }}
+//             options={campaigns.filter((campaign) => campaign?.status === 'ACTIVE')}
+//             getOptionLabel={(option) => option.name}
+//             renderInput={(params) => (
+//               <TextField
+//                 {...params}
+//                 placeholder="Search..."
+//                 InputProps={{
+//                   ...params.InputProps,
+//                   startAdornment: (
+//                     <InputAdornment position="start">
+//                       <Iconify icon="eva:search-fill" sx={{ ml: 1, color: 'text.disabled' }} />
+//                     </InputAdornment>
+//                   ),
+//                 }}
+//               />
+//             )}
+//             renderOption={(props, option) => (
+//               <Box
+//                 {...props}
+//                 component="div"
+//                 onClick={() =>
+//                   router.push(paths.dashboard.campaign.adminCampaignDetail(option?.id))
+//                 }
+//               >
+//                 <Avatar
+//                   alt="Campaign Image"
+//                   src={option?.campaignBrief?.images[0]}
+//                   variant="rounded"
+//                   sx={{
+//                     width: 48,
+//                     height: 48,
+//                     flexShrink: 0,
+//                     mr: 1.5,
+//                     borderRadius: 1,
+//                   }}
+//                 />
+//                 <ListItemText
+//                   primary={option?.name}
+//                   secondary={option?.company?.name || option?.brand?.name}
+//                 />
+//               </Box>
+//             )}
+//           />
+//         )}
+
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
       <Box>
         <Typography variant="h2" sx={{ mb: 4, fontFamily: theme.typography.fontSecondaryFamily }}>
@@ -279,6 +381,36 @@ const CampaignView = () => {
             title={`No ${filter === 'active' ? 'active' : 'completed'} campaigns available`}
           />
         ))}
+
+      <CampaignFilter
+        open={openFilters.value}
+        onOpen={openFilters.onTrue}
+        onClose={openFilters.onFalse}
+        //
+        filters={filters}
+        onFilters={handleFilters}
+        reset={handleResetFitlers}
+        brands={brandOptions}
+      />
+
+      <Dialog
+        fullWidth
+        fullScreen
+        PaperProps={{
+          sx: {
+            bgcolor: '#FFF',
+            borderRadius: 2,
+            p: 4,
+            m: 2,
+            height: '97vh',
+            overflow: 'hidden',
+          },
+        }}
+        scroll="paper"
+        open={create.value}
+      >
+        <CreateCampaignForm onClose={create.onFalse} />
+      </Dialog>
     </Container>
   );
 };
