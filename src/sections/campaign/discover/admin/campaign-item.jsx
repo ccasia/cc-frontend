@@ -1,10 +1,11 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import { useTheme } from '@mui/material/styles';
 
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import ListItemText from '@mui/material/ListItemText';
-import { Box, Card, Chip, Typography } from '@mui/material';
+import { Box, Card, Chip, Typography, Avatar } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -23,135 +24,147 @@ import { useSettingsContext } from 'src/components/settings';
 
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
   const settings = useSettingsContext();
+  const theme = useTheme();
   const { user } = useAuthContext();
 
   const router = useRouter();
 
   const renderImages = (
-    <Stack
-      spacing={0.5}
-      direction="row"
-      sx={{
-        p: (theme) => theme.spacing(1, 1, 0, 1),
-      }}
-    >
-      <Stack flexGrow={1} direction="row" gap={1}>
-        <Image
-          alt={campaign?.name}
-          src={campaign?.campaignBrief?.images[0]}
-          sx={{ borderRadius: 1, height: 164, width: 1 }}
-        />
-        {campaign?.campaignBrief?.images.length === 2 && (
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[1]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 1, height: 164 }}
+    <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
+      <Image
+        alt={campaign?.name}
+        src={campaign?.campaignBrief?.images[0]}
+        sx={{
+          height: '100%',
+          width: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center',
+        }}
+      />
+      {status && (
+        <Box sx={{ position: 'absolute', top: 20, left: 20, display: 'flex', gap: 1 }}>
+          <Chip
+            icon={
+              campaign?.status?.toLowerCase() === 'active' ? (
+                <img
+                  src="/assets/icons/overview/GreenIndicator.svg"
+                  alt="Active"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    marginLeft: '8px'
+                  }}
+                />
+              ) : null
+            }
+            label={formatText(campaign?.status)}
+            sx={{
+              backgroundColor: theme.palette.common.white,
+              color: '#48484a',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              borderRadius: '5px',
+              height: '32px',
+              border: '1.2px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              '& .MuiChip-label': {
+                padding: '0 8px',
+              },
+              '& .MuiChip-icon': {
+                marginRight: '-4px',
+              },
+              '&:hover': {
+                backgroundColor: theme.palette.common.white,
+              },
+            }}
           />
-        )}
-      </Stack>
-      {campaign?.campaignBrief?.images.length === 3 && (
-        <Stack spacing={0.5}>
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[1]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 80 }}
-          />
-          <Image
-            alt={campaign?.name}
-            src={campaign?.campaignBrief?.images[2]}
-            ratio="1/1"
-            sx={{ borderRadius: 1, width: 80 }}
-          />
-        </Stack>
+        </Box>
       )}
-    </Stack>
+    </Box>
   );
 
   const renderTexts = (
-    <Stack
-      sx={{
-        p: (theme) => theme.spacing(2.5, 2.5, 2, 2.5),
-      }}
-    >
-      <ListItemText
-        primary={
-          <Link component={RouterLink} color="inherit">
-            {campaign?.name}
-          </Link>
-        }
-        secondary={`by ${campaign?.brand?.name ?? campaign?.company?.name}`}
-        primaryTypographyProps={{
-          noWrap: true,
-          component: 'span',
-          color: 'text.primary',
-          typography: 'subtitle1',
-        }}
-        secondaryTypographyProps={{
-          noWrap: true,
-          color: 'text.disabled',
-          typography: 'caption',
+    <Box sx={{ position: 'relative', pt: 2, px: 3, pb: 2.5 }}>
+      <Avatar
+        src={campaign?.brand?.logo || campaign?.company?.logo}
+        alt={campaign?.brand?.name || campaign?.company?.name}
+        sx={{
+          width: 56,
+          height: 56,
+          border: '2px solid #ebebeb',
+          borderRadius: '50%',
+          position: 'absolute',
+          top: -40,
+          left: 17,
         }}
       />
-    </Stack>
-  );
-
-  const renderInfo = (
-    <Stack
-      spacing={1.5}
-      sx={{
-        p: (theme) => theme.spacing(0, 2.5, 2.5, 2.5),
-      }}
-    >
-      <Stack direction="row" alignItems="center" spacing={1.5}>
-        <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />
-        <Label color="primary">{campaign?.campaignBrief?.industries}</Label>
-      </Stack>
-
-      <Stack direction="row" alignItems="center" spacing={1.5}>
-        <Iconify icon="solar:clock-circle-bold" />
-        <Typography variant="caption" color="text.secondary">
-          {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
+      <Box sx={{ mt: 0.5 }}>
+        <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
+          {campaign?.name}
         </Typography>
-      </Stack>
-      {/* <Grid
-        container
-        sx={{
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Grid item xs={1}>
-          <Iconify icon="streamline:industry-innovation-and-infrastructure-solid" />
-        </Grid>
-        <Grid item xs={11}>
-          <Label color="primary">{campaign?.campaignBrief?.industries}</Label>
-        </Grid>
-      </Grid> */}
+        <Typography
+          variant="body2"
+          sx={{
+            mb: 2,
+            color: '#8e8e93',
+            fontSize: '0.95rem',
+            fontWeight: 550,
+          }}
+        >
+          {campaign?.brand?.name || campaign?.company?.name}
+        </Typography>
+      </Box>
 
-      {/* <Grid
-        container
-        sx={{
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Grid item xs={1}>
-          <Iconify icon="solar:clock-circle-bold" />
-        </Grid>
-        <Grid item xs={11}>
-          <Typography variant="caption" color="text.disabled">
-            {`${dayjs(campaign?.campaignBrief?.startDate).format('LL')} - ${dayjs(campaign?.campaignBrief?.endDate).format('LL')}`}
+      <Stack spacing={0.5}>
+        <Stack direction="row" alignItems="center" spacing={1.2}>
+          <img 
+            src="/assets/icons/overview/IndustriesTag.svg"
+            alt="Industries"
+            style={{ 
+              width: 20, 
+              height: 20,
+            }} 
+          />
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#8e8e93', 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            {campaign?.campaignBrief?.industries}
           </Typography>
-        </Grid>
-      </Grid> */}
-    </Stack>
+        </Stack>
+
+        <Stack direction="row" alignItems="center" spacing={1.2}>
+          <img 
+            src="/assets/icons/overview/SmallCalendar.svg"
+            alt="Calendar"
+            style={{ 
+              width: 20, 
+              height: 20,
+            }} 
+          />
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: '#8e8e93', 
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            {`${dayjs(campaign?.campaignBrief?.startDate).format('D MMM YYYY')} - ${dayjs(
+              campaign?.campaignBrief?.endDate
+            ).format('D MMM YYYY')}`}
+          </Typography>
+        </Stack>
+      </Stack>
+    </Box>
   );
 
   return (
-    <Box
-      component={Card}
+    <Card
       onClick={
         user?.admin?.role?.name === 'Finance'
           ? () => {
@@ -162,48 +175,24 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             }
       }
       sx={{
+        overflow: 'hidden',
         cursor: 'pointer',
-        transition: '.2s ease',
+        transition: 'all 0.3s',
+        bgcolor: 'background.paper',
+        borderRadius: '15px',
+        border: '1.2px solid',
+        borderColor: '#ebebeb',
+        mb: -0.5,
+        height: 345,
         '&:hover': {
-          bgcolor: (theme) =>
-            settings.themeMode === 'light' ? theme.palette.grey[300] : theme.palette.grey[700],
+          borderColor: '#1340ff',
+          transform: 'translateY(-2px)',
         },
       }}
     >
-      {status && (
-        <Chip
-          label={formatText(campaign?.status)}
-          color="primary"
-          size="small"
-          sx={{
-            position: 'absolute',
-            top: 15,
-            left: 15,
-            zIndex: 11,
-          }}
-        />
-      )}
-
-      {pitchStatus && (
-        <Chip
-          label={formatText(pitchStatus !== 'approved' && 'In review')}
-          color="primary"
-          size="small"
-          sx={{
-            position: 'absolute',
-            bottom: 15,
-            right: 15,
-            zIndex: 11,
-          }}
-        />
-      )}
-
       {renderImages}
-
       {renderTexts}
-
-      {renderInfo}
-    </Box>
+    </Card>
   );
 }
 

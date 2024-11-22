@@ -29,7 +29,6 @@ const Login = () => {
   // });
 
   const { login } = useAuthContext();
-  //   const [error, setError] = useState();
   const router = useRouter();
 
   const LoginSchema = Yup.object().shape({
@@ -125,38 +124,6 @@ const Login = () => {
           borderRadius: 2,
         }}
       >
-        {/* <Box
-          component="div"
-          sx={{
-            position: 'relative',
-            mb: 3,
-            width: 55,
-            height: 55,
-            borderRadius: 10,
-          }}
-        >
-          <Image
-            src="/assets/icons/auth/Vector.svg"
-            alt="Background Image"
-            style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: 'inherit',
-            }}
-          />
-          <Avatar
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 40,
-              height: 40,
-            }}
-            src="/assets/icons/auth/test.svg"
-          />
-        </Box> */}
-
         <Typography
           variant="h3"
           fontWeight="bold"

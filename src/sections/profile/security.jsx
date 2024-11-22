@@ -1,18 +1,17 @@
 import * as Yup from 'yup';
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, Controller } from 'react-hook-form';
 
 import { LoadingButton } from '@mui/lab';
-import { Card, Grid, Stack, IconButton, InputAdornment, Typography } from '@mui/material';
+import { Card, Grid, Stack, IconButton, Typography, InputAdornment } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import { Controller } from 'react-hook-form';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
@@ -49,7 +48,7 @@ const AccountSecurity = () => {
     handleSubmit,
     control,
     formState: { isDirty },
-    watch
+    watch,
   } = methods;
 
   const curPassword = watch('newPassword');
@@ -60,7 +59,6 @@ const AccountSecurity = () => {
       const res = await axiosInstance.patch(endpoints.auth.changePass, data);
       setLoading(false);
       enqueueSnackbar(res?.data?.message);
-      // toast.success(res?.data?.message);
       methods.reset(defaultValues);
     } catch (error) {
       enqueueSnackbar(error.message, { variant: 'error' });
@@ -131,16 +129,14 @@ const AccountSecurity = () => {
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton onClick={password.onToggle} edge="end">
-                          <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                          <Iconify
+                            icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                          />
                         </IconButton>
                       </InputAdornment>
                     ),
                   }}
-                  helperText={
-                    <Stack spacing={1}>
-                      {renderPasswordValidations}
-                    </Stack>
-                  }
+                  helperText={<Stack spacing={1}>{renderPasswordValidations}</Stack>}
                 />
               )}
             />

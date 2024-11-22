@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from 'react';
 
-import { Box, Chip, Typography, CircularProgress } from '@mui/material';
+import { Box, Chip, Stack, Avatar, FormLabel, CircularProgress } from '@mui/material';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -17,6 +17,8 @@ const CampaignAdminManager = () => {
     [admins, isLoading]
   );
 
+  console.log(filteredAdmins);
+
   return (
     <>
       {isLoading && (
@@ -25,9 +27,6 @@ const CampaignAdminManager = () => {
             position: 'relative',
             top: 200,
             textAlign: 'center',
-            // top: '50%',
-            // left: '50%',
-            // transform: 'translate(-50%, -50%)',
           }}
         >
           <CircularProgress
@@ -51,35 +50,46 @@ const CampaignAdminManager = () => {
             p: 3,
           }}
         >
-          <Typography variant="h5">Select Admin Manager</Typography>
-
-          <RHFAutocomplete
-            name="adminManager"
-            multiple
-            placeholder="Admin Manager"
-            options={
-              filteredAdmins.map((admin) => ({
-                id: admin?.id,
-                name: admin?.name,
-                role: admin?.admin?.role?.name,
-              })) || []
-            }
-            freeSolo
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            getOptionLabel={(option) => `${option.name}`}
-            renderTags={(selected, getTagProps) =>
-              selected.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option?.id}
-                  label={option?.id === user?.id ? 'Me' : option?.name || ''}
-                  size="small"
-                  color="info"
-                  variant="soft"
-                />
-              ))
-            }
-          />
+          <Stack spacing={1}>
+            <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+              Admin Managers
+            </FormLabel>
+            <RHFAutocomplete
+              name="adminManager"
+              multiple
+              placeholder="Admin Manager"
+              options={
+                filteredAdmins.map((admin) => ({
+                  id: admin?.id,
+                  name: admin?.name,
+                  role: admin?.admin?.role?.name,
+                  photoURL: admin?.photoURL,
+                })) || []
+              }
+              freeSolo
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              getOptionLabel={(option) => `${option.name}`}
+              renderTags={(selected, getTagProps) =>
+                selected.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
+                    key={option?.id}
+                    label={option?.id === user?.id ? 'Me' : option?.name || ''}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      border: 1,
+                      borderColor: '#EBEBEB',
+                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      py: 2,
+                      px: 1,
+                    }}
+                  />
+                ))
+              }
+            />
+          </Stack>
         </Box>
       )}
     </>

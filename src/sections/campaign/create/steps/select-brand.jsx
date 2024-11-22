@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 
-import { Box, Stack, Avatar, ListItemText, createFilterOptions } from '@mui/material';
+import { Box, Stack, Avatar, FormLabel, ListItemText, createFilterOptions } from '@mui/material';
 
 import useGetCompany from 'src/hooks/use-get-company';
 
@@ -19,7 +19,6 @@ const SelectBrand = ({ openBrand, openCompany }) => {
 
   useEffect(() => {
     if (client && client.inputValue) {
-      console.log('DASDSA');
       openCompany.onTrue();
     }
   }, [client, openCompany]);
@@ -36,120 +35,131 @@ const SelectBrand = ({ openBrand, openCompany }) => {
         p: 2,
       }}
     >
-      <RHFAutocomplete
-        name="client"
-        label="Select or Create Client"
-        options={data || []}
-        loading={isLoading}
-        freeSolo
-        getOptionLabel={(option) => {
-          // Add "xxx" option created dynamically
-          if (option.inputValue) {
-            return option.inputValue;
-          }
-          // Regular option
-          return option.name;
-        }}
-        isOptionEqualToValue={(option, value) => option.id === value.id}
-        selectOnFocus
-        clearOnBlur
-        renderOption={(props, option) => {
-          //   eslint-disable-next-line react/prop-types
-          const { ...optionProps } = props;
+      <Stack spacing={1}>
+        <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+          Select client or agency
+        </FormLabel>
+        <RHFAutocomplete
+          name="client"
+          placeholder="Select or Create Client"
+          options={data || []}
+          loading={isLoading}
+          // freeSolo
+          getOptionLabel={(option) => {
+            // Add "xxx" option created dynamically
+            if (option.inputValue) {
+              return option.inputValue;
+            }
+            // Regular option
+            return option.name;
+          }}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          selectOnFocus
+          clearOnBlur
+          renderOption={(props, option) => {
+            //   eslint-disable-next-line react/prop-types
+            const { ...optionProps } = props;
 
-          return (
-            <Stack
-              component="li"
-              direction="row"
-              spacing={1}
-              p={1}
-              {...optionProps}
-              key={option?.id}
-            >
-              <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
-              <ListItemText primary={option.name} />
-            </Stack>
-          );
-        }}
-        filterOptions={(options, params) => {
-          const { inputValue } = params;
+            return (
+              <Stack
+                component="li"
+                direction="row"
+                spacing={1}
+                p={1}
+                {...optionProps}
+                key={option?.id}
+              >
+                <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                <ListItemText primary={option.name} />
+              </Stack>
+            );
+          }}
+          filterOptions={(options, params) => {
+            const { inputValue } = params;
 
-          const filtered = filter(options, params);
+            const filtered = filter(options, params);
 
-          // Suggest the creation of a new value
-          const isExisting = options.some(
-            (option) => option.name.toLowerCase() === inputValue.toLowerCase()
-          );
+            // Suggest the creation of a new value
+            const isExisting = options.some(
+              (option) => option.name.toLowerCase() === inputValue.toLowerCase()
+            );
 
-          if (inputValue !== '' && !isExisting) {
-            filtered.push({
-              inputValue,
-              name: `Add "${inputValue}"`,
-            });
-          }
+            if (inputValue !== '' && !isExisting) {
+              filtered.push({
+                inputValue,
+                name: `Add "${inputValue}"`,
+              });
+            }
 
-          return filtered;
-        }}
-      />
+            return filtered;
+          }}
+        />
+      </Stack>
+
       {client && <RHFCheckbox name="hasBrand" size="small" label="Is it an agency?" />}
 
       {client && hasBrand && (
         <Box mt={2}>
-          <RHFAutocomplete
-            name="campaignBrand"
-            label="Select or Create Brand"
-            options={client?.brand || []}
-            loading={isLoading}
-            freeSolo
-            getOptionLabel={(option) => {
-              // Add "xxx" option created dynamically
-              if (option.inputValue) {
-                return option.inputValue;
-              }
-              // Regular option
-              return option.name;
-            }}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            selectOnFocus
-            clearOnBlur
-            renderOption={(props, option) => {
-              //   eslint-disable-next-line react/prop-types
-              const { ...optionProps } = props;
+          <Stack spacing={1}>
+            <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+              Select or create brand
+            </FormLabel>
+            <RHFAutocomplete
+              name="campaignBrand"
+              placeholder="Select or Create Brand"
+              options={client?.brand || []}
+              loading={isLoading}
+              // freeSolo
+              getOptionLabel={(option) => {
+                // Add "xxx" option created dynamically
+                if (option.inputValue) {
+                  return option.inputValue;
+                }
+                // Regular option
+                return option.name;
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              selectOnFocus
+              clearOnBlur
+              renderOption={(props, option) => {
+                //   eslint-disable-next-line react/prop-types
+                const { ...optionProps } = props;
 
-              return (
-                <Stack
-                  component="li"
-                  direction="row"
-                  spacing={1}
-                  p={1}
-                  {...optionProps}
-                  key={option?.id}
-                >
-                  <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
-                  <ListItemText primary={option.name} />
-                </Stack>
-              );
-            }}
-            filterOptions={(options, params) => {
-              const { inputValue } = params;
+                return (
+                  <Stack
+                    component="li"
+                    direction="row"
+                    spacing={1}
+                    p={1}
+                    {...optionProps}
+                    key={option?.id}
+                  >
+                    <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                    <ListItemText primary={option.name} />
+                  </Stack>
+                );
+              }}
+              filterOptions={(options, params) => {
+                const { inputValue } = params;
 
-              const filtered = filter(options, params);
+                const filtered = filter(options, params);
 
-              // Suggest the creation of a new value
-              const isExisting = options.some(
-                (option) => option.name.toLowerCase() === inputValue.toLowerCase()
-              );
+                // Suggest the creation of a new value
+                const isExisting = options.some(
+                  (option) => option.name.toLowerCase() === inputValue.toLowerCase()
+                );
 
-              if (inputValue !== '' && !isExisting) {
-                filtered.push({
-                  inputValue,
-                  name: `Add "${inputValue}"`,
-                });
-              }
+                if (inputValue !== '' && !isExisting) {
+                  filtered.push({
+                    inputValue,
+                    name: `Add "${inputValue}"`,
+                  });
+                }
 
-              return filtered;
-            }}
-          />
+                return filtered;
+              }}
+            />
+          </Stack>
         </Box>
       )}
     </Box>
