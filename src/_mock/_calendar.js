@@ -1,14 +1,8 @@
-import { info, error, primary, success, warning, secondary } from 'src/theme/palette';
-
-// ----------------------------------------------------------------------
-
 export const CALENDAR_COLOR_OPTIONS = [
-  primary.main,
-  secondary.main,
-  info.main,
-  info.darker,
-  success.main,
-  warning.main,
-  error.main,
-  error.darker,
+  { color: '#f8d8d0', label: 'Red', labelColor: '#ff3500' },
+  { color: '#ffefb4', label: 'Yellow', labelColor: '#e3b100' },
+  { color: '#a4f4e1', label: 'Green', labelColor: '#026d54' },
+  { color: '#dce2ff', label: 'Blue', labelColor: '#1340ff' },
+  { color: '#e8deff', label: 'Purple', labelColor: '#8a5afe' },
+  { color: '#e7e7e7', label: 'Grey', labelColor: '#636366' },
 ];
