@@ -1,9 +1,10 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Page, pdfjs, Document } from 'react-pdf';
+import React, { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
@@ -13,6 +14,7 @@ import {
   Stack,
   Dialog,
   Button,
+  TextField,
   Typography,
   IconButton,
   DialogTitle,
@@ -114,10 +116,17 @@ const Register = () => {
   const RegisterSchema = Yup.object().shape({
     name: Yup.string().required('First name required'),
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
-    password: Yup.string().required('Password is required'),
+    password: Yup.string()
+      .required('Password is required')
+      .min(8, 'Password must be at least 8 characters long')
+      .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .matches(/[0-9]/, 'Password must contain at least one number')
+      .matches(/[@$!%*?&#]/, 'Password must contain at least one special character'),
     confirmPassword: Yup.string()
       .required('Confirm password is required')
       .oneOf([Yup.ref('password')], 'Passwords must match'),
+    recaptcha: Yup.string().required('Please complete the reCAPTCHA'),
   });
 
   const defaultValues = {
@@ -125,17 +134,27 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    recaptcha: '',
   };
 
   const methods = useForm({
+    reValidateMode: 'onChange',
+    mode: 'onChange',
     resolver: yupResolver(RegisterSchema),
     defaultValues,
   });
 
   const {
     handleSubmit,
-    formState: { isSubmitting, isDirty },
+    control,
+    formState: { isSubmitting, isDirty, errors },
+    setValue,
+    watch,
   } = methods;
+
+  const errorRecaptcha = errors?.recaptcha;
+
+  const curPassword = watch('password');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -150,6 +169,35 @@ const Register = () => {
       });
     }
   });
+
+  const criteria = [
+    { label: 'At least 8 characters', test: curPassword.length >= 8 },
+    { label: 'Contains an uppercase letter', test: /[A-Z]/.test(curPassword) },
+    { label: 'Contains a lowercase letter', test: /[a-z]/.test(curPassword) },
+    { label: 'Contains a number', test: /[0-9]/.test(curPassword) },
+    {
+      label: 'Contains a special character (@, $, !, %, *, ?, &, #)',
+      test: /[@$!%*?&#]/.test(curPassword),
+    },
+  ];
+
+  const renderPasswordValidations = (
+    <Stack>
+      {criteria.map((rule, index) => (
+        <Stack key={index} direction="row" alignItems="center" spacing={1}>
+          <Iconify icon="ic:round-check" color={rule.test ? 'success.main' : 'gray'} />
+          <Typography
+            variant="caption"
+            sx={{
+              color: rule.test ? 'success.main' : 'text.secondary',
+            }}
+          >
+            {rule.label}
+          </Typography>
+        </Stack>
+      ))}
+    </Stack>
+  );
 
   const renderHead = (
     <Stack direction="row" spacing={0.5} my={1.5}>
@@ -173,9 +221,30 @@ const Register = () => {
 
       <RHFTextField name="email" label="Email address" />
 
-      <RHFTextField
+      <Controller
         name="password"
-        label="Password"
+        control={control}
+        render={({ field, fieldState: { error } }) => (
+          <TextField
+            {...field}
+            label="Password"
+            type={password.value ? 'text' : 'password'}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={password.onToggle} edge="end">
+                    <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            helperText={renderPasswordValidations}
+          />
+        )}
+      />
+
+      {/* <RHFTextField
+        name="password"
         type={password.value ? 'text' : 'password'}
         InputProps={{
           endAdornment: (
@@ -186,7 +255,8 @@ const Register = () => {
             </InputAdornment>
           ),
         }}
-      />
+        helperText={renderPasswordValidations}
+      /> */}
 
       <RHFTextField
         name="confirmPassword"
@@ -255,6 +325,14 @@ const Register = () => {
     </Typography>
   );
 
+  useEffect(() => {
+    if (errorRecaptcha) {
+      enqueueSnackbar(errorRecaptcha?.message, {
+        variant: 'error',
+      });
+    }
+  }, [errorRecaptcha]);
+
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Box
@@ -279,9 +357,17 @@ const Register = () => {
         <Box
           sx={{
             mt: 3,
+            textAlign: 'center',
           }}
         >
           {renderForm}
+
+          <Box sx={{ mt: 2, display: 'inline-flex' }}>
+            <ReCAPTCHA
+              sitekey="6LeFk4YqAAAAAKARqfMS8L55Wpl63fHP5xrSq9hO"
+              onChange={(token) => setValue('recaptcha', token)}
+            />
+          </Box>
 
           {renderTerms}
         </Box>

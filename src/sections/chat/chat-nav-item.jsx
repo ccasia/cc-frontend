@@ -104,9 +104,9 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
             </Typography>
 
             {/* Show verified icon only for single chats */}
-            {!thread.isGroup && (
+            {/* {!thread.isGroup && (
               <Iconify icon="material-symbols:verified" style={{ color: '#1340FF' }} />
-            )}
+            )} */}
           </Stack>
 
           {/* Right-aligned: Badge and Timestamp */}
