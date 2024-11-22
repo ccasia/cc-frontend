@@ -8,6 +8,7 @@ import { ClimbingBoxLoader } from 'react-spinners';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
+  Chip,
   Stack,
   Button,
   Dialog,
@@ -43,8 +44,10 @@ import CampaignAgreementEdit from '../campaign-agreement-edit';
 const CampaignDetailCreator = ({ campaign }) => {
   const [query, setQuery] = useState(null);
   const { data, isLoading } = useGetAllCreators();
+
   const { data: agreements, isLoading: loadingAgreements } = useGetAgreements(campaign?.id);
   const smUp = useResponsive('up', 'sm');
+
   const shortlistedCreators = campaign?.shortlisted;
   const shortlistedCreatorsId = shortlistedCreators?.map((item) => item.userId);
   const modal = useBoolean();
@@ -180,44 +183,74 @@ const CampaignDetailCreator = ({ campaign }) => {
         <DialogTitle>List Creators</DialogTitle>
         <DialogContent>
           <Box py={1}>
-            <RHFAutocomplete
-              label="Select Creator to shortlist"
-              multiple
-              disableCloseOnSelect
-              name="creator"
-              options={
-                !isLoading &&
-                data?.filter((user) => user.status === 'active' && user?.creator?.isFormCompleted)
-              }
-              filterOptions={(option, state) =>
-                option.filter((item) => !shortlistedCreatorsId.includes(item.id))
-              }
-              getOptionLabel={(option) => option.name}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              renderOption={(props, option, { selected }) => {
-                // eslint-disable-next-line react/prop-types
-                const { key, ...optionProps } = props;
-                return (
-                  <Box key={key} component="div" {...optionProps}>
-                    <Checkbox style={{ marginRight: 8 }} checked={selected} />
-                    <Avatar
-                      alt="dawd"
-                      src={option?.photoURL}
-                      variant="rounded"
-                      sx={{
-                        width: 30,
-                        height: 30,
-                        flexShrink: 0,
-                        mr: 1.5,
-                        borderRadius: 2,
-                      }}
-                    />
-                    <ListItemText primary={option?.name} secondary={option?.email} />
-                  </Box>
-                );
-              }}
-            />
+            {!isLoading && (
+              <RHFAutocomplete
+                name="creator"
+                label="Select Creator to shortlist"
+                multiple
+                disableCloseOnSelect
+                options={data?.filter(
+                  (user) => user.status === 'active' && user?.creator?.isFormCompleted
+                )}
+                filterOptions={(option, state) => {
+                  const options = option.filter((item) => !shortlistedCreatorsId.includes(item.id));
+                  if (state?.inputValue) {
+                    return options?.filter(
+                      (item) =>
+                        item?.email?.toLowerCase()?.includes(state.inputValue.toLowerCase()) ||
+                        item?.name?.toLowerCase()?.includes(state.inputValue.toLowerCase())
+                    );
+                  }
+                  return options;
+                }}
+                getOptionLabel={(option) => option?.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option, { selected }) => {
+                  // eslint-disable-next-line react/prop-types
+                  const { key, ...optionProps } = props;
+                  return (
+                    <Box key={key} component="div" {...optionProps}>
+                      <Checkbox style={{ marginRight: 8 }} checked={selected} />
+                      <Avatar
+                        alt="dawd"
+                        src={option?.photoURL}
+                        variant="rounded"
+                        sx={{
+                          width: 30,
+                          height: 30,
+                          flexShrink: 0,
+                          mr: 1.5,
+                          borderRadius: 2,
+                        }}
+                      />
+                      <ListItemText primary={option?.name} secondary={option?.email} />
+                    </Box>
+                  );
+                }}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => {
+                    const { key, ...tagProps } = getTagProps({ index });
+                    return (
+                      <Chip
+                        variant="outlined"
+                        avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
+                        sx={{
+                          border: 1,
+                          borderColor: '#EBEBEB',
+                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                          py: 2,
+                        }}
+                        label={option?.name}
+                        key={key}
+                        {...tagProps}
+                      />
+                    );
+                  })
+                }
+              />
+            )}
           </Box>
+
           {loading.value && (
             <ClimbingBoxLoader
               color={settings.themeMode === 'light' ? 'black' : 'white'}
