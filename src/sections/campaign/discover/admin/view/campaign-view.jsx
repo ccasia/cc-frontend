@@ -1,38 +1,19 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
-import {
-  Box,
-  Stack,
-  Avatar,
-  Button,
-  Container,
-  TextField,
-  Autocomplete,
-  ListItemText,
-  InputAdornment,
-  CircularProgress,
-  Typography,
-  Backdrop,
-} from '@mui/material';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import { useTheme } from '@mui/material/styles';
+import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 
-import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
-import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CampaignLists from '../campaign-list';
-import CampaignFilter from '../campaign-filter';
-import { useTheme } from '@mui/material/styles';
-import InputBase from '@mui/material/InputBase';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 
 const defaultFilters = {
   status: '',
@@ -51,7 +32,7 @@ const CampaignView = () => {
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
-  
+
   const handleClose = () => {
     setAnchorEl(null);
   };
@@ -61,8 +42,15 @@ const CampaignView = () => {
     handleClose();
   };
 
-  const activeCampaigns = campaigns?.filter((campaign) => campaign?.status === 'ACTIVE') || [];
-  const completedCampaigns = campaigns?.filter((campaign) => campaign?.status === 'COMPLETED') || [];
+  const activeCampaigns = useMemo(
+    () => campaigns?.filter((campaign) => campaign?.status === 'ACTIVE') || [],
+    [campaigns]
+  );
+  const completedCampaigns = useMemo(
+    () => campaigns?.filter((campaign) => campaign?.status === 'COMPLETED') || [],
+    [campaigns]
+  );
+
   const activeCount = activeCampaigns.length;
   const completedCount = completedCampaigns.length;
 
@@ -71,10 +59,10 @@ const CampaignView = () => {
       return activeCampaigns;
     }
     return completedCampaigns;
-  }, [filter, campaigns]);
+  }, [filter, activeCampaigns, completedCampaigns]);
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4} }}>
+    <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
       <Box>
         <Typography variant="h2" sx={{ mb: 4, fontFamily: theme.typography.fontSecondaryFamily }}>
           Manage Campaigns ✨
@@ -264,10 +252,10 @@ const CampaignView = () => {
           <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2 }} />
           New Campaign
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        {/* <MenuItem onClick={handleClose}>
           <Iconify icon="mdi:note-text" width={20} height={20} sx={{ mr: 2 }} />
           Drafts
-        </MenuItem>
+        </MenuItem> */}
       </Menu>
 
       {isLoading && (
@@ -287,8 +275,8 @@ const CampaignView = () => {
         (dataFiltered?.length > 0 ? (
           <CampaignLists campaigns={dataFiltered} />
         ) : (
-          <EmptyContent 
-            title={`No ${filter === 'active' ? 'active' : 'completed'} campaigns available`} 
+          <EmptyContent
+            title={`No ${filter === 'active' ? 'active' : 'completed'} campaigns available`}
           />
         ))}
     </Container>
