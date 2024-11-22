@@ -133,13 +133,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   // REGISTER
-  const register = useCallback(async (email, password, firstName, lastName) => {
-    const data = {
-      email,
-      password,
-      firstName,
-      lastName,
-    };
+  const register = useCallback(async (data) => {
+    // const data = {
+    //   email,
+    //   password,
+    //   firstName,
+    //   lastName,
+    // };
 
     const response = await axios.post(endpoints.auth.registerCreator, data);
 

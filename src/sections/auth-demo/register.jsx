@@ -1,8 +1,9 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Page, pdfjs, Document } from 'react-pdf';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -125,6 +126,7 @@ const Register = () => {
     confirmPassword: Yup.string()
       .required('Confirm password is required')
       .oneOf([Yup.ref('password')], 'Passwords must match'),
+    recaptcha: Yup.string().required('Please complete the reCAPTCHA'),
   });
 
   const defaultValues = {
@@ -132,6 +134,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    recaptcha: '',
   };
 
   const methods = useForm({
@@ -144,9 +147,12 @@ const Register = () => {
   const {
     handleSubmit,
     control,
-    formState: { isSubmitting, isDirty },
+    formState: { isSubmitting, isDirty, errors },
+    setValue,
     watch,
   } = methods;
+
+  const errorRecaptcha = errors?.recaptcha;
 
   const curPassword = watch('password');
 
@@ -319,6 +325,14 @@ const Register = () => {
     </Typography>
   );
 
+  useEffect(() => {
+    if (errorRecaptcha) {
+      enqueueSnackbar(errorRecaptcha?.message, {
+        variant: 'error',
+      });
+    }
+  }, [errorRecaptcha]);
+
   return (
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Box
@@ -343,9 +357,17 @@ const Register = () => {
         <Box
           sx={{
             mt: 3,
+            textAlign: 'center',
           }}
         >
           {renderForm}
+
+          <Box sx={{ mt: 2, display: 'inline-flex' }}>
+            <ReCAPTCHA
+              sitekey="6LeFk4YqAAAAAKARqfMS8L55Wpl63fHP5xrSq9hO"
+              onChange={(token) => setValue('recaptcha', token)}
+            />
+          </Box>
 
           {renderTerms}
         </Box>
