@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Stack, Button, Skeleton, Container, Typography } from '@mui/material';
+import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -221,7 +221,22 @@ const CampaignListView = () => {
           <EmptyContent filled title="No Data" sx={{ py: 10, mt: 2 }} />
         )
       ) : (
-        <Skeleton width={500} height={500} />
+        <Box
+          sx={{
+            position: 'relative',
+            top: 200,
+            textAlign: 'center',
+          }}
+        >
+          <CircularProgress
+            thickness={7}
+            size={25}
+            sx={{
+              color: (theme) => theme.palette.common.black,
+              strokeLinecap: 'round',
+            }}
+          />
+        </Box>
       )}
     </Container>
   );

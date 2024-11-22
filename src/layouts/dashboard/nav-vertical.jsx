@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 
@@ -11,9 +10,6 @@ import { Avatar, Typography, IconButton } from '@mui/material';
 import { usePathname } from 'src/routes/hooks';
 
 import { useResponsive } from 'src/hooks/use-responsive';
-import useGetTokenExpiry from 'src/hooks/use-get-token-expiry';
-
-import { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -38,25 +34,25 @@ export default function NavVertical({ openNav, onCloseNav }) {
 
   const navData = useNavData();
 
-  const { data } = useGetTokenExpiry();
+  // const { data } = useGetTokenExpiry();
 
-  const date = new Date(data?.lastRefreshToken || new Date());
+  // const date = new Date(data?.lastRefreshToken || new Date());
 
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-  const formattedDate = formatter.format(date);
+  // const formatter = new Intl.DateTimeFormat('en-US', {
+  //   day: '2-digit',
+  //   month: '2-digit',
+  //   year: 'numeric',
+  // });
+  // const formattedDate = formatter.format(date);
 
-  const handleActivateXero = async () => {
-    try {
-      const response = await axios.get(endpoints.invoice.xero, { withCredentials: true });
-      window.location.href = response.data.url;
-    } catch (error) {
-      console.error('Error connecting to Xero:', error);
-    }
-  };
+  // const handleActivateXero = async () => {
+  //   try {
+  //     const response = await axios.get(endpoints.invoice.xero, { withCredentials: true });
+  //     window.location.href = response.data.url;
+  //   } catch (error) {
+  //     console.error('Error connecting to Xero:', error);
+  //   }
+  // };
 
   useEffect(() => {
     if (openNav) {

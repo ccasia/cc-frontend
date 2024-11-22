@@ -313,7 +313,6 @@ function CreateCampaignForm() {
 
   const values = watch();
 
-
   const {
     append: doAppend,
     fields: doFields,

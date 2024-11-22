@@ -145,13 +145,13 @@ export function fileData(file) {
 
   // File
   return {
-    key: file.preview,
-    name: file.name,
-    size: file.size,
-    path: file.path,
-    type: file.type,
-    preview: file.preview,
-    lastModified: file.lastModified,
-    lastModifiedDate: file.lastModifiedDate,
+    key: file?.preview,
+    name: file?.name,
+    size: file?.size,
+    path: file?.path,
+    type: file?.type,
+    preview: file?.preview,
+    lastModified: file?.lastModified,
+    lastModifiedDate: file?.lastModifiedDate,
   };
 }

@@ -41,20 +41,6 @@ export default function NavList({ data, depth, slotProps }) {
         position: 'relative',
       }}
     >
-      {/* {active && (
-        <Box
-          sx={{
-            width: 8,
-            height: 20,
-            bgcolor: 'blue',
-            position: 'absolute',
-            left: -20,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            borderRadius: 2,
-          }}
-        />
-      )} */}
       <NavItem
         open={openMenu}
         onClick={handleToggleMenu}

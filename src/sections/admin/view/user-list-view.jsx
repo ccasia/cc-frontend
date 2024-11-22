@@ -1,5 +1,4 @@
 import * as yup from 'yup';
-import PropTypes from 'prop-types';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
@@ -19,6 +18,7 @@ import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
 import {
+  Box,
   Step,
   Stack,
   Dialog,
@@ -30,6 +30,7 @@ import {
   StepContent,
   DialogContent,
   DialogActions,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -37,6 +38,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import useGetRoles from 'src/hooks/use-get-roles';
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useGetAdminsForSuperadmin } from 'src/hooks/use-get-admins-for-superadmin';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -66,7 +68,6 @@ import {
 // eslint-disable-next-line import/no-cycle
 import UserTableRow from '../user-table-row';
 import UserTableToolbar from '../user-table-toolbar';
-import AdminCreateManager from '../admin-create-form';
 import UserTableFiltersResult from '../user-table-filters-result';
 
 // ----------------------------------------------------------------------
@@ -119,8 +120,9 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function UserListView({ admins }) {
+export default function UserListView() {
   const { user } = useAuthContext();
+  const { admins, isLoading: adminLoading } = useGetAdminsForSuperadmin();
   const { enqueueSnackbar } = useSnackbar();
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -209,7 +211,7 @@ export default function UserListView({ admins }) {
       totalRowsInPage: dataInPage.length,
       totalRowsFiltered: dataFiltered.length,
     });
-  }, [dataFiltered.length, dataInPage.length, enqueueSnackbar, table, tableData]);
+  }, [dataFiltered, dataInPage, enqueueSnackbar, table, tableData]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -492,146 +494,166 @@ export default function UserListView({ admins }) {
 
         {inviteAdminDialog}
 
-        <AdminCreateManager open={openCreateDialog} onClose={handleCloseCreateDialog} />
-
-        <Card>
-          <Tabs
-            value={filters.status}
-            onChange={handleFilterStatus}
+        {/* <AdminCreateManager open={openCreateDialog} onClose={handleCloseCreateDialog} /> */}
+        {adminLoading && (
+          <Box
             sx={{
-              px: 2.5,
-              boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+              position: 'relative',
+              top: 200,
+              textAlign: 'center',
             }}
           >
-            {STATUS_OPTIONS.map((tab) => (
-              <Tab
-                key={tab.value}
-                iconPosition="end"
-                value={tab.value}
-                label={tab.label}
-                icon={
-                  <Label
-                    variant={
-                      ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
-                    }
-                    color={
-                      (tab.value === 'active' && 'success') ||
-                      (tab.value === 'pending' && 'warning') ||
-                      (tab.value === 'banned' && 'error') ||
-                      'default'
-                    }
-                  >
-                    {[
-                      'active',
-                      'pending',
-                      'banned',
-                      'rejected',
-                      'blacklisted',
-                      'suspended',
-                      'spam',
-                    ].includes(tab.value)
-                      ? tableData.filter((item) => item.status === tab.value).length
-                      : tableData.length}
-                  </Label>
-                }
-              />
-            ))}
-          </Tabs>
-
-          <UserTableToolbar
-            filters={filters}
-            onFilters={handleFilters}
-            roleOptions={!isLoading && roles.map((item) => item.name)}
-          />
-
-          {canReset && (
-            <UserTableFiltersResult
-              filters={filters}
-              onFilters={handleFilters}
-              //
-              onResetFilters={handleResetFilters}
-              //
-              results={dataFiltered.length}
-              sx={{ p: 2.5, pt: 0 }}
+            <CircularProgress
+              thickness={7}
+              size={25}
+              sx={{
+                color: (theme) => theme.palette.common.black,
+                strokeLinecap: 'round',
+              }}
             />
-          )}
-
-          <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-            <TableSelectedAction
-              dense={table.dense}
-              numSelected={table.selected.length}
-              rowCount={dataFiltered.length}
-              onSelectAllRows={(checked) =>
-                table.onSelectAllRows(
-                  checked,
-                  dataFiltered.map((row) => row.id)
-                )
-              }
-              action={
-                <Tooltip title="Delete">
-                  <IconButton color="primary" onClick={confirm.onTrue}>
-                    <Iconify icon="solar:trash-bin-trash-bold" />
-                  </IconButton>
-                </Tooltip>
-              }
-            />
-
-            <Scrollbar>
-              <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-                <TableHeadCustom
-                  order={table.order}
-                  orderBy={table.orderBy}
-                  headLabel={TABLE_HEAD}
-                  rowCount={dataFiltered.length}
-                  numSelected={table.selected.length}
-                  onSort={table.onSort}
-                  onSelectAllRows={(checked) =>
-                    table.onSelectAllRows(
-                      checked,
-                      dataFiltered.map((row) => row.id)
-                    )
+          </Box>
+        )}
+        {!adminLoading && tableData?.length && (
+          <Card>
+            <Tabs
+              value={filters.status}
+              onChange={handleFilterStatus}
+              sx={{
+                px: 2.5,
+                boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+              }}
+            >
+              {STATUS_OPTIONS.map((tab) => (
+                <Tab
+                  key={tab.value}
+                  iconPosition="end"
+                  value={tab.value}
+                  label={tab.label}
+                  icon={
+                    <Label
+                      variant={
+                        ((tab.value === 'all' || tab.value === filters.status) && 'filled') ||
+                        'soft'
+                      }
+                      color={
+                        (tab.value === 'active' && 'success') ||
+                        (tab.value === 'pending' && 'warning') ||
+                        (tab.value === 'banned' && 'error') ||
+                        'default'
+                      }
+                    >
+                      {[
+                        'active',
+                        'pending',
+                        'banned',
+                        'rejected',
+                        'blacklisted',
+                        'suspended',
+                        'spam',
+                      ].includes(tab.value)
+                        ? tableData.filter((item) => item.status === tab.value).length
+                        : tableData.length}
+                    </Label>
                   }
                 />
+              ))}
+            </Tabs>
 
-                <TableBody>
-                  {dataFiltered
-                    ?.slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => (
-                      <UserTableRow
-                        key={row.id}
-                        row={row}
-                        selected={table.selected.includes(row.id)}
-                        onSelectRow={() => table.onSelectRow(row.id)}
-                        onDeleteRow={() => handleDeleteRow(row.id)}
-                        onEditRow={() => handleEditRow(row.id)}
-                      />
-                    ))}
+            <UserTableToolbar
+              filters={filters}
+              onFilters={handleFilters}
+              roleOptions={!isLoading && roles.map((item) => item.name)}
+            />
 
-                  <TableEmptyRows
-                    height={denseHeight}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
+            {canReset && (
+              <UserTableFiltersResult
+                filters={filters}
+                onFilters={handleFilters}
+                //
+                onResetFilters={handleResetFilters}
+                //
+                results={dataFiltered.length}
+                sx={{ p: 2.5, pt: 0 }}
+              />
+            )}
+
+            <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+              <TableSelectedAction
+                dense={table.dense}
+                numSelected={table.selected.length}
+                rowCount={dataFiltered.length}
+                onSelectAllRows={(checked) =>
+                  table.onSelectAllRows(
+                    checked,
+                    dataFiltered.map((row) => row.id)
+                  )
+                }
+                action={
+                  <Tooltip title="Delete">
+                    <IconButton color="primary" onClick={confirm.onTrue}>
+                      <Iconify icon="solar:trash-bin-trash-bold" />
+                    </IconButton>
+                  </Tooltip>
+                }
+              />
+
+              <Scrollbar>
+                <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
+                  <TableHeadCustom
+                    order={table.order}
+                    orderBy={table.orderBy}
+                    headLabel={TABLE_HEAD}
+                    rowCount={dataFiltered.length}
+                    numSelected={table.selected.length}
+                    onSort={table.onSort}
+                    onSelectAllRows={(checked) =>
+                      table.onSelectAllRows(
+                        checked,
+                        dataFiltered.map((row) => row.id)
+                      )
+                    }
                   />
 
-                  <TableNoData notFound={notFound} />
-                </TableBody>
-              </Table>
-            </Scrollbar>
-          </TableContainer>
+                  <TableBody>
+                    {dataFiltered
+                      ?.slice(
+                        table.page * table.rowsPerPage,
+                        table.page * table.rowsPerPage + table.rowsPerPage
+                      )
+                      .map((row) => (
+                        <UserTableRow
+                          key={row.id}
+                          row={row}
+                          selected={table.selected.includes(row.id)}
+                          onSelectRow={() => table.onSelectRow(row.id)}
+                          onDeleteRow={() => handleDeleteRow(row.id)}
+                          onEditRow={() => handleEditRow(row.id)}
+                        />
+                      ))}
 
-          <TablePaginationCustom
-            count={dataFiltered.length}
-            page={table.page}
-            rowsPerPage={table.rowsPerPage}
-            onPageChange={table.onChangePage}
-            onRowsPerPageChange={table.onChangeRowsPerPage}
-            //
-            dense={table.dense}
-            onChangeDense={table.onChangeDense}
-          />
-        </Card>
+                    <TableEmptyRows
+                      height={denseHeight}
+                      emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
+                    />
+
+                    <TableNoData notFound={notFound} />
+                  </TableBody>
+                </Table>
+              </Scrollbar>
+            </TableContainer>
+
+            <TablePaginationCustom
+              count={dataFiltered.length}
+              page={table.page}
+              rowsPerPage={table.rowsPerPage}
+              onPageChange={table.onChangePage}
+              onRowsPerPageChange={table.onChangeRowsPerPage}
+              //
+              dense={table.dense}
+              onChangeDense={table.onChangeDense}
+            />
+          </Card>
+        )}
       </Container>
 
       <ConfirmDialog
@@ -660,10 +682,6 @@ export default function UserListView({ admins }) {
     </>
   );
 }
-
-UserListView.propTypes = {
-  admins: PropTypes.array,
-};
 
 // ----------------------------------------------------------------------
 

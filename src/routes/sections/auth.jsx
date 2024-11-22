@@ -127,24 +127,6 @@ const authCreator = {
         </AuthModernLayout>
       ),
     },
-    // {
-    //   element: (
-    //     <CompactLayout>
-    //       <Outlet />
-    //     </CompactLayout>
-    //   ),
-    //   children: [
-    //     // {
-    //     //   path: 'forgot-password',
-    //     //   element: (
-    //     //     <AuthModernLayout>
-    //     //       <ForgotPasswordClassicPage />
-    //     //     </AuthModernLayout>
-    //     //   ),
-    //     // },
-    //     // { path: 'new-password', element: <NewPasswordClassicPage /> },
-    //   ],
-    // },
   ],
 };
 

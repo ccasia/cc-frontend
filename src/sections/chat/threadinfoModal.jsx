@@ -274,7 +274,7 @@ const ThreadInfoModal = ({ open, onClose, threadId }) => {
                     >
                       <Typography variant="h6" sx={{ fontWeight: 'bold', mr: 0.5 }}>
                         {member?.user.name}
-                        <Iconify icon="material-symbols:verified" style={{ color: '#1340FF' }} />
+                        {/* <Iconify icon="material-symbols:verified" style={{ color: '#1340FF' }} /> */}
                       </Typography>
                     </Box>
 

@@ -55,6 +55,7 @@ export default function AdminCreateManager({ currentUser, open, onClose }) {
   const onSubmit = handleSubmit(async (data) => {
     try {
       const response = await axiosInstance.post(endpoints.users.createAdmin, data);
+
       if (response.status === 200) {
         enqueueSnackbar('Admin created successfully', { variant: 'success' });
         onClose();

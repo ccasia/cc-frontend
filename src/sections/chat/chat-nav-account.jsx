@@ -1,4 +1,4 @@
-/* eslint-disable */ 
+/* eslint-disable */
 import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
@@ -16,7 +16,6 @@ import Badge, { badgeClasses } from '@mui/material/Badge';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
@@ -33,8 +32,6 @@ export default function ChatNavAccount() {
     setStatus(event.target.value);
   }, []);
 
-
-
   return (
     <>
       <Badge variant={status} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
@@ -48,7 +45,7 @@ export default function ChatNavAccount() {
         </Avatar>
       </Badge>
       <Typography p={1}> {user?.name} </Typography>
-      <Iconify icon="material-symbols:verified" style={{ color: '#1340FF' }}> </Iconify>
+      {/* <Iconify icon="material-symbols:verified" style={{ color: '#1340FF' }}> </Iconify> */}
 
       <CustomPopover open={popover.open} onClose={popover.onClose} arrow="top-left" sx={{ p: 0 }}>
         <Stack

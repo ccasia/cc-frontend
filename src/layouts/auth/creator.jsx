@@ -5,12 +5,10 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 
-import { useResponsive } from 'src/hooks/use-responsive';
-
 // ----------------------------------------------------------------------
 
 export default function AuthModernLayout({ children, image }) {
-  const mdUp = useResponsive('up', 'md');
+  // const mdUp = useResponsive('up', 'md');
   // const [backgroundImage, setBackgroundImage] = useState('');
   const route = window.location.href;
 
@@ -40,6 +38,7 @@ export default function AuthModernLayout({ children, image }) {
         width: 1,
         mx: 'auto',
         maxWidth: 480,
+        pb: 2,
         px: { xs: 2, md: 6 },
       }}
     >
@@ -59,7 +58,6 @@ export default function AuthModernLayout({ children, image }) {
           boxShadow: { md: 'none' },
           overflow: { md: 'unset' },
           bgcolor: { md: 'background.default' },
-          mt: 5,
         }}
       >
         {children}
@@ -67,34 +65,33 @@ export default function AuthModernLayout({ children, image }) {
     </Stack>
   );
 
-  const renderSection = (
-    <Stack flexGrow={1} sx={{ position: 'relative' }}>
-      <Box
-        component="img"
-        alt="auth"
-        src={image || '/assets/images/login/cultimage.png'}
-        sx={{
-          top: 16,
-          left: 16,
-          objectFit: 'cover',
-          position: 'absolute',
-          width: 'calc(100% - 32px)',
-          height: 'calc(100% - 32px)',
-          mixBlendMode: 'exclusion',
-        }}
-      />
-    </Stack>
-  );
+  // const renderSection = (
+  //   <Stack flexGrow={1} sx={{ position: 'relative' }}>
+  //     <Box
+  //       component="img"
+  //       alt="auth"
+  //       src={image || '/assets/images/login/cultimage.png'}
+  //       sx={{
+  //         top: 16,
+  //         left: 16,
+  //         objectFit: 'cover',
+  //         position: 'absolute',
+  //         width: 'calc(100% - 32px)',
+  //         height: 'calc(100% - 32px)',
+  //         mixBlendMode: 'exclusion',
+  //       }}
+  //     />
+  //   </Stack>
+  // );
 
   return (
     <Box
       sx={{
-        // background: 'radial-gradient(circle, rgba(238,224,255,1) 0%, rgba(254,255,255,1) 70%)',
         background: `url(${backgroundImage}) no-repeat fixed center`,
         backgroundSize: 'cover',
         height: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
+        width: 1,
+        overflow: 'auto',
       }}
     >
       {renderContent}

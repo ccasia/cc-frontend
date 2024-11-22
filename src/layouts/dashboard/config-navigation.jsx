@@ -1,4 +1,3 @@
-
 /* eslint-disable */
 // import useSound from 'use-sound';
 import { enqueueSnackbar } from 'notistack';
@@ -155,38 +154,38 @@ export function useNavData() {
               },
             ],
           },
-          {
-            roles: ['superadmin'],
-            title: 'Landing pages',
-            path: paths.dashboard.landing.creator,
-            icon: <Iconify icon="fluent:people-team-28-regular" width={25} />,
-            children: [
-              {
-                title: 'Creator list',
-                path: paths.dashboard.landing.creator,
-              },
-              {
-                title: 'Client list',
-                path: paths.dashboard.landing.brand,
-              },
-            ],
-          },
           // {
-          //   roles: ['superadmin', 'CSM'],
-          //   title: 'Clients',
-          //   path: paths.dashboard.company.root,
-          //   icon: <Iconify icon="mdi:company" width={25} />,
+          //   roles: ['superadmin'],
+          //   title: 'Landing pages',
+          //   path: paths.dashboard.landing.creator,
+          //   icon: <Iconify icon="fluent:people-team-28-regular" width={25} />,
           //   children: [
           //     {
-          //       title: 'List',
-          //       path: paths.dashboard.company.discover,
+          //       title: 'Creator list',
+          //       path: paths.dashboard.landing.creator,
           //     },
           //     {
-          //       title: 'Create',
-          //       path: paths.dashboard.company.create,
+          //       title: 'Client list',
+          //       path: paths.dashboard.landing.brand,
           //     },
           //   ],
           // },
+          {
+            roles: ['superadmin', 'CSM', 'god'],
+            title: 'Clients',
+            path: paths.dashboard.company.root,
+            icon: <Iconify icon="mdi:company" width={25} />,
+            children: [
+              {
+                title: 'List',
+                path: paths.dashboard.company.discover,
+              },
+              {
+                title: 'Create',
+                path: paths.dashboard.company.create,
+              },
+            ],
+          },
           {
             roles: ['superadmin'],
             title: 'Roles',

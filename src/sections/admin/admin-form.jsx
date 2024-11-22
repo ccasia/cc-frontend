@@ -38,7 +38,6 @@ const AdminForm = () => {
     email: Yup.string(),
     password: Yup.string().required('Password is required'),
     name: Yup.string().required('Name is required'),
-    // designation: Yup.string().required('Designation is required'),
     country: Yup.string().required('Country is required'),
     phoneNumber: Yup.string().required('Phone Number is required'),
   });
@@ -115,15 +114,7 @@ const AdminForm = () => {
       <RHFTextField name="email" label="Email" type="email" disabled />
       <RHFTextField name="name" label="Name" type="text" />
       <RHFTextField name="role" label="Role" type="text" disabled />
-      {/* <RHFAutocomplete
-        name="designation"
-        type="designation"
-        label="Designation"
-        placeholder="Choose your designation"
-        fullWidth
-        options={['Finance', 'CSM', 'BD', 'Growth']}
-        getOptionLabel={(option) => option}
-      /> */}
+
       <RHFAutocomplete
         name="country"
         type="country"
@@ -133,6 +124,7 @@ const AdminForm = () => {
         options={countries.map((option) => option.label)}
         getOptionLabel={(option) => option}
       />
+
       <RHFTextField
         name="phoneNumber"
         label="Phone Number"
@@ -144,6 +136,7 @@ const AdminForm = () => {
           ),
         }}
       />
+
       <RHFTextField
         name="password"
         label="Password"
