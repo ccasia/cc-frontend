@@ -1,11 +1,18 @@
 import PropTypes from 'prop-types';
 
+import { Box } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
+import { Document, Page, pdfjs } from 'react-pdf';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 // ----------------------------------------------------------------------
 
@@ -67,35 +74,62 @@ export default function ChatMessageItem({ message }) {
     if (fileType.startsWith('image')) {
       // Render Image
       return (
-        <img
-          src={fileURL}
-          alt="Image message"
-          style={{ maxWidth: '320px', maxHeight: '200px', objectFit: 'cover' }}
-        />
+        <Box
+        component="img"
+        src={fileURL}
+        alt="Image message"
+        sx={{
+          maxWidth: '320px',
+          maxHeight: '200px',
+          objectFit: 'cover',
+          borderRadius: 2,
+        }}
+      />
       );
     }
   
     if (fileType.startsWith('video')) {
       // Render Video
       return (
-        <video width="320" controls>
-          <source src={fileURL} type={fileType} />
-          Your browser does not support the video tag.
-        </video>
+        <Box
+        component="video"
+        controls
+        sx={{
+          width: '320px',
+          maxHeight: '200px',
+          borderRadius: 2,
+          objectFit: 'cover',
+        }}
+      >
+        <source src={fileURL} type={fileType} />
+        Your browser does not support the video tag.
+      </Box>
       );
     }
   
     if (fileType === 'application/pdf') {
       // Render PDF
       return (
+        <Box
+        sx={{
+          width: '320px',
+          height: '240px',
+          overflow: 'hidden',
+          borderRadius: 2,
+          boxShadow: 1,
+          display: 'flex',
+        }}
+      >
         <iframe
           src={fileURL}
-          width="320"
-          height="240"
+          width="100%"
+          height="100%"
           title="PDF preview"
+          style={{ border: 'none' }} 
         >
           Your browser does not support PDFs.
         </iframe>
+      </Box>
       );
     }
   
