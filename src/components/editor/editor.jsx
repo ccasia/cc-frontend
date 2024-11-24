@@ -6,6 +6,7 @@ import ReactQuill from 'react-quill';
 
 import { alpha } from '@mui/material/styles';
 
+import { useRef, useState } from 'react';
 import { StyledEditor } from './styles';
 import Toolbar, { formats } from './toolbar';
 
@@ -29,12 +30,18 @@ export default function Editor({
       userOnly: true,
     },
     syntax: true,
-    // syntax: {
-    //   highlight: (text) => window.hljs.highlightAuto(text).value,
-    // },
     clipboard: {
       matchVisual: false,
     },
+  };
+
+  const quillRef = useRef(null);
+  const [savedRange, setSavedRange] = useState(null);
+
+  const handleSelectionChange = (range, source, editor) => {
+    if (range && source === 'user') {
+      setSavedRange(range);
+    }
   };
 
   return (
@@ -50,11 +57,14 @@ export default function Editor({
           ...sx,
         }}
       >
-        <Toolbar id={id} simple={simple} />
+        <Toolbar id={id} simple={simple} quillRef={quillRef} savedRange={savedRange} />
 
         <ReactQuill
+          ref={quillRef}
           modules={modules}
           formats={formats}
+          onChangeSelection={handleSelectionChange}
+          onChange={(e) => console.log(e)}
           placeholder="Pitch your text here !"
           {...other}
         />

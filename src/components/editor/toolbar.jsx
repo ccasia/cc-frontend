@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
 
+import { Divider } from '@mui/material';
+
 import { StyledEditorToolbar } from './styles';
 
 // ----------------------------------------------------------------------
@@ -32,7 +34,33 @@ export const formats = [
   'video',
 ];
 
-export default function Toolbar({ id, simple, ...other }) {
+export default function Toolbar({ id, simple, quillRef, savedRange, ...other }) {
+  // const [url, setUrl] = useState('');
+  // const [anchorEl, setAnchorEl] = useState(null);
+
+  // const handleClick = (event) => {
+  //   setAnchorEl(anchorEl ? null : event.currentTarget);
+  // };
+
+  // const open = Boolean(anchorEl);
+
+  // const idd = open ? 'simple-popper' : undefined;
+
+  // const handleMenuClose = () => {
+  //   setAnchorEl(null);
+  // };
+
+  // const handleAddLink = () => {
+  //   const editor = quillRef.current?.getEditor();
+
+  //   if (savedRange) {
+  //     editor.setSelection(savedRange); // Restore the saved selection
+  //     editor.format('link', url); // Apply the link formatting
+  //   }
+
+  //   // handleMenuClose(); // Close the Popper
+  // };
+
   return (
     <StyledEditorToolbar {...other}>
       <div id={id}>
@@ -47,12 +75,28 @@ export default function Toolbar({ id, simple, ...other }) {
           </select>
         </div>
 
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
+            mr: 2,
+          }}
+        />
+
         <div className="ql-formats">
           <button type="button" className="ql-bold" />
           <button type="button" className="ql-italic" />
           <button type="button" className="ql-underline" />
           <button type="button" className="ql-strike" />
         </div>
+
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
+            mr: 2,
+          }}
+        />
 
         {!simple && (
           <div className="ql-formats">
@@ -67,6 +111,14 @@ export default function Toolbar({ id, simple, ...other }) {
           {!simple && <button type="button" className="ql-indent" value="-1" />}
           {!simple && <button type="button" className="ql-indent" value="+1" />}
         </div>
+
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
+            mr: 2,
+          }}
+        />
 
         {!simple && (
           <div className="ql-formats">
@@ -87,17 +139,71 @@ export default function Toolbar({ id, simple, ...other }) {
           <select className="ql-align" />
         </div>
 
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
+            mr: 2,
+          }}
+        />
         <div className="ql-formats">
           <button type="button" className="ql-link" />
           <button type="button" className="ql-image" />
           <button type="button" className="ql-video" />
         </div>
 
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
+            mr: 2,
+          }}
+        />
+
         <div className="ql-formats">
           {!simple && <button type="button" className="ql-formula" />}
           <button type="button" className="ql-clean" />
         </div>
+
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
+            mr: 2,
+          }}
+        />
       </div>
+
+      {/* <Popover
+        id={idd}
+        open={open}
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        onClose={handleMenuClose}
+      >
+        <Box
+          sx={{
+            p: 1,
+          }}
+        >
+          <Stack spacing={1}>
+            <TextField
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              label="Enter URL"
+              variant="outlined"
+              size="small"
+              fullWidth
+            />
+            <Button variant="contained" fullWidth onClick={handleAddLink}>
+              Apply
+            </Button>
+          </Stack>
+        </Box>
+      </Popover> */}
     </StyledEditorToolbar>
   );
 }
@@ -105,4 +211,6 @@ export default function Toolbar({ id, simple, ...other }) {
 Toolbar.propTypes = {
   id: PropTypes.string,
   simple: PropTypes.bool,
+  quillRef: PropTypes.any,
+  savedRange: PropTypes.string,
 };

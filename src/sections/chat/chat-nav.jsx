@@ -217,8 +217,10 @@ export default function ChatNav({}) {
       const recipientId = recipient.id;
 
       const existingThreadResponse = await axiosInstance.get(endpoints.threads.getAll);
+
       const existingThread = existingThreadResponse.data.find((thread) => {
         const userIdsInThread = thread.UserThread.map((userThread) => userThread.userId);
+
         return (
           userIdsInThread.includes(user?.id) &&
           userIdsInThread.includes(recipientId) &&
@@ -241,7 +243,7 @@ export default function ChatNav({}) {
 
         router.push(`/dashboard/chat/thread/${response.data.id}`);
       }
-      router.push(threadPath);
+      // router.push(threadPath);
     } catch (error) {
       console.error('Error creating thread:', error);
     }

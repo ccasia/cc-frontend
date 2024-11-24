@@ -49,15 +49,15 @@ export default function JwtLoginView() {
   });
 
   // Remove for production
-  // const defaultValues = {
-  //   email: 'super@cultcreativeasia.com',
-  //   password: 'super123_',
-  // };
-
   const defaultValues = {
-    email: '',
-    password: '',
+    email: 'super@cultcreativeasia.com',
+    password: 'super123_',
   };
+
+  // const defaultValues = {
+  //   email: '',
+  //   password: '',
+  // };
 
   const methods = useForm({
     resolver: yupResolver(LoginSchema),
