@@ -16,7 +16,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-import BrandLists from './brand-lists';
+import BrandLists from '../brand-lists';
 
 const defaultFilters = {
   roles: [],
@@ -56,10 +56,13 @@ function DiscoverBrand() {
         ]}
         action={
           <Button
-            variant="contained"
-            size="small"
-            startIcon={<Iconify icon="ion:create" />}
+            variant="outlined"
+            startIcon={<Iconify icon="qlementine-icons:new-16" width={18} />}
             onClick={() => router.push(paths.dashboard.company.create)}
+            sx={{
+              borderColor: '#EBEBEB',
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            }}
           >
             Create New Client
           </Button>
@@ -68,24 +71,7 @@ function DiscoverBrand() {
           mb: { xs: 3, md: 5 },
         }}
       />
-      {/* <Box mb={3}>
-        <TextField
-          placeholder="Search"
-          onChange={handleSearch}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="material-symbols:search" />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            minWidth: 250,
-          }}
-        >
-          Search
-        </TextField>
-      </Box> */}
+
       {!isLoading && (
         <>
           {companies.length < 1 ? (
@@ -99,14 +85,6 @@ function DiscoverBrand() {
               />
             </Box>
           ) : (
-            // <Stack
-            //   spacing={2.5}
-            //   sx={{
-            //     mb: { xs: 3, md: 5 },
-            //   }}
-            // >
-            //   <BrandList companies={filteredData} />
-            // </Stack>
             <BrandLists dataFiltered={filteredData} />
           )}
         </>

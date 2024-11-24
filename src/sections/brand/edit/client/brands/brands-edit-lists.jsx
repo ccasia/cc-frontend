@@ -2,7 +2,16 @@ import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
 import React, { useState, useCallback } from 'react';
 
-import { Card, Table, Tooltip, TableBody, IconButton, TableContainer } from '@mui/material';
+import {
+  Card,
+  Table,
+  Dialog,
+  Tooltip,
+  TableBody,
+  IconButton,
+  DialogContent,
+  TableContainer,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -19,8 +28,9 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import BrandsToolBar from './brands-toolbar';
-import BrandTableRow from './brand-table-row';
+import EditBrand from './edit/edit-brand';
+import BrandsToolBar from './brands-edit-toolbar';
+import BrandTableRow from './brands-edit-table-row';
 
 const defaultFilters = {
   name: '',
@@ -31,15 +41,17 @@ const TABLE_HEAD = [
   { id: 'email', label: 'Email', width: 220 },
   { id: 'phoneNumber', label: 'Phone Number', width: 180 },
   { id: 'website', label: 'Website', width: 100 },
-  { id: 'brand', label: 'Brands', width: 100 },
-  { id: 'campaigns', label: 'Campaigns', width: 100 },
+  { id: 'instagram', label: 'Instagram', width: 100 },
+  { id: 'tiktok', label: 'Tiktok', width: 100 },
   { id: '', width: 88 },
 ];
 
-const BrandLists = ({ dataFiltered }) => {
+const BrandEditLists = ({ dataFiltered }) => {
   const table = useTable();
   const [filters, setFilters] = useState(defaultFilters);
+  const [brandData, setBrandData] = useState(null);
   const confirm = useBoolean();
+  const editDialog = useBoolean();
 
   const denseHeight = table.dense ? 56 : 56 + 20;
 
@@ -68,13 +80,26 @@ const BrandLists = ({ dataFiltered }) => {
     console.log(id);
   }, []);
 
-  const handleEditRow = useCallback((id) => {
-    console.log(id);
-  }, []);
+  const handleEditRow = useCallback(
+    (data) => {
+      setBrandData(data);
+      editDialog.onTrue();
+    },
+    [editDialog]
+  );
+
+  // const handleEdit = useCallback(
+  //   (data) => {
+  //     setBrandData(data);
+  //     editDialog.onTrue();
+  //   },
+  //   [editDialog]
+  // );
 
   return (
     <Card>
       <BrandsToolBar filters={filters} onFilters={handleFilters} />
+
       <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
         <TableSelectedAction
           dense={table.dense}
@@ -125,7 +150,8 @@ const BrandLists = ({ dataFiltered }) => {
                     selected={table.selected.includes(row.id)}
                     onSelectRow={() => table.onSelectRow(row.id)}
                     onDeleteRow={() => handleDeleteRow(row.id)}
-                    onEditRow={() => handleEditRow(row.id)}
+                    onEditRow={() => handleEditRow(row)}
+                    brandData={brandData}
                   />
                 ))}
 
@@ -139,6 +165,7 @@ const BrandLists = ({ dataFiltered }) => {
           </Table>
         </Scrollbar>
       </TableContainer>
+
       <TablePaginationCustom
         count={filteredData.length}
         page={table.page}
@@ -149,13 +176,26 @@ const BrandLists = ({ dataFiltered }) => {
         dense={table.dense}
         onChangeDense={table.onChangeDense}
       />
+
+      {/* Edit Existing brand dialog */}
+      <Dialog open={brandData && editDialog.value}>
+        <DialogContent>
+          <EditBrand
+            brand={brandData}
+            onClose={() => {
+              editDialog.onFalse();
+              setBrandData(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
 
-export default BrandLists;
+export default BrandEditLists;
 
-BrandLists.propTypes = {
+BrandEditLists.propTypes = {
   dataFiltered: PropTypes.array,
 };
 
