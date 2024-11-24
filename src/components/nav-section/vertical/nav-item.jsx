@@ -109,6 +109,8 @@ const NavItem = forwardRef(
       return null;
     }
 
+    if (title === 'Clients' && user?.admin?.mode !== 'god') return null;
+
     if (hasChild) {
       return renderContent;
     }

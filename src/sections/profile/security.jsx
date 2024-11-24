@@ -1,11 +1,11 @@
 import * as Yup from 'yup';
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, Controller } from 'react-hook-form';
 
 import { LoadingButton } from '@mui/lab';
-import { Card, Grid, Stack, IconButton, InputAdornment } from '@mui/material';
+import { Card, Grid, Stack, IconButton, Typography, InputAdornment } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -22,8 +22,12 @@ const AccountSecurity = () => {
   const ChangePassWordSchema = Yup.object().shape({
     oldPassword: Yup.string().required('Old Password is required'),
     newPassword: Yup.string()
-      .required('New Password is required')
-      .min(6, 'Password must be at least 6 characters')
+      .required('Password is required')
+      .min(8, 'Password must be at least 8 characters long')
+      .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+      .matches(/[0-9]/, 'Password must contain at least one number')
+      .matches(/[@$!%*?&#]/, 'Password must contain at least one special character')
       .test(
         'no-match',
         'New password must be different than old password',
@@ -42,8 +46,12 @@ const AccountSecurity = () => {
 
   const {
     handleSubmit,
+    control,
     formState: { isDirty },
+    watch,
   } = methods;
+
+  const curPassword = watch('newPassword');
 
   const onSubmit = handleSubmit(async (data) => {
     setLoading(true);
@@ -51,7 +59,6 @@ const AccountSecurity = () => {
       const res = await axiosInstance.patch(endpoints.auth.changePass, data);
       setLoading(false);
       enqueueSnackbar(res?.data?.message);
-      // toast.success(res?.data?.message);
       methods.reset(defaultValues);
     } catch (error) {
       enqueueSnackbar(error.message, { variant: 'error' });
@@ -59,6 +66,35 @@ const AccountSecurity = () => {
       setLoading(false);
     }
   });
+
+  const criteria = [
+    { label: 'At least 8 characters', test: curPassword.length >= 8 },
+    { label: 'Contains an uppercase letter', test: /[A-Z]/.test(curPassword) },
+    { label: 'Contains a lowercase letter', test: /[a-z]/.test(curPassword) },
+    { label: 'Contains a number', test: /[0-9]/.test(curPassword) },
+    {
+      label: 'Contains a special character (@, $, !, %, *, ?, &, #)',
+      test: /[@$!%*?&#]/.test(curPassword),
+    },
+  ];
+
+  const renderPasswordValidations = (
+    <Stack>
+      {criteria.map((rule, index) => (
+        <Stack key={index} direction="row" alignItems="center" spacing={1}>
+          <Iconify icon="ic:round-check" color={rule.test ? 'success.main' : 'gray'} />
+          <Typography
+            variant="caption"
+            sx={{
+              color: rule.test ? 'success.main' : 'text.secondary',
+            }}
+          >
+            {rule.label}
+          </Typography>
+        </Stack>
+      ))}
+    </Stack>
+  );
 
   return (
     <Card sx={{ p: 3 }}>
@@ -81,25 +117,28 @@ const AccountSecurity = () => {
             />
           </Grid>
           <Grid item xs={12} md={12} lg={12}>
-            <RHFTextField
+            <Controller
               name="newPassword"
-              label="New Password"
-              type={password.value ? 'text' : 'password'}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={password.onToggle} edge="end">
-                      <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              helperText={
-                <Stack component="span" direction="row" alignItems="center">
-                  <Iconify icon="eva:info-fill" width={16} sx={{ mr: 0.5 }} /> Password must be
-                  minimum 6+
-                </Stack>
-              }
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <RHFTextField
+                  {...field}
+                  label="New Password"
+                  type={password.value ? 'text' : 'password'}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={password.onToggle} edge="end">
+                          <Iconify
+                            icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                          />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  helperText={<Stack spacing={1}>{renderPasswordValidations}</Stack>}
+                />
+              )}
             />
           </Grid>
           <Grid item xs={12} md={12} lg={12}>

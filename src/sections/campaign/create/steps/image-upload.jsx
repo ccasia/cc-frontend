@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 
 import { RHFUpload } from 'src/components/hook-form';
 
@@ -20,7 +20,7 @@ const CampaignImageUpload = () => {
         })
       );
 
-      setValue('campaignImages', [...files, ...newFiles]);
+      setValue('campaignImages', [...files, ...newFiles], { shouldValidate: true });
     },
     [setValue, values.campaignImages]
   );
@@ -36,7 +36,6 @@ const CampaignImageUpload = () => {
         p: 3,
       }}
     >
-      <Typography variant="h4">Upload Campaign Images</Typography>
       <RHFUpload
         multiple
         thumbnail
@@ -51,7 +50,6 @@ const CampaignImageUpload = () => {
           )
         }
         onRemoveAll={() => setValue('campaignImages', [], { shouldValidate: true })}
-        // onUpload={() => console.info('ON UPLOAD')}
       />
     </Box>
   );

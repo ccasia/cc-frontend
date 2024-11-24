@@ -5,7 +5,6 @@ import { Outlet } from 'react-router-dom';
 import { GuestGuard } from 'src/auth/guard';
 import CompactLayout from 'src/layouts/compact';
 import AuthModernLayout from 'src/layouts/auth/creator';
-import AuthClassicLayout from 'src/layouts/auth/classic';
 
 import { SplashScreen } from 'src/components/loading-screen';
 
@@ -48,9 +47,9 @@ const authAdmin = {
           path: 'login',
           element: (
             <GuestGuard>
-              <AuthClassicLayout>
+              <AuthModernLayout>
                 <JwtLoginPage />
-              </AuthClassicLayout>
+              </AuthModernLayout>
             </GuestGuard>
           ),
         },
@@ -127,24 +126,6 @@ const authCreator = {
         </AuthModernLayout>
       ),
     },
-    // {
-    //   element: (
-    //     <CompactLayout>
-    //       <Outlet />
-    //     </CompactLayout>
-    //   ),
-    //   children: [
-    //     // {
-    //     //   path: 'forgot-password',
-    //     //   element: (
-    //     //     <AuthModernLayout>
-    //     //       <ForgotPasswordClassicPage />
-    //     //     </AuthModernLayout>
-    //     //   ),
-    //     // },
-    //     // { path: 'new-password', element: <NewPasswordClassicPage /> },
-    //   ],
-    // },
   ],
 };
 

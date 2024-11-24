@@ -204,7 +204,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId, currentuser
                 <>
                   <Avatar
                     alt={otherUserName}
-                    src={otherUser.user.photoURL}
+                    src={otherUser?.user?.photoURL}
                     sx={{ width: 40, height: 40, mr: 1 }}
                   />
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -220,10 +220,10 @@ export default function ChatHeaderCompose({ currentUserId, threadId, currentuser
                     >
                       <Stack direction={'row'} alignItems={'center'} spacing={0.5}>
                         <Typography variant="subtitle1">{otherUserName}</Typography>
-                        <Iconify
+                        {/* <Iconify
                           icon="material-symbols:verified"
                           style={{ color: '#1340FF', paddingLeft: 1 }}
-                        />
+                        /> */}
                       </Stack>
                     </Typography>
                     <Typography

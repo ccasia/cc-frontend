@@ -69,7 +69,6 @@ export default function ChatView() {
     }
 
     if (hasThreads) {
-      // If there are threads but no active thread is selected, show unread count
       return (
         <Box
           display="flex"
@@ -187,11 +186,6 @@ export default function ChatView() {
         >
           Chats 💬
         </Typography>
-        {/* <Image
-          src="/assets/images/chat/Chats.png"
-          alt="chat image"
-          style={{ width: 40, height: 40, marginRight: 2 }}
-        /> */}
       </Box>
 
       <Stack direction="row" sx={{ height: '72vh' }} gap={2}>

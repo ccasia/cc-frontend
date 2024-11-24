@@ -1,10 +1,20 @@
 import React, { memo } from 'react';
 
-import { Box, MenuItem } from '@mui/material';
+import { Box, Stack, MenuItem, FormLabel } from '@mui/material';
 
 import { interestsLists } from 'src/contants/interestLists';
 
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
+
+// eslint-disable-next-line react/prop-types
+const FormField = ({ label, children }) => (
+  <Stack spacing={1}>
+    <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+      {label}
+    </FormLabel>
+    {children}
+  </Stack>
+);
 
 const GeneralCampaign = () => {
   console.log('test');
@@ -15,45 +25,52 @@ const GeneralCampaign = () => {
       mt={4}
       gridTemplateColumns={{
         xs: 'repeat(1, 1fr)',
-        sm: 'repeat(2, 1fr)',
+        sm: 'repeat(1, 1fr)',
       }}
     >
-      <RHFTextField name="campaignTitle" label="Campaign Title" />
+      <FormField label="Campaign Title">
+        <RHFTextField name="campaignTitle" placeholder="Campaign Title" />
+      </FormField>
 
-      <RHFTextField
-        name="campaignDescription"
-        label="let us know more about the campaign"
-        multiline
-      />
+      <FormField label="Campaign Info">
+        <RHFTextField
+          name="campaignDescription"
+          placeholder="Explain more about the campaign..."
+          multiline
+          rows={4}
+        />
+      </FormField>
 
-      <RHFSelect name="campaignObjectives" label="Campaign Objectives">
-        <MenuItem value="I'm launching a new product">I&apos;m launching a new product</MenuItem>
-        <MenuItem value="I'm launching a new service">I&apos;m launching a new service</MenuItem>
-        <MenuItem value="I want to drive brand awareness">I want to drive brand awareness</MenuItem>
-        <MenuItem value="Want to drive product awareness">Want to drive product awareness</MenuItem>
-      </RHFSelect>
+      <FormField label="Brand Tone">
+        <RHFTextField name="brandTone" placeholder="Brand Tone" multiline />
+      </FormField>
 
-      <RHFSelect name="campaignIndustries" label="Industries">
-        {interestsLists.map((item, index) => (
-          <MenuItem key={index} value={item}>
-            {item}
+      <FormField label="Product/Service Name">
+        <RHFTextField name="productName" placeholder="Product/Service Name" multiline />
+      </FormField>
+
+      <FormField label="Campaign Objectives">
+        <RHFSelect name="campaignObjectives" label="Campaign Objective">
+          <MenuItem value="I'm launching a new product">I&apos;m launching a new product</MenuItem>
+          <MenuItem value="I'm launching a new service">I&apos;m launching a new service</MenuItem>
+          <MenuItem value="I want to drive brand awareness">
+            I want to drive brand awareness
           </MenuItem>
-        ))}
-      </RHFSelect>
+          <MenuItem value="Want to drive product awareness">
+            Want to drive product awareness
+          </MenuItem>
+        </RHFSelect>
+      </FormField>
 
-      {/* <RHFSelect
-        name="campaignIndustries"
-        label="Industries"
-        checkbox
-        chip
-        options={interestsLists.map((item) => ({
-          value: item.toLowerCase(),
-          label: item,
-        }))}
-      /> */}
-
-      <RHFTextField name="brandTone" label="Brand Tone" multiline />
-      <RHFTextField name="productName" label="Product/Service Name" multiline />
+      <FormField label="Industry">
+        <RHFSelect name="campaignIndustries" label="Industry">
+          {interestsLists.map((item, index) => (
+            <MenuItem key={index} value={item}>
+              {item}
+            </MenuItem>
+          ))}
+        </RHFSelect>
+      </FormField>
     </Box>
   );
 };

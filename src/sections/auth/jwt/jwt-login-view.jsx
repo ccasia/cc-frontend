@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
+import { Box } from '@mui/material';
 import Link from '@mui/material/Link';
-import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -13,6 +13,7 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import { paths } from 'src/routes/paths';
+import { RouterLink } from 'src/routes/components';
 import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -32,8 +33,6 @@ export default function JwtLoginView() {
 
   const router = useRouter();
 
-  const [errorMsg, setErrorMsg] = useState('');
-
   const searchParams = useSearchParams();
 
   const [token, setToken] = useState();
@@ -49,10 +48,16 @@ export default function JwtLoginView() {
     password: Yup.string().required('Password is required'),
   });
 
+  // Remove for production
   const defaultValues = {
     email: 'super@cultcreativeasia.com',
     password: 'super123_',
   };
+
+  // const defaultValues = {
+  //   email: '',
+  //   password: '',
+  // };
 
   const methods = useForm({
     resolver: yupResolver(LoginSchema),
@@ -62,16 +67,20 @@ export default function JwtLoginView() {
   const {
     reset,
     handleSubmit,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       await login?.(data.email, data.password, { admin: true });
+      enqueueSnackbar('Welcome!');
       router.push(returnTo || PATH_AFTER_LOGIN);
     } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
       reset();
-      setErrorMsg(typeof error === 'string' ? error : error.message);
+      // setErrorMsg(typeof error === 'string' ? error : error.message);
     }
   });
 
@@ -92,7 +101,9 @@ export default function JwtLoginView() {
       }
     };
 
-    checkTokenValidity();
+    if (tokenParam) {
+      checkTokenValidity();
+    }
   }, []);
 
   const sendNewToken = async () => {
@@ -108,15 +119,58 @@ export default function JwtLoginView() {
     }
   };
 
-  const renderHead = (
-    <Stack spacing={2} sx={{ mb: 5 }}>
-      <Typography variant="h4">Sign in to Cult Creative</Typography>
-    </Stack>
-  );
+  // const renderForm = (
+  //   <Stack spacing={2.5}>
+  //     <RHFTextField name="email" label="Email address" placeholder="hello@cultcreative.asia" />
+
+  //     <RHFTextField
+  //       name="password"
+  //       label="Password"
+  //       type={password.value ? 'text' : 'password'}
+  //       InputProps={{
+  //         endAdornment: (
+  //           <InputAdornment position="end">
+  //             <IconButton onClick={password.onToggle} edge="end">
+  //               <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+  //             </IconButton>
+  //           </InputAdornment>
+  //         ),
+  //       }}
+  //     />
+
+  //     <Link variant="body2" color="inherit" underline="always" sx={{ alignSelf: 'flex-end' }}>
+  //       Forgot password?
+  //     </Link>
+
+  //     <LoadingButton
+  //       fullWidth
+  //       color="inherit"
+  //       size="large"
+  //       type="submit"
+  //       variant="contained"
+  //       loading={isSubmitting}
+  //     >
+  //       Login
+  //     </LoadingButton>
+
+  //     {isTokenValid && (
+  //       <LoadingButton
+  //         fullWidth
+  //         color="error"
+  //         size="medium"
+  //         variant="outlined"
+  //         onClick={sendNewToken}
+  //         loading={loading}
+  //       >
+  //         Resend Token
+  //       </LoadingButton>
+  //     )}
+  //   </Stack>
+  // );
 
   const renderForm = (
     <Stack spacing={2.5}>
-      <RHFTextField name="email" label="Email address" placeholder="hello@cultcreative.asia" />
+      <RHFTextField name="email" label="Email address" />
 
       <RHFTextField
         name="password"
@@ -133,13 +187,25 @@ export default function JwtLoginView() {
         }}
       />
 
-      <Link variant="body2" color="inherit" underline="always" sx={{ alignSelf: 'flex-end' }}>
-        Forgot password?
+      <Link
+        component={RouterLink}
+        href={paths.auth.jwt.forgetPassword}
+        variant="body2"
+        color="text.secondary"
+        underline="always"
+        sx={{ alignSelf: 'flex-start' }}
+      >
+        Forgot your password?
       </Link>
 
       <LoadingButton
         fullWidth
-        color="inherit"
+        sx={{
+          background: isDirty
+            ? '#1340FF'
+            : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+          pointerEvents: !isDirty && 'none',
+        }}
         size="large"
         type="submit"
         variant="contained"
@@ -164,22 +230,32 @@ export default function JwtLoginView() {
   );
 
   return (
-    <>
-      {renderHead}
+    <FormProvider methods={methods} onSubmit={onSubmit}>
+      <Box
+        sx={{
+          p: 3,
+          bgcolor: '#F4F4F4',
+          borderRadius: 2,
+        }}
+      >
+        <Typography
+          variant="h3"
+          fontWeight="bold"
+          sx={{
+            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          }}
+        >
+          Login 👾
+        </Typography>
 
-      {/* <Alert severity="info" sx={{ mb: 3 }}>
-        Use email : <strong>demo@minimals.cc</strong> / password :<strong> demo1234</strong>
-      </Alert> */}
-
-      {!!errorMsg && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {errorMsg}
-        </Alert>
-      )}
-
-      <FormProvider methods={methods} onSubmit={onSubmit}>
-        {renderForm}
-      </FormProvider>
-    </>
+        <Box
+          sx={{
+            mt: 3,
+          }}
+        >
+          {renderForm}
+        </Box>
+      </Box>
+    </FormProvider>
   );
 }

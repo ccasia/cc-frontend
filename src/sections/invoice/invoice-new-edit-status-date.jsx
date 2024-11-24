@@ -34,28 +34,19 @@ export default function InvoiceNewEditStatusDate() {
         PaperPropsSx={{ textTransform: 'capitalize' }}
         disabled={values.status === 'approved'}
       >
-        {[
-          'approved',
-          'paid',
-          'pending',
-          'overdue',
-          'draft',
-          'pending_approval',
-          'pending_payment',
-        ].map((option) => (
+        {['approved', 'paid', 'draft'].map((option) => (
           <MenuItem key={option} value={option}>
             {option}
           </MenuItem>
         ))}
       </RHFSelect>
 
-
       <Controller
         name="createDate"
         control={control}
         render={({ field, fieldState: { error } }) => (
           <DatePicker
-          disabled
+            disabled
             label="Date create"
             value={field.value}
             onChange={(newValue) => {

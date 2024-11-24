@@ -3,6 +3,7 @@
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { pdfjs } from 'react-pdf';
+import PropTypes from 'prop-types';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { enqueueSnackbar } from 'notistack';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -12,13 +13,17 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { lazy, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Step from '@mui/material/Step';
-import Paper from '@mui/material/Paper';
 import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
-import Stepper from '@mui/material/Stepper';
-import StepLabel from '@mui/material/StepLabel';
-import { Stack, Typography, StepContent } from '@mui/material';
+import {
+  Stack,
+  Avatar,
+  Dialog,
+  IconButton,
+  Typography,
+  ListItemText,
+  LinearProgress,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -48,25 +53,27 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 const steps = [
-  'Select Client or Agency',
-  'General Campaign Information',
-  'Campaign Details',
-  'Campaign Images',
-  'Campaign Type',
-  'Timeline',
-  'Admin Manager',
-  'Agreement Form',
-  'Other Attachment',
+  { title: 'Select Client or Agency', logo: '👾', color: '#D8FF01' },
+  { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
+  { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
+  { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
+  { title: 'Campaign Type', logo: '⎏', color: '#D8FF01' },
+  { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
+  { title: 'Select Admin Manager(s)', logo: '⛑️', color: '#FFF0E5' },
+  { title: 'Agreement Form', logo: '✍️', color: '#026D54' },
+  { title: 'Other Attachment ( Optional )', logo: '⺟', color: '#FF3500' },
 ];
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
 
-function CreateCampaignForm() {
+function CreateCampaignForm({ onClose }) {
   const { user } = useAuthContext();
   const openCompany = useBoolean();
   const openBrand = useBoolean();
   const modal = useBoolean();
+  const confirmation = useBoolean();
 
+  const [status, setStatus] = useState('');
   const [activeStep, setActiveStep] = useState(0);
   const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -212,6 +219,10 @@ function CreateCampaignForm() {
       }),
   });
 
+  const agreementSchema = Yup.object().shape({
+    agreementFrom: Yup.object().required('Campaign agreement is required.'),
+  });
+
   const campaignTypeSchema = Yup.object().shape({
     campaignType: Yup.string().required('Campaign type is required.'),
   });
@@ -233,7 +244,7 @@ function CreateCampaignForm() {
       case 6:
         return campaignAdminSchema;
       case 7:
-        return campaignAdminSchema;
+        return agreementSchema;
       default:
         return campaignSchema;
     }
@@ -304,7 +315,7 @@ function CreateCampaignForm() {
     setValue,
     watch,
     trigger,
-    formState: { errors },
+    formState: { errors, isValid },
   } = methods;
 
   const values = watch();
@@ -441,6 +452,8 @@ function CreateCampaignForm() {
         variant: 'success',
       });
       reset();
+      setStatus('');
+      confirmation.onFalse();
       setActiveStep(0);
       localStorage.setItem('activeStep', 0);
     } catch (error) {
@@ -485,16 +498,172 @@ function CreateCampaignForm() {
 
   return (
     <Box
-      sx={{
-        boxShadow: (theme) => theme.customShadows.z20,
-        borderRadius: '20px',
-        mt: 3,
-        bgcolor: 'background.paper',
-        p: { xs: 1, md: 3 },
-      }}
+    // sx={{
+    //   boxShadow: (theme) => theme.customShadows.z20,
+    //   borderRadius: '20px',
+    //   mt: 3,
+    //   bgcolor: 'background.paper',
+    //   p: { xs: 1, md: 3 },
+    // }}
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Stepper
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <IconButton
+            sx={{
+              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              border: 1,
+              borderRadius: 1,
+              borderColor: '#E7E7E7',
+            }}
+            onClick={onClose}
+          >
+            <Iconify icon="ic:round-close" />
+          </IconButton>
+
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 20,
+              left: '50%',
+              bgcolor: 'wheat',
+              transform: 'translateX(-50%)',
+            }}
+          >
+            <LinearProgress
+              variant="determinate"
+              value={Math.floor(((activeStep + 1) / steps.length) * 100)}
+              sx={{
+                width: 150,
+                bgcolor: '#E7E7E7',
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: '#1340FF', // Custom color
+                },
+              }}
+            />
+          </Box>
+
+          <Stack direction="row" alignItems="center" spacing={1}>
+            {activeStep !== 0 && (
+              <Button
+                variant="outlined"
+                sx={{
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  py: 1,
+                }}
+                onClick={handleBack}
+              >
+                Back
+              </Button>
+            )}
+            {activeStep === steps.length - 1 ? (
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+                {/* <LoadingButton
+                  variant="outlined"
+                  onClick={() => onSubmit('DRAFT')}
+                  startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
+                  loading={isLoading}
+                >
+                  Draft
+                </LoadingButton> */}
+                {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
+                  <LoadingButton
+                    variant="outlined"
+                    onClick={() => {
+                      setStatus('ACTIVE');
+                      confirmation.onTrue();
+                    }}
+                    startIcon={<Iconify icon="material-symbols:publish" width={16} />}
+                    disabled={!isValid}
+                    sx={{
+                      boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                      bgcolor: '#1340FF',
+                      color: 'whitesmoke',
+                      py: 1,
+                      '&:hover': {
+                        bgcolor: '#1340FF',
+                      },
+                    }}
+                  >
+                    Publish now
+                  </LoadingButton>
+                ) : (
+                  <LoadingButton
+                    variant="outlined"
+                    onClick={() => {
+                      setStatus('SCHEDULED');
+                      confirmation.onTrue();
+                    }}
+                    startIcon={<Iconify icon="material-symbols:publish" width={16} />}
+                    disabled={!isValid}
+                    sx={{
+                      boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                      bgcolor: '#1340FF',
+                      color: 'whitesmoke',
+                      py: 1,
+                      '&:hover': {
+                        bgcolor: '#1340FF',
+                      },
+                    }}
+                  >
+                    Schedule on {dayjs(startDate).format('ddd LL')}
+                  </LoadingButton>
+                )}
+              </Stack>
+            ) : (
+              <Button
+                variant="contained"
+                sx={{
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                  bgcolor: '#3A3A3C',
+                  color: 'white',
+                  py: 1,
+                }}
+                disabled={!isValid}
+                onClick={handleNext}
+              >
+                Next
+              </Button>
+            )}
+          </Stack>
+        </Stack>
+
+        <Box sx={{ height: '85vh', overflow: 'auto', mt: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              mt: 10,
+              maxWidth: 1000,
+              width: 1,
+              mx: 'auto',
+              overflow: 'auto',
+            }}
+          >
+            <Stack alignItems="center" spacing={2}>
+              <Avatar
+                sx={{ bgcolor: steps[activeStep].color, width: 60, height: 60, fontSize: 35 }}
+              >
+                {steps[activeStep].logo}
+              </Avatar>
+              <Typography
+                sx={{
+                  fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                  fontSize: 35,
+                  textAlign: 'center',
+                }}
+              >
+                {steps[activeStep].title}
+              </Typography>
+            </Stack>
+
+            <Box my={5} overflow="auto" minHeight={400}>
+              {getStepContent(activeStep)}
+            </Box>
+          </Box>
+        </Box>
+
+        {/* <Stepper
           sx={{
             pt: 2,
             m: 1,
@@ -533,9 +702,9 @@ function CreateCampaignForm() {
               </Step>
             );
           })}
-        </Stepper>
+        </Stepper> */}
 
-        <Box
+        {/* <Box
           sx={{
             display: 'flex',
             flexDirection: 'column',
@@ -604,7 +773,85 @@ function CreateCampaignForm() {
               )}
             </Box>
           </Paper>
-        </Box>
+        </Box> */}
+
+        <Dialog
+          open={confirmation.value}
+          fullWidth
+          maxWidth="xs"
+          PaperProps={{
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Box
+            sx={{
+              borderRadius: 2,
+              boxShadow: 24,
+              p: 4,
+              textAlign: 'center',
+            }}
+          >
+            <Avatar
+              src="/assets/images/notification/markread.png"
+              alt="archive"
+              sx={{
+                width: 60,
+                height: 60,
+                margin: '0 auto 16px',
+                backgroundColor: '#ffeb3b',
+              }}
+            />
+
+            <ListItemText
+              primary="Confirm campaign"
+              secondary="Are you sure you’re ready to publish your campaign?"
+              primaryTypographyProps={{
+                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                fontSize: 40,
+              }}
+              secondaryTypographyProps={{
+                variant: 'body1',
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            {/* Action Buttons */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <LoadingButton
+                variant="contained"
+                fullWidth
+                onClick={() => {
+                  if (status) {
+                    onSubmit(status);
+                  }
+                }}
+                loading={isLoading}
+                sx={{
+                  fontWeight: 'bold',
+                  backgroundColor: '#3A3A3C',
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                  py: 1,
+                  '&:hover': {
+                    backgroundColor: '#3A3A3C',
+                  },
+                }}
+              >
+                Yes
+              </LoadingButton>
+              <Button
+                variant="outlined"
+                fullWidth
+                sx={{ fontWeight: 'bold', py: 1 }}
+                onClick={() => {
+                  setStatus('');
+                  confirmation.onFalse();
+                }}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </Box>
+        </Dialog>
       </FormProvider>
 
       <CreateBrand
@@ -644,3 +891,7 @@ function CreateCampaignForm() {
   );
 }
 export default CreateCampaignForm;
+
+CreateCampaignForm.propTypes = {
+  onClose: PropTypes.func,
+};

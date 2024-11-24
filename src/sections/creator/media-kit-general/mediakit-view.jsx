@@ -17,18 +17,17 @@ import { useSWRGetCreatorByID } from 'src/hooks/use-get-creators';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import { useSettingsContext } from 'src/components/settings';
 
 import MediaKitSocial from '../media-kit-creator-view/media-kit-social/view';
 import { formatNumber } from '../media-kit-creator-view/media-kit-social/media-kit-social-content/view-instagram';
 
 // eslint-disable-next-line react/prop-types
 const MediaKit = ({ id, noBigScreen }) => {
-  const settings = useSettingsContext();
+  // const settings = useSettingsContext();
   const theme = useTheme();
   const { creator, isLoading, isError } = useSWRGetCreatorByID(id);
 
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  // const [isFullScreen, setIsFullScreen] = useState(false);
   const [currentTab, setCurrentTab] = useState('instagram');
   const [data, setData] = useState();
 
@@ -64,18 +63,18 @@ const MediaKit = ({ id, noBigScreen }) => {
     };
   }, [currentTab, creator, isLoading]);
 
-  const toggle = () => {
-    setIsFullScreen(!isFullScreen);
-  };
+  // const toggle = () => {
+  //   setIsFullScreen(!isFullScreen);
+  // };
 
-  const styleFullScreen = {
-    minWidth: '100vw',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    zIndex: 10000,
-    bgcolor: theme.palette.grey[900],
-  };
+  // const styleFullScreen = {
+  //   minWidth: '100vw',
+  //   position: 'absolute',
+  //   top: 0,
+  //   left: 0,
+  //   zIndex: 10000,
+  //   bgcolor: theme.palette.grey[900],
+  // };
 
   if (isLoading) {
     return (
@@ -130,7 +129,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           >
             {creator?.name}
           </Typography>
-          <Iconify icon="material-symbols:verified" color="info.main" width={20} />
+          {/* <Iconify icon="material-symbols:verified" color="info.main" width={20} /> */}
         </Stack>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="body2" color="text.secondary">

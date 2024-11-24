@@ -88,7 +88,9 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     });
 
     socket?.on('newFeedback', () => submissionMutate());
-    socket?.on('agreementReady', () => submissionMutate());
+    socket?.on('agreementReady', () => {
+      mutate(endpoints.auth.me);
+    });
 
     return () => {
       socket?.off('draft');

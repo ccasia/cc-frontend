@@ -33,6 +33,12 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
     },
   });
 
+  // const type = useMemo(() => {
+  //   if (campaign?.brand) return 'brand';
+  //   if (campaign?.company) return 'company';
+  //   return '';
+  // }, [campaign]);
+
   const { handleSubmit } = methods;
 
   const onSubmit = handleSubmit(async (data) => {

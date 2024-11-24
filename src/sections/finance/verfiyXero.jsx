@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -10,11 +10,11 @@ function VerfiyXero() {
   const code = searchParams.get('code');
   const session = searchParams.get('session_state');
 
-  const xeroCode = async () => {
+  const xeroCode = useCallback(async () => {
     try {
       // Call the backend to exchange the authorization code for the access token
-      const { data } = await axiosInstance.get(endpoints.invoice.xeroCallback, {
-        // withCredentials: true,
+      await axiosInstance.get(endpoints.invoice.xeroCallback, {
+        withCredentials: true,
         params: {
           code,
           session,
@@ -22,13 +22,17 @@ function VerfiyXero() {
       });
 
       // Navigate to another page or update the state after getting the token
-      navigate('/dashboard'); // Example navigation after success
+      navigate('/dashboard/user/profile'); // Example navigation after success
     } catch (error) {
-      console.error(error);
+      console.error('DASDSA', error);
     }
-  };
+  }, [code, session, navigate]);
 
-  xeroCode();
+  useEffect(() => {
+    xeroCode();
+  }, [xeroCode]);
+
+  // Change the UI
   return <div>to Dashboard</div>;
 }
 
