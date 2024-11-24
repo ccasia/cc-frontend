@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Box, Modal, Typography, IconButton, Button } from "@mui/material";
+import PropTypes from "prop-types";
 import CloseIcon from "@mui/icons-material/Close";
 
-const FilePreviewModal = ({ open, handleClose, handleSend, filePreview, file }) => {
-  return (
+const FilePreviewModal = ({ open, handleClose, handleSend, filePreview, file }) =>  (
     <Modal
       open={open}
       onClose={handleClose}
@@ -22,7 +22,7 @@ const FilePreviewModal = ({ open, handleClose, handleSend, filePreview, file }) 
           bgcolor: "background.paper",
           borderRadius: 2,
           boxShadow: 24,
-          p: 4,
+          p: 2,
           maxWidth: 400,
           width: "100%",
           display: "flex",
@@ -68,7 +68,7 @@ const FilePreviewModal = ({ open, handleClose, handleSend, filePreview, file }) 
             {file.type.startsWith("image/") && (
               <img
                 src={filePreview}
-                alt="Image Preview"
+                alt="Preview"
                 style={{
                   width: "100%",
                   height: "100%",
@@ -134,6 +134,18 @@ const FilePreviewModal = ({ open, handleClose, handleSend, filePreview, file }) 
       </Box>
     </Modal>
   );
+
+
+FilePreviewModal.propTypes = {
+  open: PropTypes.bool,
+  handleClose: PropTypes.func.isRequired,
+  handleSend: PropTypes.func.isRequired,
+  filePreview: PropTypes.string.isRequired,
+  file: PropTypes.shape({
+    type: PropTypes.string,
+    name: PropTypes.string,
+  }).isRequired,
 };
+
 
 export default FilePreviewModal

@@ -1,16 +1,17 @@
 import PropTypes from 'prop-types';
 import EmojiPicker from 'emoji-picker-react';
+import Iconify from 'src/components/iconify';
 import { useRef, useState, useCallback } from 'react';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import Box from '@mui/material/Box';
-import { Button, Typography } from '@mui/material';
+import { Button, IconButton, CircularProgress } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
-import IconButton from '@mui/material/IconButton';
 
-import Iconify from 'src/components/iconify';
+import FilePreviewModal  from './filePreviewModal';
+
 
 // ----------------------------------------------------------------------
 
@@ -20,6 +21,8 @@ export default function ChatMessageInput({ disabled, threadId  }) {
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [filePreview, setFilePreview] = useState(null); 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const {user} = useAuthContext();
   const { socket } = useSocketContext();
 
@@ -35,8 +38,9 @@ export default function ChatMessageInput({ disabled, threadId  }) {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       const previewUrl = URL.createObjectURL(selectedFile);
-      setFile(selectedFile);  // Update the file state
-      setFilePreview(previewUrl);  // Set the file preview
+      setFile(selectedFile); 
+      setFilePreview(previewUrl);  
+      setIsModalOpen(true); 
     }
   };
 
@@ -54,8 +58,10 @@ export default function ChatMessageInput({ disabled, threadId  }) {
   
       if (file) {
         fileTypeCheck = file.type || null;
-        setIsLoading(true);  // Show loading indicator while uploading
+        setIsLoading(true);  
         try {
+          setIsSending(true); 
+
           const formData = new FormData();
           formData.append('content', content);
           formData.append('threadId', threadId);
@@ -64,7 +70,7 @@ export default function ChatMessageInput({ disabled, threadId  }) {
           formData.append('name', name);
           formData.append('photoURL', photoURL);
           formData.append('createdAt', createdAt);
-          formData.append('file', file); // Attach file to the formData
+          formData.append('file', file);
   
           const response = await axiosInstance.post(endpoints.threads.sendMessage, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
@@ -79,12 +85,14 @@ export default function ChatMessageInput({ disabled, threadId  }) {
           console.log("final text", finalContent);
   
           if (data.content?.file) {
-            finalContent = data.content.text;  // Update content if file was processed
+            finalContent = data.content.text;  
           }
+
         } catch (error) {
           console.error('Error uploading file:', error);
         } finally {
-          setIsLoading(false);  // Hide loading indicator
+          setIsLoading(false);
+          setIsSending(false);
         }
       }
   
@@ -102,14 +110,15 @@ export default function ChatMessageInput({ disabled, threadId  }) {
       });
     };
   
-    //  console.log("Sending file:", file);
+  
   
     // Only proceed if there is content or a file to send
     if (trimmedMessage !== '' || file) {
-      sendMessageWithFile(trimmedMessage, file);  // Send the message with the content and file
-      setMessage('');  // Reset message input
-      setFile(null);   // Reset file input
-      setFilePreview(null); // Reset file preview
+      sendMessageWithFile(trimmedMessage, file);  
+      setMessage('');  
+      setFile(null);   
+      setFilePreview(null); 
+      setIsModalOpen(false); 
     }
   }, [message, file, socket, threadId, user]);
   
@@ -135,6 +144,7 @@ export default function ChatMessageInput({ disabled, threadId  }) {
   };
 
   return (
+   <> 
     <Stack
       direction="row"
       justifyContent="space-between"
@@ -221,96 +231,6 @@ export default function ChatMessageInput({ disabled, threadId  }) {
 
           />
         
-        {filePreview  && (
-            <Box
-              sx={{
-                maxWidth: 300,
-                maxHeight: 80,
-                overflow: 'hidden',
-                borderRadius: 1,
-                p: 4,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              {/* Determine preview based on file type */}
-              {file.type.startsWith('image/') && (
-                <img
-                  src={filePreview}
-                  alt="Image Preview"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                />
-              )}
-
-              {file.type.startsWith('video/') && (
-                <video
-                  src={filePreview}
-                  controls
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                >
-                  <track
-                    kind="captions"
-                    srcLang="en"
-                    label="English captions"
-                    src=""
-                    default
-                  />
-                </video>
-              )}
-
-              {file.type === 'application/pdf' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    padding: '4px',
-                    overflow: 'hidden',
-                    maxWidth: '100%',
-                  }}
-                >
-                  <Iconify icon="mdi:file-pdf-box" sx={{ color: 'red', mr: 1, fontSize: '24px' }} /> {/* PDF icon */}
-                  <Typography
-                    variant="body2"
-                    noWrap
-                    sx={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '100%',
-                    }}
-                  >
-                    {file.name}
-                  </Typography>
-                </Box>
-              )}
-
-              {!file.type.startsWith('image/') && !file.type.startsWith('video/') && file.type !== 'application/pdf' && (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    textAlign: 'center',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    maxWidth: '100%',
-                  }}
-                >
-                  Unsupported file: {file.name}
-                </Typography>
-              )}
-            </Box>
-          )}
-
 
           <IconButton  component="label">
             <Iconify icon="mdi:camera" /> 
@@ -325,15 +245,26 @@ export default function ChatMessageInput({ disabled, threadId  }) {
           color="secondary" 
           onClick={handleSendMessage} 
           sx={{ alignSelf: 'center' }}
-          disabled={!message.trim() && !file} 
-          >
-            Send
+          disabled={(!message.trim() && !file) || isSending}
+          startIcon={isSending ? <CircularProgress size={20} color="inherit" /> : null}
+        >
+          {isSending ? 'Sending...' : 'Send'}
           </Button>
       </Box>
     </Stack>
+
+    <FilePreviewModal
+    open={isModalOpen}
+    handleClose={() => setIsModalOpen(false)}
+    handleSend={handleSendMessage}
+    filePreview={filePreview}
+    file={file}
+    />
+  </>
   );
 }
 
 ChatMessageInput.propTypes = {
   disabled: PropTypes.bool,
+  threadId: PropTypes.string,
 };

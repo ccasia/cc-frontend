@@ -4,15 +4,15 @@ import { Box } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
-import { Document, Page, pdfjs } from 'react-pdf';
+//  import { Document, Page, pdfjs } from 'react-pdf';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+// pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+//   'pdfjs-dist/build/pdf.worker.min.mjs',
+//   import.meta.url
+// ).toString();
 
 // ----------------------------------------------------------------------
 
@@ -20,7 +20,7 @@ export default function ChatMessageItem({ message }) {
   const { user } = useAuthContext();
 
   const isMe = user?.id === message.senderId;
-  const { content: body, sender, file } = message;
+  const { content: body, sender } = message;
 
   const isAdmin = sender?.role === 'admin';
   const isSprAdmin = sender?.role === 'superadmin';
@@ -199,6 +199,8 @@ export default function ChatMessageItem({ message }) {
 ChatMessageItem.propTypes = {
   message: PropTypes.shape({
     senderId: PropTypes.string.isRequired,
+    file: PropTypes.string,
+    fileType: PropTypes.string,
     content: PropTypes.string.isRequired,
     createdAt: PropTypes.string.isRequired,
     sender: PropTypes.shape({

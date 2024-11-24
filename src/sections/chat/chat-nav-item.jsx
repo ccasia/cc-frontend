@@ -63,6 +63,7 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
 
   const latestMessage = thread.latestMessage;
 
+  console.log("Latest message", latestMessage)
   const renderInfo = (
     <>
       <Badge
@@ -137,6 +138,20 @@ export default function ChatNavItem({ onArchive, selected, collapse, thread }) {
         >
           {latestMessage && latestMessage.content}
         </Typography>
+
+        {latestMessage?.file && (
+        <Typography
+          variant="body2"
+          sx={{
+            fontSize: 12,
+            color: 'text.secondary',
+            mt: 0.5,
+          }}
+        >
+          Attachment Sent
+        </Typography>
+        )}
+        
       </Stack>
     </>
   );

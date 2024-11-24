@@ -19,39 +19,35 @@ import { archiveUserThread, unarchiveUserThread, useGetAllThreads } from 'src/ap
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import ThreadInfoModal from './threadinfoModal';
 import ChatArchiveModal from './chatArchiveModal';
-//  import { toast } from 'react-toastify';
 
 // ----------------------------------------------------------------------
 
-export default function ChatHeaderCompose({ currentUserId, threadId }) {
+export default function ChatHeaderCompose({ currentUserId, threadId, currentuserInThreads}) {
   const { user } = useAuthContext();
-  const { thread, error } = useGetThreadById(threadId);
   const [archivedChats, setArchivedChats] = useState([]);
   const [openAlert, setOpenAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertSeverity, setAlertSeverity] = useState('success');
-  const navigate = useNavigate();
-  const [contacts, setContacts] = useState([]);
   const [lastAction, setLastAction] = useState(null);
   const [previousArchivedChats, setPreviousArchivedChats] = useState([]);
-  const [selectedContact, setSelectedContact] = useState();
-  const [loading, setLoading] = useState(true);
+
   const [openInfoModal, setOpenInfoModal] = useState(false);
   const [autoHideDuration, setAutoHideDuration] = useState(3000);
   const [openArchiveModal, setOpenArchiveModal] = useState(false);
-  const { threads } = useGetAllThreads();
+  
+
+  const thread = currentuserInThreads?.find((t) => t.id === threadId);
 
   useEffect(() => {
-    if (threads) {
-      // Extract archived status from threads
-      const archivedThreadIds = threads
-        .filter((thread) => thread.UserThread.some((ut) => ut.userId === user.id && ut.archived))
-        .map((thread) => thread.id);
-
+    if (thread) {
+      // Extract archived status from the current thread
+      const archivedThreadIds = thread.UserThread
+        .filter((ut) => ut.userId === user.id && ut.archived)
+        .map(() => thread.id);
+  
       setArchivedChats(archivedThreadIds);
-      console.log('Archvied', archivedThreadIds);
     }
-  }, [threads]);
+  }, [thread, user.id]);
 
   const handleOpenInfoModal = () => {
     setOpenInfoModal(true);
@@ -119,76 +115,31 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
     }
   };
 
-  const isAdmin = user?.role === 'admin';
-  const isSuperAdmin = user?.role === 'superadmin';
+  // const isAdmin = user?.role === 'admin';
+  // const isSuperAdmin = user?.role === 'superadmin';
 
   // if (error) {
   //   return <Typography variant="h6">Error loading thread</Typography>;
   // }
 
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const response = await axiosInstance.get(endpoints.users.allusers);
-        const filteredContacts = response.data.filter((user) => user.id !== currentUserId);
-        setContacts(filteredContacts);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchUsers();
-  }, [currentUserId]);
+  // useEffect(() => {
+  //   async function fetchUsers() {
+  //     try {
+  //       const response = await axiosInstance.get(endpoints.users.allusers);
+  //       const filteredContacts = response.data.filter((user) => user.id !== currentUserId);
+  //       setContacts(filteredContacts);
+  //     } catch (error) {
+  //       console.error('Error fetching users:', error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   }
+  //   fetchUsers();
+  // }, [currentUserId]);
 
   const otherUser = thread?.UserThread.find((u) => u.userId !== currentUserId);
   const otherUserName = otherUser ? otherUser.user.name : 'Unknown User';
-
-  useEffect(() => {}, [selectedContact]);
-
-  const handleChange = (_event, newValue) => {
-    setSelectedContact(newValue);
-    createThread(newValue);
-  };
-
-  const createThread = async (recipient) => {
-    if (!recipient || !recipient.id) {
-      console.error('Invalid recipient:', recipient);
-      return;
-    }
-
-    try {
-      const recipientId = recipient.id;
-
-      const existingThreadResponse = await axiosInstance.get(endpoints.threads.getAll);
-      const existingThread = existingThreadResponse.data.find((thread) => {
-        const userIdsInThread = thread.UserThread.map((userThread) => userThread.userId);
-        return (
-          userIdsInThread.includes(currentUserId) &&
-          userIdsInThread.includes(recipientId) &&
-          !thread.isGroup
-        );
-      });
-
-      if (existingThread) {
-        navigate(`/dashboard/chat/thread/${existingThread.id}`);
-      } else {
-        const response = await axiosInstance.post(endpoints.threads.create, {
-          title: ` Chat between ${user.name} & ${recipient.name}`,
-          description: '',
-          userIds: [currentUserId, recipientId],
-          isGroup: false,
-        });
-
-        mutate(endpoints.threads.getAll);
-
-        navigate(`/dashboard/chat/thread/${response.data.id}`);
-      }
-      router.push(threadPath);
-    } catch (error) {
-      console.error('Error creating thread:', error);
-    }
-  };
+  
 
   return (
     <>
@@ -290,64 +241,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
           )}
         </Box>
 
-        {/* {isAdmin && contacts.length > 0 && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Autocomplete
-              sx={{ minWidth: 320 }}
-              popupIcon={null}
-              disablePortal
-              noOptionsText={<SearchNotFound query={contacts} />}
-              onChange={handleChange}
-              options={contacts}
-              getOptionLabel={(recipient) => recipient.name}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Search for creators"
-                  InputProps={{
-                    ...params.InputProps,
-                    startAdornment: (
-                      <>
-                        <Iconify
-                          icon="material-symbols:search-rounded"
-                          style={{ color: 'black', marginRight: '8px' }}
-                        />
-                        {params.InputProps.startAdornment}
-                      </>
-                    ),
-                  }}
-                />
-              )}
-              renderOption={(props, recipient, { selected }) => (
-                <li {...props} key={recipient.id}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Avatar
-                      alt={recipient.name}
-                      src={recipient.photoURL}
-                      sx={{ width: 32, height: 32, mr: 1 }}
-                    />
-                    <div>
-                      <Typography variant="body1">{recipient.name}</Typography>
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {recipient.email}
-                      </Typography>
-                    </div>
-                  </Box>
-                </li>
-              )}
-            />
-          </Box>
-        )} */}
+
         {/* Flex End: Icon buttons */}
         <Box paddingLeft={1} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Button
