@@ -25,7 +25,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -42,8 +41,8 @@ const Agreement = ({ campaign, submission, creator }) => {
   const loading = useBoolean();
   const [pdfError, setPdfError] = useState(false);
 
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
+  const onDocumentLoadSuccess = ({ numPages: num }) => {
+    setNumPages(num);
     setPdfError(false);
   };
 
@@ -161,10 +160,16 @@ const Agreement = ({ campaign, submission, creator }) => {
                 <Stack direction="row" spacing={3} sx={{ mb: 3, mt: -2 }}>
                   <Stack spacing={0.5}>
                     <Stack direction="row" spacing={0.5}>
-                      <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}
+                      >
                         Date Submitted:
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
+                      >
                         {submission?.submissionDate
                           ? dayjs(submission?.submissionDate).format('ddd, D MMM YYYY')
                           : '-'}
@@ -172,10 +177,16 @@ const Agreement = ({ campaign, submission, creator }) => {
                     </Stack>
 
                     <Stack direction="row" spacing={0.5}>
-                      <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}
+                      >
                         Reviewed On:
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
+                      >
                         {submission?.isReview
                           ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
                           : 'Pending Review'}
@@ -184,8 +195,8 @@ const Agreement = ({ campaign, submission, creator }) => {
                   </Stack>
                 </Stack>
 
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     width: '100%',
                     height: '600px',
                     mt: 1,
@@ -198,7 +209,7 @@ const Agreement = ({ campaign, submission, creator }) => {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                    }
+                    },
                   }}
                 >
                   {pdfError ? (
@@ -224,8 +235,8 @@ const Agreement = ({ campaign, submission, creator }) => {
                       onLoadError={onDocumentLoadError}
                     >
                       {Array.from(new Array(numPages), (el, index) => (
-                        <Box 
-                          key={index} 
+                        <Box
+                          key={index}
                           sx={{
                             p: 2,
                             width: '100%',
@@ -234,7 +245,7 @@ const Agreement = ({ campaign, submission, creator }) => {
                             '&:not(:last-child)': {
                               borderBottom: '1px solid',
                               borderColor: 'divider',
-                            }
+                            },
                           }}
                         >
                           <Page

@@ -1,19 +1,28 @@
+import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
-import { format } from 'date-fns';
-
-import { Tab, Tabs, Stack, Button, Container, Typography, Box , Dialog, IconButton, DialogActions} from '@mui/material';
 
 import { LoadingButton } from '@mui/lab';
+import {
+  Box,
+  Stack,
+  Button,
+  Dialog,
+  Container,
+  Typography,
+  IconButton,
+  DialogActions,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
-import { useGetAllInvoices } from 'src/api/invoices';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -21,6 +30,7 @@ import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
 
 import CampaignOverview from '../campaign-overview';
+import CampaignLogistics from '../campaign-logistics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
@@ -28,8 +38,6 @@ import CampaignDetailContent from '../campaign-detail-content';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
-import CampaignLogistics from '../campaign-logistics';
-
 
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
@@ -120,25 +128,25 @@ const CampaignDetailView = ({ id }) => {
             { label: 'Overview', value: 'overview' },
             { label: 'Campaign Details', value: 'campaign-content' },
             // { label: 'Client Info', value: 'client' },
-            { 
-              label: `Pitches (${currentCampaign?.pitch?.filter(p => p.status === 'undecided').length || 0})`, 
-              value: 'pitch' 
+            {
+              label: `Pitches (${currentCampaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
+              value: 'pitch',
             },
-            { 
-              label: `Creators (${currentCampaign?.shortlisted?.length || 0})`, 
-              value: 'creator' 
+            {
+              label: `Creators (${currentCampaign?.shortlisted?.length || 0})`,
+              value: 'creator',
             },
-            { 
-              label: `Agreements (${currentCampaign?.creatorAgreement?.length || 0})`, 
-              value: 'agreement' 
+            {
+              label: `Agreements (${currentCampaign?.creatorAgreement?.length || 0})`,
+              value: 'agreement',
             },
-            { 
-              label: `Invoices (${campaignInvoices?.length || 0})`, 
-              value: 'invoices' 
+            {
+              label: `Invoices (${campaignInvoices?.length || 0})`,
+              value: 'invoices',
             },
-            { 
-              label: `Logistics (${currentCampaign?.logistic?.length || 0})`, 
-              value: 'logistics' 
+            {
+              label: `Logistics (${currentCampaign?.logistic?.length || 0})`,
+              value: 'logistics',
             },
           ].map((tab) => (
             <Button
@@ -186,7 +194,7 @@ const CampaignDetailView = ({ id }) => {
                     opacity: currentTab === tab.value ? 1 : 0.5,
                   },
                 },
-                mr: 2,
+                // mr: 2,
               }}
             >
               {tab.label}
@@ -311,10 +319,10 @@ const CampaignDetailView = ({ id }) => {
   );
 
   return (
-    <Container 
+    <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
-      sx={{ 
-        px: { xs: 2, sm: 5 }
+      sx={{
+        px: { xs: 2, sm: 5 },
       }}
     >
       <Stack spacing={1}>
@@ -365,15 +373,15 @@ const CampaignDetailView = ({ id }) => {
             </Typography>
           </Stack>
 
-          <Stack 
-            direction={{ xs: 'column', sm: 'row' }} 
-            alignItems={{ xs: 'stretch', sm: 'center' }} 
-            spacing={{ xs: 1, sm: 0 }} 
-            width={{ xs: '100%', sm: 'auto' }} 
-            justifyContent={{ xs: 'flex-start', sm: 'flex-end' }} 
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            spacing={{ xs: 1, sm: 0 }}
+            width={{ xs: '100%', sm: 'auto' }}
+            justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
           >
-            <Stack 
-              alignItems={{ xs: 'flex-start', sm: 'flex-end' }} 
+            <Stack
+              alignItems={{ xs: 'flex-start', sm: 'flex-end' }}
               spacing={0}
               justifyContent="center"
               sx={{ minHeight: { sm: '76px' } }}
@@ -397,13 +405,14 @@ const CampaignDetailView = ({ id }) => {
                   fontSize: { xs: '0.875rem', sm: '1rem' },
                 }}
               >
-                {formatDate(currentCampaign?.campaignBrief?.startDate)} - {formatDate(currentCampaign?.campaignBrief?.endDate)}
+                {formatDate(currentCampaign?.campaignBrief?.startDate)} -{' '}
+                {formatDate(currentCampaign?.campaignBrief?.endDate)}
               </Typography>
             </Stack>
 
             <Box
               sx={{
-                height: '76px', 
+                height: '76px',
                 width: '1px',
                 backgroundColor: '#e7e7e7',
                 mx: 2,
@@ -416,9 +425,9 @@ const CampaignDetailView = ({ id }) => {
                 variant="outlined"
                 size="small"
                 startIcon={
-                  <img 
-                    src="/assets/icons/overview/editButton.svg" 
-                    alt="edit" 
+                  <img
+                    src="/assets/icons/overview/editButton.svg"
+                    alt="edit"
                     style={{ width: 16, height: 16 }}
                   />
                 }
@@ -471,12 +480,12 @@ const CampaignDetailView = ({ id }) => {
                 >
                   Generate Spreadsheet
                 </LoadingButton>
-              ) : ( 
+              ) : (
                 <Button
                   variant="outlined"
                   size="small"
                   startIcon={<Iconify icon="tabler:external-link" width={16} />}
-                  onClick={() =>{
+                  onClick={() => {
                     const a = document.createElement('a');
                     a.href = currentCampaign?.spreadSheetURL;
                     a.target = '_blank';
@@ -502,7 +511,7 @@ const CampaignDetailView = ({ id }) => {
                   }}
                   disabled={!currentCampaign?.spreadSheetURL}
                 >
-                  Google Spreadsheet   
+                  Google Spreadsheet
                 </Button>
               )}
             </Stack>

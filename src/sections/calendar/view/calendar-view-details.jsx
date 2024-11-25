@@ -1,40 +1,43 @@
+import PropTypes from 'prop-types';
 import React, { useState, useCallback } from 'react';
-import { 
-  Box, 
-  Drawer, 
-  Typography, 
-  Divider, 
-  Dialog, 
-  DialogTitle, 
-  DialogActions, 
-  Tooltip, 
+
+import { useTheme } from '@mui/material/styles';
+import {
+  Box,
+  Drawer,
+  Dialog,
+  Button,
+  Divider,
+  Tooltip,
+  Typography,
   IconButton,
-  Button
+  DialogTitle,
+  DialogActions,
 } from '@mui/material';
 
-import { useSnackbar } from 'src/components/snackbar';
-import { useTheme } from '@mui/material/styles';
-import Iconify from 'src/components/iconify';
-
-import CalendarForm from '../calendar-form';
 import { CALENDAR_COLOR_OPTIONS } from 'src/_mock/_calendar';
 import { deleteEvent, useGetEvents } from 'src/api/calendar';
+
+import Iconify from 'src/components/iconify';
+import { useSnackbar } from 'src/components/snackbar';
+
+import CalendarForm from '../calendar-form';
 
 export default function EventDetails({ open, onClose, currentEvent, colorOptions }) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [openForm, setOpenForm] = useState(false);
-  const [openConfirmDelete, setOpenConfirmDelete] = useState(false); 
-  const { events } = useGetEvents(); 
+  const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
+  const { events } = useGetEvents();
 
-  const eventDetails = events.find(event => event.id === currentEvent?.id);  
+  const eventDetails = events.find((event) => event.id === currentEvent?.id);
 
   const onEdit = useCallback(() => {
     setOpenForm(true);
   }, []);
 
   const onCloseForm = useCallback(() => {
-    setOpenForm(false); 
+    setOpenForm(false);
   }, []);
 
   const onDelete = useCallback(() => {
@@ -45,7 +48,7 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
     try {
       await deleteEvent(currentEvent.id);
       enqueueSnackbar('👋 Event removed');
-      onClose(); 
+      onClose();
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Delete failed!');
@@ -54,7 +57,7 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
   };
 
   const handleCancelDelete = () => {
-    setOpenConfirmDelete(false); 
+    setOpenConfirmDelete(false);
   };
 
   const formatDate = (start, end) => {
@@ -83,17 +86,17 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
     <>
       <Drawer anchor="right" open={open} onClose={onClose}>
         <Box sx={{ maxWidth: 400, padding: 2.5 }}>
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              mb: 2
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
             }}
           >
-            <Typography 
+            <Typography
               variant="h2"
-              sx={{ 
+              sx={{
                 fontFamily: 'Instrument Serif',
                 fontWeight: 400,
                 display: 'flex',
@@ -108,12 +111,12 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
                   <IconButton
                     color="default"
                     onClick={onEdit}
-                    sx={{ 
+                    sx={{
                       width: '40px',
                       height: '40px',
                       background: '#FFFFFF',
                       borderRadius: '8px',
-                      boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[500]}`
+                      boxShadow: `0px 1px 1px 1px ${theme.palette.grey[500]}`,
                     }}
                   >
                     <Iconify icon="solar:pen-bold" />
@@ -124,12 +127,12 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
                   <IconButton
                     color="error"
                     onClick={onDelete}
-                    sx={{ 
+                    sx={{
                       width: '40px',
                       height: '40px',
                       background: '#FFFFFF',
                       borderRadius: '8px',
-                      boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[500]}`
+                      boxShadow: `0px 1px 1px 1px ${theme.palette.grey[500]}`,
                     }}
                   >
                     <Iconify icon="solar:trash-bin-trash-bold" />
@@ -143,10 +146,7 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
 
           {eventDetails ? (
             <>
-              <Typography 
-                variant="h4"
-                sx={{ maxWidth: 400, overflowWrap: 'break-word' }}
-                >
+              <Typography variant="h4" sx={{ maxWidth: 400, overflowWrap: 'break-word' }}>
                 {renderDescription(eventDetails.title)}
               </Typography>
 
@@ -154,43 +154,51 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
                 {formatDate(eventDetails.start, eventDetails.end)}
               </Typography>
 
-              <Typography 
-                variant="body2" 
-                sx={{ maxWidth: 400, overflowWrap: 'break-word' }}
-              >
+              <Typography variant="body2" sx={{ maxWidth: 400, overflowWrap: 'break-word' }}>
                 {renderDescription(eventDetails.description)}
               </Typography>
 
-              <Typography variant="body2" color="#454F5B" display="flex" alignItems="center" paddingTop={2}>
-                <Typography variant="body2" sx={{ color: theme => theme.palette.grey[600], marginRight: '8px' }}>
+              <Typography
+                variant="body2"
+                color="#454F5B"
+                display="flex"
+                alignItems="center"
+                paddingTop={2}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{ color: theme.palette.grey[600], marginRight: '8px' }}
+                >
                   Label:
                 </Typography>
-                {colorOptions.map(({ color, label, labelColor }) => {
-                  return eventDetails.color === color ? (
+                {colorOptions.map(({ color, label, labelColor }) =>
+                  eventDetails.color === color ? (
                     <Box key={color} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Box
-                      sx={{
-                        backgroundColor: color,
-                        borderRadius: 1,
-                        padding: '2px 8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        height: '25px',
-                      }}>
-                      <span
-                        style={{
-                          color: labelColor, 
-                          fontSize: '12px',
-                          fontWeight: '700',
-                          textAlign: 'center',
-                        }}>
+                        sx={{
+                          backgroundColor: color,
+                          borderRadius: 1,
+                          padding: '2px 8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '25px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: labelColor,
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            textAlign: 'center',
+                          }}
+                        >
                           {label}
                         </span>
                       </Box>
                     </Box>
-                  ) : null ;
-                })}
+                  ) : null
+                )}
               </Typography>
             </>
           ) : (
@@ -260,7 +268,7 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
             >
               Yes
             </Button>
-            
+
             <Button
               variant="outlined"
               onClick={handleCancelDelete}
@@ -300,19 +308,23 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
         }}
       >
         <DialogTitle sx={{ minHeight: 76 }}>
-          <div style={{
-            width: '200px',
-            height: '40px',
-            fontFamily: 'Instrument Serif',
-            fontWeight: 400,
-            fontSize: '36px',
-            lineHeight: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            color: '#231F20',
-          }}>
-            <span role="img" aria-label="calendar" style={{ marginRight: '8px' }}>📅</span>
-            {'Edit Event'}
+          <div
+            style={{
+              width: '200px',
+              height: '40px',
+              fontFamily: 'Instrument Serif',
+              fontWeight: 400,
+              fontSize: '36px',
+              lineHeight: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              color: '#231F20',
+            }}
+          >
+            <span role="img" aria-label="calendar" style={{ marginRight: '8px' }}>
+              📅
+            </span>
+            Edit Event
           </div>
           <Divider sx={{ my: 2 }} />
         </DialogTitle>
@@ -327,4 +339,11 @@ export default function EventDetails({ open, onClose, currentEvent, colorOptions
       </Dialog>
     </>
   );
+}
+
+EventDetails.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  currentEvent: PropTypes.object,
+  colorOptions: PropTypes.any,
 };

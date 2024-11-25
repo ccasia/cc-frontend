@@ -9,18 +9,9 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import Timeline from '@mui/lab/Timeline';
 import { LoadingButton } from '@mui/lab';
-import { blue } from '@mui/material/colors';
-import TimelineDot from '@mui/lab/TimelineDot';
-import TimelineItem from '@mui/lab/TimelineItem';
-import CloseIcon from '@mui/icons-material/Close';
-import CommentIcon from '@mui/icons-material/Comment';
-import TimelineContent from '@mui/lab/TimelineContent';
-import TimelineSeparator from '@mui/lab/TimelineSeparator';
-import TimelineConnector from '@mui/lab/TimelineConnector';
-import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
-import TimelineOppositeContent from '@mui/lab/TimelineOppositeContent';
+import Avatar from '@mui/material/Avatar';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
   Grid,
@@ -31,24 +22,20 @@ import {
   Button,
   Dialog,
   Typography,
-  IconButton,
   DialogTitle,
   DialogActions,
   DialogContent,
   DialogContentText,
 } from '@mui/material';
-import Avatar from '@mui/material/Avatar';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
-import Iconify from 'src/components/iconify';
 
 const options_changes = [
   'Missing caption requirements',

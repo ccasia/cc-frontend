@@ -1,23 +1,18 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { useTheme } from '@mui/material/styles';
 
-import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
-import ListItemText from '@mui/material/ListItemText';
-import { Box, Card, Chip, Typography, Avatar } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { Box, Card, Chip, Avatar, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-import { RouterLink } from 'src/routes/components';
 
 import { formatText } from 'src/utils/format-test';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
-import Label from 'src/components/label';
-import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
 // ----------------------------------------------------------------------

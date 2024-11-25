@@ -10,7 +10,7 @@ import React, { useMemo, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Stack, Button, Dialog, DialogTitle, DialogActions, DialogContent, Box, Typography } from '@mui/material';
+import { Box, Stack, Button, Dialog, Typography, DialogTitle, DialogActions, DialogContent } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -18,10 +18,10 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import AgreementTemplate from 'src/template/agreement';
 
+import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFCheckbox, RHFTextField } from 'src/components/hook-form';
-import Iconify from 'src/components/iconify';
 
 const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const settings = useSettingsContext();

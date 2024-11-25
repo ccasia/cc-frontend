@@ -1,29 +1,32 @@
+/* eslint-disable no-unsafe-optional-chaining */
+/* eslint-disable no-nested-ternary */
+/* eslint-disable no-plusplus */
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
+import { useMemo, useState, useEffect } from 'react';
+
+import CircularProgress from '@mui/material/CircularProgress';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-  Stack,
-  Avatar,
-  Typography,
   Box,
-  Button,
-  DialogActions,
-  Divider,
-  Tooltip,
   Chip,
   Grid,
+  Stack,
+  Dialog,
+  Avatar,
+  Button,
+  Divider,
+  Tooltip,
+  IconButton,
+  Typography,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
-import Iconify from 'src/components/iconify';
-import { useSnackbar } from 'notistack';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import Iconify from 'src/components/iconify';
 import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
-import { fDate } from 'src/utils/format-time';
-import { useState, useEffect, useMemo } from 'react';
-import { alpha } from '@mui/material/styles';
-import CircularProgress from '@mui/material/CircularProgress';
-import dayjs from 'dayjs';
 
 const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -39,21 +42,21 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const matchPercentage = useMemo(() => {
     if (!pitch?.user?.creator || !campaign?.campaignRequirement) return 0;
 
-    const creator = pitch.user.creator;
+    const { creator } = pitch.user;
     const requirements = campaign.campaignRequirement;
 
     // Calculate interest matching percentage (80% weight)
     const calculateInterestMatchingPercentage = () => {
       if (!requirements.creator_persona?.length || !creator.interests?.length) return 0;
-      
+
       // Convert creator interests to lowercase names
-      const creatorInterests = creator.interests.map(int => 
-        typeof int === 'string' ? int.toLowerCase() : int?.name?.toLowerCase()
-      ).filter(Boolean);
+      const creatorInterests = creator.interests
+        .map((int) => (typeof int === 'string' ? int.toLowerCase() : int?.name?.toLowerCase()))
+        .filter(Boolean);
 
       // Count matching interests
-      const matchingInterests = creatorInterests.filter(interest =>
-        requirements.creator_persona.map(p => p.toLowerCase()).includes(interest)
+      const matchingInterests = creatorInterests.filter((interest) =>
+        requirements.creator_persona.map((p) => p.toLowerCase()).includes(interest)
       ).length;
 
       return (matchingInterests / requirements.creator_persona.length) * 100;
@@ -68,7 +71,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       if (requirements.age?.length) {
         totalCriteria++;
         const creatorAge = dayjs().diff(dayjs(creator.birthDate), 'year');
-        const isAgeInRange = requirements.age.some(range => {
+        const isAgeInRange = requirements.age.some((range) => {
           const [min, max] = range.split('-').map(Number);
           return creatorAge >= min && creatorAge <= max;
         });
@@ -78,19 +81,20 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       // Gender check
       if (requirements.gender?.length) {
         totalCriteria++;
-        const creatorGender = creator.pronounce === 'he/him' 
-          ? 'male' 
-          : creator.pronounce === 'she/her' 
-            ? 'female' 
-            : 'nonbinary';
+        const creatorGender =
+          creator.pronounce === 'he/him'
+            ? 'male'
+            : creator.pronounce === 'she/her'
+              ? 'female'
+              : 'nonbinary';
         if (requirements.gender.includes(creatorGender)) matches++;
       }
 
       // Language check
       if (requirements.language?.length && creator.languages?.length) {
         totalCriteria++;
-        const hasLanguageMatch = creator.languages.some(lang =>
-          requirements.language.map(l => l.toLowerCase()).includes(lang.toLowerCase())
+        const hasLanguageMatch = creator.languages.some((lang) =>
+          requirements.language.map((l) => l.toLowerCase()).includes(lang.toLowerCase())
         );
         if (hasLanguageMatch) matches++;
       }
@@ -102,27 +106,26 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
     const requirementMatch = calculateRequirementMatchingPercentage();
 
     // Calculate overall percentage (80% interests, 20% requirements)
-    return Math.round((interestMatch * 0.8) + (requirementMatch * 0.2));
-  }, [pitch?.user?.creator, campaign?.campaignRequirement]);
+    return Math.round(interestMatch * 0.8 + requirementMatch * 0.2);
+  }, [campaign?.campaignRequirement, pitch]);
 
   const handleApprove = async () => {
     try {
       setIsSubmitting(true);
       const response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
         pitchId: pitch.id,
-        status: 'approved'
+        status: 'approved',
       });
-      
+
       const updatedPitch = { ...pitch, status: 'approved' };
       setCurrentPitch(updatedPitch);
-      
+
       if (onUpdate) {
         onUpdate(updatedPitch);
       }
-      
+
       enqueueSnackbar(response?.data?.message || 'Pitch approved successfully');
       setConfirmDialog({ open: false, type: null });
-      
     } catch (error) {
       console.error('Error approving pitch:', error);
       enqueueSnackbar('Error approving pitch', { variant: 'error' });
@@ -136,19 +139,18 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       setIsSubmitting(true);
       const response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
         pitchId: pitch.id,
-        status: 'rejected'
+        status: 'rejected',
       });
-      
+
       const updatedPitch = { ...pitch, status: 'rejected' };
       setCurrentPitch(updatedPitch);
-      
+
       if (onUpdate) {
         onUpdate(updatedPitch);
       }
-      
+
       enqueueSnackbar(response?.data?.message || 'Pitch declined successfully');
       setConfirmDialog({ open: false, type: null });
-      
     } catch (error) {
       console.error('Error declining pitch:', error);
       enqueueSnackbar('Error declining pitch', { variant: 'error' });
@@ -160,17 +162,17 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   // Adds a delay before fully closing the dialog
   const handleCloseConfirmDialog = () => {
     // First just close the dialog
-    setConfirmDialog(prev => ({ ...prev, open: false }));
-    
+    setConfirmDialog((prev) => ({ ...prev, open: false }));
+
     setTimeout(() => {
       setConfirmDialog({ open: false, type: null });
-    }, 300); 
+    }, 300);
   };
 
   return (
     <>
-      <Dialog 
-        open={open} 
+      <Dialog
+        open={open}
         onClose={onClose}
         maxWidth="md"
         fullWidth
@@ -185,9 +187,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         {/* Close Button */}
         <IconButton
           onClick={onClose}
-          sx={{ 
-            position: 'absolute', 
-            right: 16, 
+          sx={{
+            position: 'absolute',
+            right: 16,
             top: 16,
             zIndex: 9,
             padding: 1,
@@ -214,18 +216,18 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         >
           <Stack spacing={3}>
             {/* Creator Info and Social Media */}
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              alignItems={{ xs: 'flex-start', sm: 'center' }} 
-              justifyContent="space-between" 
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              justifyContent="space-between"
               sx={{ pr: 4 }}
             >
               {/* Creator Info */}
               <Stack direction="row" spacing={2} alignItems="center">
-                <Avatar 
-                  src={currentPitch?.user?.photoURL} 
-                  sx={{ 
-                    width: 64, 
+                <Avatar
+                  src={currentPitch?.user?.photoURL}
+                  sx={{
+                    width: 64,
                     height: 64,
                     border: '2px solid',
                     borderColor: 'background.paper',
@@ -233,13 +235,11 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   }}
                 />
                 <Stack spacing={0.5}>
-                  <Typography variant="h6">
-                    {currentPitch?.user?.name}
-                  </Typography>
+                  <Typography variant="h6">{currentPitch?.user?.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     {currentPitch?.user?.email}
                   </Typography>
-                  
+
                   {/* Social Media Icons Chip - Mobile */}
                   <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
                     <Chip
@@ -440,8 +440,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         </Box>
 
         {/* Scrollable Content */}
-        <DialogContent 
-          sx={{ 
+        <DialogContent
+          sx={{
             p: 3,
             pt: 2,
             '&::-webkit-scrollbar': {
@@ -467,8 +467,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 {/* Pitch Type Section */}
                 <Grid item xs={12} md={6}>
                   <Stack direction="row" spacing={2} alignItems="center">
-                    <AvatarIcon 
-                      icon={currentPitch?.type === 'video' ? "akar-icons:video" : "solar:document-bold"} 
+                    <AvatarIcon
+                      icon={
+                        currentPitch?.type === 'video' ? 'akar-icons:video' : 'solar:document-bold'
+                      }
                     />
                     <Stack>
                       <Typography variant="h6">
@@ -477,7 +479,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       {/* Match Percentage Chip */}
                       <Chip
                         icon={
-                          <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
+                          <Box
+                            sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}
+                          >
                             <CircularProgress
                               variant="determinate"
                               value={100}
@@ -528,9 +532,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
 
                 {/* Submission Info Section */}
                 <Grid item xs={12} md={6}>
-                  <Stack 
-                    direction={{ xs: 'row', sm: 'row' }} 
-                    spacing={3} 
+                  <Stack
+                    direction={{ xs: 'row', sm: 'row' }}
+                    spacing={3}
                     alignItems="center"
                     justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
                     sx={{ width: '100%' }}
@@ -543,7 +547,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                         {new Date(currentPitch?.createdAt).toLocaleDateString('en-US', {
                           day: 'numeric',
                           month: 'short',
-                          year: 'numeric'
+                          year: 'numeric',
                         })}
                       </Typography>
                     </Stack>
@@ -551,16 +555,20 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       <Typography variant="caption" color="text.secondary">
                         STATUS
                       </Typography>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
+                      <Typography
+                        variant="body2"
+                        sx={{
                           fontWeight: 600,
-                          color: currentPitch?.status === 'approved' ? 'success.main' : 
-                                 currentPitch?.status === 'rejected' ? 'error.main' : 
-                                 'warning.main'
+                          color:
+                            currentPitch?.status === 'approved'
+                              ? 'success.main'
+                              : currentPitch?.status === 'rejected'
+                                ? 'error.main'
+                                : 'warning.main',
                         }}
                       >
-                        {currentPitch?.status?.charAt(0).toUpperCase() + currentPitch?.status?.slice(1)}
+                        {currentPitch?.status?.charAt(0).toUpperCase() +
+                          currentPitch?.status?.slice(1)}
                       </Typography>
                     </Stack>
                   </Stack>
@@ -572,30 +580,32 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
 
             {/* Pitch Content Section */}
             <Box>
-              {currentPitch?.type === 'video' && currentPitch?.content && currentPitch.status !== 'pending' && (
-                <Box
-                  sx={{
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    boxShadow: (theme) => theme.customShadows.z8,
-                    maxWidth: '100%',
-                    maxHeight: '70vh',
-                    aspectRatio: '16/9',
-                  }}
-                >
+              {currentPitch?.type === 'video' &&
+                currentPitch?.content &&
+                currentPitch.status !== 'pending' && (
                   <Box
-                    component="video"
-                    controls
-                    sx={{ 
-                      width: '100%',
-                      height: '100%',
-                      display: 'block',
-                      objectFit: 'contain',
+                    sx={{
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      boxShadow: (theme) => theme.customShadows.z8,
+                      maxWidth: '100%',
+                      maxHeight: '70vh',
+                      aspectRatio: '16/9',
                     }}
-                    src={currentPitch.content}
-                  />
-                </Box>
-              )}
+                  >
+                    <Box
+                      component="video"
+                      controls
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'block',
+                        objectFit: 'contain',
+                      }}
+                      src={currentPitch.content}
+                    />
+                  </Box>
+                )}
 
               {currentPitch?.type === 'text' && currentPitch?.content && (
                 <Box
@@ -608,14 +618,14 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     '& p': {
                       margin: 0,
                       '& + p': {
-                        mt: 0.5
-                      }
-                    }
+                        mt: 0.5,
+                      },
+                    },
                   }}
                 >
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
+                  <Typography
+                    variant="body1"
+                    sx={{
                       color: '#000000',
                       lineHeight: 1.7,
                       whiteSpace: 'pre-wrap',
@@ -649,7 +659,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               fontSize: '0.875rem',
               '&:hover': {
                 bgcolor: '#e7e7e7',
-              }
+              },
             }}
           >
             Decline
@@ -671,26 +681,17 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               fontSize: '0.875rem',
               '&:hover': {
                 bgcolor: '#1e4a3a',
-              }
+              },
             }}
           >
-            <Iconify 
-              icon="eva:checkmark-fill" 
-              width={20} 
-              sx={{ mr: 0.5 }} 
-            />
+            <Iconify icon="eva:checkmark-fill" width={20} sx={{ mr: 0.5 }} />
             Approve
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Confirmation Dialog */}
-      <Dialog
-        open={confirmDialog.open}
-        onClose={handleCloseConfirmDialog}
-        maxWidth="xs"
-        fullWidth
-      >
+      <Dialog open={confirmDialog.open} onClose={handleCloseConfirmDialog} maxWidth="xs" fullWidth>
         <DialogContent>
           <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
             <Box
@@ -727,8 +728,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   mb: -3,
                 }}
               >
-                {confirmDialog.type === 'approve' 
-                  ? 'Are you sure you want to approve this pitch?' 
+                {confirmDialog.type === 'approve'
+                  ? 'Are you sure you want to approve this pitch?'
                   : 'Are you sure you want to decline this pitch?'}
               </Typography>
             </Stack>
@@ -783,11 +784,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             ) : (
               <>
                 {confirmDialog.type === 'approve' && (
-                  <Iconify 
-                    icon="eva:checkmark-fill" 
-                    width={20} 
-                    sx={{ mr: 0.5 }} 
-                  />
+                  <Iconify icon="eva:checkmark-fill" width={20} sx={{ mr: 0.5 }} />
                 )}
                 {`Yes, ${confirmDialog.type === 'approve' ? 'approve!' : 'decline!'}`}
               </>

@@ -1,37 +1,38 @@
-import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { pdfjs } from 'react-pdf';
+import React, { useState } from 'react';
+import { Page, Document } from 'react-pdf';
+import { useNavigate } from 'react-router-dom';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import { useNavigate } from 'react-router-dom';
-import { useAuthContext } from 'src/auth/hooks';
-import axiosInstance, { endpoints } from 'src/utils/axios';
-import { useBoolean } from 'src/hooks/use-boolean';
-import { Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
-import { Document, Page } from 'react-pdf';
-import { useResponsive } from 'src/hooks/use-responsive';
-import { CircularProgress } from '@mui/material';
 
 import {
   Box,
-  Chip,
   Link,
   Stack,
   Table,
+  Dialog,
   Avatar,
-  ListItem,
+  Button,
   TableRow,
   TableHead,
   TableCell,
   TableBody,
+  IconButton,
   Typography,
-  ListItemIcon,
+  DialogTitle,
+  DialogContent,
   TableContainer,
-  Button,
+  CircularProgress,
 } from '@mui/material';
 
-import Label from 'src/components/label';
+import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import { MultiFilePreview } from 'src/components/upload';
 
@@ -116,8 +117,8 @@ const CampaignDetailContent = ({ campaign }) => {
 
   const requirement = campaign?.campaignRequirement;
 
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
+  const onDocumentLoadSuccess = ({ numPages: num }) => {
+    setNumPages(num);
     setPdfLoading(false);
   };
 
@@ -140,7 +141,7 @@ const CampaignDetailContent = ({ campaign }) => {
           {/* Demographics Box */}
           <Box sx={{ ...BoxStyle, mt: 1 }}>
             <Box className="header">
-              <img 
+              <img
                 src="/assets/icons/overview/bluesmileyface.svg"
                 alt="Campaign Info"
                 style={{
@@ -240,10 +241,7 @@ const CampaignDetailContent = ({ campaign }) => {
                       }}
                     />
                   )}
-                  <Typography
-                    variant={item?.value ? 'body2' : 'caption'}
-                    sx={{ color: '#221f20' }}
-                  >
+                  <Typography variant={item?.value ? 'body2' : 'caption'} sx={{ color: '#221f20' }}>
                     {item?.value || 'No campaign do.'}
                   </Typography>
                 </Stack>
@@ -308,7 +306,7 @@ const CampaignDetailContent = ({ campaign }) => {
           {/* Timeline Box */}
           <Box sx={BoxStyle}>
             <Box className="header">
-              <img 
+              <img
                 src="/assets/icons/overview/yellowCalendar.svg"
                 alt="Campaign Timeline"
                 style={{
@@ -329,8 +327,8 @@ const CampaignDetailContent = ({ campaign }) => {
               </Typography>
             </Box>
 
-            <TableContainer 
-              sx={{ 
+            <TableContainer
+              sx={{
                 mt: 2,
                 overflow: 'auto',
                 '&::-webkit-scrollbar': {
@@ -345,10 +343,10 @@ const CampaignDetailContent = ({ campaign }) => {
               <Table sx={{ minWidth: { xs: 400, sm: 500 } }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell 
-                      sx={{ 
-                        py: 1, 
-                        color: '#221f20', 
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
                         fontWeight: 600,
                         width: { xs: '40%', sm: '55%' },
                         minWidth: '150px',
@@ -359,10 +357,10 @@ const CampaignDetailContent = ({ campaign }) => {
                     >
                       Timeline Name
                     </TableCell>
-                    <TableCell 
-                      sx={{ 
-                        py: 1, 
-                        color: '#221f20', 
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
                         fontWeight: 600,
                         width: { xs: '30%', sm: '20%' },
                         minWidth: '120px',
@@ -372,10 +370,10 @@ const CampaignDetailContent = ({ campaign }) => {
                     >
                       Start Date
                     </TableCell>
-                    <TableCell 
-                      sx={{ 
-                        py: 1, 
-                        color: '#221f20', 
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
                         fontWeight: 600,
                         width: { xs: '30%', sm: '20%' },
                         minWidth: '120px',
@@ -391,7 +389,9 @@ const CampaignDetailContent = ({ campaign }) => {
                 <TableBody>
                   <TableRow>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>Campaign Start Date</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{dayjs(campaign?.campaignBrief?.startDate).format('ddd, DD MMM YYYY')}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                      {dayjs(campaign?.campaignBrief?.startDate).format('ddd, DD MMM YYYY')}
+                    </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>-</TableCell>
                   </TableRow>
                   {campaign?.campaignTimeline
@@ -399,14 +399,20 @@ const CampaignDetailContent = ({ campaign }) => {
                     .map((timeline) => (
                       <TableRow key={timeline?.id}>
                         <TableCell sx={{ whiteSpace: 'nowrap' }}>{timeline?.name}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{dayjs(timeline.startDate).format('ddd, DD MMM YYYY')}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{dayjs(timeline.endDate).format('ddd, DD MMM YYYY')}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                          {dayjs(timeline.startDate).format('ddd, DD MMM YYYY')}
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                          {dayjs(timeline.endDate).format('ddd, DD MMM YYYY')}
+                        </TableCell>
                       </TableRow>
                     ))}
                   <TableRow>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>Campaign End Date</TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>-</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{dayjs(campaign?.campaignBrief?.endDate).format('ddd, DD MMM YYYY')}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                      {dayjs(campaign?.campaignBrief?.endDate).format('ddd, DD MMM YYYY')}
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -442,7 +448,10 @@ const CampaignDetailContent = ({ campaign }) => {
                   sx={{ py: 0.75 }}
                 >
                   <Avatar src={elem.admin.user.photoURL} sx={{ width: 34, height: 34 }} />
-                  <Typography variant="body2" sx={{ flex: 1, fontSize: '0.85rem', fontWeight: 600 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ flex: 1, fontSize: '0.85rem', fontWeight: 600 }}
+                  >
                     {elem.admin.user.name}
                   </Typography>
                   <Box
@@ -538,8 +547,8 @@ const CampaignDetailContent = ({ campaign }) => {
                 sx={{
                   height: '1px',
                   bgcolor: '#e0e0e0',
-                  mx: -0.4,  // margin left and right
-                  my: 1,  // margin top and bottom
+                  mx: -0.4, // margin left and right
+                  my: 1, // margin top and bottom
                 }}
               />
 
@@ -550,9 +559,9 @@ const CampaignDetailContent = ({ campaign }) => {
                   label: 'Website',
                   value: campaign?.company?.website,
                   isLink: true,
-                  href: campaign?.company?.website?.startsWith('http') 
-                    ? campaign?.company?.website 
-                    : `https://${campaign?.company?.website}`
+                  href: campaign?.company?.website?.startsWith('http')
+                    ? campaign?.company?.website
+                    : `https://${campaign?.company?.website}`,
                 },
                 { label: 'Instagram', value: campaign?.company?.instagram },
                 { label: 'TikTok', value: campaign?.company?.tiktok },
@@ -593,7 +602,7 @@ const CampaignDetailContent = ({ campaign }) => {
           {/* Agreement Form Box */}
           <Box sx={BoxStyle}>
             <Box className="header">
-              <img 
+              <img
                 src="/assets/icons/overview/agreementFormIcon.svg"
                 alt="Agreement Form"
                 style={{
@@ -613,7 +622,7 @@ const CampaignDetailContent = ({ campaign }) => {
                 AGREEMENT FORM
               </Typography>
             </Box>
-            
+
             <Box sx={{ textAlign: 'center' }}>
               <Button
                 onClick={display.onTrue}
@@ -769,4 +778,3 @@ CampaignDetailContent.propTypes = {
 };
 
 export default CampaignDetailContent;
-

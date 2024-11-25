@@ -4,9 +4,9 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState } from 'react';
 import { ClimbingBoxLoader } from 'react-spinners';
-import { alpha } from '@mui/material/styles';
 
 import { LoadingButton } from '@mui/lab';
+import { alpha } from '@mui/material/styles';
 import {
   Box,
   Chip,
@@ -22,7 +22,6 @@ import {
   DialogContent,
   DialogActions,
   InputAdornment,
-  DialogContentText,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
-import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
 import {
@@ -10,17 +10,16 @@ import {
   Stack,
   Button,
   Dialog,
+  Avatar,
   TableRow,
   TableCell,
   TableHead,
   TableBody,
   IconButton,
+  Typography,
   DialogTitle,
-  ListItemText,
   DialogContent,
   TableContainer,
-  Avatar,
-  Typography,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -29,7 +28,6 @@ import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 
@@ -61,15 +59,15 @@ const CampaignAgreements = ({ campaign }) => {
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
 
-  const pendingCount = data?.filter(item => !item.isSent).length || 0;
-  const sentCount = data?.filter(item => item.isSent).length || 0;
+  const pendingCount = data?.filter((item) => !item.isSent).length || 0;
+  const sentCount = data?.filter((item) => item.isSent).length || 0;
 
   const filteredData = useMemo(() => {
     if (selectedFilter === 'pending') {
-      return data?.filter(item => !item.isSent);
+      return data?.filter((item) => !item.isSent);
     }
     if (selectedFilter === 'sent') {
-      return data?.filter(item => item.isSent);
+      return data?.filter((item) => item.isSent);
     }
     return data;
   }, [data, selectedFilter]);
@@ -100,13 +98,9 @@ const CampaignAgreements = ({ campaign }) => {
 
   return (
     <Box sx={{ overflowX: 'auto' }}>
-      <Stack 
-        direction={{ xs: 'column', md: 'row' }} 
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
           spacing={1}
           sx={{ width: { xs: '100%', md: 'auto' } }}
         >
@@ -123,7 +117,7 @@ const CampaignAgreements = ({ campaign }) => {
               fontSize: '0.85rem',
               fontWeight: 600,
               textTransform: 'none',
-              ...(selectedFilter === 'all' 
+              ...(selectedFilter === 'all'
                 ? {
                     color: '#203ff5',
                     bgcolor: 'rgba(32, 63, 245, 0.04)',
@@ -131,7 +125,7 @@ const CampaignAgreements = ({ campaign }) => {
                 : {
                     color: '#637381',
                     bgcolor: 'transparent',
-                }),
+                  }),
               '&:hover': {
                 bgcolor: selectedFilter === 'all' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
@@ -153,7 +147,7 @@ const CampaignAgreements = ({ campaign }) => {
               fontSize: '0.85rem',
               fontWeight: 600,
               textTransform: 'none',
-              ...(selectedFilter === 'pending' 
+              ...(selectedFilter === 'pending'
                 ? {
                     color: '#203ff5',
                     bgcolor: 'rgba(32, 63, 245, 0.04)',
@@ -161,7 +155,7 @@ const CampaignAgreements = ({ campaign }) => {
                 : {
                     color: '#637381',
                     bgcolor: 'transparent',
-                }),
+                  }),
               '&:hover': {
                 bgcolor: selectedFilter === 'pending' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
@@ -183,7 +177,7 @@ const CampaignAgreements = ({ campaign }) => {
               fontSize: '0.85rem',
               fontWeight: 600,
               textTransform: 'none',
-              ...(selectedFilter === 'sent' 
+              ...(selectedFilter === 'sent'
                 ? {
                     color: '#203ff5',
                     bgcolor: 'rgba(32, 63, 245, 0.04)',
@@ -191,7 +185,7 @@ const CampaignAgreements = ({ campaign }) => {
                 : {
                     color: '#637381',
                     bgcolor: 'transparent',
-                }),
+                  }),
               '&:hover': {
                 bgcolor: selectedFilter === 'sent' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
@@ -202,24 +196,24 @@ const CampaignAgreements = ({ campaign }) => {
         </Stack>
       </Stack>
 
-      <TableContainer 
-        sx={{ 
+      <TableContainer
+        sx={{
           width: '100%',
-          minWidth: { xs: '100%', sm: 800 }, 
+          minWidth: { xs: '100%', sm: 800 },
           position: 'relative',
           bgcolor: 'transparent',
           borderBottom: '1px solid',
           borderColor: 'divider',
         }}
       >
-        <Table size={smUp ? "medium" : "small"}>
+        <Table size={smUp ? 'medium' : 'small'}>
           <TableHead>
             <TableRow>
-              <TableCell 
-                sx={{ 
-                  py: { xs: 0.5, sm: 1 }, 
+              <TableCell
+                sx={{
+                  py: { xs: 0.5, sm: 1 },
                   px: { xs: 1, sm: 2 },
-                  color: '#221f20', 
+                  color: '#221f20',
                   fontWeight: 600,
                   width: 270,
                   borderRadius: '10px 0 0 10px',
@@ -230,23 +224,23 @@ const CampaignAgreements = ({ campaign }) => {
                 Creator
               </TableCell>
               {smUp && (
-                <TableCell 
-                  sx={{ 
-                    py: 1, 
-                    color: '#221f20', 
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
                     fontWeight: 600,
                     width: 270,
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  Creator's Email
+                  Creator&apos;s Email
                 </TableCell>
               )}
-              <TableCell 
-                sx={{ 
-                  py: 1, 
-                  color: '#221f20', 
+              <TableCell
+                sx={{
+                  py: 1,
+                  color: '#221f20',
                   fontWeight: 600,
                   width: 170,
                   bgcolor: '#f5f5f5',
@@ -255,10 +249,10 @@ const CampaignAgreements = ({ campaign }) => {
               >
                 Issue Date
               </TableCell>
-              <TableCell 
-                sx={{ 
-                  py: 1, 
-                  color: '#221f20', 
+              <TableCell
+                sx={{
+                  py: 1,
+                  color: '#221f20',
                   fontWeight: 600,
                   width: 100,
                   bgcolor: '#f5f5f5',
@@ -267,10 +261,10 @@ const CampaignAgreements = ({ campaign }) => {
               >
                 Status
               </TableCell>
-              <TableCell 
-                sx={{ 
-                  py: 1, 
-                  color: '#221f20', 
+              <TableCell
+                sx={{
+                  py: 1,
+                  color: '#221f20',
                   fontWeight: 600,
                   width: 100,
                   bgcolor: '#f5f5f5',
@@ -279,10 +273,10 @@ const CampaignAgreements = ({ campaign }) => {
               >
                 Price
               </TableCell>
-              <TableCell 
-                sx={{ 
-                  py: 1, 
-                  color: '#221f20', 
+              <TableCell
+                sx={{
+                  py: 1,
+                  color: '#221f20',
                   fontWeight: 600,
                   width: 80,
                   borderRadius: '0 10px 10px 0',
@@ -297,20 +291,17 @@ const CampaignAgreements = ({ campaign }) => {
           <TableBody>
             {!isLoading &&
               filteredData?.map((item) => {
+                // eslint-disable-next-line no-restricted-globals
                 const isAmountValid = !isNaN(parseFloat(item?.amount?.toString()));
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
-                      <Stack 
-                        direction="row" 
-                        alignItems="center" 
-                        spacing={{ xs: 1, sm: 2 }}
-                      >
-                        <Avatar 
-                          src={item?.user?.photoURL} 
+                      <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
+                        <Avatar
+                          src={item?.user?.photoURL}
                           alt={item?.user?.name}
-                          sx={{ 
-                            width: { xs: 32, sm: 40 }, 
+                          sx={{
+                            width: { xs: 32, sm: 40 },
                             height: { xs: 32, sm: 40 },
                             border: '2px solid',
                             borderColor: 'background.paper',
@@ -320,36 +311,29 @@ const CampaignAgreements = ({ campaign }) => {
                           {item?.user?.name?.charAt(0).toUpperCase()}
                         </Avatar>
                         <Stack spacing={0.5}>
-                          <Typography variant="body2">
-                            {item?.user?.name}
-                          </Typography>
+                          <Typography variant="body2">{item?.user?.name}</Typography>
                           {!smUp && (
-                            <Typography 
-                              variant="caption" 
-                              sx={{ color: 'text.secondary' }}
-                            >
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                               {item?.user?.email}
                             </Typography>
                           )}
                         </Stack>
                       </Stack>
                     </TableCell>
-                    {smUp && (
-                      <TableCell>{item?.user?.email}</TableCell>
-                    )}
+                    {smUp && <TableCell>{item?.user?.email}</TableCell>}
                     <TableCell>
                       <Stack spacing={0.5} alignItems="start">
-                        <Typography 
+                        <Typography
                           variant="body2"
-                          sx={{ 
+                          sx={{
                             fontSize: '0.875rem',
                           }}
                         >
                           {dayjs(item?.updatedAt).format('LL')}
                         </Typography>
-                        <Typography 
+                        <Typography
                           variant="body2"
-                          sx={{ 
+                          sx={{
                             color: '#8e8e93',
                             display: 'block',
                             fontSize: '0.875rem',
@@ -361,9 +345,9 @@ const CampaignAgreements = ({ campaign }) => {
                       </Stack>
                     </TableCell>
                     <TableCell>
-                      <Typography 
+                      <Typography
                         variant="body2"
-                        sx={{ 
+                        sx={{
                           textTransform: 'uppercase',
                           fontWeight: 700,
                           display: 'inline-block',
@@ -374,7 +358,7 @@ const CampaignAgreements = ({ campaign }) => {
                           borderBottom: '3px solid',
                           borderRadius: 0.8,
                           bgcolor: 'white',
-                          ...(item?.isSent 
+                          ...(item?.isSent
                             ? {
                                 color: '#2e6b55',
                                 borderColor: '#2e6b55',
@@ -382,8 +366,7 @@ const CampaignAgreements = ({ campaign }) => {
                             : {
                                 color: '#f19f39',
                                 borderColor: '#f19f39',
-                              }
-                          ),
+                              }),
                         }}
                       >
                         {item?.isSent ? 'Sent' : 'Pending'}

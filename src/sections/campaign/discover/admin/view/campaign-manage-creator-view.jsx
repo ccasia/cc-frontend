@@ -6,20 +6,14 @@ import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
-  Tab,
-  Card,
-  Tabs,
-  Grid,
   Stack,
   alpha,
   Button,
   Avatar,
   Container,
   Typography,
-  tabsClasses,
-  ListItemText,
-  CircularProgress,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -30,9 +24,6 @@ import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoiceByCreatorAndCampaign from 'src/hooks/use-get-invoice-creator-camp';
 
-import { _userAbout } from 'src/_mock';
-import { bgGradient } from 'src/theme/css';
-import { countries } from 'src/assets/data';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -40,7 +31,6 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import InvoicePDF from 'src/sections/invoice/invoice-pdf';
 
-import OverView from '../creator-stuff/overview';
 import Submissions from '../creator-stuff/submissions';
 import TimelineCreator from '../creator-stuff/timeline/view/page';
 import LogisticView from '../creator-stuff/logistics/view/logistic-view';
@@ -145,7 +135,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                     opacity: currentTab === tab.value ? 1 : 0.5,
                   },
                 },
-                mr: 2,
+                // mr: 2,
               }}
             >
               {tab.label}
@@ -179,10 +169,10 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
   }, [socket, mutate]);
 
   return (
-    <Container 
+    <Container
       maxWidth="xl"
-      sx={{ 
-        px: { xs: 2, sm: 5 }
+      sx={{
+        px: { xs: 2, sm: 5 },
       }}
     >
       <Button
@@ -235,7 +225,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                 {data?.user?.name?.charAt(0).toUpperCase()}
               </Avatar>
 
-              <Typography 
+              <Typography
                 variant="h4"
                 sx={{
                   fontFamily: 'Instrument Serif',
@@ -263,8 +253,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
 
               <Stack direction="row" spacing={1}>
                 {data?.user?.creator?.instagram && (
-                  <IconButton 
-                    component="a" 
+                  <IconButton
+                    component="a"
                     href={`https://instagram.com/${data?.user?.creator?.instagram}`}
                     target="_blank"
                     sx={{
@@ -379,26 +369,26 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                       {
                         label: 'Pronouns',
                         value: data?.user?.creator?.pronounce,
-                        fallback: 'Not specified'
+                        fallback: 'Not specified',
                       },
                       {
                         label: 'Email',
                         value: data?.user?.email,
-                        fallback: 'Not specified'
+                        fallback: 'Not specified',
                       },
                       {
                         label: 'Phone',
                         value: data?.user.phoneNumber,
-                        fallback: 'Not specified'
+                        fallback: 'Not specified',
                       },
                       {
                         label: 'Location',
                         value: data?.user?.creator?.country || data?.user?.country,
-                        fallback: 'Not specified'
+                        fallback: 'Not specified',
                       },
                       {
                         label: 'Interests',
-                        value: data?.user?.creator?.interests?.map(interest => (
+                        value: data?.user?.creator?.interests?.map((interest) => (
                           <Box
                             key={interest.name}
                             component="span"
@@ -420,20 +410,24 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                             {interest.name}
                           </Box>
                         )),
-                        fallback: 'Not specified'
-                      }
+                        fallback: 'Not specified',
+                      },
                     ].map((item) => (
                       <Stack key={item.label} spacing={1}>
-                        <Typography variant="subtitle2" color="#8e8e93" sx={{ fontWeight: 600, mt: -0.5 }}>
+                        <Typography
+                          variant="subtitle2"
+                          color="#8e8e93"
+                          sx={{ fontWeight: 600, mt: -0.5 }}
+                        >
                           {item.label}
                         </Typography>
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
+                        <Typography
+                          variant="body2"
+                          sx={{
                             wordBreak: 'break-word',
                             display: item.label === 'Interests' ? 'flex' : 'block',
                             flexWrap: 'wrap',
-                            gap: 0.5
+                            gap: 0.5,
                           }}
                         >
                           {item.value || item.fallback}

@@ -7,34 +7,30 @@ import {
   Stack,
   Table,
   Button,
-  Drawer,
-  TextField,
+  Avatar,
   TableRow,
+  TextField,
   TableBody,
   TableCell,
   TableHead,
-  IconButton,
+  Typography,
   InputAdornment,
   TableContainer,
-  Avatar,
-  Typography,
 } from '@mui/material';
 
-import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import Iconify from 'src/components/iconify';
-import EmptyContent from 'src/components/empty-content/empty-content';
 import Scrollbar from 'src/components/scrollbar';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
 import PitchModal from '../pitch-modal';
 import MediaKitModal from '../media-kit-modal';
 
 const TABLE_HEAD = [
   { id: 'creator', label: 'Creator', width: 300 },
-  { id: 'email', label: 'Creator\'s Email', width: 350 },
+  { id: 'email', label: "Creator's Email", width: 350 },
   { id: 'submitDate', label: 'Pitch Submitted', width: 120 },
   { id: 'format', label: 'Pitch Format', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
@@ -49,34 +45,31 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
   const mediaKit = useBoolean();
   const theme = useTheme();
 
-  const undecidedCount = pitches?.filter(pitch => pitch.status === 'undecided').length || 0;
-  const approvedCount = pitches?.filter(pitch => pitch.status === 'approved').length || 0;
+  const undecidedCount = pitches?.filter((pitch) => pitch.status === 'undecided').length || 0;
+  const approvedCount = pitches?.filter((pitch) => pitch.status === 'approved').length || 0;
 
-  const filteredPitches = useMemo(
-    () => {
-      let filtered = pitches;
-      
-      // Apply status filter
-      if (selectedFilter === 'undecided') {
-        filtered = filtered?.filter(pitch => pitch.status === 'undecided');
-      } else if (selectedFilter === 'approved') {
-        filtered = filtered?.filter(pitch => pitch.status === 'approved');
-      }
+  const filteredPitches = useMemo(() => {
+    let filtered = pitches;
 
-      // Apply search filter
-      if (search) {
-        filtered = filtered?.filter((elem) => 
-          elem.user.name.toLowerCase().includes(search.toLowerCase())
-        );
-      }
+    // Apply status filter
+    if (selectedFilter === 'undecided') {
+      filtered = filtered?.filter((pitch) => pitch.status === 'undecided');
+    } else if (selectedFilter === 'approved') {
+      filtered = filtered?.filter((pitch) => pitch.status === 'approved');
+    }
 
-      return filtered;
-    },
-    [pitches, selectedFilter, search]
-  );
+    // Apply search filter
+    if (search) {
+      filtered = filtered?.filter((elem) =>
+        elem.user.name.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [pitches, selectedFilter, search]);
 
   const handleViewPitch = (pitch) => {
-    const completePitch = pitches.find(p => p.id === pitch.id);
+    const completePitch = pitches.find((p) => p.id === pitch.id);
     setSelectedPitch(completePitch);
     setOpenPitchModal(true);
   };
@@ -87,10 +80,8 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
 
   const handlePitchUpdate = (updatedPitch) => {
     // Update the pitch in the local state
-    const updatedPitches = pitches.map((p) => 
-      p.id === updatedPitch.id ? updatedPitch : p
-    );
-    
+    const updatedPitches = pitches.map((p) => (p.id === updatedPitch.id ? updatedPitch : p));
+
     // Call the parent's onUpdate if it exists
     if (onUpdate) {
       onUpdate(updatedPitches);
@@ -101,15 +92,15 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
 
   return pitches?.length > 0 ? (
     <>
-      <Stack 
-        direction={{ xs: 'column', md: 'row' }} 
-        alignItems={{ xs: 'stretch', md: 'center' }} 
-        justifyContent="space-between" 
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        justifyContent="space-between"
         spacing={2}
         sx={{ mb: 2 }}
       >
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
           spacing={1}
           sx={{ width: { xs: '100%', md: 'auto' } }}
         >
@@ -126,7 +117,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
               fontSize: '0.85rem',
               fontWeight: 600,
               textTransform: 'none',
-              ...(selectedFilter === 'all' 
+              ...(selectedFilter === 'all'
                 ? {
                     color: '#203ff5',
                     bgcolor: 'rgba(32, 63, 245, 0.04)',
@@ -134,7 +125,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                 : {
                     color: '#637381',
                     bgcolor: 'transparent',
-                }),
+                  }),
               '&:hover': {
                 bgcolor: selectedFilter === 'all' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
@@ -156,7 +147,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
               fontSize: '0.85rem',
               fontWeight: 600,
               textTransform: 'none',
-              ...(selectedFilter === 'undecided' 
+              ...(selectedFilter === 'undecided'
                 ? {
                     color: '#203ff5',
                     bgcolor: 'rgba(32, 63, 245, 0.04)',
@@ -164,7 +155,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                 : {
                     color: '#637381',
                     bgcolor: 'transparent',
-                }),
+                  }),
               '&:hover': {
                 bgcolor: selectedFilter === 'undecided' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
@@ -186,7 +177,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
               fontSize: '0.85rem',
               fontWeight: 600,
               textTransform: 'none',
-              ...(selectedFilter === 'approved' 
+              ...(selectedFilter === 'approved'
                 ? {
                     color: '#203ff5',
                     bgcolor: 'rgba(32, 63, 245, 0.04)',
@@ -194,7 +185,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                 : {
                     color: '#637381',
                     bgcolor: 'transparent',
-                }),
+                  }),
               '&:hover': {
                 bgcolor: selectedFilter === 'approved' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
               },
@@ -223,7 +214,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
               },
             },
           }}
-          sx={{ 
+          sx={{
             width: { xs: '100%', md: 260 },
             '& .MuiOutlinedInput-root': {
               height: '42px',
@@ -237,9 +228,9 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
 
       <Box>
         <Scrollbar>
-          <TableContainer 
-            sx={{ 
-              minWidth: 800, 
+          <TableContainer
+            sx={{
+              minWidth: 800,
               position: 'relative',
               bgcolor: 'transparent',
               borderBottom: '1px solid',
@@ -249,10 +240,10 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell 
-                    sx={{ 
-                      py: 1, 
-                      color: '#221f20', 
+                  <TableCell
+                    sx={{
+                      py: 1,
+                      color: '#221f20',
                       fontWeight: 600,
                       width: 300,
                       borderRadius: '10px 0 0 10px',
@@ -262,22 +253,22 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                   >
                     Creator
                   </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      py: 1, 
-                      color: '#221f20', 
+                  <TableCell
+                    sx={{
+                      py: 1,
+                      color: '#221f20',
                       fontWeight: 600,
                       width: 350,
                       bgcolor: '#f5f5f5',
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    Creator's Email
+                    Creator&apos;s Email
                   </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      py: 1, 
-                      color: '#221f20', 
+                  <TableCell
+                    sx={{
+                      py: 1,
+                      color: '#221f20',
                       fontWeight: 600,
                       width: 120,
                       bgcolor: '#f5f5f5',
@@ -286,10 +277,10 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                   >
                     Pitch Submitted
                   </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      py: 1, 
-                      color: '#221f20', 
+                  <TableCell
+                    sx={{
+                      py: 1,
+                      color: '#221f20',
                       fontWeight: 600,
                       width: 100,
                       bgcolor: '#f5f5f5',
@@ -298,10 +289,10 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                   >
                     Pitch Format
                   </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      py: 1, 
-                      color: '#221f20', 
+                  <TableCell
+                    sx={{
+                      py: 1,
+                      color: '#221f20',
                       fontWeight: 600,
                       width: 100,
                       bgcolor: '#f5f5f5',
@@ -310,10 +301,10 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                   >
                     Status
                   </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      py: 1, 
-                      color: '#221f20', 
+                  <TableCell
+                    sx={{
+                      py: 1,
+                      color: '#221f20',
                       fontWeight: 600,
                       width: 80,
                       borderRadius: '0 10px 10px 0',
@@ -328,8 +319,8 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
 
               <TableBody>
                 {filteredPitches?.map((pitch) => (
-                  <TableRow 
-                    key={pitch.id} 
+                  <TableRow
+                    key={pitch.id}
                     hover
                     sx={{
                       bgcolor: 'transparent',
@@ -341,30 +332,28 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                   >
                     <TableCell>
                       <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar 
-                          src={pitch.user?.photoURL} 
+                        <Avatar
+                          src={pitch.user?.photoURL}
                           alt={pitch.user?.name}
-                          sx={{ 
-                            width: 40, 
+                          sx={{
+                            width: 40,
                             height: 40,
                             border: '2px solid',
                             borderColor: 'background.paper',
-                            boxShadow: (theme) => theme.customShadows.z8,
+                            boxShadow: theme.customShadows.z8,
                           }}
                         >
                           {pitch.user?.name?.charAt(0).toUpperCase()}
                         </Avatar>
-                        <Typography variant="body2">
-                          {pitch.user?.name}
-                        </Typography>
+                        <Typography variant="body2">{pitch.user?.name}</Typography>
                       </Stack>
                     </TableCell>
                     <TableCell>{pitch.user?.email}</TableCell>
                     <TableCell>
                       <Stack spacing={0.5} alignItems="start">
-                        <Typography 
+                        <Typography
                           variant="body2"
-                          sx={{ 
+                          sx={{
                             fontSize: '0.875rem',
                           }}
                         >
@@ -374,9 +363,9 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                             year: 'numeric',
                           })}
                         </Typography>
-                        <Typography 
+                        <Typography
                           variant="body2"
-                          sx={{ 
+                          sx={{
                             color: '#8e8e93',
                             display: 'block',
                             fontSize: '0.875rem',
@@ -395,9 +384,9 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                       {pitch.type === 'text' ? 'Letter' : pitch.type}
                     </TableCell>
                     <TableCell>
-                      <Typography 
+                      <Typography
                         variant="body2"
-                        sx={{ 
+                        sx={{
                           textTransform: 'uppercase',
                           fontWeight: 700,
                           display: 'inline-block',

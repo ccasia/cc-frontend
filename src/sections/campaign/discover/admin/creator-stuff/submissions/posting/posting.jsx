@@ -12,21 +12,19 @@ import {
   Paper,
   Button,
   Dialog,
+  Avatar,
   TextField,
   Typography,
   DialogTitle,
   DialogContent,
   DialogActions,
   DialogContentText,
-  Avatar,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import Label from 'src/components/label';
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
