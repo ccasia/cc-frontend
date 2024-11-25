@@ -40,9 +40,20 @@ const Agreement = ({ campaign, submission, creator }) => {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const [numPages, setNumPages] = useState(null);
   const loading = useBoolean();
-  // eslint-disable-next-line no-shadow
+  const [pdfError, setPdfError] = useState(false);
+
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+    setPdfError(false);
+  };
+
+  const onDocumentLoadError = () => {
+    setPdfError(true);
+  };
+
+  const handlePdfRefresh = () => {
+    setPdfError(false);
+    setNumPages(null);
   };
 
   const modal = useBoolean();
@@ -73,7 +84,7 @@ const Agreement = ({ campaign, submission, creator }) => {
       );
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar('Faileddsadsa', {
+      enqueueSnackbar('Failed', {
         variant: 'error',
       });
     } finally {
@@ -142,75 +153,129 @@ const Agreement = ({ campaign, submission, creator }) => {
   return (
     <Box>
       <Grid container spacing={2}>
-        <Grid item xs={12} md={3}>
-          <Box component={Paper} p={1.5} position="sticky" top={80}>
-            <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-              <Stack spacing={1} justifyContent="space-evenly">
-                <Typography variant="subtitle2">Due Date</Typography>
-                <Typography variant="subtitle2">Status</Typography>
-                <Typography variant="subtitle2">Date Submission</Typography>
-                <Typography variant="subtitle2">Review on</Typography>
-              </Stack>
-              <Stack spacing={1} justifyContent="space-evenly">
-                <Typography variant="subtitle2" color="text.secondary">
-                  {dayjs(submission?.dueDate).format('ddd LL')}
-                </Typography>
-                <Label>{submission?.status}</Label>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {submission?.submissionDate
-                    ? dayjs(submission?.submissionDate).format('ddd LL')
-                    : '-'}
-                </Typography>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {submission?.isReview
-                    ? dayjs(submission?.updatedAt).format('ddd LL')
-                    : 'Pending Review'}
-                </Typography>
-              </Stack>
-            </Box>
-          </Box>
-        </Grid>
-        <Grid item xs={12} md={9}>
+        <Grid item xs={12}>
           {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No submission" />}
           {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
             <Box component={Paper} p={1.5}>
               <>
-                <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
-                  <Document
-                    file={submission.content}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                    // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
-                  >
-                    {Array.from(new Array(numPages), (el, index) => (
-                      <div key={index} style={{ marginBottom: '0px' }}>
-                        <Page
-                          key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
-                          pageNumber={index + 1}
-                          scale={isSmallScreen ? 0.7 : 1.5}
-                          renderAnnotationLayer={false}
-                          renderTextLayer={false}
-                          style={{ overflow: 'scroll' }}
-                        />
-                      </div>
-                    ))}
-                  </Document>
-                </Box>
-                {/* <iframe
-                  src={submission?.content}
-                  style={{
-                    borderRadius: 10,
+                <Stack direction="row" spacing={3} sx={{ mb: 3, mt: -2 }}>
+                  <Stack spacing={0.5}>
+                    <Stack direction="row" spacing={0.5}>
+                      <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                        Date Submitted:
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                        {submission?.submissionDate
+                          ? dayjs(submission?.submissionDate).format('ddd, D MMM YYYY')
+                          : '-'}
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction="row" spacing={0.5}>
+                      <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                        Reviewed On:
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                        {submission?.isReview
+                          ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
+                          : 'Pending Review'}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Stack>
+
+                <Box 
+                  sx={{ 
                     width: '100%',
-                    height: 900,
+                    height: '600px',
+                    mt: 1,
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    overflow: 'auto',
+                    bgcolor: 'background.neutral',
+                    '& .react-pdf__Document': {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    }
                   }}
-                  title="AgreementForm"
-                /> */}
+                >
+                  {pdfError ? (
+                    <Stack
+                      spacing={2}
+                      alignItems="center"
+                      justifyContent="center"
+                      sx={{ height: '100%' }}
+                    >
+                      <Typography color="error">Failed to load PDF</Typography>
+                      <Button
+                        startIcon={<Iconify icon="mdi:refresh" />}
+                        onClick={handlePdfRefresh}
+                        variant="contained"
+                      >
+                        Refresh PDF
+                      </Button>
+                    </Stack>
+                  ) : (
+                    <Document
+                      file={submission.content}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      onLoadError={onDocumentLoadError}
+                    >
+                      {Array.from(new Array(numPages), (el, index) => (
+                        <Box 
+                          key={index} 
+                          sx={{
+                            p: 2,
+                            width: '100%',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            '&:not(:last-child)': {
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
+                            }
+                          }}
+                        >
+                          <Page
+                            key={`page-${index + 1}`}
+                            pageNumber={index + 1}
+                            scale={isSmallScreen ? 0.7 : 1}
+                            renderAnnotationLayer={false}
+                            renderTextLayer={false}
+                          />
+                        </Box>
+                      ))}
+                    </Document>
+                  )}
+                </Box>
+
                 {submission.status === 'PENDING_REVIEW' && (
                   <Stack direction="row" gap={1.5} justifyContent="end" mt={2}>
                     <Button
                       onClick={modal.onTrue}
                       size="small"
-                      variant="outlined"
-                      startIcon={<Iconify icon="mingcute:close-fill" />}
+                      variant="contained"
+                      startIcon={<Iconify icon="solar:close-circle-bold" />}
+                      sx={{
+                        bgcolor: 'white',
+                        border: 1,
+                        borderRadius: 0.8,
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        color: 'error.main',
+                        '&:hover': {
+                          bgcolor: 'error.lighter',
+                          borderColor: '#e7e7e7',
+                        },
+                        textTransform: 'none',
+                        px: 2.5,
+                        py: 1.2,
+                        fontSize: '0.875rem',
+                        minWidth: '80px',
+                        height: '45px',
+                      }}
                     >
                       Reject
                     </Button>
@@ -218,9 +283,24 @@ const Agreement = ({ campaign, submission, creator }) => {
                       size="small"
                       onClick={() => handleClick()}
                       variant="contained"
-                      color="success"
-                      startIcon={<Iconify icon="hugeicons:tick-03" />}
+                      startIcon={<Iconify icon="solar:check-circle-bold" />}
                       loading={loading.value}
+                      sx={{
+                        bgcolor: '#2e6c56',
+                        color: 'white',
+                        borderBottom: 3,
+                        borderBottomColor: '#1a3b2f',
+                        borderRadius: 0.8,
+                        px: 2.5,
+                        py: 1.2,
+                        '&:hover': {
+                          bgcolor: '#2e6c56',
+                          opacity: 0.9,
+                        },
+                        fontSize: '0.875rem',
+                        minWidth: '80px',
+                        height: '45px',
+                      }}
                     >
                       Approve
                     </LoadingButton>
@@ -233,16 +313,6 @@ const Agreement = ({ campaign, submission, creator }) => {
           {submission?.status === 'CHANGES_REQUIRED' && (
             <EmptyContent title="Waiting for another submission" />
           )}
-          {/* {submission?.isReview && submission?.status === 'APPROVED' && (
-            <Box component={Paper} position="relative" p={10}>
-              <Stack gap={1.5} alignItems="center">
-                <Image src="/assets/approve.svg" width={200} />
-                <Typography variant="subtitle2" color="text.secondary" sx={{ textAlign: 'center' }}>
-                  Agreement has been reviewed
-                </Typography>
-              </Stack>
-            </Box>
-          )} */}
         </Grid>
       </Grid>
     </Box>

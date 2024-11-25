@@ -106,24 +106,15 @@ const CampaignLogistics = ({ campaign }) => {
                 <TableCell sx={{ padding: '20px 4px', color: 'black' }}>
                   <Box
                     sx={{
-                      border: { xs: '1px solid #203ff5', md: '1.5px solid #203ff5' },
-                      borderBottom: { xs: '4px solid #203ff5', md: '4px solid #203ff5' },
+                      display: 'inline-flex',
+                      px: 2,
+                      py: 0.5,
                       borderRadius: 1,
-                      p: { xs: 1, md: 0.8 },
-                      mb: { xs: 1, md: 1 },
-                      width: 'fit-content',
-                      display: 'flex',
-                      flexDirection: { xs: 'column', md: 'row' },
+                      bgcolor: 'primary.lighter',
+                      color: 'primary.main',
                     }}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: '#203ff5',
-                        fontWeight: 500,
-                        fontSize: { xs: '0.65rem', md: '0.75rem' },
-                      }}
-                    >
+                    <Typography variant="body2">
                       {statusMapping[logistic?.status] || logistic?.status}
                     </Typography>
                   </Box>

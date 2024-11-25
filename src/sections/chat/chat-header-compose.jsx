@@ -253,7 +253,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
                 <>
                   <Avatar
                     alt={otherUserName}
-                    src={otherUser.user.photoURL}
+                    src={otherUser?.user?.photoURL}
                     sx={{ width: 40, height: 40, mr: 1 }}
                   />
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>

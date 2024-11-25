@@ -4,206 +4,486 @@ import React, { useMemo, useState } from 'react';
 
 import {
   Box,
-  Grid,
-  Card,
   Stack,
+  Table,
   Button,
   Drawer,
   TextField,
+  TableRow,
+  TableBody,
+  TableCell,
+  TableHead,
   IconButton,
   InputAdornment,
+  TableContainer,
+  Avatar,
+  Typography,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
+import Scrollbar from 'src/components/scrollbar';
 
-import UserCard from './user-card';
+import PitchModal from '../pitch-modal';
 import MediaKitModal from '../media-kit-modal';
-import CampaignDetailPitchContent from './campaign-detail-pitch-content';
 
-const CampaignDetailPitch = ({ pitches, timelines }) => {
-  const smUp = useResponsive('up', 'sm');
+const TABLE_HEAD = [
+  { id: 'creator', label: 'Creator', width: 300 },
+  { id: 'email', label: 'Creator\'s Email', width: 350 },
+  { id: 'submitDate', label: 'Pitch Submitted', width: 120 },
+  { id: 'format', label: 'Pitch Format', width: 100 },
+  { id: 'status', label: 'Status', width: 100 },
+  { id: 'actions', label: 'Actions', width: 80 },
+];
+
+const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
-  const [search, setSearch] = useState();
-  const filterBar = useBoolean();
+  const [openPitchModal, setOpenPitchModal] = useState(false);
   const mediaKit = useBoolean();
-  const router = useRouter();
   const theme = useTheme();
-  const drawer = useBoolean();
+
+  const undecidedCount = pitches?.filter(pitch => pitch.status === 'undecided').length || 0;
+  const approvedCount = pitches?.filter(pitch => pitch.status === 'approved').length || 0;
 
   const filteredPitches = useMemo(
-    () =>
-      search
-        ? pitches?.filter((elem) => elem.user.name.toLowerCase().includes(search.toLowerCase()))
-        : pitches,
-    [pitches, search]
+    () => {
+      let filtered = pitches;
+      
+      // Apply status filter
+      if (selectedFilter === 'undecided') {
+        filtered = filtered?.filter(pitch => pitch.status === 'undecided');
+      } else if (selectedFilter === 'approved') {
+        filtered = filtered?.filter(pitch => pitch.status === 'approved');
+      }
+
+      // Apply search filter
+      if (search) {
+        filtered = filtered?.filter((elem) => 
+          elem.user.name.toLowerCase().includes(search.toLowerCase())
+        );
+      }
+
+      return filtered;
+    },
+    [pitches, selectedFilter, search]
   );
 
-  const handleChange = (e) => {
-    setSearch(e.target.value);
-    setSelectedPitch(null);
+  const handleViewPitch = (pitch) => {
+    const completePitch = pitches.find(p => p.id === pitch.id);
+    setSelectedPitch(completePitch);
+    setOpenPitchModal(true);
   };
 
-  const notfound = search && filteredPitches.length < 1;
+  const handleClosePitchModal = () => {
+    setOpenPitchModal(false);
+  };
 
-  const renderFilterDrawer = (
-    <Drawer
-      anchor="right"
-      open={filterBar.value}
-      onClose={filterBar.onFalse}
-      slotProps={{
-        backdrop: { invisible: true },
-      }}
-      PaperProps={{
-        sx: { width: 280 },
-      }}
-    >
-      <h1>asdas</h1>
-    </Drawer>
-  );
+  const handlePitchUpdate = (updatedPitch) => {
+    // Update the pitch in the local state
+    const updatedPitches = pitches.map((p) => 
+      p.id === updatedPitch.id ? updatedPitch : p
+    );
+    
+    // Call the parent's onUpdate if it exists
+    if (onUpdate) {
+      onUpdate(updatedPitches);
+    }
+  };
+
+  const mdUp = useResponsive('up', 'md');
 
   return pitches?.length > 0 ? (
     <>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: 2,
-        }}
+      <Stack 
+        direction={{ xs: 'column', md: 'row' }} 
+        alignItems={{ xs: 'stretch', md: 'center' }} 
+        justifyContent="space-between" 
+        spacing={2}
+        sx={{ mb: 2 }}
       >
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={1}
+          sx={{ width: { xs: '100%', md: 'auto' } }}
+        >
+          <Button
+            fullWidth={!mdUp}
+            onClick={() => setSelectedFilter('all')}
+            sx={{
+              px: 1.5,
+              py: 2.5,
+              height: '42px',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              ...(selectedFilter === 'all' 
+                ? {
+                    color: '#203ff5',
+                    bgcolor: 'rgba(32, 63, 245, 0.04)',
+                  }
+                : {
+                    color: '#637381',
+                    bgcolor: 'transparent',
+                }),
+              '&:hover': {
+                bgcolor: selectedFilter === 'all' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+              },
+            }}
+          >
+            All
+          </Button>
+
+          <Button
+            fullWidth={!mdUp}
+            onClick={() => setSelectedFilter('undecided')}
+            sx={{
+              px: 1.5,
+              py: 2.5,
+              height: '42px',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              ...(selectedFilter === 'undecided' 
+                ? {
+                    color: '#203ff5',
+                    bgcolor: 'rgba(32, 63, 245, 0.04)',
+                  }
+                : {
+                    color: '#637381',
+                    bgcolor: 'transparent',
+                }),
+              '&:hover': {
+                bgcolor: selectedFilter === 'undecided' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+              },
+            }}
+          >
+            {`Undecided (${undecidedCount})`}
+          </Button>
+
+          <Button
+            fullWidth={!mdUp}
+            onClick={() => setSelectedFilter('approved')}
+            sx={{
+              px: 1.5,
+              py: 2.5,
+              height: '42px',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1,
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              ...(selectedFilter === 'approved' 
+                ? {
+                    color: '#203ff5',
+                    bgcolor: 'rgba(32, 63, 245, 0.04)',
+                  }
+                : {
+                    color: '#637381',
+                    bgcolor: 'transparent',
+                }),
+              '&:hover': {
+                bgcolor: selectedFilter === 'approved' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+              },
+            }}
+          >
+            {`Approved (${approvedCount})`}
+          </Button>
+        </Stack>
+
         <TextField
-          placeholder="Search by Name"
-          sx={{
-            width: 260,
-          }}
+          placeholder="Search by Creator Name"
           value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          fullWidth={!mdUp}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
                 <Iconify icon="material-symbols:search" />
               </InputAdornment>
             ),
+            sx: {
+              height: '42px',
+              '& input': {
+                py: 3,
+                height: '42px',
+              },
+            },
           }}
-          onChange={handleChange}
+          sx={{ 
+            width: { xs: '100%', md: 260 },
+            '& .MuiOutlinedInput-root': {
+              height: '42px',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              borderRadius: 1,
+            },
+          }}
         />
-        <Button onClick={filterBar.onTrue}>Filter</Button>
-      </Box>
-      {/* {renderOverview} */}
-      <Grid spacing={2} container>
-        {smUp && (
-          <Grid
-            item
-            xs={12}
-            sm={4}
-            sx={{
-              maxHeight: 490,
-              overflow: 'auto',
-              scrollbarWidth: 'thin',
-              scrollSnapType: 'y mandatory',
-              mt: 2,
+      </Stack>
+
+      <Box>
+        <Scrollbar>
+          <TableContainer 
+            sx={{ 
+              minWidth: 800, 
+              position: 'relative',
+              bgcolor: 'transparent',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
             }}
           >
-            {notfound ? (
-              <EmptyContent title="Not found" />
-            ) : (
-              <Stack gap={2}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell 
+                    sx={{ 
+                      py: 1, 
+                      color: '#221f20', 
+                      fontWeight: 600,
+                      width: 300,
+                      borderRadius: '10px 0 0 10px',
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Creator
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      py: 1, 
+                      color: '#221f20', 
+                      fontWeight: 600,
+                      width: 350,
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Creator's Email
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      py: 1, 
+                      color: '#221f20', 
+                      fontWeight: 600,
+                      width: 120,
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Pitch Submitted
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      py: 1, 
+                      color: '#221f20', 
+                      fontWeight: 600,
+                      width: 100,
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Pitch Format
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      py: 1, 
+                      color: '#221f20', 
+                      fontWeight: 600,
+                      width: 100,
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Status
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      py: 1, 
+                      color: '#221f20', 
+                      fontWeight: 600,
+                      width: 80,
+                      borderRadius: '0 10px 10px 0',
+                      bgcolor: '#f5f5f5',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {/* Actions */}
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
                 {filteredPitches?.map((pitch) => (
-                  <Box
-                    key={pitch?.id}
-                    onClick={() =>
-                      smUp
-                        ? setSelectedPitch(pitch)
-                        : router.push(paths.dashboard.campaign.pitch(pitch?.campaignId, pitch?.id))
-                    }
+                  <TableRow 
+                    key={pitch.id} 
+                    hover
                     sx={{
-                      scrollSnapAlign: 'start',
+                      bgcolor: 'transparent',
+                      '& td': {
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                      },
                     }}
                   >
-                    <UserCard creator={pitch} selectedPitch={selectedPitch} />
-                    <MediaKitModal
-                      open={mediaKit.value}
-                      handleClose={mediaKit.onFalse}
-                      creatorId={pitch?.user?.creator?.id}
-                    />
-                  </Box>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar 
+                          src={pitch.user?.photoURL} 
+                          alt={pitch.user?.name}
+                          sx={{ 
+                            width: 40, 
+                            height: 40,
+                            border: '2px solid',
+                            borderColor: 'background.paper',
+                            boxShadow: (theme) => theme.customShadows.z8,
+                          }}
+                        >
+                          {pitch.user?.name?.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Typography variant="body2">
+                          {pitch.user?.name}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>{pitch.user?.email}</TableCell>
+                    <TableCell>
+                      <Stack spacing={0.5} alignItems="start">
+                        <Typography 
+                          variant="body2"
+                          sx={{ 
+                            fontSize: '0.875rem',
+                          }}
+                        >
+                          {new Date(pitch.createdAt).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </Typography>
+                        <Typography 
+                          variant="body2"
+                          sx={{ 
+                            color: '#8e8e93',
+                            display: 'block',
+                            fontSize: '0.875rem',
+                            mt: '-2px',
+                          }}
+                        >
+                          {new Date(pitch.createdAt).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                          })}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell sx={{ textTransform: 'capitalize' }}>
+                      {pitch.type === 'text' ? 'Letter' : pitch.type}
+                    </TableCell>
+                    <TableCell>
+                      <Typography 
+                        variant="body2"
+                        sx={{ 
+                          textTransform: 'uppercase',
+                          fontWeight: 700,
+                          display: 'inline-block',
+                          px: 1.5,
+                          py: 0.5,
+                          fontSize: '0.75rem',
+                          border: '1px solid',
+                          borderBottom: '3px solid',
+                          borderRadius: 0.8,
+                          bgcolor: 'white',
+                          ...(pitch.status === 'pending' && {
+                            color: '#f19f39',
+                            borderColor: '#f19f39',
+                          }),
+                          ...(pitch.status === 'undecided' && {
+                            color: '#f19f39',
+                            borderColor: '#f19f39',
+                          }),
+                          ...(pitch.status === 'approved' && {
+                            color: '#2e6b55',
+                            borderColor: '#2e6b55',
+                          }),
+                          ...(pitch.status === 'rejected' && {
+                            color: '#ff4842',
+                            borderColor: '#ff4842',
+                          }),
+                        }}
+                      >
+                        {pitch.status || 'PENDING'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleViewPitch(pitch)}
+                        sx={{
+                          cursor: 'pointer',
+                          px: 1.5,
+                          py: 2,
+                          border: '1px solid #e7e7e7',
+                          borderBottom: '3px solid #e7e7e7',
+                          borderRadius: 1,
+                          color: '#203ff5',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          height: '28px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          textTransform: 'none',
+                          bgcolor: 'transparent',
+                          whiteSpace: 'nowrap',
+                          '&:hover': {
+                            bgcolor: 'rgba(32, 63, 245, 0.04)',
+                            border: '1px solid #e7e7e7',
+                            borderBottom: '3px solid #e7e7e7',
+                          },
+                        }}
+                      >
+                        View Pitch
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </Stack>
-            )}
-          </Grid>
-        )}
-        {!smUp && (
-          <>
-            <IconButton
-              sx={{
-                position: 'fixed',
-                left: 10,
-                top: '50%',
-                zIndex: 1111,
-              }}
-              onClick={() => {
-                drawer.onTrue();
-              }}
-            >
-              <Iconify
-                icon="mynaui:arrow-right-square"
-                width={30}
-                color={theme.palette.grey[400]}
-              />
-            </IconButton>
-            <Drawer
-              open={drawer.value}
-              onClose={() => {
-                drawer.onFalse();
-              }}
-              sx={{
-                minWidth: '80%',
-              }}
-              PaperProps={{
-                sx: { width: '80%' },
-              }}
-            >
-              <Stack gap={2} p={2}>
-                {filteredPitches?.map((pitch) => (
-                  <Box
-                    key={pitch?.id}
-                    onClick={() => {
-                      setSelectedPitch(pitch);
-                      drawer.onFalse();
-                    }}
-                  >
-                    <UserCard creator={pitch} selectedPitch={selectedPitch} />
-                    <MediaKitModal
-                      open={mediaKit.value}
-                      handleClose={mediaKit.onFalse}
-                      creatorId={pitch?.user?.creator?.id}
-                    />
-                  </Box>
-                ))}
-              </Stack>
-            </Drawer>
-          </>
-        )}
-        <Grid item xs={12} sm={8}>
-          <Box component={Card} p={2}>
-            {selectedPitch ? (
-              <CampaignDetailPitchContent data={selectedPitch} timelines={timelines} />
-            ) : (
-              <EmptyContent title="Select a pitch" />
-            )}
-          </Box>
-        </Grid>
-      </Grid>
-      {renderFilterDrawer}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Scrollbar>
+      </Box>
+
+      <PitchModal
+        pitch={selectedPitch}
+        open={openPitchModal}
+        onClose={handleClosePitchModal}
+        onUpdate={handlePitchUpdate}
+        campaign={campaign}
+      />
+
+      <MediaKitModal
+        open={mediaKit.value}
+        handleClose={mediaKit.onFalse}
+        creatorId={selectedPitch?.user?.creator?.id}
+      />
     </>
   ) : (
-    <EmptyContent title="No Pitch" filled />
+    <EmptyContent title="No Pitches" filled />
   );
 };
 
@@ -211,152 +491,7 @@ export default CampaignDetailPitch;
 
 CampaignDetailPitch.propTypes = {
   pitches: PropTypes.array,
-
   timelines: PropTypes.array,
+  campaign: PropTypes.object,
+  onUpdate: PropTypes.func,
 };
-
-// {/* <Card
-//   key={pitch?.id}
-//   sx={{
-//     p: 1.5,
-//   }}
-// >
-//   {/* {isShortlisted(pitch?.userId) && pitch?.status === 'accept' && (
-//                 <Chip
-//                   label="shortlisted"
-//                   size="small"
-//                   color="success"
-//                   sx={{
-//                     position: 'absolute',
-//                     bottom: 10,
-//                     right: 10,
-//                   }}
-//                 />
-//               )} */}
-
-//   {pitch?.status ? (
-//     <>
-//       {pitch?.status === 'accept' && (
-//         <Chip
-//           label="approved"
-//           size="small"
-//           color="success"
-//           sx={{
-//             position: 'absolute',
-//             bottom: 10,
-//             right: 10,
-//           }}
-//         />
-//       )}
-//       {pitch?.status === 'reject' && (
-//         <Chip
-//           label="rejected"
-//           size="small"
-//           color="error"
-//           sx={{
-//             position: 'absolute',
-//             bottom: 10,
-//             right: 10,
-//           }}
-//         />
-//       )}
-//       {pitch?.status === 'filtered' && (
-//         <Chip
-//           label="filtered"
-//           size="small"
-//           color="success"
-//           sx={{
-//             position: 'absolute',
-//             bottom: 10,
-//             right: 10,
-//           }}
-//         />
-//       )}
-//     </>
-//   ) : (
-//     <Chip
-//       label="Pending"
-//       size="small"
-//       color="warning"
-//       sx={{
-//         position: 'absolute',
-//         bottom: 10,
-//         right: 10,
-//       }}
-//     />
-//   )}
-
-//   <Tooltip title={`View ${pitch?.user?.name}`}>
-//     <IconButton
-//       sx={{
-//         position: ' absolute',
-//         top: 0,
-//         right: 0,
-//       }}
-//       onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}
-//       // onClick={() => {
-//       //   setOpen(true);
-//       //   setSelectedPitch(pitch);
-//       // }}
-//     >
-//       <Iconify icon="fluent:open-12-filled" width={16} />
-//     </IconButton>
-//   </Tooltip>
-//   <Stack direction="row" spacing={2}>
-//     <Image
-//       src="/test.jpeg"
-//       ratio="1/1"
-//       sx={{
-//         borderRadius: 1,
-//         width: 70,
-//       }}
-//     />
-//     <Stack spacing={1} alignItems="start">
-//       <ListItemText
-//         primary={pitch?.user?.name}
-//         secondary={`Pitch at ${dayjs(pitch?.createdAt).format('LL')}`}
-//         primaryTypographyProps={{
-//           typography: 'subtitle1',
-//         }}
-//       />
-//       <Stack direction="row" alignItems="center" spacing={1}>
-//         <Tooltip title={getFullPhoneNumber(pitch?.user?.country, pitch?.user?.phoneNumber)}>
-//           <IconButton
-//             size="small"
-//             color="success"
-//             sx={{
-//               borderRadius: 1,
-//               bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
-//               '&:hover': {
-//                 bgcolor: (theme) => alpha(theme.palette.success.main, 0.16),
-//               },
-//             }}
-//           >
-//             <Iconify icon="material-symbols:call" />
-//           </IconButton>
-//         </Tooltip>
-//         <Tooltip title="Media Kit">
-//           <IconButton
-//             size="small"
-//             color="info"
-//             sx={{
-//               borderRadius: 1,
-//               bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-//               '&:hover': {
-//                 bgcolor: (theme) => alpha(theme.palette.info.main, 0.16),
-//               },
-//             }}
-//             onClick={mediaKit.onTrue}
-//           >
-//             <Iconify icon="flowbite:profile-card-outline" width={15} />
-//           </IconButton>
-//         </Tooltip>
-//         {/* <Typography variant="caption">Type</Typography>
-//                   <Chip label={pitch?.type} size="small" color="secondary" /> */}
-//         {/* <Button onClick={() => router.push(paths.dashboard.campaign.pitch(pitch?.id))}>
-//                     View
-//                   </Button> */}
-//       </Stack>
-//     </Stack>
-//   </Stack>
-// </Card>; */}
