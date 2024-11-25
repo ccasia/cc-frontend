@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
-import { SparkLineChart } from '@mui/x-charts';
 import {
   Box,
   Card,
@@ -26,28 +27,76 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import EmptyContent from 'src/components/empty-content/empty-content';
+import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+import Iconify from 'src/components/iconify';
+import { useBoolean } from 'src/hooks/use-boolean';
+import PitchModal from './pitch-modal';
 
-const CampaignOverview = ({ campaign }) => {
+const BoxStyle = {
+  border: '1px solid #e0e0e0',
+  borderRadius: 2,
+  p: 3,
+  mt: -1,
+  mb: 3,
+  width: '100%',
+  '& .header': {
+    borderBottom: '1px solid #e0e0e0',
+    mx: -3,
+    mb: 1,
+    mt: -1.5,
+    pb: 1.5,
+    px: 1.8,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+  },
+};
+
+const cardStyle = {
+  boxShadow: 'none',
+  bgcolor: 'transparent',
+  mb: { xs: 1, sm: 2 },
+  '& .iconBox': {
+    width: { xs: 40, sm: 52 },
+    height: { xs: 40, sm: 52 },
+    minWidth: { xs: 40, sm: 52 },
+    minHeight: { xs: 40, sm: 52 },
+    display: 'flex',
+    borderRadius: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  '& .iconImage': {
+    width: { xs: 24, sm: 32 },
+    height: { xs: 24, sm: 32 },
+    minWidth: { xs: 24, sm: 32 },
+    minHeight: { xs: 24, sm: 32 },
+  }
+};
+
+const CampaignOverview = ({ campaign, onUpdate }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
+  const { enqueueSnackbar } = useSnackbar();
+  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(campaign?.id);
+  const [selectedPitch, setSelectedPitch] = useState(null);
+  const [openPitchModal, setOpenPitchModal] = useState(false);
+  const dialog = useBoolean();
+  const [localCampaign, setLocalCampaign] = useState(campaign);
 
-  const generateRandomNumbers = (count) => {
-    const randomNumbers = [];
-    // eslint-disable-next-line no-plusplus
-    for (let i = 0; i < count; i++) {
-      randomNumbers.push(Math.floor(Math.random() * 100)); // generates a random number between 0 and 99
-    }
-    return randomNumbers;
-  };
+  useEffect(() => {
+    setLocalCampaign(campaign);
+  }, [campaign]);
 
-  const handleChatClick = async (admin) => {
+  const handleChatClick = async (data) => {
     try {
       const response = await axiosInstance.get(endpoints.threads.getAll);
+
       const existingThread = response.data.find((thread) => {
         const userIdsInThread = thread.UserThread.map((userThread) => userThread.userId);
         return (
           userIdsInThread.includes(user.id) &&
-          userIdsInThread.includes(admin.user.id) &&
+          userIdsInThread.includes(data.user.id) &&
           !thread.isGroup
         );
       });
@@ -56,121 +105,291 @@ const CampaignOverview = ({ campaign }) => {
         navigate(`/dashboard/chat/thread/${existingThread.id}`);
       } else {
         const newThreadResponse = await axiosInstance.post(endpoints.threads.create, {
-          title: `Chat between ${user.name} & ${admin.user.name}`,
+          title: `Chat between ${user.name} & ${data.user.name}`,
           description: '',
-          userIds: [user.id, admin.user.id],
+          userIds: [user.id, data.user.id],
           isGroup: false,
         });
         navigate(`/dashboard/chat/thread/${newThreadResponse.data.id}`);
       }
     } catch (error) {
+      console.log(error)
       console.error('Error creating or finding chat thread:', error);
     }
   };
 
-  return (
-    <Grid container spacing={2}>
-      <Grid item xs={12} sm={6} md={3}>
-        <Zoom in>
-          <Box component={Card} p={3} flexGrow={1}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Stack gap={1}>
-                <Typography variant="subtitle2">Applied Creator</Typography>
-                <Typography variant="h4">{campaign?.pitch.length}</Typography>
-              </Stack>
-              <Box>
-                <SparkLineChart
-                  plotType="bar"
-                  data={generateRandomNumbers(7)}
-                  height={50}
-                  width={50}
-                />
-              </Box>
-            </Stack>
-          </Box>
-        </Zoom>
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <Zoom in>
-          <Box component={Card} p={3} flexGrow={1}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Stack gap={1}>
-                <Typography variant="subtitle2">Shortlisted Creator</Typography>
-                <Typography variant="h4">{campaign?.shortlisted?.length}</Typography>
-              </Stack>
-              <Box>
-                <SparkLineChart
-                  plotType="bar"
-                  data={generateRandomNumbers(7)}
-                  height={50}
-                  width={50}
-                />
-              </Box>
-            </Stack>
-          </Box>
-        </Zoom>
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <Zoom in>
-          <Box component={Card} p={3}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Stack gap={1}>
-                <Typography variant="subtitle2">Filtered Creator</Typography>
-                <Typography variant="h4">
-                  {campaign?.pitch.filter((i) => i.status === 'filtered').length}
-                </Typography>
-              </Stack>
-              <Box>
-                <SparkLineChart
-                  plotType="bar"
-                  data={generateRandomNumbers(7)}
-                  height={50}
-                  width={50}
-                />
-              </Box>
-            </Stack>
-          </Box>
-        </Zoom>
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <Zoom in>
-          <Box component={Card} p={3}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Stack gap={1}>
-                <Typography variant="subtitle2">Rejected Creator</Typography>
-                <Typography variant="h4">
-                  {campaign?.pitch.filter((i) => i.status === 'rejected').length}
-                </Typography>
-              </Stack>
+  const handleDecline = async (pitch) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
+        pitchId: pitch.id,
+        status: 'rejected'
+      });
+      
+      enqueueSnackbar(response?.data?.message || 'Pitch declined successfully');
+      
+      // Call onUpdate to refresh the data
+      if (onUpdate) {
+        onUpdate();
+      }
+      
+    } catch (error) {
+      console.error('Error declining pitch:', error);
+      enqueueSnackbar('error', { variant: 'error' });
+    }
+  };
 
-              <Box>
-                <SparkLineChart
-                  plotType="bar"
-                  data={generateRandomNumbers(7)}
-                  height={50}
-                  width={50}
-                />
-              </Box>
+  // const handleDeclineClick = (pitch) => {
+  //   setSelectedPitch(pitch);
+  //   dialog.onTrue();
+  // };
+
+  const handleConfirmDecline = async () => {
+    if (selectedPitch) {
+      await handleDecline(selectedPitch);
+      dialog.onFalse();
+      setSelectedPitch(null);
+    }
+  };
+
+  const handleViewPitch = (pitch) => {
+    const updatedPitch = localCampaign.pitch.find(p => p.id === pitch.id);
+    setSelectedPitch(updatedPitch);
+    setOpenPitchModal(true);
+  };
+
+  // const refreshData = async () => {
+  //   try {
+  //     const response = await axiosInstance.get(endpoints.campaign.get(campaignId));
+  //     setCampaign(response.data);
+  //     // If you have a separate pitches state, update that too
+  //     setPitches(response.data.pitches); // adjust according to your data structure
+  //   } catch (error) {
+  //     console.error('Error refreshing data:', error);
+  //   }
+  // };
+
+  const handlePitchUpdate = (updatedPitch) => {
+    if (onUpdate) {
+      onUpdate();
+    }
+    
+    setLocalCampaign(prev => ({
+      ...prev,
+      pitch: prev.pitch.map(p => 
+        p.id === updatedPitch.id 
+          ? { ...p, status: updatedPitch.status }
+          : p
+      )
+    }));
+  };
+
+  return (
+    <Grid container spacing={{ xs: 1, sm: 2 }}>
+      <Grid item xs={12} sm={6} md={3}>
+        <Zoom in>
+          <Box component={Card} p={3} flexGrow={1} sx={cardStyle}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Box
+                  className="iconBox"
+                  sx={{
+                    backgroundColor: '#203ff5',
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src="/assets/icons/overview/light_bulb.svg"
+                    className="iconImage"
+                  />
+                </Box>
+                <Stack gap={-1}>
+                  <Typography variant="subtitle2" sx={{ color: '#8E8E93' }}>CREATOR PITCHES</Typography>
+                  <Typography variant="h4">
+                    {localCampaign?.pitch?.filter(pitch => pitch.status === 'undecided')?.length || 0}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+          </Box>
+        </Zoom>
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
+        <Zoom in>
+          <Box component={Card} p={3} flexGrow={1} sx={cardStyle}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Box
+                  className="iconBox"
+                  sx={{
+                    backgroundColor: '#eb4a26',
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src="/assets/icons/overview/shortlisted_creators.svg"
+                    className="iconImage"
+                  />
+                </Box>
+                <Stack gap={-1}>
+                  <Typography variant="subtitle2" sx={{ color: '#8E8E93' }}>SHORTLISTED CREATORS</Typography>
+                  <Typography variant="h4">{localCampaign?.shortlisted?.length}</Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+          </Box>
+        </Zoom>
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
+        <Zoom in>
+          <Box component={Card} p={3} sx={cardStyle}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Box
+                  className="iconBox"
+                  sx={{
+                    backgroundColor: '#f7c945',
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src="/assets/icons/overview/pending_agreements.svg"
+                    className="iconImage"
+                  />
+                </Box>
+                <Stack gap={-1}>
+                  <Typography variant="subtitle2" sx={{ color: '#8E8E93' }}>PENDING AGREEMENTS</Typography>
+                  <Typography variant="h4">
+                    {localCampaign?.creatorAgreement?.filter(a => !a.isSent)?.length || 0}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+          </Box>
+        </Zoom>
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
+        <Zoom in>
+          <Box component={Card} p={3} sx={cardStyle}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Box
+                  className="iconBox"
+                  sx={{
+                    backgroundColor: '#2e6c56',
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src="/assets/icons/overview/invoices.svg"
+                    className="iconImage"
+                  />
+                </Box>
+                <Stack gap={-1}>
+                  <Typography variant="subtitle2" sx={{ color: '#8E8E93' }}>INVOICES</Typography>
+                  <Typography variant="h4">
+                    {campaignInvoices?.length || 0}
+                  </Typography>
+                </Stack>
+              </Stack>
             </Stack>
           </Box>
         </Zoom>
       </Grid>
       <Grid item xs={12} md={6}>
         <Zoom in>
-          <Box component={Card} p={3}>
-            <Stack gap={2}>
-              <Typography variant="subtitle2">Shortlisted Creators</Typography>
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Box
+                component="img"
+                src="/assets/icons/overview/lightBulb.svg"
+                sx={{
+                  width: 20,
+                  height: 20,
+                  color: '#203ff5',
+                }}
+              />
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1}}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  CREATOR PITCHES
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  ({localCampaign?.pitch?.filter(pitch => pitch.status === 'undecided')?.length || 0})
+                </Typography>
+              </Stack>
+            </Box>
 
-              {campaign?.shortlisted?.length ? (
-                campaign?.shortlisted.map((item, index) => (
-                  <Stack key={item.id} direction="row" alignItems="center" spacing={2}>
-                    <Label>{index + 1}</Label>
-                    <Avatar src={item.user.photoURL} />
-                    <Typography variant="subtitle2">{item.user.name}</Typography>
+            <Stack spacing={[1]}>
+              {localCampaign?.pitch?.length > 0 ? (
+                localCampaign?.pitch?.filter(pitch => pitch.status === 'undecided')?.map((pitch, index) => (
+                  <Stack
+                    key={pitch.id}
+                    direction="row"
+                    alignItems="center"
+                    spacing={2}
+                    sx={{ 
+                      pt: 2,
+                      pb: index !== localCampaign.pitch.filter(p => p.status === 'undecided').length - 1 ? 2 : 1,
+                      borderBottom: index !== localCampaign.pitch.filter(p => p.status === 'undecided').length - 1 ? '1px solid #e7e7e7' : 'none',
+                    }}
+                  >
+                    <Avatar 
+                      src={pitch.user?.photoURL} 
+                      sx={{ 
+                        width: 40, 
+                        height: 40,
+                        border: '2px solid',
+                        borderColor: 'background.paper',
+                      }}
+                    />
+                    <Stack sx={{ flex: 1 }}>
+                      <Typography variant="subtitle3" sx={{ fontWeight: 500 }}>
+                        {pitch.user?.name}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => handleViewPitch(pitch)}
+                        sx={{
+                          textTransform: 'none',
+                          minHeight: 42,
+                          minWidth: 100,
+                          bgcolor: '#3a3a3c',
+                          color: '#fff',
+                          borderBottom: '3px solid',
+                          borderBottomColor: '#202021',
+                          borderRadius: 1.15,
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          '&:hover': {
+                            bgcolor: '#3a3a3c',
+                          }
+                        }}
+                      >
+                        View Pitch
+                      </Button>
+                    </Stack>
                   </Stack>
                 ))
               ) : (
-                <EmptyContent title="You haven't shortlisted any creator yet" />
+                <Typography variant="caption" sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>
+                  No pitches received yet
+                </Typography>
               )}
             </Stack>
           </Box>
@@ -178,62 +397,132 @@ const CampaignOverview = ({ campaign }) => {
       </Grid>
       <Grid item xs={12} md={6}>
         <Zoom in>
-          <Box component={Card} p={3}>
-            <Stack gap={2}>
-              <Typography variant="subtitle2">Assigned Account Manager</Typography>
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Box
+                component="img"
+                src="/assets/icons/overview/group2People.svg"
+                sx={{
+                  width: 20,
+                  height: 20,
+                  color: '#203ff5',
+                }}
+              />
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  SHORTLISTED CREATORS
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  ({localCampaign?.shortlisted?.length || 0})
+                </Typography>
+              </Stack>
+            </Box>
 
-              <TableContainer sx={{ borderRadius: 2 }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Email</TableCell>
-                      <TableCell />
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {campaign?.campaignAdmin?.length &&
-                      campaign?.campaignAdmin?.map((elem) => (
-                        <TableRow key={elem?.id}>
-                          <TableCell>{elem?.admin?.user?.name}</TableCell>
-                          <TableCell>{elem?.admin?.user?.email}</TableCell>
-                          <TableCell>
-                            {user.id === elem?.admin?.user?.id ? (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                disabled
-                                sx={{
-                                  color: 'text.disabled',
-                                  borderColor: 'action.disabledBackground',
-                                  bgcolor: 'action.disabledBackground',
-                                  '&.Mui-disabled': {
-                                    color: 'text.disabled',
-                                    borderColor: 'action.disabledBackground',
-                                  },
-                                }}
-                              >
-                                You
-                              </Button>
-                            ) : (
-                              <Button
-                                size="small"
-                                variant="contained"
-                                onClick={() => handleChatClick(elem.admin)}
-                              >
-                                Chat
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+            <Stack spacing={[1]}>
+              {localCampaign?.shortlisted?.length > 0 ? (
+                localCampaign?.shortlisted?.map((creator, index) => (
+                  <Stack
+                    key={creator.id}
+                    direction="row"
+                    alignItems="center"
+                    spacing={2}
+                    sx={{ 
+                      pt: 2,
+                      pb: index !== localCampaign.shortlisted.length - 1 ? 2 : 1,
+                      borderBottom: index !== localCampaign.shortlisted.length - 1 ? '1px solid #e7e7e7' : 'none',
+                    }}
+                  >
+                    <Avatar 
+                      src={creator.user?.photoURL} 
+                      sx={{ 
+                        width: 40, 
+                        height: 40,
+                        border: '2px solid',
+                        borderColor: 'background.paper',
+                      }}
+                    />
+                    <Stack sx={{ flex: 1 }}>
+                      <Typography variant="subtitle3" sx={{ fontWeight: 500 }}>
+                        {creator.user?.name}
+                      </Typography>
+                    </Stack>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => handleChatClick(creator)}
+                      sx={{
+                        textTransform: 'none',
+                        minHeight: 42,
+                        minWidth: 100,
+                        bgcolor: '#ffffff',
+                        color: '#203ff5',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: '3px solid',
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1.15,
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        '&:hover': {
+                          bgcolor: '#e7e7e7',
+                        }
+                      }}
+                    >
+                      Message
+                    </Button>
+                  </Stack>
+                ))
+              ) : (
+                <Typography variant="caption" sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}>
+                  No creators shortlisted yet
+                </Typography>
+              )}
             </Stack>
           </Box>
         </Zoom>
       </Grid>
+      <Dialog open={dialog.value} onClose={dialog.onFalse}>
+        <DialogTitle>Decline Pitch</DialogTitle>
+        <DialogContent>
+          Are you sure you want to decline this pitch? This action cannot be undone.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={dialog.onFalse} variant="outlined">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleConfirmDecline}
+            variant="contained"
+            color="error"
+          >
+            Decline
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <PitchModal 
+        pitch={selectedPitch}
+        open={openPitchModal}
+        onClose={() => {
+          setOpenPitchModal(false);
+          setSelectedPitch(null);
+        }}
+        campaign={localCampaign}
+        onUpdate={handlePitchUpdate}
+      />
     </Grid>
   );
 };

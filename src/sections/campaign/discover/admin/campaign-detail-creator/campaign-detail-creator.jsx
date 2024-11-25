@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState } from 'react';
 import { ClimbingBoxLoader } from 'react-spinners';
+import { alpha } from '@mui/material/styles';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -42,7 +43,7 @@ import UserCard from './user-card';
 import CampaignAgreementEdit from '../campaign-agreement-edit';
 
 const CampaignDetailCreator = ({ campaign }) => {
-  const [query, setQuery] = useState(null);
+  const [query, setQuery] = useState('');
   const { data, isLoading } = useGetAllCreators();
 
   const { data: agreements, isLoading: loadingAgreements } = useGetAgreements(campaign?.id);
@@ -70,26 +71,6 @@ const CampaignDetailCreator = ({ campaign }) => {
     formState: { isSubmitting },
   } = methods;
 
-  const filteredData = useMemo(
-    () =>
-      query
-        ? campaign?.shortlisted.filter((elem) =>
-            elem.user.name.toLowerCase().includes(query.toLowerCase())
-          )
-        : campaign?.shortlisted.sort((a, b) => {
-            if (a?.user?.name < b?.user?.name) {
-              return -1;
-            }
-            if (a?.user?.name > b?.user?.name) {
-              return 1;
-            }
-            return 0;
-          }),
-    [campaign, query]
-  );
-
-  const selectedCreator = watch('creator');
-
   const creatorsWithAgreements = useMemo(() => {
     if (!agreements || !campaign?.shortlisted) return campaign?.shortlisted;
 
@@ -107,6 +88,18 @@ const CampaignDetailCreator = ({ campaign }) => {
       agreementStatus: agreementsMap[creator.userId]?.status || 'NOT_SENT',
     }));
   }, [agreements, campaign]);
+
+  const filteredCreators = useMemo(
+    () =>
+      query
+        ? creatorsWithAgreements?.filter((elem) =>
+            elem?.user?.name?.toLowerCase().includes(query.toLowerCase())
+          )
+        : creatorsWithAgreements,
+    [creatorsWithAgreements, query]
+  );
+
+  const selectedCreator = watch('creator');
 
   const onSubmit = handleSubmit(async (value) => {
     try {
@@ -146,31 +139,31 @@ const CampaignDetailCreator = ({ campaign }) => {
     editDialog.onTrue();
   };
 
-  const renderConfirmationModal = !!selectedCreator.length && (
-    <Dialog open={confirmModal.value} onClose={confirmModal.onFalse}>
-      <DialogTitle>Confirm to close modal</DialogTitle>
-      <DialogContent>
-        <DialogContentText>All selected creators will be remove.</DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button size="small" onClick={confirmModal.onFalse} variant="outlined">
-          Cancel
-        </Button>
-        <Button
-          size="small"
-          onClick={() => {
-            confirmModal.onFalse();
-            modal.onFalse();
-            reset();
-          }}
-          variant="contained"
-          color="error"
-        >
-          Confirm
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+  // const renderConfirmationModal = !!selectedCreator.length && (
+  //   <Dialog open={confirmModal.value} onClose={confirmModal.onFalse}>
+  //     <DialogTitle>Confirm to close modal</DialogTitle>
+  //     <DialogContent>
+  //       <DialogContentText>All selected creators will be remove.</DialogContentText>
+  //     </DialogContent>
+  //     <DialogActions>
+  //       <Button size="small" onClick={confirmModal.onFalse} variant="outlined">
+  //         Cancel
+  //       </Button>
+  //       <Button
+  //         size="small"
+  //         onClick={() => {
+  //           confirmModal.onFalse();
+  //           modal.onFalse();
+  //           reset();
+  //         }}
+  //         variant="contained"
+  //         color="error"
+  //       >
+  //         Confirm
+  //       </Button>
+  //     </DialogActions>
+  //   </Dialog>
+  // );
 
   const renderShortlistFormModal = (
     <Dialog
@@ -180,9 +173,13 @@ const CampaignDetailCreator = ({ campaign }) => {
       fullWidth
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>List Creators</DialogTitle>
+        <DialogTitle>Shortlist Creators</DialogTitle>
+        <Box sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mt: -1, mb: 2 }} />
         <DialogContent>
           <Box py={1}>
+            <Box sx={{ mb: 2, fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem' }}>
+              Who would you like to shortlist?
+            </Box>
             {!isLoading && (
               <RHFAutocomplete
                 name="creator"
@@ -268,6 +265,20 @@ const CampaignDetailCreator = ({ campaign }) => {
               modal.onFalse();
               reset();
             }}
+            sx={{ 
+              bgcolor: '#ffffff',
+              border: '1px solid #e7e7e7',
+              borderBottom: '3px solid #e7e7e7',
+              height: 44,
+              color: '#203ff5',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              px: 3,
+              '&:hover': {
+                bgcolor: alpha('#636366', 0.08),
+                opacity: 0.9,
+              },
+            }}
           >
             Cancel
           </Button>
@@ -276,8 +287,28 @@ const CampaignDetailCreator = ({ campaign }) => {
             type="submit"
             disabled={!selectedCreator.length || isSubmitting}
             loading={loading.value}
+            sx={{ 
+              bgcolor: '#203ff5',
+              border: '1px solid #203ff5',
+              borderBottom: '3px solid #1933cc',
+              height: 44,
+              color: '#ffffff',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              px: 3,
+              '&:hover': {
+                bgcolor: '#1933cc',
+                opacity: 0.9,
+              },
+              '&:disabled': {
+                bgcolor: '#e7e7e7',
+                color: '#999999',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #d1d1d1',
+              }
+            }}
           >
-            Shortlist {selectedCreator.length > 0 && selectedCreator.length} creators
+            Shortlist {selectedCreator.length > 0 && selectedCreator.length} Creators
           </LoadingButton>
         </DialogActions>
       </FormProvider>
@@ -289,19 +320,33 @@ const CampaignDetailCreator = ({ campaign }) => {
       <Stack gap={3}>
         <Stack alignItems="center" direction="row" justifyContent="space-between">
           <TextField
-            placeholder="Search by Name"
-            sx={{
-              width: 260,
-            }}
+            placeholder="Search by Creator Name"
             value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            fullWidth={!smUp}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
                   <Iconify icon="material-symbols:search" />
                 </InputAdornment>
               ),
+              sx: {
+                height: '42px',
+                '& input': {
+                  py: 3,
+                  height: '42px',
+                },
+              },
             }}
-            onChange={(e) => setQuery(e.target.value)}
+            sx={{ 
+              width: { xs: '100%', md: 260 },
+              '& .MuiOutlinedInput-root': {
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+              },
+            }}
           />
           {!smUp ? (
             <IconButton
@@ -311,8 +356,25 @@ const CampaignDetailCreator = ({ campaign }) => {
               <Iconify icon="fluent:people-add-28-filled" width={18} />
             </IconButton>
           ) : (
-            <Button size="small" variant="contained" onClick={modal.onTrue}>
-              Shortlist new creator
+            <Button 
+              onClick={modal.onTrue}
+              sx={{ 
+                bgcolor: '#ffffff',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                height: 44,
+                color: '#203ff5',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                px: 3,
+                '&:hover': {
+                  bgcolor: alpha('#636366', 0.08),
+                  opacity: 0.9,
+                },
+              }}
+              startIcon={<Iconify icon="fluent:people-add-28-filled" width={16} />}
+            >
+              Shortlist New Creators
             </Button>
           )}
         </Stack>
@@ -321,13 +383,20 @@ const CampaignDetailCreator = ({ campaign }) => {
             <Box
               display="grid"
               gridTemplateColumns={{
-                xs: 'repear(1, 1fr)',
+                xs: 'repeat(1, 1fr)',
                 sm: 'repeat(2, 1fr)',
                 md: 'repeat(3, 1fr)',
               }}
               gap={2}
+              sx={{
+                width: '100%',
+                '& > *': {
+                  minWidth: 0,
+                  height: '100%'
+                }
+              }}
             >
-              {creatorsWithAgreements.map((elem) => (
+              {filteredCreators?.map((elem) => (
                 <UserCard
                   key={elem?.id}
                   creator={elem?.user}
@@ -338,8 +407,8 @@ const CampaignDetailCreator = ({ campaign }) => {
                 />
               ))}
             </Box>
-            {filteredData?.length < 1 && (
-              <EmptyContent title={`No Creator with name ${query} Found`} />
+            {filteredCreators?.length < 1 && (
+              <EmptyContent title={`No Creator with name "${query}" Found`} />
             )}
           </>
         ) : (
@@ -347,7 +416,7 @@ const CampaignDetailCreator = ({ campaign }) => {
         )}
       </Stack>
       {renderShortlistFormModal}
-      {renderConfirmationModal}
+      {/* {renderConfirmationModal} */}
       <CampaignAgreementEdit
         dialog={editDialog}
         agreement={selectedAgreement}
