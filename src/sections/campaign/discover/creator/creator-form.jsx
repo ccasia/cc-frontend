@@ -82,7 +82,7 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
         mt={2}
       >
         <RHFTextField name="fullName" label="Full name" />
-        <RHFTextField name="address" label="Address" multiline />
+        <RHFTextField name="address" label="Full Address" multiline />
         <RHFTextField name="icNumber" label="IC/Passport Number" />
       </Box>
       <Box sx={{ mt: 2 }}>
@@ -106,7 +106,7 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
       </Box>
 
       <Stack direction="row" alignItems="center" justifyContent="end" spacing={2} mt={3}>
-        <Button 
+        <Button
           size="medium"
           variant="outlined"
           onClick={backdrop?.onFalse}
@@ -122,7 +122,7 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
         >
           Later
         </Button>
-        <LoadingButton 
+        <LoadingButton
           size="medium"
           variant="contained"
           type="submit"

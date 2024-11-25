@@ -217,7 +217,7 @@ const Register = () => {
   const renderForm = (
     <Stack spacing={2.5}>
       {/* <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}> */}
-      <RHFTextField name="name" label="Name" />
+      <RHFTextField name="name" label="Full Name" />
       {/* </Stack> */}
 
       <RHFTextField name="email" label="Email address" />
