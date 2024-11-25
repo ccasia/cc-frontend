@@ -445,28 +445,52 @@ const CampaignDetailContent = ({ campaign }) => {
                   <Typography variant="body2" sx={{ flex: 1, fontSize: '0.85rem', fontWeight: 600 }}>
                     {elem.admin.user.name}
                   </Typography>
-                  <Box
-                    onClick={() => handleChatClick(elem.admin)}
-                    sx={{
-                      cursor: 'pointer',
-                      px: 1.5,
-                      py: 2,
-                      border: '1px solid #e7e7e7',
-                      borderBottom: '3px solid #e7e7e7',
-                      borderRadius: 1,
-                      color: '#203ff5',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      height: '28px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      '&:hover': {
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      },
-                    }}
-                  >
-                    Message
-                  </Box>
+                  {elem.admin.user.id === user.id ? (
+                    <Chip
+                      label="You"
+                      sx={{
+                        height: 32,
+                        minWidth: 85,
+                        bgcolor: '#f5f5f7',
+                        color: '#8e8e93',
+                        fontSize: '0.85rem',
+                        fontWeight: 650,
+                        border: '1px solid #e7e7e7',
+                        borderBottom: '3px solid #e7e7e7',
+                        borderRadius: 1,
+                        '& .MuiChip-label': {
+                          px: 1.5,
+                          py: 2,
+                        },
+                        '&:hover': {
+                          bgcolor: '#f5f5f7',
+                        },
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      onClick={() => handleChatClick(elem.admin)}
+                      sx={{
+                        cursor: 'pointer',
+                        px: 1.5,
+                        py: 2,
+                        border: '1px solid #e7e7e7',
+                        borderBottom: '3px solid #e7e7e7',
+                        borderRadius: 1,
+                        color: '#203ff5',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        '&:hover': {
+                          bgcolor: 'rgba(32, 63, 245, 0.04)',
+                        },
+                      }}
+                    >
+                      Message
+                    </Box>
+                  )}
                 </Stack>
               ))}
             </Stack>

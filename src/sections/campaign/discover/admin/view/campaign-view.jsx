@@ -329,17 +329,17 @@ const CampaignView = () => {
         open={open}
         onClose={handleClose}
         anchorOrigin={{
-          vertical: 'top',
+          vertical: 'bottom',
           horizontal: 'right',
         }}
         transformOrigin={{
-          vertical: 'bottom',
+          vertical: 'top',
           horizontal: 'right',
         }}
         PaperProps={{
           sx: {
-            mt: { xs: -1, sm: 1 },
-            mb: { xs: 1, sm: 0 },
+            mt: { xs: -8, sm: 0 },
+            mb: { xs: 1, sm: 1 },
             width: 200,
             bgcolor: 'white',
             border: '1px solid #e7e7e7',
@@ -360,7 +360,7 @@ const CampaignView = () => {
         }}
       >
         <MenuItem onClick={handleNewCampaign}>
-          <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2 }} />
+          <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2}} />
           New Campaign
         </MenuItem>
         {/* <MenuItem onClick={handleClose}>
