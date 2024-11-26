@@ -130,6 +130,7 @@ const CampaignFirstDraft = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [thumbnailUrl, setThumbnail] = useState(null);
   const inQueue = useBoolean();
 
   const methods = useForm({
@@ -213,13 +214,6 @@ const CampaignFirstDraft = ({
         preview: URL.createObjectURL(file),
       });
 
-      // try {
-      //   const thumbnail = await generateThumbnail(file);
-      //   newFile.thumbnail = thumbnail;
-      // } catch (error) {
-      //   console.error('Error generating thumbnail:', error);
-      // }
-
       setPreview(newFile.preview);
       localStorage.setItem('preview', newFile.preview);
       setUploadProgress(0);
@@ -229,7 +223,8 @@ const CampaignFirstDraft = ({
 
         try {
           const thumbnail = await generateThumbnail(file);
-          newFile.thumbnail = thumbnail;
+          // newFile.thumbnail = thumbnail;
+          setThumbnail(thumbnail);
         } catch (error) {
           console.error('Error generating thumbnail:', error);
         }
@@ -870,7 +865,8 @@ const CampaignFirstDraft = ({
                             >
                               <Box
                                 component="img"
-                                src={methods.getValues('draft').thumbnail}
+                                // src={methods.getValues('draft').thumbnail}
+                                src={!thumbnailUrl && thumbnailUrl}
                                 sx={{
                                   width: 64,
                                   height: 64,
