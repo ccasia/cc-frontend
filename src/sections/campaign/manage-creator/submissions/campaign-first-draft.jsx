@@ -227,15 +227,12 @@ const CampaignFirstDraft = ({
       if (file) {
         setValue('draft', newFile, { shouldValidate: true });
 
-        generateThumbnail(file)
-          .then((thumbnailData) => {
-            newFile.thumbnail = thumbnailData;
-          })
-          .catch((err) => {
-            console.error('Error generating thumbnail:', err);
-          });
-
-        setValue('draft', newFile, { shouldValidate: true });
+        try {
+          const thumbnail = await generateThumbnail(file);
+          newFile.thumbnail = thumbnail;
+        } catch (error) {
+          console.error('Error generating thumbnail:', error);
+        }
 
         // Simulate upload progress
         const interval = setInterval(() => {
