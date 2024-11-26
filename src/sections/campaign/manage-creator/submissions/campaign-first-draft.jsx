@@ -219,6 +219,7 @@ const CampaignFirstDraft = ({
         alert('STARTING...');
         const thumbnail = await generateThumbnail(newFile);
         newFile.thumbnail = thumbnail;
+        alert('HAAA...');
       } catch (error) {
         console.error('Error generating thumbnail:', error);
       }
