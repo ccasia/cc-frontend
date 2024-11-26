@@ -195,7 +195,6 @@ const CampaignFirstDraft = ({
 
           // Revoke object URL to free up memory
           URL.revokeObjectURL(video.src);
-          alert(canvas.toDataURL());
           // Return the Base64 image URL
           resolve(canvas.toDataURL());
         });
@@ -213,11 +212,10 @@ const CampaignFirstDraft = ({
 
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
-        thumbnail: '',
       });
 
       try {
-        const thumbnail = await generateThumbnail(file);
+        const thumbnail = await generateThumbnail(newFile);
         newFile.thumbnail = thumbnail;
       } catch (error) {
         console.error('Error generating thumbnail:', error);

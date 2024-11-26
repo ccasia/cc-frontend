@@ -224,7 +224,7 @@ const CampaignFinalDraft = ({
       });
 
       try {
-        const thumbnail = await generateThumbnail(file);
+        const thumbnail = await generateThumbnail(newFile);
         newFile.thumbnail = thumbnail;
       } catch (error) {
         console.error('Error generating thumbnail:', error);
