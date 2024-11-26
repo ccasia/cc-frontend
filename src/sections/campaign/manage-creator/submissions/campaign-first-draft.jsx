@@ -179,12 +179,14 @@ const CampaignFirstDraft = ({
         preview: URL.createObjectURL(file),
       });
 
-      try {
-        const thumbnail = await generateThumbnail(file);
-        newFile.thumbnail = thumbnail;
-      } catch (error) {
-        console.error('Error generating thumbnail:', error);
-      }
+      alert(JSON.stringify(newFile));
+
+      // try {
+      //   const thumbnail = await generateThumbnail(file);
+      //   newFile.thumbnail = thumbnail;
+      // } catch (error) {
+      //   console.error('Error generating thumbnail:', error);
+      // }
 
       setPreview(newFile.preview);
       localStorage.setItem('preview', newFile.preview);

@@ -144,8 +144,6 @@ const CampaignFinalDraft = ({
 
   const handleDrop = useCallback(
     async (acceptedFiles) => {
-      // CHANGE LATER
-      alert(JSON.stringify(acceptedFiles[0]));
       const file = acceptedFiles[0];
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
@@ -164,7 +162,6 @@ const CampaignFinalDraft = ({
 
       if (file) {
         setValue('draft', newFile, { shouldValidate: true });
-
         const interval = setInterval(() => {
           setUploadProgress((prev) => {
             if (prev >= 100) {
