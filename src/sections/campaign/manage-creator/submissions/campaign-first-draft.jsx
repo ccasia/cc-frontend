@@ -174,7 +174,6 @@ const CampaignFirstDraft = ({
   const handleDrop = useCallback(
     async (acceptedFiles) => {
       // CHANGE LATER
-      alert(JSON.stringify(acceptedFiles[0]));
       const file = acceptedFiles[0];
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
@@ -184,7 +183,6 @@ const CampaignFirstDraft = ({
         const thumbnail = await generateThumbnail(file);
         newFile.thumbnail = thumbnail;
       } catch (error) {
-        alert(JSON.stringify(error));
         console.error('Error generating thumbnail:', error);
       }
 
@@ -206,6 +204,8 @@ const CampaignFirstDraft = ({
             return prev + 10;
           });
         }, 200);
+      } else {
+        alert('NO FILE');
       }
     },
     [setValue]
