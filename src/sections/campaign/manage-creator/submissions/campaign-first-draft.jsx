@@ -235,6 +235,8 @@ const CampaignFirstDraft = ({
             console.error('Error generating thumbnail:', err);
           });
 
+        setValue('draft', newFile, { shouldValidate: true });
+
         // Simulate upload progress
         const interval = setInterval(() => {
           setUploadProgress((prev) => {

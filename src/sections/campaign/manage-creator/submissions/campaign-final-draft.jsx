@@ -234,8 +234,6 @@ const CampaignFinalDraft = ({
       setUploadProgress(0);
 
       if (file) {
-        setValue('draft', newFile, { shouldValidate: true });
-
         generateThumbnail(file)
           .then((thumbnailData) => {
             newFile.thumbnail = thumbnailData;
@@ -243,6 +241,8 @@ const CampaignFinalDraft = ({
           .catch((err) => {
             console.error('Error generating thumbnail:', err);
           });
+
+        setValue('draft', newFile, { shouldValidate: true });
 
         const interval = setInterval(() => {
           setUploadProgress((prev) => {
