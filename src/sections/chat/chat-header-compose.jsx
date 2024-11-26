@@ -122,10 +122,6 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'superadmin';
 
-  // if (error) {
-  //   return <Typography variant="h6">Error loading thread</Typography>;
-  // }
-
   useEffect(() => {
     async function fetchUsers() {
       try {
@@ -253,7 +249,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
                 <>
                   <Avatar
                     alt={otherUserName}
-                    src={otherUser.user.photoURL}
+                    src={otherUser?.user?.photoURL}
                     sx={{ width: 40, height: 40, mr: 1 }}
                   />
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>

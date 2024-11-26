@@ -75,7 +75,6 @@ const BrandLists = ({ dataFiltered }) => {
   return (
     <Card>
       <BrandsToolBar filters={filters} onFilters={handleFilters} />
-
       <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
         <TableSelectedAction
           dense={table.dense}
@@ -140,7 +139,6 @@ const BrandLists = ({ dataFiltered }) => {
           </Table>
         </Scrollbar>
       </TableContainer>
-
       <TablePaginationCustom
         count={filteredData.length}
         page={table.page}

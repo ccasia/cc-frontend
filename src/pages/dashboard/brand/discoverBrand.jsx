@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-import DiscoverBrand from 'src/sections/brand/discover/view';
+import DiscoverBrand from 'src/sections/brand/discover/view/view';
 
 export default function Page() {
   return (

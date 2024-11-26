@@ -32,6 +32,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useCreator } from 'src/hooks/zustands/useCreator';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { RECAPTCHA_SITEKEY } from 'src/config-global';
 
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
@@ -216,7 +217,7 @@ const Register = () => {
   const renderForm = (
     <Stack spacing={2.5}>
       {/* <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}> */}
-      <RHFTextField name="name" label="Name" />
+      <RHFTextField name="name" label="Full Name" />
       {/* </Stack> */}
 
       <RHFTextField name="email" label="Email address" />
@@ -364,7 +365,7 @@ const Register = () => {
 
           <Box sx={{ mt: 2, display: 'inline-flex' }}>
             <ReCAPTCHA
-              sitekey="6LeFk4YqAAAAAKARqfMS8L55Wpl63fHP5xrSq9hO"
+              sitekey={RECAPTCHA_SITEKEY}
               onChange={(token) => setValue('recaptcha', token)}
             />
           </Box>

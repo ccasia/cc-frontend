@@ -13,6 +13,37 @@ export const StyledEditor = styled(Box)(({ theme }) => ({
     ...theme.typography.body2,
     fontFamily: theme.typography.fontFamily,
   },
+
+  '& .ql-tooltip': {
+    position: 'fixed',
+    // top: '50%',
+    // left: '50%',
+    marginTop: '-5px',
+    marginLeft: 140,
+    // transform: 'translate(-50%, -50%)',
+    left: '50%',
+    zIndex: 1000,
+    backgroundColor: 'white',
+    padding: 2,
+    borderRadius: '10px',
+    boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+  },
+
+  // '& .ql-tooltip .ql-editing': {
+  //   display: 'flex',
+  //   justifyContent: 'space-between',
+  //   alignItems: 'center',
+  // },
+
+  // '& .ql-tooltip a': {
+  //   textDecoration: 'none',
+  //   padding: '4px 8px',
+  //   backgroundColor: '#007bff',
+  //   color: 'white',
+  //   borderRadius: '4px',
+  //   fontSize: '14px',
+  // },
+
   '& .ql-editor': {
     minHeight: 160,
     maxHeight: 640,
@@ -57,21 +88,27 @@ export const StyledEditorToolbar = styled('div')(({ theme }) => {
   return {
     '& .ql-snow.ql-toolbar button:hover .ql-fill, .ql-snow .ql-toolbar button:hover .ql-fill, .ql-snow.ql-toolbar button:focus .ql-fill, .ql-snow .ql-toolbar button:focus .ql-fill, .ql-snow.ql-toolbar button.ql-active .ql-fill, .ql-snow .ql-toolbar button.ql-active .ql-fill, .ql-snow.ql-toolbar .ql-picker-label:hover .ql-fill, .ql-snow .ql-toolbar .ql-picker-label:hover .ql-fill, .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-fill, .ql-snow .ql-toolbar .ql-picker-label.ql-active .ql-fill, .ql-snow.ql-toolbar .ql-picker-item:hover .ql-fill, .ql-snow .ql-toolbar .ql-picker-item:hover .ql-fill, .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-fill, .ql-snow .ql-toolbar .ql-picker-item.ql-selected .ql-fill, .ql-snow.ql-toolbar button:hover .ql-stroke.ql-fill, .ql-snow .ql-toolbar button:hover .ql-stroke.ql-fill, .ql-snow.ql-toolbar button:focus .ql-stroke.ql-fill, .ql-snow .ql-toolbar button:focus .ql-stroke.ql-fill, .ql-snow.ql-toolbar button.ql-active .ql-stroke.ql-fill, .ql-snow .ql-toolbar button.ql-active .ql-stroke.ql-fill, .ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke.ql-fill, .ql-snow .ql-toolbar .ql-picker-label:hover .ql-stroke.ql-fill, .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke.ql-fill, .ql-snow .ql-toolbar .ql-picker-label.ql-active .ql-stroke.ql-fill, .ql-snow.ql-toolbar .ql-picker-item:hover .ql-stroke.ql-fill, .ql-snow .ql-toolbar .ql-picker-item:hover .ql-stroke.ql-fill, .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-stroke.ql-fill, .ql-snow .ql-toolbar .ql-picker-item.ql-selected .ql-stroke.ql-fill':
       {
-        fill: theme.palette.primary.main,
+        // fill: theme.palette.primary.main,
+        fill: 'black',
+        border: '1px solid black',
       },
     '& .ql-snow.ql-toolbar button:hover, .ql-snow .ql-toolbar button:hover, .ql-snow.ql-toolbar button:focus, .ql-snow .ql-toolbar button:focus, .ql-snow.ql-toolbar button.ql-active, .ql-snow .ql-toolbar button.ql-active, .ql-snow.ql-toolbar .ql-picker-label:hover, .ql-snow .ql-toolbar .ql-picker-label:hover, .ql-snow.ql-toolbar .ql-picker-label.ql-active, .ql-snow .ql-toolbar .ql-picker-label.ql-active, .ql-snow.ql-toolbar .ql-picker-item:hover, .ql-snow .ql-toolbar .ql-picker-item:hover, .ql-snow.ql-toolbar .ql-picker-item.ql-selected, .ql-snow .ql-toolbar .ql-picker-item.ql-selected':
       {
         color: theme.palette.primary.main,
+        // border: '1px solid black',
+        backgroundColor: '#EBEBEB',
       },
     '& .ql-snow.ql-toolbar button:hover .ql-stroke, .ql-snow .ql-toolbar button:hover .ql-stroke, .ql-snow.ql-toolbar button:focus .ql-stroke, .ql-snow .ql-toolbar button:focus .ql-stroke, .ql-snow.ql-toolbar button.ql-active .ql-stroke, .ql-snow .ql-toolbar button.ql-active .ql-stroke, .ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke, .ql-snow .ql-toolbar .ql-picker-label:hover .ql-stroke, .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke, .ql-snow .ql-toolbar .ql-picker-label.ql-active .ql-stroke, .ql-snow.ql-toolbar .ql-picker-item:hover .ql-stroke, .ql-snow .ql-toolbar .ql-picker-item:hover .ql-stroke, .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-stroke, .ql-snow .ql-toolbar .ql-picker-item.ql-selected .ql-stroke, .ql-snow.ql-toolbar button:hover .ql-stroke-miter, .ql-snow .ql-toolbar button:hover .ql-stroke-miter, .ql-snow.ql-toolbar button:focus .ql-stroke-miter, .ql-snow .ql-toolbar button:focus .ql-stroke-miter, .ql-snow.ql-toolbar button.ql-active .ql-stroke-miter, .ql-snow .ql-toolbar button.ql-active .ql-stroke-miter, .ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke-miter, .ql-snow .ql-toolbar .ql-picker-label:hover .ql-stroke-miter, .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke-miter, .ql-snow .ql-toolbar .ql-picker-label.ql-active .ql-stroke-miter, .ql-snow.ql-toolbar .ql-picker-item:hover .ql-stroke-miter, .ql-snow .ql-toolbar .ql-picker-item:hover .ql-stroke-miter, .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-stroke-miter, .ql-snow .ql-toolbar .ql-picker-item.ql-selected .ql-stroke-miter':
       {
-        stroke: theme.palette.primary.main,
+        // stroke: theme.palette.primary.main,
+        stroke: 'black',
       },
     '& .ql-stroke': {
-      stroke: theme.palette.text.primary,
+      stroke: 'black',
+      // stroke: theme.palette.text.primary,
     },
     '& .ql-fill, .ql-stroke.ql-fill': {
-      fill: theme.palette.text.primary,
+      // fill: theme.palette.text.primary,
     },
     '& .ql-picker, .ql-picker-options, .ql-picker-item, .ql-picker-label, button': {
       '&:focus': { outline: 'none' },
@@ -79,15 +116,22 @@ export const StyledEditorToolbar = styled('div')(({ theme }) => {
     '& .ql-toolbar.ql-snow': {
       border: 'none',
       borderBottom: `solid 1px ${alpha(theme.palette.grey[500], 0.2)}`,
+      display: 'flex',
+      alignItems: 'center',
+      flexWrap: 'wrap',
       '& .ql-formats': {
         '&:not(:last-of-type)': {
           marginRight: theme.spacing(2),
         },
+        display: 'flex',
+        gap: '2px',
       },
 
       // Button
       '& button': {
         padding: 0,
+        // margin: '0px 2px 0px 2px',
+        // border: '1px solid #EBEBEB',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

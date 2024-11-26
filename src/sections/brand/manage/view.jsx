@@ -1,9 +1,7 @@
-import React from 'react'
+import React from 'react';
 
 function ManageBrand() {
-  return (
-    <div>ManageBrand</div>
-  )
+  return <div>ManageBrand</div>;
 }
 
-export default ManageBrand
+export default ManageBrand;

@@ -9,18 +9,9 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import Timeline from '@mui/lab/Timeline';
 import { LoadingButton } from '@mui/lab';
-import { blue } from '@mui/material/colors';
-import TimelineDot from '@mui/lab/TimelineDot';
-import TimelineItem from '@mui/lab/TimelineItem';
-import CloseIcon from '@mui/icons-material/Close';
-import CommentIcon from '@mui/icons-material/Comment';
-import TimelineContent from '@mui/lab/TimelineContent';
-import TimelineSeparator from '@mui/lab/TimelineSeparator';
-import TimelineConnector from '@mui/lab/TimelineConnector';
-import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
-import TimelineOppositeContent from '@mui/lab/TimelineOppositeContent';
+import Avatar from '@mui/material/Avatar';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
   Grid,
@@ -31,9 +22,7 @@ import {
   Button,
   Dialog,
   Typography,
-  IconButton,
   DialogTitle,
-  ListItemText,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -43,8 +32,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import Image from 'src/components/image';
-import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
@@ -65,29 +53,32 @@ const options_changes = [
   'Speling in subtitles',
 ];
 
+
 const FinalDraft = ({ campaign, submission, creator }) => {
   const [type, setType] = useState('approve');
   const approve = useBoolean();
   const request = useBoolean();
   const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
+    type: Yup.string(),
   });
 
-  const approveSchema = Yup.object().shape({
-    feedback: Yup.string().required('This field is required'),
+  const normalSchema = Yup.object().shape({
+    feedback: Yup.string().required('Comment is required.'),
     schedule: Yup.object().shape({
-      startDate: Yup.string().required('Start date is required.'),
-      endDate: Yup.string().required('End date is required.'),
+      startDate: Yup.string().required('Start Date is required.'),
+      endDate: Yup.string().required('End Date is required.'),
     }),
   });
 
   const methods = useForm({
-    resolver: type === 'request' ? yupResolver(requestSchema) : yupResolver(approveSchema),
+    resolver: type === 'request' ? yupResolver(requestSchema) : yupResolver(normalSchema),
     defaultValues: {
       feedback: 'Thank you for submitting',
-      type,
+      type: '',
       reasons: [],
       schedule: {
         startDate: null,
@@ -121,7 +112,6 @@ const FinalDraft = ({ campaign, submission, creator }) => {
       request.onFalse();
       reset();
     } catch (error) {
-      console.log(error);
       enqueueSnackbar('Error submitting', {
         variant: 'error',
       });
@@ -131,13 +121,95 @@ const FinalDraft = ({ campaign, submission, creator }) => {
   });
 
   const confirmationApproveModal = (open, onclose) => (
-    <Dialog open={open} onClose={onclose}>
-      <DialogTitle>Approve Confirmation</DialogTitle>
-      <DialogContent>
-        <DialogContentText>Are you sure you want to submit now?</DialogContentText>
+    <Dialog 
+      open={open} 
+      onClose={onclose}
+      PaperProps={{
+        sx: {
+          width: '100%',
+          maxWidth: '500px',
+          borderRadius: 2,
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        pb: 2
+      }}>
+        Approve Confirmation
+      </DialogTitle>
+      <DialogContent sx={{ mt: 2 }}>
+        <Stack spacing={2}>
+          <DialogContentText>
+            Are you sure you want to submit now?
+          </DialogContentText>
+
+          {/* Show schedule if set */}
+          {watch('schedule.startDate') && watch('schedule.endDate') && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Schedule:
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  bgcolor: 'grey.100',
+                  p: 1.5,
+                  borderRadius: 1
+                }}
+              >
+                {`${dayjs(watch('schedule.startDate')).format('MMM D, YYYY')} - ${dayjs(watch('schedule.endDate')).format('MMM D, YYYY')}`}
+              </Typography>
+            </Box>
+          )}
+
+          {/* Show feedback comment */}
+          {watch('feedback') && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Feedback:
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  bgcolor: 'grey.100',
+                  p: 1.5,
+                  borderRadius: 1,
+                  maxHeight: '100px',
+                  overflowY: 'auto'
+                }}
+              >
+                {watch('feedback')}
+              </Typography>
+            </Box>
+          )}
+        </Stack>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onclose} variant="outlined" size="small">
+      <DialogActions sx={{ p: 2.5, pt: 2 }}>
+        <Button
+          onClick={onclose}
+          size="small"
+          sx={{
+            bgcolor: 'white',
+            border: 1,
+            borderRadius: 0.8,
+            borderColor: '#e7e7e7',
+            borderBottom: 3,
+            borderBottomColor: '#e7e7e7',
+            color: 'text.primary',
+            '&:hover': {
+              bgcolor: '#f5f5f5',
+              borderColor: '#e7e7e7',
+            },
+            textTransform: 'none',
+            px: 2.5,
+            py: 1.2,
+            fontSize: '0.875rem',
+            minWidth: '80px',
+            height: '45px',
+          }}
+        >
           Cancel
         </Button>
         <LoadingButton
@@ -148,40 +220,156 @@ const FinalDraft = ({ campaign, submission, creator }) => {
           variant="contained"
           size="small"
           loading={isSubmitting}
+          sx={{
+            bgcolor: '#2e6c56',
+            color: 'white',
+            borderBottom: 3,
+            borderBottomColor: '#1a3b2f',
+            borderRadius: 0.8,
+            px: 2.5,
+            py: 1.2,
+            '&:hover': {
+              bgcolor: '#2e6c56',
+              opacity: 0.9,
+            },
+            fontSize: '0.875rem',
+            minWidth: '80px',
+            height: '45px',
+            textTransform: 'none',
+          }}
         >
-          Confirm
+          Submit
         </LoadingButton>
       </DialogActions>
     </Dialog>
   );
 
   const confirmationRequestModal = (open, onclose) => (
-    <Dialog open={open} onClose={onclose}>
-      <DialogTitle>Request Confirmation</DialogTitle>
-      <DialogContent>
-        <DialogContentText>Are you sure you want to submit now?</DialogContentText>
+    <Dialog 
+      open={open} 
+      onClose={onclose}
+      PaperProps={{
+        sx: {
+          width: '100%',
+          maxWidth: '500px',
+          borderRadius: 2,
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        pb: 2
+      }}>
+        Confirm Change Request
+      </DialogTitle>
+      <DialogContent sx={{ mt: 2 }}>
+        <Stack spacing={2}>
+          <DialogContentText>
+            Are you sure you want to submit this change request?
+          </DialogContentText>
+
+          {/* Show selected reasons if any */}
+          {watch('reasons')?.length > 0 && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Selected Reasons:
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {watch('reasons').map((reason, index) => (
+                  <Chip
+                    key={index}
+                    label={reason}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {/* Show feedback comment */}
+          {watch('feedback') && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Feedback:
+              </Typography>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  bgcolor: 'grey.100',
+                  p: 1.5,
+                  borderRadius: 1,
+                  maxHeight: '100px',
+                  overflowY: 'auto'
+                }}
+              >
+                {watch('feedback')}
+              </Typography>
+            </Box>
+          )}
+        </Stack>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onclose} variant="outlined" size="small">
+      <DialogActions sx={{ p: 2.5, pt: 2 }}>
+        <Button
+          onClick={onclose}
+          size="small"
+          sx={{
+            bgcolor: 'white',
+            border: 1,
+            borderRadius: 0.8,
+            borderColor: '#e7e7e7',
+            borderBottom: 3,
+            borderBottomColor: '#e7e7e7',
+            color: 'text.primary',
+            '&:hover': {
+              bgcolor: '#f5f5f5',
+              borderColor: '#e7e7e7',
+            },
+            textTransform: 'none',
+            px: 2.5,
+            py: 1.2,
+            fontSize: '0.875rem',
+            minWidth: '80px',
+            height: '45px',
+          }}
+        >
           Cancel
         </Button>
-        <LoadingButton
+        <LoadingButton 
+          variant="contained" 
+          size="small" 
           onClick={() => {
             setValue('type', 'request');
             onSubmit();
           }}
-          variant="contained"
-          size="small"
-          loading={isSubmitting}
+          sx={{
+            bgcolor: '#2e6c56',
+            color: 'white',
+            borderBottom: 3,
+            borderBottomColor: '#1a3b2f',
+            borderRadius: 0.8,
+            px: 2.5,
+            py: 1.2,
+            '&:hover': {
+              bgcolor: '#2e6c56',
+              opacity: 0.9,
+            },
+            fontSize: '0.875rem',
+            minWidth: '80px',
+            height: '45px',
+            textTransform: 'none',
+          }}
         >
-          Confirm
+          Submit
         </LoadingButton>
       </DialogActions>
     </Dialog>
   );
 
-  const handleOpenFeedbackModal = () => setOpenFeedbackModal(true);
-  const handleCloseFeedbackModal = () => setOpenFeedbackModal(false);
+  // const handleOpenFeedbackModal = () => setOpenFeedbackModal(true);
+  // const handleCloseFeedbackModal = () => setOpenFeedbackModal(false);
 
   // Sort feedback by date, most recent first
   const sortedFeedback = React.useMemo(() => {
@@ -194,40 +382,54 @@ const FinalDraft = ({ campaign, submission, creator }) => {
   return (
     <Box>
       <Grid container spacing={2}>
-        <Grid item xs={12} md={3}>
-          <Box component={Paper} p={1.5} sx={{ mb: { xs: 2, md: 0 } }}>
-            <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
-              <Stack spacing={1} justifyContent="space-evenly">
-                <Typography variant="subtitle2">Due Date</Typography>
-                <Typography variant="subtitle2">Status</Typography>
-                <Typography variant="subtitle2">Date Submission</Typography>
-                <Typography variant="subtitle2">Review on</Typography>
-              </Stack>
-              <Stack spacing={1} justifyContent="space-evenly">
-                <Typography variant="subtitle2" color="text.secondary">
-                  {dayjs(submission?.dueDate).format('ddd LL')}
-                </Typography>
-                <Label>{submission?.status}</Label>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {submission?.submissionDate
-                    ? dayjs(submission?.submissionDate).format('ddd LL')
-                    : '-'}
-                </Typography>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {submission?.isReview ? dayjs(submission?.updatedAt).format('ddd LL') : '-'}
-                </Typography>
-              </Stack>
-            </Box>
+        <Grid item xs={12}>
+          <Box component={Paper} p={{ xs: 1, sm: 1.5 }}>
+            <Stack 
+              direction={{ xs: 'column', sm: 'row' }} 
+              spacing={{ xs: 1, sm: 3 }} 
+              sx={{ mb: 3, mt: -2 }}
+            >
+              <Stack spacing={0.5}>
+                <Stack direction="row" spacing={0.5}>
+                  <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                    Date Submitted:
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                    {submission?.submissionDate
+                      ? dayjs(submission?.submissionDate).format('ddd, D MMM YYYY')
+                      : '-'}
+                  </Typography>
+                </Stack>
 
-            {/* New centered button for opening the modal */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Button onClick={handleOpenFeedbackModal} variant="outlined" size="small">
+                <Stack direction="row" spacing={0.5}>
+                  <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                    Reviewed On:
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                    {submission?.isReview
+                      ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
+                      : 'Pending Review'}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+
+            {/* Feedback History Button */}
+            {/* <Box sx={{ display: 'flex', mb: 2 }}>
+              <Button 
+                onClick={handleOpenFeedbackModal} 
+                variant="outlined" 
+                size="small"
+                sx={{
+                  boxShadow: 2,
+                }}
+              >
                 View Feedback History
               </Button>
-            </Box>
+            </Box> */}
 
-            {/* Feedback History Modal */}
-            <Modal
+            {/* Commented out feedback history modal */}
+            {/* <Modal
               open={openFeedbackModal}
               onClose={handleCloseFeedbackModal}
               aria-labelledby="feedback-history-modal"
@@ -343,267 +545,538 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                   )}
                 </Box>
               </Box>
-            </Modal>
-          </Box>
-        </Grid>
-        <Grid item xs={12} md={9}>
-          {submission?.status === 'NOT_STARTED' && <EmptyContent title="Not Started" />}
-          {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No Submission" />}
-          {(submission?.status === 'PENDING_REVIEW' ||
-            submission?.status === 'CHANGES_REQUIRED') && (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
-                  <Box
-                    component="video"
-                    autoPlay
-                    controls
+            </Modal> */}
+
+            {submission?.status === 'NOT_STARTED' && <EmptyContent title="Not Started" />}
+            {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No Submission" />}
+            {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Box 
+                    component={Paper} 
                     sx={{
-                      maxHeight: '50vh',
-                      maxWidth: '100%',
-                      width: 'auto',
-                      height: 'auto',
-                      borderRadius: 2,
-                      boxShadow: 3,
+                      p: { xs: 2, sm: 3 },
+                      mb: 2,
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'divider',
                     }}
                   >
-                    <source src={submission?.content} />
-                  </Box>
-                  {/* <video
-                  autoPlay
-                  style={{ width: '100%', borderRadius: 10, margin: 'auto' }}
-                  controls
-                >
-                  <source src={submission?.content} />
-                </video> */}
-                  <Box component={Paper} p={1.5} width={1}>
-                    <Typography variant="caption" color="text.secondary">
-                      Caption
-                    </Typography>
-                    <Typography variant="subtitle1">{submission?.caption}</Typography>
-                  </Box>
-                </Box>
+                    <Box display="flex" flexDirection="column" gap={2}>
+                      {/* User Profile Section */}
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar
+                          src={creator?.user?.photoURL}
+                          alt={creator?.user?.name}
+                          sx={{ 
+                            width: 40, 
+                            height: 40,
+                            border: '1px solid #e7e7e7'
+                          }}
+                        >
+                          {creator?.user?.name?.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Typography 
+                          variant="subtitle2"
+                          sx={{ 
+                            fontSize: '1.05rem',
+                            mt: -2.5
+                          }}
+                        >
+                          {creator?.user?.name}
+                        </Typography>
+                      </Stack>
 
-                {/* <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
-                  <video
-                    autoPlay
-                    style={{ width: '100%', height: 'auto', borderRadius: 10, margin: 'auto' }}
-                    controls
-                  >
-                    <source src={submission?.content} />
-                  </video>
-                </Box>
-                <Box component={Paper} p={1.5}>
-                  <Typography variant="caption" color="text.secondary">
-                    Caption
-                  </Typography>
-                  <Typography variant="subtitle1">{submission?.caption}</Typography>
-                </Box> */}
-              </Grid>
-              {submission?.status === 'CHANGES_REQUIRED' ? (
-                <Grid item xs={12}>
-                  <Box component={Paper} position="relative" p={10}>
-                    <Stack gap={1.5} alignItems="center">
-                      <Image src="/assets/pending.svg" width={200} />
-                      <ListItemText
-                        primary="Creator has been notified. Awaiting resubmission of the final draft."
-                        sx={{
-                          textAlign: 'center',
-                        }}
-                        primaryTypographyProps={{
-                          variant: 'subtitle2',
-                          // color: 'text.secondary',
-                        }}
-                        secondaryTypographyProps={{
-                          variant: 'caption',
-                        }}
-                      />
-                    </Stack>
-                  </Box>
-                </Grid>
-              ) : (
-                <Grid item xs={12}>
-                  <Box component={Paper} p={1.5}>
-                    {type === 'approve' && (
-                      <FormProvider methods={methods} onSubmit={onSubmit}>
-                        <Stack gap={1} mb={2}>
-                          <Typography variant="subtitle1" mb={1} mx={1}>
-                            Schedule This Post
+                      {/* Content Section */}
+                      <Box sx={{ pl: 7 }}> 
+
+                        {/* Description Section */}
+                        <Box sx={{ mt: -3.5 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontSize: '0.95rem',
+                              color: '#48484A'
+                            }}
+                          >
+                            Description: {submission?.caption}
                           </Typography>
-                          <Stack direction="row" gap={3}>
-                            <RHFDatePicker
-                              name="schedule.startDate"
-                              label="Start Date"
-                              minDate={dayjs()}
-                            />
-                            <RHFDatePicker
-                              name="schedule.endDate"
-                              label="End Date"
-                              minDate={dayjs(scheduleStartDate)}
-                            />
-                          </Stack>
-                        </Stack>
-                        <Typography variant="subtitle1" mb={1} mx={1}>
-                          Comment For Creator
-                        </Typography>
-                        <Stack gap={2}>
-                          <RHFTextField
-                            name="feedback"
-                            multiline
-                            minRows={5}
-                            placeholder="Comment"
-                          />
-                          <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              sx={{
-                                boxShadow: 2,
-                              }}
-                              onClick={() => {
-                                setType('request');
-                                setValue('type', 'request');
-                                setValue('feedback', '');
-                              }}
-                            >
-                              Request a change
-                            </Button>
-                            {/* <Typography
-                              component="a"
-                              onClick={() => {
-                                setType('request');
-                                setValue('type', 'request');
-                                setValue('feedback', '');
-                              }}
-                              sx={{
-                                color: (theme) => theme.palette.text.secondary,
-                                cursor: 'pointer',
-                                textDecoration: 'underline',
-                                '&:hover': {
-                                  color: (theme) => theme.palette.text.primary,
-                                },
-                              }}
-                              variant="caption"
-                            >
-                              Request a change
-                            </Typography> */}
-                            <Button
-                              variant="contained"
-                              size="small"
-                              color="primary"
-                              onClick={approve.onTrue}
-                            >
-                              Approve
-                            </Button>
-                          </Stack>
-                        </Stack>
-                        {confirmationApproveModal(approve.value, approve.onFalse)}
-                      </FormProvider>
-                    )}
-                    {type === 'request' && (
-                      <>
-                        <Typography variant="h6" mb={1} mx={1}>
-                          Request Changes
-                        </Typography>
+                        </Box>
+
+                        {/* Video Thumbnail Section */}
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            cursor: 'pointer',
+                            width: { xs: '100%', sm: '300px' },
+                            height: { xs: '200px', sm: '169px' },
+                            borderRadius: 2,
+                            overflow: 'hidden',
+                            boxShadow: 3,
+                            mt: 2
+                          }}
+                          onClick={() => setVideoModalOpen(true)}
+                        >
+                          <Box
+                            component="video"
+                            sx={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              borderRadius: 2,
+                            }}
+                          >
+                            <source src={submission?.content} />
+                          </Box>
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              bgcolor: 'rgba(0, 0, 0, 0.4)',
+                              borderRadius: 2,
+                            }}
+                          >
+                            <VisibilityIcon sx={{ color: 'white', fontSize: 32 }} />
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {submission?.status === 'PENDING_REVIEW' && (
+                    <Box 
+                      component={Paper} 
+                      sx={{
+                        p: { xs: 2, sm: 3 },
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      {type === 'approve' && (
                         <FormProvider methods={methods} onSubmit={onSubmit}>
+                          <Stack gap={1} mb={2}>
+                            <Typography variant="subtitle1" mb={1} mx={1}>
+                              Schedule This Post
+                            </Typography>
+                            <Stack 
+                              direction={{ xs: 'column', sm: 'row' }} 
+                              gap={{ xs: 2, sm: 3 }}
+                            >
+                              <RHFDatePicker
+                                name="schedule.startDate"
+                                label="Start Date"
+                                minDate={dayjs()}
+                              />
+                              <RHFDatePicker
+                                name="schedule.endDate"
+                                label="End Date"
+                                minDate={dayjs(scheduleStartDate)}
+                              />
+                            </Stack>
+                          </Stack>
+                          <Typography variant="subtitle1" mb={1} mx={1}>
+                            Comments For Creator
+                          </Typography>
                           <Stack gap={2}>
-                            <RHFMultiSelect
-                              name="reasons"
-                              checkbox
-                              chip
-                              options={options_changes.map((item) => ({
-                                value: item,
-                                label: item,
-                              }))}
-                              label="Reasons"
-                            />
                             <RHFTextField
                               name="feedback"
                               multiline
                               minRows={5}
-                              placeholder="Feedback"
+                              placeholder="Comment"
                             />
-
-                            <Stack alignItems="center" direction="row" gap={1} alignSelf="end">
-                              <Typography
-                                component="a"
+                            <Stack 
+                              alignItems={{ xs: 'stretch', sm: 'center' }} 
+                              direction={{ xs: 'column', sm: 'row' }} 
+                              gap={1.5} 
+                              justifyContent="end"
+                            >
+                              <Button
                                 onClick={() => {
-                                  setType('approve');
-                                  setValue('type', 'approve');
+                                  setType('request');
+                                  setValue('type', 'request');
                                   setValue('feedback', '');
-                                  setValue('reasons', []);
                                 }}
+                                size="small"
+                                variant="contained"
+                                startIcon={<Iconify icon="solar:close-circle-bold" />}
                                 sx={{
-                                  color: (theme) => theme.palette.text.secondary,
-                                  cursor: 'pointer',
-                                  textDecoration: 'underline',
+                                  bgcolor: 'white',
+                                  border: 1,
+                                  borderRadius: 0.8,
+                                  borderColor: '#e7e7e7',
+                                  borderBottom: 3,
+                                  borderBottomColor: '#e7e7e7',
+                                  color: 'error.main',
                                   '&:hover': {
-                                    color: (theme) => theme.palette.text.primary,
+                                    bgcolor: 'error.lighter',
+                                    borderColor: '#e7e7e7',
                                   },
+                                  textTransform: 'none',
+                                  px: 2.5,
+                                  py: 1.2,
+                                  fontSize: '0.875rem',
+                                  minWidth: '80px',
+                                  height: '45px',
                                 }}
-                                variant="caption"
                               >
-                                Back
-                              </Typography>
-                              <Button variant="contained" size="small" onClick={request.onTrue}>
-                                Submit
+                                Request a change
                               </Button>
+                              <LoadingButton
+                                onClick={approve.onTrue}
+                                variant="contained"
+                                size="small"
+                                startIcon={<Iconify icon="solar:check-circle-bold" />}
+                                loading={isSubmitting}
+                                sx={{
+                                  bgcolor: '#2e6c56',
+                                  color: 'white',
+                                  borderBottom: 3,
+                                  borderBottomColor: '#1a3b2f',
+                                  borderRadius: 0.8,
+                                  px: 2.5,
+                                  py: 1.2,
+                                  '&:hover': {
+                                    bgcolor: '#2e6c56',
+                                    opacity: 0.9,
+                                  },
+                                  fontSize: '0.875rem',
+                                  minWidth: '80px',
+                                  height: '45px',
+                                }}
+                              >
+                                Approve
+                              </LoadingButton>
                             </Stack>
                           </Stack>
-
-                          {confirmationRequestModal(request.value, request.onFalse)}
+                          {confirmationApproveModal(approve.value, approve.onFalse)}
                         </FormProvider>
-                      </>
-                    )}
-                  </Box>
-                  {submission?.isReview && submission?.status === 'APPROVED' && (
-                    <Box component={Paper} position="relative" p={10}>
-                      <Stack gap={1.5} alignItems="center">
-                        <Image src="/assets/approve.svg" width={200} />
-                        <Typography
-                          variant="subtitle2"
-                          color="text.secondary"
-                          sx={{ textAlign: 'center' }}
-                        >
-                          Final Draft has been reviewed
-                        </Typography>
-                      </Stack>
+                      )}
+                      {type === 'request' && (
+                        <>
+                          <Typography variant="h6" mb={1} mx={1}>
+                            Request Changes
+                          </Typography>
+                          <FormProvider methods={methods} onSubmit={onSubmit}>
+                            <Stack gap={2}>
+                              <RHFMultiSelect
+                                name="reasons"
+                                checkbox
+                                chip
+                                options={options_changes.map((item) => ({
+                                  value: item,
+                                  label: item,
+                                }))}
+                                label="Reasons"
+                              />
+                              <RHFTextField
+                                name="feedback"
+                                multiline
+                                minRows={5}
+                                placeholder="Feedback"
+                              />
+
+                              <Stack 
+                                alignItems={{ xs: 'stretch', sm: 'center' }} 
+                                direction={{ xs: 'column', sm: 'row' }} 
+                                gap={1.5} 
+                                alignSelf="end"
+                              >
+                                <Button
+                                  onClick={() => {
+                                    setType('approve');
+                                    setValue('type', 'approve');
+                                    setValue('feedback', '');
+                                    setValue('reasons', []);
+                                  }}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: 'white',
+                                    border: 1,
+                                    borderRadius: 0.8,
+                                    borderColor: '#e7e7e7',
+                                    borderBottom: 3,
+                                    borderBottomColor: '#e7e7e7',
+                                    color: 'text.primary',
+                                    '&:hover': {
+                                      bgcolor: '#f5f5f5',
+                                      borderColor: '#e7e7e7',
+                                    },
+                                    textTransform: 'none',
+                                    px: 2.5,
+                                    py: 1.2,
+                                    fontSize: '0.875rem',
+                                    minWidth: '80px',
+                                    height: '45px',
+                                  }}
+                                >
+                                  Back
+                                </Button>
+                                <LoadingButton 
+                                  variant="contained" 
+                                  size="small" 
+                                  onClick={request.onTrue}
+                                  sx={{
+                                    bgcolor: '#2e6c56',
+                                    color: 'white',
+                                    borderBottom: 3,
+                                    borderBottomColor: '#1a3b2f',
+                                    borderRadius: 0.8,
+                                    px: 2.5,
+                                    py: 1.2,
+                                    '&:hover': {
+                                      bgcolor: '#2e6c56',
+                                      opacity: 0.9,
+                                    },
+                                    fontSize: '0.875rem',
+                                    minWidth: '80px',
+                                    height: '45px',
+                                    textTransform: 'none',
+                                  }}
+                                >
+                                  Submit
+                                </LoadingButton>
+                              </Stack>
+                            </Stack>
+
+                            {confirmationRequestModal(request.value, request.onFalse)}
+                          </FormProvider>
+                        </>
+                      )}
                     </Box>
                   )}
                 </Grid>
-              )}
-            </Grid>
-          )}
-          {submission?.status === 'APPROVED' && (
-            <Grid item xs={12}>
-              <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
-                <Box
-                  component="video"
-                  autoPlay
-                  controls
-                  sx={{
-                    maxHeight: '50vh',
-                    maxWidth: '100%',
-                    width: 'auto',
-                    height: 'auto',
-                    borderRadius: 2,
-                    boxShadow: 3,
-                  }}
-                >
-                  <source src={submission?.content} />
-                </Box>
+              </Grid>
+            )}
+            {submission?.status === 'CHANGES_REQUIRED' && (
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  {/* Video Box */}
+                  <Box 
+                    component={Paper} 
+                    sx={{
+                      p: { xs: 2, sm: 3 },
+                      mb: 2,
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Box display="flex" flexDirection="column" gap={2}>
+                      {/* User Profile Section */}
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar
+                          src={creator?.user?.photoURL}
+                          alt={creator?.user?.name}
+                          sx={{ 
+                            width: 40, 
+                            height: 40,
+                            border: '1px solid #e7e7e7'
+                          }}
+                        >
+                          {creator?.user?.name?.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Typography 
+                          variant="subtitle2"
+                          sx={{ 
+                            fontSize: '1.05rem',
+                            mt: -2.5
+                          }}
+                        >
+                          {creator?.user?.name}
+                        </Typography>
+                      </Stack>
 
-                <Box component={Paper} p={1.5} width={1}>
-                  <Typography variant="caption" color="text.secondary">
-                    Caption
-                  </Typography>
-                  <Typography variant="subtitle1">{submission?.caption}</Typography>
-                </Box>
-              </Box>
-            </Grid>
-          )}
+                      {/* Content Section */}
+                      <Box sx={{ pl: 7 }}> 
+                        {/* Description Section */}
+                        <Box sx={{ mt: -3.5 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontSize: '0.95rem',
+                              color: '#48484A'
+                            }}
+                          >
+                            Description: {submission?.caption}
+                          </Typography>
+                        </Box>
+
+                        {/* Video Thumbnail Section */}
+                        <Box
+                          sx={{
+                            position: 'relative',
+                            cursor: 'pointer',
+                            width: { xs: '100%', sm: '300px' },
+                            height: { xs: '200px', sm: '169px' },
+                            borderRadius: 2,
+                            overflow: 'hidden',
+                            boxShadow: 3,
+                            mt: 2
+                          }}
+                          onClick={() => setVideoModalOpen(true)}
+                        >
+                          <Box
+                            component="video"
+                            sx={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              borderRadius: 2,
+                            }}
+                          >
+                            <source src={submission?.content} />
+                          </Box>
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              bgcolor: 'rgba(0, 0, 0, 0.4)',
+                              borderRadius: 2,
+                            }}
+                          >
+                            <VisibilityIcon sx={{ color: 'white', fontSize: 32 }} />
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {/* Divider */}
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '1px',
+                      bgcolor: 'divider',
+                      my: 3
+                    }}
+                  />
+
+                  {/* Admin Feedback */}
+                  {submission.feedback
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .map((feedback, index) => (
+                      <Box
+                        key={index}
+                        mb={2}
+                        p={2}
+                        border={1}
+                        borderColor="grey.300"
+                        borderRadius={1}
+                        display="flex"
+                        alignItems="flex-start"
+                      >
+                        <Avatar
+                          src={feedback.admin?.photoURL || '/default-avatar.png'}
+                          alt={feedback.admin?.name || 'User'}
+                          sx={{ mr: 2 }}
+                        />
+                        <Box
+                          flexGrow={1}
+                          sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+                        >
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 'bold', marginBottom: '2px' }}
+                          >
+                            {feedback.admin?.name || 'Unknown User'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {feedback.admin?.role || 'No Role'}
+                          </Typography>
+                          <Box sx={{ textAlign: 'left', mt: 1 }}>
+                            {feedback.content.split('\n').map((line, i) => (
+                              <Typography key={i} variant="body2">
+                                {line}
+                              </Typography>
+                            ))}
+                            {feedback.reasons && feedback.reasons.length > 0 && (
+                              <Box mt={1} sx={{ textAlign: 'left' }}>
+                                <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                  {feedback.reasons.map((reason, idx) => (
+                                    <Box
+                                      key={idx}
+                                      sx={{
+                                        border: '1.5px solid #e7e7e7',
+                                        borderBottom: '4px solid #e7e7e7',
+                                        borderRadius: 1,
+                                        p: 0.5,
+                                        display: 'inline-flex',
+                                      }}
+                                    >
+                                      <Chip
+                                        label={reason}
+                                        size="small"
+                                        color="default"
+                                        variant="outlined"
+                                        sx={{
+                                          border: 'none',
+                                          color: '#8e8e93',
+                                          fontSize: '0.75rem',
+                                          padding: '1px 2px',
+                                        }}
+                                      />
+                                    </Box>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    ))}
+                </Grid>
+              </Grid>
+            )}
+          </Box>
         </Grid>
       </Grid>
+
+      {/* Video Modal */}
+      <Modal
+        open={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        aria-labelledby="video-modal"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: { xs: '95%', sm: '90%' },
+            maxWidth: '1000px',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: { xs: 1, sm: 2 },
+            borderRadius: 2,
+          }}
+        >
+          <Box
+            component="video"
+            autoPlay
+            controls
+            sx={{
+              width: '100%',
+              maxHeight: '80vh',
+            }}
+          >
+            <source src={submission?.content} />
+          </Box>
+        </Box>
+      </Modal>
     </Box>
   );
 };
@@ -615,3 +1088,4 @@ FinalDraft.propTypes = {
   submission: PropTypes.object,
   creator: PropTypes.object,
 };
+

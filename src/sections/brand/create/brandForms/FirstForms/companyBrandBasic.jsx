@@ -49,10 +49,6 @@ function CompanyBrandBasic() {
   const [loading, setLoading] = useState(false);
   const smUp = useResponsive('up', 'sm');
 
-  // useEffect(() => {
-  //   getCompany();
-  // }, [openCreate, getCompany]);
-
   // If existing company is selected
   const schemaTwo = Yup.object().shape({
     brandName: Yup.string().required('name is required'),
@@ -213,7 +209,6 @@ function CompanyBrandBasic() {
               mt: 3,
             }}
           >
-            {' '}
             Brand Information
           </Typography>
           <Box sx={{ flexGrow: 1 }} />

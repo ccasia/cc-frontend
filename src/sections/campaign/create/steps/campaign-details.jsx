@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
-import { Box, Grid, Stack, Button, FormLabel, Typography, IconButton } from '@mui/material';
+import { Box, Grid, Chip, Stack, Button, FormLabel, Typography, IconButton } from '@mui/material';
 
 import { langList } from 'src/contants/language';
 import { interestsLists } from 'src/contants/interestLists';
@@ -163,6 +163,25 @@ const CampaignDetails = () => {
               placeholder="Select Language"
               options={langList.sort()}
               getOptionLabel={(option) => option || ''}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  return (
+                    <Chip
+                      variant="outlined"
+                      sx={{
+                        border: 1,
+                        borderColor: '#EBEBEB',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        py: 2,
+                      }}
+                      label={option}
+                      key={key}
+                      {...tagProps}
+                    />
+                  );
+                })
+              }
             />
           </FormField>
         </Stack>

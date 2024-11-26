@@ -1,13 +1,13 @@
 import Calendar from '@fullcalendar/react';
 import listPlugin from '@fullcalendar/list';
+import { useState, useEffect } from 'react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import timelinePlugin from '@fullcalendar/timeline';
-import { useState, useEffect } from 'react';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Divider } from '@mui/material';
 
 import Card from '@mui/material/Card';
+import { Divider } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -15,7 +15,6 @@ import { useTheme } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
-
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
@@ -59,7 +58,7 @@ export default function CalendarView() {
 
   const currentEvent = useEvent(events, selectEventId, selectedRange, openForm);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null); 
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     onInitialView();
@@ -67,8 +66,8 @@ export default function CalendarView() {
 
   const handleEventClick = (eventInfo) => {
     console.log('Event Info:', eventInfo.event);
-    setSelectedEvent(eventInfo.event); 
-    setDrawerOpen(true); 
+    setSelectedEvent(eventInfo.event);
+    setDrawerOpen(true);
   };
 
   return (
@@ -96,7 +95,7 @@ export default function CalendarView() {
               size="small"
               onClick={onDateToday}
               sx={{
-                boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+                boxShadow: `0px 1px 1px 1px ${theme.palette.grey[400]}`,
               }}
             >
               Today
@@ -105,7 +104,7 @@ export default function CalendarView() {
               size="small"
               onClick={onDatePrev}
               sx={{
-                boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+                boxShadow: `0px 1px 1px 1px ${theme.palette.grey[400]}`,
                 padding: '4px 8px',
                 minWidth: '30px',
               }}
@@ -116,7 +115,7 @@ export default function CalendarView() {
               size="small"
               onClick={onDateNext}
               sx={{
-                boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+                boxShadow: `0px 1px 1px 1px ${theme.palette.grey[400]}`,
                 padding: '4px 8px',
                 minWidth: '30px',
               }}
@@ -160,33 +159,30 @@ export default function CalendarView() {
                 interactionPlugin,
               ]}
               dayCellContent={(dayInfo) => {
-                const date = new Date(dayInfo.date);
-                const isFirstOfMonth = date.getDate() === 1;
+                const datee = new Date(dayInfo.date);
+                const isFirstOfMonth = datee.getDate() === 1;
 
                 // Check if the date is the first of the month
                 if (isFirstOfMonth) {
-                  const formattedDate = `${date.getDate()}${date.toLocaleString('default', {
+                  const formattedDate = `${datee.getDate()}${datee.toLocaleString('default', {
                     month: 'short',
                   })}`;
-                  return (
-                    <div>{formattedDate}</div>
-                  );
+                  return <div>{formattedDate}</div>;
                 }
-                return <div>{date.getDate()}</div>;
+                return <div>{datee.getDate()}</div>;
               }}
-
-              //Content format for different media screen
+              // Content format for different media screen
               eventContent={(eventInfo) => {
                 const { start, end, title, backgroundColor } = eventInfo.event;
                 const isSmallScreen = window.innerWidth < 600;
 
-                const labelColor = CALENDAR_COLOR_OPTIONS.find(
-                  (option) => option.color === backgroundColor
-                )?.labelColor || 'black'; 
+                const labelColor =
+                  CALENDAR_COLOR_OPTIONS.find((option) => option.color === backgroundColor)
+                    ?.labelColor || 'black';
 
                 const eventTitleStyle = {
-                  '--label-color': labelColor, 
-                  color: 'var(--label-color)', 
+                  '--label-color': labelColor,
+                  color: 'var(--label-color)',
                 };
 
                 if (isSmallScreen) {
@@ -257,13 +253,15 @@ export default function CalendarView() {
                 lineHeight: '40px',
               }}
             >
-              <span role="img" aria-label="calendar" style={{ marginRight: '8px' }}>📅</span>
+              <span role="img" aria-label="calendar" style={{ marginRight: '8px' }}>
+                📅
+              </span>
               New Event
             </div>
           )}
           <Divider
             sx={{
-              my: 2 ,
+              my: 2,
             }}
           />
         </DialogTitle>

@@ -83,7 +83,8 @@ const stepSchemas = [
     languages: Yup.array().min(1, 'Choose at least one option'),
   }),
   Yup.object({
-    instagram: Yup.string().required('Please enter your instagram username'),
+    instagram: Yup.string(),
+    tiktok: Yup.string(),
   }),
 ];
 

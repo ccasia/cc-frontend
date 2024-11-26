@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import React from 'react';
 import PropTypes from 'prop-types';
 
@@ -6,19 +5,15 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import ListItemText from '@mui/material/ListItemText';
 import { alpha, useTheme } from '@mui/material/styles';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { _socials, _userAbout } from 'src/_mock';
-import { AvatarShape } from 'src/assets/illustrations';
-
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -40,128 +35,237 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
       key={key}
       component="div"
       onClick={handleCardClick}
-      sx={{ position: 'relative', cursor: 'pointer' }}
+      sx={{ 
+        position: 'relative',
+        cursor: 'pointer',
+        width: '100%',
+        '&:hover': {
+          '& .MuiCard-root': {
+            transform: 'translateY(-5px)',
+            transition: 'transform 0.3s ease',
+          }
+        }
+      }}
     >
-      {!isSent && (
-        <Typography
-          variant="caption"
-          sx={{
-            position: 'absolute',
-            top: 10,
-            left: 10,
-            backgroundColor: theme.palette.warning.main,
-            color: 'white',
-            padding: '3.5px 8px',
-            borderRadius: 1,
-            zIndex: 10,
-          }}
-        >
-          PENDING AGREEMENT
-        </Typography>
-      )}
-
       <Card
         sx={{
-          textAlign: 'center',
-          '&:hover': {
-            transform: 'scale(1.02)',
-            transition: 'all ease-in .1s',
-            cursor: 'pointer',
-          },
+          p: 3,
+          border: '1px solid #ebebeb',
+          borderRadius: 2,
+          height: '100%',
+          width: '100%',
         }}
       >
-        <Box sx={{ position: 'relative' }}>
-          <AvatarShape
-            sx={{
-              left: 0,
-              right: 0,
-              zIndex: 10,
-              mx: 'auto',
-              bottom: -26,
-              position: 'absolute',
-            }}
-          />
-
-          <Avatar
-            alt={creator?.name}
-            src={creator?.photoURL}
-            sx={{
-              width: 64,
-              height: 64,
-              zIndex: 11,
-              left: 0,
-              right: 0,
-              bottom: -32,
-              mx: 'auto',
-              position: 'absolute',
-            }}
-          />
-
-          <Image
-            src={_userAbout?.coverUrl}
-            alt={_userAbout?.coverUrl}
-            ratio="16/9"
-            overlay={alpha(theme.palette.grey[900], 0.48)}
-          />
-        </Box>
-
-        <ListItemText
-          sx={{ mt: 7, mb: 1 }}
-          primary={
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-              {creator?.name}
-              <Iconify icon="mdi:tick-decagram" color="success.main" />
-            </Stack>
-          }
-          secondary={`${dayjs().diff(dayjs(creator?.creator?.birthDate), 'years')} years old`}
-          primaryTypographyProps={{ typography: 'subtitle1' }}
-          secondaryTypographyProps={{ component: 'span', mt: 0.5 }}
-        />
-
-        <Stack direction="row" alignItems="center" justifyContent="center" sx={{ mb: 2.5 }}>
-          {_socials.map((social) => (
-            <IconButton
-              key={social.name}
+        {/* Top Section */}
+        <Stack 
+          direction="row" 
+          justifyContent="space-between" 
+          alignItems="flex-start"
+          sx={{ minWidth: 0 }}
+        >
+          {/* Left Side - Profile Picture & Name */}
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Avatar
+              alt={creator?.name}
+              src={creator?.photoURL}
               sx={{
-                color: social.color,
-                '&:hover': {
-                  bgcolor: alpha(social.color, 0.08),
-                },
+                width: 64,
+                height: 64,
+                border: '2px solid',
+                borderColor: 'background.paper',
+                mb: 2,
               }}
             >
-              <Iconify icon={social.icon} />
-            </IconButton>
-          ))}
+              {creator?.name?.charAt(0).toUpperCase()}
+            </Avatar>
+            <Typography 
+              variant="subtitle1"
+              sx={{
+                fontWeight: 600,
+                ml: 0.5,
+                mb: -1.4,
+                fontSize: '1.1rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {`${creator?.name?.charAt(0).toUpperCase()}${creator?.name?.slice(1)}`}
+            </Typography>
+          </Box>
+
+          {/* Right Side - Social Links and Label */}
+          <Stack alignItems="flex-end" spacing={1} sx={{ ml: 1 }}>
+            <Stack direction="row" spacing={1}>
+              {creator?.creator?.instagram && (
+                <IconButton 
+                  component="a" 
+                  href={`https://instagram.com/${creator?.creator?.instagram}`}
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  sx={{
+                    color: '#636366',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: alpha('#636366', 0.08),
+                    },
+                  }}
+                >
+                  <Iconify icon="mdi:instagram" width={24} />
+                </IconButton>
+              )}
+              {creator?.creator?.tiktok && (
+                <IconButton
+                  component="a"
+                  href={`https://tiktok.com/@${creator?.creator?.tiktok}`}
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  sx={{
+                    color: '#636366',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: alpha('#636366', 0.08),
+                    },
+                  }}
+                >
+                  <Iconify icon="ic:baseline-tiktok" width={24} />
+                </IconButton>
+              )}
+            </Stack>
+
+            {!isSent && (
+              <Typography
+                variant="caption"
+                sx={{
+                  backgroundColor: theme.palette.warning.main,
+                  color: 'white',
+                  padding: '3.5px 8px',
+                  fontWeight: 600,
+                  borderRadius: 1,
+                }}
+              >
+                PENDING AGREEMENT
+              </Typography>
+            )}
+          </Stack>
         </Stack>
 
-        <Divider sx={{ borderStyle: 'dashed' }} />
+        <Divider sx={{ my: 3 }} />
 
+        {/* Stats Section */}
         <Box
           display="grid"
           gridTemplateColumns="repeat(3, 1fr)"
-          sx={{ py: 3, typography: 'subtitle1' }}
+          gap={3}
+          sx={{ 
+            mb: 3,
+            mt: -1,
+            minWidth: 0,
+          }}
         >
-          <div>
-            <Typography variant="caption" component="div" sx={{ mb: 0.5, color: 'text.secondary' }}>
+          <Stack spacing={1} alignItems="flex-start" sx={{ minWidth: 0 }}>
+            <Box
+              component="img"
+              src="/assets/icons/overview/purpleGroup.svg"
+              sx={{ width: 24, height: 24, mb: -0.5 }}
+            />
+            <Typography variant="h6">
+              N/A
+            </Typography>
+            <Typography variant="subtitle2" color="#8e8e93" sx={{ 
+              whiteSpace: 'nowrap',
+              fontWeight: 500,
+              mt: -1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              width: '100%',
+            }}>
               Followers
             </Typography>
-            0{/* {fShortenNumber(totalFollowers)} */}
-          </div>
+          </Stack>
 
-          <div>
-            <Typography variant="caption" component="div" sx={{ mb: 0.5, color: 'text.secondary' }}>
-              Engagement Rates
+          <Stack spacing={1} alignItems="flex-start" sx={{
+            borderLeft: '1px solid #ebebeb',
+            borderRight: '1px solid #ebebeb',
+            px: 2,
+            minWidth: 0,
+          }}>
+            <Box
+              component="img"
+              src="/assets/icons/overview/greenChart.svg"
+              sx={{ width: 24, height: 24, mb: -0.5 }}
+            />
+            <Typography variant="h6">
+              N/A
             </Typography>
-            0{/* {fShortenNumber(totalFollowing)} */}
-          </div>
+            <Typography variant="subtitle2" color="#8e8e93" sx={{ 
+              whiteSpace: 'nowrap',
+              fontWeight: 500,
+              mt: -1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              width: '100%',
+            }}>
+              Engagement Rate
+            </Typography>
+          </Stack>
 
-          <div>
-            <Typography variant="caption" component="div" sx={{ mb: 0.5, color: 'text.secondary' }}>
-              Total Views
+          <Stack spacing={1} alignItems="flex-start" sx={{ minWidth: 0 }}>
+            <Box
+              component="img"
+              src="/assets/icons/overview/bubbleHeart.svg"
+              sx={{ width: 24, height: 24, mb: -0.5 }}
+            />
+            <Typography variant="h6">
+              N/A
             </Typography>
-            0{/* {fShortenNumber(totalPosts)} */}
-          </div>
+            <Typography variant="subtitle2" color="#8e8e93" sx={{ 
+              whiteSpace: 'nowrap',
+              fontWeight: 500,
+              mt: -1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              width: '100%',
+            }}>
+              Average Likes
+            </Typography>
+          </Stack>
         </Box>
+
+        {/* Updated View Profile Button */}
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCardClick();
+          }}
+          sx={{ 
+            mx: 'auto',
+            width: '100%',
+            display: 'block',
+            bgcolor: isSent ? '#3a3a3c' : '#ffffff',
+            border: isSent ? 'none' : '1px solid #e7e7e7',
+            borderBottom: isSent ? '3px solid #202021' : '3px solid #e7e7e7',
+            height: 48,
+            color: isSent ? '#ffffff' : '#203ff5',
+            fontSize: '1rem',
+            fontWeight: 600,
+            '&:hover': {
+              bgcolor: isSent ? '#3a3a3c' : alpha('#636366', 0.08),
+              opacity: 0.9,
+              cursor: 'pointer',
+            },
+          }}
+        >
+          {isSent ? 'View Profile' : 'Complete Agreement'}
+        </Button>
       </Card>
     </Box>
   );
@@ -171,6 +275,6 @@ UserCard.propTypes = {
   creator: PropTypes.object,
   campaignId: PropTypes.string,
   isSent: PropTypes.bool,
-  onEditAgreement: PropTypes.func, // Add this line
+  onEditAgreement: PropTypes.func, 
   key: PropTypes.string,
 };

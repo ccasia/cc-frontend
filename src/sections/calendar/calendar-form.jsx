@@ -6,13 +6,13 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import LoadingButton from '@mui/lab/LoadingButton';
-import DialogActions from '@mui/material/DialogActions';
-import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton';
+import DialogActions from '@mui/material/DialogActions';
+import InputAdornment from '@mui/material/InputAdornment';
+import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined'
 
 import { isAfter, fTimestamp } from 'src/utils/format-time';
@@ -196,8 +196,7 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
                 return (
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     {selectedOption ? (
-                      <>
-                        <Box
+                      <Box
                           sx={{
                             backgroundColor: selectedOption.color,
                             borderRadius: 1,
@@ -220,7 +219,6 @@ export default function CalendarForm({ currentEvent, colorOptions, onClose }) {
                             {selectedOption.label}
                           </span>
                         </Box>
-                      </>
                     ) : (
                       <span style={{ color: 'gray', fontSize: '12px' }}>Select Color</span>
                     )}

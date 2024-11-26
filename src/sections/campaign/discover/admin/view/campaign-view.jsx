@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useTheme } from '@mui/material/styles';
-import { Box, Stack, Button, Dialog, Container, Typography, CircularProgress } from '@mui/material';
+import { Box, Stack, Button, Dialog, Container, Typography, IconButton, CircularProgress } from '@mui/material';
 
 // import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 import { useRouter } from 'src/routes/hooks';
@@ -276,29 +276,51 @@ const CampaignView = () => {
               Completed ({completedCount})
             </Button>
           </Stack>
-          <Button
+          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+            <Button
+              onClick={handleClick}
+              endIcon={<Iconify icon="eva:chevron-down-fill" width={20} height={20} />}
+              sx={{
+                bgcolor: '#203ff5',
+                color: 'white',
+                borderBottom: '3px solid #102387',
+                borderRadius: '8px',
+                padding: '8px 20px',
+                position: 'absolute',
+                right: 0,
+                top: -3,
+                minWidth: '150px',
+                fontSize: '0.9rem',
+                '&:hover': {
+                  bgcolor: '#203ff5',
+                  opacity: 0.9,
+                },
+              }}
+            >
+              New Campaign
+            </Button>
+          </Box>
+          <IconButton
             onClick={handleClick}
-            endIcon={<Iconify icon="eva:chevron-down-fill" width={20} height={20} />}
             sx={{
+              display: { xs: 'flex', sm: 'none' },
+              position: 'fixed',
+              right: 20,
+              bottom: 20,
+              width: 56,
+              height: 56,
               bgcolor: '#203ff5',
               color: 'white',
-              borderBottom: '3px solid #102387',
-              borderRadius: '8px',
-              px: 2.5,
-              py: 1,
-              position: 'absolute',
-              right: 0,
-              top: -3,
-              minWidth: '150px',
-              fontSize: '0.9rem',
+              zIndex: 1100,
+              boxShadow: '0 2px 12px rgba(32, 63, 245, 0.3)',
               '&:hover': {
                 bgcolor: '#203ff5',
                 opacity: 0.9,
               },
             }}
           >
-            New Campaign
-          </Button>
+            <Iconify icon="eva:plus-fill" width={24} height={24} />
+          </IconButton>
         </Stack>
       </Box>
 
@@ -307,16 +329,17 @@ const CampaignView = () => {
         open={open}
         onClose={handleClose}
         anchorOrigin={{
-          vertical: 'bottom',
+          vertical: 'top',
           horizontal: 'right',
         }}
         transformOrigin={{
-          vertical: 'top',
+          vertical: 'bottom',
           horizontal: 'right',
         }}
         PaperProps={{
           sx: {
-            mt: 1,
+            mt: { xs: -1, sm: 1 },
+            mb: { xs: 1, sm: 0 },
             width: 200,
             bgcolor: 'white',
             border: '1px solid #e7e7e7',

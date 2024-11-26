@@ -6,18 +6,13 @@ import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
-  Tab,
-  Card,
-  Tabs,
-  Grid,
   Stack,
   alpha,
   Button,
   Avatar,
   Container,
   Typography,
-  tabsClasses,
-  ListItemText,
+  IconButton,
   CircularProgress,
 } from '@mui/material';
 
@@ -29,9 +24,6 @@ import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoiceByCreatorAndCampaign from 'src/hooks/use-get-invoice-creator-camp';
 
-import { _userAbout } from 'src/_mock';
-import { bgGradient } from 'src/theme/css';
-import { countries } from 'src/assets/data';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -39,7 +31,6 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 import InvoicePDF from 'src/sections/invoice/invoice-pdf';
 
-import OverView from '../creator-stuff/overview';
 import Submissions from '../creator-stuff/submissions';
 import TimelineCreator from '../creator-stuff/timeline/view/page';
 import LogisticView from '../creator-stuff/logistics/view/logistic-view';
@@ -62,123 +53,97 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
 
   const interests = data?.user?.creator?.interests;
 
-  const phoneNumberHelper = (country, phoneNumber) => {
-    if (!phoneNumber) {
-      return;
-    }
-    const prefix = countries.filter((item) => item.label === country)[0].phone;
-    // eslint-disable-next-line consistent-return
-    return `+${prefix} ${phoneNumber}`;
-  };
-
   const renderTabs = (
-    <Tabs
-      value={currentTab}
-      onChange={(a, val) => setCurrentTab(val)}
-      sx={{
-        width: 1,
-        bottom: 0,
-        zIndex: 9,
-        position: 'absolute',
-        bgcolor: 'background.paper',
-        [`& .${tabsClasses.flexContainer}`]: {
-          pr: { md: 3 },
-          justifyContent: {
-            sm: 'center',
-            md: 'flex-end',
+    <Box sx={{ mt: 2.5, mb: 2.5 }}>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{
+          position: 'relative',
+          width: '100%',
+          overflowX: 'auto',
+          '&::-webkit-scrollbar': { display: 'none' },
+          scrollbarWidth: 'none',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '1px',
+            bgcolor: 'divider',
           },
-        },
-      }}
-    >
-      <Tab
-        value="profile"
-        label="Profile"
-        icon={<Iconify icon="flowbite:profile-card-outline" width={18} />}
-      />
-      {/* <Tab value="overview" label="Overview" /> */}
-      <Tab value="submission" label="Submissions" />
-      <Tab value="invoice" label="Invoice" />
-      <Tab value="logistics" label="Logistics" />
-      <Tab value="timeline" label="Timeline" />
-    </Tabs>
-  );
-
-  const renderProfile = (
-    <Grid container spacing={2}>
-      <Grid item xs={12} md={4}>
-        <Stack gap={2}>
-          <Box
-            sx={{
-              p: 3,
-            }}
-            component={Card}
-          >
-            <Typography variant="h6">About</Typography>
-            <Stack gap={1.5} mt={2}>
-              <Box display="inline-flex" alignItems="center" gap={1}>
-                <Iconify icon="ic:baseline-email" width={20} color="text.secondary" />
-                <Typography variant="subtitle2">{data?.user?.email}</Typography>
-              </Box>
-              <Box display="inline-flex" alignItems="center" gap={1}>
-                <Iconify icon="ic:baseline-phone" width={20} color="text.secondary" />
-                <Typography variant="subtitle2">
-                  {phoneNumberHelper(data?.user?.country, data?.user?.phoneNumber)}
-                </Typography>
-              </Box>
-              <Box display="inline-flex" alignItems="center" gap={1}>
-                {/* <Iconify icon="material-symbols:globe" width={20} color="text.secondary" /> */}
-                <Iconify icon={`twemoji:flag-${data?.user?.country.toLowerCase()}`} width={20} />
-                <Typography variant="subtitle2">{data?.user?.country}</Typography>
-              </Box>
-            </Stack>
-          </Box>
-          <Card
-            sx={{
-              p: 3,
-            }}
-          >
-            <Typography variant="h6">Social</Typography>
-            <Stack gap={1.5} mt={2}>
-              <Box display="inline-flex" alignItems="center" gap={1}>
-                <Iconify icon="mdi:instagram" width={20} color="text.secondary" />
-                <Typography variant="subtitle2">{data?.user?.creator?.instagram}</Typography>
-              </Box>
-              <Box display="inline-flex" alignItems="center" gap={1}>
-                <Iconify icon="ic:baseline-tiktok" width={20} color="text.secondary" />
-                <Typography variant="subtitle2">{data?.user?.creator?.tiktok}</Typography>
-              </Box>
-            </Stack>
-          </Card>
+        }}
+      >
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            width: { xs: '100%', sm: 'auto' },
+            overflowX: 'auto',
+          }}
+        >
+          {[
+            { label: 'Overview', value: 'profile' },
+            { label: 'Submissions', value: 'submission' },
+            { label: 'Invoice', value: 'invoice' },
+            { label: 'Logistics', value: 'logistics' },
+            // { label: 'Timeline', value: 'timeline' }, // Add timeline when backend is ready
+          ].map((tab) => (
+            <Button
+              key={tab.value}
+              disableRipple
+              size="large"
+              onClick={() => setCurrentTab(tab.value)}
+              sx={{
+                px: { xs: 1, sm: 1.5 },
+                py: 0.5,
+                pb: 1,
+                minWidth: 'fit-content',
+                color: currentTab === tab.value ? '#221f20' : '#8e8e93',
+                position: 'relative',
+                fontSize: { xs: '0.9rem', sm: '1.05rem' },
+                fontWeight: 650,
+                whiteSpace: 'nowrap',
+                mr: { xs: 1, sm: 2 },
+                transition: 'transform 0.1s ease-in-out',
+                '&:focus': {
+                  outline: 'none',
+                  bgcolor: 'transparent',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  bgcolor: 'transparent',
+                },
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '2px',
+                  width: currentTab === tab.value ? '100%' : '0%',
+                  bgcolor: '#1340ff',
+                  transition: 'all 0.3s ease-in-out',
+                  transform: 'scaleX(1)',
+                  transformOrigin: 'left',
+                },
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  '&::after': {
+                    width: '100%',
+                    opacity: currentTab === tab.value ? 1 : 0.5,
+                  },
+                },
+                // mr: 2,
+              }}
+            >
+              {tab.label}
+            </Button>
+          ))}
         </Stack>
-      </Grid>
-      <Grid item xs={12} md={8}>
-        <Box component={Card} sx={{ p: 2 }}>
-          <Typography variant="h6">Interests</Typography>
-
-          {/* List creator interests */}
-          <Stack direction="row" justifyContent="space-evenly" mt={2} flexWrap="wrap" gap={1}>
-            {!isLoading &&
-              interests?.map((item) => (
-                <Box
-                  key={item.id}
-                  p={3}
-                  borderRadius={2}
-                  border={1}
-                  sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.05)}` }}
-                >
-                  <ListItemText
-                    primary={item.name}
-                    primaryTypographyProps={{
-                      variant: 'subtitle2',
-                      fontWeight: 800,
-                    }}
-                  />
-                </Box>
-              ))}
-          </Stack>
-        </Box>
-      </Grid>
-    </Grid>
+      </Stack>
+    </Box>
   );
 
   const shortlistedCreators = useMemo(
@@ -204,16 +169,23 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
   }, [socket, mutate]);
 
   return (
-    <Container>
+    <Container
+      maxWidth="xl"
+      sx={{
+        px: { xs: 2, sm: 5 },
+      }}
+    >
       <Button
+        color="inherit"
+        startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
         onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id))}
         sx={{
-          mb: 3,
+          alignSelf: 'flex-start',
+          color: '#636366',
+          fontSize: { xs: '0.875rem', sm: '1rem' },
         }}
-        variant="contained"
-        size="small"
       >
-        All creators
+        Back
       </Button>
 
       {isLoading && (
@@ -237,72 +209,236 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
 
       {!campaignLoading && (
         <>
-          <Card
-            sx={{
-              mb: 3,
-              height: 290,
-            }}
-          >
-            <Box
-              sx={{
-                ...bgGradient({
-                  color: alpha(theme.palette.primary.darker, 0.8),
-                  imgUrl: _userAbout?.coverUrl,
-                }),
-                height: 1,
-                color: 'common.white',
-              }}
-            >
-              <Stack
-                direction={{ xs: 'column', md: 'row' }}
+          {/* Profile Info - Now without card wrapper */}
+          <Box sx={{ p: 3, mb: -2 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Avatar
+                alt={data?.user?.name}
+                src={data?.user?.photoURL}
                 sx={{
-                  left: { md: 24 },
-                  bottom: { md: 24 },
-                  zIndex: { md: 10 },
-                  pt: { xs: 6, md: 0 },
-                  position: { md: 'absolute' },
+                  width: 48,
+                  height: 48,
+                  ml: -2,
+                  border: '1px solid #e7e7e7',
                 }}
               >
-                <Avatar
-                  alt={data?.user?.name}
-                  src={data?.user?.photoURL}
-                  sx={{
-                    mx: 'auto',
-                    width: { xs: 64, md: 128 },
-                    height: { xs: 64, md: 128 },
-                    border: `solid 2px ${theme.palette.common.white}`,
-                  }}
-                >
-                  {data?.user?.name?.charAt(0).toUpperCase()}
-                </Avatar>
+                {data?.user?.name?.charAt(0).toUpperCase()}
+              </Avatar>
 
-                <ListItemText
+              <Typography
+                variant="h4"
+                sx={{
+                  fontFamily: 'Instrument Serif',
+                  flex: 1,
+                  ml: 2,
+                  fontWeight: 580,
+                  fontSize: { xs: '1.75rem', sm: '2rem', md: '2.25rem' },
+                  lineHeight: 1.2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                {`${data?.user?.name?.charAt(0).toUpperCase()}${data?.user?.name?.slice(1)}`}
+                <Box
+                  component="img"
+                  src="/assets/icons/overview/creatorVerified.svg"
                   sx={{
-                    mt: 3,
-                    ml: { md: 3 },
-                    textAlign: { xs: 'center', md: 'unset' },
-                  }}
-                  primary={`${data?.user?.name?.charAt(0).toUpperCase()}${data?.user?.name.slice(1)}`}
-                  secondary={data?.user?.creator?.pronounce}
-                  primaryTypographyProps={{
-                    typography: 'h3',
-                    fontFamily: theme.typography.fontSecondaryFamily,
-                  }}
-                  secondaryTypographyProps={{
-                    color: 'inherit',
-                    component: 'span',
-                    typography: 'body1',
-                    sx: { opacity: 0.48 },
-                    fontFamily: theme.typography.fontSecondaryFamily,
+                    width: 20,
+                    height: 20,
+                    ml: 0.5,
                   }}
                 />
-              </Stack>
-            </Box>
-            {renderTabs}
-          </Card>
+              </Typography>
 
-          {currentTab === 'profile' && renderProfile}
-          {currentTab === 'overview' && <OverView campaign={campaign} />}
+              <Stack direction="row" spacing={1}>
+                {data?.user?.creator?.instagram && (
+                  <IconButton
+                    component="a"
+                    href={`https://instagram.com/${data?.user?.creator?.instagram}`}
+                    target="_blank"
+                    sx={{
+                      color: '#636366',
+                      border: '1px solid #e7e7e7',
+                      borderBottom: '3px solid #e7e7e7',
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        bgcolor: alpha('#636366', 0.08),
+                      },
+                    }}
+                  >
+                    <Iconify icon="mdi:instagram" width={24} />
+                  </IconButton>
+                )}
+                {data?.user?.creator?.tiktok && (
+                  <IconButton
+                    component="a"
+                    href={`https://tiktok.com/@${data?.user?.creator?.tiktok}`}
+                    target="_blank"
+                    sx={{
+                      color: '#636366',
+                      border: '1px solid #e7e7e7',
+                      borderBottom: '3px solid #e7e7e7',
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        bgcolor: alpha('#636366', 0.08),
+                      },
+                    }}
+                  >
+                    <Iconify icon="ic:baseline-tiktok" width={24} />
+                  </IconButton>
+                )}
+              </Stack>
+            </Stack>
+          </Box>
+
+          {/* Tabs */}
+          {renderTabs}
+
+          {currentTab === 'profile' && (
+            <Box sx={{ p: 3 }}>
+              {/* Stats Section */}
+              <Box
+                sx={{
+                  width: { xs: '100%', sm: '80%', md: '50%', lg: '35%' },
+                  border: '1px solid #e7e7e7',
+                  borderRadius: 2,
+                  p: 3,
+                  ml: { xs: 0, sm: -3 },
+                  mt: -1.8,
+                  bgcolor: 'background.paper',
+                }}
+              >
+                <Stack spacing={3}>
+                  {/* Stats Groups */}
+                  <Stack spacing={2}>
+                    {/* Followers */}
+                    <Stack direction="row" spacing={2}>
+                      <Box
+                        component="img"
+                        src="/assets/icons/overview/purpleGroup.svg"
+                        sx={{ width: 32, height: 32, alignSelf: 'center' }}
+                      />
+                      <Stack>
+                        <Typography variant="h6">N/A</Typography>
+                        <Typography variant="subtitle2" color="#8e8e93" sx={{ fontWeight: 500 }}>
+                          Followers
+                        </Typography>
+                      </Stack>
+                    </Stack>
+
+                    {/* Engagement Rate */}
+                    <Stack direction="row" spacing={2}>
+                      <Box
+                        component="img"
+                        src="/assets/icons/overview/greenChart.svg"
+                        sx={{ width: 32, height: 32, alignSelf: 'center' }}
+                      />
+                      <Stack>
+                        <Typography variant="h6">N/A</Typography>
+                        <Typography variant="subtitle2" color="#8e8e93" sx={{ fontWeight: 500 }}>
+                          Engagement Rate
+                        </Typography>
+                      </Stack>
+                    </Stack>
+
+                    {/* Average Likes */}
+                    <Stack direction="row" spacing={2}>
+                      <Box
+                        component="img"
+                        src="/assets/icons/overview/bubbleHeart.svg"
+                        sx={{ width: 32, height: 32, alignSelf: 'center' }}
+                      />
+                      <Stack>
+                        <Typography variant="h6">N/A</Typography>
+                        <Typography variant="subtitle2" color="#8e8e93" sx={{ fontWeight: 500 }}>
+                          Average Likes
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </Stack>
+
+                  {/* Divider */}
+                  <Box sx={{ borderTop: '1px solid #e7e7e7' }} />
+
+                  {/* Personal Information */}
+                  <Stack spacing={3}>
+                    {[
+                      {
+                        label: 'Pronouns',
+                        value: data?.user?.creator?.pronounce,
+                        fallback: 'Not specified',
+                      },
+                      {
+                        label: 'Email',
+                        value: data?.user?.email,
+                        fallback: 'Not specified',
+                      },
+                      {
+                        label: 'Phone',
+                        value: data?.user.phoneNumber,
+                        fallback: 'Not specified',
+                      },
+                      {
+                        label: 'Location',
+                        value: data?.user?.creator?.country || data?.user?.country,
+                        fallback: 'Not specified',
+                      },
+                      {
+                        label: 'Interests',
+                        value: data?.user?.creator?.interests?.map((interest) => (
+                          <Box
+                            key={interest.name}
+                            component="span"
+                            sx={{
+                              display: 'inline-block',
+                              color: '#8e8e93',
+                              border: '1px solid #ebebeb',
+                              borderBottom: '3px solid #ebebeb',
+                              fontWeight: 600,
+                              px: 1,
+                              py: 0.5,
+                              borderRadius: 0.8,
+                              mr: 0.5,
+                              mb: 0.5,
+                              textTransform: 'uppercase',
+                              fontSize: '0.8rem',
+                            }}
+                          >
+                            {interest.name}
+                          </Box>
+                        )),
+                        fallback: 'Not specified',
+                      },
+                    ].map((item) => (
+                      <Stack key={item.label} spacing={1}>
+                        <Typography
+                          variant="subtitle2"
+                          color="#8e8e93"
+                          sx={{ fontWeight: 600, mt: -0.5 }}
+                        >
+                          {item.label}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            wordBreak: 'break-word',
+                            display: item.label === 'Interests' ? 'flex' : 'block',
+                            flexWrap: 'wrap',
+                            gap: 0.5,
+                          }}
+                        >
+                          {item.value || item.fallback}
+                        </Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Stack>
+              </Box>
+            </Box>
+          )}
 
           {currentTab === 'submission' && (
             <Submissions campaign={campaign} submissions={submissions} creator={data} />
