@@ -214,23 +214,19 @@ const CampaignFirstDraft = ({
         preview: URL.createObjectURL(file),
       });
 
+      alert('ABOUT TO START');
       try {
+        alert('STARTING...');
         const thumbnail = await generateThumbnail(newFile);
         newFile.thumbnail = thumbnail;
       } catch (error) {
         console.error('Error generating thumbnail:', error);
       }
+      alert('END...');
 
       setPreview(newFile.preview);
       localStorage.setItem('preview', newFile.preview);
       setUploadProgress(0);
-
-      // try {
-      //   const thumbnail = await generateThumbnail(file);
-      //   newFile.thumbnail = thumbnail;
-      // } catch (error) {
-      //   console.error('Error generating thumbnail:', error);
-      // }
 
       if (file) {
         setValue('draft', newFile, { shouldValidate: true });
