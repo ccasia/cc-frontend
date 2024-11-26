@@ -599,7 +599,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                               color: '#48484A'
                             }}
                           >
-                            Description: {submission?.caption}
+                            <strong>Description:</strong> {submission?.caption}
                           </Typography>
                         </Box>
 
@@ -904,7 +904,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                               color: '#48484A'
                             }}
                           >
-                            Description: {submission?.caption}
+                            <strong>Description:</strong> {submission?.caption}
                           </Typography>
                         </Box>
 

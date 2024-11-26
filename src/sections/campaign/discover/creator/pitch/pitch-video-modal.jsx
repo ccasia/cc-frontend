@@ -351,11 +351,12 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
                 loading={loading}
                 disabled={progress.some((elem) => elem.campaignId === campaign.id) || !a}
                 sx={{
-                  background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
+                  backgroundColor: '#203ff5',
                   color: 'white',
-                  border: '1px solid #3300c3',
+                  borderBottom: '3px solid',
+                  borderBottomColor: (progress.some((elem) => elem.campaignId === campaign.id) || !a) ? 'rgba(0, 0, 0, 0.12)' : '#1429a0',
                   '&:hover': {
-                    background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+                    backgroundColor: '#4259f7',
                   },
                   fontSize: { xs: '0.8rem', sm: '0.875rem' },
                   padding: { xs: '6px 12px', sm: '8px 16px' },
