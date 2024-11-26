@@ -179,13 +179,13 @@ const CampaignFirstDraft = ({
         preview: URL.createObjectURL(file),
       });
 
-      try {
-        const thumbnail = await generateThumbnail(file);
-        newFile.thumbnail = thumbnail;
-        alert(JSON.stringify(newFile));
-      } catch (error) {
-        alert(JSON.stringify(error));
-        console.error('Error generating thumbnail:', error);
+      if (file) {
+        try {
+          const thumbnail = await generateThumbnail(file);
+          newFile.thumbnail = thumbnail;
+        } catch (error) {
+          console.error('Error generating thumbnail:', error);
+        }
       }
 
       setPreview(newFile.preview);
