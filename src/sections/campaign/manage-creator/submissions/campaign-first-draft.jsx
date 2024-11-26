@@ -53,8 +53,9 @@ const formatFileSize = (bytes) => {
   return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
 
-const generateThumbnail = (file) =>
-  new Promise((resolve, reject) => {
+const generateThumbnail = (file) => {
+  alert(JSON.stringify(file));
+  Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
     video.muted = true; // Mute the video to prevent playback issues
@@ -88,6 +89,7 @@ const generateThumbnail = (file) =>
       cleanUp(); // Clean up resources in case of error
     });
   });
+};
 
 const LoadingDots = () => {
   const [dots, setDots] = useState('');
@@ -179,13 +181,11 @@ const CampaignFirstDraft = ({
         preview: URL.createObjectURL(file),
       });
 
-      if (file) {
-        try {
-          const thumbnail = await generateThumbnail(file);
-          newFile.thumbnail = thumbnail;
-        } catch (error) {
-          console.error('Error generating thumbnail:', error);
-        }
+      try {
+        const thumbnail = await generateThumbnail(file);
+        newFile.thumbnail = thumbnail;
+      } catch (error) {
+        console.error('Error generating thumbnail:', error);
       }
 
       setPreview(newFile.preview);
