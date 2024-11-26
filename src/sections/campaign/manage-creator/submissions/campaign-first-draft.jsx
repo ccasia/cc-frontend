@@ -181,7 +181,7 @@ const CampaignFirstDraft = ({
 
         video.load();
 
-        video.play();
+        // video.play();
 
         // When video metadata is loaded, set the time to capture thumbnail
         video.addEventListener('loadeddata', () => {
@@ -222,16 +222,12 @@ const CampaignFirstDraft = ({
         preview: URL.createObjectURL(file),
       });
 
-      alert('ABOUT TO START');
       try {
-        alert('STARTING...');
         const thumbnail = await generateThumbnail(newFile);
         newFile.thumbnail = thumbnail;
-        alert('HAAA...');
       } catch (error) {
         console.error('Error generating thumbnail:', error);
       }
-      alert('END...');
 
       setPreview(newFile.preview);
       localStorage.setItem('preview', newFile.preview);
