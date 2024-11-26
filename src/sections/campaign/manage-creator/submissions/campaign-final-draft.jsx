@@ -183,19 +183,33 @@ const CampaignFinalDraft = ({
 
   const generateThumbnail = useCallback(
     (file) =>
-      new Promise((resolve) => {
+      new Promise((resolve, reject) => {
         const video = document.createElement('video');
         video.src = URL.createObjectURL(file);
+
+        // When video metadata is loaded, set the time to capture thumbnail
         video.addEventListener('loadeddata', () => {
-          video.currentTime = 1;
+          video.currentTime = 1; // Capture thumbnail at 1 second
         });
+
+        // After seeking to 1 second, capture the frame
         video.addEventListener('seeked', () => {
           const canvas = document.createElement('canvas');
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
+
           const ctx = canvas.getContext('2d');
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          // Revoke object URL to free up memory
+          URL.revokeObjectURL(video.src);
+
+          // Return the Base64 image URL
           resolve(canvas.toDataURL());
+        });
+
+        video.addEventListener('error', () => {
+          reject(new Error('Failed to load video'));
         });
       }),
     []
@@ -208,12 +222,12 @@ const CampaignFinalDraft = ({
         preview: URL.createObjectURL(file),
       });
 
-      try {
-        const thumbnail = await generateThumbnail(file);
-        newFile.thumbnail = thumbnail;
-      } catch (error) {
-        console.error('Error generating thumbnail:', error);
-      }
+      // try {
+      //   const thumbnail = await generateThumbnail(file);
+      //   newFile.thumbnail = thumbnail;
+      // } catch (error) {
+      //   console.error('Error generating thumbnail:', error);
+      // }
 
       setPreview(newFile.preview);
       localStorage.setItem('preview', newFile.preview);
@@ -221,6 +235,15 @@ const CampaignFinalDraft = ({
 
       if (file) {
         setValue('draft', newFile, { shouldValidate: true });
+
+        generateThumbnail(file)
+          .then((thumbnailData) => {
+            newFile.thumbnail = thumbnailData;
+          })
+          .catch((err) => {
+            console.error('Error generating thumbnail:', err);
+          });
+
         const interval = setInterval(() => {
           setUploadProgress((prev) => {
             if (prev >= 100) {
