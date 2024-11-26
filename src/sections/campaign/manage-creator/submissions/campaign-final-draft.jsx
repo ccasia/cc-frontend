@@ -64,67 +64,20 @@ const formatFileSize = (bytes) => {
   return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
 
-// const generateThumbnail = (file) =>
-//   new Promise((resolve) => {
-//     const video = document.createElement('video');
-//     video.src = URL.createObjectURL(file);
-//     video.addEventListener('loadeddata', () => {
-//       video.currentTime = 1;
-//     });
-//     video.addEventListener('seeked', () => {
-//       const canvas = document.createElement('canvas');
-//       canvas.width = video.videoWidth;
-//       canvas.height = video.videoHeight;
-//       const ctx = canvas.getContext('2d');
-//       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-//       resolve(canvas.toDataURL());
-//     });
-//   });
-
 const generateThumbnail = (file) =>
-  new Promise((resolve, reject) => {
+  new Promise((resolve) => {
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
-    video.muted = true; // Ensure no sound
-    video.playsInline = true; // For mobile browsers
-    video.crossOrigin = 'anonymous'; // Handle cross-origin issues if needed
-
-    const cleanUp = () => {
-      URL.revokeObjectURL(video.src);
-      video.remove(); // Remove video element to free up memory
-    };
-
-    const captureFrame = () => {
+    video.addEventListener('loadeddata', () => {
+      video.currentTime = 1;
+    });
+    video.addEventListener('seeked', () => {
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
       resolve(canvas.toDataURL());
-      cleanUp();
-    };
-
-    video.addEventListener('loadeddata', () => {
-      // Play the video briefly to ensure compatibility
-      video
-        .play()
-        .then(() => {
-          video.pause(); // Pause immediately
-          video.currentTime = 1; // Seek to 1 second
-        })
-        .catch((err) => {
-          reject(`Error playing video: ${err.message}`);
-          cleanUp();
-        });
-    });
-
-    video.addEventListener('seeked', captureFrame);
-
-    video.addEventListener('error', (e) => {
-      reject(`Error loading video: ${e.message}`);
-      cleanUp();
     });
   });
 
