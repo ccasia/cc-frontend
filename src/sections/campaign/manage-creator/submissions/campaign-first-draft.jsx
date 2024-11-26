@@ -55,11 +55,12 @@ const formatFileSize = (bytes) => {
 
 const generateThumbnail = (file) => {
   alert(JSON.stringify(file));
-  Promise((resolve, reject) => {
+  // eslint-disable-next-line no-new
+  new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
     video.muted = true; // Mute the video to prevent playback issues
-    video.playsInline = true; // Improve mobile performance
+    // video.playsInline = true; // Improve mobile performance
     video.crossOrigin = 'anonymous'; // Ensure proper cross-origin handling if needed
 
     const cleanUp = () => {
