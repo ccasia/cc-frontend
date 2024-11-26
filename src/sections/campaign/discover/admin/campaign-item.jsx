@@ -94,7 +94,18 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         }}
       />
       <Box sx={{ mt: 0.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            fontWeight: 650, 
+            mb: -0.1, 
+            pb: 0.2, 
+            mt: 0.8,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {campaign?.name}
         </Typography>
         <Typography

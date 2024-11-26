@@ -21,6 +21,8 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
+  Avatar,
+  Chip,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -143,19 +145,80 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   );
 
   const renderRejectMessage = (
-    <Alert severity="error">
-      <Typography variant="subtitle1">Posting Rejected!</Typography>
-      <ListItemText
-        primary={submission?.feedback?.content}
-        secondary="Please re-post and submit the link again."
-        primaryTypographyProps={{
-          variant: 'subtitle2',
-        }}
-        secondaryTypographyProps={{
-          variant: 'caption',
-        }}
-      />
-    </Alert>
+    <Box mt={2}>
+      {submission.feedback
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map((feedback, index) => (
+          <Box
+            key={index}
+            mb={2}
+            p={2}
+            border={1}
+            borderColor="grey.300"
+            borderRadius={1}
+            display="flex"
+            alignItems="flex-start"
+          >
+            <Avatar
+              src={feedback.admin?.photoURL || '/default-avatar.png'}
+              alt={feedback.admin?.name || 'User'}
+              sx={{ mr: 2 }}
+            />
+            <Box
+              flexGrow={1}
+              sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+            >
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 'bold', marginBottom: '2px' }}
+              >
+                {feedback.admin?.name || 'Unknown User'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {feedback.admin?.role || 'No Role'}
+              </Typography>
+              <Box sx={{ textAlign: 'left', mt: 1 }}>
+                {feedback.content.split('\n').map((line, i) => (
+                  <Typography key={i} variant="body2">
+                    {line}
+                  </Typography>
+                ))}
+                {feedback.reasons && feedback.reasons.length > 0 && (
+                  <Box mt={1} sx={{ textAlign: 'left' }}>
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                      {feedback.reasons.map((reason, idx) => (
+                        <Box
+                          key={idx}
+                          sx={{
+                            border: '1.5px solid #e7e7e7',
+                            borderBottom: '4px solid #e7e7e7',
+                            borderRadius: 1,
+                            p: 0.5,
+                            display: 'inline-flex',
+                          }}
+                        >
+                          <Chip
+                            label={reason}
+                            size="small"
+                            color="default"
+                            variant="outlined"
+                            sx={{
+                              border: 'none',
+                              color: '#8e8e93',
+                              fontSize: '0.75rem',
+                              padding: '1px 2px',
+                            }}
+                          />
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        ))}
+    </Box>
   );
 
   const onSubmit = handleSubmit(async (data) => {

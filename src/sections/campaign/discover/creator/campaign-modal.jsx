@@ -515,16 +515,16 @@ const CampaignModal = ({
                 ) : (
                   <Chip
                     icon={<Iconify icon="mdi:clock" />}
-                    label="Under Review"
+                    label="In Review"
                     sx={{
                       bgcolor: 'background.paper',
                       color: 'text.primary',
-                      fontWeight: 550,
+                      fontWeight: 600,
                       fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      height: '40px',
+                      height: '42px',
                       minWidth: '100px',
                       border: '1px solid',
-                      borderBottom: '3px solid',
+                      borderBottom: '4px solid',
                       borderColor: 'divider',
                       '& .MuiChip-icon': {
                         fontSize: 18,

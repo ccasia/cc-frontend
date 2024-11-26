@@ -158,11 +158,12 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
           sx={{
             flex: 1,
             ml: 1,
-            background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
-            color: 'white',
-            border: '1px solid #3300c3',
+            backgroundColor: '#203ff5',
+            color: 'white', 
+            borderBottom: '3px solid',
+            borderBottomColor: isSubmitting ? 'rgba(0, 0, 0, 0.12)' : '#1429a0',
             '&:hover': {
-              background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+              backgroundColor: '#4259f7',
             },
             fontSize: { xs: '0.8rem', sm: '0.875rem' },
             padding: { xs: '6px 12px', sm: '8px 16px' },
@@ -311,11 +312,12 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign }) => {
             onClick={modal.onTrue}
             disabled={!value || value === pitch?.content}
             sx={{
-              background: 'linear-gradient(to bottom, #7d54fe, #5131ff)',
-              color: 'white',
-              border: '1px solid #3300c3',
+              backgroundColor: '#203ff5',
+              color: 'white', 
+              borderBottom: '3px solid',
+              borderBottomColor: (!value || value === pitch?.content) ? '#rgba(0, 0, 0, 0.12)' : '#1429a0',
               '&:hover': {
-                background: 'linear-gradient(to bottom, #6a46e5, #4628e6)',
+                backgroundColor: '#4259f7',
               },
               fontSize: { xs: '0.8rem', sm: '0.875rem' },
               padding: { xs: '6px 12px', sm: '8px 16px' },

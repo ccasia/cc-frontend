@@ -134,7 +134,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
   };
 
   const renderImage = (
-    <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
+    <Box sx={{ position: 'relative', height: 180, overflow: 'hidden'}}>
       <Image
         alt={campaign?.name}
         src={campaign?.campaignBrief?.images[0]}
@@ -143,6 +143,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
           width: '100%',
           objectFit: 'cover',
           objectPosition: 'center',
+          
         }}
       />
       <Box sx={{ position: 'absolute', top: 20, left: 20, display: 'flex', gap: 1 }}>
@@ -185,7 +186,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
         }}
       />
       <Box sx={{ mt: 0.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
+        <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {campaign?.name}
         </Typography>
         <Typography

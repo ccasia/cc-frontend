@@ -36,6 +36,7 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const LoadingDots = () => {
   const [dots, setDots] = useState('');
@@ -301,7 +302,10 @@ const CampaignFinalDraft = ({
             <Image src="/assets/pending.svg" sx={{ width: 250 }} />
             <Typography variant="subtitle2">Your Final Draft is in review.</Typography>
             <Button
-              onClick={display.onTrue}
+              onClick={() => {
+                setPreview(submission?.content);
+                display.onTrue();
+              }}
               variant="contained"
               startIcon={<Iconify icon="solar:document-bold" width={24} />}
               sx={{
@@ -422,120 +426,123 @@ const CampaignFinalDraft = ({
 
         {submission?.status === 'CHANGES_REQUIRED' && (
           <Stack spacing={2}>
-            <Box textAlign="center">
-              <Button
-                onClick={display.onTrue}
-                variant="contained"
-                startIcon={<Iconify icon="solar:document-bold" width={24} />}
+            <Box>
+              <Box 
+                component={Paper} 
                 sx={{
-                  bgcolor: '#203ff5',
-                  color: 'white',
-                  borderBottom: 3.5,
-                  borderBottomColor: '#112286',
-                  borderRadius: 1.5,
-                  px: 2.5,
-                  py: 1,
-                  '&:hover': {
-                    bgcolor: '#203ff5',
-                    opacity: 0.9,
-                  },
+                  p: { xs: 2, sm: 3 },
+                  mb: 2,
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
                 }}
               >
-                Preview Draft
-              </Button>
-            </Box>
+                <Box sx={{ mb: 2 }}>
+                  <Chip
+                    label="REJECTED"
+                    sx={{
+                      color: '#ff3b30',
+                      bgcolor: '#fff',
+                      border: '1px solid #ff3b30',
+                      borderBottom: '3px solid #ff3b30',
+                      borderRadius: 0.6,
+                      px: 1,
+                      '& .MuiChip-label': {
+                        px: 1,
+                        fontWeight: 650
+                      },
+                      '&:hover': {
+                        bgcolor: '#fff'
+                      }
+                    }}
+                  />
+                </Box>
 
-            {isProcessing ? (
-              <Stack justifyContent="center" alignItems="center" gap={1}>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    fontSize: '0.95rem',
+                    color: '#48484A',
+                    mb: 2
+                  }}
+                >
+                  <strong>Caption:</strong> {submission?.caption}
+                </Typography>
+
                 <Box
                   sx={{
                     position: 'relative',
-                    display: 'inline-flex',
+                    cursor: 'pointer',
+                    width: { xs: '100%', sm: '300px' },
+                    height: { xs: '200px', sm: '169px' },
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    boxShadow: 3,
                   }}
+                  onClick={display.onTrue}
                 >
-                  <CircularProgress
-                    variant="determinate"
-                    thickness={5}
-                    value={progress}
-                    size={200}
+                  <Box
+                    component="video"
                     sx={{
-                      ' .MuiCircularProgress-circle': {
-                        stroke:
-                          theme.palette.mode === 'dark'
-                            ? theme.palette.common.white
-                            : theme.palette.common.black,
-                        strokeLinecap: 'round',
-                      },
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: 2,
                     }}
-                  />
+                  >
+                    <source src={submission?.content} />
+                  </Box>
                   <Box
                     sx={{
+                      position: 'absolute',
                       top: 0,
                       left: 0,
-                      bottom: 0,
                       right: 0,
-                      position: 'absolute',
+                      bottom: 0,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      bgcolor: 'rgba(0, 0, 0, 0.4)',
+                      borderRadius: 2,
                     }}
                   >
-                    <Typography variant="h3" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
-                      {`${Math.round(progress)}%`}
-                    </Typography>
+                    <VisibilityIcon sx={{ color: 'white', fontSize: 32 }} />
                   </Box>
                 </Box>
-                <Stack gap={1}>
-                  <Typography variant="caption">{progressName && progressName}</Typography>
-                  <Button variant="contained" size="small" onClick={() => handleCancel()}>
-                    Cancel
-                  </Button>
-                </Stack>
-              </Stack>
-            ) : (
-              <Stack gap={2}>
-                <Box>
-                  <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                    Please review the changes required for your second draft.
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: '#221f20', mb: 13, ml: -1 }}>
-                    Re-upload a new draft to address the feedback.
-                  </Typography>
+              </Box>
 
-                  <Box
-                    sx={{
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
-                      mb: 2,
-                      mx: -1.5,
-                    }}
-                  />
+              <Box
+                sx={{
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  mb: 2,
+                  mx: -1.5,
+                }}
+              />
 
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                      variant="contained"
-                      onClick={() => setOpenUploadModal(true)}
-                      startIcon={<Iconify icon="material-symbols:add" width={24} />}
-                      sx={{
-                        bgcolor: '#203ff5',
-                        color: 'white',
-                        borderBottom: 3.5,
-                        borderBottomColor: '#112286',
-                        borderRadius: 1.5,
-                        px: 2.5,
-                        py: 1.2,
-                        '&:hover': {
-                          bgcolor: '#203ff5',
-                          opacity: 0.9,
-                        },
-                      }}
-                    >
-                      Re-Upload
-                    </Button>
-                  </Box>
-                </Box>
-              </Stack>
-            )}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="contained"
+                  onClick={() => setOpenUploadModal(true)}
+                  startIcon={<Iconify icon="material-symbols:add" width={24} />}
+                  sx={{
+                    bgcolor: '#203ff5',
+                    color: 'white',
+                    borderBottom: 3.5,
+                    borderBottomColor: '#112286',
+                    borderRadius: 1.5,
+                    px: 2.5,
+                    py: 1.2,
+                    '&:hover': {
+                      bgcolor: '#203ff5',
+                      opacity: 0.9,
+                    },
+                  }}
+                >
+                  Re-Upload
+                </Button>
+              </Box>
+            </Box>
           </Stack>
         )}
 
@@ -544,7 +551,10 @@ const CampaignFinalDraft = ({
             <Image src="/assets/approve.svg" sx={{ width: 250 }} />
             <Typography variant="subtitle2">Your Final Draft has been approved.</Typography>
             <Button
-              onClick={display.onTrue}
+              onClick={() => {
+                setPreview(submission?.content);
+                display.onTrue();
+              }}
               variant="contained"
               startIcon={<Iconify icon="solar:document-bold" width={24} />}
               sx={{
@@ -566,7 +576,17 @@ const CampaignFinalDraft = ({
           </Stack>
         )}
 
-        <Dialog open={openUploadModal} fullWidth maxWidth="md">
+        <Dialog 
+          open={openUploadModal} 
+          fullWidth 
+          maxWidth="md"
+          sx={{
+            '& .MuiDialog-paper': {
+              width: { xs: 'calc(100% - 32px)', sm: '100%' },
+              m: { xs: 2, sm: 32 }
+            }
+          }}
+        >
           <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
             <Stack direction="row" alignItems="center" gap={2}>
               <Box>
@@ -574,7 +594,7 @@ const CampaignFinalDraft = ({
                   variant="h5"
                   sx={{
                     fontFamily: 'Instrument Serif, serif',
-                    fontSize: { xs: '2rem', sm: '2.4rem' },
+                    fontSize: { xs: '1.8rem', sm: '2.4rem' },
                     fontWeight: 550,
                   }}
                 >
@@ -587,13 +607,13 @@ const CampaignFinalDraft = ({
                 sx={{
                   ml: 'auto',
                   '& svg': {
-                    width: 24,
-                    height: 24,
+                    width: { xs: 20, sm: 24 },
+                    height: { xs: 20, sm: 24 },
                     color: '#636366',
                   },
                 }}
               >
-                <Iconify icon="hugeicons:cancel-01" width={24} />
+                <Iconify icon="hugeicons:cancel-01" />
               </IconButton>
             </Stack>
           </DialogTitle>
@@ -614,7 +634,13 @@ const CampaignFinalDraft = ({
                           bgcolor: '#ffffff',
                         }}
                       >
-                        <Stack direction="row" spacing={2}>
+                        <Stack 
+                          direction="row" 
+                          spacing={2}
+                          sx={{
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                          }}
+                        >
                           <Box
                             component="img"
                             src={methods.getValues('draft').thumbnail}
@@ -627,7 +653,11 @@ const CampaignFinalDraft = ({
                             }}
                           />
 
-                          <Box sx={{ flexGrow: 1 }}>
+                          <Box sx={{ 
+                            flexGrow: 1,
+                            minWidth: { xs: '100%', sm: 'auto' },
+                            mt: { xs: 1, sm: 0 }
+                          }}>
                             <Typography
                               variant="subtitle2"
                               noWrap
@@ -635,7 +665,7 @@ const CampaignFinalDraft = ({
                                 color: 'text.primary',
                                 fontWeight: 600,
                                 fontSize: '1rem',
-                                maxWidth: '300px',
+                                maxWidth: { xs: '100%', sm: '300px' },
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -659,209 +689,117 @@ const CampaignFinalDraft = ({
                             </Typography>
                           </Box>
 
-                          {uploadProgress < 100 ? (
-                            <Stack direction="row" spacing={2} alignItems="center">
-                              <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                                <CircularProgress
-                                  variant="determinate"
-                                  value={100}
-                                  size={30}
-                                  thickness={6}
-                                  sx={{ color: 'grey.300' }}
-                                />
-                                <CircularProgress
-                                  variant="determinate"
-                                  value={uploadProgress}
-                                  size={30}
-                                  thickness={6}
+                          <Stack 
+                            direction="row" 
+                            spacing={2} 
+                            alignItems="center"
+                            sx={{ 
+                              width: { xs: '100%', sm: 'auto' },
+                              justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+                              mt: { xs: 2, sm: 0 }
+                            }}
+                          >
+                            {uploadProgress < 100 ? (
+                              <Stack direction="row" spacing={2} alignItems="center">
+                                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                                  <CircularProgress
+                                    variant="determinate"
+                                    value={100}
+                                    size={30}
+                                    thickness={6}
+                                    sx={{ color: 'grey.300' }}
+                                  />
+                                  <CircularProgress
+                                    variant="determinate"
+                                    value={uploadProgress}
+                                    size={30}
+                                    thickness={6}
+                                    sx={{
+                                      color: '#5abc6f',
+                                      position: 'absolute',
+                                      left: 0,
+                                      strokeLinecap: 'round',
+                                    }}
+                                  />
+                                </Box>
+                                <Button
+                                  onClick={handleRemoveFile}
+                                  variant="contained"
                                   sx={{
-                                    color: '#5abc6f',
-                                    position: 'absolute',
-                                    left: 0,
-                                    strokeLinecap: 'round',
+                                    bgcolor: 'white',
+                                    border: 1,
+                                    borderColor: '#e7e7e7',
+                                    borderBottom: 3,
+                                    borderBottomColor: '#e7e7e7',
+                                    color: '#221f20',
+                                    '&:hover': {
+                                      bgcolor: 'white',
+                                      borderColor: '#e7e7e7',
+                                    },
+                                    textTransform: 'none',
+                                    px: 2,
+                                    py: 1.5,
+                                    fontSize: '0.875rem',
+                                    minWidth: '80px',
+                                    height: '45px',
                                   }}
-                                />
-                              </Box>
-                              <Button
-                                onClick={handleRemoveFile}
-                                variant="contained"
-                                sx={{
-                                  bgcolor: 'white',
-                                  border: 1,
-                                  borderColor: '#e7e7e7',
-                                  borderBottom: 3,
-                                  borderBottomColor: '#e7e7e7',
-                                  color: '#221f20',
-                                  '&:hover': {
+                                >
+                                  Cancel
+                                </Button>
+                              </Stack>
+                            ) : (
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Button
+                                  onClick={display.onTrue}
+                                  variant="contained"
+                                  sx={{
                                     bgcolor: 'white',
+                                    border: 1,
                                     borderColor: '#e7e7e7',
-                                  },
-                                  textTransform: 'none',
-                                  px: 2,
-                                  py: 1.5,
-                                  fontSize: '0.875rem',
-                                  minWidth: '80px',
-                                  height: '45px',
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                            </Stack>
-                          ) : (
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <Button
-                                onClick={() => {
-                                  const video = document.createElement('video');
-                                  video.src = localStorage.getItem('preview');
-                                  video.controls = true;
-                                  video.style.cssText = `
-                                    max-width: 100%;
-                                    border-radius: 8px;
-                                  `;
-
-                                  const header = document.createElement('div');
-                                  header.style.cssText = `
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 8px;
-                                    padding: 16px 24px;
-                                  `;
-
-                                  const title = document.createElement('h2');
-                                  title.textContent = 'Preview Video';
-                                  title.style.cssText = `
-                                    font-family: 'Instrument Serif', serif;
-                                    font-size: 2rem;
-                                    font-weight: 550;
-                                    margin: 0;
-                                  `;
-
-                                  const closeButton = document.createElement('button');
-                                  closeButton.innerHTML = `
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M18 6L6 18M6 6L18 18" stroke="#636366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                  `;
-                                  closeButton.style.cssText = `
-                                    margin-left: auto;
-                                    background: none;
-                                    border: none;
-                                    cursor: pointer;
-                                    padding: 8px;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    color: #636366;
-                                    border-radius: 50%;
-                                    transition: background-color 0.2s ease;
-                                  `;
-
-                                  closeButton.addEventListener('mouseover', () => {
-                                    closeButton.style.backgroundColor = '#f5f5f7';
-                                  });
-                                  closeButton.addEventListener('mouseout', () => {
-                                    closeButton.style.backgroundColor = 'transparent';
-                                  });
-
-                                  const divider = document.createElement('div');
-                                  divider.style.cssText = `
-                                    width: 95%;
-                                    margin: 0 auto;
-                                    border-bottom: 1px solid #e7e7e7;
-                                  `;
-
-                                  const videoContainer = document.createElement('div');
-                                  videoContainer.style.cssText = `
-                                    padding: 24px;
-                                    position: relative;
-                                  `;
-
-                                  const dialog = document.createElement('dialog');
-                                  dialog.style.cssText = `
-                                    padding: 0;
-                                    background: white;
-                                    border: none;
-                                    border-radius: 12px;
-                                    max-width: 80vw;
-                                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                                  `;
-
-                                  header.appendChild(title);
-                                  header.appendChild(closeButton);
-                                  videoContainer.appendChild(video);
-                                  dialog.appendChild(header);
-                                  dialog.appendChild(divider);
-                                  dialog.appendChild(videoContainer);
-                                  document.body.appendChild(dialog);
-                                  dialog.showModal();
-
-                                  const handleClose = () => {
-                                    video.pause();
-                                    video.currentTime = 0;
-                                    video.src = '';
-                                    dialog.close();
-                                    dialog.remove();
-                                  };
-
-                                  closeButton.addEventListener('click', handleClose);
-                                  dialog.addEventListener('click', (e) => {
-                                    if (e.target === dialog) {
-                                      handleClose();
-                                    }
-                                  });
-                                  dialog.addEventListener('cancel', (e) => {
-                                    e.preventDefault();
-                                    handleClose();
-                                  });
-                                }}
-                                variant="contained"
-                                sx={{
-                                  bgcolor: 'white',
-                                  border: 1,
-                                  borderColor: '#e7e7e7',
-                                  borderBottom: 3,
-                                  borderBottomColor: '#e7e7e7',
-                                  color: '#221f20',
-                                  '&:hover': {
+                                    borderBottom: 3,
+                                    borderBottomColor: '#e7e7e7',
+                                    color: '#221f20',
+                                    '&:hover': {
+                                      bgcolor: 'white',
+                                      borderColor: '#e7e7e7',
+                                    },
+                                    textTransform: 'none',
+                                    px: 2,
+                                    py: 1.5,
+                                    fontSize: '0.875rem',
+                                    minWidth: '80px',
+                                    height: '45px',
+                                  }}
+                                >
+                                  Preview
+                                </Button>
+                                <Button
+                                  onClick={handleRemoveFile}
+                                  variant="contained"
+                                  sx={{
                                     bgcolor: 'white',
+                                    border: 1,
                                     borderColor: '#e7e7e7',
-                                  },
-                                  textTransform: 'none',
-                                  px: 2,
-                                  py: 1.5,
-                                  fontSize: '0.875rem',
-                                  minWidth: '80px',
-                                  height: '45px',
-                                }}
-                              >
-                                Preview
-                              </Button>
-                              <Button
-                                onClick={handleRemoveFile}
-                                variant="contained"
-                                sx={{
-                                  bgcolor: 'white',
-                                  border: 1,
-                                  borderColor: '#e7e7e7',
-                                  borderBottom: 3,
-                                  borderBottomColor: '#e7e7e7',
-                                  color: '#221f20',
-                                  '&:hover': {
-                                    bgcolor: 'white',
-                                    borderColor: '#e7e7e7',
-                                  },
-                                  textTransform: 'none',
-                                  px: 2,
-                                  py: 1.5,
-                                  fontSize: '0.875rem',
-                                  minWidth: '80px',
-                                  height: '45px',
-                                }}
-                              >
-                                Remove
-                              </Button>
-                            </Stack>
-                          )}
+                                    borderBottom: 3,
+                                    borderBottomColor: '#e7e7e7',
+                                    color: '#221f20',
+                                    '&:hover': {
+                                      bgcolor: 'white',
+                                      borderColor: '#e7e7e7',
+                                    },
+                                    textTransform: 'none',
+                                    px: 2,
+                                    py: 1.5,
+                                    fontSize: '0.875rem',
+                                    minWidth: '80px',
+                                    height: '45px',
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </Stack>
+                            )}
+                          </Stack>
                         </Stack>
                       </Stack>
                     </Box>
@@ -888,10 +826,6 @@ const CampaignFinalDraft = ({
                     multiline
                     rows={4}
                     required
-                    rules={{
-                      required: 'Caption is required',
-                      validate: (value) => value.trim() !== '' || 'Caption cannot be empty',
-                    }}
                     sx={{
                       bgcolor: '#ffffff !important',
                       border: '0px solid #e7e7e7',
@@ -910,6 +844,8 @@ const CampaignFinalDraft = ({
               onClick={onSubmit}
               disabled={!isDirty}
               sx={{
+                fontSize: '0.95rem',
+                fontWeight: 600,
                 bgcolor: isDirty ? '#203ff5' : '#b0b0b1 !important',
                 color: '#ffffff !important',
                 borderBottom: 3.5,
@@ -1066,12 +1002,12 @@ const CampaignFinalDraft = ({
         <Dialog
           open={display.value}
           onClose={display.onFalse}
-          fullWidth
           maxWidth="md"
           sx={{
             '& .MuiDialog-paper': {
               p: 0,
-              maxWidth: '80vw',
+              maxWidth: { xs: '95vw', sm: '85vw', md: '75vw' },
+              margin: { xs: '16px', sm: '32px' },
             },
           }}
         >
@@ -1086,21 +1022,18 @@ const CampaignFinalDraft = ({
                   m: 0,
                 }}
               >
-                Preview Video
+                Preview Draft
               </Typography>
 
               <IconButton
                 onClick={display.onFalse}
                 sx={{
                   ml: 'auto',
-                  '& svg': {
-                    width: 24,
-                    height: 24,
-                    color: '#636366',
-                  },
+                  color: 'text.secondary',
+                  '&:hover': { bgcolor: 'action.hover' },
                 }}
               >
-                <Iconify icon="hugeicons:cancel-01" width={24} />
+                <Iconify icon="hugeicons:cancel-01" width={20} />
               </IconButton>
             </Stack>
           </DialogTitle>
@@ -1110,58 +1043,57 @@ const CampaignFinalDraft = ({
               width: '95%',
               mx: 'auto',
               borderBottom: '1px solid',
-              borderColor: '#e7e7e7',
+              borderColor: 'divider',
             }}
           />
 
-          <DialogContent sx={{ p: 3, position: 'relative' }}>
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              gap={2}
-              sx={{
-                width: '100%',
-                maxWidth: '100%',
-                margin: '0 auto',
-              }}
-            >
+          <DialogContent sx={{ p: 2.5 }}>
+            <Stack spacing={2}>
               <Box
                 component="video"
                 autoPlay
                 controls
                 sx={{
                   width: '100%',
-                  maxHeight: '70vh',
-                  borderRadius: 1.5,
-                  boxShadow: 'none',
-                  bgcolor: 'background.paper',
+                  maxHeight: '60vh',
+                  borderRadius: 1,
+                  bgcolor: 'background.neutral',
                 }}
               >
-                <source src={submission?.content} />
+                <source src={preview || submission?.content} />
               </Box>
 
-              <Box
-                component={Paper}
-                p={2}
-                width="100%"
-                sx={{
-                  boxShadow: 'none',
-                  border: '1px solid',
-                  borderColor: '#e7e7e7',
-                  borderRadius: 1.5,
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ mb: 0.5, display: 'block' }}
+              {/* Caption section below video */}
+              {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 1,
+                    bgcolor: 'background.neutral',
+                  }}
                 >
-                  Caption
-                </Typography>
-                <Typography variant="subtitle1">{submission?.caption}</Typography>
-              </Box>
-            </Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      display: 'block',
+                      mb: 0.5,
+                    }}
+                  >
+                    Caption
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.primary',
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {submission?.caption}
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
           </DialogContent>
         </Dialog>
 
