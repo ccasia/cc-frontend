@@ -210,36 +210,36 @@ const CampaignFirstDraft = ({
   const handleDrop = useCallback(
     async (acceptedFiles) => {
       const file = acceptedFiles[0];
+      const newFile = Object.assign(file, {
+        preview: URL.createObjectURL(file),
+        thumbnail: '',
+      });
+
+      setPreview(newFile.preview);
+      localStorage.setItem('preview', newFile.preview);
+      setUploadProgress(0);
+
+      try {
+        const thumbnail = await generateThumbnail(file);
+        newFile.thumbnail = thumbnail;
+      } catch (error) {
+        console.error('Error generating thumbnail:', error);
+      }
 
       if (file) {
-        const newFile = Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        });
+        setValue('draft', newFile, { shouldValidate: true });
 
-        setPreview(newFile.preview);
-        localStorage.setItem('preview', newFile.preview);
-        setUploadProgress(0);
-
-        try {
-          const thumbnail = await generateThumbnail(file);
-          newFile.thumbnail = thumbnail;
-
-          setValue('draft', newFile, { shouldValidate: true });
-
-          // Simulate upload progress
-          const interval = setInterval(() => {
-            setUploadProgress((prev) => {
-              if (prev >= 100) {
-                clearInterval(interval);
-                enqueueSnackbar('Upload complete!', { variant: 'success' });
-                return 100;
-              }
-              return prev + 10;
-            });
-          }, 200);
-        } catch (error) {
-          console.error('Error generating thumbnail:', error);
-        }
+        // Simulate upload progress
+        const interval = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 100) {
+              clearInterval(interval);
+              enqueueSnackbar('Upload complete!', { variant: 'success' });
+              return 100;
+            }
+            return prev + 10;
+          });
+        }, 200);
       }
     },
     [setValue, generateThumbnail]
