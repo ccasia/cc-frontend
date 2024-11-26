@@ -218,22 +218,23 @@ const CampaignFinalDraft = ({
   const handleDrop = useCallback(
     async (acceptedFiles) => {
       const file = acceptedFiles[0];
+
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
       });
+
+      try {
+        const thumbnail = await generateThumbnail(file);
+        newFile.thumbnail = thumbnail;
+      } catch (error) {
+        console.error('Error generating thumbnail:', error);
+      }
 
       setPreview(newFile.preview);
       localStorage.setItem('preview', newFile.preview);
       setUploadProgress(0);
 
       if (file) {
-        try {
-          const thumbnail = await generateThumbnail(file);
-          newFile.thumbnail = thumbnail;
-        } catch (error) {
-          console.error('Error generating thumbnail:', error);
-        }
-
         setValue('draft', newFile, { shouldValidate: true });
 
         const interval = setInterval(() => {

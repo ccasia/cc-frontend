@@ -210,21 +210,30 @@ const CampaignFirstDraft = ({
   const handleDrop = useCallback(
     async (acceptedFiles) => {
       const file = acceptedFiles[0];
+
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
         thumbnail: '',
       });
 
-      setPreview(newFile.preview);
-      localStorage.setItem('preview', newFile.preview);
-      setUploadProgress(0);
-
       try {
         const thumbnail = await generateThumbnail(file);
         newFile.thumbnail = thumbnail;
       } catch (error) {
+        alert(error);
         console.error('Error generating thumbnail:', error);
       }
+
+      setPreview(newFile.preview);
+      localStorage.setItem('preview', newFile.preview);
+      setUploadProgress(0);
+
+      // try {
+      //   const thumbnail = await generateThumbnail(file);
+      //   newFile.thumbnail = thumbnail;
+      // } catch (error) {
+      //   console.error('Error generating thumbnail:', error);
+      // }
 
       if (file) {
         setValue('draft', newFile, { shouldValidate: true });
