@@ -220,26 +220,26 @@ const CampaignFirstDraft = ({
         localStorage.setItem('preview', newFile.preview);
         setUploadProgress(0);
 
-        setValue('draft', newFile, { shouldValidate: true });
-
         try {
           const thumbnail = await generateThumbnail(file);
           newFile.thumbnail = thumbnail;
+
+          setValue('draft', newFile, { shouldValidate: true });
+
+          // Simulate upload progress
+          const interval = setInterval(() => {
+            setUploadProgress((prev) => {
+              if (prev >= 100) {
+                clearInterval(interval);
+                enqueueSnackbar('Upload complete!', { variant: 'success' });
+                return 100;
+              }
+              return prev + 10;
+            });
+          }, 200);
         } catch (error) {
           console.error('Error generating thumbnail:', error);
         }
-
-        // Simulate upload progress
-        const interval = setInterval(() => {
-          setUploadProgress((prev) => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              enqueueSnackbar('Upload complete!', { variant: 'success' });
-              return 100;
-            }
-            return prev + 10;
-          });
-        }, 200);
       }
     },
     [setValue, generateThumbnail]
