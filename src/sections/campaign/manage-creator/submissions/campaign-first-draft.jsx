@@ -130,7 +130,7 @@ const CampaignFirstDraft = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
-  const [thumbnailUrl, setThumbnail] = useState(null);
+  // const [thumbnailUrl, setThumbnail] = useState(null);
   const inQueue = useBoolean();
 
   const methods = useForm({
@@ -210,21 +210,21 @@ const CampaignFirstDraft = ({
   const handleDrop = useCallback(
     async (acceptedFiles) => {
       const file = acceptedFiles[0];
-      const newFile = Object.assign(file, {
-        preview: URL.createObjectURL(file),
-      });
-
-      setPreview(newFile.preview);
-      localStorage.setItem('preview', newFile.preview);
-      setUploadProgress(0);
 
       if (file) {
+        const newFile = Object.assign(file, {
+          preview: URL.createObjectURL(file),
+        });
+
+        setPreview(newFile.preview);
+        localStorage.setItem('preview', newFile.preview);
+        setUploadProgress(0);
+
         setValue('draft', newFile, { shouldValidate: true });
 
         try {
           const thumbnail = await generateThumbnail(file);
-          // newFile.thumbnail = thumbnail;
-          setThumbnail(thumbnail);
+          newFile.thumbnail = thumbnail;
         } catch (error) {
           console.error('Error generating thumbnail:', error);
         }
@@ -865,8 +865,7 @@ const CampaignFirstDraft = ({
                             >
                               <Box
                                 component="img"
-                                // src={methods.getValues('draft').thumbnail}
-                                src={!thumbnailUrl && thumbnailUrl}
+                                src={methods.getValues('draft').thumbnail}
                                 sx={{
                                   width: 64,
                                   height: 64,
