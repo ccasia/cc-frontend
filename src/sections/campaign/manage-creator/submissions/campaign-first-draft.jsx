@@ -179,6 +179,10 @@ const CampaignFirstDraft = ({
         const video = document.createElement('video');
         video.src = URL.createObjectURL(file);
 
+        video.load();
+
+        video.play();
+
         // When video metadata is loaded, set the time to capture thumbnail
         video.addEventListener('loadeddata', () => {
           video.currentTime = 1; // Capture thumbnail at 1 second
@@ -186,17 +190,21 @@ const CampaignFirstDraft = ({
 
         // After seeking to 1 second, capture the frame
         video.addEventListener('seeked', () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
+          if (video.readyState >= 2) {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
 
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          // Revoke object URL to free up memory
-          URL.revokeObjectURL(video.src);
-          // Return the Base64 image URL
-          resolve(canvas.toDataURL());
+            // Revoke object URL to free up memory
+            URL.revokeObjectURL(video.src);
+            // Return the Base64 image URL
+            resolve(canvas.toDataURL());
+          } else {
+            reject(new Error('Failed to capture thumbnail: video not ready'));
+          }
         });
 
         video.addEventListener('error', () => {
