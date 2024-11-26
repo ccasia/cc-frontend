@@ -203,7 +203,7 @@ const CampaignDetails = () => {
               chip
               options={[
                 { value: 'instagram', label: 'Instagram' },
-                { value: 'tiktok', label: 'Tikok' },
+                { value: 'tiktok', label: 'TikTok' },
               ]}
             />
           </FormField>
