@@ -53,104 +53,39 @@ const formatFileSize = (bytes) => {
   return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
 
-// const generateThumbnail = (file) =>
-//   new Promise((resolve, reject) => {
-//     const video = document.createElement('video');
-//     video.src = URL.createObjectURL(file);
-//     video.muted = true; // Mute the video to prevent playback issues
-//     video.playsInline = true; // Improve mobile performance
-//     video.crossOrigin = 'anonymous'; // Ensure proper cross-origin handling if needed
-
-//     const cleanUp = () => {
-//       URL.revokeObjectURL(video.src);
-//       video.remove(); // Remove video element to free up memory
-//     };
-
-//     video.addEventListener('loadeddata', () => {
-//       video.currentTime = 1; // Seek to 1 second
-//     });
-
-//     video.addEventListener('seeked', () => {
-//       const canvas = document.createElement('canvas');
-//       canvas.width = video.videoWidth;
-//       canvas.height = video.videoHeight;
-
-//       const ctx = canvas.getContext('2d');
-//       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-//       resolve(canvas.toDataURL());
-//       cleanUp(); // Clean up resources
-//     });
-
-//     video.addEventListener('error', (e) => {
-//       // eslint-disable-next-line prefer-promise-reject-errors
-//       reject(`Error loading video: ${e.message}`);
-//       cleanUp(); // Clean up resources in case of error
-//     });
-//   });
-
-// const generateThumbnail = (file) =>
-//   new Promise((resolve, reject) => {
-//     const video = document.createElement('video');
-//     video.src = URL.createObjectURL(file);
-//     video.muted = true; // Ensure no sound
-//     video.playsInline = true; // For mobile browsers
-//     video.crossOrigin = 'anonymous'; // Handle cross-origin issues if needed
-
-//     const cleanUp = () => {
-//       URL.revokeObjectURL(video.src);
-//       video.remove(); // Remove video element to free up memory
-//     };
-
-//     const captureFrame = () => {
-//       const canvas = document.createElement('canvas');
-//       canvas.width = video.videoWidth;
-//       canvas.height = video.videoHeight;
-
-//       const ctx = canvas.getContext('2d');
-//       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-//       resolve(canvas.toDataURL());
-//       cleanUp();
-//     };
-
-//     video.addEventListener('loadeddata', () => {
-//       // Play the video briefly to ensure compatibility
-//       video
-//         .play()
-//         .then(() => {
-//           video.pause(); // Pause immediately
-//           video.currentTime = 1; // Seek to 1 second
-//         })
-//         .catch((err) => {
-//           reject(`Error playing video: ${err.message}`);
-//           cleanUp();
-//         });
-//     });
-
-//     video.addEventListener('seeked', captureFrame);
-
-//     video.addEventListener('error', (e) => {
-//       reject(`Error loading video: ${e.message}`);
-//       cleanUp();
-//     });
-//   });
-
 const generateThumbnail = (file) =>
-  new Promise((resolve) => {
+  new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
+    video.muted = true; // Mute the video to prevent playback issues
+    video.playsInline = true; // Improve mobile performance
+    video.crossOrigin = 'anonymous'; // Ensure proper cross-origin handling if needed
+
+    const cleanUp = () => {
+      URL.revokeObjectURL(video.src);
+      video.remove(); // Remove video element to free up memory
+    };
+
     video.addEventListener('loadeddata', () => {
-      video.currentTime = 1;
+      video.currentTime = 1; // Seek to 1 second
     });
 
     video.addEventListener('seeked', () => {
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
       resolve(canvas.toDataURL());
+      cleanUp(); // Clean up resources
+    });
+
+    video.addEventListener('error', (e) => {
+      // eslint-disable-next-line prefer-promise-reject-errors
+      reject(`Error loading video: ${e.message}`);
+      cleanUp(); // Clean up resources in case of error
     });
   });
 
@@ -239,7 +174,6 @@ const CampaignFirstDraft = ({
 
   const handleDrop = useCallback(
     async (acceptedFiles) => {
-      // CHANGE LATER
       const file = acceptedFiles[0];
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
@@ -249,6 +183,7 @@ const CampaignFirstDraft = ({
         const thumbnail = await generateThumbnail(file);
         newFile.thumbnail = thumbnail;
       } catch (error) {
+        alert(JSON.stringify(error));
         console.error('Error generating thumbnail:', error);
       }
 
