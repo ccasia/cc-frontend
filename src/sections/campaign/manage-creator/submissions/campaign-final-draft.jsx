@@ -7,6 +7,7 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
   Chip,
@@ -36,7 +37,6 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const LoadingDots = () => {
   const [dots, setDots] = useState('');
@@ -144,6 +144,8 @@ const CampaignFinalDraft = ({
 
   const handleDrop = useCallback(
     async (acceptedFiles) => {
+      // CHANGE LATER
+      alert(JSON.stringify(acceptedFiles[0]));
       const file = acceptedFiles[0];
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
@@ -427,8 +429,8 @@ const CampaignFinalDraft = ({
         {submission?.status === 'CHANGES_REQUIRED' && (
           <Stack spacing={2}>
             <Box>
-              <Box 
-                component={Paper} 
+              <Box
+                component={Paper}
                 sx={{
                   p: { xs: 2, sm: 3 },
                   mb: 2,
@@ -449,21 +451,21 @@ const CampaignFinalDraft = ({
                       px: 1,
                       '& .MuiChip-label': {
                         px: 1,
-                        fontWeight: 650
+                        fontWeight: 650,
                       },
                       '&:hover': {
-                        bgcolor: '#fff'
-                      }
+                        bgcolor: '#fff',
+                      },
                     }}
                   />
                 </Box>
 
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
+                <Typography
+                  variant="body1"
+                  sx={{
                     fontSize: '0.95rem',
                     color: '#48484A',
-                    mb: 2
+                    mb: 2,
                   }}
                 >
                   <strong>Caption:</strong> {submission?.caption}
@@ -576,15 +578,15 @@ const CampaignFinalDraft = ({
           </Stack>
         )}
 
-        <Dialog 
-          open={openUploadModal} 
-          fullWidth 
+        <Dialog
+          open={openUploadModal}
+          fullWidth
           maxWidth="md"
           sx={{
             '& .MuiDialog-paper': {
               width: { xs: 'calc(100% - 32px)', sm: '100%' },
-              m: { xs: 2, sm: 32 }
-            }
+              m: { xs: 2, sm: 32 },
+            },
           }}
         >
           <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
@@ -634,11 +636,11 @@ const CampaignFinalDraft = ({
                           bgcolor: '#ffffff',
                         }}
                       >
-                        <Stack 
-                          direction="row" 
+                        <Stack
+                          direction="row"
                           spacing={2}
                           sx={{
-                            flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' },
                           }}
                         >
                           <Box
@@ -653,11 +655,13 @@ const CampaignFinalDraft = ({
                             }}
                           />
 
-                          <Box sx={{ 
-                            flexGrow: 1,
-                            minWidth: { xs: '100%', sm: 'auto' },
-                            mt: { xs: 1, sm: 0 }
-                          }}>
+                          <Box
+                            sx={{
+                              flexGrow: 1,
+                              minWidth: { xs: '100%', sm: 'auto' },
+                              mt: { xs: 1, sm: 0 },
+                            }}
+                          >
                             <Typography
                               variant="subtitle2"
                               noWrap
@@ -689,14 +693,14 @@ const CampaignFinalDraft = ({
                             </Typography>
                           </Box>
 
-                          <Stack 
-                            direction="row" 
-                            spacing={2} 
+                          <Stack
+                            direction="row"
+                            spacing={2}
                             alignItems="center"
-                            sx={{ 
+                            sx={{
                               width: { xs: '100%', sm: 'auto' },
                               justifyContent: { xs: 'flex-end', sm: 'flex-start' },
-                              mt: { xs: 2, sm: 0 }
+                              mt: { xs: 2, sm: 0 },
                             }}
                           >
                             {uploadProgress < 100 ? (

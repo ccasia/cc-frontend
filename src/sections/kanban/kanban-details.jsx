@@ -18,10 +18,10 @@ import { useAuthContext } from 'src/auth/hooks';
 import Scrollbar from 'src/components/scrollbar';
 
 import KanbanDetailsToolbar from './kanban-details-toolbar';
-import CampaignPosting from '../campaign/manage-creator/campaign-posting';
-import CampaignAgreement from '../campaign/manage-creator/campaign-agreement';
-import CampaignFirstDraft from '../campaign/manage-creator/campaign-first-draft';
-import CampaignFinalDraft from '../campaign/manage-creator/campaign-final-draft';
+import CampaignPosting from '../campaign/manage-creator/submissions/campaign-posting';
+import CampaignAgreement from '../campaign/manage-creator/submissions/campaign-agreement';
+import CampaignFirstDraft from '../campaign/manage-creator/submissions/campaign-first-draft';
+import CampaignFinalDraft from '../campaign/manage-creator/submissions/campaign-final-draft';
 
 // ----------------------------------------------------------------------
 

@@ -15,10 +15,10 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
-import CampaignPosting from './campaign-posting';
-import CampaignAgreement from './campaign-agreement';
-import CampaignFirstDraft from './campaign-first-draft';
-import CampaignFinalDraft from './campaign-final-draft';
+import CampaignPosting from './submissions/campaign-posting';
+import CampaignAgreement from './submissions/campaign-agreement';
+import CampaignFirstDraft from './submissions/campaign-first-draft';
+import CampaignFinalDraft from './submissions/campaign-final-draft';
 
 export const defaultSubmission = [
   {

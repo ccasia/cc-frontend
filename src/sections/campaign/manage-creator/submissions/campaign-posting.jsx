@@ -9,10 +9,12 @@ import React, { useMemo, useState, useEffect } from 'react';
 import {
   Box,
   List,
+  Chip,
   Stack,
   Alert,
   Dialog,
   Button,
+  Avatar,
   ListItem,
   TextField,
   Typography,
@@ -21,8 +23,6 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
-  Avatar,
-  Chip,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';

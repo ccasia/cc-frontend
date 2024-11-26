@@ -4,11 +4,11 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import { useNavigate } from 'react-router-dom';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Chip from '@mui/material/Chip';
 import { LoadingButton } from '@mui/lab';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
   Stack,
@@ -36,14 +36,13 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 
 // eslint-disable-next-line react/prop-types
-const AvatarIcon = ({ icon, ...props }) => (
-  <Avatar {...props}>
-    <Iconify icon={icon} />
-  </Avatar>
-);
+// const AvatarIcon = ({ icon, ...props }) => (
+//   <Avatar {...props}>
+//     <Iconify icon={icon} />
+//   </Avatar>
+// );
 
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';
@@ -52,23 +51,6 @@ const formatFileSize = (bytes) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
-
-// const generateThumbnail = (file) =>
-//   new Promise((resolve) => {
-//     const video = document.createElement('video');
-//     video.src = URL.createObjectURL(file);
-//     video.addEventListener('loadeddata', () => {
-//       video.currentTime = 1; // Seek to 1 second
-//     });
-//     video.addEventListener('seeked', () => {
-//       const canvas = document.createElement('canvas');
-//       canvas.width = video.videoWidth;
-//       canvas.height = video.videoHeight;
-//       const ctx = canvas.getContext('2d');
-//       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-//       resolve(canvas.toDataURL());
-//     });
-//   });
 
 const generateThumbnail = (file) =>
   new Promise((resolve, reject) => {
@@ -135,7 +117,7 @@ const CampaignFirstDraft = ({
   // eslint-disable-next-line no-unused-vars
   const [preview, setPreview] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const dependency = getDependency(submission?.id);
   const { socket } = useSocketContext();
   const [progress, setProgress] = useState(0);
@@ -143,7 +125,7 @@ const CampaignFirstDraft = ({
   const display = useBoolean();
   const { user } = useAuthContext();
   const [openUploadModal, setOpenUploadModal] = useState(false);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
@@ -191,6 +173,8 @@ const CampaignFirstDraft = ({
 
   const handleDrop = useCallback(
     async (acceptedFiles) => {
+      // CHANGE LATER
+      alert(JSON.stringify(acceptedFiles[0]));
       const file = acceptedFiles[0];
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
@@ -494,8 +478,8 @@ const CampaignFirstDraft = ({
             {submission?.status === 'CHANGES_REQUIRED' && (
               <Stack spacing={2}>
                 <Box>
-                  <Box 
-                    component={Paper} 
+                  <Box
+                    component={Paper}
                     sx={{
                       p: { xs: 2, sm: 3 },
                       mb: 2,
@@ -516,21 +500,21 @@ const CampaignFirstDraft = ({
                           px: 1,
                           '& .MuiChip-label': {
                             px: 1,
-                            fontWeight: 650
+                            fontWeight: 650,
                           },
                           '&:hover': {
-                            bgcolor: '#fff'
-                          }
+                            bgcolor: '#fff',
+                          },
                         }}
                       />
                     </Box>
 
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
+                    <Typography
+                      variant="body1"
+                      sx={{
                         fontSize: '0.95rem',
                         color: '#48484A',
-                        mb: 2
+                        mb: 2,
                       }}
                     >
                       <strong>Caption:</strong> {submission?.caption}
@@ -779,15 +763,15 @@ const CampaignFirstDraft = ({
             </Dialog>
 
             {/* New Upload Modal */}
-            <Dialog 
-              open={openUploadModal} 
-              fullWidth 
+            <Dialog
+              open={openUploadModal}
+              fullWidth
               maxWidth="md"
               sx={{
                 '& .MuiDialog-paper': {
                   width: { xs: 'calc(100% - 32px)', sm: '100%' },
-                  m: { xs: 2, sm: 32 }
-                }
+                  m: { xs: 2, sm: 32 },
+                },
               }}
             >
               <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
@@ -837,11 +821,11 @@ const CampaignFirstDraft = ({
                               bgcolor: '#ffffff',
                             }}
                           >
-                            <Stack 
-                              direction="row" 
+                            <Stack
+                              direction="row"
                               spacing={2}
                               sx={{
-                                flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                                flexWrap: { xs: 'wrap', sm: 'nowrap' },
                               }}
                             >
                               <Box
@@ -856,11 +840,13 @@ const CampaignFirstDraft = ({
                                 }}
                               />
 
-                              <Box sx={{ 
-                                flexGrow: 1,
-                                minWidth: { xs: '100%', sm: 'auto' },
-                                mt: { xs: 1, sm: 0 }
-                              }}>
+                              <Box
+                                sx={{
+                                  flexGrow: 1,
+                                  minWidth: { xs: '100%', sm: 'auto' },
+                                  mt: { xs: 1, sm: 0 },
+                                }}
+                              >
                                 <Typography
                                   variant="subtitle2"
                                   noWrap
@@ -889,17 +875,17 @@ const CampaignFirstDraft = ({
                                   {uploadProgress < 100
                                     ? `Uploading ${uploadProgress}%`
                                     : formatFileSize(methods.watch('draft').size)}
-                                  </Typography>
+                                </Typography>
                               </Box>
 
-                              <Stack 
-                                direction="row" 
-                                spacing={2} 
+                              <Stack
+                                direction="row"
+                                spacing={2}
                                 alignItems="center"
-                                sx={{ 
+                                sx={{
                                   width: { xs: '100%', sm: 'auto' },
                                   justifyContent: { xs: 'flex-end', sm: 'flex-start' },
-                                  mt: { xs: 2, sm: 0 }
+                                  mt: { xs: 2, sm: 0 },
                                 }}
                               >
                                 {uploadProgress < 100 ? (
@@ -1145,7 +1131,7 @@ const CampaignFirstDraft = ({
                       mb: -2,
                     }}
                   >
-                  🚀
+                    🚀
                   </Box>
                   <Stack spacing={1} alignItems="center">
                     <Typography
