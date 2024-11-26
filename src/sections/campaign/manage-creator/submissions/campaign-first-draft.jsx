@@ -184,6 +184,7 @@ const CampaignFirstDraft = ({
         const thumbnail = await generateThumbnail(file);
         newFile.thumbnail = thumbnail;
       } catch (error) {
+        alert(JSON.stringify(error));
         console.error('Error generating thumbnail:', error);
       }
 
@@ -193,7 +194,7 @@ const CampaignFirstDraft = ({
 
       if (file) {
         setValue('draft', newFile, { shouldValidate: true });
-
+        alert('FILE ADA');
         // Simulate upload progress
         const interval = setInterval(() => {
           setUploadProgress((prev) => {
