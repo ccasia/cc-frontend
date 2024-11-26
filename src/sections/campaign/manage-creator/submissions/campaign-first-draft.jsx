@@ -195,7 +195,7 @@ const CampaignFirstDraft = ({
 
           // Revoke object URL to free up memory
           URL.revokeObjectURL(video.src);
-
+          alert(canvas.toDataURL());
           // Return the Base64 image URL
           resolve(canvas.toDataURL());
         });
@@ -220,7 +220,6 @@ const CampaignFirstDraft = ({
         const thumbnail = await generateThumbnail(file);
         newFile.thumbnail = thumbnail;
       } catch (error) {
-        alert(error);
         console.error('Error generating thumbnail:', error);
       }
 
