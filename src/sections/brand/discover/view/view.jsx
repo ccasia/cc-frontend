@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useState, useCallback } from 'react';
 
-import { Box, Button } from '@mui/material';
+import { Box } from '@mui/material';
 import Container from '@mui/material/Container';
 
 import { paths } from 'src/routes/paths';
@@ -11,7 +11,6 @@ import useGetCompany from 'src/hooks/use-get-company';
 
 import withPermission from 'src/auth/guard/withPermissions';
 
-import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -54,19 +53,19 @@ function DiscoverBrand() {
           },
           { name: 'List' },
         ]}
-        action={
-          <Button
-            variant="outlined"
-            startIcon={<Iconify icon="qlementine-icons:new-16" width={18} />}
-            onClick={() => router.push(paths.dashboard.company.create)}
-            sx={{
-              borderColor: '#EBEBEB',
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-            }}
-          >
-            Create New Client
-          </Button>
-        }
+        // action={
+        //   <Button
+        //     variant="outlined"
+        //     startIcon={<Iconify icon="qlementine-icons:new-16" width={18} />}
+        //     onClick={() => router.push(paths.dashboard.company.create)}
+        //     sx={{
+        //       borderColor: '#EBEBEB',
+        //       boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+        //     }}
+        //   >
+        //     Create New Client
+        //   </Button>
+        // }
         sx={{
           mb: { xs: 3, md: 5 },
         }}

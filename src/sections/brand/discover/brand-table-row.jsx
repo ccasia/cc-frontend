@@ -8,7 +8,6 @@ import {
   Checkbox,
   TableRow,
   TableCell,
-  IconButton,
   ListItemText,
 } from '@mui/material';
 
@@ -33,7 +32,7 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
 
   return (
     <>
-      <TableRow hover selected={selected}>
+      <TableRow key={id} hover selected={selected}>
         <TableCell padding="checkbox">
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell>
@@ -51,27 +50,39 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
           />
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{email || 'null'}</TableCell>
+        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{email || 'null'}</TableCell> */}
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{phone || 'null'}</TableCell>
+        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{phone || 'null'}</TableCell> */}
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{website || 'null'}</TableCell>
+        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{website || 'null'}</TableCell> */}
 
-        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label>{brand?.length || '0'}</Label>
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label>{campaign?.length || '0'}</Label>
         </TableCell>
 
-        <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
-          <Tooltip title="Quick Edit" placement="top" arrow>
-            <IconButton onClick={() => router.push(paths.dashboard.company.companyEdit(id))}>
+        <TableCell sx={{ px: 1, whiteSpace: 'nowrap' }}>
+          <Tooltip title="Edit" placement="top" arrow>
+            {/* <IconButton onClick={() => router.push(paths.dashboard.company.companyEdit(id))}>
               <Iconify icon="solar:pen-bold" />
-            </IconButton>
+            </IconButton> */}
+            <Button
+              startIcon={<Iconify icon="solar:pen-bold" />}
+              sx={{
+                border: 1,
+                borderColor: '#EBEBEB',
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+              }}
+              variant="contained"
+              onClick={() => router.push(paths.dashboard.company.companyEdit(id))}
+            >
+              Edit
+            </Button>
           </Tooltip>
-          <Tooltip title="Delete" placement="top" arrow>
+          {/* <Tooltip title="Delete" placement="top" arrow>
             <IconButton
               onClick={() => {
                 confirm.onTrue();
@@ -81,7 +92,7 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
             >
               <Iconify icon="solar:trash-bin-trash-bold" />
             </IconButton>
-          </Tooltip>
+          </Tooltip> */}
         </TableCell>
       </TableRow>
 
