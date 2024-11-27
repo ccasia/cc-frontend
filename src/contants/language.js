@@ -82,4 +82,5 @@ export const langList = [
   'Tongan',
   'Fijian',
   'Malay',
+  'Indonesian',
 ];
