@@ -27,7 +27,6 @@ const PaymentFormProfile = ({ user }) => {
 
   const {
     handleSubmit,
-    control,
     formState: { isDirty, isSubmitting },
   } = methods;
 
@@ -60,7 +59,7 @@ const PaymentFormProfile = ({ user }) => {
             getOptionLabel={(option) => option.bank}
           />
           <RHFTextField name="bankNumber" type="number" label="Bank Account Number" />
-          <RHFTextField name="icPassportNumber" type="number" label="IC / Passport Number" />
+          <RHFTextField name="icPassportNumber" label="IC / Passport Number" />
           {/* <RHFTextField
             name="bodyMeasurement"
             type="number"
