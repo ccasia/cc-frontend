@@ -10,7 +10,16 @@ import React, { useMemo, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Button, Dialog, Typography, DialogTitle, DialogActions, DialogContent } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Button,
+  Dialog,
+  Typography,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -66,7 +75,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
     if (campaign?.agreementTemplate) return campaign.agreementTemplate;
 
     return campaign?.campaignAdmin?.reduce(
-      (foundTemplate, item) => foundTemplate || item?.admin?.user?.agreementTemplate || null,
+      (foundTemplate, item) => foundTemplate || item?.admin?.user?.agreementTemplate[0] || null,
       null
     );
   }, [campaign]);
@@ -128,17 +137,15 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         <DialogTitle sx={{ pb: 2 }}>
           <Stack spacing={2}>
             <Stack direction="row" alignItems="center" spacing={1}>
-              <Iconify 
-                icon="bx:send" 
-                sx={{ 
+              <Iconify
+                icon="bx:send"
+                sx={{
                   width: 24,
                   height: 24,
-                  color: '#835cf5'
-                }} 
+                  color: '#835cf5',
+                }}
               />
-              <Typography variant="h6">
-                Issue a Payment Amount
-              </Typography>
+              <Typography variant="h6">Issue a Payment Amount</Typography>
             </Stack>
 
             <Box sx={{ borderBottom: '1px solid #e7e7e7' }} />
@@ -177,9 +184,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
                   </Box>
                 )}
                 <Stack>
-                  <Typography variant="subtitle1">
-                    {agreement?.user?.name}
-                  </Typography>
+                  <Typography variant="subtitle1">{agreement?.user?.name}</Typography>
                   <Typography variant="body2" sx={{ color: '#637381' }}>
                     {agreement?.user?.email}
                   </Typography>
@@ -200,11 +205,11 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1,
-                }
+                },
               }}
             />
-            <RHFCheckbox 
-              name="default" 
+            <RHFCheckbox
+              name="default"
               label="Default"
               sx={{
                 color: '#636366',
@@ -231,7 +236,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
                 bgcolor: '#f5f5f7',
                 border: '1px solid #e7e7e7',
                 borderBottom: '3px solid #e7e7e7',
-              }
+              },
             }}
           >
             Cancel
@@ -253,8 +258,8 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
               fontWeight: 600,
               '&:hover': {
                 bgcolor: '#3a3a3c',
-                opacity: 0.9
-              }
+                opacity: 0.9,
+              },
             }}
           >
             Generate and Send
