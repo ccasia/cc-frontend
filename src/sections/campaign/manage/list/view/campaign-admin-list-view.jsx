@@ -7,12 +7,10 @@ import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mu
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-import { RouterLink } from 'src/routes/components';
 
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import Label from 'src/components/label';
-import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
@@ -100,16 +98,16 @@ const CampaignListView = () => {
           },
           { name: 'List' },
         ]}
-        action={
-          <Button
-            component={RouterLink}
-            href={paths.dashboard.campaign.create}
-            variant="contained"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-          >
-            New Campaign
-          </Button>
-        }
+        // action={
+        //   <Button
+        //     component={RouterLink}
+        //     href={paths.dashboard.campaign.create}
+        //     variant="contained"
+        //     startIcon={<Iconify icon="mingcute:add-line" />}
+        //   >
+        //     New Campaign
+        //   </Button>
+        // }
         sx={{
           mb: { xs: 3, md: 5 },
         }}

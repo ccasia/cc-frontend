@@ -46,8 +46,6 @@ export default function Main({ children, sx, ...other }) {
     <Box
       component="main"
       sx={{
-        // flexGrow: 1,
-        // minHeight: 1,
         display: 'flex',
         flexDirection: 'column',
         bgcolor: (theme) => theme.palette.background.paper,

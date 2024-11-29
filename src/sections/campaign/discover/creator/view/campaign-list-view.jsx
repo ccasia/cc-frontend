@@ -275,7 +275,19 @@ export default function CampaignListView() {
         Here are the top campaigns that fit your profile!
       </Typography>
 
-      <Box sx={{ mb: 2.5 }}>
+      <Box
+        sx={{
+          mb: 2.5,
+          // position: 'sticky',
+          // top: 80,
+          // zIndex: 100,
+          // bgcolor: theme.palette.background.paper,
+          // boxShadow: 10,
+          // borderRadius: 2,
+          // px: 2,
+          // py: 0.5,
+        }}
+      >
         {/* Mobile Search and Sort Stack */}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -384,6 +396,7 @@ export default function CampaignListView() {
         </Stack>
 
         {/* Filter Buttons and Desktop Search/Sort */}
+
         <Stack
           direction="row"
           spacing={0.5}

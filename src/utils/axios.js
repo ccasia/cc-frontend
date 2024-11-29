@@ -226,6 +226,7 @@ export const endpoints = {
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
     sendAgreement: `/api/campaign/sendAgreement`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
+    linkNewAgreement: `/api/campaign/linkNewAgreement`,
   },
   submission: {
     root: '/api/submission/',
