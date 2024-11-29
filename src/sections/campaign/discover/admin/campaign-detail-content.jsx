@@ -10,18 +10,21 @@ import {
   Box,
   Link,
   Chip,
+  List,
   Stack,
   Table,
   Dialog,
   Avatar,
   Button,
   TableRow,
+  ListItem,
   TableHead,
   TableCell,
   TableBody,
   IconButton,
   Typography,
   DialogTitle,
+  ListItemIcon,
   DialogContent,
   TableContainer,
   CircularProgress,
@@ -38,15 +41,20 @@ import Iconify from 'src/components/iconify';
 import { MultiFilePreview } from 'src/components/upload';
 
 const ChipStyle = {
-  bgcolor: '#e4e4e4',
+  bgcolor: '#FFF',
+  border: 1,
+  borderColor: '#EBEBEB',
+  borderRadius: 1,
   color: '#636366',
-  borderRadius: 16,
+  py: 2,
+  px: 1,
+  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
     px: 1.5,
     py: 0.5,
   },
-  '&:hover': { bgcolor: '#e4e4e4' },
+  '&:hover': { bgcolor: '#FFF' },
 };
 
 const BoxStyle = {
@@ -166,6 +174,70 @@ const CampaignDetailContent = ({ campaign }) => {
             <Typography variant="body2">
               {campaign?.description || 'No campaign description available.'}
             </Typography>
+          </Box>
+
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="mdi:emoticon-happy"
+                sx={{
+                  color: '#203ff5',
+                  width: 20,
+                  height: 20,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                }}
+              >
+                CAMPAIGN DEMOGRAPHICS
+              </Typography>
+            </Box>
+
+            <Stack direction="row" spacing={4}>
+              {/* Left Column */}
+              <Stack spacing={2} sx={{ flex: 1 }}>
+                {[
+                  { label: 'Gender', data: requirement?.gender },
+                  { label: 'Geo Location', data: requirement?.geoLocation },
+                  { label: 'Creator Persona', data: requirement?.creator_persona },
+                ].map((item) => (
+                  <Box key={item.label}>
+                    <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                      {item.label}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {item.data?.map((value, idx) => (
+                        <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                      ))}
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+
+              {/* Right Column */}
+              <Stack spacing={2} sx={{ flex: 1 }}>
+                {[
+                  { label: 'Age', data: requirement?.age },
+                  { label: 'Language', data: requirement?.language },
+                ].map((item) => (
+                  <Box key={item.label}>
+                    <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
+                      {item.label}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {item.data?.map((value, idx) => (
+                        <Chip key={idx} label={value} size="small" sx={ChipStyle} />
+                      ))}
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            </Stack>
           </Box>
 
           {/* Objectives Box */}
@@ -418,6 +490,48 @@ const CampaignDetailContent = ({ campaign }) => {
                 </TableBody>
               </Table>
             </TableContainer>
+          </Box>
+
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="ep:guide"
+                sx={{
+                  color: '#203ff5',
+                  width: 20,
+                  height: 20,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                }}
+              >
+                {'References Links'.toUpperCase()}
+              </Typography>
+            </Box>
+
+            {campaign?.campaignBrief?.referencesLinks?.length > 0 ? (
+              <List>
+                {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
+                  <ListItem key={index}>
+                    <ListItemIcon>
+                      <Iconify icon="ix:reference" />
+                    </ListItemIcon>
+                    <Link key={index} href={link} target="_blank">
+                      {link}
+                    </Link>
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                No references found.
+              </Typography>
+            )}
           </Box>
         </Stack>
 
