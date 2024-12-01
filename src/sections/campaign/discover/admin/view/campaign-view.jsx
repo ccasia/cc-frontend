@@ -1,15 +1,28 @@
-import React, { useMemo, useState } from 'react';
+import useSWRInfinite from 'swr/infinite';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useTheme } from '@mui/material/styles';
-import { Box, Stack, Button, Dialog, Container, Typography, IconButton, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Button,
+  Dialog,
+  Container,
+  Typography,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
 
 // import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
-import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
+
+import { fetcher } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -26,14 +39,28 @@ import CampaignLists from '../campaign-list';
 
 const CampaignView = () => {
   const settings = useSettingsContext();
-  const { campaigns, isLoading } = useGetCampaigns();
-  // const { data: brandOptions } = useGetCampaignBrandOption();
+  const { campaigns } = useGetCampaigns();
   const create = useBoolean();
   const [filter, setFilter] = useState('active');
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-  const router = useRouter();
+  const { user } = useAuthContext();
+  const scrollContainerRef = useRef(null);
+
+  const getKey = (pageIndex, previousPageData) => {
+    // If there's no previous page data, start from the first page
+    if (pageIndex === 0)
+      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${9}`;
+
+    // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
+    if (!previousPageData?.metaData?.lastCursor) return null;
+
+    // Otherwise, use the nextCursor to get the next page
+    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${9}&cursor=${previousPageData?.metaData?.lastCursor}`;
+  };
+
+  const { data, error, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -45,7 +72,6 @@ const CampaignView = () => {
 
   const handleNewCampaign = () => {
     create.onTrue();
-    // router.push('/dashboard/campaign/create');
     handleClose();
   };
 
@@ -61,95 +87,44 @@ const CampaignView = () => {
   const activeCount = activeCampaigns.length;
   const completedCount = completedCampaigns.length;
 
-  const dataFiltered = useMemo(() => {
-    if (filter === 'active') {
-      return activeCampaigns;
+  // const dataFiltered = useMemo(() => {
+  //   if (filter === 'active') {
+  //     return activeCampaigns;
+  //   }
+  //   return completedCampaigns;
+  // }, [filter, activeCampaigns, completedCampaigns]);
+
+  const dataFiltered = useMemo(
+    () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
+    [data]
+  );
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+
+    const bottom =
+      scrollContainerRef.current.scrollHeight ===
+      scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight;
+
+    if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
+      setSize(size + 1);
     }
-    return completedCampaigns;
-  }, [filter, activeCampaigns, completedCampaigns]);
+  }, [data, isValidating, setSize, size]);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const scrollListener = () => handleScroll();
+
+    scrollContainer.addEventListener('scroll', scrollListener);
+    // eslint-disable-next-line consistent-return
+    return () => {
+      scrollContainer.removeEventListener('scroll', scrollListener);
+    };
+  }, [data, isValidating, size, setSize, handleScroll]);
 
   return (
-    //     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-    //       <CustomBreadcrumbs
-    //         heading="Campaigns"
-    //         links={[
-    //           { name: 'Dashboard', href: paths.dashboard.root },
-    //           {
-    //             name: 'Campaigns',
-    //             href: paths.dashboard.campaign.root,
-    //           },
-    //           { name: 'List' },
-    //         ]}
-    //         sx={{
-    //           mb: { xs: 3, md: 5 },
-    //         }}
-    //         // Temporary
-    //         action={
-    //           <Button
-    //             startIcon={
-    //               <Iconify width={25} icon="material-symbols-light:campaign-outline-rounded" />
-    //             }
-    //             variant="outlined"
-    //             sx={{
-    //               boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-    //             }}
-    //             onClick={create.onTrue}
-    //           >
-    //             Create campaign
-    //           </Button>
-    //         }
-    //       />
-
-    //       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-    //         {campaigns && (
-    //           <Autocomplete
-    //             freeSolo
-    //             sx={{ width: { xs: 1, sm: 260 } }}
-    //             options={campaigns.filter((campaign) => campaign?.status === 'ACTIVE')}
-    //             getOptionLabel={(option) => option.name}
-    //             renderInput={(params) => (
-    //               <TextField
-    //                 {...params}
-    //                 placeholder="Search..."
-    //                 InputProps={{
-    //                   ...params.InputProps,
-    //                   startAdornment: (
-    //                     <InputAdornment position="start">
-    //                       <Iconify icon="eva:search-fill" sx={{ ml: 1, color: 'text.disabled' }} />
-    //                     </InputAdornment>
-    //                   ),
-    //                 }}
-    //               />
-    //             )}
-    //             renderOption={(props, option) => (
-    //               <Box
-    //                 {...props}
-    //                 component="div"
-    //                 onClick={() =>
-    //                   router.push(paths.dashboard.campaign.adminCampaignDetail(option?.id))
-    //                 }
-    //               >
-    //                 <Avatar
-    //                   alt="Campaign Image"
-    //                   src={option?.campaignBrief?.images[0]}
-    //                   variant="rounded"
-    //                   sx={{
-    //                     width: 48,
-    //                     height: 48,
-    //                     flexShrink: 0,
-    //                     mr: 1.5,
-    //                     borderRadius: 1,
-    //                   }}
-    //                 />
-    //                 <ListItemText
-    //                   primary={option?.name}
-    //                   secondary={option?.company?.name || option?.brand?.name}
-    //                 />
-    //               </Box>
-    //             )}
-    //           />
-    //         )}
-
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
       <Box>
         <Typography variant="h2" sx={{ mb: 4, fontFamily: theme.typography.fontSecondaryFamily }}>
@@ -360,7 +335,7 @@ const CampaignView = () => {
         }}
       >
         <MenuItem onClick={handleNewCampaign}>
-          <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2}} />
+          <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2 }} />
           New Campaign
         </MenuItem>
         {/* <MenuItem onClick={handleClose}>
@@ -384,12 +359,36 @@ const CampaignView = () => {
 
       {!isLoading &&
         (dataFiltered?.length > 0 ? (
-          <CampaignLists campaigns={dataFiltered} />
+          <Box
+            ref={scrollContainerRef}
+            sx={{
+              overflowY: 'auto',
+              height: { xs: '60vh', xl: '65vh' },
+            }}
+          >
+            <CampaignLists campaigns={dataFiltered} />
+            {isValidating && (
+              <Box sx={{ textAlign: 'center', my: 2 }}>
+                <CircularProgress
+                  thickness={7}
+                  size={25}
+                  sx={{
+                    color: theme.palette.common.black,
+                    strokeLinecap: 'round',
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
         ) : (
           <EmptyContent
             title={`No ${filter === 'active' ? 'active' : 'completed'} campaigns available`}
           />
         ))}
+
+      {/* <Button fullWidth onClick={() => setSize(size + 1)}>
+        Load more
+      </Button> */}
 
       {/* <CampaignFilter
         open={openFilters.value}

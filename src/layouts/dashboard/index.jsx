@@ -119,11 +119,12 @@ export default function DashboardLayout({ children }) {
             height: '95vh',
             borderRadius: 2,
             my: 'auto',
-            overflow: 'auto',
+            overflowY: 'auto',
             position: 'relative',
             bgcolor: (theme) => theme.palette.background.paper,
           }),
         }}
+        component="div"
       >
         <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
