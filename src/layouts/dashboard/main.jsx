@@ -24,11 +24,13 @@ export default function Main({ children, sx, ...other }) {
       <Box
         component="main"
         sx={{
-          minHeight: 1,
+          flexGrow: 1,
+          height: 1,
           display: 'flex',
+          overflow: 'auto',
           flexDirection: 'column',
           pt: `${HEADER.H_MOBILE + 24}px`,
-          pb: 10,
+          // pb: 10,
           ...(lgUp && {
             pt: `${HEADER.H_MOBILE * 2 + 40}px`,
             pb: 15,

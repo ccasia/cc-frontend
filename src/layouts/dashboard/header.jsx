@@ -93,7 +93,7 @@ export default function Header({ onOpenNav, isOnline }) {
   return (
     <AppBar
       sx={{
-        position: 'absolute',
+        position: lgUp && 'absolute',
         borderBottom: 1,
         borderColor: grey[200],
         height: HEADER.H_MOBILE,

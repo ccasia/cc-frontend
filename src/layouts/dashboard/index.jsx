@@ -71,7 +71,7 @@ export default function DashboardLayout({ children }) {
               height: '95vh',
               borderRadius: 2,
               my: 'auto',
-              overflow: 'auto',
+              overflow: 'hidden',
               position: 'relative',
               bgcolor: (theme) => theme.palette.background.paper,
             }),
