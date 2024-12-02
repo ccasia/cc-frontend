@@ -51,13 +51,13 @@ const CampaignView = () => {
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
     if (pageIndex === 0)
-      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${9}`;
+      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${10}`;
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${9}&cursor=${previousPageData?.metaData?.lastCursor}`;
+    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
   const { data, error, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
@@ -103,8 +103,8 @@ const CampaignView = () => {
     if (!scrollContainerRef.current) return;
 
     const bottom =
-      scrollContainerRef.current.scrollHeight ===
-      scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight;
+      scrollContainerRef.current.scrollHeight <=
+      scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight + 0.5;
 
     if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
       setSize(size + 1);
@@ -364,6 +364,7 @@ const CampaignView = () => {
             sx={{
               overflowY: 'auto',
               height: { xs: '60vh', xl: '65vh' },
+              scrollBehavior: 'smooth',
             }}
           >
             <CampaignLists campaigns={dataFiltered} />

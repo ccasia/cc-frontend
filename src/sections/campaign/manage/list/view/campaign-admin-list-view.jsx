@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
-import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 
@@ -9,6 +9,8 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import { useSettingsContext } from 'src/components/settings';
@@ -21,17 +23,32 @@ import CampaignList from '../campaign-admin-list';
 
 const CampaignListView = () => {
   const settings = useSettingsContext();
-  const { data, isLoading } = useSWR(endpoints.campaign.getCampaignsByAdminId, fetcher, {
-    revalidateIfStale: true,
-    revalidateOnFocus: true,
-    revalidateOnMount: true,
-  });
+  const { user } = useAuthContext();
+  const scrollContainerRef = useRef(null);
+  const [filter, setFilter] = useState('active');
+  // const { data, isLoading } = useSWR(endpoints.campaign.getCampaignsByAdminId, fetcher, {
+  //   revalidateIfStale: true,
+  //   revalidateOnFocus: true,
+  //   revalidateOnMount: true,
+  // });
+
+  const getKey = (pageIndex, previousPageData) => {
+    // If there's no previous page data, start from the first page
+    if (pageIndex === 0)
+      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${10}`;
+
+    // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
+    if (!previousPageData?.metaData?.lastCursor) return null;
+
+    // Otherwise, use the nextCursor to get the next page
+    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+  };
+
+  const { data, error, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
 
   const router = useRouter();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const [filter, setFilter] = useState('');
 
   const filtered = useMemo(
     () => ({
@@ -70,8 +87,8 @@ const CampaignListView = () => {
         const res = await axiosInstance.get(endpoints.campaign.getCampaignsByAdminId);
         setCampaigns(res?.data);
         setLoading(false);
-      } catch (error) {
-        enqueueSnackbar(error?.message, {
+      } catch (err) {
+        enqueueSnackbar(err?.message, {
           variant: 'error',
         });
       } finally {
@@ -81,10 +98,40 @@ const CampaignListView = () => {
     getAllCampaigns();
   }, []);
 
+  // const filteredData = useMemo(
+  //   () => !isLoading && (!filter ? data : data.filter((elem) => elem?.status === filter)),
+  //   [isLoading, filter, data]
+  // );
+
   const filteredData = useMemo(
-    () => !isLoading && (!filter ? data : data.filter((elem) => elem?.status === filter)),
-    [isLoading, filter, data]
+    () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
+    [data]
   );
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+
+    const bottom =
+      scrollContainerRef.current.scrollHeight <=
+      scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight;
+
+    if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
+      setSize(size + 1);
+    }
+  }, [data, isValidating, setSize, size]);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const scrollListener = () => handleScroll();
+
+    scrollContainer.addEventListener('scroll', scrollListener);
+    // eslint-disable-next-line consistent-return
+    return () => {
+      scrollContainer.removeEventListener('scroll', scrollListener);
+    };
+  }, [data, isValidating, size, setSize, handleScroll]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -109,7 +156,7 @@ const CampaignListView = () => {
         //   </Button>
         // }
         sx={{
-          mb: { xs: 3, md: 5 },
+          mb: { xs: 3 },
         }}
       />
 
@@ -195,28 +242,50 @@ const CampaignListView = () => {
       {!isLoading ? (
         filteredData?.length > 0 ? (
           <Box
+            ref={scrollContainerRef}
             sx={{
-              display: 'grid',
-              gap: 2,
-              gridTemplateColumns: {
-                xs: 'repeat(1, 1fr)',
-                md: 'repeat(2, 1fr)',
-              },
-              mt: 1,
+              overflowY: 'auto',
+              height: { xs: '50vh', xl: '65vh' },
+              mt: 2,
+              scrollBehavior: 'smooth',
             }}
           >
-            {filteredData.map((campaign) => (
-              <CampaignList
-                key={campaign?.id}
-                campaign={campaign}
-                onView={() => onView(campaign?.id)}
-                onEdit={() => onEdit(campaign?.id)}
-                onDelete={() => onDelete(campaign?.id)}
-              />
-            ))}
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: {
+                  xs: 'repeat(1, 1fr)',
+                  sm: 'repeat(2, 1fr)',
+                  md: 'repeat(3, 1fr)',
+                },
+              }}
+            >
+              {filteredData.map((campaign) => (
+                <CampaignList
+                  key={campaign?.id}
+                  campaign={campaign}
+                  onView={() => onView(campaign?.id)}
+                  onEdit={() => onEdit(campaign?.id)}
+                  onDelete={() => onDelete(campaign?.id)}
+                />
+              ))}
+            </Box>
+            {isValidating && (
+              <Box sx={{ textAlign: 'center', my: 2 }}>
+                <CircularProgress
+                  thickness={7}
+                  size={25}
+                  sx={{
+                    color: (theme) => theme.palette.common.black,
+                    strokeLinecap: 'round',
+                  }}
+                />
+              </Box>
+            )}
           </Box>
         ) : (
-          <EmptyContent filled title="No Data" sx={{ py: 10, mt: 2 }} />
+          <EmptyContent filled title={`No Data for ${filter} campaigns`} sx={{ py: 10, mt: 2 }} />
         )
       ) : (
         <Box
