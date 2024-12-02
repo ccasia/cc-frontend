@@ -1,6 +1,6 @@
-import { mutate } from 'swr';
 import { orderBy } from 'lodash';
 import { m } from 'framer-motion';
+import useSWR, { mutate } from 'swr';
 import { enqueueSnackbar } from 'notistack';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -24,9 +24,8 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
-import { endpoints } from 'src/utils/axios';
+import { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -44,8 +43,20 @@ import CampaignLists from '../campaign-list';
 
 export default function CampaignListView() {
   const settings = useSettingsContext();
-  const { campaigns, isLoading } = useGetCampaigns('creator');
+  // const { campaigns, isLoading } = useGetCampaigns('creator');
   const [filter, setFilter] = useState('all');
+
+  const [search, setSearch] = useState({
+    query: '',
+    results: [],
+  });
+
+  const { data: campaigns, isLoading } = useSWR(
+    search.query
+      ? `${endpoints.campaign.getMatchedCampaign}?search=${search.query}`
+      : endpoints.campaign.getMatchedCampaign,
+    fetcher
+  );
 
   const { user } = useAuthContext();
   const dialog = useBoolean();
@@ -126,10 +137,10 @@ export default function CampaignListView() {
     };
   }, [socket, upload]);
 
-  const [search, setSearch] = useState({
-    query: '',
-    results: [],
-  });
+  // const [search, setSearch] = useState({
+  //   query: '',
+  //   results: [],
+  // });
 
   const handleSearch = useCallback(
     (inputValue) => {
