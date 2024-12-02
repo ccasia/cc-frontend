@@ -93,8 +93,7 @@ export default function Header({ onOpenNav, isOnline }) {
   return (
     <AppBar
       sx={{
-        position: 'sticky',
-        // top: 0,
+        position: 'absolute',
         borderBottom: 1,
         borderColor: grey[200],
         height: HEADER.H_MOBILE,
@@ -106,8 +105,6 @@ export default function Header({ onOpenNav, isOnline }) {
           duration: theme.transitions.duration.shorter,
         }),
         ...(lgUp && {
-          // bgcolor: theme.palette.background.paper,
-          // width: `calc(100% - ${NAV.W_VERTICAL + 32}px)`,
           height: HEADER.H_DESKTOP,
           ...(offsetTop && {
             height: HEADER.H_DESKTOP_OFFSET,
@@ -118,10 +115,6 @@ export default function Header({ onOpenNav, isOnline }) {
             height: HEADER.H_DESKTOP_OFFSET,
             borderBottom: `dashed 1px ${theme.palette.divider}`,
           }),
-          // ...(isNavMini &&
-          //   {
-          //     // width: `calc(100% - ${NAV.W_MINI + 1}px)`,
-          //   }),
         }),
       }}
     >

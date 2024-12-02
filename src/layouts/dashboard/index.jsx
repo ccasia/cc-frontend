@@ -46,27 +46,11 @@ export default function DashboardLayout({ children }) {
 
   const nav = useBoolean();
 
-  // const isHorizontal = settings.themeLayout === 'horizontal';
-
   const isMini = settings.themeLayout === 'mini';
 
   const renderNavMini = <NavMini />;
 
-  // const renderHorizontal = <NavHorizontal />;
-
   const renderNavVertical = <NavVertical openNav={nav.value} onCloseNav={nav.onFalse} />;
-
-  // if (isHorizontal) {
-  //   return (
-  //     <>
-  //       <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
-
-  //       {lgUp ? renderHorizontal : renderNavVertical}
-
-  //       <Main>{children}</Main>
-  //     </>
-  //   );
-  // }
 
   if (isMini) {
     return (
@@ -95,7 +79,7 @@ export default function DashboardLayout({ children }) {
         >
           <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
-          <Main sx={{ py: 2 }}>{children}</Main>
+          <Main>{children}</Main>
         </Box>
       </Box>
     );
@@ -119,7 +103,7 @@ export default function DashboardLayout({ children }) {
             height: '95vh',
             borderRadius: 2,
             my: 'auto',
-            overflow: 'auto',
+            overflow: 'hidden',
             position: 'relative',
             bgcolor: (theme) => theme.palette.background.paper,
           }),
@@ -127,7 +111,7 @@ export default function DashboardLayout({ children }) {
       >
         <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
-        <Main sx={{ py: 2 }}>{children}</Main>
+        <Main>{children}</Main>
       </Box>
     </Box>
   );
