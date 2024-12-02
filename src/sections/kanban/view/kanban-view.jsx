@@ -119,9 +119,9 @@ export default function KanbanView() {
   return (
     <Container
       maxWidth={false}
-      // sx={{
-      //   height: 1,
-      // }}
+      sx={{
+        height: 1,
+      }}
     >
       <Typography
         variant="h2"
@@ -173,7 +173,6 @@ export default function KanbanView() {
                   sx={{
                     p: 0.25,
                     height: 1,
-                    overflowX: 'auto',
                   }}
                 >
                   {board.columns.map((item, index) => (
@@ -190,7 +189,7 @@ export default function KanbanView() {
 
                   {provided.placeholder}
 
-                  <KanbanColumnAdd />
+                  {/* <KanbanColumnAdd /> */}
                 </Stack>
               </Scrollbar>
             )}
