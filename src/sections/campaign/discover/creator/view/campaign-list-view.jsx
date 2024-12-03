@@ -273,7 +273,7 @@ export default function CampaignListView() {
 
     const bottom =
       scrollContainerRef.current.scrollHeight <=
-      scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight + 0.5;
+      scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight + 1;
 
     if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
       setSize(size + 1);
@@ -339,7 +339,6 @@ export default function CampaignListView() {
           mb: 2.5,
         }}
       >
-        {/* Mobile Search and Sort Stack */}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
@@ -445,8 +444,6 @@ export default function CampaignListView() {
             </Select>
           </Box>
         </Stack>
-
-        {/* Filter Buttons and Desktop Search/Sort */}
 
         <Stack
           direction="row"
@@ -739,8 +736,11 @@ export default function CampaignListView() {
           <Box
             ref={scrollContainerRef}
             sx={{
-              overflowY: 'auto',
-              height: { xs: '60vh', xl: '65vh' },
+              height: { xs: '85vh', xl: '65vh' },
+              overflow: 'auto',
+              // bgcolor: 'wheat',
+              p: 2,
+              // height: { xs: '60vh', xl: '65vh' },
               scrollBehavior: 'smooth',
             }}
           >
