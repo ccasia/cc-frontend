@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useLocation } from 'react-router';
 import { useState, useEffect, useCallback } from 'react';
 
 import { paths } from 'src/routes/paths';
@@ -35,10 +36,15 @@ function Container({ children }) {
 
   const [checked, setChecked] = useState(false);
 
+  const location = useLocation();
+
   const check = useCallback(() => {
     if (!authenticated) {
+      const queryString = location.search || '';
+      const path = location.pathname;
+
       const searchParams = new URLSearchParams({
-        returnTo: window.location.pathname,
+        returnTo: path + queryString,
       }).toString();
 
       const loginPath = loginPaths[method];
@@ -49,7 +55,7 @@ function Container({ children }) {
     } else {
       setChecked(true);
     }
-  }, [authenticated, method, router]);
+  }, [authenticated, method, router, location]);
 
   useEffect(() => {
     check();

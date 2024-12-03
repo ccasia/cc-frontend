@@ -35,7 +35,7 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
       key={key}
       component="div"
       onClick={handleCardClick}
-      sx={{ 
+      sx={{
         position: 'relative',
         cursor: 'pointer',
         width: '100%',
@@ -43,8 +43,8 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
           '& .MuiCard-root': {
             transform: 'translateY(-5px)',
             transition: 'transform 0.3s ease',
-          }
-        }
+          },
+        },
       }}
     >
       <Card
@@ -57,9 +57,9 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
         }}
       >
         {/* Top Section */}
-        <Stack 
-          direction="row" 
-          justifyContent="space-between" 
+        <Stack
+          direction="row"
+          justifyContent="space-between"
           alignItems="flex-start"
           sx={{ minWidth: 0 }}
         >
@@ -78,7 +78,7 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
             >
               {creator?.name?.charAt(0).toUpperCase()}
             </Avatar>
-            <Typography 
+            <Typography
               variant="subtitle1"
               sx={{
                 fontWeight: 600,
@@ -98,8 +98,8 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
           <Stack alignItems="flex-end" spacing={1} sx={{ ml: 1 }}>
             <Stack direction="row" spacing={1}>
               {creator?.creator?.instagram && (
-                <IconButton 
-                  component="a" 
+                <IconButton
+                  component="a"
                   href={`https://instagram.com/${creator?.creator?.instagram}`}
                   target="_blank"
                   onClick={(e) => e.stopPropagation()}
@@ -163,7 +163,7 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
           display="grid"
           gridTemplateColumns="repeat(3, 1fr)"
           gap={3}
-          sx={{ 
+          sx={{
             mb: 3,
             mt: -1,
             minWidth: 0,
@@ -175,43 +175,51 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
               src="/assets/icons/overview/purpleGroup.svg"
               sx={{ width: 24, height: 24, mb: -0.5 }}
             />
-            <Typography variant="h6">
-              N/A
-            </Typography>
-            <Typography variant="subtitle2" color="#8e8e93" sx={{ 
-              whiteSpace: 'nowrap',
-              fontWeight: 500,
-              mt: -1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              width: '100%',
-            }}>
+            <Typography variant="h6">N/A</Typography>
+            <Typography
+              variant="subtitle2"
+              color="#8e8e93"
+              sx={{
+                whiteSpace: 'nowrap',
+                fontWeight: 500,
+                mt: -1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: '100%',
+              }}
+            >
               Followers
             </Typography>
           </Stack>
 
-          <Stack spacing={1} alignItems="flex-start" sx={{
-            borderLeft: '1px solid #ebebeb',
-            borderRight: '1px solid #ebebeb',
-            px: 2,
-            minWidth: 0,
-          }}>
+          <Stack
+            spacing={1}
+            alignItems="flex-start"
+            sx={{
+              borderLeft: '1px solid #ebebeb',
+              borderRight: '1px solid #ebebeb',
+              px: 2,
+              minWidth: 0,
+            }}
+          >
             <Box
               component="img"
               src="/assets/icons/overview/greenChart.svg"
               sx={{ width: 24, height: 24, mb: -0.5 }}
             />
-            <Typography variant="h6">
-              N/A
-            </Typography>
-            <Typography variant="subtitle2" color="#8e8e93" sx={{ 
-              whiteSpace: 'nowrap',
-              fontWeight: 500,
-              mt: -1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              width: '100%',
-            }}>
+            <Typography variant="h6">N/A</Typography>
+            <Typography
+              variant="subtitle2"
+              color="#8e8e93"
+              sx={{
+                whiteSpace: 'nowrap',
+                fontWeight: 500,
+                mt: -1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: '100%',
+              }}
+            >
               Engagement Rate
             </Typography>
           </Stack>
@@ -222,17 +230,19 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
               src="/assets/icons/overview/bubbleHeart.svg"
               sx={{ width: 24, height: 24, mb: -0.5 }}
             />
-            <Typography variant="h6">
-              N/A
-            </Typography>
-            <Typography variant="subtitle2" color="#8e8e93" sx={{ 
-              whiteSpace: 'nowrap',
-              fontWeight: 500,
-              mt: -1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              width: '100%',
-            }}>
+            <Typography variant="h6">N/A</Typography>
+            <Typography
+              variant="subtitle2"
+              color="#8e8e93"
+              sx={{
+                whiteSpace: 'nowrap',
+                fontWeight: 500,
+                mt: -1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: '100%',
+              }}
+            >
               Average Likes
             </Typography>
           </Stack>
@@ -246,7 +256,7 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
             e.stopPropagation();
             handleCardClick();
           }}
-          sx={{ 
+          sx={{
             mx: 'auto',
             width: '100%',
             display: 'block',
@@ -275,6 +285,6 @@ UserCard.propTypes = {
   creator: PropTypes.object,
   campaignId: PropTypes.string,
   isSent: PropTypes.bool,
-  onEditAgreement: PropTypes.func, 
+  onEditAgreement: PropTypes.func,
   key: PropTypes.string,
 };

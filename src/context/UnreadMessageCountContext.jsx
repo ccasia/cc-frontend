@@ -21,11 +21,11 @@ export function UnreadMessageCountProvider({ children }) {
     };
   }, [socket]);
 
-  useEffect(() => {
-    if (isError) {
-      console.error('Failed to load unread message count');
-    }
-  }, [isError]);
+  // useEffect(() => {
+  //   if (isError) {
+  //     console.error('Failed to load unread message count');
+  //   }
+  // }, [isError]);
 
   useEffect(() => {
     if (isLoading) {
