@@ -739,7 +739,6 @@ export default function CampaignListView() {
               height: { xs: '85vh', xl: '65vh' },
               overflow: 'auto',
               // bgcolor: 'wheat',
-              p: 2,
               // height: { xs: '60vh', xl: '65vh' },
               scrollBehavior: 'smooth',
             }}
