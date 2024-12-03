@@ -126,9 +126,10 @@ const Login = () => {
       >
         <Typography
           variant="h3"
-          fontWeight="bold"
+          // fontWeight="bold"
           sx={{
             fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+            fontWeight: 400,
           }}
         >
           Login 👾
