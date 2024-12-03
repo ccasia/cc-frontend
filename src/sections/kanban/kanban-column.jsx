@@ -200,7 +200,7 @@ export default function KanbanColumn({ column, tasks, index, status }) {
           </Droppable>
           {/* </Box> */}
 
-          {renderAddTask}
+          {/* {renderAddTask} */}
           {/* </Stack> */}
         </Paper>
       )}
