@@ -2,10 +2,10 @@ import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 
+import { alpha } from '@mui/material';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import { Box, alpha } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -164,41 +164,42 @@ export default function KanbanColumn({ column, tasks, index, status }) {
             provided={provided}
           />
 
-          <Box sx={{ overflow: 'auto', height: '60vh', scrollbarWidth: 'none' }}>
-            <Droppable droppableId={column?.id} type="TASK">
-              {(dropProvided, dropSnapshot) => (
-                <Stack
-                  ref={dropProvided.innerRef}
-                  {...dropProvided.droppableProps}
-                  spacing={2}
-                  sx={{
-                    py: 3,
-                    minWidth: 280,
-                    ...(dropSnapshot.isDraggingOver && {
-                      bgcolor: (theme) => alpha(theme.palette.grey[400], 0.2),
-                      borderRadius: 2,
-                    }),
-                  }}
-                >
-                  {column?.task
-                    .filter((item) => item?.submission?.status !== 'NOT_STARTED')
-                    .map((item, taskIndex) => (
-                      <KanbanTaskItem
-                        key={item?.id}
-                        index={taskIndex}
-                        column={column}
-                        task={item}
-                        onUpdateTask={handleUpdateTask}
-                        onDeleteTask={() => handleDeleteTask(item?.id)}
-                        status={status}
-                      />
-                    ))}
+          {/* <Box sx={{ overflow: 'auto', height: '65vh', scrollbarWidth: 'none' }}> */}
+          <Droppable droppableId={column?.id} type="TASK">
+            {(dropProvided, dropSnapshot) => (
+              <Stack
+                ref={dropProvided.innerRef}
+                {...dropProvided.droppableProps}
+                spacing={2}
+                sx={{
+                  py: 3,
+                  minWidth: 280,
+                  ...(dropSnapshot.isDraggingOver && {
+                    bgcolor: (theme) => alpha(theme.palette.grey[400], 0.2),
+                    borderRadius: 2,
+                  }),
+                }}
+              >
+                {column?.task
+                  .filter((item) => item?.submission?.status !== 'NOT_STARTED')
+                  .map((item, taskIndex) => (
+                    <KanbanTaskItem
+                      key={item?.id}
+                      index={taskIndex}
+                      column={column}
+                      task={item}
+                      onUpdateTask={handleUpdateTask}
+                      onDeleteTask={() => handleDeleteTask(item?.id)}
+                      status={status}
+                    />
+                  ))}
 
-                  {dropProvided.placeholder}
-                </Stack>
-              )}
-            </Droppable>
-          </Box>
+                {dropProvided.placeholder}
+              </Stack>
+            )}
+          </Droppable>
+          {/* </Box> */}
+
           {/* {renderAddTask} */}
           {/* </Stack> */}
         </Paper>

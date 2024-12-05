@@ -18,6 +18,7 @@ import {
 // import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { fetcher } from 'src/utils/axios';
@@ -39,13 +40,23 @@ import CampaignLists from '../campaign-list';
 
 const CampaignView = () => {
   const settings = useSettingsContext();
+
   const { campaigns } = useGetCampaigns();
+
+//   const { campaigns, isLoading } = useGetCampaigns();
+  
   const create = useBoolean();
+
   const [filter, setFilter] = useState('active');
+
   const theme = useTheme();
+
   const [anchorEl, setAnchorEl] = useState(null);
+
   const open = Boolean(anchorEl);
+  
   const { user } = useAuthContext();
+  
   const scrollContainerRef = useRef(null);
 
   const getKey = (pageIndex, previousPageData) => {
@@ -61,6 +72,8 @@ const CampaignView = () => {
   };
 
   const { data, error, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
+
+  const smDown = useResponsive('down', 'sm');
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -413,6 +426,10 @@ const CampaignView = () => {
             m: 2,
             height: '97vh',
             overflow: 'hidden',
+            ...(smDown && {
+              height: 1,
+              m: 0,
+            }),
           },
         }}
         scroll="paper"

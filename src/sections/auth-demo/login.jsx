@@ -55,7 +55,7 @@ const Login = () => {
     try {
       const res = await login(data.email, data.password, { admin: false });
       if (res?.user?.role === 'creator') {
-        router.push(paths.dashboard.campaign.view);
+        router.push(paths.dashboard.overview.root);
       }
       enqueueSnackbar('Successfully login');
     } catch (err) {
@@ -126,9 +126,10 @@ const Login = () => {
       >
         <Typography
           variant="h3"
-          fontWeight="bold"
+          // fontWeight="bold"
           sx={{
             fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+            fontWeight: 400,
           }}
         >
           Login 👾

@@ -11,9 +11,12 @@ import Link from '@mui/material/Link';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
+  Fade,
   Stack,
+  Paper,
   Dialog,
   Button,
+  Popper,
   TextField,
   Typography,
   IconButton,
@@ -29,6 +32,7 @@ import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 import { useCreator } from 'src/hooks/zustands/useCreator';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -91,12 +95,20 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
 
 const Register = () => {
   const password = useBoolean();
+
+  const mdDown = useResponsive('down', 'lg');
+
   const { register } = useAuthContext();
 
   const router = useRouter();
+
   const { setEmail } = useCreator();
+
   const [openTermsModal, setOpenTermsModal] = useState(false);
+
   const [openPrivacyModal, setOpenPrivacyModal] = useState(false);
+
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const handleOpenTerms = () => {
     setOpenTermsModal(true);
@@ -139,7 +151,7 @@ const Register = () => {
   };
 
   const methods = useForm({
-    reValidateMode: 'onChange',
+    // reValidateMode: 'onChange',
     mode: 'onChange',
     resolver: yupResolver(RegisterSchema),
     defaultValues,
@@ -148,14 +160,40 @@ const Register = () => {
   const {
     handleSubmit,
     control,
-    formState: { isSubmitting, isDirty, errors },
+    formState: { isSubmitting, errors, isValid },
     setValue,
     watch,
   } = methods;
 
+  // To check isValid in realtime
+  useEffect(() => {
+    watch();
+  }, [watch]);
+
+  console.log(isValid);
+  console.log(errors);
+
   const errorRecaptcha = errors?.recaptcha;
 
   const curPassword = watch('password');
+
+  const open = Boolean(anchorEl);
+
+  const id = open ? 'popper' : undefined;
+
+  useEffect(() => {
+    const handleClose = (event) => {
+      if (anchorEl && !anchorEl.contains(event.target)) {
+        setAnchorEl(null);
+      }
+    };
+
+    window.addEventListener('click', handleClose);
+
+    return () => {
+      window.removeEventListener('click', handleClose);
+    };
+  }, [anchorEl]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -173,24 +211,35 @@ const Register = () => {
 
   const criteria = [
     { label: 'At least 8 characters', test: curPassword.length >= 8 },
-    { label: 'Contains an uppercase letter', test: /[A-Z]/.test(curPassword) },
-    { label: 'Contains a lowercase letter', test: /[a-z]/.test(curPassword) },
-    { label: 'Contains a number', test: /[0-9]/.test(curPassword) },
+    { label: 'an uppercase letter', test: /[A-Z]/.test(curPassword) },
+    { label: 'a lowercase letter', test: /[a-z]/.test(curPassword) },
+    { label: 'a number', test: /[0-9]/.test(curPassword) },
     {
-      label: 'Contains a special character (@, $, !, %, *, ?, &, #)',
+      label: 'a special character (@, $, !, %, *, ?, &, #)',
       test: /[@$!%*?&#]/.test(curPassword),
     },
   ];
 
   const renderPasswordValidations = (
     <Stack>
+      <Typography variant="caption" gutterBottom color="text.secondary">
+        It&apos;s better to have:
+      </Typography>
       {criteria.map((rule, index) => (
-        <Stack key={index} direction="row" alignItems="center" spacing={1}>
-          <Iconify icon="ic:round-check" color={rule.test ? 'success.main' : 'gray'} />
+        <Stack key={index} direction="row" alignItems="center" spacing={0.5}>
+          {rule.test ? (
+            <Iconify icon="ic:round-check" color={rule.test && 'success.main'} />
+          ) : (
+            <Iconify icon="mdi:dot" />
+          )}
           <Typography
             variant="caption"
             sx={{
-              color: rule.test ? 'success.main' : 'text.secondary',
+              ...(curPassword &&
+                rule.test && {
+                  color: 'success.main',
+                  textDecoration: 'line-through',
+                }),
             }}
           >
             {rule.label}
@@ -216,9 +265,7 @@ const Register = () => {
 
   const renderForm = (
     <Stack spacing={2.5}>
-      {/* <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}> */}
       <RHFTextField name="name" label="Full Name" />
-      {/* </Stack> */}
 
       <RHFTextField name="email" label="Email address" />
 
@@ -227,6 +274,10 @@ const Register = () => {
         control={control}
         render={({ field, fieldState: { error } }) => (
           <TextField
+            onClick={(e) => {
+              setAnchorEl(e.currentTarget);
+            }}
+            aria-describedby={id}
             {...field}
             label="Password"
             type={password.value ? 'text' : 'password'}
@@ -239,25 +290,57 @@ const Register = () => {
                 </InputAdornment>
               ),
             }}
-            helperText={renderPasswordValidations}
+            error={!!error}
           />
         )}
       />
 
-      {/* <RHFTextField
-        name="password"
-        type={password.value ? 'text' : 'password'}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton onClick={password.onToggle} edge="end">
-                <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-        helperText={renderPasswordValidations}
-      /> */}
+      <Popper
+        id={id}
+        open={open}
+        anchorEl={anchorEl}
+        placement={mdDown ? 'top' : 'right'}
+        transition
+      >
+        {({ TransitionProps }) => (
+          <Fade {...TransitionProps} timeout={350}>
+            <Paper
+              sx={{
+                position: 'relative',
+                borderRadius: 2,
+                boxShadow: 10,
+                border: 1,
+                borderColor: '#EBEBEB',
+                ml: 2,
+                p: 2,
+                ...(mdDown && {
+                  mb: 2,
+                  ml: 0,
+                }),
+              }}
+            >
+              <Iconify
+                icon="ic:round-arrow-left"
+                width={30}
+                color="white"
+                sx={{
+                  position: 'absolute',
+                  left: -17,
+                  top: !mdDown && '50%',
+                  transform: 'translateY(-50%)',
+                  ...(mdDown && {
+                    position: 'absolute',
+                    bottom: -17,
+                    left: '50%',
+                    transform: 'translateX(-50%) rotate(-90deg)',
+                  }),
+                }}
+              />
+              {renderPasswordValidations}
+            </Paper>
+          </Fade>
+        )}
+      </Popper>
 
       <RHFTextField
         name="confirmPassword"
@@ -281,10 +364,10 @@ const Register = () => {
         variant="contained"
         loading={isSubmitting}
         sx={{
-          background: isDirty
+          background: isValid
             ? '#1340FF'
             : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
-          pointerEvents: !isDirty && 'none',
+          pointerEvents: !isValid && 'none',
         }}
       >
         Join Now
@@ -345,9 +428,9 @@ const Register = () => {
       >
         <Typography
           variant="h3"
-          fontWeight="bold"
           sx={{
             fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+            fontWeight: 400,
           }}
         >
           Join The Cult 👽
@@ -366,7 +449,9 @@ const Register = () => {
           <Box sx={{ mt: 2, display: 'inline-flex' }}>
             <ReCAPTCHA
               sitekey={RECAPTCHA_SITEKEY}
-              onChange={(token) => setValue('recaptcha', token)}
+              onChange={(token) => {
+                setValue('recaptcha', token, { shouldValidate: true });
+              }}
             />
           </Box>
 

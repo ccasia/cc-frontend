@@ -7,7 +7,7 @@ import CampaignManageCreatorView from 'src/sections/campaign/discover/admin/view
 // ----------------------------------------------------------------------
 
 export default function Page() {
-  const { id, creatorId, index } = useParams();
+  const { id, creatorId } = useParams();
 
   return (
     <>
@@ -15,7 +15,7 @@ export default function Page() {
         <title>Manage Creator</title>
       </Helmet>
 
-      <CampaignManageCreatorView id={creatorId} campaignId={id} index={index} />
+      <CampaignManageCreatorView id={creatorId} campaignId={id} />
     </>
   );
 }
