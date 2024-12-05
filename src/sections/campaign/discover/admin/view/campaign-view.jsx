@@ -43,8 +43,8 @@ const CampaignView = () => {
 
   const { campaigns } = useGetCampaigns();
 
-//   const { campaigns, isLoading } = useGetCampaigns();
-  
+  //   const { campaigns, isLoading } = useGetCampaigns();
+
   const create = useBoolean();
 
   const [filter, setFilter] = useState('active');
@@ -54,9 +54,9 @@ const CampaignView = () => {
   const [anchorEl, setAnchorEl] = useState(null);
 
   const open = Boolean(anchorEl);
-  
+
   const { user } = useAuthContext();
-  
+
   const scrollContainerRef = useRef(null);
 
   const getKey = (pageIndex, previousPageData) => {
@@ -372,11 +372,19 @@ const CampaignView = () => {
 
       {!isLoading &&
         (dataFiltered?.length > 0 ? (
+          // <Box
+          //   ref={scrollContainerRef}
+          //   sx={{
+          //     overflowY: 'auto',
+          //     height: { xs: '60vh', xl: '65vh' },
+          //     scrollBehavior: 'smooth',
+          //   }}
+          // >
           <Box
             ref={scrollContainerRef}
             sx={{
-              overflowY: 'auto',
-              height: { xs: '60vh', xl: '65vh' },
+              height: { xs: '85vh', xl: '65vh' },
+              overflow: 'auto',
               scrollBehavior: 'smooth',
             }}
           >
