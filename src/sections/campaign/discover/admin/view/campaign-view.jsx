@@ -3,12 +3,21 @@ import React, { useMemo, useState } from 'react';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useTheme } from '@mui/material/styles';
-import { Box, Stack, Button, Dialog, Container, Typography, IconButton, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Button,
+  Dialog,
+  Container,
+  Typography,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
 
 // import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
-import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import Iconify from 'src/components/iconify';
@@ -26,14 +35,20 @@ import CampaignLists from '../campaign-list';
 
 const CampaignView = () => {
   const settings = useSettingsContext();
+
   const { campaigns, isLoading } = useGetCampaigns();
-  // const { data: brandOptions } = useGetCampaignBrandOption();
+
   const create = useBoolean();
+
   const [filter, setFilter] = useState('active');
+
   const theme = useTheme();
+
   const [anchorEl, setAnchorEl] = useState(null);
+
   const open = Boolean(anchorEl);
-  const router = useRouter();
+
+  const smDown = useResponsive('down', 'sm');
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -360,7 +375,7 @@ const CampaignView = () => {
         }}
       >
         <MenuItem onClick={handleNewCampaign}>
-          <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2}} />
+          <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2 }} />
           New Campaign
         </MenuItem>
         {/* <MenuItem onClick={handleClose}>
@@ -413,6 +428,10 @@ const CampaignView = () => {
             m: 2,
             height: '97vh',
             overflow: 'hidden',
+            ...(smDown && {
+              height: 1,
+              m: 0,
+            }),
           },
         }}
         scroll="paper"
