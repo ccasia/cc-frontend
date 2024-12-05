@@ -2,7 +2,6 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
-import Pagination, { paginationClasses } from '@mui/material/Pagination';
 
 import CampaignItem from './campaign-item';
 
@@ -30,12 +29,15 @@ export default function CampaignLists({ campaigns }) {
           md: 'repeat(3, 1fr)',
         }}
       >
-        {campaigns?.slice(indexOfFirstItem, indexOfLastItem)?.map((campaign) => (
+        {/* {campaigns?.slice(indexOfFirstItem, indexOfLastItem)?.map((campaign) => (
           <CampaignItem key={campaign.id} campaign={campaign} status={campaign?.status} />
+        ))} */}
+        {campaigns?.map((campaign) => (
+          <CampaignItem key={campaign?.id} campaign={campaign} status={campaign?.status} />
         ))}
       </Box>
 
-      {campaigns?.length > 9 && (
+      {/* {campaigns?.length > 9 && (
         <Pagination
           count={Math.ceil(campaigns.length / MAX_ITEM)}
           page={page}
@@ -47,7 +49,7 @@ export default function CampaignLists({ campaigns }) {
             },
           }}
         />
-      )}
+      )} */}
     </>
   );
 }

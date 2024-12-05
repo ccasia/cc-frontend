@@ -34,7 +34,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle id="alert-dialog-title">“{campaign.name}” Log</DialogTitle>
+      <DialogTitle id="alert-dialog-title">“{campaign?.name}” Log</DialogTitle>
 
       <TableContainer>
         <Table>
@@ -46,7 +46,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row) => (
+            {rows?.map((row) => (
               <TableRow key={row.id}>
                 <TableCell>{row.datePerformed}</TableCell>
                 <TableCell>{row.action}</TableCell>
