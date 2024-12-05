@@ -40,7 +40,7 @@ const LastStep = ({ item }) => (
         <Stack gap={1}>
           <RHFTextField
             name="instagram"
-            placeholder="@cultcreativeasia"
+            placeholder="Eg: cultcreativeasia"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -57,7 +57,7 @@ const LastStep = ({ item }) => (
         <Stack gap={1}>
           <RHFTextField
             name="tiktok"
-            placeholder="@cultcreativeasia"
+            placeholder="Eg: cultcreativeasia"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
