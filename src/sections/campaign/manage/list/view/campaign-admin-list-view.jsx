@@ -8,9 +8,12 @@ import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mu
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { useResponsive } from 'src/hooks/use-responsive';
+
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Label from 'src/components/label';
 import { useSettingsContext } from 'src/components/settings';
@@ -23,14 +26,21 @@ import CampaignList from '../campaign-admin-list';
 
 const CampaignListView = () => {
   const settings = useSettingsContext();
+
   const { user } = useAuthContext();
+
   const scrollContainerRef = useRef(null);
+
   const [filter, setFilter] = useState('active');
   // const { data, isLoading } = useSWR(endpoints.campaign.getCampaignsByAdminId, fetcher, {
   //   revalidateIfStale: true,
   //   revalidateOnFocus: true,
   //   revalidateOnMount: true,
   // });
+
+  const { mainRef } = useMainContext();
+
+  const lgUp = useResponsive('up', 'lg');
 
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
@@ -108,30 +118,52 @@ const CampaignListView = () => {
     [data]
   );
 
+  // const handleScroll = useCallback(() => {
+  //   if (!scrollContainerRef.current) return;
+
+  //   const bottom =
+  //     scrollContainerRef.current.scrollHeight <=
+  //     scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight;
+
+  //   if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
+  //     setSize(size + 1);
+  //   }
+  // }, [data, isValidating, setSize, size]);
+
+  // useEffect(() => {
+  //   const scrollContainer = scrollContainerRef.current;
+  //   if (!scrollContainer) return;
+
+  //   const scrollListener = () => handleScroll();
+
+  //   scrollContainer.addEventListener('scroll', scrollListener);
+  //   // eslint-disable-next-line consistent-return
+  //   return () => {
+  //     scrollContainer.removeEventListener('scroll', scrollListener);
+  //   };
+  // }, [data, isValidating, size, setSize, handleScroll]);
+
   const handleScroll = useCallback(() => {
-    if (!scrollContainerRef.current) return;
+    const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
 
     const bottom =
-      scrollContainerRef.current.scrollHeight <=
-      scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight;
+      scrollContainer.scrollHeight <=
+      scrollContainer.scrollTop + scrollContainer.clientHeight + 0.5;
 
     if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
       setSize(size + 1);
     }
-  }, [data, isValidating, setSize, size]);
+  }, [data, isValidating, setSize, size, mainRef, lgUp]);
 
   useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
+    const scrollContainer = lgUp ? mainRef?.current : window;
 
-    const scrollListener = () => handleScroll();
+    scrollContainer.addEventListener('scroll', handleScroll);
 
-    scrollContainer.addEventListener('scroll', scrollListener);
-    // eslint-disable-next-line consistent-return
     return () => {
-      scrollContainer.removeEventListener('scroll', scrollListener);
+      scrollContainer.removeEventListener('scroll', handleScroll);
     };
-  }, [data, isValidating, size, setSize, handleScroll]);
+  }, [handleScroll, mainRef, lgUp]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -241,15 +273,7 @@ const CampaignListView = () => {
 
       {!isLoading ? (
         filteredData?.length > 0 ? (
-          <Box
-            ref={scrollContainerRef}
-            sx={{
-              overflowY: 'auto',
-              height: { xs: '50vh', xl: '65vh' },
-              mt: 2,
-              scrollBehavior: 'smooth',
-            }}
-          >
+          <Box>
             <Box
               sx={{
                 display: 'grid',

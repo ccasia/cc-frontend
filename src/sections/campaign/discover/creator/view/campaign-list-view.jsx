@@ -29,6 +29,7 @@ import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -44,8 +45,14 @@ import CampaignLists from '../campaign-list';
 export default function CampaignListView() {
   const settings = useSettingsContext();
   // const { campaigns } = useGetCampaigns('creator');
+
   const [filter, setFilter] = useState('all');
+
   const scrollContainerRef = useRef(null);
+
+  const { mainRef } = useMainContext();
+
+  const lgUp = useResponsive('up', 'lg');
 
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
@@ -268,29 +275,53 @@ export default function CampaignListView() {
     [filteredData, filter, user]
   );
 
+  // const handleScroll = useCallback(() => {
+  //   if (!scrollContainerRef.current) return;
+
+  //   const bottom =
+  //     scrollContainerRef.current.scrollHeight <=
+  //     scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight + 1;
+
+  //   if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
+  //     setSize(size + 1);
+  //   }
+  // }, [data, isValidating, setSize, size]);
+
+  // useEffect(() => {
+  //   const scrollContainer = scrollContainerRef.current;
+  //   if (!scrollContainer) return;
+
+  //   const scrollListener = () => handleScroll();
+  //   scrollContainer.addEventListener('scroll', scrollListener);
+  //   // eslint-disable-next-line consistent-return
+  //   return () => {
+  //     scrollContainer.removeEventListener('scroll', scrollListener);
+  //   };
+  // }, [data, isValidating, size, setSize, handleScroll]);
+
   const handleScroll = useCallback(() => {
-    if (!scrollContainerRef.current) return;
+    const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
 
     const bottom =
-      scrollContainerRef.current.scrollHeight <=
-      scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight + 1;
+      scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
+
+    console.log(scrollContainer.scrollHeight);
+    console.log(scrollContainer.scrollTop + scrollContainer.clientHeight);
 
     if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
       setSize(size + 1);
     }
-  }, [data, isValidating, setSize, size]);
+  }, [data, isValidating, setSize, size, mainRef, lgUp]);
 
   useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
+    const scrollContainer = lgUp ? mainRef?.current : window;
 
-    const scrollListener = () => handleScroll();
-    scrollContainer.addEventListener('scroll', scrollListener);
-    // eslint-disable-next-line consistent-return
+    scrollContainer.addEventListener('scroll', handleScroll);
+
     return () => {
-      scrollContainer.removeEventListener('scroll', scrollListener);
+      scrollContainer.removeEventListener('scroll', handleScroll);
     };
-  }, [data, isValidating, size, setSize, handleScroll]);
+  }, [handleScroll, mainRef, lgUp]);
 
   // const sortCampaigns = (campaigns) => {
   //   if (!campaigns) return [];
@@ -733,23 +764,11 @@ export default function CampaignListView() {
 
       {!isLoading &&
         (filteredData?.length > 0 ? (
-          <Box
-            ref={scrollContainerRef}
-            sx={{
-              height: { xs: '85vh', xl: '65vh' },
-              overflow: 'auto',
-              // bgcolor: 'wheat',
-              // height: { xs: '60vh', xl: '65vh' },
-              scrollBehavior: 'smooth',
-            }}
-          >
+          <Box>
             <CampaignLists
               campaigns={filteredData}
               totalCampaigns={filteredData?.length}
               mutate={mutate}
-              // page={page}
-              // onPageChange={handlePageChange}
-              // maxItemsPerPage={MAX_ITEM}
             />
             {isValidating && (
               <Box sx={{ textAlign: 'center', my: 2 }}>

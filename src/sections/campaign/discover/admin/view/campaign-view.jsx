@@ -1,5 +1,5 @@
 import useSWRInfinite from 'swr/infinite';
-import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -24,6 +24,7 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
@@ -57,7 +58,9 @@ const CampaignView = () => {
 
   const { user } = useAuthContext();
 
-  const scrollContainerRef = useRef(null);
+  const { mainRef } = useMainContext();
+
+  const lgUp = useResponsive('up', 'lg');
 
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
@@ -100,50 +103,69 @@ const CampaignView = () => {
   const activeCount = activeCampaigns.length;
   const completedCount = completedCampaigns.length;
 
-  // const dataFiltered = useMemo(() => {
-  //   if (filter === 'active') {
-  //     return activeCampaigns;
-  //   }
-  //   return completedCampaigns;
-  // }, [filter, activeCampaigns, completedCampaigns]);
-
   const dataFiltered = useMemo(
     () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
     [data]
   );
 
+  // const handleScroll = useCallback(() => {
+  //   if (!mainRef.current) return;
+
+  //   const bottom =
+  //     mainRef.current.scrollHeight ===
+  //     mainRef.current.scrollTop + mainRef.current.clientHeight + 0.5;
+
+  //   if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
+  //     setSize(size + 1);
+  //   }
+  // }, [data, isValidating, setSize, size, mainRef]);
+
+  // useEffect(() => {
+  //   const scrollContainer = mainRef?.current;
+  //   if (!scrollContainer) return;
+
+  //   const scrollListener = () => handleScroll();
+
+  //   scrollContainer.addEventListener('scroll', scrollListener);
+  //   // eslint-disable-next-line consistent-return
+  //   return () => {
+  //     scrollContainer.removeEventListener('scroll', scrollListener);
+  //   };
+  // }, [handleScroll, mainRef]);
+
   const handleScroll = useCallback(() => {
-    if (!scrollContainerRef.current) return;
+    const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
 
     const bottom =
-      scrollContainerRef.current.scrollHeight <=
-      scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight + 0.5;
+      scrollContainer.scrollHeight <=
+      scrollContainer.scrollTop + scrollContainer.clientHeight + 0.5;
 
     if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
       setSize(size + 1);
     }
-  }, [data, isValidating, setSize, size]);
+  }, [data, isValidating, setSize, size, mainRef, lgUp]);
 
   useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
+    const scrollContainer = lgUp ? mainRef?.current : window;
 
-    const scrollListener = () => handleScroll();
+    scrollContainer.addEventListener('scroll', handleScroll);
 
-    scrollContainer.addEventListener('scroll', scrollListener);
-    // eslint-disable-next-line consistent-return
     return () => {
-      scrollContainer.removeEventListener('scroll', scrollListener);
+      scrollContainer.removeEventListener('scroll', handleScroll);
     };
-  }, [data, isValidating, size, setSize, handleScroll]);
+  }, [handleScroll, mainRef, lgUp]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-      <Box>
-        <Typography variant="h2" sx={{ mb: 4, fontFamily: theme.typography.fontSecondaryFamily }}>
-          Manage Campaigns ✨
-        </Typography>
-      </Box>
+      <Typography
+        variant="h2"
+        sx={{
+          mb: 4,
+          fontFamily: theme.typography.fontSecondaryFamily,
+        }}
+      >
+        Manage Campaigns ✨
+      </Typography>
 
       <Box sx={{ mb: 2.5 }}>
         <Stack
@@ -311,7 +333,6 @@ const CampaignView = () => {
           </IconButton>
         </Stack>
       </Box>
-
       <Menu
         anchorEl={anchorEl}
         open={open}
@@ -356,7 +377,6 @@ const CampaignView = () => {
           Drafts
         </MenuItem> */}
       </Menu>
-
       {isLoading && (
         <Box sx={{ position: 'relative', top: 200, textAlign: 'center' }}>
           <CircularProgress
@@ -369,7 +389,6 @@ const CampaignView = () => {
           />
         </Box>
       )}
-
       {!isLoading &&
         (dataFiltered?.length > 0 ? (
           // <Box
@@ -380,14 +399,7 @@ const CampaignView = () => {
           //     scrollBehavior: 'smooth',
           //   }}
           // >
-          <Box
-            ref={scrollContainerRef}
-            sx={{
-              height: { xs: '85vh', xl: '65vh' },
-              overflow: 'auto',
-              scrollBehavior: 'smooth',
-            }}
-          >
+          <Box>
             <CampaignLists campaigns={dataFiltered} />
             {isValidating && (
               <Box sx={{ textAlign: 'center', my: 2 }}>
@@ -407,11 +419,6 @@ const CampaignView = () => {
             title={`No ${filter === 'active' ? 'active' : 'completed'} campaigns available`}
           />
         ))}
-
-      {/* <Button fullWidth onClick={() => setSize(size + 1)}>
-        Load more
-      </Button> */}
-
       {/* <CampaignFilter
         open={openFilters.value}
         onOpen={openFilters.onTrue}
@@ -422,7 +429,6 @@ const CampaignView = () => {
         reset={handleResetFitlers}
         brands={brandOptions}
       /> */}
-
       <Dialog
         fullWidth
         fullScreen
