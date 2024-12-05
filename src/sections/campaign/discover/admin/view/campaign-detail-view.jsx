@@ -76,11 +76,6 @@ const CampaignDetailView = ({ id }) => {
 
   const open = Boolean(anchorEl);
 
-  // const currentCampaign = useMemo(
-  //   () => !isLoading && campaigns?.find((campaign) => campaign.id === id),
-  //   [campaigns, id, isLoading]
-  // );
-
   useEffect(() => {
     if (!campaignLoading && campaign) {
       if (!campaign?.agreementTemplate) {

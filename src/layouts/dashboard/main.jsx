@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useRef, useMemo, createContext } from 'react';
 
 import Box from '@mui/material/Box';
 
@@ -12,12 +13,18 @@ import { HEADER } from '../config-layout';
 
 const SPACING = 8;
 
+export const mainContext = createContext();
+
 export default function Main({ children, sx, ...other }) {
   const settings = useSettingsContext();
 
   const lgUp = useResponsive('up', 'lg');
 
   const isNavHorizontal = settings.themeLayout === 'horizontal';
+
+  const mainRef = useRef(null);
+
+  const memoizedValue = useMemo(() => ({ mainRef }), []);
 
   if (isNavHorizontal) {
     return (
@@ -36,6 +43,7 @@ export default function Main({ children, sx, ...other }) {
             pb: 15,
           }),
         }}
+        {...other}
       >
         {children}
       </Box>
@@ -43,25 +51,28 @@ export default function Main({ children, sx, ...other }) {
   }
 
   return (
-    <Box
-      component="main"
-      sx={{
-        flexGrow: 1,
-        height: 1,
-        overflow: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        py: `${HEADER.H_MOBILE + SPACING}px`,
-        ...(lgUp && {
-          px: 2,
-          py: `${HEADER.H_DESKTOP + SPACING}px`,
-        }),
-        ...sx,
-      }}
-      {...other}
-    >
-      {children}
-    </Box>
+    <mainContext.Provider value={memoizedValue}>
+      <Box
+        ref={mainRef}
+        component="main"
+        sx={{
+          flexGrow: 1,
+          height: 1,
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          py: `${HEADER.H_MOBILE + SPACING}px`,
+          ...(lgUp && {
+            px: 2,
+            py: `${HEADER.H_DESKTOP + SPACING}px`,
+          }),
+          ...sx,
+        }}
+        {...other}
+      >
+        {children}
+      </Box>
+    </mainContext.Provider>
   );
 }
 
