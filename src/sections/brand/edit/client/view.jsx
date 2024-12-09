@@ -119,11 +119,13 @@ const CompanyEditView = ({ id }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
+
     const newData = {
       ...data,
       companyId: company?.id,
       companyObjectives: data.companyObjectives.filter((item) => item.value !== ''),
     };
+
     formData.append('data', JSON.stringify(newData));
     formData.append('companyLogo', data.companyLogo);
     try {
@@ -188,7 +190,6 @@ const CompanyEditView = ({ id }) => {
                 loading={loading}
                 type="submit"
                 variant="contained"
-                // color="primary"
                 sx={{
                   width: 100,
                 }}

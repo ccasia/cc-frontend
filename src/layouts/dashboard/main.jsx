@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useRef, useMemo, createContext } from 'react';
 
 import Box from '@mui/material/Box';
 
@@ -10,7 +11,9 @@ import { HEADER } from '../config-layout';
 
 // ----------------------------------------------------------------------
 
-// const SPACING = 8;
+const SPACING = 8;
+
+export const mainContext = createContext();
 
 export default function Main({ children, sx, ...other }) {
   const settings = useSettingsContext();
@@ -19,23 +22,28 @@ export default function Main({ children, sx, ...other }) {
 
   const isNavHorizontal = settings.themeLayout === 'horizontal';
 
-  // const isNavMini = settings.themeLayout === 'mini';
+  const mainRef = useRef(null);
+
+  const memoizedValue = useMemo(() => ({ mainRef }), []);
 
   if (isNavHorizontal) {
     return (
       <Box
         component="main"
         sx={{
-          minHeight: 1,
+          flexGrow: 1,
+          height: 1,
           display: 'flex',
+          overflow: 'auto',
           flexDirection: 'column',
           pt: `${HEADER.H_MOBILE + 24}px`,
-          pb: 10,
+          // pb: 10,
           ...(lgUp && {
             pt: `${HEADER.H_MOBILE * 2 + 40}px`,
             pb: 15,
           }),
         }}
+        {...other}
       >
         {children}
       </Box>
@@ -43,20 +51,28 @@ export default function Main({ children, sx, ...other }) {
   }
 
   return (
-    <Box
-      component="main"
-      sx={{
-        // flexGrow: 1,
-        // minHeight: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        bgcolor: (theme) => theme.palette.background.paper,
-        ...sx,
-      }}
-      {...other}
-    >
-      {children}
-    </Box>
+    <mainContext.Provider value={memoizedValue}>
+      <Box
+        ref={mainRef}
+        component="main"
+        sx={{
+          flexGrow: 1,
+          height: 1,
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          py: `${HEADER.H_MOBILE + SPACING}px`,
+          ...(lgUp && {
+            px: 2,
+            py: `${HEADER.H_DESKTOP + SPACING}px`,
+          }),
+          ...sx,
+        }}
+        {...other}
+      >
+        {children}
+      </Box>
+    </mainContext.Provider>
   );
 }
 

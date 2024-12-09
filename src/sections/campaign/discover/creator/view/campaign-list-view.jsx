@@ -1,8 +1,8 @@
-import { mutate } from 'swr';
 import { orderBy } from 'lodash';
 import { m } from 'framer-motion';
+import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Backdrop from '@mui/material/Backdrop';
 import Container from '@mui/material/Container';
@@ -24,12 +24,12 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
-import { endpoints } from 'src/utils/axios';
+import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -44,8 +44,31 @@ import CampaignLists from '../campaign-list';
 
 export default function CampaignListView() {
   const settings = useSettingsContext();
-  const { campaigns, isLoading } = useGetCampaigns('creator');
+  // const { campaigns } = useGetCampaigns('creator');
+
   const [filter, setFilter] = useState('all');
+
+  const scrollContainerRef = useRef(null);
+
+  const { mainRef } = useMainContext();
+
+  const lgUp = useResponsive('up', 'lg');
+
+  const getKey = (pageIndex, previousPageData) => {
+    // If there's no previous page data, start from the first page
+    if (pageIndex === 0) return `/api/campaign/matchCampaignWithCreator?take=${10}`;
+
+    // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
+    if (!previousPageData?.metaData?.lastCursor) return null;
+
+    // Otherwise, use the nextCursor to get the next page
+    return `/api/campaign/matchCampaignWithCreator?take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+  };
+
+  const { data, error, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(
+    getKey,
+    fetcher
+  );
 
   const { user } = useAuthContext();
   const dialog = useBoolean();
@@ -88,15 +111,15 @@ export default function CampaignListView() {
 
   useEffect(() => {
     // Define the handler function
-    const handlePitchLoading = (data) => {
-      if (upload.find((item) => item.campaignId === data.campaignId)) {
+    const handlePitchLoading = (val) => {
+      if (upload.find((item) => item.campaignId === val.campaignId)) {
         setUpload((prev) =>
           prev.map((item) =>
-            item.campaignId === data.campaignId
+            item.campaignId === val.campaignId
               ? {
-                  campaignId: data.campaignId,
+                  campaignId: val.campaignId,
                   loading: true,
-                  progress: Math.floor(data.progress),
+                  progress: Math.floor(val.progress),
                 }
               : item
           )
@@ -104,15 +127,15 @@ export default function CampaignListView() {
       } else {
         setUpload((item) => [
           ...item,
-          { loading: true, campaignId: data.campaignId, progress: Math.floor(data.progress) },
+          { loading: true, campaignId: val.campaignId, progress: Math.floor(val.progress) },
         ]);
       }
     };
 
-    const handlePitchSuccess = (data) => {
-      mutate(endpoints.campaign.getAllActiveCampaign);
-      enqueueSnackbar(data.name);
-      setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));
+    const handlePitchSuccess = (val) => {
+      mutate();
+      enqueueSnackbar(val.name);
+      setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== val.campaignId));
     };
 
     // Attach the event listener
@@ -124,36 +147,12 @@ export default function CampaignListView() {
       socket?.off('pitch-loading', handlePitchLoading);
       socket?.off('pitch-uploaded', handlePitchSuccess);
     };
-  }, [socket, upload]);
+  }, [socket, upload, mutate]);
 
   const [search, setSearch] = useState({
     query: '',
     results: [],
   });
-
-  const handleSearch = useCallback(
-    (inputValue) => {
-      setSearch((prevState) => ({
-        ...prevState,
-        query: inputValue,
-      }));
-
-      if (inputValue && campaigns) {
-        const filteredCampaigns = applyFilter({ inputData: campaigns, filter, user });
-        const results = filteredCampaigns.filter(
-          (campaign) =>
-            campaign.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-            campaign.company.name.toLowerCase().includes(inputValue.toLowerCase())
-        );
-
-        setSearch((prevState) => ({
-          ...prevState,
-          results,
-        }));
-      }
-    },
-    [campaigns, filter, user]
-  );
 
   const renderUploadProgress = (
     <Box
@@ -195,7 +194,9 @@ export default function CampaignListView() {
           <>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <ListItemText
-                primary={campaigns && campaigns.find((item) => item.id === elem.campaignId)?.name}
+                primary={
+                  filteredData && filteredData.find((item) => item.id === elem.campaignId)?.name
+                }
                 secondary="Uploading pitch"
                 primaryTypographyProps={{ variant: 'subtitle1' }}
                 secondaryTypographyProps={{ variant: 'caption' }}
@@ -218,20 +219,109 @@ export default function CampaignListView() {
     setPage(value);
   };
 
+  // const filteredData = useMemo(() => {
+  //   const indexOfLastItem = page * MAX_ITEM;
+  //   const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
+
+  // return applyFilter({
+  //   inputData: campaigns
+  //     ?.filter((campaign) => campaign?.status === 'ACTIVE')
+  //     ?.slice(indexOfFirstItem, indexOfLastItem),
+  //   filter,
+  //   user,
+  //   sortBy,
+  //   search,
+  // });
+  // }, [campaigns, filter, user, sortBy, page, search]);
+
   const filteredData = useMemo(() => {
-    const indexOfLastItem = page * MAX_ITEM;
-    const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
+    const campaigns = data ? data?.flatMap((item) => item?.data?.campaigns) : [];
 
     return applyFilter({
-      inputData: campaigns
-        ?.filter((campaign) => campaign?.status === 'ACTIVE')
-        ?.slice(indexOfFirstItem, indexOfLastItem),
+      inputData: campaigns?.filter((campaign) => campaign?.status === 'ACTIVE'),
       filter,
       user,
       sortBy,
       search,
     });
-  }, [campaigns, filter, user, sortBy, page, search]);
+  }, [data, filter, user, sortBy, search]);
+
+  // const filteredData = useMemo(
+  //   () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
+  //   [data]
+  // );
+
+  const handleSearch = useCallback(
+    (inputValue) => {
+      setSearch((prevState) => ({
+        ...prevState,
+        query: inputValue,
+      }));
+
+      if (inputValue && filteredData) {
+        const filteredCampaigns = applyFilter({ inputData: filteredData, filter, user });
+        const results = filteredCampaigns.filter(
+          (campaign) =>
+            campaign.name.toLowerCase().includes(inputValue.toLowerCase()) ||
+            campaign.company.name.toLowerCase().includes(inputValue.toLowerCase())
+        );
+
+        setSearch((prevState) => ({
+          ...prevState,
+          results,
+        }));
+      }
+    },
+    [filteredData, filter, user]
+  );
+
+  // const handleScroll = useCallback(() => {
+  //   if (!scrollContainerRef.current) return;
+
+  //   const bottom =
+  //     scrollContainerRef.current.scrollHeight <=
+  //     scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight + 1;
+
+  //   if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
+  //     setSize(size + 1);
+  //   }
+  // }, [data, isValidating, setSize, size]);
+
+  // useEffect(() => {
+  //   const scrollContainer = scrollContainerRef.current;
+  //   if (!scrollContainer) return;
+
+  //   const scrollListener = () => handleScroll();
+  //   scrollContainer.addEventListener('scroll', scrollListener);
+  //   // eslint-disable-next-line consistent-return
+  //   return () => {
+  //     scrollContainer.removeEventListener('scroll', scrollListener);
+  //   };
+  // }, [data, isValidating, size, setSize, handleScroll]);
+
+  const handleScroll = useCallback(() => {
+    const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
+
+    const bottom =
+      scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
+
+    console.log(scrollContainer.scrollHeight);
+    console.log(scrollContainer.scrollTop + scrollContainer.clientHeight);
+
+    if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
+      setSize(size + 1);
+    }
+  }, [data, isValidating, setSize, size, mainRef, lgUp]);
+
+  useEffect(() => {
+    const scrollContainer = lgUp ? mainRef?.current : window;
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, [handleScroll, mainRef, lgUp]);
 
   // const sortCampaigns = (campaigns) => {
   //   if (!campaigns) return [];
@@ -275,8 +365,11 @@ export default function CampaignListView() {
         Here are the top campaigns that fit your profile!
       </Typography>
 
-      <Box sx={{ mb: 2.5 }}>
-        {/* Mobile Search and Sort Stack */}
+      <Box
+        sx={{
+          mb: 2.5,
+        }}
+      >
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
@@ -300,7 +393,7 @@ export default function CampaignListView() {
           >
             <InputBase
               value={search.query}
-              onChange={(e) => handleSearch(e.target.value)}
+              // onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search"
               startAdornment={
                 <Iconify
@@ -383,7 +476,6 @@ export default function CampaignListView() {
           </Box>
         </Stack>
 
-        {/* Filter Buttons and Desktop Search/Sort */}
         <Stack
           direction="row"
           spacing={0.5}
@@ -672,13 +764,25 @@ export default function CampaignListView() {
 
       {!isLoading &&
         (filteredData?.length > 0 ? (
-          <CampaignLists
-            campaigns={filteredData}
-            totalCampaigns={campaigns?.length}
-            page={page}
-            onPageChange={handlePageChange}
-            maxItemsPerPage={MAX_ITEM}
-          />
+          <Box>
+            <CampaignLists
+              campaigns={filteredData}
+              totalCampaigns={filteredData?.length}
+              mutate={mutate}
+            />
+            {isValidating && (
+              <Box sx={{ textAlign: 'center', my: 2 }}>
+                <CircularProgress
+                  thickness={7}
+                  size={25}
+                  sx={{
+                    color: theme.palette.common.black,
+                    strokeLinecap: 'round',
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
         ) : (
           <EmptyContent
             title={`No campaigns available in ${filter === 'saved' ? 'Saved' : 'For You'}`}

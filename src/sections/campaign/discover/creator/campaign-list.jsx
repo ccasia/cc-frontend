@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
-import Pagination, { paginationClasses } from '@mui/material/Pagination';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -9,13 +8,7 @@ import CampaignItem from './campaign-item';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignLists({
-  campaigns,
-  totalCampaigns,
-  page,
-  onPageChange,
-  maxItemsPerPage,
-}) {
+export default function CampaignLists({ campaigns, mutate }) {
   const { user } = useAuthContext();
 
   return (
@@ -30,11 +23,11 @@ export default function CampaignLists({
         }}
       >
         {campaigns.map((campaign) => (
-          <CampaignItem key={campaign.id} campaign={campaign} user={user} />
+          <CampaignItem key={campaign.id} campaign={campaign} user={user} mutate={mutate} />
         ))}
       </Box>
 
-      {totalCampaigns > maxItemsPerPage && (
+      {/* {totalCampaigns > maxItemsPerPage && (
         <Pagination
           count={Math.ceil(totalCampaigns / maxItemsPerPage)}
           page={page}
@@ -46,15 +39,16 @@ export default function CampaignLists({
             },
           }}
         />
-      )}
+      )} */}
     </>
   );
 }
 
 CampaignLists.propTypes = {
   campaigns: PropTypes.array.isRequired,
-  totalCampaigns: PropTypes.number.isRequired,
-  page: PropTypes.number.isRequired,
-  onPageChange: PropTypes.func.isRequired,
-  maxItemsPerPage: PropTypes.number.isRequired,
+  mutate: PropTypes.func,
+  // totalCampaigns: PropTypes.number.isRequired,
+  // page: PropTypes.number.isRequired,
+  // onPageChange: PropTypes.func.isRequired,
+  // maxItemsPerPage: PropTypes.number.isRequired,
 };

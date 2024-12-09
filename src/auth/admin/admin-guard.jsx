@@ -29,7 +29,6 @@ const AdminGuardProvider = ({ children }) => {
       const res = await axiosInstance.get(endpoints.auth.verifyAdmin, {
         params: { inviteToken },
       });
-      console.log(res.data);
       setUser(res.data.user);
     } catch (error) {
       enqueueSnackbar(error?.message, {

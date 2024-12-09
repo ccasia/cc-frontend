@@ -481,6 +481,7 @@ const CampaignAgreements = ({ campaign }) => {
         </Table>
       </TableContainer>
       <AgreementDialog open={dialog.value} onClose={dialog.onFalse} url={selectedUrl} />
+
       <CampaignAgreementEdit
         dialog={editDialog}
         agreement={selectedAgreement}

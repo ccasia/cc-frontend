@@ -1,5 +1,4 @@
 /* eslint-disable no-nested-ternary */
-import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
@@ -21,7 +20,7 @@ import CampaignModal from './campaign-modal';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
+export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate }) {
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
   const dialog = useBoolean();
@@ -59,7 +58,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
     };
 
     const handlePitchSuccess = (data) => {
-      mutate(endpoints.campaign.getAllActiveCampaign);
+      mutate();
       enqueueSnackbar(data.name);
       setUpload((prevItems) => prevItems.filter((item) => item.campaignId !== data.campaignId));
       setLoading(false);
@@ -72,7 +71,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
       socket?.off('pitch-loading', handlePitchLoading);
       socket?.off('pitch-uploaded', handlePitchSuccess);
     };
-  }, [socket, upload]);
+  }, [socket, upload, mutate]);
 
   const saveCampaign = async (campaignId) => {
     try {
@@ -80,7 +79,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
         campaignId,
         userId: user?.id,
       });
-      mutate(endpoints.campaign.getMatchedCampaign);
+      mutate();
       // mutate(endpoints.campaign.creator.getSavedCampaigns);
       setBookMark(true);
       enqueueSnackbar(res?.data?.message);
@@ -96,7 +95,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
       const res = await axiosInstance.delete(
         endpoints.campaign.creator.unsaveCampaign(saveCampaignId)
       );
-      mutate(endpoints.campaign.getMatchedCampaign);
+      mutate();
       setBookMark(false);
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
@@ -185,7 +184,18 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm }) {
         }}
       />
       <Box sx={{ mt: 0.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 650,
+            mb: -0.1,
+            pb: 0.2,
+            mt: 0.8,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {campaign?.name}
         </Typography>
         <Typography
@@ -332,4 +342,5 @@ CampaignItem.propTypes = {
   campaign: PropTypes.object,
   user: PropTypes.object,
   onOpenCreatorForm: PropTypes.func,
+  mutate: PropTypes.func,
 };

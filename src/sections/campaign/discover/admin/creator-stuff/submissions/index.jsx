@@ -218,7 +218,7 @@ const Submissions = ({ campaign, submissions, creator }) => {
                 sx={{
                   fontWeight: 600,
                   color: '#221f20',
-                  ml: 1.5,
+                  ml: 0.2,
                   fontSize: { xs: '1.25rem', md: '1.5rem' },
                 }}
               >

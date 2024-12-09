@@ -359,13 +359,12 @@ const Overview = () => {
   return (
     <Container maxWidth="xl">
       <ListItemText
-        primary={`Welcome back, ${user?.name} 👋🏼`}
+        primary={`Welcome to the Cult, ${user?.name?.split(' ')[0]} 👋🏼`}
         secondary="Keep up the good work! Here’s what is relevant to you right now."
         primaryTypographyProps={{
           variant: 'h2',
           fontWeight: 400,
-          fontFamily: 'InstrumentSerif',
-          letterSpacing: 0.5,
+          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
         }}
         secondaryTypographyProps={{
           variant: 'body1',

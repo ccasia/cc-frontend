@@ -1,7 +1,7 @@
 import * as Yup from 'yup';
-import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useCallback } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Stack from '@mui/material/Stack';
@@ -61,8 +61,12 @@ export default function ClassicNewPasswordView() {
 
   const NewPasswordSchema = Yup.object().shape({
     password: Yup.string()
-      .min(6, 'Password must be at least 6 characters')
-      .required('Password is required'),
+    .required('Password is required')
+    .min(8, 'Password must be at least 8 characters long')
+    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .matches(/[0-9]/, 'Password must contain at least one number')
+    .matches(/[@$!%*?&#]/, 'Password must contain at least one special character'),
     confirmPassword: Yup.string()
       .required('Confirm password is required')
       .oneOf([Yup.ref('password')], 'Passwords must match'),
@@ -82,7 +86,11 @@ export default function ClassicNewPasswordView() {
   const {
     handleSubmit,
     formState: { isSubmitting, isDirty, isValid },
+    control,
+    watch,
   } = methods;
+
+  const curPassword = watch('password');
 
   const onSubmit = handleSubmit(async (data) => {
     console.log(data);
@@ -103,29 +111,67 @@ export default function ClassicNewPasswordView() {
     }
   });
 
+  const criteria = [
+    { label: 'At least 8 characters', test: curPassword.length >= 8 },
+    { label: 'Contains an uppercase letter', test: /[A-Z]/.test(curPassword) },
+    { label: 'Contains a lowercase letter', test: /[a-z]/.test(curPassword) },
+    { label: 'Contains a number', test: /[0-9]/.test(curPassword) },
+    {
+      label: 'Contains a special character (@, $, !, %, *, ?, &, #)',
+      test: /[@$!%*?&#]/.test(curPassword),
+    },
+  ];
+
+  const renderPasswordValidations = (
+    <Stack>
+      {criteria.map((rule, index) => (
+        <Stack key={index} direction="row" alignItems="center" spacing={1}>
+          <Iconify icon="ic:round-check" color={rule.test ? 'success.main' : 'gray'} />
+          <Typography
+            variant="caption"
+            sx={{
+              color: rule.test ? 'success.main' : 'text.secondary',
+            }}
+          >
+            {rule.label}
+          </Typography>
+        </Stack>
+      ))}
+    </Stack>
+  );
+
   const renderForm = (
     <Stack spacing={3} alignItems="center">
       <Stack width={1}>
         <FormLabel required>Password</FormLabel>
-        <RHFTextField
-          sx={{
-            '& .MuiInputBase-root': {
-              backgroundColor: '#FFF', // Replace with your desired color
-            },
-          }}
+        <Controller
           name="password"
-          placeholder="Password"
-          type={password.value ? 'text' : 'password'}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={password.onToggle} edge="end">
-                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
+          control={methods.control}
+          render={({ field }) => (
+            <RHFTextField
+              {...field}
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: '#FFF', // Replace with your desired color
+                },
+              }}
+              placeholder="Password"
+              type={password.value ? 'text' : 'password'}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={password.onToggle} edge="end">
+                      <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          )}
         />
+        <Stack spacing={1} sx={{ mt: 0.5 }}>
+          {renderPasswordValidations}
+        </Stack>
       </Stack>
 
       <Stack width={1}>

@@ -89,9 +89,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
+  const [pdfError, setPdfError] = useState(false);
+
   // eslint-disable-next-line no-shadow
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+  };
+
+  const onDocumentLoadError = (error) => {
+    setPdfError(true);
+    console.error('Error loading PDF:', error);
   };
 
   const agreement = campaign?.campaignTimeline.find((elem) => elem.name === 'Agreement');
@@ -335,35 +342,49 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                 {/* Full-width Scrollable PDF Preview */}
                 <Box
                   sx={{
-                    mt: 3,
-                    height: 400,
+                    width: '100%',
+                    height: '600px',
+                    mt: 1,
+                    ml: -1,
+                    borderRadius: 1,
                     border: '1px solid',
                     borderColor: 'divider',
-                    borderRadius: 1,
                     overflow: 'auto',
-                    mx: -1.5,
-                    px: 1.5,
-                    '&::-webkit-scrollbar': {
-                      width: '8px',
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                      backgroundColor: 'rgba(0,0,0,0.1)',
-                      borderRadius: '4px',
+                    bgcolor: 'background.neutral',
+                    '& .react-pdf__Document': {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
                     },
                   }}
                 >
                   <Document
                     file={campaign?.agreement?.agreementUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={onDocumentLoadError}
                   >
                     {Array.from(new Array(numPages), (el, index) => (
-                      <Page
+                      <Box
                         key={index}
-                        pageNumber={index + 1}
-                        renderAnnotationLayer={false}
-                        renderTextLayer={false}
-                        width={isSmallScreen ? undefined : 800}
-                      />
+                        sx={{
+                          p: 2,
+                          width: '100%',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          '&:not(:last-child)': {
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                          },
+                        }}
+                      >
+                        <Page
+                          key={`page-${index + 1}`}
+                          pageNumber={index + 1}
+                          scale={isSmallScreen ? 0.7 : 1}
+                          renderAnnotationLayer={false}
+                          renderTextLayer={false}
+                        />
+                      </Box>
                     ))}
                   </Document>
                 </Box>
@@ -536,35 +557,48 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
                 <Box
                   sx={{
-                    mt: 3,
-                    height: 400,
+                    width: '100%',
+                    height: '600px',
+                    mt: 1,
+                    borderRadius: 1,
                     border: '1px solid',
                     borderColor: 'divider',
-                    borderRadius: 1,
                     overflow: 'auto',
-                    mx: -1.5,
-                    px: 1.5,
-                    '&::-webkit-scrollbar': {
-                      width: '8px',
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                      backgroundColor: 'rgba(0,0,0,0.1)',
-                      borderRadius: '4px',
+                    bgcolor: 'background.neutral',
+                    '& .react-pdf__Document': {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
                     },
                   }}
                 >
                   <Document
                     file={campaign?.agreement?.agreementUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={onDocumentLoadError}
                   >
                     {Array.from(new Array(numPages), (el, index) => (
-                      <Page
+                      <Box
                         key={index}
-                        pageNumber={index + 1}
-                        renderAnnotationLayer={false}
-                        renderTextLayer={false}
-                        width={isSmallScreen ? undefined : 800}
-                      />
+                        sx={{
+                          p: 2,
+                          width: '100%',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          '&:not(:last-child)': {
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                          },
+                        }}
+                      >
+                        <Page
+                          key={`page-${index + 1}`}
+                          pageNumber={index + 1}
+                          scale={isSmallScreen ? 0.7 : 1}
+                          renderAnnotationLayer={false}
+                          renderTextLayer={false}
+                        />
+                      </Box>
                     ))}
                   </Document>
                 </Box>
@@ -605,7 +639,17 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           )}
 
           {/* New Upload Modal */}
-          <Dialog open={openUploadModal} fullWidth maxWidth="md">
+          <Dialog 
+            open={openUploadModal} 
+            fullWidth 
+            maxWidth="md"
+            sx={{
+              '& .MuiDialog-paper': {
+                width: { xs: 'calc(100% - 32px)', sm: '100%' },
+                m: { xs: 2, sm: 32 }
+              }
+            }}
+          >
             <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
               <Stack direction="row" alignItems="center" gap={2}>
                 <Box>
@@ -613,7 +657,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     variant="h5"
                     sx={{
                       fontFamily: 'Instrument Serif, serif',
-                      fontSize: { xs: '2rem', sm: '2.4rem' },
+                      fontSize: { xs: '1.8rem', sm: '2.4rem' },
                       fontWeight: 550,
                     }}
                   >
@@ -626,13 +670,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   sx={{
                     ml: 'auto',
                     '& svg': {
-                      width: 24,
-                      height: 24,
+                      width: { xs: 20, sm: 24 },
+                      height: { xs: 20, sm: 24 },
                       color: '#636366',
                     },
                   }}
                 >
-                  <Iconify icon="hugeicons:cancel-01" width={24} />
+                  <Iconify icon="hugeicons:cancel-01" />
                 </IconButton>
               </Stack>
             </DialogTitle>
@@ -651,7 +695,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                         borderColor: '#e7e7e7',
                         borderRadius: 1.2,
                         bgcolor: '#ffffff',
-                        position: 'relative',
+                        flexWrap: { xs: 'wrap', sm: 'nowrap' },
                       }}
                     >
                       <AvatarIcon
@@ -662,14 +706,11 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                           bgcolor: '#f5f5f5',
                           color: '#8e8e93',
                           borderRadius: 1.2,
-                          '& svg': {
-                            width: 24,
-                            height: 24,
-                          },
+                          '& svg': { width: 24, height: 24 },
                         }}
                       />
 
-                      <Box sx={{ flexGrow: 1 }}>
+                      <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', sm: 'auto' }, mt: { xs: 1, sm: 0 } }}>
                         <Typography
                           variant="subtitle2"
                           noWrap
@@ -677,130 +718,128 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                             color: 'text.primary',
                             fontWeight: 600,
                             fontSize: '1rem',
-                            maxWidth: '300px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
+                            maxWidth: { xs: '100%', sm: '300px' },
                           }}
                         >
                           {agreementForm.name}
                         </Typography>
 
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: 'text.secondary',
-                            display: 'block',
-                            mt: 0.5,
-                            fontSize: '0.875rem',
-                          }}
-                        >
-                          {uploadProgress < 100
-                            ? `Uploading ${uploadProgress}%`
-                            : formatFileSize(agreementForm.size)}
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5, fontSize: '0.875rem' }}>
+                          {uploadProgress < 100 ? `Uploading ${uploadProgress}%` : formatFileSize(agreementForm.size)}
                         </Typography>
                       </Box>
 
-                      {uploadProgress < 100 ? (
-                        <Stack direction="row" spacing={2} alignItems="center">
-                          <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                            <CircularProgress
-                              variant="determinate"
-                              value={100}
-                              size={30}
-                              thickness={6}
-                              sx={{ color: 'grey.300' }}
-                            />
-                            <CircularProgress
-                              variant="determinate"
-                              value={uploadProgress}
-                              size={30}
-                              thickness={6}
+                      <Stack 
+                        direction="row" 
+                        spacing={2} 
+                        alignItems="center"
+                        sx={{ 
+                          width: { xs: '100%', sm: 'auto' },
+                          justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+                          mt: { xs: 2, sm: 0 }
+                        }}
+                      >
+                        {uploadProgress < 100 ? (
+                          <Stack direction="row" spacing={2} alignItems="center">
+                            <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                              <CircularProgress
+                                variant="determinate"
+                                value={100}
+                                size={30}
+                                thickness={6}
+                                sx={{ color: 'grey.300' }}
+                              />
+                              <CircularProgress
+                                variant="determinate"
+                                value={uploadProgress}
+                                size={30}
+                                thickness={6}
+                                sx={{
+                                  color: '#5abc6f',
+                                  position: 'absolute',
+                                  left: 0,
+                                  strokeLinecap: 'round',
+                                }}
+                              />
+                            </Box>
+                            <Button
+                              onClick={handleRemove}
+                              variant="contained"
                               sx={{
-                                color: '#5abc6f',
-                                position: 'absolute',
-                                left: 0,
-                                strokeLinecap: 'round',
+                                bgcolor: 'white',
+                                border: 1,
+                                borderColor: '#e7e7e7',
+                                borderBottom: 3,
+                                borderBottomColor: '#e7e7e7',
+                                color: '#221f20',
+                                '&:hover': {
+                                  bgcolor: 'white',
+                                  borderColor: '#e7e7e7',
+                                },
+                                textTransform: 'none',
+                                px: 2,
+                                py: 1.5,
+                                fontSize: '0.875rem',
+                                minWidth: '80px',
+                                height: '45px',
                               }}
-                            />
-                          </Box>
-                          <Button
-                            onClick={handleRemove}
-                            variant="contained"
-                            sx={{
-                              bgcolor: 'white',
-                              border: 1,
-                              borderColor: '#e7e7e7',
-                              borderBottom: 3,
-                              borderBottomColor: '#e7e7e7',
-                              color: '#221f20',
-                              '&:hover': {
+                            >
+                              Cancel
+                            </Button>
+                          </Stack>
+                        ) : (
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Button
+                              onClick={() => setPreview(URL.createObjectURL(agreementForm))}
+                              variant="contained"
+                              sx={{
                                 bgcolor: 'white',
+                                border: 1,
                                 borderColor: '#e7e7e7',
-                              },
-                              textTransform: 'none',
-                              px: 2,
-                              py: 1.5,
-                              fontSize: '0.875rem',
-                              minWidth: '80px',
-                              height: '45px',
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        </Stack>
-                      ) : (
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Button
-                            onClick={() => setPreview(URL.createObjectURL(agreementForm))}
-                            variant="contained"
-                            sx={{
-                              bgcolor: 'white',
-                              border: 1,
-                              borderColor: '#e7e7e7',
-                              borderBottom: 3,
-                              borderBottomColor: '#e7e7e7',
-                              color: '#221f20',
-                              '&:hover': {
+                                borderBottom: 3,
+                                borderBottomColor: '#e7e7e7',
+                                color: '#221f20',
+                                '&:hover': {
+                                  bgcolor: 'white',
+                                  borderColor: '#e7e7e7',
+                                },
+                                textTransform: 'none',
+                                px: 2,
+                                py: 1.5,
+                                fontSize: '0.875rem',
+                                minWidth: '80px',
+                                height: '45px',
+                              }}
+                            >
+                              Preview
+                            </Button>
+                            <Button
+                              onClick={handleRemove}
+                              variant="contained"
+                              sx={{
                                 bgcolor: 'white',
+                                border: 1,
                                 borderColor: '#e7e7e7',
-                              },
-                              textTransform: 'none',
-                              px: 2,
-                              py: 1.5,
-                              fontSize: '0.875rem',
-                              minWidth: '80px',
-                              height: '45px',
-                            }}
-                          >
-                            Preview
-                          </Button>
-                          <Button
-                            onClick={handleRemove}
-                            variant="contained"
-                            sx={{
-                              bgcolor: 'white',
-                              border: 1,
-                              borderColor: '#e7e7e7',
-                              borderBottom: 3,
-                              borderBottomColor: '#e7e7e7',
-                              color: '#221f20',
-                              '&:hover': {
-                                bgcolor: 'white',
-                                borderColor: '#e7e7e7',
-                              },
-                              textTransform: 'none',
-                              px: 2,
-                              py: 1.5,
-                              fontSize: '0.875rem',
-                              minWidth: '80px',
-                              height: '45px',
-                            }}
-                          >
-                            Remove
-                          </Button>
-                        </Stack>
-                      )}
+                                borderBottom: 3,
+                                borderBottomColor: '#e7e7e7',
+                                color: '#221f20',
+                                '&:hover': {
+                                  bgcolor: 'white',
+                                  borderColor: '#e7e7e7',
+                                },
+                                textTransform: 'none',
+                                px: 2,
+                                py: 1.5,
+                                fontSize: '0.875rem',
+                                minWidth: '80px',
+                                height: '45px',
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </Stack>
+                        )}
+                      </Stack>
                     </Stack>
                   </Box>
                 ) : (
@@ -838,7 +877,18 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             </DialogActions>
           </Dialog>
 
-          <Dialog open={!!preview} onClose={() => setPreview('')} fullWidth maxWidth="md">
+          <Dialog 
+            open={!!preview} 
+            onClose={() => setPreview('')} 
+            fullWidth 
+            maxWidth="md"
+            sx={{
+              '& .MuiDialog-paper': {
+                width: { xs: 'calc(100% - 32px)', sm: '100%' },
+                m: { xs: 2, sm: 32 }
+              }
+            }}
+          >
             <DialogTitle>
               <Stack direction="row" alignItems="center" gap={2}>
                 <Box>
@@ -846,7 +896,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     variant="h5"
                     sx={{
                       fontFamily: 'Instrument Serif, serif',
-                      fontSize: { xs: '2rem', sm: '2.4rem' },
+                      fontSize: { xs: '1.8rem', sm: '2.4rem' },
                       fontWeight: 550,
                     }}
                   >
@@ -859,7 +909,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                     sx={{
                       fontWeight: 'bold',
                       color: 'text.secondary',
-                      maxWidth: '400px',
+                      maxWidth: { xs: '250px', sm: '400px' },
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -875,8 +925,8 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   sx={{
                     ml: 'auto',
                     '& svg': {
-                      width: 24,
-                      height: 24,
+                      width: { xs: 20, sm: 24 },
+                      height: { xs: 20, sm: 24 },
                       color: '#636366',
                     },
                   }}
@@ -891,7 +941,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             <DialogContent sx={{ p: 3 }}>
               <Box
                 sx={{
-                  height: 600,
+                  height: { xs: 400, sm: 600 },
                   overflow: 'auto',
                   '&::-webkit-scrollbar': {
                     width: '8px',
@@ -902,14 +952,23 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   },
                 }}
               >
-                <Document file={preview} onLoadSuccess={onDocumentLoadSuccess}>
+                <Document 
+                  file={preview} 
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  loading={
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                      <CircularProgress />
+                    </Box>
+                  }
+                >
                   {Array.from(new Array(numPages), (el, index) => (
                     <Page
                       key={index}
                       pageNumber={index + 1}
                       renderAnnotationLayer={false}
                       renderTextLayer={false}
-                      width={isSmallScreen ? undefined : 800}
+                      width={isSmallScreen ? window.innerWidth - 64 : 800}
+                      scale={isSmallScreen ? 0.8 : 1}
                     />
                   ))}
                 </Document>

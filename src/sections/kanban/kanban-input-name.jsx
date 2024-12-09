@@ -15,6 +15,7 @@ export default function KanbanInputName({ sx, ...other }) {
           borderWidth: 2,
           borderStyle: 'solid',
           borderColor: 'transparent',
+          pointerEvents: 'none',
           transition: (theme) => theme.transitions.create(['padding-left', 'border-color']),
           [`&.${inputBaseClasses.focused}`]: {
             pl: 1.5,

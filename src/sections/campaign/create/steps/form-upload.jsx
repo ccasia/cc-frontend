@@ -15,13 +15,12 @@ import {
   Typography,
   DialogTitle,
   DialogContent,
-  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetTemplate } from 'src/hooks/use-get-template';
 
+import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
 
 import Iconify from 'src/components/iconify';
@@ -32,8 +31,9 @@ const CampaignFormUpload = ({ pdfModal }) => {
   const [selectedTemplate, setSelectedTemplate] = useState({});
   const lgUp = useResponsive('up', 'sm');
   const [displayPdf, setDisplayPdf] = useState('');
+  const { user } = useAuthContext();
 
-  const { data: templates, templateLoading } = useGetTemplate();
+  // const { data: templates, templateLoading } = useGetTemplate();
 
   const {
     setValue,
@@ -79,11 +79,11 @@ const CampaignFormUpload = ({ pdfModal }) => {
 
   return (
     <>
-      {templateLoading && (
+      {/* {templateLoading && (
         <Box display="flex" justifyContent="center">
           <CircularProgress size={30} />
         </Box>
-      )}
+      )} */}
 
       {error && (
         <Alert severity="error" variant="outlined">
@@ -91,14 +91,25 @@ const CampaignFormUpload = ({ pdfModal }) => {
         </Alert>
       )}
 
-      {!templateLoading && !templates?.length < 0 ? (
-        <Alert severity="warning" variant="outlined">
-          Template Not found
-        </Alert>
+      {/* {!templateLoading && !templates?.length < 0 ? ( */}
+      {user?.agreementTemplate < 1 ? (
+        <Stack spacing={1}>
+          <Alert severity="warning" variant="outlined">
+            Template Not found
+          </Alert>
+          <Button
+            size="medium"
+            variant="contained"
+            onClick={pdfModal.onTrue}
+            startIcon={<Iconify icon="icon-park-outline:agreement" width={20} />}
+          >
+            Create new agreement template
+          </Button>
+        </Stack>
       ) : (
         <>
           <Alert severity="success" variant="outlined">
-            {templates?.length} templates found
+            {user?.agreementTemplate?.length} templates found
           </Alert>
           <Box sx={{ my: 2, textAlign: 'end' }}>
             <Stack direction="row" spacing={1} justifyContent="end">
@@ -175,7 +186,7 @@ const CampaignFormUpload = ({ pdfModal }) => {
               alignItems: 'center',
             }}
           >
-            {templateLoading && (
+            {/* {templateLoading && (
               <Box
                 sx={{
                   // position: 'relative',
@@ -192,9 +203,9 @@ const CampaignFormUpload = ({ pdfModal }) => {
                   }}
                 />
               </Box>
-            )}
-            {!templateLoading &&
-              templates?.map((template) => (
+            )} */}
+            {user?.agreementTemplate?.length > 0 &&
+              user?.agreementTemplate?.map((template) => (
                 <Box
                   key={template?.id}
                   my={4}

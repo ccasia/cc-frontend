@@ -189,7 +189,9 @@ const DashboardSuperadmin = () => {
             </Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="h2">
-                {campaigns?.filter((campaign) => campaign.status === 'ACTIVE').reduce((acc, campaign) => acc + campaign.pitch.length, 0)}
+                {campaigns
+                  ?.filter((campaign) => campaign.status === 'ACTIVE')
+                  .reduce((acc, campaign) => acc + campaign.pitch.length, 0)}
               </Typography>
               <Chart
                 dir="ltr"
@@ -214,9 +216,7 @@ const DashboardSuperadmin = () => {
               Total Creator
             </Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h2">
-                {creators?.length}
-              </Typography>
+              <Typography variant="h2">{creators?.length}</Typography>
               <Chart
                 dir="ltr"
                 type="bar"
@@ -240,9 +240,7 @@ const DashboardSuperadmin = () => {
               Total Task
             </Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h2">
-                {taskLists?.length}
-              </Typography>
+              <Typography variant="h2">{taskLists?.length}</Typography>
               <Chart
                 dir="ltr"
                 type="bar"

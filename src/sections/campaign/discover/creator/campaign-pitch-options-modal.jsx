@@ -54,9 +54,9 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
         </DialogTitle>
         <DialogContent>
           <Stack
-            direction="row"
+            direction={{ xs: 'column', sm: 'row' }}
             justifyContent="space-between"
-            alignItems="center"
+            alignItems={{ xs: 'stretch', sm: 'center' }}
             gap={2}
             pb={4}
             mt={1}
@@ -68,6 +68,7 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
                 borderRadius: 2,
                 borderColor: grey[100],
                 transition: 'all .2s ease',
+                width: { xs: '100%', sm: 'auto' },
                 '&:hover': {
                   borderColor: grey[700],
                   cursor: 'pointer',
@@ -105,6 +106,7 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
                 borderRadius: 2,
                 borderColor: grey[100],
                 transition: 'all .2s ease',
+                width: { xs: '100%', sm: 'auto' },
                 '&:hover': {
                   borderColor: grey[700],
                   cursor: 'pointer',
@@ -136,90 +138,7 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
             </Box>
           </Stack>
         </DialogContent>
-        {/* <Stack direction={{ xs: 'column', sm: 'row' }} p={2} gap={2}>
-          <Box
-            sx={{
-              width: 200,
-              height: 200,
-              bgcolor: (theme) =>
-                theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[300],
-              borderRadius: 2,
-              position: 'relative',
-              '&:hover': {
-                border: 1,
-                borderColor: 'text.secondary',
-              },
-            }}
-            component={Button}
-            onClick={() => {
-              handleClose();
-              text.onTrue();
-            }}
-          >
-            <Stack
-              alignItems="center"
-              justifyContent="center"
-              spacing={0.5}
-              sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            >
-              <Iconify icon="streamline:script-2-solid" width={30} />
-              <Typography variant="subtitle1">Text</Typography>
-            </Stack>
-          </Box>
-          <Box
-            sx={{
-              width: 200,
-              height: 200,
-              bgcolor: (theme) =>
-                theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[300],
-              borderRadius: 2,
-              position: 'relative',
-              '&:hover': {
-                border: 1,
-                borderColor: 'text.secondary',
-              },
-            }}
-            component={Button}
-            onClick={() => {
-              handleClose();
-              video.onTrue();
-            }}
-          >
-            <Stack
-              alignItems="center"
-              justifyContent="center"
-              spacing={0.5}
-              sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            >
-              <Iconify icon="ph:video-fill" width={30} />
-              <Typography>Video</Typography>
-            </Stack>
-          </Box>
-        </Stack> */}
       </Dialog>
-      {/* {open && (
-        // <Button
-        //   variant="contained"
-        //   onClick={handlePitchClick}
-        //   sx={{
-        //     position: 'absolute',
-        //     bottom: 16,
-        //     right: 16,
-        //   }}
-        // >
-        //   {hasDraft ? 'Draft' : 'Pitch Yourself'}
-        // </Button>
-      )} */}
       <CampaignPitchTextModal open={text.value} handleClose={text.onFalse} campaign={campaign} />
       <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} />
     </>

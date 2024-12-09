@@ -1,33 +1,48 @@
+import dayjs from 'dayjs';
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
+import { pdf } from '@react-pdf/renderer';
+import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
+import { pink, deepOrange } from '@mui/material/colors';
 import {
   Box,
   Stack,
+  Alert,
+  Radio,
   Button,
   Dialog,
+  Avatar,
   Container,
   Typography,
   IconButton,
+  DialogTitle,
   DialogActions,
+  DialogContent,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import useGetCampaigns from 'src/hooks/use-get-campaigns';
+import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
+import AgreementTemplate from 'src/template/agreement';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
+
+import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
 import CampaignOverview from '../campaign-overview';
 import CampaignLogistics from '../campaign-logistics';
@@ -42,27 +57,66 @@ import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-cr
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
-  const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
+  // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
+  const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const reminderRef = useRef(null);
   const loading = useBoolean();
   const [url, setUrl] = useState('');
   const copyDialog = useBoolean();
   const copy = useBoolean();
+  const pdfModal = useBoolean();
+  const { user } = useAuthContext();
+  const [openDialog, setOpenDialog] = useState(false);
+  const [pages, setPages] = useState(0);
+  const lgUp = useResponsive('up', 'lg');
+  const templateModal = useBoolean();
+  const linking = useBoolean();
 
   const open = Boolean(anchorEl);
 
-  const currentCampaign = useMemo(
-    () => !isLoading && campaigns?.find((campaign) => campaign.id === id),
-    [campaigns, id, isLoading]
-  );
+  useEffect(() => {
+    if (!campaignLoading && campaign) {
+      if (!campaign?.agreementTemplate) {
+        setOpenDialog(true);
+      } else {
+        setOpenDialog(false);
+      }
+    }
+  }, [campaign, campaignLoading]);
 
-  const isCampaignHasSpreadSheet = useMemo(
-    () => currentCampaign?.spreadSheetURL,
-    [currentCampaign]
-  );
+  const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
 
-  // const dialog = useBoolean(!currentCampaign?.agreementTemplate);
+  const generateNewAgreement = useCallback(async (template) => {
+    try {
+      if (template) {
+        const blob = await pdf(
+          <AgreementTemplate
+            DATE={dayjs().format('LL')}
+            ccEmail="hello@cultcreative.com"
+            ccPhoneNumber="+60162678757"
+            NOW_DATE={dayjs().format('LL')}
+            VERSION_NUMBER="V1"
+            ADMIN_IC_NUMBER={template?.adminICNumber ?? 'Default'}
+            ADMIN_NAME={template?.adminName ?? 'Default'}
+            SIGNATURE={template?.signURL ?? 'Default'}
+          />
+        ).toBlob();
+        return blob;
+      }
+      return null;
+    } catch (err) {
+      console.log(err);
+      return err;
+    }
+  }, []);
+
+  const onSelectAgreement = async (template) => {
+    const newAgreement = await generateNewAgreement(template);
+    // setDisplayPdf(newAgreement);
+    setSelectedTemplate(template);
+  };
 
   const [currentTab, setCurrentTab] = useState(
     localStorage.getItem('campaigndetail') || 'campaign-content'
@@ -74,19 +128,17 @@ const CampaignDetailView = ({ id }) => {
   }, []);
 
   const icons = (tab) => {
-    if (tab.value === 'pitch' && currentCampaign?.pitch?.length > 0) {
-      const undecidedPitches = currentCampaign.pitch.filter(
-        (pitch) => pitch.status === 'undecided'
-      );
+    if (tab.value === 'pitch' && campaign?.pitch?.length > 0) {
+      const undecidedPitches = campaign.pitch.filter((pitch) => pitch.status === 'undecided');
       return undecidedPitches.length > 0 ? <Label>{undecidedPitches.length}</Label> : null;
     }
 
-    if (tab.value === 'creator' && currentCampaign?.shortlisted?.length) {
-      return <Label>{currentCampaign?.shortlisted?.length}</Label>;
+    if (tab.value === 'creator' && campaign?.shortlisted?.length) {
+      return <Label>{campaign?.shortlisted?.length}</Label>;
     }
 
-    if (tab.value === 'agreement' && currentCampaign?.creatorAgreement?.length) {
-      return <Label>{currentCampaign?.creatorAgreement?.length}</Label>;
+    if (tab.value === 'agreement' && campaign?.creatorAgreement?.length) {
+      return <Label>{campaign?.creatorAgreement?.length}</Label>;
     }
 
     return '';
@@ -129,15 +181,15 @@ const CampaignDetailView = ({ id }) => {
             { label: 'Campaign Details', value: 'campaign-content' },
             // { label: 'Client Info', value: 'client' },
             {
-              label: `Pitches (${currentCampaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
+              label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
               value: 'pitch',
             },
             {
-              label: `Creators (${currentCampaign?.shortlisted?.length || 0})`,
+              label: `Creators (${campaign?.shortlisted?.length || 0})`,
               value: 'creator',
             },
             {
-              label: `Agreements (${currentCampaign?.creatorAgreement?.length || 0})`,
+              label: `Agreements (${campaign?.creatorAgreement?.length || 0})`,
               value: 'agreement',
             },
             {
@@ -145,7 +197,7 @@ const CampaignDetailView = ({ id }) => {
               value: 'invoices',
             },
             {
-              label: `Logistics (${currentCampaign?.logistic?.length || 0})`,
+              label: `Logistics (${campaign?.logistic?.length || 0})`,
               value: 'logistics',
             },
           ].map((tab) => (
@@ -217,7 +269,7 @@ const CampaignDetailView = ({ id }) => {
     try {
       loading.onTrue();
       const res = await axiosInstance.post(endpoints.campaign.spreadsheet, {
-        campaignId: currentCampaign?.id,
+        campaignId: campaign?.id,
       });
       setUrl(res?.data?.url);
       enqueueSnackbar(res?.data?.message);
@@ -230,32 +282,29 @@ const CampaignDetailView = ({ id }) => {
     } finally {
       loading.onFalse();
     }
-  }, [loading, copyDialog, campaignMutate, currentCampaign]);
+  }, [loading, copyDialog, campaignMutate, campaign]);
 
   const renderTabContent = {
-    overview: <CampaignOverview campaign={currentCampaign} />,
-    'campaign-content': <CampaignDetailContent campaign={currentCampaign} />,
-    creator: <CampaignDetailCreator campaign={currentCampaign} />,
-    agreement: <CampaignAgreements campaign={currentCampaign} />,
-    logistics: <CampaignLogistics campaign={currentCampaign} />,
-    invoices: <CampaignInvoicesList campId={currentCampaign?.id} />,
+    overview: <CampaignOverview campaign={campaign} />,
+    'campaign-content': <CampaignDetailContent campaign={campaign} />,
+    creator: <CampaignDetailCreator campaign={campaign} />,
+    agreement: <CampaignAgreements campaign={campaign} />,
+    logistics: <CampaignLogistics campaign={campaign} />,
+    invoices: <CampaignInvoicesList campId={campaign?.id} />,
     client: (
-      <CampaignDetailBrand
-        brand={currentCampaign?.brand ?? currentCampaign?.company}
-        campaign={currentCampaign}
-      />
+      <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
     pitch: (
       <CampaignDetailPitch
-        pitches={currentCampaign?.pitch}
-        timeline={currentCampaign?.campaignTimeline?.find((elem) => elem.name === 'Open For Pitch')}
-        timelines={currentCampaign?.campaignTimeline?.filter(
+        pitches={campaign?.pitch}
+        timeline={campaign?.campaignTimeline?.find((elem) => elem.name === 'Open For Pitch')}
+        timelines={campaign?.campaignTimeline?.filter(
           (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
         )}
-        shortlisted={currentCampaign?.shortlisted}
+        shortlisted={campaign?.shortlisted}
       />
     ),
-    submission: <CampaignDraftSubmissions campaign={currentCampaign} />,
+    submission: <CampaignDraftSubmissions campaign={campaign} />,
   };
 
   const formatDate = (dateString) => {
@@ -272,6 +321,25 @@ const CampaignDetailView = ({ id }) => {
       .catch((err) => {
         console.error('Failed to copy text: ', err);
       });
+  };
+
+  const linkTemplate = async () => {
+    try {
+      linking.onTrue();
+      const res = await axiosInstance.patch(endpoints.campaign.linkNewAgreement, {
+        template: selectedTemplate,
+        campaignId: campaign?.id,
+      });
+      enqueueSnackbar(res?.data?.message);
+      templateModal.onFalse();
+      campaignMutate();
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      linking.onFalse();
+    }
   };
 
   const copyDialogContainer = (
@@ -318,6 +386,64 @@ const CampaignDetailView = ({ id }) => {
     </Dialog>
   );
 
+  const agreementDialogContainer = (
+    <Dialog
+      maxWidth="sm"
+      fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          p: 2,
+        },
+      }}
+      open={openDialog}
+    >
+      <Alert variant="outlined" severity="warning">
+        Agreement missing
+      </Alert>
+      <Box
+        sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: 'repeat(2,1fr)' } }}
+        gap={2}
+        mt={2}
+        minHeight={200}
+      >
+        <Button
+          sx={{
+            border: 1,
+            borderColor: '#EBEBEB',
+            borderRadius: 2,
+            p: 2,
+            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+          }}
+          onClick={pdfModal.onTrue}
+        >
+          <Stack alignItems="center" spacing={1}>
+            <Avatar sx={{ bgcolor: deepOrange[500] }}>
+              <Iconify icon="mingcute:file-new-fill" width={20} />
+            </Avatar>
+            Create new template
+          </Stack>
+        </Button>
+        <Button
+          sx={{
+            border: 1,
+            borderColor: '#EBEBEB',
+            borderRadius: 2,
+            p: 2,
+            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+          }}
+          onClick={templateModal.onTrue}
+        >
+          <Stack alignItems="center" spacing={1}>
+            <Avatar sx={{ bgcolor: pink[500] }}>
+              <Iconify icon="ooui:reference-existing-ltr" width={20} />
+            </Avatar>
+            Link to an existing template
+          </Stack>
+        </Button>
+      </Box>
+    </Dialog>
+  );
+
   return (
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
@@ -347,10 +473,10 @@ const CampaignDetailView = ({ id }) => {
           width="100%"
         >
           <Stack direction="row" alignItems="center" spacing={2}>
-            {currentCampaign?.campaignBrief?.images?.[0] && (
+            {campaign?.campaignBrief?.images?.[0] && (
               <img
-                src={currentCampaign.campaignBrief.images[0]}
-                alt={currentCampaign?.name}
+                src={campaign?.campaignBrief.images[0]}
+                alt={campaign?.name}
                 style={{
                   width: '100%',
                   maxWidth: 80,
@@ -369,7 +495,7 @@ const CampaignDetailView = ({ id }) => {
                 fontWeight: 550,
               }}
             >
-              {currentCampaign?.name || 'Campaign Detail'}
+              {campaign?.name || 'Campaign Detail'}
             </Typography>
           </Stack>
 
@@ -405,8 +531,8 @@ const CampaignDetailView = ({ id }) => {
                   fontSize: { xs: '0.875rem', sm: '1rem' },
                 }}
               >
-                {formatDate(currentCampaign?.campaignBrief?.startDate)} -{' '}
-                {formatDate(currentCampaign?.campaignBrief?.endDate)}
+                {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
+                {formatDate(campaign?.campaignBrief?.endDate)}
               </Typography>
             </Stack>
 
@@ -487,7 +613,7 @@ const CampaignDetailView = ({ id }) => {
                   startIcon={<Iconify icon="tabler:external-link" width={16} />}
                   onClick={() => {
                     const a = document.createElement('a');
-                    a.href = currentCampaign?.spreadSheetURL;
+                    a.href = campaign?.spreadSheetURL;
                     a.target = '_blank';
                     a.click();
                     document.body.removeChild(a);
@@ -509,7 +635,7 @@ const CampaignDetailView = ({ id }) => {
                     },
                     boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
                   }}
-                  disabled={!currentCampaign?.spreadSheetURL}
+                  disabled={!campaign?.spreadSheetURL}
                 >
                   Google Spreadsheet
                 </Button>
@@ -520,8 +646,143 @@ const CampaignDetailView = ({ id }) => {
       </Stack>
 
       {renderTabs}
-      {(!isLoading ? renderTabContent[currentTab] : <LoadingScreen />) || null}
+
+      {(!campaignLoading ? renderTabContent[currentTab] : <LoadingScreen />) || null}
+
       {copyDialogContainer}
+
+      {agreementDialogContainer}
+
+      <PDFEditorModal
+        open={pdfModal.value}
+        onClose={pdfModal.onFalse}
+        user={user}
+        campaignId={campaign?.id}
+      />
+
+      <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>
+        <DialogTitle>
+          <Stack direction={{ sm: 'column', md: 'row' }} justifyContent="space-between">
+            <Typography variant="subtitle2" mt={2}>
+              You may select one template to be use:
+            </Typography>
+            <LoadingButton
+              sx={{
+                border: 1,
+                borderColor: deepOrange[500],
+                borderRadius: 2,
+                p: 2,
+                boxShadow: `0px -3px 0px 0px ${deepOrange[500]} inset`,
+              }}
+              disabled={!selectedTemplate}
+              onClick={linkTemplate}
+              loading={linking.value}
+            >
+              Link now
+            </LoadingButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(1, 1fr)',
+                md: 'repeat(2, 1fr)',
+              },
+              columnGap: 1,
+              justifyItems: 'center',
+              alignItems: 'center',
+            }}
+          >
+            {/* {templateLoading && (
+              <Box
+                sx={{
+                  // position: 'relative',
+                  // top: 200,
+                  textAlign: 'center',
+                }}
+              >
+                <CircularProgress
+                  thickness={7}
+                  size={25}
+                  sx={{
+                    color: (theme) => theme.palette.common.black,
+                    strokeLinecap: 'round',
+                  }}
+                />
+              </Box>
+            )} */}
+            {user?.agreementTemplate?.length > 0 &&
+              user?.agreementTemplate?.map((template) => (
+                <Box
+                  key={template?.id}
+                  my={4}
+                  overflow="auto"
+                  textAlign="center"
+                  height={400}
+                  // width={{ md: 360 }}
+                  sx={{
+                    border: selectedTemplate?.id === template?.id ? 4 : 1,
+                    borderRadius: 2,
+                    borderColor: selectedTemplate?.id === template?.id && 'green',
+                    cursor: 'pointer',
+                    transition: 'transform 0.3s ease-in-out',
+                    position: 'relative',
+                    '&:hover': {
+                      transform: 'scale(1.03)',
+                      zIndex: 10,
+                    },
+                    '::-webkit-scrollbar': {
+                      display: 'none', //
+                    },
+
+                    overflow: 'hidden',
+                  }}
+                  component="div"
+                  onClick={() => onSelectAgreement(template)}
+                >
+                  <Radio
+                    checked={selectedTemplate?.id === template?.id}
+                    onChange={() => onSelectAgreement(template)}
+                    value={template?.id}
+                    name="template-selection"
+                    inputProps={{ 'aria-label': `Select template ${template?.id}` }}
+                    sx={{
+                      position: 'absolute',
+                      top: 10,
+                      left: 10,
+                      zIndex: 100,
+                    }}
+                  />
+
+                  <Box sx={{ width: 1, height: 1, overflow: 'auto', scrollbarWidth: 'none' }}>
+                    <Box sx={{ display: 'inline-block' }}>
+                      <Document
+                        file={template?.url}
+                        onLoadSuccess={({ numPages }) => setPages(numPages)}
+                      >
+                        <Stack spacing={2}>
+                          {Array.from({ length: pages }, (_, index) => (
+                            <Page
+                              key={index}
+                              pageIndex={index}
+                              renderTextLayer={false}
+                              pageNumber={index + 1}
+                              scale={1}
+                              width={lgUp ? 400 : 300}
+                            />
+                          ))}
+                        </Stack>
+                      </Document>
+                    </Box>
+                  </Box>
+                </Box>
+              ))}
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };

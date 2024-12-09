@@ -28,9 +28,9 @@ const defaultFilters = {
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
-  { id: 'email', label: 'Email', width: 220 },
-  { id: 'phoneNumber', label: 'Phone Number', width: 180 },
-  { id: 'website', label: 'Website', width: 100 },
+  // { id: 'email', label: 'Email', width: 220 },
+  // { id: 'phoneNumber', label: 'Phone Number', width: 180 },
+  // { id: 'website', label: 'Website', width: 100 },
   { id: 'brand', label: 'Brands', width: 100 },
   { id: 'campaigns', label: 'Campaigns', width: 100 },
   { id: '', width: 88 },

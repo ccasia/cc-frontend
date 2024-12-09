@@ -32,7 +32,7 @@ export function button(theme) {
         // CONTAINED
         ...(containedVariant && {
           color: lightMode ? theme.palette.common.white : theme.palette.grey[800],
-          backgroundColor: lightMode ? theme.palette.grey[800] : theme.palette.common.white,
+          backgroundColor: lightMode ? '#3A3A3C' : theme.palette.common.white,
           '&:hover': {
             backgroundColor: lightMode ? theme.palette.grey[700] : theme.palette.grey[400],
           },
