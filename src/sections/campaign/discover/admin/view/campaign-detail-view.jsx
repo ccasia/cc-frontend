@@ -287,10 +287,10 @@ const CampaignDetailView = ({ id }) => {
   const renderTabContent = {
     overview: <CampaignOverview campaign={campaign} />,
     'campaign-content': <CampaignDetailContent campaign={campaign} />,
-    creator: <CampaignDetailCreator campaign={campaign} />,
-    agreement: <CampaignAgreements campaign={campaign} />,
-    logistics: <CampaignLogistics campaign={campaign} />,
-    invoices: <CampaignInvoicesList campId={campaign?.id} />,
+    creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
+    agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
+    logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />,
+    invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
     client: (
       <CampaignDetailBrand brand={campaign?.brand ?? campaign?.company} campaign={campaign} />
     ),
@@ -302,9 +302,10 @@ const CampaignDetailView = ({ id }) => {
           (elem) => elem.for === 'creator' && elem.name !== 'Open For Pitch'
         )}
         shortlisted={campaign?.shortlisted}
+        campaignMutate={campaignMutate}
       />
     ),
-    submission: <CampaignDraftSubmissions campaign={campaign} />,
+    submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
   };
 
   const formatDate = (dateString) => {
