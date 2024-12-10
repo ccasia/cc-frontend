@@ -126,7 +126,6 @@ export default function NotificationsPopover() {
             fontFamily: (theme) => theme.typography.fontSecondaryFamily,
             flexGrow: 1,
             fontWeight: 'normal',
-            letterSpacing: 2,
             fontSize: '32px',
           }}
         >
@@ -138,11 +137,33 @@ export default function NotificationsPopover() {
             color="primary"
             variant="outlined"
             onClick={handleOpenModal}
-            sx={{ display: 'flex', alignItems: 'center' }}
-            startIcon={<Iconify icon="eva:done-all-fill" />}
+            sx={{
+              height: '40px',
+              background: '#FFFFFF',
+              border: '1px solid #E8E8E8',
+              boxShadow: 'inset 0px -3px 0px #E7E7E7',
+              borderRadius: '8px',
+              '&.Mui-disabled': {
+                background: '#FFFFFF',
+                border: '1px solid #E8E8E8',
+                boxShadow: 'inset 0px -3px 0px #E7E7E7',
+              },
+            }}
+            startIcon={
+                <img 
+                    src={totalUnRead < 1 ? "/assets/icons/notification/ic_mark_read_gray.svg" : "/assets/icons/notification/ic_mark_read.svg"} 
+                />
+            }
             disabled={totalUnRead < 1}
           >
-            Mark all as read
+            <Typography variant="body2" sx={{ 
+              fontWeight: 600, 
+              color: totalUnRead < 1 ? '#8E8E93' : '#026D54',
+              fontSize: '14px',
+              lineHeight: '18px',
+            }}>
+              Mark all as Read
+            </Typography>
           </Button>
         </Tooltip>
 
@@ -179,6 +200,7 @@ export default function NotificationsPopover() {
           height: 1,
           py: 1,
           zIndex: -10000,
+          padding: '4px',
           bgcolor: 'transparent',
           transition: 'all .3s ease-in-out',
           '&.MuiTabs-indicator > span': {
@@ -190,12 +212,13 @@ export default function NotificationsPopover() {
             height: '100%',
             display: 'inline-flex',
             borderRadius: 1,
-            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+            border: '1px solid #E8E8E8',
+            boxShadow: 'inset 0px -3px 0px #E7E7E7',
           },
         },
       }}
       sx={{
-        borderRadius: 2,
+        borderRadius: 1,
         m: 1,
         '&.MuiTabs-root': {
           zIndex: 1,
@@ -204,7 +227,7 @@ export default function NotificationsPopover() {
           bgcolor: '#F4F4F4',
         },
         '& .MuiTabs-scroller': {
-          p: 1,
+          p: '0px',
         },
       }}
     >
@@ -217,20 +240,16 @@ export default function NotificationsPopover() {
               borderRadius: 2,
               fontWeight: 600,
             },
+            '&:not(.Mui-selected)': {
+              color: '#8E8E93',  
+            },
             '&:not(:last-of-type)': {
               mr: 0,
             },
           }}
           value={tab.value}
-          label={tab.label}
-          icon={
-            tab.value === 'unread' && (
-              <Label>
-                {/* {tab.value === 'all' && `(${data?.notifications?.filter((item) => !item.archive)?.length})`} */}
-                {tab.value === 'unread' && totalUnRead}
-              </Label>
-            )
-          }
+          label={tab.value === 'unread' ? `Unread (${totalUnRead})` : tab.label}
+          
         />
       ))}
     </Tabs>
@@ -313,8 +332,25 @@ export default function NotificationsPopover() {
     <>
       <IconButton
         sx={{
-          borderRadius: 1,
-          boxShadow: (theme) => `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '6px 10px 9px',
+          gap: '2px',
+          width: '40px',
+          height: '40px',
+          background: '#FFFFFF',
+          border: '1px solid #E8E8E8',
+          boxShadow: 'inset 0px -3px 0px #E7E7E7',
+          borderRadius: '8px',
+          '& .MuiBadge-dot': {
+            top: '5px',
+            right: '5px',
+            border: '1px solid #FFFFFF',
+            borderRadius: '500px',
+          },
         }}
         component={m.button}
         whileTap="tap"
@@ -328,7 +364,11 @@ export default function NotificationsPopover() {
           color="error"
           variant="dot"
         >
-          <Iconify icon="mdi:bell-outline" width={18} />
+          <Iconify>
+            <img 
+              src="/assets/icons/notification/ic_bell.svg" 
+            />
+          </Iconify>
         </Badge>
       </IconButton>
 
@@ -340,7 +380,7 @@ export default function NotificationsPopover() {
           backdrop: { invisible: true },
         }}
         PaperProps={{
-          sx: { width: 1, maxWidth: 420 },
+          sx: { width: 1, maxWidth: 370, borderRadius: '12px 0 0 0' },
         }}
       >
         {renderHead}
@@ -348,8 +388,6 @@ export default function NotificationsPopover() {
         <Divider />
 
         {renderTabs}
-
-        <Divider />
 
         {renderList}
       </Drawer>

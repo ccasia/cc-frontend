@@ -5,6 +5,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
+import Badge from '@mui/material/Badge';
+import Divider from '@mui/material/Divider';
 
 // import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -124,19 +126,13 @@ export default function NotificationItem({ notification, markAsRead }) {
   );
 
   const renderUnReadBadge = !notification.read && (
-    <Box
-      direction="row"
-      alignItems="center"
-      sx={{
-        top: 26,
-        width: 8,
-        height: 8,
-        right: 20,
-        borderRadius: '50%',
-        bgcolor: '#F04438',
-        position: 'absolute',
-      }}
-    />
+    <Badge
+      badgeContent={1}
+      color="error"
+      variant="dot"
+      sx={{ marginRight: '1px' }}
+    >
+    </Badge>
   );
 
   const renderReadStatus = notification.read && (
@@ -175,79 +171,50 @@ export default function NotificationItem({ notification, markAsRead }) {
   );
 
   return (
-    <ListItemButton
-      disableRipple
-      sx={{
-        p: 2.5,
-        alignItems: 'flex-start',
-        borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
-        position: 'relative',
-      }}
-      onClick={handleViewClick}
-    >
-      <Box
+    <>
+      <ListItemButton
+        disableRipple
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          width: '100%',
-          flexDirection: 'column',
+          p: 2.5,
+          alignItems: 'flex-start',
+          position: 'relative',
         }}
+        onClick={handleViewClick}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          {/* <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start' }}>
-            {renderTitle}
-          </Box> */}
-
-          {/* //     <ListItemButton
-//       disableRipple
-//       sx={{
-//         p: 2.5,
-//         alignItems: 'flex-start',
-//         borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
-//         position: 'relative',
-//       }}
-//     > */}
-
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              width: '100%',
-              flexDirection: 'column',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-              <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start' }}>
-                {renderTitle}
-              </Box>
-              <Box
-                sx={{
-                  width: '120px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 4,
-                  alignItems: 'center',
-                }}
-              >
-                {renderUnReadBadge}
-                {renderOther}
-              </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            width: '100%',
+            flexDirection: 'column',
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+            <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-start' }}>
+              {renderTitle}
             </Box>
-
-            <Stack spacing={1} sx={{ flexGrow: 1 }}>
-              {renderText}
-              {renderViewSignUp}
-              {/* {renderReadStatus} */}
-            </Stack>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: '10px',
+                alignItems: 'center',
+              }}
+            >
+              {renderUnReadBadge}
+              {renderOther}
+            </Box>
           </Box>
-        </Box>
 
-        {/* <Stack spacing={1} sx={{ flexGrow: 1 }}>
-          {renderText}
-          {renderViewSignUp}
-        </Stack> */}
-      </Box>
-    </ListItemButton>
+          <Stack spacing={1} sx={{ flexGrow: 1 }}>
+            {renderText}
+            {renderViewSignUp}
+            {/* {renderReadStatus} */}
+          </Stack>
+        </Box>
+      </ListItemButton>
+      <Divider sx={{ marginLeft: '16px', marginRight: '16px' }} />
+    </>
   );
 }
 
