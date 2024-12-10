@@ -187,6 +187,11 @@ export function useNavData() {
             ],
           },
           {
+            title: 'My Tasks',
+            path: paths.dashboard.kanban,
+            icon: ICONS.kanban,
+          },
+          {
             roles: ['superadmin'],
             title: 'Roles',
             path: paths.dashboard.roles.root,
