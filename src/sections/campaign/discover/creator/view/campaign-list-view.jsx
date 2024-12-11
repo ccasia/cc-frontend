@@ -358,7 +358,13 @@ export default function CampaignListView() {
         px: { xs: 2, sm: 3, md: 4 },
       }}
     >
-      <Typography variant="h2" sx={{ mb: 0.2, fontFamily: theme.typography.fontSecondaryFamily }}>
+      <Typography 
+      variant="h2" 
+      sx={{ 
+        mb: 0.2, 
+        fontFamily: theme.typography.fontSecondaryFamily,
+        fontWeight: 'normal'
+        }}>
         Discover Campaigns ✨
       </Typography>
       <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>

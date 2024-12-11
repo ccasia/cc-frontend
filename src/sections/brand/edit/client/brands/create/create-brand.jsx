@@ -123,7 +123,7 @@ const CreateBrand = ({ companyId, onClose }) => {
             sx={{
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontSize: 25,
-              fontWeight: 800,
+              fontWeight: 'normal',
             }}
           >
             Brand Details
@@ -189,7 +189,7 @@ const CreateBrand = ({ companyId, onClose }) => {
             sx={{
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontSize: 25,
-              fontWeight: 800,
+              fontWeight: 'normal', 
             }}
           >
             Social Media
@@ -260,7 +260,7 @@ const CreateBrand = ({ companyId, onClose }) => {
             sx={{
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontSize: 25,
-              fontWeight: 800,
+              fontWeight: 'normal', 
             }}
           >
             Objectives

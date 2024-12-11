@@ -85,6 +85,7 @@ export default function CalendarView() {
             variant="h2"
             sx={{
               fontFamily: theme.typography.fontSecondaryFamily,
+              fontWeight: 'normal', 
             }}
           >
             {date.toLocaleString('default', { month: 'long' })} {date.getFullYear()}

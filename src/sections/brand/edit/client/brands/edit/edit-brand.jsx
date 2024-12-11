@@ -125,7 +125,7 @@ const EditBrand = ({ brand, onClose }) => {
             sx={{
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontSize: 25,
-              fontWeight: 800,
+              fontWeight: 'normal', 
             }}
           >
             Brand Details
@@ -191,7 +191,7 @@ const EditBrand = ({ brand, onClose }) => {
             sx={{
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontSize: 25,
-              fontWeight: 800,
+              fontWeight: 'normal', 
             }}
           >
             Social Media
@@ -262,7 +262,7 @@ const EditBrand = ({ brand, onClose }) => {
             sx={{
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontSize: 25,
-              fontWeight: 800,
+              fontWeight: 'normal', 
             }}
           >
             Objectives

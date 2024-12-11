@@ -178,7 +178,7 @@ const CompanyEditView = ({ id }) => {
             sx={{
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontSize: 40,
-              fontWeight: 800,
+              fontWeight: 'normal',
             }}
           >
             {company?.brand?.length ? 'Agency' : 'Client'} Information
@@ -205,7 +205,7 @@ const CompanyEditView = ({ id }) => {
                   sx={{
                     fontFamily: (theme) => theme.typography.fontSecondaryFamily,
                     fontSize: 30,
-                    fontWeight: 800,
+                    fontWeight: 'normal',
                     mb: 2,
                   }}
                 >

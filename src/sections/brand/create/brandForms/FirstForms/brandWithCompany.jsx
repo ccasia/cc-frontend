@@ -163,6 +163,7 @@ function BrandWithCompany() {
           variant="h4"
           sx={{
             mb: 2,
+            fontWeight: 'normal',
           }}
         >
           {' '}
