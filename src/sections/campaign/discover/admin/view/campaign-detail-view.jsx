@@ -303,6 +303,7 @@ const CampaignDetailView = ({ id }) => {
         )}
         shortlisted={campaign?.shortlisted}
         campaignMutate={campaignMutate}
+        campaign={campaign}
       />
     ),
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,

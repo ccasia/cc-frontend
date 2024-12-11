@@ -1,10 +1,9 @@
 /* eslint-disable no-unsafe-optional-chaining */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-plusplus */
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import {
@@ -39,75 +38,77 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   }, [pitch]);
 
   // Calculate match percentage
-  const matchPercentage = useMemo(() => {
-    if (!pitch?.user?.creator || !campaign?.campaignRequirement) return 0;
+  // const matchPercentage = useMemo(() => {
+  //   // if (!pitch?.user?.creator || !campaign?.campaignRequirement) return 0;
 
-    const { creator } = pitch.user;
-    const requirements = campaign.campaignRequirement;
+  //   // const { creator } = pitch.user;
+  //   const creator = pitch?.user?.creator;
 
-    // Calculate interest matching percentage (80% weight)
-    const calculateInterestMatchingPercentage = () => {
-      if (!requirements.creator_persona?.length || !creator.interests?.length) return 0;
+  //   const requirements = campaign?.campaignRequirement;
 
-      // Convert creator interests to lowercase names
-      const creatorInterests = creator.interests
-        .map((int) => (typeof int === 'string' ? int.toLowerCase() : int?.name?.toLowerCase()))
-        .filter(Boolean);
+  //   // Calculate interest matching percentage (80% weight)
+  // const calculateInterestMatchingPercentage = () => {
+  //   if (!requirements?.creator_persona?.length || !creator?.interests?.length) return 0;
 
-      // Count matching interests
-      const matchingInterests = creatorInterests.filter((interest) =>
-        requirements.creator_persona.map((p) => p.toLowerCase()).includes(interest)
-      ).length;
+  //   // Convert creator interests to lowercase names
+  //   const creatorInterests = creator.interests
+  //     .map((int) => (typeof int === 'string' ? int.toLowerCase() : int?.name?.toLowerCase()))
+  //     .filter(Boolean);
 
-      return (matchingInterests / requirements.creator_persona.length) * 100;
-    };
+  //   // Count matching interests
+  //   const matchingInterests = creatorInterests.filter((interest) =>
+  //     requirements.creator_persona.map((p) => p.toLowerCase()).includes(interest)
+  //   ).length;
 
-    // Calculate requirements matching percentage (20% weight)
-    const calculateRequirementMatchingPercentage = () => {
-      let matches = 0;
-      let totalCriteria = 0;
+  //   return (matchingInterests / requirements.creator_persona.length) * 100;
+  // };
 
-      // Age check
-      if (requirements.age?.length) {
-        totalCriteria++;
-        const creatorAge = dayjs().diff(dayjs(creator.birthDate), 'year');
-        const isAgeInRange = requirements.age.some((range) => {
-          const [min, max] = range.split('-').map(Number);
-          return creatorAge >= min && creatorAge <= max;
-        });
-        if (isAgeInRange) matches++;
-      }
+  //   // Calculate requirements matching percentage (20% weight)
+  // const calculateRequirementMatchingPercentage = () => {
+  //   let matches = 0;
+  //   let totalCriteria = 0;
 
-      // Gender check
-      if (requirements.gender?.length) {
-        totalCriteria++;
-        const creatorGender =
-          creator.pronounce === 'he/him'
-            ? 'male'
-            : creator.pronounce === 'she/her'
-              ? 'female'
-              : 'nonbinary';
-        if (requirements.gender.includes(creatorGender)) matches++;
-      }
+  //   // Age check
+  //   if (requirements.age?.length) {
+  //     totalCriteria++;
+  //     const creatorAge = dayjs().diff(dayjs(creator.birthDate), 'year');
+  //     const isAgeInRange = requirements.age.some((range) => {
+  //       const [min, max] = range.split('-').map(Number);
+  //       return creatorAge >= min && creatorAge <= max;
+  //     });
+  //     if (isAgeInRange) matches++;
+  //   }
 
-      // Language check
-      if (requirements.language?.length && creator.languages?.length) {
-        totalCriteria++;
-        const hasLanguageMatch = creator.languages.some((lang) =>
-          requirements.language.map((l) => l.toLowerCase()).includes(lang.toLowerCase())
-        );
-        if (hasLanguageMatch) matches++;
-      }
+  //   // Gender check
+  //   if (requirements.gender?.length) {
+  //     totalCriteria++;
+  //     const creatorGender =
+  //       creator.pronounce === 'he/him'
+  //         ? 'male'
+  //         : creator.pronounce === 'she/her'
+  //           ? 'female'
+  //           : 'nonbinary';
+  //     if (requirements.gender.includes(creatorGender)) matches++;
+  //   }
 
-      return totalCriteria > 0 ? (matches / totalCriteria) * 100 : 0;
-    };
+  //   // Language check
+  //   if (requirements.language?.length && creator.languages?.length) {
+  //     totalCriteria++;
+  //     const hasLanguageMatch = creator.languages.some((lang) =>
+  //       requirements.language.map((l) => l.toLowerCase()).includes(lang.toLowerCase())
+  //     );
+  //     if (hasLanguageMatch) matches++;
+  //   }
 
-    const interestMatch = calculateInterestMatchingPercentage();
-    const requirementMatch = calculateRequirementMatchingPercentage();
+  //   return totalCriteria > 0 ? (matches / totalCriteria) * 100 : 0;
+  // };
 
-    // Calculate overall percentage (80% interests, 20% requirements)
-    return Math.round(interestMatch * 0.8 + requirementMatch * 0.2);
-  }, [campaign?.campaignRequirement, pitch]);
+  // const interestMatch = calculateInterestMatchingPercentage();
+  // const requirementMatch = calculateRequirementMatchingPercentage();
+
+  //   // Calculate overall percentage (80% interests, 20% requirements)
+  // return Math.round(interestMatch * 0.8 + requirementMatch * 0.2);
+  // }, [campaign?.campaignRequirement, pitch]);
 
   const handleApprove = async () => {
     try {
@@ -476,7 +477,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                       <Typography variant="h6">
                         {currentPitch?.type === 'video' ? 'Video Pitch' : 'Letter Pitch'}
                       </Typography>
+
                       {/* Match Percentage Chip */}
+
                       <Chip
                         icon={
                           <Box
@@ -491,7 +494,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             />
                             <CircularProgress
                               variant="determinate"
-                              value={Math.min(matchPercentage, 100)}
+                              value={Math.min(pitch?.matchingPercentage, 100)}
                               size={20}
                               thickness={7}
                               sx={{
@@ -503,7 +506,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             />
                           </Box>
                         }
-                        label={`${Math.min(matchPercentage, 100)}% MATCH WITH CAMPAIGN`}
+                        label={`${Math.min(pitch?.matchingPercentage, 100)}% MATCH WITH CAMPAIGN`}
                         sx={{
                           backgroundColor: (theme) => theme.palette.common.white,
                           color: '#48484a',

@@ -1,3 +1,6 @@
+/* eslint-disable no-nested-ternary */
+import dayjs from 'dayjs';
+/* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
 import React, { useMemo, useState } from 'react';
@@ -68,9 +71,78 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
     return filtered;
   }, [pitches, selectedFilter, search]);
 
+  const matchCampaignPercentage = (pitch) => {
+    if (!pitch) return null;
+
+    const creator = pitch?.user?.creator;
+    const requirements = campaign?.campaignRequirement;
+
+    const calculateInterestMatchingPercentage = () => {
+      if (!requirements?.creator_persona?.length || !creator?.interests?.length) return 0;
+
+      // Convert creator interests to lowercase names
+      const creatorInterests = creator.interests
+        .map((int) => (typeof int === 'string' ? int.toLowerCase() : int?.name?.toLowerCase()))
+        .filter(Boolean);
+
+      // Count matching interests
+      const matchingInterests = creatorInterests.filter((interest) =>
+        requirements.creator_persona.map((p) => p.toLowerCase()).includes(interest)
+      ).length;
+
+      return (matchingInterests / requirements.creator_persona.length) * 100;
+    };
+
+    const calculateRequirementMatchingPercentage = () => {
+      let matches = 0;
+      let totalCriteria = 0;
+
+      // Age check
+      if (requirements?.age?.length) {
+        totalCriteria++;
+        const creatorAge = dayjs().diff(dayjs(creator.birthDate), 'year');
+        const isAgeInRange = requirements.age.some((range) => {
+          const [min, max] = range.split('-').map(Number);
+          return creatorAge >= min && creatorAge <= max;
+        });
+        if (isAgeInRange) matches++;
+      }
+
+      // Gender check
+      if (requirements?.gender?.length) {
+        totalCriteria++;
+        const creatorGender =
+          creator.pronounce === 'he/him'
+            ? 'male'
+            : creator.pronounce === 'she/her'
+              ? 'female'
+              : 'nonbinary';
+        if (requirements.gender.includes(creatorGender)) matches++;
+      }
+
+      // Language check
+      if (requirements?.language?.length && creator.languages?.length) {
+        totalCriteria++;
+        const hasLanguageMatch = creator.languages.some((lang) =>
+          requirements.language.map((l) => l.toLowerCase()).includes(lang.toLowerCase())
+        );
+        if (hasLanguageMatch) matches++;
+      }
+
+      return totalCriteria > 0 ? (matches / totalCriteria) * 100 : 0;
+    };
+
+    const interestMatch = calculateInterestMatchingPercentage();
+    const requirementMatch = calculateRequirementMatchingPercentage();
+
+    return Math.round(interestMatch * 0.5 + requirementMatch * 0.5);
+  };
+
   const handleViewPitch = (pitch) => {
     const completePitch = pitches.find((p) => p.id === pitch.id);
-    setSelectedPitch(completePitch);
+    const data = matchCampaignPercentage(pitch);
+
+    setSelectedPitch({ ...completePitch, matchingPercentage: data });
     setOpenPitchModal(true);
   };
 
