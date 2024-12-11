@@ -170,7 +170,16 @@ export default function JwtLoginView() {
 
   const renderForm = (
     <Stack spacing={2.5}>
-      <RHFTextField name="email" label="Email address" />
+      <RHFTextField
+        name="email"
+        label="Email address"
+        sx={{
+          '&.MuiTextField-root': {
+            bgcolor: 'white',
+            borderRadius: 1,
+          },
+        }}
+      />
 
       <RHFTextField
         name="password"
@@ -185,13 +194,19 @@ export default function JwtLoginView() {
             </InputAdornment>
           ),
         }}
+        sx={{
+          '&.MuiTextField-root': {
+            bgcolor: 'white',
+            borderRadius: 1,
+          },
+        }}
       />
 
       <Link
         component={RouterLink}
         href={paths.auth.jwt.forgetPassword}
         variant="body2"
-        color="text.secondary"
+        color="#636366"
         underline="always"
         sx={{ alignSelf: 'flex-start' }}
       >
@@ -205,6 +220,7 @@ export default function JwtLoginView() {
             ? '#1340FF'
             : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
           pointerEvents: !isDirty && 'none',
+          fontSize: '18px',
         }}
         size="large"
         type="submit"

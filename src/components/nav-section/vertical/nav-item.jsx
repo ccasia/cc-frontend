@@ -89,7 +89,22 @@ const NavItem = forwardRef(
           </Box>
         )}
 
-        {msgcounter && <Label color="success">{msgcounter}</Label>}
+      {msgcounter && (
+        <Label
+          sx={{
+            color: 'white',
+            backgroundColor: '#de5243',
+            borderRadius: '12px',
+            padding: '2px 6px',
+            height: '24px',
+            width: '32px',
+            fontWeight: 550,
+            fontSize: '13px',
+          }}
+        >
+          {msgcounter}
+        </Label>
+      )}
 
         {hasChild && (
           <Iconify
@@ -276,7 +291,7 @@ const StyledNavItem = styled(ListItemButton, {
         //   borderRadius: 10,
         // },
         '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.16),
+          backgroundColor: alpha('#203ff5', 0.20),
         },
       }),
       ...(opened && {

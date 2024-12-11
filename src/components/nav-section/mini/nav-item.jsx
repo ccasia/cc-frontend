@@ -221,7 +221,7 @@ const StyledNavItem = styled(ListItemButton, {
           theme.palette.mode === 'light' ? 'rgba(19, 64, 255, 1)' : theme.palette.primary.light,
         background: alpha('rgba(19, 64, 255, 1)', 0.08),
         '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.16),
+          backgroundColor: alpha('#203ff5', 0.20),
         },
       }),
       ...(opened && {

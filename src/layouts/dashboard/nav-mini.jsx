@@ -1,6 +1,5 @@
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import { grey } from '@mui/material/colors';
 import { Avatar, IconButton } from '@mui/material';
 
 import { hideScroll } from 'src/theme/css';
@@ -29,19 +28,19 @@ export default function NavMini() {
         width: 50,
         height: 50,
         borderRadius: 1,
-        my: 2,
+        my: 3,
       }}
     >
       <Image
-        src="/logo/vector1.svg"
-        alt="Background Image"
+        src="/assets/icons/navbar/ic_navlogo.svg"
+        alt="Cult Creative Logo"
         style={{
           width: '100%',
           height: '100%',
           borderRadius: 'inherit',
         }}
       />
-      <Avatar
+      {/* <Avatar
         sx={{
           position: 'absolute',
           top: '50%',
@@ -51,7 +50,7 @@ export default function NavMini() {
           height: 30,
         }}
         src="/assets/icons/auth/test.svg"
-      />
+      /> */}
     </Box>
   );
 
@@ -88,10 +87,14 @@ export default function NavMini() {
 
           <IconButton
             sx={{
-              borderRadius: 1,
-              border: 0.5,
-              borderColor: grey[300],
-              boxShadow: 3,
+              borderRadius: 1.4,
+              border: '1.8px solid',
+              borderBottom: '4px solid',
+              borderColor: '#e7e7e7',
+              bgcolor: 'white',
+              width: '50px',
+              height: '42px',
+              marginBottom: '-4px',
             }}
             onClick={() =>
               settings.onUpdate(
@@ -100,7 +103,7 @@ export default function NavMini() {
               )
             }
           >
-            <Iconify icon="radix-icons:double-arrow-right" color="black" width={18} />
+            <img src="/assets/icons/navbar/ic_nav_expand.svg" alt="Collapse" style={{ width: '22px', color: 'black' }} />
           </IconButton>
         </Stack>
 

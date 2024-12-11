@@ -2,7 +2,7 @@
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
 import { PDFViewer } from '@react-pdf/renderer';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import {
   Box,
@@ -13,11 +13,12 @@ import {
   Container,
   Typography,
   IconButton,
+  ListItemText,
   CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
+import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -35,23 +36,49 @@ import Submissions from '../creator-stuff/submissions';
 import TimelineCreator from '../creator-stuff/timeline/view/page';
 import LogisticView from '../creator-stuff/logistics/view/logistic-view';
 
+const BoxStyle = {
+  border: '1px solid #e0e0e0',
+  borderRadius: 2,
+  p: 3,
+  height: 1,
+  width: '100%',
+  '& .header': {
+    borderBottom: '1px solid #e0e0e0',
+    mx: -3,
+    mt: -1,
+    mb: 2,
+    pb: 1.5,
+    pt: -1,
+    px: 1.8,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+  },
+};
+
 const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
-  const [currentTab, setCurrentTab] = useState('profile');
+
+  const query = useSearchParams();
+
+  const tabs = query.get('tabs');
+
+  const [currentTab, setCurrentTab] = useState(tabs ?? 'profile');
+
   const { socket } = useSocketContext();
+
   const { campaign, campaignLoading } = useGetCampaignById(campaignId);
+
   const {
     data: submissions,
     isLoading: submissionLoading,
     mutate,
   } = useGetSubmissions(id, campaignId);
+
   const { invoice } = useGetInvoiceByCreatorAndCampaign(id, campaignId);
 
-  // use get invoice by campaign id and creator id
   const theme = useTheme();
   const router = useRouter();
-
-  const interests = data?.user?.creator?.interests;
 
   const renderTabs = (
     <Box sx={{ mt: 2.5, mb: 2.5 }}>
@@ -94,7 +121,11 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
               key={tab.value}
               disableRipple
               size="large"
-              onClick={() => setCurrentTab(tab.value)}
+              onClick={() => {
+                router.push(`?tabs=${tab.value}`);
+                // ha.set('tabs', tab.value);
+                setCurrentTab(tab.value);
+              }}
               sx={{
                 px: { xs: 1, sm: 1.5 },
                 py: 0.5,
@@ -146,15 +177,15 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     </Box>
   );
 
-  const shortlistedCreators = useMemo(
-    () =>
-      !campaignLoading && campaign?.shortlisted
-        ? campaign.shortlisted.map((item, index) => ({ index, userId: item?.userId }))
-        : [],
-    [campaign, campaignLoading]
-  );
+  // const shortlistedCreators = useMemo(
+  //   () =>
+  //     !campaignLoading && campaign?.shortlisted
+  //       ? campaign.shortlisted.map((item, index) => ({ index, userId: item?.userId }))
+  //       : [],
+  //   [campaign, campaignLoading]
+  // );
 
-  const currentIndex = shortlistedCreators.find((a) => a?.userId === id)?.index;
+  // const currentIndex = shortlistedCreators.find((a) => a?.userId === id)?.index;
 
   useEffect(() => {
     if (socket) {
@@ -298,17 +329,16 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
           {renderTabs}
 
           {currentTab === 'profile' && (
-            <Box sx={{ p: 3 }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} px={{ md: 3 }}>
               {/* Stats Section */}
               <Box
                 sx={{
-                  width: { xs: '100%', sm: '80%', md: '50%', lg: '35%' },
+                  // width: { xs: '100%', sm: '80%', md: '50%', lg: '35%' },
                   border: '1px solid #e7e7e7',
                   borderRadius: 2,
                   p: 3,
                   ml: { xs: 0, sm: -3 },
-                  mt: -1.8,
-                  bgcolor: 'background.paper',
+                  // bgcolor: 'background.paper',
                 }}
               >
                 <Stack spacing={3}>
@@ -437,10 +467,81 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                   </Stack>
                 </Stack>
               </Box>
-            </Box>
+
+              <Box sx={{ ...BoxStyle }}>
+                <Box className="header">
+                  <img
+                    src="/assets/icons/overview/bluesmileyface.svg"
+                    alt="Campaign Info"
+                    style={{
+                      width: 20,
+                      height: 20,
+                      color: '#203ff5',
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#221f20',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    Payment Information
+                  </Typography>
+                </Box>
+
+                <Stack spacing={2}>
+                  <ListItemText
+                    primary="Bank Name"
+                    secondary={data?.user?.paymentForm?.bankName || 'N/A'}
+                    primaryTypographyProps={{
+                      color: '#8e8e93',
+                      fontWeight: 600,
+                      mt: -0.5,
+                      variant: 'subtitle2',
+                    }}
+                    secondaryTypographyProps={{
+                      variant: 'body2',
+                      color: 'black',
+                    }}
+                  />
+
+                  <ListItemText
+                    primary="Account Number"
+                    secondary={data?.user?.paymentForm?.bankAccountNumber || 'N/A'}
+                    primaryTypographyProps={{
+                      color: '#8e8e93',
+                      fontWeight: 600,
+                      mt: -0.5,
+                      variant: 'subtitle2',
+                    }}
+                    secondaryTypographyProps={{
+                      variant: 'body2',
+                      color: 'black',
+                    }}
+                  />
+
+                  <ListItemText
+                    primary="IC/Passport Number"
+                    secondary={data?.user?.paymentForm?.icNumber || 'N/A'}
+                    primaryTypographyProps={{
+                      color: '#8e8e93',
+                      fontWeight: 600,
+                      mt: -0.5,
+                      variant: 'subtitle2',
+                    }}
+                    secondaryTypographyProps={{
+                      variant: 'body2',
+                      color: 'black',
+                    }}
+                  />
+                </Stack>
+              </Box>
+            </Stack>
           )}
 
-          {currentTab === 'submission' && (
+          {currentTab === 'submission' && !submissionLoading && (
             <Submissions campaign={campaign} submissions={submissions} creator={data} />
           )}
           {currentTab === 'logistics' && <LogisticView campaign={campaign} creator={data} />}
