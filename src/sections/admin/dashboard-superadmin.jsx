@@ -1,3 +1,4 @@
+import useSWR from 'swr';
 import dayjs from 'dayjs';
 import React from 'react';
 import { useTheme } from '@emotion/react';
@@ -23,6 +24,7 @@ import {
 import useGetCreators from 'src/hooks/use-get-creators';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
+import { fetcher } from 'src/utils/axios';
 import { fNumber } from 'src/utils/format-number';
 
 import Label from 'src/components/label';
@@ -33,6 +35,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 const DashboardSuperadmin = () => {
   const { campaigns, isLoading } = useGetCampaigns();
   const { data: creators, isLoading: creatorLoading } = useGetCreators();
+  const { data: analytics, isLoading: analyticsLoading } = useSWR('/api/admin/overview', fetcher);
 
   const theme = useTheme();
   const setting = useSettingsContext();
@@ -165,14 +168,32 @@ const DashboardSuperadmin = () => {
               <Typography variant="h2">
                 {campaigns?.filter((campaign) => campaign.status === 'ACTIVE')?.length}
               </Typography>
-              <Chart
-                dir="ltr"
-                type="bar"
-                series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
-                options={chartOptions}
-                width={60}
-                height={36}
-              />
+              {!analyticsLoading && (
+                <Chart
+                  dir="ltr"
+                  type="bar"
+                  // series={[{ data: [20, 41, 63, 33] }]}
+                  series={[
+                    {
+                      data: analytics?.campaigns?.campaignsGraph?.map(
+                        (campaign) => campaign?.totalCampaigns
+                      ),
+                    },
+                  ]}
+                  options={{
+                    ...chartOptions,
+                    xaxis: {
+                      categories:
+                        !analyticsLoading &&
+                        analytics?.campaigns?.campaignsGraph?.map((campaign) =>
+                          campaign?.month?.slice(0, 3)
+                        ),
+                    },
+                  }}
+                  width={60}
+                  height={36}
+                />
+              )}
             </Stack>
           </Stack>
         </Box>
