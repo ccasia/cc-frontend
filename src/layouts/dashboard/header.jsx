@@ -53,7 +53,7 @@ export default function Header({ onOpenNav, isOnline }) {
         // variant="fullWidth"
         orientation="vertical"
         sx={{
-          height: '24px',
+          height: '28px',
           borderColor: grey[200],
         }}
       />
