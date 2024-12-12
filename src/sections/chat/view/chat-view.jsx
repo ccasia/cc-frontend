@@ -181,6 +181,7 @@ export default function ChatView() {
           variant="h2"
           sx={{
             fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+            fontWeight: 'normal', 
             px: 2,
           }}
         >

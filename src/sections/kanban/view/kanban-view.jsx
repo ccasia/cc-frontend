@@ -128,6 +128,7 @@ export default function KanbanView() {
         sx={{
           mb: 0.2,
           fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          fontWeight: 'normal',
         }}
       >
         My Tasks ✏️

@@ -161,7 +161,8 @@ const CampaignView = () => {
         variant="h2"
         sx={{
           mb: 4,
-          fontFamily: theme.typography.fontSecondaryFamily,
+          fontFamily: "fontSecondaryFamily", 
+          fontWeight: "normal"
         }}
       >
         Manage Campaigns ✨
