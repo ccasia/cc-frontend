@@ -54,8 +54,14 @@ export const paths = {
         manage: `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`,
         detail: (id) => `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${id}`,
       },
-      manageCreator: (campaignId, creatorId, index) =>
-        `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/creator/${creatorId}`,
+      manageCreator: (campaignId, creatorId, params) => {
+        const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+        return `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/creator/${creatorId}${queryString}`;
+      },
+      // manageCreator: (campaignId, creatorId, params) =>
+      //   params
+      //     ? `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/creator/${creatorId}${params}`
+      //     : `${ROOTS.DASHBOARD}/campaign/discover/detail/${campaignId}/creator/${creatorId}`,
     },
     user: {
       root: `${ROOTS.DASHBOARD}/user`,

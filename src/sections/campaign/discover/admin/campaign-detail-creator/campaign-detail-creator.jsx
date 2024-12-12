@@ -41,7 +41,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import UserCard from './user-card';
 import CampaignAgreementEdit from '../campaign-agreement-edit';
 
-const CampaignDetailCreator = ({ campaign }) => {
+const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const [query, setQuery] = useState('');
   const { data, isLoading } = useGetAllCreators();
 
@@ -113,8 +113,9 @@ const CampaignDetailCreator = ({ campaign }) => {
       modal.onFalse();
       reset();
       enqueueSnackbar(res?.data?.message);
+      campaignMutate();
       mutate(endpoints.campaign.creatorAgreement(campaign.id));
-      mutate(endpoints.campaign.getCampaignsByAdminId);
+      // mutate(endpoints.campaign.getCampaignsByAdminId);
     } catch (error) {
       console.log(error);
       loading.onFalse();
@@ -173,7 +174,9 @@ const CampaignDetailCreator = ({ campaign }) => {
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <DialogTitle>Shortlist Creators</DialogTitle>
-        <Box sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mt: -1, mb: 2 }} />
+        <Box
+          sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mt: -1, mb: 2 }}
+        />
         <DialogContent>
           <Box py={1}>
             <Box sx={{ mb: 2, fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem' }}>
@@ -264,7 +267,7 @@ const CampaignDetailCreator = ({ campaign }) => {
               modal.onFalse();
               reset();
             }}
-            sx={{ 
+            sx={{
               bgcolor: '#ffffff',
               border: '1px solid #e7e7e7',
               borderBottom: '3px solid #e7e7e7',
@@ -286,7 +289,7 @@ const CampaignDetailCreator = ({ campaign }) => {
             type="submit"
             disabled={!selectedCreator.length || isSubmitting}
             loading={loading.value}
-            sx={{ 
+            sx={{
               bgcolor: '#203ff5',
               border: '1px solid #203ff5',
               borderBottom: '3px solid #1933cc',
@@ -304,7 +307,7 @@ const CampaignDetailCreator = ({ campaign }) => {
                 color: '#999999',
                 border: '1px solid #e7e7e7',
                 borderBottom: '3px solid #d1d1d1',
-              }
+              },
             }}
           >
             Shortlist {selectedCreator.length > 0 && selectedCreator.length} Creators
@@ -337,7 +340,7 @@ const CampaignDetailCreator = ({ campaign }) => {
                 },
               },
             }}
-            sx={{ 
+            sx={{
               width: { xs: '100%', md: 260 },
               '& .MuiOutlinedInput-root': {
                 height: '42px',
@@ -355,9 +358,9 @@ const CampaignDetailCreator = ({ campaign }) => {
               <Iconify icon="fluent:people-add-28-filled" width={18} />
             </IconButton>
           ) : (
-            <Button 
+            <Button
               onClick={modal.onTrue}
-              sx={{ 
+              sx={{
                 bgcolor: '#ffffff',
                 border: '1px solid #e7e7e7',
                 borderBottom: '3px solid #e7e7e7',
@@ -391,8 +394,8 @@ const CampaignDetailCreator = ({ campaign }) => {
                 width: '100%',
                 '& > *': {
                   minWidth: 0,
-                  height: '100%'
-                }
+                  height: '100%',
+                },
               }}
             >
               {filteredCreators?.map((elem) => (
@@ -429,4 +432,5 @@ export default CampaignDetailCreator;
 
 CampaignDetailCreator.propTypes = {
   campaign: PropTypes.any,
+  campaignMutate: PropTypes.func,
 };

@@ -6,7 +6,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import { useTheme } from '@mui/material/styles';
-import { Box, ListItemText } from '@mui/material';
+import { Box, Typography, ListItemText } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -32,7 +32,7 @@ export default function KanbanTaskItem({
 }) {
   const theme = useTheme();
   const router = useRouter();
-  const { user } = useAuthContext();
+  const { user, role } = useAuthContext();
 
   const openDetails = useBoolean();
 
@@ -69,19 +69,32 @@ export default function KanbanTaskItem({
   }, [task, column]);
 
   const isDone = useMemo(() => task?.submission?.status === 'APPROVED', [task]);
+  const isChangesRequired = useMemo(() => task?.submission?.status === 'CHANGES_REQUIRED', [task]);
 
   return (
     <>
-      <Draggable draggableId={task.id} index={index} isDragDisabled={user?.role !== 'admin'}>
+      <Draggable draggableId={task.id} index={index} isDragDisabled>
         {(provided, snapshot) => (
           <Paper
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
             // onClick={openDetails.onTrue}
-            onClick={() =>
-              router.push(paths.dashboard.campaign.creator.detail(task?.submission?.campaign?.id))
-            }
+            onClick={() => {
+              if (user?.role?.includes('admin') && role?.name === 'CSM') {
+                router.push(
+                  paths.dashboard.campaign.manageCreator(
+                    task?.submission?.campaign?.id,
+                    task?.submission?.userId,
+                    { tabs: 'submission' }
+                  )
+                );
+              } else {
+                router.push(
+                  paths.dashboard.campaign.creator.detail(task?.submission?.campaign?.id)
+                );
+              }
+            }}
             sx={{
               width: 1,
               borderRadius: 1.5,
@@ -107,14 +120,21 @@ export default function KanbanTaskItem({
             }}
             {...other}
           >
-            <Stack spacing={2} sx={{ px: 2, py: 2.5, position: 'relative' }}>
+            <Stack sx={{ px: 2, py: 2.5, position: 'relative' }}>
               <ListItemText
                 primary={task?.name}
-                secondary={task?.submission?.campaign?.name}
+                secondary={
+                  task?.submission?.campaign && `Campaign ${task?.submission?.campaign?.name}`
+                }
                 primaryTypographyProps={{
                   variant: 'subtitle2',
                 }}
               />
+              {user?.role?.includes('admin') && (
+                <Typography variant="caption" color="text.secondary" textAlign="end">
+                  from {task?.submission?.user?.name}
+                </Typography>
+              )}
             </Stack>
             <Box
               sx={{
@@ -127,6 +147,7 @@ export default function KanbanTaskItem({
             >
               {isDue && <Label color="error">Due</Label>}
               {isDone && <Label color="success">Done</Label>}
+              {isChangesRequired && <Label color="warning">Changes Required</Label>}
             </Box>
           </Paper>
         )}

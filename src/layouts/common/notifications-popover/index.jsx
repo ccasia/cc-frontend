@@ -126,6 +126,7 @@ export default function NotificationsPopover() {
             fontFamily: (theme) => theme.typography.fontSecondaryFamily,
             flexGrow: 1,
             fontWeight: 'normal',
+            // letterSpacing: 2,
             fontSize: '32px',
           }}
         >

@@ -66,21 +66,21 @@ export default function NavVertical({ openNav, onCloseNav }) {
       component="div"
       sx={{
         position: 'relative',
-        width: 55,
-        height: 55,
+        width: 50,
+        height: 50,
         borderRadius: 1,
       }}
     >
       <Image
-        src="/logo/vector1.svg"
-        alt="Background Image"
+        src="/assets/icons/navbar/ic_navlogo.svg"
+        alt="Cult Creative Logo"
         style={{
           width: '100%',
           height: '100%',
           borderRadius: 'inherit',
         }}
       />
-      <Avatar
+      {/* <Avatar
         sx={{
           position: 'absolute',
           top: '50%',
@@ -88,9 +88,10 @@ export default function NavVertical({ openNav, onCloseNav }) {
           transform: 'translate(-50%, -50%)',
           width: 30,
           height: 30,
+          borderRadius: 0,
         }}
-        src="/assets/icons/auth/test.svg"
-      />
+        src="/assets/icons/navbar/ic_nav_logo.svg"
+      /> */}
     </Box>
   );
 
@@ -125,10 +126,13 @@ export default function NavVertical({ openNav, onCloseNav }) {
         </Stack>
         <IconButton
           sx={{
-            borderRadius: 1,
-            border: 0.5,
-            borderColor: grey[300],
-            boxShadow: 3,
+            borderRadius: 1.2,
+            border: '1.8px solid',
+            borderBottom: '4px solid',
+            borderColor: '#e7e7e7',
+            bgcolor: 'white',
+            width: '46px',
+            height: '38px',
           }}
           onClick={() => {
             onCloseNav();
@@ -138,7 +142,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
             );
           }}
         >
-          <Iconify icon="radix-icons:double-arrow-left" color="black" width={18} />
+          <img src="/assets/icons/navbar/ic_nav_collapse.svg" alt="CollapseButton" style={{ width: '20px', color: 'black' }} />
         </IconButton>
       </Stack>
 
