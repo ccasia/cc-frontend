@@ -27,14 +27,12 @@ import { useGetSocialMedia, fetchSocialMediaData } from 'src/api/socialMedia';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import { useSettingsContext } from 'src/components/settings';
 
 import MediaKitSetting from './media-kit-setting';
 import MediaKitSocial from './media-kit-social/view';
 import { formatNumber } from './media-kit-social/media-kit-social-content/view-instagram';
 
 const MediaKitCreator = () => {
-  const settings = useSettingsContext();
   const theme = useTheme();
   const { user } = useAuthContext();
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -140,25 +138,7 @@ const MediaKitCreator = () => {
   });
 
   return (
-    <Container
-      maxWidth="xl"
-      // maxWidth={settings.themeStretch ? false : 'lg'}
-      // sx={
-      //   isFullScreen
-      //     ? {
-      //         ...styleFullScreen,
-      //       }
-      //     : {
-      //         borderRadius: 1,
-      //         position: 'relative',
-      //         boxShadow:
-      //           theme.palette.mode === 'light'
-      //             ? 'rgba(9, 30, 66, 0.25) 0px 1px 1px, rgba(9, 30, 66, 0.13) 0px 0px 2px 2px;'
-      //             : 'rgba(255, 255, 255, 0.10) 0px 1px 1px, rgba(255, 255, 255, 0.08) 0px 0px 2px 2px',
-      //         p: 2,
-      //       }
-      // }
-    >
+    <Container maxWidth="xl">
       <Stack direction="row" alignItems="start" justifyContent="space-between">
         <Avatar
           sx={{
@@ -194,16 +174,17 @@ const MediaKitCreator = () => {
             {loading.value ? 'Loading...' : 'Refresh'}
           </Button>
           <Button
-            startIcon={<Iconify icon="lucide:edit" />}
-            variant="outlined"
+            startIcon={<Iconify icon="solar:settings-linear" />}
+            // startIcon={<Iconify icon="lucide:edit" />}
+            // variant="outlined"
             sx={{
-              boxShadow: 2,
+              color: 'black',
             }}
             onClick={() => {
               setOpenSetting(true);
             }}
           >
-            Edit Profile
+            Settings
           </Button>
         </Box>
       </Stack>
@@ -217,9 +198,8 @@ const MediaKitCreator = () => {
               fontWeight: 100,
             }}
           >
-            {user?.name}
+            {user?.creator?.mediaKit?.displayName ?? user?.name}
           </Typography>
-          {/* <Iconify icon="material-symbols:verified" color="info.main" width={20} /> */}
         </Stack>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="body2" color="text.secondary">

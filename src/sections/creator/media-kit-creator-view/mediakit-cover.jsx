@@ -88,7 +88,7 @@ const MediaKitCover = ({ user }) => {
             const interestsToUse =
               user?.creator?.interests && user?.creator?.interests.length > 0
                 ? user.creator.interests
-                : (user?.creator?.mediaKit?.interests ?? user?.user?.creator?.interests ?? []);
+                : user?.user?.creator?.interests || [];
 
             const result = interestsToUse.map((elem, index) => (
               <Label key={`interest-${index}`}>
