@@ -89,25 +89,7 @@ const MediaKit = ({ id, noBigScreen }) => {
   }
 
   return (
-    <Container
-      maxWidth="xl"
-      // maxWidth={settings.themeStretch ? false : 'lg'}
-      // sx={
-      //   isFullScreen
-      //     ? {
-      //         ...styleFullScreen,
-      //       }
-      //     : {
-      //         borderRadius: 1,
-      //         position: 'relative',
-      //         boxShadow:
-      //           theme.palette.mode === 'light'
-      //             ? 'rgba(9, 30, 66, 0.25) 0px 1px 1px, rgba(9, 30, 66, 0.13) 0px 0px 2px 2px;'
-      //             : 'rgba(255, 255, 255, 0.10) 0px 1px 1px, rgba(255, 255, 255, 0.08) 0px 0px 2px 2px',
-      //         p: 2,
-      //       }
-      // }
-    >
+    <Container maxWidth="xl">
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Avatar
           sx={{
@@ -127,7 +109,7 @@ const MediaKit = ({ id, noBigScreen }) => {
               fontWeight: 100,
             }}
           >
-            {creator?.name}
+            {creator?.creator?.mediaKit?.displayName ?? creator?.name}
           </Typography>
           {/* <Iconify icon="material-symbols:verified" color="info.main" width={20} /> */}
         </Stack>
