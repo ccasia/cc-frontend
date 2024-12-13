@@ -623,6 +623,7 @@ export default function CampaignListView() {
                 display: 'flex',
                 alignItems: 'center',
                 height: '42px',
+                mb: 1,
               }}
             >
               <InputBase
@@ -664,6 +665,7 @@ export default function CampaignListView() {
                 borderRadius: 1,
                 bgcolor: 'background.paper',
                 height: '42px',
+                mb: 1,
               }}
             >
               <Select
@@ -701,7 +703,7 @@ export default function CampaignListView() {
                     justifyContent: 'center',
                   },
                   '& .MuiSelect-icon': {
-                    color: '#1340ff',
+                    color: '#000000',
                   },
                 }}
                 IconComponent={(props) => (
@@ -709,10 +711,13 @@ export default function CampaignListView() {
                     icon="eva:chevron-down-fill"
                     {...props}
                     sx={{
-                      mr: 0.2,
-                      width: 32,
-                      height: 32,
+                      mr: -0.5,
+                      width: 60,
+                      height: 40,
+                      minWidth: 25,
+                      minHeight: 25,
                       right: -4,
+                      transform: 'translateY(-12%)',
                     }}
                   />
                 )}

@@ -203,7 +203,7 @@ const CampaignModal = ({
       open={open}
       onClose={handleClose}
       fullWidth
-      maxWidth="md"
+      maxWidth="lg"
       PaperProps={{
         sx: {
           borderRadius: 2,
@@ -211,7 +211,7 @@ const CampaignModal = ({
           flexDirection: 'column',
           maxHeight: '98vh',
           position: 'relative',
-          width: isSmallScreen ? '95vw' : '80vh',
+          width: { xs: '85vw', sm: '70vw', md: '60vw' },
         },
       }}
     >
@@ -624,6 +624,7 @@ const CampaignModal = ({
                   icon={bookMark ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
                   width={28}
                   height={28}
+                  sx={{ minWidth: 24, minHeight: 24 }}
                 />
               </Button>
             </Stack>

@@ -188,7 +188,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
           variant="h5"
           sx={{
             fontWeight: 650,
-            mb: -0.1,
+            mb: -0.5,
             pb: 0.2,
             mt: 0.8,
             overflow: 'hidden',
@@ -204,7 +204,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
             mb: 2,
             color: '#8e8e93',
             fontSize: '0.95rem',
-            fontWeight: 550,
+            fontWeight: 500,
           }}
         >
           {campaign?.brand?.name || campaign?.company?.name}
