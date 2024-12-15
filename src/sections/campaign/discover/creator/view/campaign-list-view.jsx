@@ -305,9 +305,6 @@ export default function CampaignListView() {
     const bottom =
       scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
 
-    console.log(scrollContainer.scrollHeight);
-    console.log(scrollContainer.scrollTop + scrollContainer.clientHeight);
-
     if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
       setSize(size + 1);
     }
@@ -358,13 +355,14 @@ export default function CampaignListView() {
         px: { xs: 2, sm: 3, md: 4 },
       }}
     >
-      <Typography 
-      variant="h2" 
-      sx={{ 
-        mb: 0.2, 
-        fontFamily: theme.typography.fontSecondaryFamily,
-        fontWeight: 'normal'
-        }}>
+      <Typography
+        variant="h2"
+        sx={{
+          mb: 0.2,
+          fontFamily: theme.typography.fontSecondaryFamily,
+          fontWeight: 'normal',
+        }}
+      >
         Discover Campaigns ✨
       </Typography>
       <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
