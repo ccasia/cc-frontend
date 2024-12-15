@@ -274,4 +274,7 @@ export const endpoints = {
     all: '/api/campaign/template',
     byId: (id) => `/api/campaign/template/${id}`,
   },
+  bug: {
+    create: '/api/bug',
+  },
 };
