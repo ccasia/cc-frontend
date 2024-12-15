@@ -9,7 +9,9 @@ import {
   Avatar,
   Divider,
   Container,
+  CardMedia,
   Typography,
+  CardContent,
   ListItemText,
   CircularProgress,
 } from '@mui/material';
@@ -20,8 +22,10 @@ import { RouterLink } from 'src/routes/components';
 import useGetOverview from 'src/hooks/use-get-overview';
 
 import { useAuthContext } from 'src/auth/hooks';
+import resources from 'src/assets/resources/blogs.json';
 
 import Image from 'src/components/image';
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const Overview = () => {
@@ -29,7 +33,7 @@ const Overview = () => {
   const { data, isLoading } = useGetOverview();
 
   const renderOverview = (
-    <Grid container spacing={2} pb={10}>
+    <Grid container spacing={2}>
       <Grid item xs={12} md={6}>
         <Box>
           <Stack
@@ -61,12 +65,10 @@ const Overview = () => {
                 variant: 'h4',
                 fontWeight: 'bold',
                 color: 'black',
-                letterSpacing: -3,
+                letterSpacing: -1,
               }}
             />
           </Stack>
-
-          {/* <Divider /> */}
 
           <Stack
             spacing={1}
@@ -356,6 +358,81 @@ const Overview = () => {
     </Grid>
   );
 
+  const renderResources = (
+    <>
+      <Typography
+        sx={{
+          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          fontWeight: 400,
+        }}
+        variant="h2"
+      >
+        Resources
+      </Typography>
+
+      <Stack direction="row" spacing={2} overflow="auto" p={1}>
+        {resources.map((resource) => (
+          <Card
+            key={resource.id}
+            component="a"
+            sx={{
+              minWidth: 300,
+              width: 300,
+              position: 'relative',
+              cursor: 'pointer',
+              transition: 'all .2s linear',
+              textDecoration: 'none',
+              '&:hover': {
+                outline: 2,
+                outlineColor: 'green',
+              },
+            }}
+            href={resource?.resource_link}
+            target="__blank"
+          >
+            <CardMedia sx={{ height: 200 }} image={resource.image_link} title="green iguana" />
+            <Label
+              sx={{
+                position: 'absolute',
+                top: 20,
+                left: 20,
+                px: 2,
+                py: 1,
+                bgcolor: 'white',
+                color: '#1340FF',
+                fontSize: 14,
+                fontFamily: (theme) => theme.typography.fontFamily,
+              }}
+              variant="filled"
+            >
+              CREATIVE
+            </Label>
+            <CardContent>
+              <Typography
+                gutterBottom
+                variant="subtitle1"
+                sx={{
+                  display: '-webkit-box',
+                  overflow: 'hidden',
+                  WebkitBoxOrient: 'vertical',
+                  WebkitLineClamp: 2,
+                  textOverflow: 'ellipsis',
+                  fontWeight: 'bold',
+                  lineHeight: 1.4,
+                }}
+              >
+                {resource.title}
+              </Typography>
+              <Typography variant="subtitle2" color="text.secondary">
+                {dayjs().format('ll')}
+              </Typography>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
+    </>
+  );
+
   return (
     <Container maxWidth="xl">
       <ListItemText
@@ -374,14 +451,6 @@ const Overview = () => {
           mb: 3,
         }}
       />
-
-      {/* <Button onClick={() => test('asdsas')}>Open</Button> */}
-
-      {/* <Divider
-        sx={{
-          my: 3,
-        }}
-      /> */}
 
       {isLoading && (
         <Box
@@ -403,6 +472,8 @@ const Overview = () => {
       )}
 
       {!isLoading && renderOverview}
+
+      {renderResources}
     </Container>
   );
 };
