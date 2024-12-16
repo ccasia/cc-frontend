@@ -12,7 +12,6 @@ import {
   Stack,
   Button,
   Dialog,
-  MenuItem,
   FormLabel,
   IconButton,
   Typography,
@@ -31,7 +30,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import FormProvider, { RHFSelect, RHFUpload, RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
 import Main from './main';
 import Header from './header';
@@ -59,9 +58,6 @@ export default function DashboardLayout({ children }) {
   const bugFormDialog = useBoolean();
 
   const schema = yup.object().shape({
-    title: yup.string().required('Bug title is required'),
-    description: yup.string().optional(),
-    priority: yup.string().optional(),
     stepsToReproduce: yup.string().required('Steps to reproduce is required'),
     attachment: yup.mixed().nullable(),
   });
@@ -69,9 +65,6 @@ export default function DashboardLayout({ children }) {
   const methods = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      title: '',
-      description: '',
-      priority: 'low',
       stepsToReproduce: '',
       attachment: null,
     },
@@ -214,26 +207,10 @@ export default function DashboardLayout({ children }) {
         </Stack>
         <DialogContent>
           <Stack spacing={2}>
-            <FormField label="Title">
-              <RHFTextField name="title" placeholder="Bug Title" />
-            </FormField>
-
-            <FormField label="Description" required={false}>
-              <RHFTextField name="description" placeholder="Bug Description" />
-            </FormField>
-
-            <FormField label="Priority">
-              <RHFSelect name="priority">
-                <MenuItem value="low">Low</MenuItem>
-                <MenuItem value="medium">Medium</MenuItem>
-                <MenuItem value="high">High</MenuItem>
-              </RHFSelect>
-            </FormField>
-
-            <FormField label="Steps to Reproduce">
+            <FormField label="Please describe the issue you are facing in detail.">
               <RHFTextField
                 name="stepsToReproduce"
-                placeholder="Steps to Reproduce"
+                placeholder="Describe the issue."
                 multiline
                 rows={4}
               />
@@ -334,7 +311,7 @@ export default function DashboardLayout({ children }) {
         <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
         <Main>{children}</Main>
-        {feedbackButton}
+        {user?.role === 'creator' && feedbackButton}
         {feedbackForm}
       </Box>
     </Box>
