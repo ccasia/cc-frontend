@@ -115,13 +115,13 @@ export default function InvoiceTableRow({
             {status}
           </Label>
         </TableCell>
-        {user?.admin?.role?.name !== 'CSM' && (
-          <TableCell align="right" sx={{ px: 1 }}>
-            <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-              <Iconify icon="eva:more-vertical-fill" />
-            </IconButton>
-          </TableCell>
-        )}
+        {/* {user?.admin?.role?.name !== 'CSM' && ( */}
+        <TableCell align="right" sx={{ px: 1 }}>
+          <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+            <Iconify icon="eva:more-vertical-fill" />
+          </IconButton>
+        </TableCell>
+        {/* )} */}
       </TableRow>
 
       <CustomPopover
@@ -140,28 +140,32 @@ export default function InvoiceTableRow({
           View
         </MenuItem>
 
-        <MenuItem
-          onClick={() => {
-            onEditRow();
-            popover.onClose();
-          }}
-        >
-          <Iconify icon="solar:pen-bold" />
-          Edit
-        </MenuItem>
+        {user?.admin?.role?.name !== 'CSM' && (
+          <>
+            <MenuItem
+              onClick={() => {
+                onEditRow();
+                popover.onClose();
+              }}
+            >
+              <Iconify icon="solar:pen-bold" />
+              Edit
+            </MenuItem>
 
-        <Divider sx={{ borderStyle: 'dashed' }} />
+            <Divider sx={{ borderStyle: 'dashed' }} />
 
-        <MenuItem
-          onClick={() => {
-            confirm.onTrue();
-            popover.onClose();
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <Iconify icon="solar:trash-bin-trash-bold" />
-          Delete
-        </MenuItem>
+            <MenuItem
+              onClick={() => {
+                confirm.onTrue();
+                popover.onClose();
+              }}
+              sx={{ color: 'error.main' }}
+            >
+              <Iconify icon="solar:trash-bin-trash-bold" />
+              Delete
+            </MenuItem>
+          </>
+        )}
       </CustomPopover>
 
       <ConfirmDialog

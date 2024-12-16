@@ -209,7 +209,7 @@ export const dashboardRoutes = [
           {
             path: 'detail/:id',
             element: (
-              <RoleBasedGuard roles={['admin', 'creator']} hasContent>
+              <RoleBasedGuard roles={['admin', 'superadmin', 'creator']} hasContent>
                 <InvoicePage />
               </RoleBasedGuard>
             ),
