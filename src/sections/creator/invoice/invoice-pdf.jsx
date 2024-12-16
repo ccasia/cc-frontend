@@ -162,7 +162,7 @@ const InvoicePDF = ({ data }) => {
                     </Text>
                   </View>
                   <View style={styles.rightHeaderContent}>
-                    <Text>Date Created</Text>
+                    <Text>Invoice Date</Text>
                     <Text
                       style={{
                         color: '#231F20',

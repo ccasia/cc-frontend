@@ -191,7 +191,7 @@ export default function InvoiceDetails({ invoice }) {
               {currentStatus}
             </Label>
 
-            <Typography variant="h6">{invoice?.invoiceNumber  || "NUll"}</Typography>
+            <Typography variant="h6">{invoice?.invoiceNumber || 'NUll'}</Typography>
           </Stack>
 
           <Stack sx={{ typography: 'body2' }}>
@@ -220,7 +220,7 @@ export default function InvoiceDetails({ invoice }) {
 
           <Stack sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Date Create
+              Invoice Date
             </Typography>
             {fDate(invoice?.createdAt)}
           </Stack>

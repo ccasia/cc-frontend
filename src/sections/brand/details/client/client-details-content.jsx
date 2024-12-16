@@ -88,7 +88,7 @@ export default function ClientDetailsContent({ company }) {
     <Stack component={Card} spacing={2} sx={{ p: 3 }}>
       {[
         {
-          label: 'Date Created',
+          label: 'Invoice Date',
           value: fDate(createdAt),
           icon: <Iconify icon="solar:calendar-date-bold" width={20} />,
         },

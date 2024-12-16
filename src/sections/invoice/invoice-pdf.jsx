@@ -166,7 +166,7 @@ export default function InvoicePDF({ invoice, currentStatus }) {
 
         <View style={[styles.gridContainer, styles.mb40]}>
           <View style={styles.col6}>
-            <Text style={[styles.subtitle2, styles.mb4]}>Date create</Text>
+            <Text style={[styles.subtitle2, styles.mb4]}>Invoice Date</Text>
             <Text style={styles.body2}>{fDate(invoice?.createdAt)}</Text>
           </View>
           <View style={styles.col6}>
