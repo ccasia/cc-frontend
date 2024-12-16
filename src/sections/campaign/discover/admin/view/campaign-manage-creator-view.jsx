@@ -492,6 +492,21 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                 </Box>
 
                 <Stack spacing={2}>
+                <ListItemText
+                    primary="Account Name"
+                    secondary={data?.user?.paymentForm?.bankAccountName || 'N/A'}
+                    primaryTypographyProps={{
+                      color: '#8e8e93',
+                      fontWeight: 600,
+                      mt: -0.5,
+                      variant: 'subtitle2',
+                    }}
+                    secondaryTypographyProps={{
+                      variant: 'body2',
+                      color: 'black',
+                    }}
+                  />
+
                   <ListItemText
                     primary="Bank Name"
                     secondary={data?.user?.paymentForm?.bankName || 'N/A'}

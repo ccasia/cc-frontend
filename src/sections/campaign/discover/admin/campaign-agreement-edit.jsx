@@ -96,6 +96,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
           creatorPayment={data.paymentAmount.toString()}
           CREATOR_NAME={agreement?.user?.name}
           CREATOR_ACCOUNT_NUMBER={agreement?.user?.paymentForm?.bankAccountNumber}
+          CREATOR_BANK_ACCOUNT_NAME={agreement?.user?.paymentForm?.bankAccountName}
           CREATOR_BANK_NAME={agreement?.user?.paymentForm?.bankName}
           AGREEMENT_ENDDATE={dayjs(campaign?.campaignBrief?.endDate).format('LL')}
           NOW_DATE={dayjs().format('LL')}
