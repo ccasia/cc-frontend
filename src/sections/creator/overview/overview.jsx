@@ -405,7 +405,7 @@ const Overview = () => {
               }}
               variant="filled"
             >
-              CREATIVE
+              {resource.tag.toUpperCase() || 'CREATIVE'}
             </Label>
             <CardContent>
               <Typography
