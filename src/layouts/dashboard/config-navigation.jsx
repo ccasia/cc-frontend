@@ -20,7 +20,7 @@ import SvgColor from 'src/components/svg-color';
 // add finance user here as well
 
 const icon = (name) => (
-  <SvgColor src={`/assets/icons/navbar/${name}.svg`} sx={{ width: 24, height: 24}} />
+  <SvgColor src={`/assets/icons/navbar/${name}.svg`} sx={{ width: 24, height: 24 }} />
   // OR
   // <Iconify icon="fluent:mail-24-filled" />
   // https://icon-sets.iconify.design/solar/
@@ -56,7 +56,7 @@ const ICONS = {
   discover: icon('ic_discover'),
   mycampaigns: icon('ic_mycampaigns'),
   mytasks: icon('ic_mytasks'),
-  mediakit: icon('ic_mediakit')
+  mediakit: icon('ic_mediakit'),
   // calendar: icon('lets-icons:calendar-duotone'),
 };
 
@@ -202,6 +202,14 @@ export function useNavData() {
             path: paths.dashboard.roles.root,
             icon: <Iconify icon="oui:app-users-roles" width={25} />,
           },
+
+          // Testing purpose
+          {
+            roles: ['superadmin'],
+            title: 'Social Media',
+            path: paths.social,
+            icon: <Iconify icon="tabler:social" width={25} />,
+          },
           // {
           //   title: 'Template',
           //   path: paths.dashboard.template.root,
@@ -224,7 +232,11 @@ export function useNavData() {
       {
         items: [
           {
-            title: <span style={{fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Overview</span>,
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Overview
+              </span>
+            ),
             path: paths.dashboard.overview.root,
             icon: ICONS.overview,
           },
@@ -233,27 +245,47 @@ export function useNavData() {
       {
         items: [
           {
-            title: <span style={{fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Discover</span>,
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Discover
+              </span>
+            ),
             path: paths.dashboard.campaign.view,
             icon: ICONS.discover,
           },
           {
-            title: <span style={{fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>My Campaigns</span>,
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                My Campaigns
+              </span>
+            ),
             path: paths.dashboard.campaign.creator.manage,
             icon: ICONS.mycampaigns,
           },
           {
-            title: <span style={{fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>My Tasks</span>,
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                My Tasks
+              </span>
+            ),
             path: paths.dashboard.kanban,
             icon: ICONS.mytasks,
           },
           {
-            title: <span style={{fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Media Kit</span>,
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Media Kit
+              </span>
+            ),
             path: paths.dashboard.creator.mediaKitCreator,
             icon: ICONS.mediakit,
           },
           {
-            title: <span style={{fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Invoice</span>,
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Invoice
+              </span>
+            ),
             path: paths.dashboard.creator.invoiceCreator,
             icon: ICONS.invoice,
           },
@@ -331,13 +363,19 @@ export function useNavData() {
       {
         items: [
           {
-            title: <span style={{fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>,
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Chats</span>
+            ),
             path: paths.dashboard.chat.root,
             icon: ICONS.chat,
             msgcounter: unreadMessageCount > 0 ? unreadMessageCount : null,
           },
           {
-            title: <span style={{fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>Calendar</span>,
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Calendar
+              </span>
+            ),
             path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,
           },

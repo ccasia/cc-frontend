@@ -112,4 +112,7 @@ export const paths = {
       mediaKit: (id) => `${ROOTS.PUBLIC}/media-kits/creator/${id}`,
     },
   },
+
+  // Testing purpose
+  social: `${ROOTS.DASHBOARD}/social`,
 };

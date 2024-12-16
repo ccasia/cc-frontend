@@ -87,6 +87,8 @@ const Overview = lazy(() => import('src/pages/dashboard/creator/overview'));
 
 const InvoiceDetail = lazy(() => import('src/pages/dashboard/creator/invoice-details'));
 
+const SocialMedia = lazy(() => import('src/pages/admin/social'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -504,6 +506,14 @@ export const dashboardRoutes = [
       {
         path: 'overview',
         element: <Overview />,
+      },
+      {
+        path: 'social',
+        element: (
+          <RoleBasedGuard roles={['superadmin']} hasContent>
+            <SocialMedia />
+          </RoleBasedGuard>
+        ),
       },
     ],
   },
