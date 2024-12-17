@@ -108,31 +108,6 @@ const CampaignView = () => {
     [data]
   );
 
-  // const handleScroll = useCallback(() => {
-  //   if (!mainRef.current) return;
-
-  //   const bottom =
-  //     mainRef.current.scrollHeight ===
-  //     mainRef.current.scrollTop + mainRef.current.clientHeight + 0.5;
-
-  //   if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
-  //     setSize(size + 1);
-  //   }
-  // }, [data, isValidating, setSize, size, mainRef]);
-
-  // useEffect(() => {
-  //   const scrollContainer = mainRef?.current;
-  //   if (!scrollContainer) return;
-
-  //   const scrollListener = () => handleScroll();
-
-  //   scrollContainer.addEventListener('scroll', scrollListener);
-  //   // eslint-disable-next-line consistent-return
-  //   return () => {
-  //     scrollContainer.removeEventListener('scroll', scrollListener);
-  //   };
-  // }, [handleScroll, mainRef]);
-
   const handleScroll = useCallback(() => {
     const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
 
@@ -161,8 +136,8 @@ const CampaignView = () => {
         variant="h2"
         sx={{
           mb: 4,
-          fontFamily: "fontSecondaryFamily", 
-          fontWeight: "normal"
+          fontFamily: 'fontSecondaryFamily',
+          fontWeight: 'normal',
         }}
       >
         Manage Campaigns ✨

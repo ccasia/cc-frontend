@@ -139,32 +139,6 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     editDialog.onTrue();
   };
 
-  // const renderConfirmationModal = !!selectedCreator.length && (
-  //   <Dialog open={confirmModal.value} onClose={confirmModal.onFalse}>
-  //     <DialogTitle>Confirm to close modal</DialogTitle>
-  //     <DialogContent>
-  //       <DialogContentText>All selected creators will be remove.</DialogContentText>
-  //     </DialogContent>
-  //     <DialogActions>
-  //       <Button size="small" onClick={confirmModal.onFalse} variant="outlined">
-  //         Cancel
-  //       </Button>
-  //       <Button
-  //         size="small"
-  //         onClick={() => {
-  //           confirmModal.onFalse();
-  //           modal.onFalse();
-  //           reset();
-  //         }}
-  //         variant="contained"
-  //         color="error"
-  //       >
-  //         Confirm
-  //       </Button>
-  //     </DialogActions>
-  //   </Dialog>
-  // );
-
   const renderShortlistFormModal = (
     <Dialog
       open={modal.value}

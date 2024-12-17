@@ -26,6 +26,7 @@ import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoiceByCreatorAndCampaign from 'src/hooks/use-get-invoice-creator-camp';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
@@ -58,6 +59,7 @@ const BoxStyle = {
 
 const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
+  const { mainRef } = useMainContext();
 
   const query = useSearchParams();
 
@@ -198,6 +200,15 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
       socket?.off('newSubmission');
     };
   }, [socket, mutate]);
+
+  useEffect(() => {
+    if (!mainRef.current) return;
+
+    mainRef?.current.scrollTo({
+      top: 0,
+      behavior: 'smooth', // Optional for smooth scrolling
+    });
+  }, [mainRef]);
 
   return (
     <Container
