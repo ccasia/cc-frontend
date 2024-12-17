@@ -397,6 +397,7 @@ export default function CampaignListView() {
           >
             <InputBase
               value={search.query}
+              onChange={(e) => handleSearch(e.target.value)}
               // onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search"
               startAdornment={
