@@ -136,6 +136,20 @@ export default function Upload({
               color: '#8E8E93',
             }}
           />
+        ) : Object.keys(other.accept)[0].includes('application/pdf') ? (
+          <ListItemText
+            primary="Choose a file or drag and drop here"
+            secondary="Acceptable files: PDF"
+            primaryTypographyProps={{
+              textAlign: 'center',
+              variant: 'h5',
+            }}
+            secondaryTypographyProps={{
+              textAlign: 'center',
+              variant: 'body1',
+              color: '#8E8E93',
+            }}
+          />
         ) : (
           <ListItemText
             primary="Choose a file or drag and drop here"
