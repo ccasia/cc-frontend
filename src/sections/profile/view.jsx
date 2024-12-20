@@ -262,7 +262,7 @@ const Profile = () => {
       />
 
       <Tab
-        label="Social"
+        label="Socials"
         value="Social Links"
         icon={<Iconify icon="solar:share-bold" width={24} />}
       />

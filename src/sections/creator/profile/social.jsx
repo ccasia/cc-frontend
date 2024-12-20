@@ -1,13 +1,15 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { Stack, Button } from '@mui/material';
+import { Stack, Button, Typography } from '@mui/material';
 
 import { initFacebookSDK } from 'src/utils/FacebookSDK';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Image from 'src/components/image';
+import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 
 // ----------------------------------------------------------------------
@@ -111,15 +113,36 @@ export default function AccountSocialLinks() {
   //     </Stack>
   //   </FormProvider>
   // );
-
   return (
-    <Stack direction="row" spacing={1}>
-      <Button variant="outlined" onClick={handleLogin}>
-        Connect Instagram
-      </Button>
-      <Button variant="outlined" onClick={connectTiktok}>
-        Connect Tiktok
-      </Button>
+    <Stack spacing={2} border={1} p={2} borderRadius={2} borderColor="#EBEBEB" px={2}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" width={1}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Image src="/instagram/insta.webp" width={30} />
+          <Typography variant="subtitle1">Instagram</Typography>
+        </Stack>
+        <Button
+          variant="outlined"
+          onClick={connectTiktok}
+          startIcon={<Iconify icon="material-symbols:add-rounded" />}
+          sx={{ borderRadius: 2 }}
+        >
+          Add account
+        </Button>
+      </Stack>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" width={1}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Image src="/tiktok/Tiktok_Login.png" width={30} />
+          <Typography variant="subtitle1">TikTok</Typography>
+        </Stack>
+        <Button
+          variant="outlined"
+          onClick={connectTiktok}
+          startIcon={<Iconify icon="material-symbols:add-rounded" />}
+          sx={{ borderRadius: 2 }}
+        >
+          Add account
+        </Button>
+      </Stack>
     </Stack>
   );
 }
