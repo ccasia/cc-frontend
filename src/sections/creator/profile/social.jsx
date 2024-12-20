@@ -1,17 +1,14 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
-import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
-import { LoadingButton } from '@mui/lab';
-import { InputAdornment } from '@mui/material';
+import { Stack, Button } from '@mui/material';
 
+import { initFacebookSDK } from 'src/utils/FacebookSDK';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
@@ -42,41 +39,87 @@ export default function AccountSocialLinks() {
     }
   });
 
+  useEffect(() => {
+    // Check if the Facebook SDK has loaded
+    if (window.FB) {
+      initFacebookSDK();
+      window.FB.getLoginStatus((response) => {
+        if (response.status === 'connected') {
+          console.log('User is already logged in.');
+        }
+      });
+    }
+  }, []);
+
+  const handleLogin = () => {
+    window.FB.login(
+      (response) => {
+        if (response.authResponse) {
+          console.log('Facebook login successful:', response);
+        } else {
+          console.log('Facebook login failed');
+        }
+      },
+      { scope: 'public_profile,email' }
+    );
+  };
+
+  const connectTiktok = async () => {
+    try {
+      const { data: url } = await axiosInstance.get('/api/social/oauth/tiktok');
+      enqueueSnackbar('Redirecting...');
+      window.location.href = url;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // return (
+  //   <FormProvider methods={methods} onSubmit={onSubmit}>
+  //     <Stack component={Card} spacing={3} sx={{ p: 3 }} alignItems="flex-end">
+  //       <RHFTextField
+  //         name="instagram"
+  //         label="Instagram"
+  //         InputProps={{
+  //           startAdornment: (
+  //             <InputAdornment position="start">
+  //               <Iconify icon="mdi:instagram" width={20} />
+  //             </InputAdornment>
+  //           ),
+  //         }}
+  //       />
+  //       <RHFTextField
+  //         name="tiktok"
+  //         label="Tiktok"
+  //         InputProps={{
+  //           startAdornment: (
+  //             <InputAdornment position="start">
+  //               <Iconify icon="ic:baseline-tiktok" width={20} />
+  //             </InputAdornment>
+  //           ),
+  //         }}
+  //       />
+  //       <LoadingButton
+  //         type="submit"
+  //         variant="outlined"
+  //         disabled={!isDirty}
+  //         size="small"
+  //         loading={isSubmitting}
+  //       >
+  //         Save changes
+  //       </LoadingButton>
+  //     </Stack>
+  //   </FormProvider>
+  // );
+
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Stack component={Card} spacing={3} sx={{ p: 3 }} alignItems="flex-end">
-        <RHFTextField
-          name="instagram"
-          label="Instagram"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="mdi:instagram" width={20} />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <RHFTextField
-          name="tiktok"
-          label="Tiktok"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="ic:baseline-tiktok" width={20} />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <LoadingButton
-          type="submit"
-          variant="outlined"
-          disabled={!isDirty}
-          size="small"
-          loading={isSubmitting}
-        >
-          Save changes
-        </LoadingButton>
-      </Stack>
-    </FormProvider>
+    <Stack direction="row" spacing={1}>
+      <Button variant="outlined" onClick={handleLogin}>
+        Connect Instagram
+      </Button>
+      <Button variant="outlined" onClick={connectTiktok}>
+        Connect Tiktok
+      </Button>
+    </Stack>
   );
 }
