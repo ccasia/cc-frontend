@@ -639,15 +639,15 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
           )}
 
           {/* New Upload Modal */}
-          <Dialog 
-            open={openUploadModal} 
-            fullWidth 
+          <Dialog
+            open={openUploadModal}
+            fullWidth
             maxWidth="md"
             sx={{
               '& .MuiDialog-paper': {
                 width: { xs: 'calc(100% - 32px)', sm: '100%' },
-                m: { xs: 2, sm: 32 }
-              }
+                m: { xs: 2, sm: 32 },
+              },
             }}
           >
             <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
@@ -710,7 +710,13 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                         }}
                       />
 
-                      <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', sm: 'auto' }, mt: { xs: 1, sm: 0 } }}>
+                      <Box
+                        sx={{
+                          flexGrow: 1,
+                          minWidth: { xs: '100%', sm: 'auto' },
+                          mt: { xs: 1, sm: 0 },
+                        }}
+                      >
                         <Typography
                           variant="subtitle2"
                           noWrap
@@ -724,19 +730,29 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                           {agreementForm.name}
                         </Typography>
 
-                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5, fontSize: '0.875rem' }}>
-                          {uploadProgress < 100 ? `Uploading ${uploadProgress}%` : formatFileSize(agreementForm.size)}
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'text.secondary',
+                            display: 'block',
+                            mt: 0.5,
+                            fontSize: '0.875rem',
+                          }}
+                        >
+                          {uploadProgress < 100
+                            ? `Uploading ${uploadProgress}%`
+                            : formatFileSize(agreementForm.size)}
                         </Typography>
                       </Box>
 
-                      <Stack 
-                        direction="row" 
-                        spacing={2} 
+                      <Stack
+                        direction="row"
+                        spacing={2}
                         alignItems="center"
-                        sx={{ 
+                        sx={{
                           width: { xs: '100%', sm: 'auto' },
                           justifyContent: { xs: 'flex-end', sm: 'flex-start' },
-                          mt: { xs: 2, sm: 0 }
+                          mt: { xs: 2, sm: 0 },
                         }}
                       >
                         {uploadProgress < 100 ? (
@@ -877,16 +893,16 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
             </DialogActions>
           </Dialog>
 
-          <Dialog 
-            open={!!preview} 
-            onClose={() => setPreview('')} 
-            fullWidth 
+          <Dialog
+            open={!!preview}
+            onClose={() => setPreview('')}
+            fullWidth
             maxWidth="md"
             sx={{
               '& .MuiDialog-paper': {
                 width: { xs: 'calc(100% - 32px)', sm: '100%' },
-                m: { xs: 2, sm: 32 }
-              }
+                m: { xs: 2, sm: 32 },
+              },
             }}
           >
             <DialogTitle>
@@ -952,8 +968,8 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
                   },
                 }}
               >
-                <Document 
-                  file={preview} 
+                <Document
+                  file={preview}
                   onLoadSuccess={onDocumentLoadSuccess}
                   loading={
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>

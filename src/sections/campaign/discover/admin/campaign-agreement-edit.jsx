@@ -92,12 +92,12 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
           ADDRESS={agreement?.user?.creator?.address}
           ccEmail="hello@cultcreative.com"
           ccPhoneNumber="+60162678757"
-          effectiveDate={dayjs(campaign?.campaignBrief?.startDate).format('LL')}
+          effectiveDate={dayjs().add(4, 'day').format('LL')}
           creatorPayment={data.paymentAmount.toString()}
           CREATOR_NAME={agreement?.user?.name}
           CREATOR_ACCOUNT_NUMBER={agreement?.user?.paymentForm?.bankAccountNumber}
           CREATOR_BANK_NAME={agreement?.user?.paymentForm?.bankName}
-          AGREEMENT_ENDDATE={dayjs(campaign?.campaignBrief?.endDate).format('LL')}
+          AGREEMENT_ENDDATE={dayjs().add(1, 'month').format('LL')}
           NOW_DATE={dayjs().format('LL')}
           VERSION_NUMBER="V1"
           ADMIN_IC_NUMBER={extractAgremmentsInfo?.adminICNumber ?? 'Default'}
