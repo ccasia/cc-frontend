@@ -25,7 +25,13 @@ const videoAngle = [
 // eslint-disable-next-line react/prop-types
 const FormField = ({ label, children }) => (
   <Stack spacing={1}>
-    <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+    <FormLabel
+      required
+      sx={{
+        fontWeight: 600,
+        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+      }}
+    >
       {label}
     </FormLabel>
     {children}
@@ -33,14 +39,16 @@ const FormField = ({ label, children }) => (
 );
 
 const BoxStyle = {
-  border: '1px solid #e0e0e0',
+  border: 1,
+  borderColor: (theme) => theme.palette.divider,
   borderRadius: 2,
   p: 3,
   mt: -1,
   mb: 3,
   width: '100%',
   '& .header': {
-    borderBottom: '1px solid #e0e0e0',
+    borderBottom: 1,
+    borderColor: (theme) => theme.palette.divider,
     mx: -3,
     mt: -1,
     mb: 2,
@@ -252,9 +260,10 @@ const CampaignDetails = () => {
               <Typography
                 variant="body2"
                 sx={{
-                  color: '#221f20',
+                  // color: '#221f20',
                   fontWeight: 600,
                   fontSize: '0.875rem',
+                  color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
                 }}
               >
                 CAMPAIGN DO&apos;S
@@ -297,7 +306,7 @@ const CampaignDetails = () => {
               <Typography
                 variant="body2"
                 sx={{
-                  color: '#221f20',
+                  color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
                   fontWeight: 600,
                   fontSize: '0.875rem',
                 }}

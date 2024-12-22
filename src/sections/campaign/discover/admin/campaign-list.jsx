@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
@@ -8,15 +7,15 @@ import CampaignItem from './campaign-item';
 // ----------------------------------------------------------------------
 
 export default function CampaignLists({ campaigns }) {
-  const [page, setPage] = useState(1);
-  const MAX_ITEM = 9;
+  // const [page, setPage] = useState(1);
+  // const MAX_ITEM = 9;
 
-  const handleChange = (event, value) => {
-    setPage(value);
-  };
+  // const handleChange = (event, value) => {
+  //   setPage(value);
+  // };
 
-  const indexOfLastItem = page * MAX_ITEM;
-  const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
+  // const indexOfLastItem = page * MAX_ITEM;
+  // const indexOfFirstItem = indexOfLastItem - MAX_ITEM;
 
   return (
     <>

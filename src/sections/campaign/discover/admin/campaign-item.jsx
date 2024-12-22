@@ -13,12 +13,10 @@ import { formatText } from 'src/utils/format-test';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
-import { useSettingsContext } from 'src/components/settings';
 
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
-  const settings = useSettingsContext();
   const theme = useTheme();
   const { user } = useAuthContext();
 
@@ -47,7 +45,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
                   style={{
                     width: 8,
                     height: 8,
-                    marginLeft: '8px'
+                    marginLeft: '8px',
                   }}
                 />
               ) : null
@@ -94,12 +92,12 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         }}
       />
       <Box sx={{ mt: 0.5 }}>
-        <Typography 
-          variant="h5" 
-          sx={{ 
-            fontWeight: 650, 
-            mb: -0.1, 
-            pb: 0.2, 
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 650,
+            mb: -0.1,
+            pb: 0.2,
             mt: 0.8,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -123,20 +121,20 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
       <Stack spacing={0.5}>
         <Stack direction="row" alignItems="center" spacing={1.2}>
-          <img 
+          <img
             src="/assets/icons/overview/IndustriesTag.svg"
             alt="Industries"
-            style={{ 
-              width: 20, 
+            style={{
+              width: 20,
               height: 20,
-            }} 
+            }}
           />
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              color: '#8e8e93', 
+          <Typography
+            variant="body2"
+            sx={{
+              color: '#8e8e93',
               fontSize: '0.875rem',
-              fontWeight: 500
+              fontWeight: 500,
             }}
           >
             {campaign?.campaignBrief?.industries}
@@ -144,20 +142,20 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         </Stack>
 
         <Stack direction="row" alignItems="center" spacing={1.2}>
-          <img 
+          <img
             src="/assets/icons/overview/SmallCalendar.svg"
             alt="Calendar"
-            style={{ 
-              width: 20, 
+            style={{
+              width: 20,
               height: 20,
-            }} 
+            }}
           />
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              color: '#8e8e93', 
+          <Typography
+            variant="caption"
+            sx={{
+              color: '#8e8e93',
               fontSize: '0.875rem',
-              fontWeight: 500
+              fontWeight: 500,
             }}
           >
             {`${dayjs(campaign?.campaignBrief?.startDate).format('D MMM YYYY')} - ${dayjs(
@@ -184,10 +182,10 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         overflow: 'hidden',
         cursor: 'pointer',
         transition: 'all 0.3s',
-        bgcolor: 'background.paper',
+        bgcolor: 'background.default',
         borderRadius: '15px',
         border: '1.2px solid',
-        borderColor: '#ebebeb',
+        borderColor: theme.palette.divider,
         mb: -0.5,
         height: 345,
         '&:hover': {

@@ -44,8 +44,6 @@ const CampaignView = () => {
 
   const { campaigns } = useGetCampaigns();
 
-  //   const { campaigns, isLoading } = useGetCampaigns();
-
   const create = useBoolean();
 
   const [filter, setFilter] = useState('active');
@@ -74,7 +72,7 @@ const CampaignView = () => {
     return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
-  const { data, error, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
+  const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
 
   const smDown = useResponsive('down', 'sm');
 
@@ -177,7 +175,7 @@ const CampaignView = () => {
                 py: 0.5,
                 pb: 1,
                 minWidth: 'fit-content',
-                color: filter === 'active' ? '#221f20' : '#8e8e93',
+                color: filter === 'active' ? theme.palette.common : '#8e8e93',
                 position: 'relative',
                 fontSize: '1.05rem',
                 fontWeight: 650,
@@ -224,7 +222,7 @@ const CampaignView = () => {
                 pb: 1,
                 ml: 2,
                 minWidth: 'fit-content',
-                color: filter === 'completed' ? '#221f20' : '#8e8e93',
+                color: filter === 'completed' ? theme.palette.common : '#8e8e93',
                 position: 'relative',
                 fontSize: '1.05rem',
                 fontWeight: 650,
@@ -367,14 +365,6 @@ const CampaignView = () => {
       )}
       {!isLoading &&
         (dataFiltered?.length > 0 ? (
-          // <Box
-          //   ref={scrollContainerRef}
-          //   sx={{
-          //     overflowY: 'auto',
-          //     height: { xs: '60vh', xl: '65vh' },
-          //     scrollBehavior: 'smooth',
-          //   }}
-          // >
           <Box>
             <CampaignLists campaigns={dataFiltered} />
             {isValidating && (
@@ -410,7 +400,8 @@ const CampaignView = () => {
         fullScreen
         PaperProps={{
           sx: {
-            bgcolor: '#FFF',
+            // bgcolor: '#FFF',
+            bgcolor: theme.palette.background.paper,
             borderRadius: 2,
             p: 4,
             m: 2,
