@@ -118,31 +118,6 @@ const CampaignListView = () => {
     [data]
   );
 
-  // const handleScroll = useCallback(() => {
-  //   if (!scrollContainerRef.current) return;
-
-  //   const bottom =
-  //     scrollContainerRef.current.scrollHeight <=
-  //     scrollContainerRef.current.scrollTop + scrollContainerRef.current.clientHeight;
-
-  //   if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
-  //     setSize(size + 1);
-  //   }
-  // }, [data, isValidating, setSize, size]);
-
-  // useEffect(() => {
-  //   const scrollContainer = scrollContainerRef.current;
-  //   if (!scrollContainer) return;
-
-  //   const scrollListener = () => handleScroll();
-
-  //   scrollContainer.addEventListener('scroll', scrollListener);
-  //   // eslint-disable-next-line consistent-return
-  //   return () => {
-  //     scrollContainer.removeEventListener('scroll', scrollListener);
-  //   };
-  // }, [data, isValidating, size, setSize, handleScroll]);
-
   const handleScroll = useCallback(() => {
     const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
 
@@ -177,16 +152,6 @@ const CampaignListView = () => {
           },
           { name: 'List' },
         ]}
-        // action={
-        //   <Button
-        //     component={RouterLink}
-        //     href={paths.dashboard.campaign.create}
-        //     variant="contained"
-        //     startIcon={<Iconify icon="mingcute:add-line" />}
-        //   >
-        //     New Campaign
-        //   </Button>
-        // }
         sx={{
           mb: { xs: 3 },
         }}
