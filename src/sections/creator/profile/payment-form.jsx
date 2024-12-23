@@ -19,6 +19,7 @@ const PaymentFormProfile = ({ user }) => {
     defaultValues: {
       bankName: null || { bank: paymentForm?.bankName },
       bankNumber: paymentForm?.bankAccountNumber || '',
+      bankAccName: paymentForm?.bankAccountName || '',
       // bodyMeasurement: paymentForm?.bodyMeasurement || '',
       // allergies: paymentForm?.allergies?.map((allergy) => ({ name: allergy })) || [{ name: '' }],
       icPassportNumber: paymentForm?.icNumber || '',
@@ -59,7 +60,9 @@ const PaymentFormProfile = ({ user }) => {
             getOptionLabel={(option) => option.bank}
           />
           <RHFTextField name="bankNumber" type="number" label="Bank Account Number" />
+          <RHFTextField name="bankAccName" label="Bank Account Name" />
           <RHFTextField name="icPassportNumber" label="IC / Passport Number" />
+        
           {/* <RHFTextField
             name="bodyMeasurement"
             type="number"

@@ -99,8 +99,8 @@ export default function AgreementTemplate({
   ccPhoneNumber,
   effectiveDate,
   creatorPayment,
-  CREATOR_NAME,
   CREATOR_ACCOUNT_NUMBER,
+  CREATOR_BANK_ACCOUNT_NAME,
   CREATOR_BANK_NAME,
   AGREEMENT_ENDDATE,
   NOW_DATE,
@@ -225,7 +225,7 @@ export default function AgreementTemplate({
                 fontWeight: 600,
               }}
             >
-              {CREATOR_NAME}
+              {CREATOR_BANK_ACCOUNT_NAME}
             </Text>
           </View>
           <View style={styles.paymentView}>

@@ -796,15 +796,16 @@ export default function CampaignListView() {
 
       {upload.length > 0 && renderUploadProgress}
 
-      <Backdrop open={backdrop.value} sx={{ zIndex: theme.zIndex.drawer + 1 }}>
+      <Backdrop open={backdrop.value} sx={{ zIndex: theme.zIndex.drawer + 1,  }}>
         <Box
           sx={{
-            bgcolor: theme.palette.background.paper,
-            borderRadius: 3,
-            p: 4,
-            pb: 2,
-            width: 600,
-            position: 'relative',
+            padding: '20px',
+            width: '580px',
+            height: '638px',
+            background: '#f4f4f4',
+            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.15)',
+            borderRadius: '20px',
+            overflow: 'auto'
           }}
         >
           <IconButton
@@ -822,16 +823,20 @@ export default function CampaignListView() {
             <Iconify icon="mingcute:close-fill" width={24} />
           </IconButton>
 
-          <Stack spacing={2}>
-            <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
-              Complete Your Profile Before Making a Pitch
+          <Stack spacing={0}>
+            <Typography 
+            variant="body1" 
+            sx={{
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              flexGrow: 1,
+              fontWeight: 'normal',
+              fontSize: '32px',
+            }}
+            >
+            💰 Fill in your payment details
             </Typography>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
-              Before you can submit a pitch for this campaign, please complete your profile form.
-              This ensures we have all the necessary information for your submission. Click below to
-              finish filling out your form and get ready to pitch!
-            </Typography>
+            <Divider sx={{ my: 2, mb: 0 }} />
 
             <CreatorForm dialog={dialog} user={user} display backdrop={backdrop} />
           </Stack>
