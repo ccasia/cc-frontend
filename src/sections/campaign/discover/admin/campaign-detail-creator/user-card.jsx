@@ -348,7 +348,30 @@ export default function UserCard({
         open={confirmationDialog.value}
         onClose={confirmationDialog.onFalse}
         title="Withdraw from Campaign?"
-        content="Are you sure you want to remove this creator? This action cannot be undone"
+        content={
+          <>
+            <Typography variant="body2" gutterBottom>
+              Are you sure you want to remove this creator? This action cannot be undone
+            </Typography>
+            {/* <Typography variant="caption" color="text.secondary">
+              This action will remove:
+            </Typography> */}
+            {/* <List>
+              <ListItem disablePadding>
+                <ListItemIcon>1.</ListItemIcon>
+                <ListItemText primary="Submissions" />
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemIcon>2.</ListItemIcon>
+                <ListItemText primary="Agreement" />
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemIcon>3</ListItemIcon>
+                <ListItemText primary="Invoice" />
+              </ListItem>
+            </List> */}
+          </>
+        }
         action={
           <LoadingButton
             variant="outlined"
