@@ -227,6 +227,7 @@ export const endpoints = {
     sendAgreement: `/api/campaign/sendAgreement`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
     linkNewAgreement: `/api/campaign/linkNewAgreement`,
+    removeCreator: `/api/campaign/removeCreatorFromCampaign`,
   },
   submission: {
     root: '/api/submission/',
