@@ -41,12 +41,9 @@ const API = () => {
                   pointerEvents: 'none',
                 }}
               >
-                Activated
+                Connected
               </Button>
             ))}
-          <Button variant="outlined" onClick={handleActivateXero}>
-            Activate
-          </Button>
         </Stack>
       </Card>
     </Box>
