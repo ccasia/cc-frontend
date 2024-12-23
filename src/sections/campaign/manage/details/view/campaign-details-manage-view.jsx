@@ -506,9 +506,22 @@ const CampaignDetailManageView = ({ id }) => {
               </Stack>
             }
           />
-          <ListItemText
+          {/* <ListItemText
             primary="User Persona"
             secondary={formatText(campaign?.campaignRequirement?.user_persona)}
+          /> */}
+          <ListItemText
+            primary="User Persona"
+            secondary={
+              <Box sx={{
+                wordWrap: 'break-word',  
+                overflowWrap: 'break-word', 
+                whiteSpace: 'pre-wrap', 
+                maxWidth: '100%' 
+              }}>
+                {formatText(campaign?.campaignRequirement?.user_persona)}
+              </Box>
+            }
           />
           <ListItemText
             primary="Social Media Platform"
