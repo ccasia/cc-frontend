@@ -412,7 +412,7 @@ const CampaignModal = ({
             spacing={2}
             sx={{ mb: 2 }}
           > */}
-          <Grid container>
+          <Grid container gap={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
             <Grid item xs={12} sm={6}>
               <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
                 <Typography
