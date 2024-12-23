@@ -198,6 +198,25 @@ const CampaignModal = ({
     }
   };
 
+  // Dynamically adjust/resize with campaign name's length
+  // if campaign name is long, the modal adjusts on its own
+  useEffect(() => {
+    const updateCampaignNameHeight = () => {
+      const nameElement = document.querySelector('[data-campaign-name]');
+      if (nameElement) {
+        const height = nameElement.offsetHeight;
+        document.documentElement.style.setProperty('--campaign-name-height', `${height}px`);
+      }
+    };
+
+    updateCampaignNameHeight();
+    window.addEventListener('resize', updateCampaignNameHeight);
+
+    return () => {
+      window.removeEventListener('resize', updateCampaignNameHeight);
+    };
+  }, [campaign?.name]);
+
   return (
     <Dialog
       open={open}
@@ -414,6 +433,7 @@ const CampaignModal = ({
           >
             <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
               <Typography
+                data-campaign-name
                 variant="h5"
                 sx={{
                   fontWeight: '550',
@@ -640,28 +660,29 @@ const CampaignModal = ({
                 elevation={0}
                 sx={{
                   pr: { md: 4 },
-                  height: {
-                    xs: 'auto', // Full height on mobile
-                    md: 'calc(98vh - 400px)', // Fixed height with scroll on desktop
+                  maxHeight: {
+                    xs: 'auto',
+                    md: 'calc(98vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))',
                   },
                   overflow: {
-                    xs: 'visible', // No scroll on mobile
-                    md: 'auto', // Enable scroll on desktop
+                    xs: 'visible',
+                    md: 'auto'
                   },
+                  pb: 3,
                   '&::-webkit-scrollbar': {
-                    width: '8px',
+                    width: '8px'
                   },
                   '&::-webkit-scrollbar-track': {
                     background: '#f1f1f1',
-                    borderRadius: '4px',
+                    borderRadius: '4px'
                   },
                   '&::-webkit-scrollbar-thumb': {
                     background: '#888',
-                    borderRadius: '4px',
+                    borderRadius: '4px'
                   },
                   '&::-webkit-scrollbar-thumb:hover': {
-                    background: '#555',
-                  },
+                    background: '#555'
+                  }
                 }}
               >
                 <Stack spacing={2}>
@@ -728,6 +749,10 @@ const CampaignModal = ({
                           sx={{
                             pl: 0.5,
                             textAlign: 'justify',
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word',
+                            whiteSpace: 'pre-wrap',
+                            maxWidth: '100%'
                           }}
                         >
                           {campaign?.description}
@@ -776,7 +801,13 @@ const CampaignModal = ({
                               flexShrink: 0,
                             }}
                           />
-                          <Typography variant="body2">
+                          <Typography variant="body2"
+                          sx={{
+                            wordWrap: 'break-word',  
+                            overflowWrap: 'break-word', 
+                            whiteSpace: 'pre-wrap', 
+                            maxWidth: '100%' 
+                          }}>
                             {campaign?.campaignBrief?.objectives}
                           </Typography>
                         </Stack>
@@ -814,7 +845,8 @@ const CampaignModal = ({
                             </Typography>
                           </Stack>
                         </Box>
-                        <Stack spacing={1} sx={{ pl: 0.5 }}>
+                        <Stack spacing={1} 
+                        sx={{ pl: 0.5 }}>
                           {campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
                             <Stack key={index} direction="row" spacing={1} alignItems="center">
                               <Iconify
@@ -826,7 +858,13 @@ const CampaignModal = ({
                                   flexShrink: 0,
                                 }}
                               />
-                              <Typography variant="body2">{item.value}</Typography>
+                              <Typography variant="body2"   
+                                sx={{
+                                wordWrap: 'break-word',  
+                                overflowWrap: 'break-word', 
+                                whiteSpace: 'pre-wrap', 
+                                maxWidth: '100%' 
+                              }}>{item.value}</Typography>
                             </Stack>
                           ))}
                         </Stack>
@@ -876,7 +914,13 @@ const CampaignModal = ({
                                   flexShrink: 0,
                                 }}
                               />
-                              <Typography variant="body2">{item.value}</Typography>
+                              <Typography variant="body2" 
+                              sx={{
+                                wordWrap: 'break-word',  
+                                overflowWrap: 'break-word', 
+                                whiteSpace: 'pre-wrap', 
+                                maxWidth: '100%' 
+                              }}>{item.value}</Typography>
                             </Stack>
                           ))}
                         </Stack>
@@ -895,7 +939,7 @@ const CampaignModal = ({
                 display: { xs: 'none', md: 'block' },
                 mr: '-1px',
                 mt: '-8px',
-                height: { md: 'calc(98vh - 400px)' },
+                height: { md: 'calc(98vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))' },
               }}
             />
 
@@ -905,28 +949,29 @@ const CampaignModal = ({
                 elevation={0}
                 sx={{
                   pl: { md: 2 },
-                  height: {
-                    xs: 'auto', // Full height on mobile
-                    md: 'calc(98vh - 400px)', // Fixed height with scroll on desktop
+                  maxHeight: {
+                    xs: 'auto',
+                    md: 'calc(98vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))',
                   },
                   overflow: {
-                    xs: 'visible', // No scroll on mobile
-                    md: 'auto', // Enable scroll on desktop
+                    xs: 'visible',
+                    md: 'auto'
                   },
+                  pb: 3,
                   '&::-webkit-scrollbar': {
-                    width: '8px',
+                    width: '8px'
                   },
                   '&::-webkit-scrollbar-track': {
                     background: '#f1f1f1',
-                    borderRadius: '4px',
+                    borderRadius: '4px'
                   },
                   '&::-webkit-scrollbar-thumb': {
                     background: '#888',
-                    borderRadius: '4px',
+                    borderRadius: '4px'
                   },
                   '&::-webkit-scrollbar-thumb:hover': {
-                    background: '#555',
-                  },
+                    background: '#555'
+                  }
                 }}
               >
                 <Stack spacing={2}>
@@ -974,7 +1019,16 @@ const CampaignModal = ({
                       >
                         User Persona
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 420,
+                          wordWrap: 'break-word',  
+                          overflowWrap: 'break-word', 
+                          whiteSpace: 'pre-wrap', 
+                          maxWidth: '100%' 
+                        }}
+                      >
                         {campaign?.campaignRequirement?.user_persona}
                       </Typography>
                     </Box>
