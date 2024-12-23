@@ -424,7 +424,7 @@ const CampaignModal = ({
 
         {/* Campaign info */}
         <Box sx={{ px: 3, pb: 3, mt: 4 }}>
-          <Stack
+          {/* <Stack
             direction={{ xs: 'column', sm: 'row' }}
             justifyContent="space-between"
             alignItems={{ xs: 'flex-start', sm: 'center' }}
@@ -469,28 +469,155 @@ const CampaignModal = ({
                 <Button
                   variant="contained"
                   onClick={dialog.onTrue}
+          > */}
+          <Grid container rowGap={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
+            <Grid item xs={12} sm={6}>
+              <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
+                <Typography
+                  variant="h5"
                   sx={{
-                    backgroundColor: '#273eec',
-                    color: 'white',
-                    borderBottom: '5px solid #152382 !important',
-                    border: 'none',
-                    '&:hover': {
-                      backgroundColor: '#f57c00',
-                      borderBottom: '5px solid #b26a00 !important',
-                    },
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    padding: { xs: '4px 12px', sm: '6px 18px' },
-                    minWidth: '100px',
-                    height: '42px',
-                    boxShadow: 'none',
-                    textTransform: 'none',
-                    fontWeight: 650,
+                    fontWeight: '550',
+                    fontSize: { xs: '2rem', sm: '2.4rem' },
+                    mb: 1,
+                    mt: 0.5,
+                    fontFamily: 'Instrument Serif, serif',
                   }}
                 >
-                  Complete Profile
-                </Button>
-              ) : hasPitched ? (
-                existingPitch.status === 'approved' ? (
+                  {campaign?.name}
+                </Typography>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontSize: { xs: '0.8rem', sm: '1rem' },
+                    mt: -2,
+                    mb: -1.5,
+                    color: '#636366',
+                    fontWeight: 480,
+                  }}
+                >
+                  {campaign?.company?.name}
+                </Typography>
+              </Stack>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Stack
+                direction={{ xs: 'row', sm: 'row' }}
+                spacing={1}
+                width={{ xs: '100%', sm: 'auto' }}
+                justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                sx={{ mt: { xs: 1.5, sm: 0 } }}
+              >
+                {!isFormCompleted ? (
+                  <Button
+                    variant="contained"
+                    onClick={dialog.onTrue}
+                    sx={{
+                      backgroundColor: '#273eec',
+                      color: 'white',
+                      borderBottom: '5px solid #152382 !important',
+                      border: 'none',
+                      '&:hover': {
+                        backgroundColor: '#f57c00',
+                        borderBottom: '5px solid #b26a00 !important',
+                      },
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      padding: { xs: '4px 12px', sm: '6px 18px' },
+                      minWidth: '100px',
+                      height: '42px',
+                      boxShadow: 'none',
+                      textTransform: 'none',
+                      fontWeight: 650,
+                    }}
+                  >
+                    Complete Profile
+                  </Button>
+                ) : hasPitched ? (
+                  existingPitch.status === 'approved' ? (
+                    <Button
+                      variant="contained"
+                      onClick={() => handleManageClick(campaign.id)}
+                      sx={{
+                        backgroundColor: '#203ff5',
+                        color: 'white',
+                        borderBottom: '4px solid #102387 !important',
+                        border: 'none',
+                        '&:hover': {
+                          backgroundColor: '#1935dd',
+                          borderBottom: '4px solid #102387 !important',
+                        },
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        padding: { xs: '4px 12px', sm: '6px 18px' },
+                        minWidth: '100px',
+                        height: '42px',
+                        boxShadow: 'none',
+                        textTransform: 'none',
+                      }}
+                    >
+                      Manage
+                    </Button>
+                  ) : existingPitch.status === 'rejected' ? (
+                    <Chip
+                      icon={<Iconify icon="mdi:close-circle" />}
+                      label="Rejected"
+                      sx={{
+                        bgcolor: 'error.light',
+                        color: 'error.dark',
+                        fontWeight: 700,
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        height: '42px',
+                        minWidth: '100px',
+                        '& .MuiChip-icon': {
+                          fontSize: 20,
+                          color: 'error.dark',
+                        },
+                        '&:hover': { bgcolor: 'error.light' },
+                        px: 2,
+                      }}
+                    />
+                  ) : (
+                    <Chip
+                      icon={<Iconify icon="mdi:clock" />}
+                      label="In Review"
+                      sx={{
+                        bgcolor: 'background.paper',
+                        color: 'text.primary',
+                        fontWeight: 600,
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        height: '42px',
+                        minWidth: '100px',
+                        border: '1px solid',
+                        borderBottom: '4px solid',
+                        borderColor: 'divider',
+                        '& .MuiChip-icon': {
+                          fontSize: 18,
+                          color: '#f7c945',
+                        },
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
+                        px: 1,
+                      }}
+                    />
+                  )
+                ) : hasDraft ? (
+                  <Button
+                    variant="contained"
+                    onClick={handleDraftClick}
+                    startIcon={<Iconify icon="mdi:file-document-edit-outline" />}
+                    sx={{
+                      bgcolor: '#FFD700',
+                      color: '#8B4513',
+                      '&:hover': {
+                        bgcolor: '#FFC300',
+                      },
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      padding: { xs: '6px 12px', sm: '8px 16px' },
+                      fontWeight: 700,
+                    }}
+                  >
+                    Draft
+                  </Button>
+                ) : isShortlisted ? (
                   <Button
                     variant="contained"
                     onClick={() => handleManageClick(campaign.id)}
@@ -513,141 +640,58 @@ const CampaignModal = ({
                   >
                     Manage
                   </Button>
-                ) : existingPitch.status === 'rejected' ? (
-                  <Chip
-                    icon={<Iconify icon="mdi:close-circle" />}
-                    label="Rejected"
-                    sx={{
-                      bgcolor: 'error.light',
-                      color: 'error.dark',
-                      fontWeight: 700,
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      height: '42px',
-                      minWidth: '100px',
-                      '& .MuiChip-icon': {
-                        fontSize: 20,
-                        color: 'error.dark',
-                      },
-                      '&:hover': { bgcolor: 'error.light' },
-                      px: 2,
-                    }}
-                  />
                 ) : (
-                  <Chip
-                    icon={<Iconify icon="mdi:clock" />}
-                    label="In Review"
+                  <Button
+                    variant="contained"
+                    onClick={handlePitch}
                     sx={{
-                      bgcolor: 'background.paper',
-                      color: 'text.primary',
-                      fontWeight: 600,
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      height: '42px',
-                      minWidth: '100px',
-                      border: '1px solid',
-                      borderBottom: '4px solid',
-                      borderColor: 'divider',
-                      '& .MuiChip-icon': {
-                        fontSize: 18,
-                        color: '#f7c945',
-                      },
+                      backgroundColor: '#203ff5',
+                      color: 'white',
+                      borderBottom: '4px solid #102387 !important',
+                      border: 'none',
                       '&:hover': {
-                        bgcolor: 'action.hover',
+                        backgroundColor: '#1935dd',
+                        borderBottom: '4px solid #102387 !important',
                       },
-                      px: 1,
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      padding: { xs: '4px 12px', sm: '6px 18px' },
+                      minWidth: '100px',
+                      height: '42px',
+                      boxShadow: 'none',
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
                     }}
+                  >
+                    Pitch Now
+                  </Button>
+                )}
+                <Button
+                  variant="outlined"
+                  onClick={handleBookmarkClick}
+                  sx={{
+                    minWidth: 0,
+                    padding: '6px 12px',
+                    border: '1px solid',
+                    borderColor: 'grey.300',
+                    borderBottom: '4px solid #e7e7e7',
+                    borderRadius: 1,
+                    '& .MuiSvgIcon-root': {
+                      fontSize: '1.5rem',
+                    },
+                    width: '42px',
+                    height: '42px',
+                  }}
+                >
+                  <Iconify
+                    icon={bookMark ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
+                    width={28}
+                    height={28}
                   />
-                )
-              ) : hasDraft ? (
-                <Button
-                  variant="contained"
-                  onClick={handleDraftClick}
-                  startIcon={<Iconify icon="mdi:file-document-edit-outline" />}
-                  sx={{
-                    bgcolor: '#FFD700',
-                    color: '#8B4513',
-                    '&:hover': {
-                      bgcolor: '#FFC300',
-                    },
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    padding: { xs: '6px 12px', sm: '8px 16px' },
-                    fontWeight: 700,
-                  }}
-                >
-                  Draft
                 </Button>
-              ) : isShortlisted ? (
-                <Button
-                  variant="contained"
-                  onClick={() => handleManageClick(campaign.id)}
-                  sx={{
-                    backgroundColor: '#203ff5',
-                    color: 'white',
-                    borderBottom: '4px solid #102387 !important',
-                    border: 'none',
-                    '&:hover': {
-                      backgroundColor: '#1935dd',
-                      borderBottom: '4px solid #102387 !important',
-                    },
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    padding: { xs: '4px 12px', sm: '6px 18px' },
-                    minWidth: '100px',
-                    height: '42px',
-                    boxShadow: 'none',
-                    textTransform: 'none',
-                  }}
-                >
-                  Manage
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  onClick={handlePitch}
-                  sx={{
-                    backgroundColor: '#203ff5',
-                    color: 'white',
-                    borderBottom: '4px solid #102387 !important',
-                    border: 'none',
-                    '&:hover': {
-                      backgroundColor: '#1935dd',
-                      borderBottom: '4px solid #102387 !important',
-                    },
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                    padding: { xs: '4px 12px', sm: '6px 18px' },
-                    minWidth: '100px',
-                    height: '42px',
-                    boxShadow: 'none',
-                    textTransform: 'none',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Pitch Now
-                </Button>
-              )}
-              <Button
-                variant="outlined"
-                onClick={handleBookmarkClick}
-                sx={{
-                  minWidth: 0,
-                  padding: '6px 12px',
-                  border: '1px solid',
-                  borderColor: 'grey.300',
-                  borderBottom: '4px solid #e7e7e7',
-                  borderRadius: 1,
-                  '& .MuiSvgIcon-root': {
-                    fontSize: '1.5rem',
-                  },
-                  width: '42px',
-                  height: '42px',
-                }}
-              >
-                <Iconify
-                  icon={bookMark ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
-                  width={28}
-                  height={28}
-                />
-              </Button>
-            </Stack>
-          </Stack>
+              </Stack>
+            </Grid>
+          </Grid>
+          {/* </Stack> */}
 
           {/* Add Divider here */}
           <Divider sx={{ my: 2, mb: 3, mt: 4 }} />

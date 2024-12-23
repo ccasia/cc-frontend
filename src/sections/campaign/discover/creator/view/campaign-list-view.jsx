@@ -4,7 +4,6 @@ import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import Backdrop from '@mui/material/Backdrop';
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -71,7 +70,7 @@ export default function CampaignListView() {
   );
 
   const { user } = useAuthContext();
-  const dialog = useBoolean();
+  const dialog = useBoolean(!user?.creator?.isFormCompleted);
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
 
   const load = useBoolean();
@@ -796,7 +795,7 @@ export default function CampaignListView() {
 
       {upload.length > 0 && renderUploadProgress}
 
-      <Backdrop open={backdrop.value} sx={{ zIndex: theme.zIndex.drawer + 1,  }}>
+      {/* <Dialog open={backdrop.value} sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Box
           sx={{
             padding: '20px',
@@ -805,7 +804,7 @@ export default function CampaignListView() {
             background: '#f4f4f4',
             boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.15)',
             borderRadius: '20px',
-            overflow: 'auto'
+            overflow: 'auto',
           }}
         >
           <IconButton
@@ -824,24 +823,23 @@ export default function CampaignListView() {
           </IconButton>
 
           <Stack spacing={0}>
-            <Typography 
-            variant="body1" 
-            sx={{
-              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-              flexGrow: 1,
-              fontWeight: 'normal',
-              fontSize: '32px',
-            }}
+            <Typography
+              variant="body1"
+              sx={{
+                fontFamily: theme.typography.fontSecondaryFamily,
+                flexGrow: 1,
+                fontWeight: 'normal',
+                fontSize: '32px',
+              }}
             >
-            💰 Fill in your payment details
+              💰 Fill in your payment details
             </Typography>
 
             <Divider sx={{ my: 2, mb: 0 }} />
-
-            <CreatorForm dialog={dialog} user={user} display backdrop={backdrop} />
           </Stack>
         </Box>
-      </Backdrop>
+      </Dialog> */}
+      <CreatorForm dialog={dialog} user={user} backdrop={backdrop} />
 
       {showScrollTop && (
         <Fab

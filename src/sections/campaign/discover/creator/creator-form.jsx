@@ -7,12 +7,7 @@ import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import {
-  Box,
-  Stack,
-  Dialog,
-  FormLabel,
-} from '@mui/material';
+import { Box, Stack, Dialog, Divider, FormLabel, Typography, IconButton } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -20,8 +15,26 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { banks } from 'src/contants/bank';
 
+import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+
+// eslint-disable-next-line react/prop-types
+const FormField = ({ label, children }) => (
+  <Stack spacing={1}>
+    <FormLabel
+      sx={{
+        fontWeight: 600,
+        fontSize: '12px',
+        color: '#636366',
+      }}
+    >
+      {label}
+      <span style={{ color: 'red' }}> *</span>
+    </FormLabel>
+    {children}
+  </Stack>
+);
 
 const CreatorForm = ({ dialog, user, display, backdrop }) => {
   const schema = yup.object().shape({
@@ -31,22 +44,6 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
     accountName: yup.string().required('Account Name is required'),
     accountNumber: yup.string().required('Account Number is required'),
   });
-
-  const FormField = ({ label, children }) => (
-    <Stack spacing={1}>
-      <FormLabel  
-        sx={{ 
-          fontWeight: 600,
-          fontSize: '12px',
-          color: '#636366',
-        }}
-      >
-        {label}
-        <span style={{ color: 'red' }}> *</span>
-      </FormLabel>
-      {children}
-    </Stack>
-  );
 
   const loading = useBoolean();
 
@@ -61,7 +58,10 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
     },
   });
 
-  const { handleSubmit, formState: { isValid } } = methods;
+  const {
+    handleSubmit,
+    formState: { isValid },
+  } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -84,50 +84,50 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
   });
 
   return display ? (
-    <FormProvider methods={methods} onSubmit={onSubmit}  >
+    <FormProvider methods={methods} onSubmit={onSubmit}>
       <Box
         display="grid"
-        gridTemplateColumns={{ 
-          xs: 'repeat(1, 1fr)', 
-          sm: 'repeat(1, 1fr)' 
+        gridTemplateColumns={{
+          xs: 'repeat(1, 1fr)',
+          sm: 'repeat(1, 1fr)',
         }}
         gap={2}
-        mt={2} 
+        mt={2}
       >
         <FormField label="Full Name">
-          <RHFTextField 
-            name="fullName" 
+          <RHFTextField
+            name="fullName"
             placeholder="Full name"
             sx={{
               '& .MuiInputBase-input': {
                 padding: '12px',
                 background: '#FFFFFF',
                 border: '1px solid #EBEBEB',
-                borderRadius: '8px'
+                borderRadius: '8px',
               },
             }}
           />
         </FormField>
 
         <FormField label="NRIC No.">
-          <RHFTextField 
-            name="icNumber" 
-            placeholder="NRIC No." 
+          <RHFTextField
+            name="icNumber"
+            placeholder="NRIC No."
             sx={{
               '& .MuiInputBase-input': {
                 padding: '12px',
                 background: '#FFFFFF',
                 border: '1px solid #EBEBEB',
-                borderRadius: '8px'
+                borderRadius: '8px',
               },
             }}
-          /> 
+          />
         </FormField>
 
         <FormField label="Bank Selection">
           <RHFAutocomplete
-           selectOnFocus
-           clearOnBlur
+            selectOnFocus
+            clearOnBlur
             label="Select Bank"
             name="bankName"
             options={banks.map((item) => item.bank)}
@@ -136,16 +136,15 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
               '& .MuiInputBase-root': {
                 background: '#FFFFFF',
                 border: '1px solid #EBEBEB',
-                borderRadius: '8px'
+                borderRadius: '8px',
               },
               '& .MuiOutlinedInput-root .MuiAutocomplete-input': {
                 padding: '5px 4px 5px 4px',
-                
               },
               '& .MuiLoadingButton-root.Mui-disabled': {
-                backgroundColor: '#B0BEC5', 
-                color: '#FFFFFF', 
-                opacity: 1, 
+                backgroundColor: '#B0BEC5',
+                color: '#FFFFFF',
+                opacity: 1,
                 cursor: 'not-allowed',
               },
             }}
@@ -153,33 +152,33 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
         </FormField>
 
         <FormField label="Account Name">
-          <RHFTextField 
-            name="accountName" 
-            placeholder="Your Name / Sdn Bhd" 
+          <RHFTextField
+            name="accountName"
+            placeholder="Your Name / Sdn Bhd"
             sx={{
               '& .MuiInputBase-input': {
                 padding: '12px',
                 background: '#FFFFFF',
                 border: '1px solid #EBEBEB',
-                borderRadius: '8px'
+                borderRadius: '8px',
               },
             }}
           />
-        </FormField> 
-        
+        </FormField>
+
         <FormField label="Account No.">
-          <RHFTextField 
-          name="accountNumber" 
-          placeholder="Account No." 
-          sx={{
-            '& .MuiInputBase-input': {
-              padding: '12px',
-              background: '#FFFFFF',
-              border: '1px solid #EBEBEB',
-              borderRadius: '8px'
-            },
-          }}
-        />
+          <RHFTextField
+            name="accountNumber"
+            placeholder="Account No."
+            sx={{
+              '& .MuiInputBase-input': {
+                padding: '12px',
+                background: '#FFFFFF',
+                border: '1px solid #EBEBEB',
+                borderRadius: '8px',
+              },
+            }}
+          />
         </FormField>
       </Box>
 
@@ -205,7 +204,8 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
             '&.MuiLoadingButton-root.Mui-disabled': {
               backgroundColor: '#B0BEC5',
               color: '#FFFFFF',
-              background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), #3A3A3C',
+              background:
+                'linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), #3A3A3C',
               boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)',
             },
           }}
@@ -216,136 +216,178 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
     </FormProvider>
   ) : (
     <Dialog open={dialog.value} onClose={dialog.onFalse} maxWidth="sm" fullWidth>
-      <FormProvider methods={methods} onSubmit={onSubmit}  >
       <Box
-        display="grid"
-        gridTemplateColumns={{ 
-          xs: 'repeat(1, 1fr)', 
-          sm: 'repeat(1, 1fr)' 
+        sx={{
+          padding: '20px',
+          width: 1,
+          height: '638px',
+          background: '#f4f4f4',
+          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.15)',
+          borderRadius: '20px',
+          overflow: 'auto',
         }}
-        gap={2}
-        mt={2} 
       >
-        <FormField label="Full Name">
-          <RHFTextField 
-            name="fullName" 
-            placeholder="Full name"
-            sx={{
-              '& .MuiInputBase-input': {
-                padding: '12px',
-                background: '#FFFFFF',
-                border: '1px solid #EBEBEB',
-                borderRadius: '8px'
-              },
-            }}
-          />
-        </FormField>
-
-        <FormField label="NRIC No.">
-          <RHFTextField 
-            name="icNumber" 
-            placeholder="NRIC No." 
-            sx={{
-              '& .MuiInputBase-input': {
-                padding: '12px',
-                background: '#FFFFFF',
-                border: '1px solid #EBEBEB',
-                borderRadius: '8px'
-              },
-            }}
-          /> 
-        </FormField>
-
-        <FormField label="Bank Selection">
-          <RHFAutocomplete
-           selectOnFocus
-           clearOnBlur
-            label="Select Bank"
-            name="bankName"
-            options={banks.map((item) => item.bank)}
-            getOptionLabel={(option) => option}
-            sx={{
-              '& .MuiInputBase-root': {
-                background: '#FFFFFF',
-                border: '1px solid #EBEBEB',
-                borderRadius: '8px'
-              },
-              '& .MuiOutlinedInput-root .MuiAutocomplete-input': {
-                padding: '5px 4px 5px 4px',
-                
-              },
-              '& .MuiLoadingButton-root.Mui-disabled': {
-                backgroundColor: '#B0BEC5', 
-                color: '#FFFFFF', 
-                opacity: 1, 
-                cursor: 'not-allowed',
-              },
-            }}
-          />
-        </FormField>
-
-        <FormField label="Account Name">
-          <RHFTextField 
-            name="accountName" 
-            placeholder="Your Name / Sdn Bhd" 
-            sx={{
-              '& .MuiInputBase-input': {
-                padding: '12px',
-                background: '#FFFFFF',
-                border: '1px solid #EBEBEB',
-                borderRadius: '8px'
-              },
-            }}
-          />
-        </FormField> 
-        
-        <FormField label="Account No.">
-          <RHFTextField 
-          name="accountNumber" 
-          placeholder="Account No." 
+        <IconButton
+          onClick={dialog.onFalse}
           sx={{
-            '& .MuiInputBase-input': {
-              padding: '12px',
-              background: '#FFFFFF',
-              border: '1px solid #EBEBEB',
-              borderRadius: '8px'
-            },
-          }}
-        />
-        </FormField>
-      </Box>
-
-      <Stack direction="row" alignItems="center" justifyContent="end" spacing={2} mt={3}>
-        <LoadingButton
-          size="medium"
-          variant="contained"
-          type="submit"
-          loading={loading.value}
-          disabled={!isValid}
-          sx={{
-            width: '126px',
-            height: '44px',
-            background: '#3A3A3C',
-            boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
-            borderRadius: '8px',
-            fontWeight: 'normal',
-            fontSize: '16px',
-            color: '#FFFFFF',
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            color: 'text.secondary',
             '&:hover': {
-              bgcolor: 'primary.dark',
-            },
-            '&.MuiLoadingButton-root.Mui-disabled': {
-              backgroundColor: '#B0BEC5',
-              color: '#FFFFFF',
-              background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), #3A3A3C',
-              boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)',
+              bgcolor: 'rgba(0, 0, 0, 0.04)',
             },
           }}
         >
-          Save Details
-        </LoadingButton>
-      </Stack>
-    </FormProvider>
+          <Iconify icon="mingcute:close-fill" width={24} />
+        </IconButton>
+
+        <Stack spacing={0}>
+          <Typography
+            variant="body1"
+            sx={{
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              flexGrow: 1,
+              fontWeight: 'normal',
+              fontSize: '32px',
+            }}
+          >
+            💰 Fill in your payment details
+          </Typography>
+
+          <Divider sx={{ my: 2, mb: 0 }} />
+          <FormProvider methods={methods} onSubmit={onSubmit}>
+            <Box
+              display="grid"
+              gridTemplateColumns={{
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(1, 1fr)',
+              }}
+              gap={2}
+              mt={2}
+            >
+              <FormField label="Full Name">
+                <RHFTextField
+                  name="fullName"
+                  placeholder="Full name"
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      padding: '12px',
+                      background: '#FFFFFF',
+                      border: '1px solid #EBEBEB',
+                      borderRadius: '8px',
+                    },
+                  }}
+                />
+              </FormField>
+
+              <FormField label="NRIC No.">
+                <RHFTextField
+                  name="icNumber"
+                  placeholder="NRIC No."
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      padding: '12px',
+                      background: '#FFFFFF',
+                      border: '1px solid #EBEBEB',
+                      borderRadius: '8px',
+                    },
+                  }}
+                />
+              </FormField>
+
+              <FormField label="Bank Selection">
+                <RHFAutocomplete
+                  selectOnFocus
+                  clearOnBlur
+                  label="Select Bank"
+                  name="bankName"
+                  options={banks.map((item) => item.bank)}
+                  getOptionLabel={(option) => option}
+                  sx={{
+                    '& .MuiInputBase-root': {
+                      background: '#FFFFFF',
+                      border: '1px solid #EBEBEB',
+                      borderRadius: '8px',
+                    },
+                    '& .MuiOutlinedInput-root .MuiAutocomplete-input': {
+                      padding: '5px 4px 5px 4px',
+                    },
+                    '& .MuiLoadingButton-root.Mui-disabled': {
+                      backgroundColor: '#B0BEC5',
+                      color: '#FFFFFF',
+                      opacity: 1,
+                      cursor: 'not-allowed',
+                    },
+                  }}
+                />
+              </FormField>
+
+              <FormField label="Account Name">
+                <RHFTextField
+                  name="accountName"
+                  placeholder="Your Name / Sdn Bhd"
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      padding: '12px',
+                      background: '#FFFFFF',
+                      border: '1px solid #EBEBEB',
+                      borderRadius: '8px',
+                    },
+                  }}
+                />
+              </FormField>
+
+              <FormField label="Account No.">
+                <RHFTextField
+                  name="accountNumber"
+                  placeholder="Account No."
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      padding: '12px',
+                      background: '#FFFFFF',
+                      border: '1px solid #EBEBEB',
+                      borderRadius: '8px',
+                    },
+                  }}
+                />
+              </FormField>
+            </Box>
+
+            <Stack direction="row" alignItems="center" justifyContent="end" spacing={2} mt={3}>
+              <LoadingButton
+                size="medium"
+                variant="contained"
+                type="submit"
+                loading={loading.value}
+                disabled={!isValid}
+                sx={{
+                  width: '126px',
+                  height: '44px',
+                  background: '#3A3A3C',
+                  boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
+                  borderRadius: '8px',
+                  fontWeight: 'normal',
+                  fontSize: '16px',
+                  color: '#FFFFFF',
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
+                  '&.MuiLoadingButton-root.Mui-disabled': {
+                    backgroundColor: '#B0BEC5',
+                    color: '#FFFFFF',
+                    background:
+                      'linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), #3A3A3C',
+                    boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.1)',
+                  },
+                }}
+              >
+                Save Details
+              </LoadingButton>
+            </Stack>
+          </FormProvider>
+        </Stack>
+      </Box>
     </Dialog>
   );
 };
