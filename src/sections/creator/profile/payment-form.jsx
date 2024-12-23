@@ -20,8 +20,6 @@ const PaymentFormProfile = ({ user }) => {
       bankName: null || { bank: paymentForm?.bankName },
       bankNumber: paymentForm?.bankAccountNumber || '',
       bankAccName: paymentForm?.bankAccountName || '',
-      // bodyMeasurement: paymentForm?.bodyMeasurement || '',
-      // allergies: paymentForm?.allergies?.map((allergy) => ({ name: allergy })) || [{ name: '' }],
       icPassportNumber: paymentForm?.icNumber || '',
     },
   });
@@ -62,28 +60,6 @@ const PaymentFormProfile = ({ user }) => {
           <RHFTextField name="bankNumber" type="number" label="Bank Account Number" />
           <RHFTextField name="bankAccName" label="Bank Account Name" />
           <RHFTextField name="icPassportNumber" label="IC / Passport Number" />
-        
-          {/* <RHFTextField
-            name="bodyMeasurement"
-            type="number"
-            label="Body Measurement"
-            InputProps={{
-              endAdornment: <InputAdornment position="start">cm</InputAdornment>,
-            }}
-          /> */}
-          {/* <Stack spacing={1}>
-            {fields.map((item, index) => (
-              <Stack key={item.id} direction="row" spacing={1} alignItems="center">
-                <RHFTextField name={`allergies[${index}].name`} label={`Allergy ${index + 1}`} />
-                <IconButton onClick={() => remove(index)}>
-                  <Iconify icon="material-symbols:remove" />
-                </IconButton>
-              </Stack>
-            ))}
-            <Button size="small" variant="contained" onClick={() => insert({ name: '' })}>
-              Add more allergy
-            </Button>
-          </Stack> */}
         </Box>
         <Box sx={{ textAlign: 'end', mt: 2 }}>
           <LoadingButton
