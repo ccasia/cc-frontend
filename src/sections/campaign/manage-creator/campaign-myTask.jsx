@@ -67,7 +67,10 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const getDueDate = (name) =>
     submissions?.find((submission) => submission?.submissionType?.type === name)?.dueDate;
 
-  const value = (name) => submissions?.find((item) => item.submissionType.type === name);
+  const value = useCallback(
+    (name) => submissions?.find((item) => item.submissionType.type === name),
+    [submissions]
+  );
 
   const timeline = campaign?.campaignTimeline;
 
@@ -99,7 +102,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     };
   }, [campaign, submissionMutate, socket]);
 
-  const getVisibleStages = () => {
+  const getVisibleStages = useCallback(() => {
     let stages = [];
     const agreementSubmission = value('AGREEMENT_FORM');
     const firstDraftSubmission = value('FIRST_DRAFT');
@@ -136,7 +139,46 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       ...stage,
       stage: stages.length - index, // This makes the bottom item Stage 01
     }));
-  };
+  }, [value]);
+
+  // const getVisibleStages = () => {
+  //   let stages = [];
+  //   const agreementSubmission = value('AGREEMENT_FORM');
+  //   const firstDraftSubmission = value('FIRST_DRAFT');
+  //   const finalDraftSubmission = value('FINAL_DRAFT');
+  //   const postingSubmission = value('POSTING');
+
+  //   // Always show Agreement stage (will be last and always Stage 01)
+  //   stages.unshift({ ...defaultSubmission[0] });
+
+  //   // Show First Draft if Agreement is approved
+  //   if (agreementSubmission?.status === 'APPROVED') {
+  //     stages.unshift({ ...defaultSubmission[1] });
+  //   }
+
+  //   // Show Final Draft if First Draft is in CHANGES_REQUIRED status
+  //   if (firstDraftSubmission?.status === 'CHANGES_REQUIRED') {
+  //     stages.unshift({ ...defaultSubmission[2] });
+  //   }
+
+  //   // Show Posting if either First Draft or Final Draft is approved
+  //   if (
+  //     firstDraftSubmission?.status === 'APPROVED' ||
+  //     finalDraftSubmission?.status === 'APPROVED'
+  //   ) {
+  //     stages.unshift({ ...defaultSubmission[3] });
+  //   }
+
+  //   if (!postingSubmission) {
+  //     stages = stages.filter((stage) => stage.value !== 'Posting');
+  //   }
+
+  //   // Add sequential stage numbers starting from the bottom
+  //   return stages.map((stage, index) => ({
+  //     ...stage,
+  //     stage: stages.length - index, // This makes the bottom item Stage 01
+  //   }));
+  // };
 
   const handleStageClick = (stageType) => {
     setSelectedStage(stageType);

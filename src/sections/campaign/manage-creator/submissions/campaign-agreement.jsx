@@ -98,6 +98,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
   const onDocumentLoadError = (error) => {
     setPdfError(true);
+    enqueueSnackbar('Error to load PDF', { variant: 'error' });
     console.error('Error loading PDF:', error);
   };
 
@@ -157,8 +158,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         submissionId: submission?.id,
       })
     );
-
-    console.log(formData);
 
     try {
       setLoading(true);
