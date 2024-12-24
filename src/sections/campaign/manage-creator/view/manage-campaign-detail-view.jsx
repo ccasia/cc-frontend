@@ -39,10 +39,10 @@ const ManageCampaignDetailView = ({ id }) => {
 
   // Run check when data or user changes
   useEffect(() => {
-    if (data) {
+    if (!isLoading && data) {
       checkIfUserIsShortlisted();
     }
-  }, [checkIfUserIsShortlisted, data]);
+  }, [checkIfUserIsShortlisted, data, isLoading]);
 
   const calculateDaysLeft = (endDate) => {
     if (!endDate) return 'No end date';
