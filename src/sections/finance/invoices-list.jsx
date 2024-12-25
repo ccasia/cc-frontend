@@ -66,11 +66,6 @@ const InvoiceLists = ({ invoices }) => {
     filters,
   });
 
-  const dataInPage = dataFiltered?.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
-
   const canReset = !isEqual(defaultFilters, filters);
 
   const notFound = (!dataFiltered?.length && canReset) || !dataFiltered?.length;

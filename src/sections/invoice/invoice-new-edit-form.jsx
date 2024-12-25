@@ -33,9 +33,8 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const { isLoading, invoice, mutate } = useGetInvoiceById(id);
 
   const { enqueueSnackbar } = useSnackbar();
-  const [open, setOpen] = useState(false);
+
   const [contact, setContact] = useState({});
-  // const [newContact, setNewContact] = useState(false);
 
   const loadingSend = useBoolean();
 
