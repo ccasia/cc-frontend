@@ -211,8 +211,6 @@ export default function InvoiceListView({ campId, invoices }) {
     [handleFilters]
   );
 
-  console.log('tableData', tableData);
-
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -220,60 +218,7 @@ export default function InvoiceListView({ campId, invoices }) {
           sx={{
             mb: { xs: 3, md: 5 },
           }}
-        >
-          {/* <Scrollbar>
-            <Stack
-              direction="row"
-              divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
-              sx={{ py: 2 }}
-            >
-              <InvoiceAnalytic
-                title="Total"
-                total={tableData.length}
-                percent={100}
-                price={sumBy(tableData, 'totalAmount')}
-                icon="solar:bill-list-bold-duotone"
-                color={theme.palette.info.main}
-              />
-
-              <InvoiceAnalytic
-                title="Paid"
-                total={getInvoiceLength('paid')}
-                percent={getPercentByStatus('paid')}
-                price={getTotalAmount('paid')}
-                icon="solar:file-check-bold-duotone"
-                color={theme.palette.success.main}
-              />
-
-              <InvoiceAnalytic
-                title="Pending"
-                total={getInvoiceLength('pending')}
-                percent={getPercentByStatus('pending')}
-                price={getTotalAmount('pending')}
-                icon="solar:sort-by-time-bold-duotone"
-                color={theme.palette.warning.main}
-              />
-
-              <InvoiceAnalytic
-                title="Overdue"
-                total={getInvoiceLength('overdue')}
-                percent={getPercentByStatus('overdue')}
-                price={getTotalAmount('overdue')}
-                icon="solar:bell-bing-bold-duotone"
-                color={theme.palette.error.main}
-              />
-
-              <InvoiceAnalytic
-                title="Draft"
-                total={getInvoiceLength('draft')}
-                percent={getPercentByStatus('draft')}
-                price={getTotalAmount('draft')}
-                icon="solar:file-corrupted-bold-duotone"
-                color={theme.palette.text.secondary}
-              />
-            </Stack>
-          </Scrollbar> */}
-        </Card>
+        />
 
         <Card>
           <Tabs
