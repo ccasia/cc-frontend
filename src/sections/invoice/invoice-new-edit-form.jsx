@@ -1,6 +1,7 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { pdf } from '@react-pdf/renderer';
 import { useMemo, useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -19,10 +20,12 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { banks } from 'src/contants/bank';
 
+import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 
+import InvoicePDF from '../creator/invoice/invoice-pdf';
 import InvoiceNewEditDetails from './invoice-new-edit-details';
 import InvoiceNewEditAddress from './invoice-new-edit-address';
 import InvoiceNewEditStatusDate from './invoice-new-edit-status-date';
@@ -34,7 +37,7 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
   const { enqueueSnackbar } = useSnackbar();
 
-  const [contact, setContact] = useState({});
+  // const [contact, setContact] = useState({});
 
   const loadingSend = useBoolean();
 
@@ -173,9 +176,9 @@ export default function InvoiceNewEditForm({ id, creators }) {
       await axiosInstance.patch(endpoints.invoice.updateInvoice, {
         ...data,
         invoiceId: id,
-        contactId: contact,
         newContact,
       });
+
       reset();
       mutate();
       loadingSend.onFalse();
@@ -235,6 +238,22 @@ export default function InvoiceNewEditForm({ id, creators }) {
     </Box>
   );
 
+  const handleDownload = async () => {
+    try {
+      const blob = await pdf(<InvoicePDF data={invoice} />).toBlob();
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `${invoice?.invoiceNumber}.pdf`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   if (loading)
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
@@ -243,34 +262,44 @@ export default function InvoiceNewEditForm({ id, creators }) {
     );
 
   return (
-    <FormProvider methods={methods}>
-      <Card sx={{ p: 1 }}>
-        <InvoiceNewEditAddress creators={creatorList} />
+    <Stack alignItems="end" spacing={1}>
+      <Box sx={{ mb: 2, textAlign: 'end' }}>
+        <LoadingButton
+          variant="outlined"
+          startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
+          onClick={handleDownload}
+        >
+          Download Invoice
+        </LoadingButton>
+      </Box>
+      <FormProvider methods={methods}>
+        <Card sx={{ p: 1 }}>
+          <InvoiceNewEditAddress creators={creatorList} />
 
-        <InvoiceNewEditStatusDate />
+          <InvoiceNewEditStatusDate />
 
-        {bankAccount}
+          {bankAccount}
 
-        <InvoiceNewEditDetails />
+          <InvoiceNewEditDetails />
 
-        {invoice?.status !== 'approved' && (
-          <Stack justifyContent="flex-end" direction="row" spacing={2} sx={{ mt: 3 }}>
-            <LoadingButton
-              size="large"
-              variant="outlined"
-              loading={loadingSend.value && isSubmitting}
-              onClick={handleCreateAndSend}
-              sx={{
-                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-              }}
-            >
-              {invoice ? 'Update' : 'Create'} & Send
-            </LoadingButton>
-          </Stack>
-        )}
-      </Card>
+          {invoice?.status !== 'approved' && (
+            <Stack justifyContent="flex-end" direction="row" spacing={2} sx={{ mt: 3 }}>
+              <LoadingButton
+                size="large"
+                variant="outlined"
+                loading={loadingSend.value && isSubmitting}
+                onClick={handleCreateAndSend}
+                sx={{
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                }}
+              >
+                {invoice ? 'Update' : 'Create'} & Send
+              </LoadingButton>
+            </Stack>
+          )}
+        </Card>
 
-      {/* <XeroDialoge
+        {/* <XeroDialoge
         open={open}
         onClose={() => {
           setOpen(false);
@@ -278,7 +307,8 @@ export default function InvoiceNewEditForm({ id, creators }) {
         setContact={setContact}
         setNewContact={setNewContact}
       /> */}
-    </FormProvider>
+      </FormProvider>
+    </Stack>
   );
 }
 

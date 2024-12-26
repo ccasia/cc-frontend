@@ -120,6 +120,7 @@ const InvoiceLists = ({ invoices }) => {
     editDialog.onFalse();
   }, [editDialog]);
 
+
   return (
     <Box>
       <Card>
