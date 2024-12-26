@@ -3,9 +3,7 @@ import { useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Slider from '@mui/material/Slider';
 import Popover from '@mui/material/Popover';
-import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
@@ -108,7 +106,7 @@ export default function CreatorTableToolbar({
             Filters
           </Typography>
 
-          <Typography gutterBottom>Age Range</Typography>
+          {/* <Typography gutterBottom>Age Range</Typography>
           <Slider
             value={ageRange}
             onChange={handleAgeRangeChange}
@@ -116,7 +114,7 @@ export default function CreatorTableToolbar({
             min={18}
             max={100}
           />
-          <Divider sx={{ my: 2 }} />
+          <Divider sx={{ my: 2 }} /> */}
           <Typography gutterBottom>Gender</Typography>
           <FormControl fullWidth>
             <InputLabel id="gender">Gender</InputLabel>

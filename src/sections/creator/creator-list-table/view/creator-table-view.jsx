@@ -22,7 +22,6 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCreators from 'src/hooks/use-get-creators';
 
-import { calculateAge } from 'src/utils/formatTime';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { USER_STATUS_OPTIONS } from 'src/_mock';
@@ -155,7 +154,7 @@ function CreatorTableView() {
 
   const handleResetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setAgeRange([18, 100]);
+    setAgeRange([0, 100]);
   }, []);
 
   const handleFilterStatus = useCallback(
@@ -436,10 +435,10 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
   }
 
   // Filter by age range
-  inputData = inputData?.filter((user) => {
-    const age = calculateAge(user.creator.birthDate);
-    return age >= ageRange[0] && age <= ageRange[1];
-  });
+  // inputData = inputData?.filter((user) => {
+  //   const age = calculateAge(user.creator.birthDate);
+  //   return age >= ageRange[0] && age <= ageRange[1];
+  // });
 
   return inputData;
 }
