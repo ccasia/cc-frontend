@@ -326,15 +326,6 @@ function CreatorTableView() {
                     )
                   }
                 />
-                {/* {isLoading && (
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                    }}
-                  >
-                    <LinearProgress />
-                  </Box>
-                )} */}
 
                 <TableBody>
                   {isLoading ? (

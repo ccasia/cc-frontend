@@ -44,7 +44,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
 
   return (
     <>
-      <TableRow hover selected={selected}>
+      <TableRow hover selected={selected} key={row.id}>
         <TableCell padding="checkbox">
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell>
