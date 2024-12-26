@@ -20,6 +20,7 @@ const ThirdStep = ({ item }) => {
       event.target.value,
       countries.find((country) => country.label === nationality).code
     ); // Replace 'MY' with your country code
+
     onChange(formattedNumber);
   };
 

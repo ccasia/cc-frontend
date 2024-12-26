@@ -13,6 +13,8 @@ import { LoadingButton } from '@mui/lab';
 import Dialog from '@mui/material/Dialog';
 import { Stack, Avatar, Button, InputAdornment, LinearProgress } from '@mui/material';
 
+import { useRouter } from 'src/routes/hooks';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Image from 'src/components/image';
@@ -95,6 +97,7 @@ export default function CreatorForm({ creator, open, onClose }) {
   const [ratingIndustries, setRatingIndustries] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const theme = useTheme();
+  const router = useRouter();
 
   const resolver = yupResolver(stepSchemas[activeStep > 0 && activeStep]);
 
