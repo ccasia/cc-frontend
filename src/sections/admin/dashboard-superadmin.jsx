@@ -25,6 +25,7 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { fNumber } from 'src/utils/format-number';
 
+import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Label from 'src/components/label';
@@ -37,6 +38,7 @@ const DashboardSuperadmin = () => {
   const { data: creators, isLoading: creatorLoading } = useGetCreators();
   const { socket } = useSocketContext();
   const [onlineUsers, setOnlineUsers] = useState(null);
+  const { user } = useAuthContext();
 
   const theme = useTheme();
   const setting = useSettingsContext();
@@ -171,9 +173,11 @@ const DashboardSuperadmin = () => {
 
   return loadingDone ? (
     <Grid container spacing={3}>
-      <Grid item xs={12} justifyItems="end">
-        <Label>Online Users: {onlineUsers || 0}</Label>
-      </Grid>
+      {user?.role === 'superadmin' && (
+        <Grid item xs={12} justifyItems="end">
+          <Label>Online Users: {onlineUsers || 0}</Label>
+        </Grid>
+      )}
       <Grid item xs={12} md={3}>
         <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
           <Stack gap={1}>
