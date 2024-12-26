@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import React from 'react';
 import { useTheme } from '@emotion/react';
+import React, { useState, useEffect } from 'react';
 
 import { grey } from '@mui/material/colors';
 import {
@@ -25,6 +25,8 @@ import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
 import { fNumber } from 'src/utils/format-number';
 
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 import Label from 'src/components/label';
 import Chart from 'src/components/chart';
 import { useSettingsContext } from 'src/components/settings';
@@ -33,6 +35,8 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 const DashboardSuperadmin = () => {
   const { campaigns, isLoading } = useGetCampaigns();
   const { data: creators, isLoading: creatorLoading } = useGetCreators();
+  const { socket } = useSocketContext();
+  const [onlineUsers, setOnlineUsers] = useState(null);
 
   const theme = useTheme();
   const setting = useSettingsContext();
@@ -153,8 +157,23 @@ const DashboardSuperadmin = () => {
     </TableContainer>
   );
 
+  useEffect(() => {
+    socket?.emit('online-user');
+
+    socket?.on('onlineUsers', (data) => {
+      setOnlineUsers(data.onlineUsers);
+    });
+
+    return () => {
+      socket?.off('onlineUsers');
+    };
+  }, [socket]);
+
   return loadingDone ? (
     <Grid container spacing={3}>
+      <Grid item xs={12} justifyItems="end">
+        <Label>Online Users: {onlineUsers || 0}</Label>
+      </Grid>
       <Grid item xs={12} md={3}>
         <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
           <Stack gap={1}>
@@ -267,65 +286,6 @@ const DashboardSuperadmin = () => {
           </Stack>
         </Box>
       </Grid>
-      {/* <Grid item xs={12} md={6}>
-        <Box
-          component={Card}
-          p={2}
-          sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
-        >
-          <Stack spacing={1}>
-            <Typography variant="subtitle2">Tasks</Typography>
-            {taskLists?.length ? (
-              <>
-                <TableContainer component={Paper}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Task</TableCell>
-                        <TableCell>Campaign</TableCell>
-                        <TableCell>Due</TableCell>
-                        <TableCell>Status</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {taskLists.length > 0 &&
-                        taskLists?.slice(0, 4).map((item, index) => (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <Typography variant="subtitle2">{item.campaignTask}</Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="subtitle2">{item.campaignName}</Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="caption" color="text.secondary">
-                                {dayjs(item.dueDate).format('ddd LL')}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Label>{item.status}</Label>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                <Box
-                  sx={{
-                    ml: 'auto',
-                  }}
-                >
-                  <Button size="small" endIcon={<Iconify icon="iconamoon:arrow-right-2-bold" />}>
-                    View all
-                  </Button>
-                </Box>
-              </>
-            ) : (
-              <EmptyContent title="No task" />
-            )}
-          </Stack>
-        </Box>
-      </Grid> */}
     </Grid>
   ) : (
     <Box
