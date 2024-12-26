@@ -9,6 +9,7 @@ export const SocketContext = createContext();
 const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState();
   const [online, setOnline] = useState();
+  const [onlineUsers, setOnlineUsers] = useState(null);
   const { user } = useAuthContext();
 
   useEffect(() => {
@@ -35,6 +36,7 @@ const SocketProvider = ({ children }) => {
 
       if (user?.id) {
         socketConnection.emit('register', user.id);
+        socketConnection.emit('online-user');
       }
     });
 
@@ -47,6 +49,7 @@ const SocketProvider = ({ children }) => {
 
     socketConnection.on('disconnect', (reason) => {
       console.log('Disconnected:', reason);
+      socketConnection.emit('online-user');
       setOnline(false);
     });
 
