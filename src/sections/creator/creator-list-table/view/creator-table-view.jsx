@@ -56,12 +56,13 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
   { id: 'pronounce', label: 'Pronounce', width: 100 },
-  { id: 'tiktok', label: 'Tiktok', width: 120 },
-  { id: 'instagram', label: 'Instagram', width: 150 },
+  // { id: 'tiktok', label: 'Tiktok', width: 120 },
+  // { id: 'instagram', label: 'Instagram', width: 150 },
   { id: 'country', label: 'Country', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
   { id: 'mediaKit', label: 'Media Kit', width: 180 },
-  { id: '', label: 'Operation', width: 88 },
+  { id: 'paymentFormStatus', label: 'Payment Form Status', width: 180 },
+  { id: '', label: '', width: 88 },
 ];
 
 const defaultFilters = {
