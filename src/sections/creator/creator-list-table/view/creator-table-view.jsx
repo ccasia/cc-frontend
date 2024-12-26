@@ -68,7 +68,7 @@ const TABLE_HEAD = [
 const defaultFilters = {
   name: '',
   status: 'all',
-  ageRange: [18, 100],
+  ageRange: [0, 100],
   pronounce: [],
 };
 
@@ -261,7 +261,9 @@ function CreatorTableView() {
                       'suspended',
                       'spam',
                     ].includes(tab.value)
-                      ? tableData?.filter((user) => user.status === tab.value).length
+                      ? tableData?.filter(
+                          (user) => user.status.toLowerCase() === tab.value.toLowerCase()
+                        ).length
                       : tableData?.length}
                   </Label>
                 }
@@ -426,7 +428,7 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
   }
 
   if (status !== 'all') {
-    inputData = inputData?.filter((user) => user.status === status);
+    inputData = inputData?.filter((user) => user.status.toLowerCase() === status.toLowerCase());
   }
 
   if (filters.pronounce.length) {
