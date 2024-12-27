@@ -226,7 +226,7 @@ export default function AgreementTemplate({
                 fontWeight: 600,
               }}
             >
-              {CREATOR_BANK_ACCOUNT_NAME ?? CREATOR_NAME}
+              {CREATOR_BANK_ACCOUNT_NAME || CREATOR_NAME}
             </Text>
           </View>
           <View style={styles.paymentView}>
