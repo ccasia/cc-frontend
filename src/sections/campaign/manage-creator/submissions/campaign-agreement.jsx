@@ -102,7 +102,7 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     console.error('Error loading PDF:', error);
   };
 
-  const agreement = campaign?.campaignTimeline.find((elem) => elem.name === 'Agreement');
+  const agreement = campaign?.campaignTimeline?.find((elem) => elem?.name === 'Agreement');
 
   const methods = useForm({
     defaultValues: {
