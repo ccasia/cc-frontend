@@ -129,19 +129,30 @@ export default function AccountSocialLinks() {
           Add account
         </Button>
       </Stack>
+
       <Stack direction="row" alignItems="center" justifyContent="space-between" width={1}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Image src="/tiktok/Tiktok_Login.png" width={30} />
           <Typography variant="subtitle1">TikTok</Typography>
         </Stack>
-        <Button
-          variant="outlined"
-          onClick={connectTiktok}
-          startIcon={<Iconify icon="material-symbols:add-rounded" />}
-          sx={{ borderRadius: 2 }}
-        >
-          Add account
-        </Button>
+        {user?.creator?.tiktokToken ? (
+          <Button
+            variant="outlined"
+            onClick={connectTiktok}
+            sx={{ borderRadius: 2, pointerEvents: 'none', color: 'green', borderColor: 'green' }}
+          >
+            Connected
+          </Button>
+        ) : (
+          <Button
+            variant="outlined"
+            onClick={connectTiktok}
+            startIcon={<Iconify icon="material-symbols:add-rounded" />}
+            sx={{ borderRadius: 2 }}
+          >
+            Add account
+          </Button>
+        )}
       </Stack>
     </Stack>
   );
