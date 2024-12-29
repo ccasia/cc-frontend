@@ -1,8 +1,8 @@
-import { orderBy } from 'lodash';
 import { m } from 'framer-motion';
 import useSWRInfinite from 'swr/infinite';
+import { orderBy, debounce } from 'lodash';
 import { enqueueSnackbar } from 'notistack';
-import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
@@ -47,26 +47,39 @@ export default function CampaignListView() {
 
   const [filter, setFilter] = useState('all');
 
-  const scrollContainerRef = useRef(null);
-
   const { mainRef } = useMainContext();
 
   const lgUp = useResponsive('up', 'lg');
 
+  const [search, setSearch] = useState({
+    query: '',
+    results: [],
+  });
+
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSetQuery = useCallback(
+    debounce((q) => setDebouncedQuery(q), 300), // 300ms delay
+    []
+  );
+
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
-    if (pageIndex === 0) return `/api/campaign/matchCampaignWithCreator?take=${10}`;
+    if (pageIndex === 0)
+      return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}`;
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/matchCampaignWithCreator?take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+    return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
   const { data, error, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(
     getKey,
-    fetcher
+    fetcher,
+    { revalidateFirstPage: false }
   );
 
   const { user } = useAuthContext();
@@ -147,11 +160,6 @@ export default function CampaignListView() {
       socket?.off('pitch-uploaded', handlePitchSuccess);
     };
   }, [socket, upload, mutate]);
-
-  const [search, setSearch] = useState({
-    query: '',
-    results: [],
-  });
 
   const renderUploadProgress = (
     <Box
@@ -396,7 +404,11 @@ export default function CampaignListView() {
           >
             <InputBase
               value={search.query}
-              onChange={(e) => handleSearch(e.target.value)}
+              // onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch((prev) => ({ ...prev, query: e.target.value }));
+                debouncedSetQuery(e.target.value);
+              }}
               // onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search"
               startAdornment={
@@ -625,7 +637,11 @@ export default function CampaignListView() {
             >
               <InputBase
                 value={search.query}
-                onChange={(e) => handleSearch(e.target.value)}
+                // onChange={(e) => handleSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch((prev) => ({ ...prev, query: e.target.value }));
+                  debouncedSetQuery(e.target.value);
+                }}
                 placeholder="Search"
                 startAdornment={
                   <Iconify
