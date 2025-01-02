@@ -22,7 +22,7 @@ import CampaignFinalDraft from './submissions/campaign-final-draft';
 
 export const defaultSubmission = [
   {
-    name: 'Agreeement Submission ✍',
+    name: 'Agreement Submission ✍',
     value: 'Agreement',
     type: 'AGREEMENT_FORM',
     stage: 1,
