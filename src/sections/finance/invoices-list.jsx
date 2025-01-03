@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 import {
   Box,
@@ -23,7 +23,6 @@ import {
   useTable,
   emptyRows,
   TableNoData,
-  getComparator,
   TableEmptyRows,
   TableHeadCustom,
   TablePaginationCustom,
@@ -41,13 +40,13 @@ const defaultFilters = {
 };
 
 const TABLE_HEAD = [
-  { id: 'invoiceId', label: 'Invoice ID', width: 180 },
-  { id: 'campaignName', label: 'Campaign Name', width: 220 },
-  { id: 'creatorName', label: 'Creator Name', width: 180 },
-  { id: 'createdAt', label: 'Created At', width: 100 },
-  { id: 'amount', label: 'Amount', width: 100 },
-  { id: 'status', label: 'Status', width: 100 },
-  { id: '', width: 80 },
+  { id: 'invoiceNumber', label: 'Invoice ID', width: 180, hideSortIcon: false },
+  { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true }, 
+  { id: 'creatorName', label: 'Creator Name', width: 180, hideSortIcon: true }, 
+  { id: 'createdAt', label: 'Created At', width: 100, hideSortIcon: true },
+  { id: 'amount', label: 'Amount', width: 100, hideSortIcon: true },
+  { id: 'status', label: 'Status', width: 100, hideSortIcon: true }, 
+  { id: '', width: 80, hideSortIcon: true }, 
 ];
 
 const InvoiceLists = ({ invoices }) => {
@@ -120,6 +119,9 @@ const InvoiceLists = ({ invoices }) => {
     editDialog.onFalse();
   }, [editDialog]);
 
+  useEffect(() => {
+    console.log(dataFiltered);
+  }, [dataFiltered]);
 
   return (
     <Box>
@@ -181,7 +183,12 @@ const InvoiceLists = ({ invoices }) => {
                 headLabel={TABLE_HEAD}
                 rowCount={dataFiltered.length}
                 numSelected={table.selected.length}
-                onSort={table.onSort}
+                onSort={(columnId) => {
+                  const column = TABLE_HEAD.find((col) => col.id === columnId);
+                  if (column && !column.hideSortIcon) {
+                    table.onSort(columnId);
+                  }
+                }}
                 onSelectAllRows={(checked) =>
                   table.onSelectAllRows(
                     checked,
@@ -198,6 +205,7 @@ const InvoiceLists = ({ invoices }) => {
                   )
                   .map((invoice) => (
                     <InvoiceItem
+                      key={invoice.id}
                       invoice={invoice}
                       onChangeStatus={changeInvoiceStatus}
                       selected={table.selected.includes(invoice.id)}
@@ -243,6 +251,30 @@ export default InvoiceLists;
 InvoiceLists.propTypes = {
   invoices: PropTypes.array,
 };
+
+function getComparator(order, orderBy) {
+  return order === 'desc'
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
+
+function descendingComparator(a, b, orderBy) {
+  if (orderBy === 'invoiceNumber') {
+    const aNum = a[orderBy];
+    const bNum = b[orderBy];
+
+    if (aNum < bNum) return -1;
+    if (aNum > bNum) return 1;
+    return 0;
+  }
+
+  const aValue = a[orderBy];
+  const bValue = b[orderBy];
+  if (aValue < bValue) return -1;
+  if (aValue > bValue) return 1;
+  return 0;
+}
 
 function applyFilter({ inputData, comparator, filters }) {
   const { name, status } = filters;
