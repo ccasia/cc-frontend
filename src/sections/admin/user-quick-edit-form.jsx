@@ -234,7 +234,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
               }}
             >
               {fields.map((elem, index) => (
-                <Box display="flex" gap={2} my={2} alignItems="center">
+                <Box key={elem.id} display="flex" gap={2} my={2} alignItems="center">
                   <Controller
                     name={`permission.${index}.module`}
                     control={control}

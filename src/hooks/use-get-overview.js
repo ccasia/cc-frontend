@@ -8,7 +8,7 @@ import { useAuthContext } from 'src/auth/hooks';
 const useGetOverview = () => {
   const { user } = useAuthContext();
 
-  const { data, isLoading } = useSWR(endpoints.overview.root(user.id), fetcher, {
+  const { data, isLoading } = useSWR(endpoints.overview.root(user?.id), fetcher, {
     revalidateOnFocus: true,
     revalidateOnMount: true,
     revalidateOnReconnect: true,

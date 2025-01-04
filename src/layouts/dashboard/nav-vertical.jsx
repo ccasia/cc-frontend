@@ -4,8 +4,7 @@ import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
-import { grey } from '@mui/material/colors';
-import { Avatar, Typography, IconButton } from '@mui/material';
+import { Typography, IconButton } from '@mui/material';
 
 import { usePathname } from 'src/routes/hooks';
 
@@ -14,7 +13,6 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
-import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { useSettingsContext } from 'src/components/settings';
 import { NavSectionVertical } from 'src/components/nav-section';
@@ -142,7 +140,11 @@ export default function NavVertical({ openNav, onCloseNav }) {
             );
           }}
         >
-          <img src="/assets/icons/navbar/ic_nav_collapse.svg" alt="CollapseButton" style={{ width: '20px', color: 'black' }} />
+          <img
+            src="/assets/icons/navbar/ic_nav_collapse.svg"
+            alt="CollapseButton"
+            style={{ width: '20px', color: 'black' }}
+          />
         </IconButton>
       </Stack>
 
