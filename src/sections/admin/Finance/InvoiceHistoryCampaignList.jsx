@@ -1,16 +1,14 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
 import { useSnackbar } from 'notistack';
+import React, { useMemo, useState } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Table,
   Paper,
-  Stack,
   Select,
-  Button,
   MenuItem,
   TableRow,
   TextField,
@@ -23,6 +21,7 @@ import {
   InputAdornment,
 } from '@mui/material';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchChange }) => {
@@ -49,25 +48,53 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
     return `RM${numericAmount.toLocaleString()}`;
   };
 
-  const filteredData = localData?.filter((item) => {
-    const matchesQuery =
-      item?.campaign?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item?.user?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item?.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
+  const filteredData = useMemo(
+    () =>
+      localData?.filter((item) => {
+        const matchesQuery =
+          item?.campaign?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item?.creator?.user?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item?.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Amount filter logic
-    const amount = parseFloat(item.amount.toString().replace(/[^0-9.-]+/g, ''));
-    const amountMatches =
-      amountFilter === 'All' ||
-      (amountFilter === 'RM0 - RM1,000' && amount <= 1000) ||
-      (amountFilter === 'RM1,001 - RM5,000' && amount > 1000 && amount <= 5000) ||
-      (amountFilter === 'RM5,001 - RM10,000' && amount > 5000 && amount <= 10000) ||
-      (amountFilter === 'RM10,001 - RM25,000' && amount > 10000 && amount <= 25000) ||
-      (amountFilter === 'RM25,001 and above' && amount > 25000);
+        const matchesStatus = statusFilter === 'All' || item.status === statusFilter.toLowerCase();
 
-    return matchesQuery && matchesStatus && amountMatches;
-  });
+        // Amount filter logic
+        const amount = parseFloat(item.amount.toString().replace(/[^0-9.-]+/g, ''));
+
+        const amountMatches =
+          amountFilter === 'All' ||
+          (amountFilter === 'RM0 - RM1,000' && amount <= 1000) ||
+          (amountFilter === 'RM1,001 - RM5,000' && amount > 1000 && amount <= 5000) ||
+          (amountFilter === 'RM5,001 - RM10,000' && amount > 5000 && amount <= 10000) ||
+          (amountFilter === 'RM10,001 - RM25,000' && amount > 10000 && amount <= 25000) ||
+          (amountFilter === 'RM25,001 and above' && amount > 25000);
+
+        return matchesQuery && matchesStatus && amountMatches;
+      }),
+    [amountFilter, localData, statusFilter, searchQuery]
+  );
+
+  // const filteredData = localData?.filter((item) => {
+  //   const matchesQuery =
+  //     item?.campaign?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //     item?.user?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //     item?.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase());
+
+  //   const matchesStatus = statusFilter === 'All' || item.status === statusFilter.toLowerCase();
+
+  //   // Amount filter logic
+  //   const amount = parseFloat(item.amount.toString().replace(/[^0-9.-]+/g, ''));
+
+  //   const amountMatches =
+  //     amountFilter === 'All' ||
+  //     (amountFilter === 'RM0 - RM1,000' && amount <= 1000) ||
+  //     (amountFilter === 'RM1,001 - RM5,000' && amount > 1000 && amount <= 5000) ||
+  //     (amountFilter === 'RM5,001 - RM10,000' && amount > 5000 && amount <= 10000) ||
+  //     (amountFilter === 'RM10,001 - RM25,000' && amount > 10000 && amount <= 25000) ||
+  //     (amountFilter === 'RM25,001 and above' && amount > 25000);
+
+  //   return matchesQuery && matchesStatus && amountMatches;
+  // });
 
   const handleStatusChangeInTable = (id, newStatus) => {
     const updatedData = localData.map((item) =>
@@ -112,9 +139,10 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
             inputProps={{ 'aria-label': 'Filter by status' }}
           >
             <MenuItem value="All">All Status</MenuItem>
-            <MenuItem value="Paid">Paid</MenuItem>
-            <MenuItem value="Pending">Pending</MenuItem>
-            <MenuItem value="Overdue">Overdue</MenuItem>
+            <MenuItem value="paid">Paid</MenuItem>
+            <MenuItem value="pending">Pending</MenuItem>
+            <MenuItem value="overdue">Overdue</MenuItem>
+            <MenuItem value="draft">Draft</MenuItem>
           </Select>
         </FormControl>
         <FormControl size="small" sx={{ minWidth: 200 }}>
@@ -158,13 +186,13 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
               <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
                 <strong>Status</strong>
               </TableCell>
-              <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+              {/* <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
                 <strong>Action</strong>
-              </TableCell>
+              </TableCell> */}
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredData.map((item) => (
+            {filteredData?.map((item) => (
               <TableRow key={item.id}>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
                   <Typography
@@ -187,7 +215,8 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                   {formatAmount(item?.amount)}
                 </TableCell>
                 <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
-                  <FormControl fullWidth size="small">
+                  <Label>{item.status}</Label>
+                  {/* <FormControl fullWidth size="small">
                     <Select
                       value={item.status}
                       onChange={(e) => handleStatusChangeInTable(item.id, e.target.value)}
@@ -199,9 +228,9 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                       <MenuItem value="overdue">Overdue</MenuItem>
                       <MenuItem value="approved">Approved</MenuItem>
                     </Select>
-                  </FormControl>
+                  </FormControl> */}
                 </TableCell>
-                <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
+                {/* <TableCell sx={{ textAlign: 'center', paddingLeft: '20px' }}>
                   {item.status === 'overdue' && (
                     <Stack>
                       <Button
@@ -274,7 +303,7 @@ const InvoiceHistoryCampaignList = ({ data, onDataUpdate, searchQuery, onSearchC
                       </Button>
                     </>
                   )}
-                </TableCell>
+                </TableCell> */}
               </TableRow>
             ))}
           </TableBody>

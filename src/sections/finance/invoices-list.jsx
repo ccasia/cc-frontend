@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
@@ -35,18 +35,19 @@ import InvoiceTableFiltersResult from './invoice-table-filters-result';
 
 const defaultFilters = {
   name: '',
+  campaignName: '',
   role: [],
   status: 'all',
 };
 
 const TABLE_HEAD = [
   { id: 'invoiceNumber', label: 'Invoice ID', width: 180, hideSortIcon: false },
-  { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true }, 
-  { id: 'creatorName', label: 'Creator Name', width: 180, hideSortIcon: true }, 
+  { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
+  { id: 'creatorName', label: 'Creator Name', width: 180, hideSortIcon: true },
   { id: 'createdAt', label: 'Created At', width: 100, hideSortIcon: true },
   { id: 'amount', label: 'Amount', width: 100, hideSortIcon: true },
-  { id: 'status', label: 'Status', width: 100, hideSortIcon: true }, 
-  { id: '', width: 80, hideSortIcon: true }, 
+  { id: 'status', label: 'Status', width: 100, hideSortIcon: true },
+  { id: '', width: 80, hideSortIcon: true },
 ];
 
 const InvoiceLists = ({ invoices }) => {
@@ -55,6 +56,11 @@ const InvoiceLists = ({ invoices }) => {
   const editDialog = useBoolean();
   const [selectedId, setSelectedId] = useState('');
   const [selectedData, setSelectedData] = useState();
+
+  const campaigns = useMemo(() => {
+    const data = invoices?.map((invoice) => invoice?.campaign?.name);
+    return data.filter((item, index) => data.indexOf(item) === index);
+  }, [invoices]);
 
   const table = useTable();
   const denseHeight = table.dense ? 56 : 56 + 20;
@@ -119,10 +125,6 @@ const InvoiceLists = ({ invoices }) => {
     editDialog.onFalse();
   }, [editDialog]);
 
-  useEffect(() => {
-    console.log(dataFiltered);
-  }, [dataFiltered]);
-
   return (
     <Box>
       <Card>
@@ -160,7 +162,7 @@ const InvoiceLists = ({ invoices }) => {
           />
         </Tabs>
 
-        <InvoiceTableToolbar filters={filters} onFilters={handleFilters} />
+        <InvoiceTableToolbar filters={filters} onFilters={handleFilters} campaigns={campaigns} />
 
         {canReset && (
           <InvoiceTableFiltersResult
@@ -258,7 +260,6 @@ function getComparator(order, orderBy) {
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-
 function descendingComparator(a, b, orderBy) {
   if (orderBy === 'invoiceNumber') {
     const aNum = a[orderBy];
@@ -277,7 +278,7 @@ function descendingComparator(a, b, orderBy) {
 }
 
 function applyFilter({ inputData, comparator, filters }) {
-  const { name, status } = filters;
+  const { name, status, campaignName } = filters;
 
   const stabilizedThis = inputData?.map((el, index) => [el, index]);
 
@@ -291,7 +292,16 @@ function applyFilter({ inputData, comparator, filters }) {
 
   if (name) {
     inputData = inputData.filter(
-      (item) => item?.creator?.user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
+      (item) =>
+        item?.creator?.user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        item?.campaign?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        item?.invoiceNumber?.toLowerCase().indexOf(name.toLowerCase()) !== -1
+    );
+  }
+
+  if (campaignName) {
+    inputData = inputData.filter(
+      (item) => item?.campaign?.name?.toLowerCase().indexOf(campaignName.toLowerCase()) !== -1
     );
   }
 
