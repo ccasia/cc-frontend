@@ -10,12 +10,15 @@ import {
   Button,
   Dialog,
   Container,
+  InputBase,
   Typography,
   IconButton,
   CircularProgress,
 } from '@mui/material';
 
 // import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
+
+import { debounce } from 'lodash';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -42,6 +45,19 @@ import CampaignLists from '../campaign-list';
 const CampaignView = () => {
   const settings = useSettingsContext();
 
+  const [search, setSearch] = useState({
+    query: '',
+    results: [],
+  });
+
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSetQuery = useCallback(
+    debounce((q) => setDebouncedQuery(q), 300), // 300ms delay
+    []
+  );
+
   const { campaigns } = useGetCampaigns();
 
   const create = useBoolean();
@@ -63,13 +79,13 @@ const CampaignView = () => {
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
     if (pageIndex === 0)
-      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${10}`;
+      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${filter.toUpperCase()}&limit=${10}`;
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
   const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
@@ -110,8 +126,7 @@ const CampaignView = () => {
     const scrollContainer = lgUp ? mainRef?.current : document.documentElement;
 
     const bottom =
-      scrollContainer.scrollHeight <=
-      scrollContainer.scrollTop + scrollContainer.clientHeight + 0.5;
+      scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
 
     if (bottom && !isValidating && data[data.length - 1]?.metaData?.lastCursor) {
       setSize(size + 1);
@@ -260,6 +275,7 @@ const CampaignView = () => {
               Completed ({completedCount})
             </Button>
           </Stack>
+
           <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
             <Button
               onClick={handleClick}
@@ -284,6 +300,7 @@ const CampaignView = () => {
               New Campaign
             </Button>
           </Box>
+
           <IconButton
             onClick={handleClick}
             sx={{
@@ -307,6 +324,7 @@ const CampaignView = () => {
           </IconButton>
         </Stack>
       </Box>
+
       <Menu
         anchorEl={anchorEl}
         open={open}
@@ -351,6 +369,41 @@ const CampaignView = () => {
           Drafts
         </MenuItem> */}
       </Menu>
+
+      <Box
+        sx={{
+          width: '100%',
+          border: '1px solid',
+          borderBottom: '3.5px solid',
+          borderColor: 'divider',
+          borderRadius: 1,
+          bgcolor: 'background.paper',
+        }}
+      >
+        <InputBase
+          value={search.query}
+          onChange={(e) => {
+            setSearch((prev) => ({ ...prev, query: e.target.value }));
+            debouncedSetQuery(e.target.value);
+          }}
+          placeholder="Search"
+          startAdornment={
+            <Iconify
+              icon="eva:search-fill"
+              sx={{ width: 20, height: 20, mr: 1, color: 'text.disabled', ml: 1 }}
+            />
+          }
+          sx={{
+            width: '100%',
+            color: 'text.primary',
+            '& input': {
+              py: 1,
+              px: 1,
+            },
+          }}
+        />
+      </Box>
+
       {isLoading && (
         <Box sx={{ position: 'relative', top: 200, textAlign: 'center' }}>
           <CircularProgress
@@ -363,9 +416,10 @@ const CampaignView = () => {
           />
         </Box>
       )}
+
       {!isLoading &&
         (dataFiltered?.length > 0 ? (
-          <Box>
+          <Box mt={2}>
             <CampaignLists campaigns={dataFiltered} />
             {isValidating && (
               <Box sx={{ textAlign: 'center', my: 2 }}>
