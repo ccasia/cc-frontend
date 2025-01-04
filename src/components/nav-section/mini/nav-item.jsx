@@ -79,7 +79,7 @@ const NavItem = forwardRef(
     );
 
     // Hidden item by role
-    if (user.role === 'admin' && roles && !roles?.includes(user?.admin?.role?.name)) {
+    if (user?.role === 'admin' && roles && !roles?.includes(user?.admin?.role?.name)) {
       return null;
     }
 

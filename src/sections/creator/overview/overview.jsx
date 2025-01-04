@@ -452,6 +452,27 @@ const Overview = () => {
     statusCheck();
   }, [statusCheck]);
 
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Container maxWidth="xl">
       <ListItemText
@@ -470,25 +491,6 @@ const Overview = () => {
           mb: 3,
         }}
       />
-
-      {isLoading && (
-        <Box
-          sx={{
-            position: 'relative',
-            top: 200,
-            textAlign: 'center',
-          }}
-        >
-          <CircularProgress
-            thickness={7}
-            size={25}
-            sx={{
-              color: (theme) => theme.palette.common.black,
-              strokeLinecap: 'round',
-            }}
-          />
-        </Box>
-      )}
 
       {!isLoading && renderOverview}
 
