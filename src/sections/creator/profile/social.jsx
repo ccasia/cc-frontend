@@ -76,6 +76,16 @@ export default function AccountSocialLinks() {
     }
   };
 
+  const connectFacebook = async () => {
+    try {
+      const { data: url } = await axiosInstance.get('/api/social/auth/facebook');
+      enqueueSnackbar('Redirecting...');
+      window.location.href = url;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   // return (
   //   <FormProvider methods={methods} onSubmit={onSubmit}>
   //     <Stack component={Card} spacing={3} sx={{ p: 3 }} alignItems="flex-end">
@@ -122,7 +132,7 @@ export default function AccountSocialLinks() {
         </Stack>
         <Button
           variant="outlined"
-          onClick={connectTiktok}
+          onClick={connectFacebook}
           startIcon={<Iconify icon="material-symbols:add-rounded" />}
           sx={{ borderRadius: 2 }}
         >
