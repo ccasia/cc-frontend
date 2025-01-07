@@ -178,7 +178,6 @@ function CreatorTableView() {
         const deleteRows = tableData.filter((row) => row.id !== id);
         confirm.onFalse();
         mutate(endpoints.creators.getCreators);
-        // setTableData(deleteRows);
         enqueueSnackbar('Successfully deleted Creator');
       } catch (error) {
         enqueueSnackbar('Error delete Creator', { variant: 'error' });

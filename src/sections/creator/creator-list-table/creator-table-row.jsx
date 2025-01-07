@@ -123,10 +123,10 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
             <IconButton
               onClick={() => {
                 // eslint-disable-next-line react-hooks/rules-of-hooks
-                if (useCheckPermission(['delete:creator'])) {
-                  confirm.onTrue();
-                  popover.onClose();
-                }
+                // if (useCheckPermission(['delete:creator'])) {
+                confirm.onTrue();
+                popover.onClose();
+                // }
               }}
               sx={{
                 color: 'error.main',
