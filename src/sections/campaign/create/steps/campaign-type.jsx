@@ -33,7 +33,7 @@ const CampaignType = () => {
         label="Campaign Type"
         helperText="The campaign type may affect the campaign timeline and creator submissions."
       >
-        <MenuItem value="normal">UGC</MenuItem>
+        <MenuItem value="normal">UGC ( With Posting )</MenuItem>
         <MenuItem value="ugc">UGC ( No Posting )</MenuItem>
         {/* <MenuItem value="seeded" disabled>
           Seeded
