@@ -1,9 +1,11 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import { useTheme } from '@emotion/react';
+import { enqueueSnackbar } from 'notistack';
 import { PDFViewer } from '@react-pdf/renderer';
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
@@ -24,6 +26,8 @@ import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoiceByCreatorAndCampaign from 'src/hooks/use-get-invoice-creator-camp';
+
+import axiosInstance from 'src/utils/axios';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
@@ -71,6 +75,10 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
 
   const { campaign, campaignLoading } = useGetCampaignById(campaignId);
 
+  const theme = useTheme();
+
+  const router = useRouter();
+
   const {
     data: submissions,
     isLoading: submissionLoading,
@@ -79,8 +87,39 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
 
   const { invoice } = useGetInvoiceByCreatorAndCampaign(id, campaignId);
 
-  const theme = useTheme();
-  const router = useRouter();
+  const isInvoiceGenerated = useMemo(() => {
+    const firstSubmission = submissions?.find((item) => item.submissionType.type === 'FIRST_DRAFT');
+    const finalSubmission = submissions?.find((item) => item.submissionType.type === 'FINAL_DRAFT');
+    const postingSubmission = submissions?.find((item) => item.submissionType.type === 'POSTING');
+
+    if (firstSubmission?.status === 'APPROVED' && !invoice) {
+      return false;
+    }
+
+    if (finalSubmission?.status === 'APPROVED' && !invoice) {
+      return false;
+    }
+
+    if (postingSubmission?.status === 'APPROVED' && !invoice) {
+      return false;
+    }
+
+    return true;
+  }, [submissions, invoice]);
+
+  const generateInvoice = async () => {
+    try {
+      await axiosInstance.post(`/api/submission/generateInvoice`, {
+        campaignId,
+        userId: id,
+      });
+      enqueueSnackbar('Invoice has been successfully generated.');
+    } catch (error) {
+      enqueueSnackbar('Error generating invoice', {
+        variant: 'error',
+      });
+    }
+  };
 
   const renderTabs = (
     <Box sx={{ mt: 2.5, mb: 2.5 }}>
@@ -230,7 +269,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         Back
       </Button>
 
-      {isLoading && (
+      {(isLoading || submissionLoading || campaignLoading) && (
         <Box
           sx={{
             position: 'relative',
@@ -292,7 +331,16 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                   }}
                 />
               </Typography>
-
+              {!isInvoiceGenerated && (
+                <LoadingButton
+                  variant="outlined"
+                  sx={{ mx: 2 }}
+                  color="info"
+                  onClick={generateInvoice}
+                >
+                  Generate invoice
+                </LoadingButton>
+              )}
               <Stack direction="row" spacing={1}>
                 {data?.user?.creator?.instagram && (
                   <IconButton
@@ -503,7 +551,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                 </Box>
 
                 <Stack spacing={2}>
-                <ListItemText
+                  <ListItemText
                     primary="Account Name"
                     secondary={data?.user?.paymentForm?.bankAccountName || 'N/A'}
                     primaryTypographyProps={{
@@ -568,7 +616,12 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
           )}
 
           {currentTab === 'submission' && !submissionLoading && (
-            <Submissions campaign={campaign} submissions={submissions} creator={data} />
+            <Submissions
+              campaign={campaign}
+              submissions={submissions}
+              creator={data}
+              invoice={invoice}
+            />
           )}
           {currentTab === 'logistics' && <LogisticView campaign={campaign} creator={data} />}
 
