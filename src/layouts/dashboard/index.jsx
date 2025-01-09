@@ -140,6 +140,7 @@ export default function DashboardLayout({ children }) {
 
   const feedbackButton = (
     <Box
+      component="div"
       sx={{
         ...(lgUp
           ? {
@@ -311,7 +312,8 @@ export default function DashboardLayout({ children }) {
         <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
         <Main>{children}</Main>
-        {user?.role === 'creator' && feedbackButton}
+        {/* {user?.role === 'creator' && feedbackButton} */}
+        {feedbackButton}
         {feedbackForm}
       </Box>
     </Box>
