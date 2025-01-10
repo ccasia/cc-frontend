@@ -107,4 +107,7 @@ export const banks = [
   {
     bank: 'United Overseas Bank (Malaysia) Bhd.',
   },
+  {
+    bank: 'Bank Indonesia',
+  },
 ];
