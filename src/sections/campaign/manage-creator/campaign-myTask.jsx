@@ -78,7 +78,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
 
   const timeline = campaign?.campaignTimeline;
 
-  const getTimeline = (name) => timeline?.find((item) => item.name === name);
+  // const getTimeline = (name) => timeline?.find((item) => item.name === name);
 
   const getDependency = useCallback(
     (submissionId) => {
@@ -223,7 +223,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                     px: { xs: 1, md: 0 },
                   }}
                 >
-                  {getVisibleStages().map((item, index) => (
+                  {getVisibleStages()?.map((item, index) => (
                     <Box
                       key={index}
                       sx={{
@@ -402,6 +402,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
               </Card>
             </>
           )}
+
           {submissionLoading && (
             <Box
               sx={{
