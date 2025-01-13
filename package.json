@@ -50,6 +50,7 @@
     "apexcharts": "^3.52.0",
     "autosuggest-highlight": "^3.3.4",
     "axios": "^1.6.2",
+    "core-js": "^3.40.0",
     "croppie": "^2.6.5",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.11",
@@ -106,6 +107,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
+    "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "eslint": "^8.55.0",
     "eslint-config-airbnb": "^19.0.4",
