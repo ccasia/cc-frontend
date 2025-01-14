@@ -3,10 +3,10 @@ import PropTypes from 'prop-types';
 
 import { Box, Stack, Typography } from '@mui/material';
 
-import MediaKitAnalytics from './media-kit-analytic/view';
 import MediaKitPartnership from '../medit-kit-partnerships';
-import MediaKitSocialContentTiktok from './media-kit-social-content/view-tiktok';
-import MediaKitSocialContentInstagram from './media-kit-social-content/view-instagram';
+import MediaKitSocialContentInstagram from '../view-instagram';
+import MediaKitAnalytics from '../../media-kit-creator-view/media-kit-social/media-kit-analytic/view';
+import MediaKitSocialContentTiktok from '../view-tiktok';
 
 const MediaKitSocial = ({ currentTab, data, isLoading }) => (
   <Box
@@ -26,6 +26,7 @@ const MediaKitSocial = ({ currentTab, data, isLoading }) => (
         <MediaKitAnalytics />
       </Stack>
     )}
+
     {currentTab === 'tiktok' && (
       <Stack gap={4}>
         <MediaKitSocialContentTiktok tiktok={data?.tiktok} />

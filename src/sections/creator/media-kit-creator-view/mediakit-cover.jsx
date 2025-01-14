@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 
 import { deepOrange } from '@mui/material/colors';
-import { Box, Stack, Avatar, useTheme, Typography, useMediaQuery } from '@mui/material';
+import { Box, Stack, Avatar, useTheme, Typography } from '@mui/material';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -13,7 +13,7 @@ const MediaKitCover = ({ user }) => {
   const mediaKitData = user?.creator?.mediaKit || user?.user || user || {};
   const { name } = mediaKitData;
 
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const encodedBackgroundUrl = useMemo(() => {
     const backgroundURL = user?.photoBackgroundURL || user?.user?.photoBackgroundURL;
