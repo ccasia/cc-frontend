@@ -89,6 +89,8 @@ const TopContentGrid = ({ topContents }) => {
               }}
             />
 
+            <Box component="div" dangerouslySetInnerHTML={{ __html: content?.embed_html }} />
+
             <Box
               sx={{
                 position: 'absolute',
