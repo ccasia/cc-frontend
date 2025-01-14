@@ -23,7 +23,6 @@ import { useGetSocialMedia } from 'src/api/socialMedia';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
-import { formatNumber } from '../view-instagram';
 import MediaKitSetting from '../media-kit-setting';
 import MediaKitSocial from './media-kit-social-view';
 
@@ -38,6 +37,7 @@ const MediaKitCreator = () => {
   );
 
   const setTiktok = useSocialMediaData((state) => state.setTiktok);
+  const tiktok = useSocialMediaData((state) => state.tiktok);
 
   setTiktok(socialData);
 
@@ -190,6 +190,7 @@ const MediaKitCreator = () => {
           py: 2,
         }}
       >
+        {/* Followers */}
         <Box
           sx={{
             width: 1,
@@ -219,9 +220,10 @@ const MediaKitCreator = () => {
             <ListItemText
               primary="FOLLOWERS"
               secondary={
-                socialMediaAnalytics.followers
-                  ? formatNumber(socialMediaAnalytics.followers)
-                  : 'No data'
+                tiktok?.user?.data?.user?.follower_count || 0
+                // socialMediaAnalytics.followers
+                //   ? formatNumber(socialMediaAnalytics.followers)
+                //   : 'No data'
               }
               primaryTypographyProps={{
                 variant: 'caption',
@@ -244,6 +246,8 @@ const MediaKitCreator = () => {
             />
           </Stack>
         </Box>
+
+        {/* Engagement rate */}
         <Box
           sx={{
             width: 1,
@@ -298,6 +302,8 @@ const MediaKitCreator = () => {
             />
           </Stack>
         </Box>
+
+        {/* Average likes */}
         <Box
           sx={{
             width: 1,
@@ -316,9 +322,10 @@ const MediaKitCreator = () => {
             <ListItemText
               primary="AVERAGE LIKES"
               secondary={
-                socialMediaAnalytics.averageLikes
-                  ? formatNumber(socialMediaAnalytics.averageLikes)
-                  : 'No data'
+                tiktok?.user?.data?.user?.likes_count || 0
+                // socialMediaAnalytics.averageLikes
+                //   ? formatNumber(socialMediaAnalytics.averageLikes)
+                //   : 'No data'
               }
               primaryTypographyProps={{
                 variant: 'caption',

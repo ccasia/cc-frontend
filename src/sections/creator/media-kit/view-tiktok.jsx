@@ -5,6 +5,8 @@ import { keyframes } from '@emotion/react';
 
 import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
 
+import { useSocialMediaData } from 'src/utils/store';
+
 import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
@@ -30,7 +32,7 @@ const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topFiveContents = topContents.slice(0, 5);
+  const topFiveContents = topContents?.slice(0, 5);
 
   return (
     <Grid
@@ -82,7 +84,7 @@ const TopContentGrid = ({ topContents }) => {
                 height: 1,
                 transition: 'all .2s linear',
                 objectFit: 'cover',
-                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.image_url}) lightgray 50% / cover no-repeat`,
+                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.cover_image_url}) lightgray 50% / cover no-repeat`,
               }}
             />
 
@@ -110,7 +112,7 @@ const TopContentGrid = ({ topContents }) => {
                   mb: 1,
                 }}
               >
-                {`${content?.description?.slice(0, 50)}...`}
+                {`${content?.video_description?.slice(0, 50)}...`}
               </Typography>
 
               <Stack direction="row" alignItems="center" spacing={2}>
@@ -142,12 +144,15 @@ TopContentGrid.propTypes = {
 
 const MediaKitSocialContent = ({ tiktok }) => {
   const theme = useTheme();
+
+  const tiktokData = useSocialMediaData((state) => state.tiktok);
+
   // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <Box>
       {tiktok?.data.top_contents ? (
-        <TopContentGrid topContents={tiktok.data.top_contents} />
+        <TopContentGrid topContents={tiktokData?.videos?.data?.videos || []} />
       ) : (
         <Typography>No top content data available</Typography>
       )}

@@ -3,10 +3,10 @@ import PropTypes from 'prop-types';
 
 import { Box, Stack, Typography } from '@mui/material';
 
+import MediaKitSocialContentTiktok from '../view-tiktok';
 import MediaKitPartnership from '../medit-kit-partnerships';
 import MediaKitSocialContentInstagram from '../view-instagram';
 import MediaKitAnalytics from '../../media-kit-creator-view/media-kit-social/media-kit-analytic/view';
-import MediaKitSocialContentTiktok from '../view-tiktok';
 
 const MediaKitSocial = ({ currentTab, data, isLoading }) => (
   <Box
