@@ -113,22 +113,17 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
         formData.append('campaignId', campaign?.id);
         formData.append('pitchVideo', e[0]);
 
+        console.log(e[0]);
+
         sources.current = axios.CancelToken.source();
 
         try {
-          // eslint-disable-next-line no-await-in-loop
           await axiosInstance.post('/api/campaign/uploadVideo', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
             cancelToken: sources.current.token,
           });
-
-          // if (data.publicUrl) {
-          //   setValue('pitchVideo', data.publicUrl);
-          // }
-
-          // setSource(data.publicUrl);
         } catch (error) {
           if (axios.isCancel(error)) {
             console.log('Request canceled:', error.message);
@@ -354,7 +349,10 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
                   backgroundColor: '#203ff5',
                   color: 'white',
                   borderBottom: '3px solid',
-                  borderBottomColor: (progress.some((elem) => elem.campaignId === campaign.id) || !a) ? 'rgba(0, 0, 0, 0.12)' : '#1429a0',
+                  borderBottomColor:
+                    progress.some((elem) => elem.campaignId === campaign.id) || !a
+                      ? 'rgba(0, 0, 0, 0.12)'
+                      : '#1429a0',
                   '&:hover': {
                     backgroundColor: '#4259f7',
                   },
