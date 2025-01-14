@@ -80,16 +80,20 @@ const TopContentGrid = ({ topContents }) => {
               component="Box"
               className="image"
               alt={`Top content ${index + 1}`}
-              src={content?.embed_link}
               sx={{
                 height: 1,
                 transition: 'all .2s linear',
                 objectFit: 'cover',
-                // background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.cover_image_url}) lightgray 50% / cover no-repeat`,
+                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.cover_image_url}) lightgray 50% / cover no-repeat`,
               }}
             />
 
-            <Box component="div" dangerouslySetInnerHTML={{ __html: content?.embed_html }} />
+            <Box
+              component="div"
+              dangerouslySetInnerHTML={{ __html: content?.embed_html }}
+              width={300}
+              height={300}
+            />
 
             <Box
               sx={{
