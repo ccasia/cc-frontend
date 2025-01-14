@@ -151,10 +151,10 @@ const MediaKitSocialContent = ({ tiktok }) => {
 
   return (
     <Box>
-      {tiktok?.data.top_contents ? (
-        <TopContentGrid topContents={tiktokData?.videos?.data?.videos || []} />
-      ) : (
+      {!tiktokData?.videos?.data?.videos.length ? (
         <Typography>No top content data available</Typography>
+      ) : (
+        <TopContentGrid topContents={tiktokData?.videos?.data?.videos || []} />
       )}
     </Box>
   );
