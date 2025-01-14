@@ -84,7 +84,7 @@ const TopContentGrid = ({ topContents }) => {
                 height: 1,
                 transition: 'all .2s linear',
                 objectFit: 'cover',
-                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.cover_image_url}) lightgray 50% / cover no-repeat`,
+                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.cover_image_url}) lightgray 50% / cover no-repeat`,
               }}
             />
 
@@ -118,12 +118,12 @@ const TopContentGrid = ({ topContents }) => {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="material-symbols:favorite-outline" width={20} />
-                  <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
+                  {/* <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography> */}
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="iconamoon:comment" width={20} />
-                  <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
+                  {/* <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography> */}
                 </Stack>
               </Stack>
             </Box>
@@ -152,9 +152,9 @@ const MediaKitSocialContent = ({ tiktok }) => {
   return (
     <Box>
       {!tiktokData?.videos?.data?.videos.length ? (
-        <Typography>No top content data available</Typography>
-      ) : (
         <TopContentGrid topContents={tiktokData?.videos?.data?.videos || []} />
+      ) : (
+        <Typography>No top content data available</Typography>
       )}
     </Box>
   );
