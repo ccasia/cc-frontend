@@ -44,7 +44,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
 
   return (
     <>
-      <TableRow hover selected={selected}>
+      <TableRow hover selected={selected} key={row?.id}>
         <TableCell padding="checkbox">
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell>
@@ -63,9 +63,9 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
         </TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{creator?.pronounce || 'null'}</TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{creator?.tiktok || 'null'}</TableCell>
+        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{creator?.tiktok || 'null'}</TableCell> */}
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}> {creator?.instagram || 'null'}</TableCell>
+        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}> {creator?.instagram || 'null'}</TableCell> */}
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{country || 'null'}</TableCell>
 
@@ -96,6 +96,12 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
           </Button>
         </TableCell>
 
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Label color={creator?.isFormCompleted ? 'success' : 'warning'}>
+            {creator?.isFormCompleted ? 'Done' : 'Pending'}
+          </Label>
+        </TableCell>
+
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Quick Edit" placement="top" arrow>
             <IconButton
@@ -117,10 +123,10 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
             <IconButton
               onClick={() => {
                 // eslint-disable-next-line react-hooks/rules-of-hooks
-                if (useCheckPermission(['delete:creator'])) {
-                  confirm.onTrue();
-                  popover.onClose();
-                }
+                // if (useCheckPermission(['delete:creator'])) {
+                confirm.onTrue();
+                popover.onClose();
+                // }
               }}
               sx={{
                 color: 'error.main',

@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
-import { Select, Button, TableRow, MenuItem, Checkbox, TableCell, Typography } from '@mui/material';
+import { Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
 
 import Label from 'src/components/label';
 
@@ -39,22 +39,14 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         <Typography variant="subtitle2">{formatAmount(invoice?.amount)}</Typography>
       </TableCell>
       <TableCell>
-        <Select
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            onChangeStatus(e.target.value);
-          }}
-        >
-          <MenuItem value="draft">Draft</MenuItem>
-          <MenuItem value="approved">Approved</MenuItem>
-          <MenuItem value="paid">Paid</MenuItem>
-        </Select>
+        <Label color={invoice?.status === 'approved' ? 'success' : 'warning'}>
+          {invoice?.status}
+        </Label>
       </TableCell>
       <TableCell>
         <Button
           size="small"
-          variant="outlined"
+          variant="contained"
           onClick={() => {
             openEditInvoice(invoice?.id);
           }}

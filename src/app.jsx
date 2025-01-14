@@ -16,9 +16,10 @@ import { SettingsDrawer, SettingsProvider } from 'src/components/settings';
 import { AuthProvider } from 'src/auth/context/jwt';
 import { LocalizationProvider } from './locales';
 import { SnackbarProvider } from './components/snackbar';
-import {UnreadMessageCountProvider}  from './context/UnreadMessageCountContext';
+import { UnreadMessageCountProvider } from './context/UnreadMessageCountContext';
 import SocketProvider from './socket/context/socket';
 import PoppupProvider from './components/popup/popup-provider';
+import 'core-js/stable';
 
 // ----------------------------------------------------------------------
 // Test
@@ -55,11 +56,11 @@ export default function App() {
               <SnackbarProvider>
                 <MotionLazy>
                   <SocketProvider>
-                   <UnreadMessageCountProvider>
-                    <SettingsDrawer />
-                    <ProgressBar />
-                    <Router />
-                   </UnreadMessageCountProvider>
+                    <UnreadMessageCountProvider>
+                      <SettingsDrawer />
+                      <ProgressBar />
+                      <Router />
+                    </UnreadMessageCountProvider>
                   </SocketProvider>
                 </MotionLazy>
               </SnackbarProvider>

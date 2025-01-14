@@ -36,7 +36,13 @@ const SelectBrand = ({ openBrand, openCompany }) => {
       }}
     >
       <Stack spacing={1}>
-        <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+        <FormLabel
+          required
+          sx={{
+            fontWeight: 600,
+            color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+          }}
+        >
           Select client or agency
         </FormLabel>
         <RHFAutocomplete
@@ -101,7 +107,13 @@ const SelectBrand = ({ openBrand, openCompany }) => {
       {client && hasBrand && (
         <Box mt={2}>
           <Stack spacing={1}>
-            <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+            <FormLabel
+              required
+              sx={{
+                fontWeight: 600,
+                color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+              }}
+            >
               Select or create brand
             </FormLabel>
             <RHFAutocomplete

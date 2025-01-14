@@ -1,10 +1,12 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import React, { useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import {
   Box,
   Grid,
@@ -33,6 +35,14 @@ const Posting = ({ campaign, submission, creator }) => {
   const dialogReject = useBoolean();
   const [feedback, setFeedback] = useState('');
   const loading = useBoolean();
+  const postingDate = useBoolean();
+  const [date, setDate] = useState({
+    startDate: submission?.startDate,
+    endDate: submission?.endDate,
+  });
+  const loadingDate = useBoolean();
+
+  const [dateError, setDateError] = useState({ startDate: null, endDate: null });
 
   const onSubmit = async (type) => {
     let res;
@@ -67,19 +77,66 @@ const Posting = ({ campaign, submission, creator }) => {
     }
   };
 
+  const handleChangeDate = async (data) => {
+    try {
+      loadingDate.onTrue();
+      const res = await axiosInstance.patch('/api/submission/posting', {
+        ...data,
+        submissionId: submission.id,
+      });
+
+      mutate(
+        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+      );
+      postingDate.onFalse();
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      loadingDate.onFalse();
+    }
+  };
+
+  useEffect(() => {
+    if (dayjs(date.startDate).isAfter(dayjs(date.endDate), 'date')) {
+      setDateError((prev) => ({ ...prev, startDate: 'Start Date cannot be after end date' }));
+    } else {
+      setDateError((prev) => ({ ...prev, startDate: null }));
+    }
+
+    if (dayjs(date.endDate).isBefore(dayjs(date.startDate), 'date')) {
+      setDateError((prev) => ({ ...prev, endDate: 'End Date cannot be before start date' }));
+    } else {
+      setDateError((prev) => ({ ...prev, endDate: null }));
+    }
+  }, [date]);
+
   return (
     <Box sx={{ width: '100%', maxWidth: '100%' }}>
       <Grid container spacing={2} sx={{ width: '100%' }}>
         <Grid item xs={12}>
           <Box component={Paper} p={1.5} mb={2}>
-            <Stack direction="row" spacing={3} sx={{ mb: 3, mt: -2 }}>
+            <Stack
+              direction="row"
+              spacing={3}
+              sx={{ mb: 3, mt: -2 }}
+              alignItems="center"
+              justifyContent="space-between"
+            >
               <Stack spacing={0.5}>
-
                 <Stack direction="row" spacing={0.5}>
-                  <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}
+                  >
                     Date Submitted:
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
+                  >
                     {submission?.submissionDate
                       ? dayjs(submission?.submissionDate).format('ddd, D MMM YYYY')
                       : '-'}
@@ -87,16 +144,42 @@ const Posting = ({ campaign, submission, creator }) => {
                 </Stack>
 
                 <Stack direction="row" spacing={0.5}>
-                  <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}
+                  >
+                    Due:
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
+                  >
+                    {submission?.dueDate
+                      ? dayjs(submission?.dueDate).format('ddd, D MMM YYYY')
+                      : '-'}
+                  </Typography>
+                </Stack>
+
+                <Stack direction="row" spacing={0.5}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}
+                  >
                     Reviewed On:
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
+                  >
                     {submission?.isReview
                       ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
                       : 'Pending Review'}
                   </Typography>
                 </Stack>
               </Stack>
+              <Button variant="outlined" onClick={postingDate.onTrue}>
+                Change Posting Date
+              </Button>
             </Stack>
           </Box>
 
@@ -106,15 +189,15 @@ const Posting = ({ campaign, submission, creator }) => {
           )}
           {submission?.status === 'PENDING_REVIEW' && (
             <>
-              <Box 
-                component={Paper} 
-                p={1.5} 
-                sx={{ 
-                  maxWidth: '100%', 
-                  overflow: 'visible'
+              <Box
+                component={Paper}
+                p={1.5}
+                sx={{
+                  maxWidth: '100%',
+                  overflow: 'visible',
                 }}
               >
-                <Box 
+                <Box
                   sx={{
                     p: 3,
                     mt: -2,
@@ -124,7 +207,7 @@ const Posting = ({ campaign, submission, creator }) => {
                     pb: 1,
                     width: '100%',
                     overflow: 'visible',
-                    position: 'relative'
+                    position: 'relative',
                   }}
                 >
                   <Box display="flex" flexDirection="column" gap={2}>
@@ -132,42 +215,46 @@ const Posting = ({ campaign, submission, creator }) => {
                       <Avatar
                         src={creator?.user?.photoURL}
                         alt={creator?.user?.name}
-                        sx={{ 
-                          width: 40, 
+                        sx={{
+                          width: 40,
                           height: 40,
-                          border: '1px solid #e7e7e7'
+                          border: '1px solid #e7e7e7',
                         }}
                       >
                         {creator?.user?.name?.charAt(0).toUpperCase()}
                       </Avatar>
-                      <Typography 
+                      <Typography
                         variant="subtitle2"
-                        sx={{ 
+                        sx={{
                           fontSize: '1.05rem',
-                          mt: -3
+                          mt: -3,
                         }}
                       >
                         {creator?.user?.name}
                       </Typography>
                     </Stack>
 
-                    <Box sx={{ 
-                      pl: 7, 
-                      maxWidth: '100%', 
-                      overflow: 'visible'
-                    }}> 
-                      <Box sx={{ 
-                        mt: -4.5, 
+                    <Box
+                      sx={{
+                        pl: 7,
                         maxWidth: '100%',
-                        wordBreak: 'break-all'
-                      }}>
-                        <Typography 
-                          variant="body2" 
+                        overflow: 'visible',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          mt: -4.5,
+                          maxWidth: '100%',
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
                           component="a"
                           href={submission?.content}
                           target="_blank"
                           rel="noopener"
-                          sx={{ 
+                          sx={{
                             wordBreak: 'break-all',
                             overflowWrap: 'break-word',
                             color: 'primary.main',
@@ -176,7 +263,7 @@ const Posting = ({ campaign, submission, creator }) => {
                               textDecoration: 'underline',
                             },
                             maxWidth: '100%',
-                            display: 'inline-block'
+                            display: 'inline-block',
                           }}
                         >
                           {submission?.content}
@@ -244,7 +331,7 @@ const Posting = ({ campaign, submission, creator }) => {
           )}
           {submission?.isReview && submission?.status === 'APPROVED' && (
             <Box component={Paper} p={1.5}>
-              <Box 
+              <Box
                 sx={{
                   p: 3,
                   mt: -4.5,
@@ -259,40 +346,40 @@ const Posting = ({ campaign, submission, creator }) => {
                     <Avatar
                       src={creator?.user?.photoURL}
                       alt={creator?.user?.name}
-                      sx={{ 
-                        width: 40, 
+                      sx={{
+                        width: 40,
                         height: 40,
-                        border: '1px solid #e7e7e7'
+                        border: '1px solid #e7e7e7',
                       }}
                     >
                       {creator?.user?.name?.charAt(0).toUpperCase()}
                     </Avatar>
-                    <Typography 
+                    <Typography
                       variant="subtitle2"
-                      sx={{ 
+                      sx={{
                         fontSize: '1.05rem',
-                        mt: -3
+                        mt: -3,
                       }}
                     >
                       {creator?.user?.name}
                     </Typography>
                   </Stack>
 
-                  <Box sx={{ pl: 7 }}> 
+                  <Box sx={{ pl: 7 }}>
                     <Box sx={{ mt: -4.5 }}>
-                      <Typography 
-                        variant="body2" 
+                      <Typography
+                        variant="body2"
                         component="a"
                         href={submission?.content}
                         target="_blank"
                         rel="noopener"
-                        sx={{ 
+                        sx={{
                           wordBreak: 'break-word',
                           color: 'primary.main',
                           textDecoration: 'none',
                           '&:hover': {
                             textDecoration: 'underline',
-                          }
+                          },
                         }}
                       >
                         {submission?.content}
@@ -305,9 +392,9 @@ const Posting = ({ campaign, submission, creator }) => {
           )}
         </Grid>
       </Grid>
-      <Dialog 
+      <Dialog
         open={dialogApprove.value}
-        maxWidth="xs" 
+        maxWidth="xs"
         fullWidth
         PaperProps={{
           sx: {
@@ -315,15 +402,17 @@ const Posting = ({ campaign, submission, creator }) => {
             maxWidth: '500px',
             borderRadius: 2,
             margin: '16px',
-            overflowX: 'hidden'
-          }
+            overflowX: 'hidden',
+          },
         }}
       >
-        <DialogTitle sx={{ 
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          pb: 2
-        }}>
+        <DialogTitle
+          sx={{
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            pb: 2,
+          }}
+        >
           Approve Posting ✨
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
@@ -334,28 +423,28 @@ const Posting = ({ campaign, submission, creator }) => {
             <DialogContentText sx={{ fontSize: '0.925rem', fontWeight: 500 }}>
               Once approved, this action cannot be undone.
             </DialogContentText>
-            
-            <Box 
-              sx={{ 
+
+            <Box
+              sx={{
                 p: 2,
                 borderRadius: 2,
                 border: '1px solid',
                 borderColor: 'divider',
               }}
             >
-              <Typography 
-                variant="body2" 
+              <Typography
+                variant="body2"
                 component="a"
                 href={submission?.content}
                 target="_blank"
                 rel="noopener"
-                sx={{ 
+                sx={{
                   wordBreak: 'break-word',
                   color: 'primary.main',
                   textDecoration: 'none',
                   '&:hover': {
                     textDecoration: 'underline',
-                  }
+                  },
                 }}
               >
                 {submission?.content}
@@ -418,9 +507,9 @@ const Posting = ({ campaign, submission, creator }) => {
           </LoadingButton>
         </DialogActions>
       </Dialog>
-      <Dialog 
-        open={dialogReject.value} 
-        maxWidth="xs" 
+      <Dialog
+        open={dialogReject.value}
+        maxWidth="xs"
         fullWidth
         PaperProps={{
           sx: {
@@ -428,15 +517,17 @@ const Posting = ({ campaign, submission, creator }) => {
             maxWidth: '500px',
             borderRadius: 2,
             margin: '16px',
-            overflowX: 'hidden'
-          }
+            overflowX: 'hidden',
+          },
         }}
       >
-        <DialogTitle sx={{ 
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          pb: 2
-        }}>
+        <DialogTitle
+          sx={{
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            pb: 2,
+          }}
+        >
           Reject Posting 🫣
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
@@ -506,6 +597,71 @@ const Posting = ({ campaign, submission, creator }) => {
             }}
           >
             Confirm
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={postingDate.value}
+        onClose={postingDate.onFalse}
+        PaperProps={{
+          sx: {
+            borderRadius: 1,
+          },
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography
+            sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
+            variant="h4"
+          >
+            Change Posting Date
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Stack direction={{ sm: 'row' }} gap={2} py={1}>
+              <DatePicker
+                value={dayjs(date.startDate)}
+                onChange={(val) => setDate((prev) => ({ ...prev, startDate: val }))}
+                label="Start Date"
+                format="DD/MM/YYYY"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!dateError.startDate,
+                    helperText: dateError.startDate,
+                  },
+                }}
+                minDate={dayjs()}
+              />
+              <DatePicker
+                label="End Date"
+                value={dayjs(date.endDate)}
+                onChange={(val) => setDate((prev) => ({ ...prev, endDate: val }))}
+                format="DD/MM/YYYY"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    error: !!dateError.endDate,
+                    helperText: dateError.endDate,
+                  },
+                }}
+                minDate={dayjs()}
+              />
+            </Stack>
+          </LocalizationProvider>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined">Cancel</Button>
+          <LoadingButton
+            variant="contained"
+            onClick={() => handleChangeDate(date)}
+            disabled={!!dateError.startDate || !!dateError.endDate}
+            loading={loadingDate.value}
+          >
+            Change
           </LoadingButton>
         </DialogActions>
       </Dialog>

@@ -35,24 +35,7 @@ export default function InvoiceDetailsView({ id, invoice }) {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      {/* <CustomBreadcrumbs
-        heading={data?.invoiceNumber}
-        links={[
-          {
-            name: 'Dashboard',
-            href: renderPathDashboard,
-          },
-          {
-            name: 'Invoice',
-            href: renderPathInvoice,
-          },
-          { name: data?.invoiceNumber },
-        ]}
-        sx={{ mb: { xs: 3, md: 5 } }}
-      /> */}
-
       <InvoiceDetail invoiceId={invoice?.id} />
-      {/* <InvoiceDetails invoice={data} /> */}
     </Container>
   );
 }

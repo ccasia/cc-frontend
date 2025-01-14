@@ -126,7 +126,7 @@ const InvoicePDF = ({ data }) => {
               <View style={styles.from}>
                 <Text style={{ color: '#8E8E93' }}>From</Text>
                 <View style={{ marginTop: 8 }}>
-                  <Text style={{ fontWeight: 600 }}>{data.invoiceFrom.name}</Text>
+                  <Text style={{ fontWeight: 600 }}>{data.bankAcc.accountName ?? data.invoiceFrom.name}</Text>
                   <Text style={{ fontWeight: 400, marginVertical: 3 }}>
                     {data.invoiceFrom.phoneNumber}
                   </Text>
@@ -209,7 +209,7 @@ const InvoicePDF = ({ data }) => {
                   <View style={styles.tableBody}>
                     <View style={styles.tableRow}>
                       <Text style={styles.tableItem}>1</Text>
-                      <Text style={styles.tableItem}>{data.invoiceFrom.name}</Text>
+                      <Text style={styles.tableItem}>{data.bankAcc.accountName ?? data.invoiceFrom.name}</Text>
                       <Text style={styles.tableItem}>{data.bankAcc.bankName}</Text>
                       <Text style={styles.tableItem}>{data.bankAcc.accountNumber}</Text>
                       <Text style={styles.tableItem}>{data.invoiceFrom.email}</Text>

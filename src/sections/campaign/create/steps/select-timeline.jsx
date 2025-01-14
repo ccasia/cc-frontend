@@ -30,7 +30,13 @@ import { RHFSelect, RHFTextField, RHFDatePicker, RHFAutocomplete } from 'src/com
 
 const FormField = ({ label, children }) => (
   <Stack spacing={1} alignItems="start" width={200}>
-    <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+    <FormLabel
+      required
+      sx={{
+        fontWeight: 600,
+        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+      }}
+    >
       {label}
     </FormLabel>
     {children}

@@ -3,7 +3,7 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { Box, Card, Stack, Typography } from '@mui/material';
+import { Box, Card, Stack, Typography, CircularProgress } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 
@@ -22,7 +22,7 @@ import CampaignFinalDraft from './submissions/campaign-final-draft';
 
 export const defaultSubmission = [
   {
-    name: 'Agreeement Submission ✍',
+    name: 'Agreement Submission ✍',
     value: 'Agreement',
     type: 'AGREEMENT_FORM',
     stage: 1,
@@ -62,16 +62,23 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     (item) => item?.campaignId === campaign?.id
   )?.isAgreementReady;
 
-  const { data: submissions, mutate: submissionMutate } = useGetSubmissions(user.id, campaign?.id);
+  const {
+    data: submissions,
+    mutate: submissionMutate,
+    isLoading: submissionLoading,
+  } = useGetSubmissions(user.id, campaign?.id);
 
   const getDueDate = (name) =>
     submissions?.find((submission) => submission?.submissionType?.type === name)?.dueDate;
 
-  const value = (name) => submissions?.find((item) => item.submissionType.type === name);
+  const value = useCallback(
+    (name) => submissions?.find((item) => item.submissionType.type === name),
+    [submissions]
+  );
 
   const timeline = campaign?.campaignTimeline;
 
-  const getTimeline = (name) => timeline?.find((item) => item.name === name);
+  // const getTimeline = (name) => timeline?.find((item) => item.name === name);
 
   const getDependency = useCallback(
     (submissionId) => {
@@ -99,7 +106,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     };
   }, [campaign, submissionMutate, socket]);
 
-  const getVisibleStages = () => {
+  const getVisibleStages = useCallback(() => {
     let stages = [];
     const agreementSubmission = value('AGREEMENT_FORM');
     const firstDraftSubmission = value('FIRST_DRAFT');
@@ -136,7 +143,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       ...stage,
       stage: stages.length - index, // This makes the bottom item Stage 01
     }));
-  };
+  }, [value]);
 
   const handleStageClick = (stageType) => {
     setSelectedStage(stageType);
@@ -160,6 +167,27 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     );
   };
 
+  // if (!submissionLoading) {
+  //   return (
+  //     <Box
+  //       sx={{
+  //         position: 'absolute',
+  //         top: '50%',
+  //         left: '50%',
+  //       }}
+  //     >
+  //       <CircularProgress
+  //         thickness={7}
+  //         size={25}
+  //         sx={{
+  //           color: (theme) => theme.palette.common.black,
+  //           strokeLinecap: 'round',
+  //         }}
+  //       />
+  //     </Box>
+  //   );
+  // }
+
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ width: '100%' }}>
       {campaign.status === 'PAUSED' ? (
@@ -174,202 +202,223 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
       ) : (
         <>
           {/* Left Column - Navigation */}
-          <Card
-            sx={{
-              width: { xs: '100%', md: '50%' },
-              minWidth: { md: '320px' },
-              maxWidth: { md: '600px' },
-              boxShadow: 'none',
-              ml: { xs: 0, md: -2 },
-              mr: { xs: 0, md: -1.5 },
-              mt: { xs: 0, md: -3.9 },
-              mb: { xs: 2, md: 0 },
-            }}
-          >
-            <Box
-              sx={{
-                height: '100%',
-                py: 2,
-                px: { xs: 1, md: 0 },
-              }}
-            >
-              {getVisibleStages().map((item, index) => (
+          {!submissionLoading && (
+            <>
+              <Card
+                sx={{
+                  width: { xs: '100%', md: '50%' },
+                  minWidth: { md: '320px' },
+                  maxWidth: { md: '600px' },
+                  boxShadow: 'none',
+                  ml: { xs: 0, md: -2 },
+                  mr: { xs: 0, md: -1.5 },
+                  mt: { xs: 0, md: -3.9 },
+                  mb: { xs: 2, md: 0 },
+                }}
+              >
                 <Box
-                  key={index}
                   sx={{
-                    mx: 2,
-                    mb: 1,
-                    p: 2.5,
-                    cursor: 'pointer',
-                    borderRadius: 2,
-                    bgcolor: selectedStage === item.type ? '#f5f5f5' : 'transparent',
-                    '&:hover': {
-                      bgcolor: '#f5f5f5',
-                    },
-                    minHeight: 75,
-                    display: 'flex',
-                    alignItems: 'center',
+                    height: '100%',
+                    py: 2,
+                    px: { xs: 1, md: 0 },
                   }}
-                  onClick={() => handleStageClick(item.type)}
                 >
-                  <Stack direction="row" spacing={2} alignItems="center" width="100%">
-                    <Label
+                  {getVisibleStages()?.map((item, index) => (
+                    <Box
+                      key={index}
                       sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
+                        mx: 2,
+                        mb: 1,
+                        p: 2.5,
+                        cursor: 'pointer',
+                        borderRadius: 2,
+                        bgcolor: selectedStage === item.type ? '#f5f5f5' : 'transparent',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                        },
+                        minHeight: 75,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor:
-                          value(item.type)?.status === 'APPROVED' ||
-                          (item.type === 'FIRST_DRAFT' &&
-                            value(item.type)?.status === 'CHANGES_REQUIRED')
-                            ? '#5abc6f'
-                            : '#f6c945',
                       }}
+                      onClick={() => handleStageClick(item.type)}
                     >
-                      {value(item.type)?.status === 'APPROVED' ||
-                      (item.type === 'FIRST_DRAFT' &&
-                        value(item.type)?.status === 'CHANGES_REQUIRED') ? (
-                        <Iconify
-                          icon="mingcute:check-circle-fill"
-                          sx={{ color: '#fff' }}
-                          width={20}
-                        />
-                      ) : (
-                        <Iconify icon="mdi:clock" sx={{ color: '#fff' }} width={20} />
-                      )}
-                    </Label>
-
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: '#8e8e93',
-                          display: 'block',
-                          mb: 0.4,
-                          textTransform: 'uppercase',
-                          fontWeight: 700,
-                        }}
-                      >
-                        Stage {String(item.stage).padStart(2, '0')}
-                      </Typography>
-
-                      <Typography variant="subtitle1" sx={{ mb: 0.2 }}>
-                        {item.name}
-                      </Typography>
-
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: '#636366',
-                          display: 'block',
-                          ...((value(item.type)?.status === 'APPROVED' ||
-                            (item.type === 'FIRST_DRAFT' &&
-                              value(item.type)?.status === 'CHANGES_REQUIRED')) && {
-                            textDecoration: 'line-through',
-                            color: '#b0b0b0',
-                          }),
-                        }}
-                      >
-                        Due: {dayjs(getDueDate(item.type)).format('D MMMM, YYYY')}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {isNewStage(item.type) && (
+                      <Stack direction="row" spacing={2} alignItems="center" width="100%">
                         <Label
                           sx={{
-                            bgcolor: 'transparent',
-                            color: '#eb4a26',
-                            border: '1px solid #eb4a26',
-                            borderBottom: '3px solid #eb4a26',
-                            borderRadius: 0.7,
-                            px: 0.8,
-                            py: 1.5,
-                            mr: 0.5,
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor:
+                              value(item.type)?.status === 'APPROVED' ||
+                              (item.type === 'FIRST_DRAFT' &&
+                                value(item.type)?.status === 'CHANGES_REQUIRED')
+                                ? '#5abc6f'
+                                : '#f6c945',
                           }}
                         >
-                          NEW
+                          {value(item.type)?.status === 'APPROVED' ||
+                          (item.type === 'FIRST_DRAFT' &&
+                            value(item.type)?.status === 'CHANGES_REQUIRED') ? (
+                            <Iconify
+                              icon="mingcute:check-circle-fill"
+                              sx={{ color: '#fff' }}
+                              width={20}
+                            />
+                          ) : (
+                            <Iconify icon="mdi:clock" sx={{ color: '#fff' }} width={20} />
+                          )}
                         </Label>
-                      )}
-                      <Iconify
-                        icon="eva:arrow-ios-forward-fill"
-                        sx={{
-                          color: 'text.secondary',
-                          width: 26,
-                          height: 26,
-                          ml: 1,
-                        }}
-                      />
-                    </Box>
-                  </Stack>
-                </Box>
-              ))}
-            </Box>
-          </Card>
 
-          {/* Right Column - Content */}
-          <Card
-            sx={{
-              width: { xs: '100%', md: '60%' },
-              flexGrow: 1,
-              boxShadow: 'none',
-              border: '1px solid',
-              borderColor: 'divider',
-              mr: { xs: 0, md: 0 },
-              mt: { xs: 0, md: -2 },
-              maxWidth: '100%',
-              overflow: 'hidden',
-            }}
-          >
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: '#8e8e93',
+                              display: 'block',
+                              mb: 0.4,
+                              textTransform: 'uppercase',
+                              fontWeight: 700,
+                            }}
+                          >
+                            Stage {String(item.stage).padStart(2, '0')}
+                          </Typography>
+
+                          <Typography variant="subtitle1" sx={{ mb: 0.2 }}>
+                            {item.name}
+                          </Typography>
+
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: '#636366',
+                              display: 'block',
+                              ...((value(item.type)?.status === 'APPROVED' ||
+                                (item.type === 'FIRST_DRAFT' &&
+                                  value(item.type)?.status === 'CHANGES_REQUIRED')) && {
+                                textDecoration: 'line-through',
+                                color: '#b0b0b0',
+                              }),
+                            }}
+                          >
+                            Due: {dayjs(getDueDate(item.type)).format('D MMMM, YYYY')}
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {isNewStage(item.type) && (
+                            <Label
+                              sx={{
+                                bgcolor: 'transparent',
+                                color: '#eb4a26',
+                                border: '1px solid #eb4a26',
+                                borderBottom: '3px solid #eb4a26',
+                                borderRadius: 0.7,
+                                px: 0.8,
+                                py: 1.5,
+                                mr: 0.5,
+                              }}
+                            >
+                              NEW
+                            </Label>
+                          )}
+                          <Iconify
+                            icon="eva:arrow-ios-forward-fill"
+                            sx={{
+                              color: 'text.secondary',
+                              width: 26,
+                              height: 26,
+                              ml: 1,
+                            }}
+                          />
+                        </Box>
+                      </Stack>
+                    </Box>
+                  ))}
+                </Box>
+              </Card>
+
+              {/* Right Column - Content */}
+              <Card
+                sx={{
+                  width: { xs: '100%', md: '60%' },
+                  flexGrow: 1,
+                  boxShadow: 'none',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  mr: { xs: 0, md: 0 },
+                  mt: { xs: 0, md: -2 },
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                }}
+              >
+                <Box
+                  sx={{
+                    p: { xs: 2, md: 3 },
+                  }}
+                >
+                  {selectedStage === 'AGREEMENT_FORM' && (
+                    <CampaignAgreement
+                      campaign={campaign}
+                      timeline={timeline}
+                      submission={value('AGREEMENT_FORM')}
+                      getDependency={getDependency}
+                      agreementStatus={agreementStatus}
+                    />
+                  )}
+                  {selectedStage === 'FIRST_DRAFT' && (
+                    <CampaignFirstDraft
+                      campaign={campaign}
+                      timeline={timeline}
+                      fullSubmission={submissions}
+                      submission={value('FIRST_DRAFT')}
+                      getDependency={getDependency}
+                      openLogisticTab={openLogisticTab}
+                      setCurrentTab={setCurrentTab}
+                    />
+                  )}
+                  {selectedStage === 'FINAL_DRAFT' && (
+                    <CampaignFinalDraft
+                      campaign={campaign}
+                      timeline={timeline}
+                      submission={value('FINAL_DRAFT')}
+                      fullSubmission={submissions}
+                      getDependency={getDependency}
+                      setCurrentTab={setCurrentTab}
+                    />
+                  )}
+                  {selectedStage === 'POSTING' && (
+                    <CampaignPosting
+                      campaign={campaign}
+                      timeline={timeline}
+                      submission={value('POSTING')}
+                      fullSubmission={submissions}
+                      getDependency={getDependency}
+                    />
+                  )}
+                </Box>
+              </Card>
+            </>
+          )}
+
+          {submissionLoading && (
             <Box
               sx={{
-                p: { xs: 2, md: 3 },
+                mx: 'auto',
               }}
             >
-              {selectedStage === 'AGREEMENT_FORM' && (
-                <CampaignAgreement
-                  campaign={campaign}
-                  timeline={timeline}
-                  submission={value('AGREEMENT_FORM')}
-                  getDependency={getDependency}
-                  agreementStatus={agreementStatus}
-                />
-              )}
-              {selectedStage === 'FIRST_DRAFT' && (
-                <CampaignFirstDraft
-                  campaign={campaign}
-                  timeline={timeline}
-                  fullSubmission={submissions}
-                  submission={value('FIRST_DRAFT')}
-                  getDependency={getDependency}
-                  openLogisticTab={openLogisticTab}
-                  setCurrentTab={setCurrentTab}
-                />
-              )}
-              {selectedStage === 'FINAL_DRAFT' && (
-                <CampaignFinalDraft
-                  campaign={campaign}
-                  timeline={timeline}
-                  submission={value('FINAL_DRAFT')}
-                  fullSubmission={submissions}
-                  getDependency={getDependency}
-                  setCurrentTab={setCurrentTab}
-                />
-              )}
-              {selectedStage === 'POSTING' && (
-                <CampaignPosting
-                  campaign={campaign}
-                  timeline={timeline}
-                  submission={value('POSTING')}
-                  fullSubmission={submissions}
-                  getDependency={getDependency}
-                />
-              )}
+              <CircularProgress
+                thickness={7}
+                size={25}
+                sx={{
+                  color: (theme) => theme.palette.common.black,
+                  strokeLinecap: 'round',
+                }}
+              />
             </Box>
-          </Card>
+          )}
         </>
       )}
     </Stack>

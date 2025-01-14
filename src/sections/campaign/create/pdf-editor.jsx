@@ -127,14 +127,6 @@ const PDFEditorModal = ({ open, onClose, user, campaignId, setAgreementForm }) =
     } catch (error) {
       throw new Error(error);
     }
-    // const urll = URL.createObjectURL(blob);
-    // const a = document.createElement('a');
-    // a.href = urll;
-    // a.download = 'annotated.pdf';
-    // document.body.appendChild(a);
-    // a.click();
-    // document.body.removeChild(a);
-    // URL.revokeObjectURL(url); // Clean up the URL object
   };
 
   const onSubmit = handleSubmit(async (data) => {

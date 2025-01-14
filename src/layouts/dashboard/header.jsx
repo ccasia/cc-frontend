@@ -91,42 +91,45 @@ export default function Header({ onOpenNav, isOnline }) {
   );
 
   return (
-    <AppBar
-      sx={{
-        position: lgUp && 'absolute',
-        borderBottom: 1,
-        borderColor: grey[200],
-        height: HEADER.H_MOBILE,
-        zIndex: theme.zIndex.appBar + 1,
-        ...bgBlur({
-          color: theme.palette.background.paper,
-        }),
-        transition: theme.transitions.create(['height'], {
-          duration: theme.transitions.duration.shorter,
-        }),
-        ...(lgUp && {
-          height: HEADER.H_DESKTOP,
-          ...(offsetTop && {
-            height: HEADER.H_DESKTOP_OFFSET,
-          }),
-          ...(isNavHorizontal && {
-            width: 1,
-            bgcolor: 'background.default',
-            height: HEADER.H_DESKTOP_OFFSET,
-            borderBottom: `dashed 1px ${theme.palette.divider}`,
-          }),
-        }),
-      }}
-    >
-      <Toolbar
+    <>
+      <AppBar
         sx={{
-          height: 1,
-          px: { lg: 5 },
+          position: lgUp && 'absolute',
+          borderBottom: 1,
+          borderBottomColor: theme.palette.divider,
+          height: HEADER.H_MOBILE,
+          zIndex: theme.zIndex.appBar + 1,
+          ...bgBlur({
+            color: theme.palette.background.paper,
+          }),
+          transition: theme.transitions.create(['height'], {
+            duration: theme.transitions.duration.shorter,
+          }),
+          ...(lgUp && {
+            height: HEADER.H_DESKTOP,
+            ...(offsetTop && {
+              height: HEADER.H_DESKTOP_OFFSET,
+            }),
+            ...(isNavHorizontal && {
+              width: 1,
+              bgcolor: 'background.default',
+              height: HEADER.H_DESKTOP_OFFSET,
+              borderBottom: `dashed 1px ${theme.palette.divider}`,
+            }),
+          }),
         }}
       >
-        {renderContent}
-      </Toolbar>
-    </AppBar>
+        <Toolbar
+          sx={{
+            height: 1,
+            px: { lg: 5 },
+          }}
+        >
+          {renderContent}
+        </Toolbar>
+      </AppBar>
+      <Divider />
+    </>
   );
 }
 

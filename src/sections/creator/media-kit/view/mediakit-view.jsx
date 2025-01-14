@@ -1,9 +1,6 @@
-import * as yup from 'yup';
+import useSWR from 'swr';
 import { m } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { enqueueSnackbar } from 'notistack';
-import { yupResolver } from '@hookform/resolvers/yup';
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   Box,
@@ -17,28 +14,36 @@ import {
   ListItemText,
 } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
+import { fetcher, endpoints } from 'src/utils/axios';
+import { useSocialMediaData } from 'src/utils/store';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
-import { grey } from 'src/theme/palette';
 import { useAuthContext } from 'src/auth/hooks';
-import { useGetSocialMedia, fetchSocialMediaData } from 'src/api/socialMedia';
+import { useGetSocialMedia } from 'src/api/socialMedia';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
-import MediaKitSetting from './media-kit-setting';
-import MediaKitSocial from './media-kit-social/view';
-import { formatNumber } from './media-kit-social/media-kit-social-content/view-instagram';
+import { formatNumber } from '../view-instagram';
+import MediaKitSetting from '../media-kit-setting';
+import MediaKitSocial from './media-kit-social-view';
 
 const MediaKitCreator = () => {
   const theme = useTheme();
+
   const { user } = useAuthContext();
-  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  const { data: socialData, error: socialError } = useSWR(
+    endpoints.creators.social.tiktok(user.id),
+    fetcher
+  );
+
+  const setTiktok = useSocialMediaData((state) => state.setTiktok);
+
+  setTiktok(socialData);
+
   const [currentTab, setCurrentTab] = useState('instagram');
+
   const [openSetting, setOpenSetting] = useState(false);
-  const dialog = useBoolean();
 
   // Function to get existing social media data
   const { data, isLoading } = useGetSocialMedia();
@@ -67,75 +72,11 @@ const MediaKitCreator = () => {
     };
   }, [currentTab, data]);
 
-  const loading = useBoolean();
-
   const handleClose = () => {
     setOpenSetting(!openSetting);
   };
 
-  const toggle = () => {
-    setIsFullScreen(!isFullScreen);
-  };
-
-  const styleFullScreen = {
-    minWidth: '100vw',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    zIndex: 10000,
-    bgcolor: theme.palette.mode === 'dark' ? grey[900] : grey[200],
-  };
-
-  const fetchNewSocialMediaData = async () => {
-    loading.onTrue();
-    try {
-      await fetchSocialMediaData();
-      enqueueSnackbar('Data is updated');
-    } catch (error) {
-      enqueueSnackbar('Failed to fetch data', {
-        variant: 'error',
-      });
-    } finally {
-      loading.onFalse();
-    }
-  };
-
-  const checkSocialMediaUsername = useCallback(() => {
-    if (!user?.creator?.tiktok || !user?.creator?.instagram) {
-      return true;
-    }
-    return false;
-  }, [user]);
-
-  const schema = yup.object().shape({
-    instagram: yup.string().required('Instagram username is required.'),
-    tiktok: yup.string().required('Tiktok username is required.'),
-  });
-
-  const methods = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      instagram: user?.creator?.instagram || '',
-      tiktok: user?.creator?.tiktok || '',
-    },
-  });
-
-  const { handleSubmit, reset } = methods;
-
-  const onSubmit = handleSubmit(async (value) => {
-    try {
-      const res = await axiosInstance.patch(endpoints.creators.updateCreator, {
-        ...value,
-        id: user.id,
-      });
-      enqueueSnackbar(res?.data?.message);
-      dialog.onFalse();
-      reset();
-      fetchNewSocialMediaData();
-    } catch (error) {
-      enqueueSnackbar(error?.message);
-    }
-  });
+  if (socialError) return <Typography>Failed to fetch tiktok data</Typography>;
 
   return (
     <Container maxWidth="xl">
@@ -155,7 +96,7 @@ const MediaKitCreator = () => {
             gap: 1.5,
           }}
         >
-          <Button
+          {/* <Button
             size="small"
             variant="contained"
             sx={{
@@ -172,11 +113,11 @@ const MediaKitCreator = () => {
             }}
           >
             {loading.value ? 'Loading...' : 'Refresh'}
-          </Button>
+          </Button> */}
           <Button
             startIcon={<Iconify icon="solar:settings-linear" />}
             // startIcon={<Iconify icon="lucide:edit" />}
-            // variant="outlined"
+            variant="outlined"
             sx={{
               color: 'black',
             }}
@@ -403,6 +344,8 @@ const MediaKitCreator = () => {
       </Stack>
 
       <Divider sx={{ my: 3 }} />
+
+      {/* Bottom View */}
 
       <Typography fontWeight={400} fontFamily="Instrument Serif" fontSize="40px">
         Top Content

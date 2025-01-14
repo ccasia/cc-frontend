@@ -2,19 +2,34 @@ import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
-import { MenuItem, TextField, IconButton, InputAdornment } from '@mui/material';
+import {
+  Select,
+  MenuItem,
+  TextField,
+  IconButton,
+  InputLabel,
+  FormControl,
+  InputAdornment,
+} from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export default function InvoiceTableToolbar({ filters, onFilters }) {
+export default function InvoiceTableToolbar({ filters, onFilters, campaigns }) {
   const popover = usePopover();
 
   const handleFilterName = useCallback(
     (event) => {
       onFilters('name', event.target.value);
+    },
+    [onFilters]
+  );
+
+  const handleFilterCampaignName = useCallback(
+    (e) => {
+      onFilters('campaignName', e.target.value);
     },
     [onFilters]
   );
@@ -34,11 +49,26 @@ export default function InvoiceTableToolbar({ filters, onFilters }) {
         }}
       >
         <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
+          <FormControl sx={{ width: 200 }}>
+            <InputLabel id="demo-simple-select-label">Campaign</InputLabel>
+            <Select
+              labelId="demo-simple-select-label"
+              id="demo-simple-select"
+              label="Campaign"
+              value={filters.campaignName}
+              onChange={handleFilterCampaignName}
+            >
+              {campaigns?.map((campaign) => (
+                <MenuItem value={campaign}>{campaign}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
           <TextField
             fullWidth
             value={filters.name}
             onChange={handleFilterName}
-            placeholder="Search by creator name"
+            placeholder="Search by Creator Name, Campaign Name or Invoice ID"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -94,4 +124,5 @@ export default function InvoiceTableToolbar({ filters, onFilters }) {
 InvoiceTableToolbar.propTypes = {
   filters: PropTypes.object,
   onFilters: PropTypes.func,
+  campaigns: PropTypes.array,
 };

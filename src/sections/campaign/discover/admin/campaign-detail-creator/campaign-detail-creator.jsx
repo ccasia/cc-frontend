@@ -115,7 +115,6 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
       enqueueSnackbar(res?.data?.message);
       campaignMutate();
       mutate(endpoints.campaign.creatorAgreement(campaign.id));
-      // mutate(endpoints.campaign.getCampaignsByAdminId);
     } catch (error) {
       console.log(error);
       loading.onFalse();
@@ -380,6 +379,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                   isSent={elem.isSent}
                   onEditAgreement={() => handleEditAgreement(elem)}
                   agreementStatus={elem.agreementStatus}
+                  campaignMutate={campaignMutate}
                 />
               ))}
             </Box>

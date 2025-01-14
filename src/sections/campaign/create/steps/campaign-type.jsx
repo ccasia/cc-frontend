@@ -5,6 +5,9 @@ import { Box, MenuItem } from '@mui/material';
 
 import { RHFSelect } from 'src/components/hook-form';
 
+// normal = UGC with posting link
+// UGC = UGC without posting link
+
 const CampaignType = () => {
   const { watch, setValue } = useFormContext();
 
@@ -30,8 +33,8 @@ const CampaignType = () => {
         label="Campaign Type"
         helperText="The campaign type may affect the campaign timeline and creator submissions."
       >
-        <MenuItem value="normal">Normal</MenuItem>
-        <MenuItem value="ugc">UGC</MenuItem>
+        <MenuItem value="normal">UGC ( With Posting )</MenuItem>
+        <MenuItem value="ugc">UGC ( No Posting )</MenuItem>
         {/* <MenuItem value="seeded" disabled>
           Seeded
         </MenuItem> */}

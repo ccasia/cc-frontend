@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
@@ -23,7 +23,6 @@ import {
   useTable,
   emptyRows,
   TableNoData,
-  getComparator,
   TableEmptyRows,
   TableHeadCustom,
   TablePaginationCustom,
@@ -36,18 +35,19 @@ import InvoiceTableFiltersResult from './invoice-table-filters-result';
 
 const defaultFilters = {
   name: '',
+  campaignName: '',
   role: [],
   status: 'all',
 };
 
 const TABLE_HEAD = [
-  { id: 'invoiceId', label: 'Invoice ID', width: 180 },
-  { id: 'campaignName', label: 'Campaign Name', width: 220 },
-  { id: 'creatorName', label: 'Creator Name', width: 180 },
-  { id: 'createdAt', label: 'Created At', width: 100 },
-  { id: 'amount', label: 'Amount', width: 100 },
-  { id: 'status', label: 'Status', width: 100 },
-  { id: '', width: 80 },
+  { id: 'invoiceNumber', label: 'Invoice ID', width: 180, hideSortIcon: false },
+  { id: 'campaignName', label: 'Campaign Name', width: 220, hideSortIcon: true },
+  { id: 'creatorName', label: 'Creator Name', width: 180, hideSortIcon: true },
+  { id: 'createdAt', label: 'Created At', width: 100, hideSortIcon: true },
+  { id: 'amount', label: 'Amount', width: 100, hideSortIcon: true },
+  { id: 'status', label: 'Status', width: 100, hideSortIcon: true },
+  { id: '', width: 80, hideSortIcon: true },
 ];
 
 const InvoiceLists = ({ invoices }) => {
@@ -57,6 +57,11 @@ const InvoiceLists = ({ invoices }) => {
   const [selectedId, setSelectedId] = useState('');
   const [selectedData, setSelectedData] = useState();
 
+  const campaigns = useMemo(() => {
+    const data = invoices?.map((invoice) => invoice?.campaign?.name);
+    return data.filter((item, index) => data.indexOf(item) === index);
+  }, [invoices]);
+
   const table = useTable();
   const denseHeight = table.dense ? 56 : 56 + 20;
 
@@ -65,11 +70,6 @@ const InvoiceLists = ({ invoices }) => {
     comparator: getComparator(table.order, table.orderBy),
     filters,
   });
-
-  const dataInPage = dataFiltered?.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
 
   const canReset = !isEqual(defaultFilters, filters);
 
@@ -162,7 +162,7 @@ const InvoiceLists = ({ invoices }) => {
           />
         </Tabs>
 
-        <InvoiceTableToolbar filters={filters} onFilters={handleFilters} />
+        <InvoiceTableToolbar filters={filters} onFilters={handleFilters} campaigns={campaigns} />
 
         {canReset && (
           <InvoiceTableFiltersResult
@@ -185,7 +185,12 @@ const InvoiceLists = ({ invoices }) => {
                 headLabel={TABLE_HEAD}
                 rowCount={dataFiltered.length}
                 numSelected={table.selected.length}
-                onSort={table.onSort}
+                onSort={(columnId) => {
+                  const column = TABLE_HEAD.find((col) => col.id === columnId);
+                  if (column && !column.hideSortIcon) {
+                    table.onSort(columnId);
+                  }
+                }}
                 onSelectAllRows={(checked) =>
                   table.onSelectAllRows(
                     checked,
@@ -202,6 +207,7 @@ const InvoiceLists = ({ invoices }) => {
                   )
                   .map((invoice) => (
                     <InvoiceItem
+                      key={invoice.id}
                       invoice={invoice}
                       onChangeStatus={changeInvoiceStatus}
                       selected={table.selected.includes(invoice.id)}
@@ -248,8 +254,31 @@ InvoiceLists.propTypes = {
   invoices: PropTypes.array,
 };
 
+function getComparator(order, orderBy) {
+  return order === 'desc'
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
+function descendingComparator(a, b, orderBy) {
+  if (orderBy === 'invoiceNumber') {
+    const aNum = a[orderBy];
+    const bNum = b[orderBy];
+
+    if (aNum < bNum) return -1;
+    if (aNum > bNum) return 1;
+    return 0;
+  }
+
+  const aValue = a[orderBy];
+  const bValue = b[orderBy];
+  if (aValue < bValue) return -1;
+  if (aValue > bValue) return 1;
+  return 0;
+}
+
 function applyFilter({ inputData, comparator, filters }) {
-  const { name, status } = filters;
+  const { name, status, campaignName } = filters;
 
   const stabilizedThis = inputData?.map((el, index) => [el, index]);
 
@@ -263,7 +292,16 @@ function applyFilter({ inputData, comparator, filters }) {
 
   if (name) {
     inputData = inputData.filter(
-      (item) => item?.creator?.user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
+      (item) =>
+        item?.creator?.user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        item?.campaign?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        item?.invoiceNumber?.toLowerCase().indexOf(name.toLowerCase()) !== -1
+    );
+  }
+
+  if (campaignName) {
+    inputData = inputData.filter(
+      (item) => item?.campaign?.name?.toLowerCase().indexOf(campaignName.toLowerCase()) !== -1
     );
   }
 

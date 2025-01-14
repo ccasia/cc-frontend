@@ -6,7 +6,7 @@ import { HOST_API } from 'src/config-global';
 
 const axiosInstance = axios.create({ baseURL: HOST_API });
 
-axiosInstance.defaults.withCredentials = true;
+// axiosInstance.defaults.withCredentials = false;
 
 axiosInstance.interceptors.request.use((request) => {
   request.headers.app = 'Cult Creative App';
@@ -104,6 +104,9 @@ export const endpoints = {
     updateSocialMediaUsername: '/api/creator/updateSocialMediaUsername',
     getMyCampaigns: (userId) => `/api/campaign/getMyCampaigns/${userId}`,
     getPartnerships: (id) => `/api/creator/getPartnerships/${id}`,
+    social: {
+      tiktok: (id) => `/api/social/tiktok/${id}`,
+    },
   },
   users: {
     newAdmin: '/api/user/admins',
@@ -227,6 +230,7 @@ export const endpoints = {
     sendAgreement: `/api/campaign/sendAgreement`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
     linkNewAgreement: `/api/campaign/linkNewAgreement`,
+    removeCreator: `/api/campaign/removeCreatorFromCampaign`,
   },
   submission: {
     root: '/api/submission/',

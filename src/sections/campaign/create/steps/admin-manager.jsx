@@ -17,8 +17,6 @@ const CampaignAdminManager = () => {
     [admins, isLoading]
   );
 
-  console.log(filteredAdmins);
-
   return (
     <>
       {isLoading && (
@@ -51,7 +49,13 @@ const CampaignAdminManager = () => {
           }}
         >
           <Stack spacing={1}>
-            <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+            <FormLabel
+              required
+              sx={{
+                fontWeight: 600,
+                color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+              }}
+            >
               Admin Managers
             </FormLabel>
             <RHFAutocomplete
@@ -81,7 +85,7 @@ const CampaignAdminManager = () => {
                     sx={{
                       border: 1,
                       borderColor: '#EBEBEB',
-                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      boxShadow: (theme) => `0px -3px 0px 0px #E7E7E7 inset`,
                       py: 2,
                       px: 1,
                     }}

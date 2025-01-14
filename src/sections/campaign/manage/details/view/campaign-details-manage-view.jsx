@@ -88,11 +88,6 @@ EditButton.propTypes = {
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
 
-  const [url, setUrl] = useState('');
-  const loading = useBoolean();
-  const copyDialog = useBoolean();
-  const copy = useBoolean();
-
   const [pages, setPages] = useState();
 
   const campaignStartDate = useMemo(
@@ -127,36 +122,6 @@ const CampaignDetailManageView = ({ id }) => {
       [data]: false,
     }));
   };
-
-  // const generateSpreadSheet = useCallback(async () => {
-  //   try {
-  //     loading.onTrue();
-  //     const res = await axiosInstance.post(endpoints.campaign.spreadsheet, {
-  //       campaignId: campaign?.id,
-  //     });
-  //     setUrl(res?.data?.url);
-  //     enqueueSnackbar(res?.data?.message);
-  //     copyDialog.onTrue();
-  //     campaignMutate();
-  //   } catch (error) {
-  //     enqueueSnackbar(error?.message, {
-  //       variant: 'error',
-  //     });
-  //   } finally {
-  //     loading.onFalse();
-  //   }
-  // }, [campaign, loading, copyDialog, campaignMutate]);
-
-  // const copyURL = () => {
-  //   navigator.clipboard
-  //     .writeText(url)
-  //     .then(() => {
-  //       copy.onTrue();
-  //     })
-  //     .catch((err) => {
-  //       console.error('Failed to copy text: ', err);
-  //     });
-  // };
 
   const refreshPdf = () => {
     mutate(endpoints.campaign.getCampaignById(id));
@@ -541,9 +506,22 @@ const CampaignDetailManageView = ({ id }) => {
               </Stack>
             }
           />
-          <ListItemText
+          {/* <ListItemText
             primary="User Persona"
             secondary={formatText(campaign?.campaignRequirement?.user_persona)}
+          /> */}
+          <ListItemText
+            primary="User Persona"
+            secondary={
+              <Box sx={{
+                wordWrap: 'break-word',  
+                overflowWrap: 'break-word', 
+                whiteSpace: 'pre-wrap', 
+                maxWidth: '100%' 
+              }}>
+                {formatText(campaign?.campaignRequirement?.user_persona)}
+              </Box>
+            }
           />
           <ListItemText
             primary="Social Media Platform"

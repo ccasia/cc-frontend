@@ -134,20 +134,15 @@ const Dashboard = () => {
   const filteredData =
     !isLoading &&
     invoices.filter(
-      (item) =>
-        item.campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.createdAt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.amount.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.status.toLowerCase().includes(searchQuery.toLowerCase())
+      (item) => item.campaign.name.toLowerCase().includes(searchQuery.toLowerCase())
+      // item.creator.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      // item.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      // item.createdAt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      // item.status.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   return (
     <Container maxWidth="lg">
-      <Typography variant="h4" gutterBottom sx={{ mb: 2 }}>
-        Finance Dashboard
-      </Typography>
       <Grid container spacing={4}>
         {/* Finance Statistics */}
         <Grid item xs={12} md={12}>

@@ -515,6 +515,8 @@ function CreateCampaignForm({ onClose }) {
               borderRadius: 1,
               borderColor: '#E7E7E7',
             }}
+            color="default"
+            variant="outlined"
             onClick={onClose}
           >
             <Iconify icon="ic:round-close" />
@@ -545,7 +547,7 @@ function CreateCampaignForm({ onClose }) {
           <Stack direction="row" alignItems="center" spacing={1}>
             {activeStep !== 0 && (
               <Button
-                variant="outlined"
+                variant="contained"
                 sx={{
                   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                   py: 1,
@@ -614,8 +616,9 @@ function CreateCampaignForm({ onClose }) {
                 variant="contained"
                 sx={{
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                  bgcolor: '#3A3A3C',
-                  color: 'white',
+                  // bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'whitesmoke' : 'black'),
+                  // '#3A3A3C',
+                  // color: (theme) => (theme.palette.mode === 'dark' ? 'black' : 'whitesmoke'),
                   py: 1,
                 }}
                 disabled={!isValid}

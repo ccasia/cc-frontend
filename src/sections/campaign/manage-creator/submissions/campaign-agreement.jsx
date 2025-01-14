@@ -36,7 +36,7 @@ import { RHFUpload } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
+  'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
   import.meta.url
 ).toString();
 
@@ -98,10 +98,11 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
   const onDocumentLoadError = (error) => {
     setPdfError(true);
+    enqueueSnackbar('Error to load PDF', { variant: 'error' });
     console.error('Error loading PDF:', error);
   };
 
-  const agreement = campaign?.campaignTimeline.find((elem) => elem.name === 'Agreement');
+  const agreement = campaign?.campaignTimeline?.find((elem) => elem?.name === 'Agreement');
 
   const methods = useForm({
     defaultValues: {
@@ -157,8 +158,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         submissionId: submission?.id,
       })
     );
-
-    console.log(formData);
 
     try {
       setLoading(true);

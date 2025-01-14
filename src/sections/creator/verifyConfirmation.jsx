@@ -13,7 +13,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { PATH_AFTER_LOGIN } from 'src/config-global';
 
 const VerifyConfirmation = () => {
   const { token } = useParams();
@@ -23,12 +22,13 @@ const VerifyConfirmation = () => {
   const success = useBoolean();
   const router = useRouter();
   const tokenExpired = useBoolean();
-  // const [isVerify, setIsVerify] = useState(false);
+
+  // const path = paths.dashboard.overview;
 
   const checkTokenVerification = useCallback(async () => {
     try {
       await verify(token);
-      router.push(PATH_AFTER_LOGIN);
+      router.push(paths.dashboard.overview.root);
     } catch (error) {
       tokenExpired.onTrue();
       enqueueSnackbar(error?.message, {

@@ -8,7 +8,7 @@ import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from
 import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
-const formatNumber = (num) => {
+export const formatNumber = (num) => {
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -53,8 +53,7 @@ const TopContentGrid = ({ topContents }) => {
         <Grid
           item
           xs={12}
-          md={4}
-          sm={6}
+          sm={4}
           key={index}
           component={m.div}
           variants={{
@@ -125,33 +124,6 @@ const TopContentGrid = ({ topContents }) => {
                 </Stack>
               </Stack>
             </Box>
-
-            {/* Link  */}
-            {/* <Box
-              sx={{
-                position: 'absolute',
-                top: 10,
-                right: 10,
-                borderRadius: '0 0 24px 24px',
-              }}
-            >
-              <IconButton
-                sx={{
-                  color: 'black',
-                  bgcolor: 'white',
-                }}
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = content?.content_url;
-                  link.target = '_blank';
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                }}
-              >
-                <Iconify icon="akar-icons:link-out" />
-              </IconButton>
-            </Box> */}
           </Box>
         </Grid>
       ))}
@@ -167,23 +139,18 @@ TopContentGrid.propTypes = {
   ).isRequired,
 };
 
-const MediaKitSocialContent = ({ tiktok }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  return (
-    <Box>
-      {tiktok?.data.top_contents ? (
-        <TopContentGrid topContents={tiktok.data.top_contents} />
-      ) : (
-        <Typography>No top content data available</Typography>
-      )}
-    </Box>
-  );
-};
-
+const MediaKitSocialContent = ({ instagram }) => (
+  <Box>
+    {instagram?.data.top_contents ? (
+      <TopContentGrid topContents={instagram.data.top_contents} />
+    ) : (
+      // Later need to implement "Connect to your instagram business account to see analytics"
+      <Typography>No top content data available</Typography>
+    )}
+  </Box>
+);
 export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
-  tiktok: PropTypes.object,
+  instagram: PropTypes.object,
 };

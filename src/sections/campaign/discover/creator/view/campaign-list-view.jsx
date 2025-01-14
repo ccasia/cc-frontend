@@ -1,10 +1,9 @@
-import { orderBy } from 'lodash';
 import { m } from 'framer-motion';
 import useSWRInfinite from 'swr/infinite';
+import { orderBy, debounce } from 'lodash';
 import { enqueueSnackbar } from 'notistack';
-import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
-import Backdrop from '@mui/material/Backdrop';
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -41,37 +40,50 @@ import CampaignLists from '../campaign-list';
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
-
+// Check
 export default function CampaignListView() {
   const settings = useSettingsContext();
   // const { campaigns } = useGetCampaigns('creator');
 
   const [filter, setFilter] = useState('all');
 
-  const scrollContainerRef = useRef(null);
-
   const { mainRef } = useMainContext();
 
   const lgUp = useResponsive('up', 'lg');
 
+  const [search, setSearch] = useState({
+    query: '',
+    results: [],
+  });
+
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSetQuery = useCallback(
+    debounce((q) => setDebouncedQuery(q), 300), // 300ms delay
+    []
+  );
+
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
-    if (pageIndex === 0) return `/api/campaign/matchCampaignWithCreator?take=${10}`;
+    if (pageIndex === 0)
+      return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}`;
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
     if (!previousPageData?.metaData?.lastCursor) return null;
 
     // Otherwise, use the nextCursor to get the next page
-    return `/api/campaign/matchCampaignWithCreator?take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
+    return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
   const { data, error, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(
     getKey,
-    fetcher
+    fetcher,
+    { revalidateFirstPage: false }
   );
 
   const { user } = useAuthContext();
-  const dialog = useBoolean();
+  const dialog = useBoolean(!user?.creator?.isFormCompleted);
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
 
   const load = useBoolean();
@@ -148,11 +160,6 @@ export default function CampaignListView() {
       socket?.off('pitch-uploaded', handlePitchSuccess);
     };
   }, [socket, upload, mutate]);
-
-  const [search, setSearch] = useState({
-    query: '',
-    results: [],
-  });
 
   const renderUploadProgress = (
     <Box
@@ -397,7 +404,11 @@ export default function CampaignListView() {
           >
             <InputBase
               value={search.query}
-              onChange={(e) => handleSearch(e.target.value)}
+              // onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch((prev) => ({ ...prev, query: e.target.value }));
+                debouncedSetQuery(e.target.value);
+              }}
               // onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search"
               startAdornment={
@@ -626,7 +637,11 @@ export default function CampaignListView() {
             >
               <InputBase
                 value={search.query}
-                onChange={(e) => handleSearch(e.target.value)}
+                // onChange={(e) => handleSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch((prev) => ({ ...prev, query: e.target.value }));
+                  debouncedSetQuery(e.target.value);
+                }}
                 placeholder="Search"
                 startAdornment={
                   <Iconify
@@ -796,15 +811,16 @@ export default function CampaignListView() {
 
       {upload.length > 0 && renderUploadProgress}
 
-      <Backdrop open={backdrop.value} sx={{ zIndex: theme.zIndex.drawer + 1 }}>
+      {/* <Dialog open={backdrop.value} sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Box
           sx={{
-            bgcolor: theme.palette.background.paper,
-            borderRadius: 3,
-            p: 4,
-            pb: 2,
-            width: 600,
-            position: 'relative',
+            padding: '20px',
+            width: '580px',
+            height: '638px',
+            background: '#f4f4f4',
+            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.15)',
+            borderRadius: '20px',
+            overflow: 'auto',
           }}
         >
           <IconButton
@@ -822,21 +838,24 @@ export default function CampaignListView() {
             <Iconify icon="mingcute:close-fill" width={24} />
           </IconButton>
 
-          <Stack spacing={2}>
-            <Typography variant="h5" sx={{ fontWeight: 650, mb: -0.1, pb: 0.2, mt: 0.8 }}>
-              Complete Your Profile Before Making a Pitch
+          <Stack spacing={0}>
+            <Typography
+              variant="body1"
+              sx={{
+                fontFamily: theme.typography.fontSecondaryFamily,
+                flexGrow: 1,
+                fontWeight: 'normal',
+                fontSize: '32px',
+              }}
+            >
+              💰 Fill in your payment details
             </Typography>
 
-            <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
-              Before you can submit a pitch for this campaign, please complete your profile form.
-              This ensures we have all the necessary information for your submission. Click below to
-              finish filling out your form and get ready to pitch!
-            </Typography>
-
-            <CreatorForm dialog={dialog} user={user} display backdrop={backdrop} />
+            <Divider sx={{ my: 2, mb: 0 }} />
           </Stack>
         </Box>
-      </Backdrop>
+      </Dialog> */}
+      <CreatorForm dialog={dialog} user={user} backdrop={backdrop} />
 
       {showScrollTop && (
         <Fab

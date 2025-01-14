@@ -1,9 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { enqueueSnackbar } from 'notistack';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import { LoadingButton } from '@mui/lab';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
@@ -14,13 +16,27 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import Iconify from 'src/components/iconify';
+import { ConfirmDialog } from 'src/components/custom-dialog';
 
 // ----------------------------------------------------------------------
 
-export default function UserCard({ key, creator, campaignId, isSent, onEditAgreement }) {
+export default function UserCard({
+  key,
+  creator,
+  campaignId,
+  isSent,
+  onEditAgreement,
+  campaignMutate,
+}) {
   const theme = useTheme();
   const router = useRouter();
+  const loading = useBoolean();
+  const confirmationDialog = useBoolean();
 
   const handleCardClick = () => {
     if (isSent) {
@@ -30,11 +46,31 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
     }
   };
 
+  const removeCreatorFromCampaign = async (userId, id) => {
+    try {
+      loading.onTrue();
+      const res = await axiosInstance.post(endpoints.campaign.removeCreator, {
+        creatorId: userId,
+        campaignId: id,
+      });
+
+      campaignMutate();
+      confirmationDialog.onFalse();
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      loading.onFalse();
+    }
+  };
+
   return (
     <Box
       key={key}
       component="div"
-      onClick={handleCardClick}
+      // onClick={handleCardClick}
       sx={{
         position: 'relative',
         cursor: 'pointer',
@@ -249,34 +285,104 @@ export default function UserCard({ key, creator, campaignId, isSent, onEditAgree
         </Box>
 
         {/* Updated View Profile Button */}
-        <Button
-          fullWidth
-          variant="contained"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleCardClick();
-          }}
-          sx={{
-            mx: 'auto',
-            width: '100%',
-            display: 'block',
-            bgcolor: isSent ? '#3a3a3c' : '#ffffff',
-            border: isSent ? 'none' : '1px solid #e7e7e7',
-            borderBottom: isSent ? '3px solid #202021' : '3px solid #e7e7e7',
-            height: 48,
-            color: isSent ? '#ffffff' : '#203ff5',
-            fontSize: '1rem',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: isSent ? '#3a3a3c' : alpha('#636366', 0.08),
-              opacity: 0.9,
-              cursor: 'pointer',
-            },
-          }}
-        >
-          {isSent ? 'View Profile' : 'Complete Agreement'}
-        </Button>
+        <Stack spacing={2} zIndex={10000000}>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCardClick();
+            }}
+            sx={{
+              mx: 'auto',
+              width: '100%',
+              display: 'block',
+              bgcolor: isSent ? '#3a3a3c' : '#ffffff',
+              border: isSent ? 'none' : '1px solid #e7e7e7',
+              borderBottom: isSent ? '3px solid #202021' : '3px solid #e7e7e7',
+              height: 48,
+              color: isSent ? '#ffffff' : '#203ff5',
+              fontSize: '1rem',
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: isSent ? '#3a3a3c' : alpha('#636366', 0.08),
+                opacity: 0.9,
+                cursor: 'pointer',
+              },
+              flexBasis: '1/2',
+            }}
+          >
+            {isSent ? 'View Profile' : 'Complete Agreement'}
+          </Button>
+
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={(e) => {
+              // e.stopPropagation();
+              // console.log('Dsa');
+              confirmationDialog.onTrue();
+            }}
+            sx={{
+              mx: 'auto',
+              display: 'block',
+              bgcolor: theme.palette.error.main,
+              border: theme.palette.error.main,
+              borderBottom: `3px solid ${theme.palette.error.main}`,
+              height: 48,
+              fontSize: '1rem',
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: theme.palette.error.main,
+                opacity: 0.9,
+                cursor: 'pointer',
+              },
+            }}
+          >
+            Withdraw Creator
+          </Button>
+        </Stack>
       </Card>
+
+      <ConfirmDialog
+        open={confirmationDialog.value}
+        onClose={confirmationDialog.onFalse}
+        title="Withdraw from Campaign?"
+        content={
+          <>
+            <Typography variant="body2" gutterBottom>
+              Are you sure you want to remove this creator? This action cannot be undone
+            </Typography>
+            {/* <Typography variant="caption" color="text.secondary">
+              This action will remove:
+            </Typography> */}
+            {/* <List>
+              <ListItem disablePadding>
+                <ListItemIcon>1.</ListItemIcon>
+                <ListItemText primary="Submissions" />
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemIcon>2.</ListItemIcon>
+                <ListItemText primary="Agreement" />
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemIcon>3</ListItemIcon>
+                <ListItemText primary="Invoice" />
+              </ListItem>
+            </List> */}
+          </>
+        }
+        action={
+          <LoadingButton
+            variant="outlined"
+            color="error"
+            loading={loading.value}
+            onClick={() => removeCreatorFromCampaign(creator.id, campaignId)}
+          >
+            Confirm
+          </LoadingButton>
+        }
+      />
     </Box>
   );
 }
@@ -287,4 +393,5 @@ UserCard.propTypes = {
   isSent: PropTypes.bool,
   onEditAgreement: PropTypes.func,
   key: PropTypes.string,
+  campaignMutate: PropTypes.func,
 };

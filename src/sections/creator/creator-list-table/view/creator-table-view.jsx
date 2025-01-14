@@ -22,7 +22,6 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCreators from 'src/hooks/use-get-creators';
 
-import { calculateAge } from 'src/utils/formatTime';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { USER_STATUS_OPTIONS } from 'src/_mock';
@@ -56,18 +55,19 @@ const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
   { id: 'pronounce', label: 'Pronounce', width: 100 },
-  { id: 'tiktok', label: 'Tiktok', width: 120 },
-  { id: 'instagram', label: 'Instagram', width: 150 },
+  // { id: 'tiktok', label: 'Tiktok', width: 120 },
+  // { id: 'instagram', label: 'Instagram', width: 150 },
   { id: 'country', label: 'Country', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
   { id: 'mediaKit', label: 'Media Kit', width: 180 },
-  { id: '', label: 'Operation', width: 88 },
+  { id: 'paymentFormStatus', label: 'Payment Form Status', width: 180 },
+  { id: '', label: '', width: 88 },
 ];
 
 const defaultFilters = {
   name: '',
   status: 'all',
-  ageRange: [18, 100],
+  ageRange: [0, 100],
   pronounce: [],
 };
 
@@ -154,7 +154,7 @@ function CreatorTableView() {
 
   const handleResetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setAgeRange([18, 100]);
+    setAgeRange([0, 100]);
   }, []);
 
   const handleFilterStatus = useCallback(
@@ -178,7 +178,6 @@ function CreatorTableView() {
         const deleteRows = tableData.filter((row) => row.id !== id);
         confirm.onFalse();
         mutate(endpoints.creators.getCreators);
-        // setTableData(deleteRows);
         enqueueSnackbar('Successfully deleted Creator');
       } catch (error) {
         enqueueSnackbar('Error delete Creator', { variant: 'error' });
@@ -260,7 +259,9 @@ function CreatorTableView() {
                       'suspended',
                       'spam',
                     ].includes(tab.value)
-                      ? tableData?.filter((user) => user.status === tab.value).length
+                      ? tableData?.filter(
+                          (user) => user.status.toLowerCase() === tab.value.toLowerCase()
+                        ).length
                       : tableData?.length}
                   </Label>
                 }
@@ -325,15 +326,6 @@ function CreatorTableView() {
                     )
                   }
                 />
-                {/* {isLoading && (
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                    }}
-                  >
-                    <LinearProgress />
-                  </Box>
-                )} */}
 
                 <TableBody>
                   {isLoading ? (
@@ -434,7 +426,7 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
   }
 
   if (status !== 'all') {
-    inputData = inputData?.filter((user) => user.status === status);
+    inputData = inputData?.filter((user) => user.status.toLowerCase() === status.toLowerCase());
   }
 
   if (filters.pronounce.length) {
@@ -442,10 +434,10 @@ function applyFilter({ inputData, comparator, filters, ageRange }) {
   }
 
   // Filter by age range
-  inputData = inputData?.filter((user) => {
-    const age = calculateAge(user.creator.birthDate);
-    return age >= ageRange[0] && age <= ageRange[1];
-  });
+  // inputData = inputData?.filter((user) => {
+  //   const age = calculateAge(user.creator.birthDate);
+  //   return age >= ageRange[0] && age <= ageRange[1];
+  // });
 
   return inputData;
 }

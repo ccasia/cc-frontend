@@ -1,5 +1,5 @@
-import React from 'react';
 import dayjs from 'dayjs';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
@@ -21,6 +21,8 @@ import { RouterLink } from 'src/routes/components';
 
 import useGetOverview from 'src/hooks/use-get-overview';
 
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 import resources from 'src/assets/resources/blogs.json';
 
@@ -28,9 +30,13 @@ import Image from 'src/components/image';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
+import CreatorForm from '../form/creatorForm';
+
 const Overview = () => {
   const { user } = useAuthContext();
   const { data, isLoading } = useGetOverview();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [creator, setCreator] = useState(null);
 
   const renderOverview = (
     <Grid container spacing={2}>
@@ -433,6 +439,40 @@ const Overview = () => {
     </>
   );
 
+  const statusCheck = useCallback(async () => {
+    const res = await axiosInstance.get(endpoints.auth.checkCreator);
+    if (res?.data?.creator?.user?.status?.includes('pending')) {
+      setDialogOpen(true);
+    }
+
+    setCreator(res?.data?.creator);
+  }, []);
+
+  useEffect(() => {
+    statusCheck();
+  }, [statusCheck]);
+
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Container maxWidth="xl">
       <ListItemText
@@ -452,28 +492,13 @@ const Overview = () => {
         }}
       />
 
-      {isLoading && (
-        <Box
-          sx={{
-            position: 'relative',
-            top: 200,
-            textAlign: 'center',
-          }}
-        >
-          <CircularProgress
-            thickness={7}
-            size={25}
-            sx={{
-              color: (theme) => theme.palette.common.black,
-              strokeLinecap: 'round',
-            }}
-          />
-        </Box>
-      )}
-
       {!isLoading && renderOverview}
 
       {renderResources}
+
+      {dialogOpen && (
+        <CreatorForm open={dialogOpen} onClose={() => setDialogOpen(false)} creator={creator} />
+      )}
     </Container>
   );
 };

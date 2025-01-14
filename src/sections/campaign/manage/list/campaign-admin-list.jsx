@@ -16,8 +16,6 @@ import CustomPopover from 'src/components/custom-popover/custom-popover';
 import { CampaignLog } from './CampaignLog';
 
 const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
-  // const smUp = useResponsive('up', 'sm');
-
   const { user } = useAuthContext();
   const popover = usePopover();
 
@@ -56,11 +54,6 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
           }}
         >
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            {/* {campaign?.status === 'active' ? (
-              <Label color="primary">{campaign?.status}</Label>
-            ) : (
-              <Label color="warning">{campaign?.status}</Label>
-            )} */}
             <Label color="info">{campaign?.campaignType}</Label>
             <Typography variant="caption" color="text.disabled">
               Created on {dayjs(campaign?.createdAt).format('LL')}
@@ -69,7 +62,17 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
 
           <Stack gap={1} flexGrow={1}>
             <Typography variant="subtitle2">{campaign?.name}</Typography>
-            <Typography variant="body2" color="text.disabled" textOverflow="ellipsis">
+            <Typography
+              variant="body2"
+              color="text.disabled"
+              textOverflow="ellipsis"
+              sx={{
+                display: '-webkit-box',
+                overflow: 'hidden',
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: 3, // Limit to 2 lines
+              }}
+            >
               {campaign?.description}
             </Typography>
           </Stack>

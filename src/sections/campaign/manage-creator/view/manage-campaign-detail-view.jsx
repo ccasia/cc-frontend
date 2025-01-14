@@ -29,7 +29,7 @@ const ManageCampaignDetailView = ({ id }) => {
 
   // Check if user is shortlisted
   const checkIfUserIsShortlisted = useCallback(() => {
-    if (data && !data.shortlisted.some((item) => item.userId === user?.id)) {
+    if (data && !data?.shortlisted?.some((item) => item?.userId === user?.id)) {
       router.back();
       enqueueSnackbar("You're not shortlisted in this campaign.", {
         variant: 'info',
@@ -39,10 +39,10 @@ const ManageCampaignDetailView = ({ id }) => {
 
   // Run check when data or user changes
   useEffect(() => {
-    if (data) {
+    if (!isLoading && data) {
       checkIfUserIsShortlisted();
     }
-  }, [checkIfUserIsShortlisted, data]);
+  }, [checkIfUserIsShortlisted, data, isLoading]);
 
   const calculateDaysLeft = (endDate) => {
     if (!endDate) return 'No end date';
@@ -83,7 +83,7 @@ const ManageCampaignDetailView = ({ id }) => {
           <Stack direction="row" alignItems="center" spacing={2}>
             {data?.campaignBrief?.images?.[0] && (
               <img
-                src={data.campaignBrief.images[0]}
+                src={data?.campaignBrief?.images[0]}
                 alt={data?.name}
                 style={{
                   width: '100%',
@@ -125,7 +125,7 @@ const ManageCampaignDetailView = ({ id }) => {
                 sx={{
                   color:
                     data?.campaignBrief?.endDate &&
-                    new Date(data.campaignBrief.endDate) < new Date()
+                    new Date(data?.campaignBrief?.endDate) < new Date()
                       ? 'error.main'
                       : '#221f20',
                   fontWeight: 500,
@@ -190,6 +190,7 @@ const ManageCampaignDetailView = ({ id }) => {
           </Stack>
         </Stack>
       </Stack>
+
       {!isLoading && data ? <CampaignDetailItem campaign={data} /> : <LoadingScreen />}
     </Container>
   );

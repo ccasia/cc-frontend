@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useAuthContext } from 'src/auth/hooks';
 
 import DashboardAdmin from 'src/sections/admin/dashboard';
-import DashboardCreator from 'src/sections/creator/dashboard';
+import Overview from 'src/sections/creator/overview/overview';
 
 // ----------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ export default function Page() {
       </Helmet>
 
       {user?.role?.includes('admin') && <DashboardAdmin />}
-      {user?.role === 'creator' && <DashboardCreator />}
+      {user?.role === 'creator' && <Overview />}
     </>
   );
 }

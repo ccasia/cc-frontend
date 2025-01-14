@@ -53,10 +53,10 @@ const Login = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await login(data.email, data.password, { admin: false });
-      if (res?.user?.role === 'creator') {
-        router.push(paths.dashboard.overview.root);
-      }
+      await login(data.email, data.password, { admin: false });
+      // if (res?.user?.role === 'creator') {
+      //   router.push(paths.dashboard.overview.root);
+      // }
       enqueueSnackbar('Successfully login');
     } catch (err) {
       // play();

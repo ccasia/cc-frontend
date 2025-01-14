@@ -1,12 +1,11 @@
-import useSWR from 'swr';
 import PropTypes from 'prop-types';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { useMemo, useEffect, useReducer, useCallback } from 'react';
 
-import axios, { fetcher, endpoints } from 'src/utils/axios';
+import axios, { endpoints } from 'src/utils/axios';
 
+import { setSession } from './utils';
 import { AuthContext } from './auth-context';
-import { setSession, isValidToken } from './utils';
 
 // ----------------------------------------------------------------------
 /**
@@ -50,6 +49,7 @@ const reducer = (state, action) => {
     return {
       ...state,
       user: null,
+      loading: false,
     };
   }
   return state;
@@ -60,53 +60,81 @@ const reducer = (state, action) => {
 // const STORAGE_KEY = 'accessToken';
 
 export function AuthProvider({ children }) {
+  const [state, dispatch] = useReducer(reducer, initialState);
   const location = useLocation();
 
-  const publicRoutes = ['/public'];
+  // const { data: userData, error: err } = useGetMe();
 
-  // Check if the current route is public
-  const isPublicRoute = publicRoutes.some((route) => location.pathname.startsWith(route));
+  // const initialize = useCallback(async () => {
+  //   console.log('TEsting');
+  //   // try {
+  //   //   const userData = await axios.get(endpoints.auth.me);
 
-  const [state, dispatch] = useReducer(reducer, initialState);
+  //   //   console.log(userData);
 
-  const { data: userData } = useSWR(isPublicRoute ? null : endpoints.auth.me, fetcher);
+  //   //   console.log('TEsting');
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  //   //   // if (err?.sessionExpired) {
+  //   //   //   dispatch({
+  //   //   //     type: 'LOGOUT',
+  //   //   //   });
+  //   //   // }
+
+  //   //   // if (userData?.user) {
+  //   //   //   const { user } = userData;
+  //   //   //   dispatch({
+  //   //   //     type: 'INITIAL',
+  //   //   //     payload: {
+  //   //   //       user: {
+  //   //   //         ...user,
+  //   //   //       },
+  //   //   //     },
+  //   //   //   });
+  //   //   // } else {
+  //   //   //   dispatch({
+  //   //   //     type: 'INITIAL',
+  //   //   //     payload: {
+  //   //   //       user: null,
+  //   //   //     },
+  //   //   //   });
+  //   //   // }
+  //   // } catch (error) {
+  //   //   console.log(error);
+  //   //   dispatch({
+  //   //     type: 'INITIAL',
+  //   //     payload: {
+  //   //       user: null,
+  //   //     },
+  //   //   });
+  //   // }
+  // }, []);
 
   const initialize = useCallback(async () => {
     try {
-      if (userData && isValidToken(userData.accessToken)) {
-        const { user } = userData;
+      const res = await axios.get(endpoints.auth.me);
 
-        dispatch({
-          type: 'INITIAL',
-          payload: {
-            user: {
-              ...user,
-            },
-          },
-        });
-      } else {
-        dispatch({
-          type: 'INITIAL',
-          payload: {
-            user: null,
-          },
-        });
-      }
-    } catch (error) {
       dispatch({
         type: 'INITIAL',
         payload: {
-          user: null,
+          user: res.data.user,
         },
       });
+    } catch (error) {
+      if (error?.sessionExpired) {
+        dispatch({
+          type: 'LOGOUT',
+        });
+      }
     }
-  }, [userData]);
+  }, []);
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    initialize();
+  }, [initialize, location]);
 
   // LOGIN
   const login = useCallback(async (email, password) => {
@@ -179,8 +207,8 @@ export function AuthProvider({ children }) {
 
   const checkAuthenticated = state.user ? 'authenticated' : 'unauthenticated';
 
-  // const permission = flattenData(state.user?.admin?.adminPermissionModule);
   const role = state?.user?.admin?.role;
+
   const permission = state?.user?.admin?.role?.permissions;
 
   const status = state.loading ? 'loading' : checkAuthenticated;
@@ -199,8 +227,9 @@ export function AuthProvider({ children }) {
       register,
       verify,
       logout,
+      initialize,
     }),
-    [login, logout, register, verify, state.user, status, permission, role]
+    [login, logout, register, verify, state.user, status, permission, role, initialize]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;
