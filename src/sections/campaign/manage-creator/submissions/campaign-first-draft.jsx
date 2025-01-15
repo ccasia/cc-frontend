@@ -124,7 +124,7 @@ const CampaignFirstDraft = ({
   const [progress, setProgress] = useState(0);
   const [progressName, setProgressName] = useState('');
   const display = useBoolean();
-  const { user } = useAuthContext();
+  const { user, dispatch } = useAuthContext();
   const [openUploadModal, setOpenUploadModal] = useState(false);
   // const navigate = useNavigate();
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -132,11 +132,12 @@ const CampaignFirstDraft = ({
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   // const [thumbnailUrl, setThumbnail] = useState(null);
   const inQueue = useBoolean();
+  const savedCaption = localStorage.getItem('caption');
 
   const methods = useForm({
     defaultValues: {
       draft: '',
-      caption: '',
+      caption: savedCaption || '',
     },
     resolver: (values) => {
       const errors = {};
@@ -160,7 +161,10 @@ const CampaignFirstDraft = ({
     setValue,
     reset,
     formState: { isSubmitting, isDirty },
+    watch,
   } = methods;
+
+  const caption = watch('caption');
 
   const handleRemoveFile = () => {
     localStorage.removeItem('preview');
@@ -274,8 +278,21 @@ const CampaignFirstDraft = ({
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
       setSubmitStatus('success');
+      if (savedCaption) localStorage.removeItem('caption');
     } catch (error) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (error?.message === 'Forbidden') {
+        if (caption) {
+          localStorage.setItem('caption', caption);
+        }
+        dispatch({
+          type: 'LOGOUT',
+        });
+        enqueueSnackbar('Your session is expired. Please re-login', {
+          variant: 'error',
+        });
+        return;
+      }
       enqueueSnackbar('Failed to submit draft', {
         variant: 'error',
       });

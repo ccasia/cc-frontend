@@ -3,6 +3,7 @@ import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useMemo, useState, useEffect } from 'react';
 
@@ -11,7 +12,6 @@ import {
   List,
   Chip,
   Stack,
-  Alert,
   Dialog,
   Button,
   Avatar,
@@ -70,7 +70,7 @@ const LoadingDots = () => {
 const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }) => {
   const dependency = getDependency(submission?.id);
   const dialog = useBoolean();
-  const { user } = useAuthContext();
+  const { user, dispatch } = useAuthContext();
 
   const invoiceId = campaign?.invoice?.find((invoice) => invoice?.creatorId === user?.id)?.id;
 
@@ -134,15 +134,15 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     </Dialog>
   );
 
-  const renderPostingTimeline = (
-    <Alert severity="success">
-      <Typography variant="subtitle1">Draft Approved! Next Step: Post Your Deliverable</Typography>
-      <Typography variant="subtitle2">
-        You can now post your content between {dayjs(submission?.startDate).format('D MMMM, YYYY')}{' '}
-        and {dayjs(submission?.endDate).format('D MMMM, YYYY')}
-      </Typography>
-    </Alert>
-  );
+  // const renderPostingTimeline = (
+  //   <Alert severity="success">
+  //     <Typography variant="subtitle1">Draft Approved! Next Step: Post Your Deliverable</Typography>
+  //     <Typography variant="subtitle2">
+  //       You can now post your content between {dayjs(submission?.startDate).format('D MMMM, YYYY')}{' '}
+  //       and {dayjs(submission?.endDate).format('D MMMM, YYYY')}
+  //     </Typography>
+  //   </Alert>
+  // );
 
   const renderRejectMessage = (
     <Box mt={2}>
@@ -164,14 +164,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
               alt={feedback.admin?.name || 'User'}
               sx={{ mr: 2 }}
             />
-            <Box
-              flexGrow={1}
-              sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
-            >
-              <Typography
-                variant="subtitle1"
-                sx={{ fontWeight: 'bold', marginBottom: '2px' }}
-              >
+            <Box flexGrow={1} sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', marginBottom: '2px' }}>
                 {feedback.admin?.name || 'Unknown User'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -228,7 +222,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const res = await axiosInstance.post(endpoints.submission.creator.postSubmission, {
+      await axiosInstance.post(endpoints.submission.creator.postSubmission, {
         ...data,
         submissionId: submission?.id,
       });
@@ -241,6 +235,15 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
       setSubmitStatus('success');
     } catch (error) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (error?.message === 'Forbidden') {
+        dispatch({
+          type: 'LOGOUT',
+        });
+        enqueueSnackbar('Your session is expired. Please re-login', {
+          variant: 'error',
+        });
+        return;
+      }
       // enqueueSnackbar('Error submitting post link', {
       //   variant: 'error',
       // });

@@ -228,6 +228,7 @@ export function AuthProvider({ children }) {
       verify,
       logout,
       initialize,
+      dispatch,
     }),
     [login, logout, register, verify, state.user, status, permission, role, initialize]
   );
