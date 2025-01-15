@@ -110,4 +110,7 @@ export const banks = [
   {
     bank: 'Bank Indonesia',
   },
+  {
+    bank: 'Bank Central Asia',
+  },
 ];
