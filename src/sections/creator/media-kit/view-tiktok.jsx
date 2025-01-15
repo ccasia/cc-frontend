@@ -3,11 +3,9 @@ import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { keyframes } from '@emotion/react';
 
-import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
+import { Box, Grid, useTheme, Typography, useMediaQuery } from '@mui/material';
 
 import { useSocialMediaData } from 'src/utils/store';
-
-import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -64,7 +62,14 @@ const TopContentGrid = ({ topContents }) => {
             show: { opacity: 1, y: 0 },
           }}
         >
-          <Box
+          <Box height={600} width={350}>
+            <iframe
+              src={content?.embed_link}
+              title="tiktok"
+              style={{ height: '100%', width: '100%' }}
+            />
+          </Box>
+          {/* <Box
             sx={{
               position: 'relative',
               height: 600,
@@ -76,13 +81,6 @@ const TopContentGrid = ({ topContents }) => {
               },
             }}
           >
-            <Box height={600} width={350}>
-              <iframe
-                src={content?.embed_link}
-                title="tiktok"
-                style={{ height: '100%', width: '100%' }}
-              />
-            </Box>
             <CardMedia
               component="Box"
               className="image"
@@ -125,16 +123,16 @@ const TopContentGrid = ({ topContents }) => {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="material-symbols:favorite-outline" width={20} />
-                  {/* <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography> */}
+                  <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="iconamoon:comment" width={20} />
-                  {/* <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography> */}
+                  <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
                 </Stack>
               </Stack>
             </Box>
-          </Box>
+          </Box> */}
         </Grid>
       ))}
     </Grid>
