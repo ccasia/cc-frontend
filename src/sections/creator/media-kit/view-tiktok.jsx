@@ -76,6 +76,13 @@ const TopContentGrid = ({ topContents }) => {
               },
             }}
           >
+            <Box height={600} width={350}>
+              <iframe
+                src={content?.embed_link}
+                title="tiktok"
+                style={{ height: '100%', width: '100%' }}
+              />
+            </Box>
             <CardMedia
               component="Box"
               className="image"
@@ -86,13 +93,6 @@ const TopContentGrid = ({ topContents }) => {
                 objectFit: 'cover',
                 background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.cover_image_url}) lightgray 50% / cover no-repeat`,
               }}
-            />
-
-            <Box
-              component="div"
-              dangerouslySetInnerHTML={{ __html: content?.embed_html }}
-              width={300}
-              height={300}
             />
 
             <Box
