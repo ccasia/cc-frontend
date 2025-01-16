@@ -140,6 +140,15 @@ const CampaignListView = () => {
     };
   }, [handleScroll, mainRef, lgUp]);
 
+  const isDisabled = useMemo(() => {
+    return (
+      user?.admin?.mode === 'advanced' && 
+      !campaigns?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaigns]);
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs

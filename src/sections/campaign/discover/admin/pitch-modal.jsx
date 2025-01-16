@@ -3,7 +3,7 @@
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import {
@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
@@ -32,10 +33,20 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
+  const { user } = useAuthContext();
 
   useEffect(() => {
     setCurrentPitch(pitch);
   }, [pitch]);
+
+  const isDisabled = useMemo(() => {
+    return (
+      user?.admin?.mode === 'advanced' && 
+      !campaign?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaign]);
 
   // Calculate match percentage
   // const matchPercentage = useMemo(() => {
@@ -646,7 +657,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           <Button
             variant="contained"
             onClick={() => setConfirmDialog({ open: true, type: 'decline' })}
-            disabled={isSubmitting || currentPitch?.status === 'rejected'}
+            disabled={isDisabled || isSubmitting || currentPitch?.status === 'rejected'}
             sx={{
               textTransform: 'none',
               minHeight: 42,
@@ -670,7 +681,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           <Button
             variant="contained"
             onClick={() => setConfirmDialog({ open: true, type: 'approve' })}
-            disabled={isSubmitting || currentPitch?.status === 'approved'}
+            disabled={isDisabled || isSubmitting || currentPitch?.status === 'approved'}
             sx={{
               textTransform: 'none',
               minHeight: 42,

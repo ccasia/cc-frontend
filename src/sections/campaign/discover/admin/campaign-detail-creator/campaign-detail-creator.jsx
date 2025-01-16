@@ -32,6 +32,8 @@ import { endpoints } from 'src/utils/axios';
 
 import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { RHFAutocomplete } from 'src/components/hook-form';
@@ -56,6 +58,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
   const [selectedAgreement, setSelectedAgreement] = useState(null);
+  const { user } = useAuthContext();
 
   const methods = useForm({
     defaultValues: {
@@ -69,6 +72,19 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     reset,
     formState: { isSubmitting },
   } = methods;
+
+  const isDisabled = useMemo(() => {
+    return (user?.admin?.mode === 'advanced' && 
+      !campaign?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaign]);
+
+  // console.log("User Id Detail:", user?.id);
+  // console.log("Campaign Id Detail:", campaign?.id);
+  // console.log("Campaign Admin List:", campaign?.campaignAdmin);
+  // console.log("Button Detail:", isDisabled);
 
   const creatorsWithAgreements = useMemo(() => {
     if (!agreements || !campaign?.shortlisted) return campaign?.shortlisted;
@@ -260,7 +276,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
 
           <LoadingButton
             type="submit"
-            disabled={!selectedCreator.length || isSubmitting}
+            disabled={isDisabled || !selectedCreator.length || isSubmitting}
             loading={loading.value}
             sx={{
               bgcolor: '#203ff5',
@@ -333,6 +349,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
           ) : (
             <Button
               onClick={modal.onTrue}
+              disabled = {isDisabled}
               sx={{
                 bgcolor: '#ffffff',
                 border: '1px solid #e7e7e7',
@@ -376,6 +393,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                   key={elem?.id}
                   creator={elem?.user}
                   campaignId={campaign?.id}
+                  campaign={campaign}
                   isSent={elem.isSent}
                   onEditAgreement={() => handleEditAgreement(elem)}
                   agreementStatus={elem.agreementStatus}

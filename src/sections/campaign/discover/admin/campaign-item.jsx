@@ -169,15 +169,9 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
 
   return (
     <Card
-      onClick={
-        user?.admin?.role?.name === 'Finance'
-          ? () => {
-              router.push(paths.dashboard.finance.creatorInvoice(campaign?.id));
-            }
-          : () => {
-              router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
-            }
-      }
+      onClick={() => {
+        router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id));
+      }}
       sx={{
         overflow: 'hidden',
         cursor: 'pointer',

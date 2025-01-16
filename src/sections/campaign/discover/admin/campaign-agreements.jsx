@@ -32,6 +32,7 @@ import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 
 import CampaignAgreementEdit from './campaign-agreement-edit';
+import { useAuthContext } from 'src/auth/hooks';
 
 // eslint-disable-next-line react/prop-types
 const AgreementDialog = ({ open, onClose, url }) => (
@@ -55,6 +56,8 @@ const CampaignAgreements = ({ campaign }) => {
   const editDialog = useBoolean();
   const [selectedUrl, setSelectedUrl] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState(null);
+
+  const { user } = useAuthContext();
 
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
@@ -82,10 +85,6 @@ const CampaignAgreements = ({ campaign }) => {
     editDialog.onTrue();
   };
 
-  if (!isLoading && data.length < 1) {
-    return <EmptyContent title="No agreements found" />;
-  }
-
   const handleSendAgreement = async (item) => {
     try {
       const res = await axiosInstance.patch(endpoints.campaign.sendAgreement, item);
@@ -95,6 +94,25 @@ const CampaignAgreements = ({ campaign }) => {
       enqueueSnackbar(error?.message, { variant: 'error' });
     }
   };
+
+  const isDisabled = useMemo(() => {
+    return (
+      user?.admin?.mode === 'advanced' && 
+      !campaign?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaign]);
+
+  console.log("Button:", isDisabled);
+
+  if (isLoading) {
+    return <div>Loading...</div>; // A loading message while the data is being fetched
+  }
+
+  if (data.length < 1) {
+    return <EmptyContent title="No agreements found" />;
+  }
 
   return (
     <Box sx={{ overflowX: 'auto' }}>
@@ -292,9 +310,9 @@ const CampaignAgreements = ({ campaign }) => {
             {!isLoading &&
               filteredData?.map((item) => {
                 // eslint-disable-next-line no-restricted-globals
-                const isAmountValid = !isNaN(parseFloat(item?.amount?.toString()));
-                return (
-                  <TableRow key={item.id}>
+              const isAmountValid = !isNaN(parseFloat(item?.amount?.toString()));
+              return (
+                <TableRow key={item.id}>
                     <TableCell>
                       <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
                         <Avatar
@@ -403,6 +421,7 @@ const CampaignAgreements = ({ campaign }) => {
                           </Button>
                           <Button
                             onClick={() => handleEditAgreement(item)}
+                            disabled={isDisabled}
                             size="small"
                             variant="outlined"
                             sx={{
@@ -430,7 +449,7 @@ const CampaignAgreements = ({ campaign }) => {
                             size="small"
                             variant="outlined"
                             startIcon={<Iconify icon="bx:send" sx={{ color: '#835cf5' }} />}
-                            disabled={!isAmountValid}
+                            disabled={isDisabled || !isAmountValid}
                             sx={{
                               px: 1.5,
                               py: 2,
@@ -461,22 +480,22 @@ const CampaignAgreements = ({ campaign }) => {
                           <IconButton onClick={() => handleViewAgreement(item?.agreementUrl)}>
                             <Iconify icon="hugeicons:view" />
                           </IconButton>
-                          <IconButton color="warning" onClick={() => handleEditAgreement(item)}>
+                          <IconButton color="warning" onClick={() => handleEditAgreement(item) } disabled={isDisabled}>
                             <Iconify icon="iconamoon:edit-light" />
                           </IconButton>
                           <IconButton
                             color={item.isSent ? 'warning' : 'primary'}
                             onClick={() => handleSendAgreement(item)}
-                            disabled={!isAmountValid}
+                            disabled={isDisabled || !isAmountValid}
                           >
                             <Iconify icon="bx:send" />
                           </IconButton>
                         </Stack>
                       )}
                     </TableCell>
-                  </TableRow>
-                );
-              })}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

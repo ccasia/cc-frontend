@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
@@ -25,6 +25,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -40,6 +42,7 @@ const Agreement = ({ campaign, submission, creator }) => {
   const [numPages, setNumPages] = useState(null);
   const loading = useBoolean();
   const [pdfError, setPdfError] = useState(false);
+  const { user } = useAuthContext();
 
   const onDocumentLoadSuccess = ({ numPages: num }) => {
     setNumPages(num);
@@ -116,6 +119,15 @@ const Agreement = ({ campaign, submission, creator }) => {
     }
   });
 
+  const isDisabled = useMemo(() => {
+    return (
+      user?.admin?.mode === 'advanced' && 
+      !campaign?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaign]);
+
   const renderFeedbackForm = (
     <Dialog open={modal.value} onClose={modal.onFalse} maxWidth="xs" fullWidth>
       <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -141,7 +153,7 @@ const Agreement = ({ campaign, submission, creator }) => {
           >
             Cancel
           </Button>
-          <LoadingButton type="submit" size="small" variant="contained" loading={isSubmitting}>
+          <LoadingButton type="submit" size="small" variant="contained" loading={isSubmitting} disabled={isDisabled}>
             Submit
           </LoadingButton>
         </DialogActions>
@@ -265,6 +277,7 @@ const Agreement = ({ campaign, submission, creator }) => {
                   <Stack direction="row" gap={1.5} justifyContent="end" mt={2}>
                     <Button
                       onClick={modal.onTrue}
+                      disabled={isDisabled}
                       size="small"
                       variant="contained"
                       startIcon={<Iconify icon="solar:close-circle-bold" />}
@@ -293,6 +306,7 @@ const Agreement = ({ campaign, submission, creator }) => {
                     <LoadingButton
                       size="small"
                       onClick={() => handleClick()}
+                      disabled={isDisabled}
                       variant="contained"
                       startIcon={<Iconify icon="solar:check-circle-bold" />}
                       loading={loading.value}

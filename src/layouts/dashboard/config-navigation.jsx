@@ -297,8 +297,17 @@ export function useNavData() {
       {
         items: [
           {
-            title: 'Dashboard',
+            title: 'Overview',
             path: paths.dashboard.finance.root,
+            icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            title: 'Campaign',
+            path: paths.dashboard.campaign.view,
             icon: <Iconify icon="iconamoon:discover" width={25} />,
           },
           {
