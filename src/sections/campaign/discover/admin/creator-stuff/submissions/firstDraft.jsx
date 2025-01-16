@@ -4,7 +4,7 @@ import * as Yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 /* eslint-disable no-undef */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -36,6 +36,7 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
+import { useAuthContext } from 'src/auth/hooks';
 
 const options_changes = [
   'Missing caption requirements',
@@ -60,6 +61,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
   const request = useBoolean();
   const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const { user } = useAuthContext();
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -96,6 +98,15 @@ const FirstDraft = ({ campaign, submission, creator }) => {
   } = methods;
 
   const scheduleStartDate = watch('schedule.startDate');
+
+  const isDisabled = useMemo(() => {
+    return (
+      user?.admin?.mode === 'advanced' && 
+      !campaign?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaign]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -217,6 +228,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
             setValue('type', 'approve');
             onSubmit();
           }}
+          disabled={isDisabled}
           variant="contained"
           size="small"
           loading={isSubmitting}
@@ -703,6 +715,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                   setValue('type', 'request');
                                   setValue('feedback', '');
                                 }}
+                                disabled={isDisabled}
                                 size="small"
                                 variant="contained"
                                 startIcon={<Iconify icon="solar:close-circle-bold" />}
@@ -730,6 +743,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                               </Button>
                               <LoadingButton
                                 onClick={approve.onTrue}
+                                disabled={isDisabled}
                                 variant="contained"
                                 size="small"
                                 startIcon={<Iconify icon="solar:check-circle-bold" />}
@@ -763,7 +777,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                           <Typography variant="h6" mb={1} mx={1}>
                             Request Changes
                           </Typography>
-                          <FormProvider methods={methods} onSubmit={onSubmit}>
+                          <FormProvider methods={methods} onSubmit={onSubmit} disabled={isDisabled}>
                             <Stack gap={2}>
                               <RHFMultiSelect
                                 name="reasons"

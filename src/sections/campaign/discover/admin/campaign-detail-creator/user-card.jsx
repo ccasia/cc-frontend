@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
@@ -22,12 +22,14 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
 export default function UserCard({
   key,
   creator,
+  campaign,
   campaignId,
   isSent,
   onEditAgreement,
@@ -37,6 +39,20 @@ export default function UserCard({
   const router = useRouter();
   const loading = useBoolean();
   const confirmationDialog = useBoolean();
+  const { user } = useAuthContext();
+
+  const isDisabled = useMemo(() => {
+    return (user?.admin?.mode === 'advanced' && 
+      !campaign?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaign]); 
+
+  // console.log("User Id:", user?.id);
+  // console.log("Campaign Id:", campaign?.id);
+  // console.log("Campaign Admin:", campaign?.campaignAdmin);
+  // console.log("Button:", isDisabled);
 
   const handleCardClick = () => {
     if (isSent) {
@@ -293,10 +309,11 @@ export default function UserCard({
               e.stopPropagation();
               handleCardClick();
             }}
+            disabled= {!isSent && isDisabled}
             sx={{
               mx: 'auto',
               width: '100%',
-              display: 'block',
+              display: isSent || !isDisabled ? 'block' : 'none', // Hide when isSent=false and isDisabled=true
               bgcolor: isSent ? '#3a3a3c' : '#ffffff',
               border: isSent ? 'none' : '1px solid #e7e7e7',
               borderBottom: isSent ? '3px solid #202021' : '3px solid #e7e7e7',
@@ -307,13 +324,13 @@ export default function UserCard({
               '&:hover': {
                 bgcolor: isSent ? '#3a3a3c' : alpha('#636366', 0.08),
                 opacity: 0.9,
-                cursor: 'pointer',
               },
               flexBasis: '1/2',
             }}
           >
             {isSent ? 'View Profile' : 'Complete Agreement'}
           </Button>
+
 
           <Button
             fullWidth
@@ -323,6 +340,7 @@ export default function UserCard({
               // console.log('Dsa');
               confirmationDialog.onTrue();
             }}
+            disabled={isDisabled}
             sx={{
               mx: 'auto',
               display: 'block',
@@ -378,6 +396,7 @@ export default function UserCard({
             color="error"
             loading={loading.value}
             onClick={() => removeCreatorFromCampaign(creator.id, campaignId)}
+            disabled={isDisabled}
           >
             Confirm
           </LoadingButton>

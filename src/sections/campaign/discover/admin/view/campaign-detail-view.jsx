@@ -446,6 +446,27 @@ const CampaignDetailView = ({ id }) => {
     </Dialog>
   );
 
+  const isDisabled = useMemo(() => {
+    return (
+      user?.admin?.mode === 'advanced' && 
+      !campaign?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaign]);
+
+  // useEffect(() => {
+  //   if (!campaignLoading && campaign) {
+  //     console.log("Campaign Object:", campaign);
+  //   }
+  // }, [campaignLoading, campaign]); 
+
+  // console.log("User:", user);
+
+  // useEffect(() => {
+  //   console.log('Is Disabled:', isDisabled);
+  // }, [isDisabled]);
+
   return (
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
@@ -556,10 +577,15 @@ const CampaignDetailView = ({ id }) => {
                   <img
                     src="/assets/icons/overview/editButton.svg"
                     alt="edit"
-                    style={{ width: 16, height: 16 }}
+                    style={{
+                      width: 16,
+                      height: 16,
+                      opacity: isDisabled ? 0.3 : 1,
+                    }}
                   />
-                }
+                }                
                 onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
+                disabled={isDisabled}
                 sx={{
                   height: 32,
                   borderRadius: 1,
@@ -586,6 +612,7 @@ const CampaignDetailView = ({ id }) => {
                   startIcon={<Iconify icon="lucide:file-spreadsheet" width={16} />}
                   variant="outlined"
                   size="small"
+                  disabled={isDisabled}
                   sx={{
                     height: 32,
                     borderRadius: 1,
@@ -653,7 +680,7 @@ const CampaignDetailView = ({ id }) => {
 
       {copyDialogContainer}
 
-      {agreementDialogContainer}
+      {!isDisabled && agreementDialogContainer}
 
       <PDFEditorModal
         open={pdfModal.value}

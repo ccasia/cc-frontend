@@ -39,6 +39,15 @@ export default function InvoiceTableRow({
   const popover = usePopover();
   const { user } = useAuthContext();
 
+  const isDisabled = useMemo(() => {
+    return (
+      user?.admin?.mode === 'advanced' && 
+      !campaign?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaign]);
+
   return (
     <>
       <TableRow hover selected={selected}>
@@ -143,25 +152,27 @@ export default function InvoiceTableRow({
         {user?.admin?.role?.name !== 'CSM' && (
           <>
             <MenuItem
+              disabled={isDisabled} 
               onClick={() => {
                 onEditRow();
                 popover.onClose();
               }}
             >
-              <Iconify icon="solar:pen-bold" />
+              <Iconify icon="solar:pen-bold"/>
               Edit
             </MenuItem>
 
             <Divider sx={{ borderStyle: 'dashed' }} />
 
             <MenuItem
+              disabled={isDisabled} 
               onClick={() => {
                 confirm.onTrue();
                 popover.onClose();
               }}
               sx={{ color: 'error.main' }}
             >
-              <Iconify icon="solar:trash-bin-trash-bold" />
+              <Iconify icon="solar:trash-bin-trash-bold"/>
               Delete
             </MenuItem>
           </>
@@ -174,7 +185,7 @@ export default function InvoiceTableRow({
         title="Delete"
         content="Are you sure want to delete?"
         action={
-          <Button variant="contained" color="error" onClick={onDeleteRow}>
+          <Button variant="contained" color="error" onClick={onDeleteRow} disabled={isDisabled}>
             Delete
           </Button>
         }

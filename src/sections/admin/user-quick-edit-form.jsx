@@ -220,6 +220,7 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
 
               <RHFSelect name="mode" label="Mode">
                 <MenuItem value="normal">Normal</MenuItem>
+                <MenuItem value="advanced">Advanced</MenuItem>
                 <MenuItem value="god">God</MenuItem>
               </RHFSelect>
             </Box>

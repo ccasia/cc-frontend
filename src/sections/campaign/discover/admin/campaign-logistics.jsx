@@ -1,6 +1,7 @@
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
+import { useMemo } from 'react';
 
 import { 
   Box,
@@ -20,6 +21,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import { confirmItemDelivered } from 'src/api/logistic';
 
 import Scrollbar from 'src/components/scrollbar';
+
 
 const statusMapping = {
   Product_is_being_packaged: 'BEING PACKAGED',
@@ -47,6 +49,15 @@ const CampaignLogistics = ({ campaign }) => {
   console.log(campaign)
 
   const campaignLogistics = campaign?.logistic || [];
+
+  const isDisabled = useMemo(() => {
+    return (
+      user?.admin?.mode === 'advanced' && 
+      !campaign?.campaignAdmin?.some(
+        (adminObj) => adminObj?.admin?.user?.id === user?.id
+      )
+    );
+  }, [user, campaign]);
 
   return (
     <Box>
@@ -201,6 +212,7 @@ const CampaignLogistics = ({ campaign }) => {
                           variant="contained"
                           size="small"
                           onClick={() => onClickConfirm(logistic?.id)}
+                          disabled={isDisabled}
                         >
                           Confirm Receipt
                         </Button>
