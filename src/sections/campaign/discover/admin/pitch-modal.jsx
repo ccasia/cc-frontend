@@ -41,10 +41,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   }, [pitch]);
 
   const isDisabled = useMemo(
-    () =>
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id),
-    [user, campaign]
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
   );
 
   // Calculate match percentage

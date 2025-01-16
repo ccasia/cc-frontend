@@ -215,10 +215,8 @@ export default function InvoiceListView({ campId, invoices }) {
   );
 
   const isDisabled = useMemo(
-    () =>
-      user?.admin?.mode === 'advanced' ||
-      !campId?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id),
-    [user, campId]
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
   );
 
   return (

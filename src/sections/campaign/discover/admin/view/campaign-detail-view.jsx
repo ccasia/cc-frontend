@@ -446,12 +446,10 @@ const CampaignDetailView = ({ id }) => {
     </Dialog>
   );
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   // useEffect(() => {
   //   if (!campaignLoading && campaign) {

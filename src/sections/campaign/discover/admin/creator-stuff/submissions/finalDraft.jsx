@@ -3,10 +3,10 @@ import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-/* eslint-disable no-undef */
-import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+/* eslint-disable no-undef */
+import React, { useMemo, useState } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -99,12 +99,10 @@ const FinalDraft = ({ campaign, submission, creator }) => {
 
   const scheduleStartDate = watch('schedule.startDate');
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   const onSubmit = handleSubmit(async (data) => {
     try {

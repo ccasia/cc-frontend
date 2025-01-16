@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -116,12 +116,10 @@ const Posting = ({ campaign, submission, creator }) => {
     }
   }, [date]);
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%' }}>

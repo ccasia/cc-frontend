@@ -1,9 +1,9 @@
 import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useState } from 'react';
 import { Page, pdfjs, Document } from 'react-pdf';
 
 import { LoadingButton } from '@mui/lab';
@@ -119,12 +119,10 @@ const Agreement = ({ campaign, submission, creator }) => {
     }
   });
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   const renderFeedbackForm = (
     <Dialog open={modal.value} onClose={modal.onFalse} maxWidth="xs" fullWidth>

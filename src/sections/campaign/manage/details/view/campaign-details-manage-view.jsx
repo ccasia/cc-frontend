@@ -43,7 +43,6 @@ import { formatText } from 'src/utils/format-test';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
-
 import withPermission from 'src/auth/guard/withPermissions';
 
 import Label from 'src/components/label';
@@ -133,13 +132,10 @@ const CampaignDetailManageView = ({ id }) => {
 
   const isEditable = campaign?.status !== 'ACTIVE';
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
-    );
-  }, [user, campaign]);
-
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
   const handleChangeStatus = async (status) => {
     if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate).isBefore(dayjs, 'date')) {
       enqueueSnackbar('You cannot publish a campaign that is already end.', {

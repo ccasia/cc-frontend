@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -61,12 +61,10 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
     setValue('pitchId', data?.id);
   }, [setValue, data]);
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   const handleChange = async (val) => {
     if (val.target.value === 'approved') {

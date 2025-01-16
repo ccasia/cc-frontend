@@ -50,10 +50,8 @@ const CampaignLogistics = ({ campaign }) => {
   const campaignLogistics = campaign?.logistic || [];
 
   const isDisabled = useMemo(
-    () =>
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id),
-    [user, campaign]
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
   );
 
   return (

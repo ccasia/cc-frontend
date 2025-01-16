@@ -5,9 +5,10 @@ import { Box, Paper, Stack, Button, Typography } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import ListLogistics from '../list-logistic';
 import CreateLogistic from '../create-logistics';
-import { useAuthContext } from 'src/auth/hooks';
 
 const LogisticView = ({ campaign, creator }) => {
   const form = useBoolean();
@@ -18,12 +19,10 @@ const LogisticView = ({ campaign, creator }) => {
     [campaign, creator]
   );
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   return (
     <Box component={Paper} p={2}>

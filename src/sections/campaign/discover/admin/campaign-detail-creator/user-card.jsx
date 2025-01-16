@@ -43,10 +43,8 @@ export default function UserCard({
   const { user } = useAuthContext();
 
   const isDisabled = useMemo(
-    () =>
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id),
-    [user, campaign]
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
   );
 
   const handleCardClick = () => {

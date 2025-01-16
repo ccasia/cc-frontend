@@ -1,8 +1,8 @@
 /* eslint-disable jsx-a11y/media-has-caption */
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import React, { useState, useMemo } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -10,15 +10,13 @@ import { Box, Card, Grid, Stack, Button, Tooltip, TextField, Typography } from '
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { useAuthContext } from 'src/auth/hooks';
-
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const FirstDraft = ({ campaign, submission, user }) => {
   const [type, setType] = useState('approve');
-  const { user } = useAuthContext();
+  // const { user } = useAuthContext();
 
   const campaignTasks = user?.user?.campaignTasks.filter(
     (task) => task?.campaignId === campaign.id
@@ -69,12 +67,10 @@ const FirstDraft = ({ campaign, submission, user }) => {
     }
   });
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' ||
-      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   return (
     <Box>
