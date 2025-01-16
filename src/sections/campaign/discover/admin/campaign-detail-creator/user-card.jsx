@@ -328,8 +328,6 @@ export default function UserCard({
             fullWidth
             variant="contained"
             onClick={(e) => {
-              // e.stopPropagation();
-              // console.log('Dsa');
               confirmationDialog.onTrue();
             }}
             disabled={isDisabled}
@@ -346,6 +344,9 @@ export default function UserCard({
                 bgcolor: theme.palette.error.main,
                 opacity: 0.9,
                 cursor: 'pointer',
+              },
+              '&:disabled': {
+                display: 'none',
               },
             }}
           >

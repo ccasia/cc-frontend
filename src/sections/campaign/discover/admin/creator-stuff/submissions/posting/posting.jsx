@@ -185,7 +185,16 @@ const Posting = ({ campaign, submission, creator }) => {
                   </Typography>
                 </Stack>
               </Stack>
-              <Button variant="outlined" onClick={postingDate.onTrue} disabled={isDisabled}>
+              <Button
+                variant="outlined"
+                onClick={postingDate.onTrue}
+                disabled={isDisabled}
+                sx={{
+                  '&:disabled': {
+                    display: 'none',
+                  },
+                }}
+              >
                 Change Posting Date
               </Button>
             </Stack>
@@ -300,6 +309,9 @@ const Posting = ({ campaign, submission, creator }) => {
                       bgcolor: 'error.lighter',
                       borderColor: '#e7e7e7',
                     },
+                    '&:disabled': {
+                      display: 'none',
+                    },
                     textTransform: 'none',
                     px: 2.5,
                     py: 1.2,
@@ -313,6 +325,7 @@ const Posting = ({ campaign, submission, creator }) => {
                 <LoadingButton
                   size="small"
                   onClick={dialogApprove.onTrue}
+                  disabled={isDisabled}
                   variant="contained"
                   startIcon={<Iconify icon="solar:check-circle-bold" />}
                   loading={loading.value}
@@ -327,6 +340,9 @@ const Posting = ({ campaign, submission, creator }) => {
                     '&:hover': {
                       bgcolor: '#2e6c56',
                       opacity: 0.9,
+                    },
+                    '&:disabled': {
+                      display: 'none',
                     },
                     fontSize: '0.875rem',
                     minWidth: '80px',

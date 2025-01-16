@@ -240,6 +240,9 @@ const FirstDraft = ({ campaign, submission, creator }) => {
               bgcolor: '#2e6c56',
               opacity: 0.9,
             },
+            '&:disabled': {
+              display: 'none',
+            },
             fontSize: '0.875rem',
             minWidth: '80px',
             height: '45px',
@@ -737,6 +740,9 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                     bgcolor: 'error.lighter',
                                     borderColor: '#e7e7e7',
                                   },
+                                  '&:disabled': {
+                                    display: 'none',
+                                  },
                                   textTransform: 'none',
                                   px: 2.5,
                                   py: 1.2,
@@ -765,6 +771,9 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                   '&:hover': {
                                     bgcolor: '#2e6c56',
                                     opacity: 0.9,
+                                  },
+                                  '&:disabled': {
+                                    display: 'none',
                                   },
                                   fontSize: '0.875rem',
                                   minWidth: '80px',
