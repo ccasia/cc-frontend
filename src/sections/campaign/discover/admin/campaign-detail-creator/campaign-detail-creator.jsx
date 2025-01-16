@@ -30,9 +30,8 @@ import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { endpoints } from 'src/utils/axios';
 
-import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
-
 import { useAuthContext } from 'src/auth/hooks';
+import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
 
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
@@ -73,13 +72,12 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     formState: { isSubmitting },
   } = methods;
 
-  const isDisabled = useMemo(() => {
-    return (user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () =>
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id),
+    [user, campaign]
+  );
 
   // console.log("User Id Detail:", user?.id);
   // console.log("Campaign Id Detail:", campaign?.id);
@@ -178,7 +176,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                 multiple
                 disableCloseOnSelect
                 options={data?.filter(
-                  (user) => user.status === 'active' && user?.creator?.isFormCompleted
+                  (item) => item.status === 'active' && item?.creator?.isFormCompleted
                 )}
                 filterOptions={(option, state) => {
                   const options = option.filter((item) => !shortlistedCreatorsId.includes(item.id));
@@ -349,7 +347,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
           ) : (
             <Button
               onClick={modal.onTrue}
-              disabled = {isDisabled}
+              disabled={isDisabled}
               sx={{
                 bgcolor: '#ffffff',
                 border: '1px solid #e7e7e7',

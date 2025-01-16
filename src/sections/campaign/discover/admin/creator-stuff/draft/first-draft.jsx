@@ -71,10 +71,8 @@ const FirstDraft = ({ campaign, submission, user }) => {
 
   const isDisabled = useMemo(() => {
     return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
     );
   }, [user, campaign]);
 
@@ -142,7 +140,12 @@ const FirstDraft = ({ campaign, submission, user }) => {
                   <Box component={Card} p={2} position="relative">
                     <Stack direction="row" alignItems="center" justifyContent="space-between">
                       <Typography variant="h6">Give your feedback</Typography>
-                      <Button size="small" variant="outlined" onClick={() => setType('request')} disabled={isDisabled}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => setType('request')}
+                        disabled={isDisabled}
+                      >
                         Request Edit
                       </Button>
                     </Stack>
@@ -150,7 +153,12 @@ const FirstDraft = ({ campaign, submission, user }) => {
                       <Stack gap={3} alignItems="end" mt={3}>
                         <RHFTextField name="comment" label="Comments" />
                         <Tooltip title="Approve">
-                          <Button size="small" color="success" variant="contained" disabled={isDisabled}>
+                          <Button
+                            size="small"
+                            color="success"
+                            variant="contained"
+                            disabled={isDisabled}
+                          >
                             Approve
                           </Button>
                         </Tooltip>
@@ -186,7 +194,13 @@ const FirstDraft = ({ campaign, submission, user }) => {
                         />
 
                         <Tooltip title="Approve">
-                          <Button size="small" color="success" variant="contained" type="submit" disabled={isDisabled}>
+                          <Button
+                            size="small"
+                            color="success"
+                            variant="contained"
+                            type="submit"
+                            disabled={isDisabled}
+                          >
                             Request Edit
                           </Button>
                         </Tooltip>

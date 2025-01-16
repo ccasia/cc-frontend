@@ -121,10 +121,8 @@ const Agreement = ({ campaign, submission, creator }) => {
 
   const isDisabled = useMemo(() => {
     return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
     );
   }, [user, campaign]);
 
@@ -153,7 +151,13 @@ const Agreement = ({ campaign, submission, creator }) => {
           >
             Cancel
           </Button>
-          <LoadingButton type="submit" size="small" variant="contained" loading={isSubmitting} disabled={isDisabled}>
+          <LoadingButton
+            type="submit"
+            size="small"
+            variant="contained"
+            loading={isSubmitting}
+            disabled={isDisabled}
+          >
             Submit
           </LoadingButton>
         </DialogActions>

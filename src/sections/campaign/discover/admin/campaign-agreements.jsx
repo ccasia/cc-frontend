@@ -28,11 +28,12 @@ import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 
 import CampaignAgreementEdit from './campaign-agreement-edit';
-import { useAuthContext } from 'src/auth/hooks';
 
 // eslint-disable-next-line react/prop-types
 const AgreementDialog = ({ open, onClose, url }) => (
@@ -95,16 +96,14 @@ const CampaignAgreements = ({ campaign }) => {
     }
   };
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () =>
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id),
+    [user, campaign]
+  );
 
-  console.log("Button:", isDisabled);
+  console.log('Button:', isDisabled);
 
   if (isLoading) {
     return <div>Loading...</div>; // A loading message while the data is being fetched
@@ -310,9 +309,9 @@ const CampaignAgreements = ({ campaign }) => {
             {!isLoading &&
               filteredData?.map((item) => {
                 // eslint-disable-next-line no-restricted-globals
-              const isAmountValid = !isNaN(parseFloat(item?.amount?.toString()));
-              return (
-                <TableRow key={item.id}>
+                const isAmountValid = !isNaN(parseFloat(item?.amount?.toString()));
+                return (
+                  <TableRow key={item.id}>
                     <TableCell>
                       <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
                         <Avatar
@@ -480,7 +479,11 @@ const CampaignAgreements = ({ campaign }) => {
                           <IconButton onClick={() => handleViewAgreement(item?.agreementUrl)}>
                             <Iconify icon="hugeicons:view" />
                           </IconButton>
-                          <IconButton color="warning" onClick={() => handleEditAgreement(item) } disabled={isDisabled}>
+                          <IconButton
+                            color="warning"
+                            onClick={() => handleEditAgreement(item)}
+                            disabled={isDisabled}
+                          >
                             <Iconify icon="iconamoon:edit-light" />
                           </IconButton>
                           <IconButton
@@ -493,9 +496,9 @@ const CampaignAgreements = ({ campaign }) => {
                         </Stack>
                       )}
                     </TableCell>
-                </TableRow>
-              );
-            })}
+                  </TableRow>
+                );
+              })}
           </TableBody>
         </Table>
       </TableContainer>

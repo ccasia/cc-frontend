@@ -41,10 +41,8 @@ export default function InvoiceTableRow({
 
   const isDisabled = useMemo(() => {
     return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
     );
   }, [user, campaign]);
 
@@ -152,27 +150,27 @@ export default function InvoiceTableRow({
         {user?.admin?.role?.name !== 'CSM' && (
           <>
             <MenuItem
-              disabled={isDisabled} 
+              disabled={isDisabled}
               onClick={() => {
                 onEditRow();
                 popover.onClose();
               }}
             >
-              <Iconify icon="solar:pen-bold"/>
+              <Iconify icon="solar:pen-bold" />
               Edit
             </MenuItem>
 
             <Divider sx={{ borderStyle: 'dashed' }} />
 
             <MenuItem
-              disabled={isDisabled} 
+              disabled={isDisabled}
               onClick={() => {
                 confirm.onTrue();
                 popover.onClose();
               }}
               sx={{ color: 'error.main' }}
             >
-              <Iconify icon="solar:trash-bin-trash-bold"/>
+              <Iconify icon="solar:trash-bin-trash-bold" />
               Delete
             </MenuItem>
           </>

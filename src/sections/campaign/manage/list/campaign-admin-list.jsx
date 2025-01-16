@@ -24,10 +24,8 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
 
   const isDisabled = useMemo(() => {
     return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
     );
   }, [user, campaign]);
 

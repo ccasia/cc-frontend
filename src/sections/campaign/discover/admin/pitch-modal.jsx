@@ -3,7 +3,7 @@
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import {
@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
@@ -39,14 +40,12 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
     setCurrentPitch(pitch);
   }, [pitch]);
 
-  const isDisabled = useMemo(() => {
-    return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
-    );
-  }, [user, campaign]);
+  const isDisabled = useMemo(
+    () =>
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id),
+    [user, campaign]
+  );
 
   // Calculate match percentage
   // const matchPercentage = useMemo(() => {

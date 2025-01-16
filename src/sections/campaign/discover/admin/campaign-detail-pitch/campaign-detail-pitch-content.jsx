@@ -63,10 +63,8 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
 
   const isDisabled = useMemo(() => {
     return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
     );
   }, [user, campaign]);
 
@@ -157,7 +155,13 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         <Button size="small" onClick={modal.onFalse} variant="outlined">
           Cancel
         </Button>
-        <LoadingButton variant="contained" size="small" onClick={onConfirm} loading={loading.value} disabled={isDisabled}>
+        <LoadingButton
+          variant="contained"
+          size="small"
+          onClick={onConfirm}
+          loading={loading.value}
+          disabled={isDisabled}
+        >
           Shortlist {data?.user?.name}
         </LoadingButton>
       </DialogActions>

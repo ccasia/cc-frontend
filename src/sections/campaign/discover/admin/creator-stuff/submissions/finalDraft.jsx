@@ -55,7 +55,6 @@ const options_changes = [
   'Speling in subtitles',
 ];
 
-
 const FinalDraft = ({ campaign, submission, creator }) => {
   const [type, setType] = useState('approve');
   const approve = useBoolean();
@@ -102,10 +101,8 @@ const FinalDraft = ({ campaign, submission, creator }) => {
 
   const isDisabled = useMemo(() => {
     return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
     );
   }, [user, campaign]);
 
@@ -133,29 +130,29 @@ const FinalDraft = ({ campaign, submission, creator }) => {
   });
 
   const confirmationApproveModal = (open, onclose) => (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onclose}
       PaperProps={{
         sx: {
           width: '100%',
           maxWidth: '500px',
           borderRadius: 2,
-        }
+        },
       }}
     >
-      <DialogTitle sx={{ 
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        pb: 2
-      }}>
+      <DialogTitle
+        sx={{
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          pb: 2,
+        }}
+      >
         Approve Confirmation
       </DialogTitle>
       <DialogContent sx={{ mt: 2 }}>
         <Stack spacing={2}>
-          <DialogContentText>
-            Are you sure you want to submit now?
-          </DialogContentText>
+          <DialogContentText>Are you sure you want to submit now?</DialogContentText>
 
           {/* Show schedule if set */}
           {watch('schedule.startDate') && watch('schedule.endDate') && (
@@ -163,12 +160,12 @@ const FinalDraft = ({ campaign, submission, creator }) => {
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Schedule:
               </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
+              <Typography
+                variant="body2"
+                sx={{
                   bgcolor: 'grey.100',
                   p: 1.5,
-                  borderRadius: 1
+                  borderRadius: 1,
                 }}
               >
                 {`${dayjs(watch('schedule.startDate')).format('MMM D, YYYY')} - ${dayjs(watch('schedule.endDate')).format('MMM D, YYYY')}`}
@@ -182,14 +179,14 @@ const FinalDraft = ({ campaign, submission, creator }) => {
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Feedback:
               </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
+              <Typography
+                variant="body2"
+                sx={{
                   bgcolor: 'grey.100',
                   p: 1.5,
                   borderRadius: 1,
                   maxHeight: '100px',
-                  overflowY: 'auto'
+                  overflowY: 'auto',
                 }}
               >
                 {watch('feedback')}
@@ -257,22 +254,24 @@ const FinalDraft = ({ campaign, submission, creator }) => {
   );
 
   const confirmationRequestModal = (open, onclose) => (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onclose}
       PaperProps={{
         sx: {
           width: '100%',
           maxWidth: '500px',
           borderRadius: 2,
-        }
+        },
       }}
     >
-      <DialogTitle sx={{ 
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        pb: 2
-      }}>
+      <DialogTitle
+        sx={{
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          pb: 2,
+        }}
+      >
         Confirm Change Request
       </DialogTitle>
       <DialogContent sx={{ mt: 2 }}>
@@ -307,14 +306,14 @@ const FinalDraft = ({ campaign, submission, creator }) => {
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Feedback:
               </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
+              <Typography
+                variant="body2"
+                sx={{
                   bgcolor: 'grey.100',
                   p: 1.5,
                   borderRadius: 1,
                   maxHeight: '100px',
-                  overflowY: 'auto'
+                  overflowY: 'auto',
                 }}
               >
                 {watch('feedback')}
@@ -349,10 +348,10 @@ const FinalDraft = ({ campaign, submission, creator }) => {
         >
           Cancel
         </Button>
-        <LoadingButton 
-          variant="contained" 
+        <LoadingButton
+          variant="contained"
           size="small"
-          disabled={isDisabled} 
+          disabled={isDisabled}
           onClick={() => {
             setValue('type', 'request');
             onSubmit();
@@ -397,17 +396,23 @@ const FinalDraft = ({ campaign, submission, creator }) => {
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <Box component={Paper} p={{ xs: 1, sm: 1.5 }}>
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
-              spacing={{ xs: 1, sm: 3 }} 
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={{ xs: 1, sm: 3 }}
               sx={{ mb: 3, mt: -2 }}
             >
               <Stack spacing={0.5}>
                 <Stack direction="row" spacing={0.5}>
-                  <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}
+                  >
                     Date Submitted:
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
+                  >
                     {submission?.submissionDate
                       ? dayjs(submission?.submissionDate).format('ddd, D MMM YYYY')
                       : '-'}
@@ -415,10 +420,16 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                 </Stack>
 
                 <Stack direction="row" spacing={0.5}>
-                  <Typography variant="caption" sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#8e8e93', fontSize: '0.875rem', fontWeight: 550 }}
+                  >
                     Reviewed On:
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#221f20', fontSize: '0.875rem', fontWeight: 500 }}
+                  >
                     {submission?.isReview
                       ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
                       : 'Pending Review'}
@@ -565,8 +576,8 @@ const FinalDraft = ({ campaign, submission, creator }) => {
             {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
-                  <Box 
-                    component={Paper} 
+                  <Box
+                    component={Paper}
                     sx={{
                       p: { xs: 2, sm: 3 },
                       mb: 2,
@@ -581,19 +592,19 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                         <Avatar
                           src={creator?.user?.photoURL}
                           alt={creator?.user?.name}
-                          sx={{ 
-                            width: 40, 
+                          sx={{
+                            width: 40,
                             height: 40,
-                            border: '1px solid #e7e7e7'
+                            border: '1px solid #e7e7e7',
                           }}
                         >
                           {creator?.user?.name?.charAt(0).toUpperCase()}
                         </Avatar>
-                        <Typography 
+                        <Typography
                           variant="subtitle2"
-                          sx={{ 
+                          sx={{
                             fontSize: '1.05rem',
-                            mt: -2.5
+                            mt: -2.5,
                           }}
                         >
                           {creator?.user?.name}
@@ -601,15 +612,14 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                       </Stack>
 
                       {/* Content Section */}
-                      <Box sx={{ pl: 7 }}> 
-
+                      <Box sx={{ pl: 7 }}>
                         {/* Description Section */}
                         <Box sx={{ mt: -3.5 }}>
-                          <Typography 
-                            variant="body1" 
-                            sx={{ 
+                          <Typography
+                            variant="body1"
+                            sx={{
                               fontSize: '0.95rem',
-                              color: '#48484A'
+                              color: '#48484A',
                             }}
                           >
                             <strong>Description:</strong> {submission?.caption}
@@ -626,7 +636,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                             borderRadius: 2,
                             overflow: 'hidden',
                             boxShadow: 3,
-                            mt: 2
+                            mt: 2,
                           }}
                           onClick={() => setVideoModalOpen(true)}
                         >
@@ -663,8 +673,8 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                   </Box>
 
                   {submission?.status === 'PENDING_REVIEW' && (
-                    <Box 
-                      component={Paper} 
+                    <Box
+                      component={Paper}
                       sx={{
                         p: { xs: 2, sm: 3 },
                         borderRadius: 1,
@@ -678,10 +688,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                             <Typography variant="subtitle1" mb={1} mx={1}>
                               Schedule This Post
                             </Typography>
-                            <Stack 
-                              direction={{ xs: 'column', sm: 'row' }} 
-                              gap={{ xs: 2, sm: 3 }}
-                            >
+                            <Stack direction={{ xs: 'column', sm: 'row' }} gap={{ xs: 2, sm: 3 }}>
                               <RHFDatePicker
                                 name="schedule.startDate"
                                 label="Start Date"
@@ -704,10 +711,10 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                               minRows={5}
                               placeholder="Comment"
                             />
-                            <Stack 
-                              alignItems={{ xs: 'stretch', sm: 'center' }} 
-                              direction={{ xs: 'column', sm: 'row' }} 
-                              gap={1.5} 
+                            <Stack
+                              alignItems={{ xs: 'stretch', sm: 'center' }}
+                              direction={{ xs: 'column', sm: 'row' }}
+                              gap={1.5}
                               justifyContent="end"
                             >
                               <Button
@@ -797,10 +804,10 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                                 placeholder="Feedback"
                               />
 
-                              <Stack 
-                                alignItems={{ xs: 'stretch', sm: 'center' }} 
-                                direction={{ xs: 'column', sm: 'row' }} 
-                                gap={1.5} 
+                              <Stack
+                                alignItems={{ xs: 'stretch', sm: 'center' }}
+                                direction={{ xs: 'column', sm: 'row' }}
+                                gap={1.5}
                                 alignSelf="end"
                               >
                                 <Button
@@ -833,9 +840,9 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                                 >
                                   Back
                                 </Button>
-                                <LoadingButton 
-                                  variant="contained" 
-                                  size="small" 
+                                <LoadingButton
+                                  variant="contained"
+                                  size="small"
                                   onClick={request.onTrue}
                                   sx={{
                                     bgcolor: '#2e6c56',
@@ -873,8 +880,8 @@ const FinalDraft = ({ campaign, submission, creator }) => {
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   {/* Video Box */}
-                  <Box 
-                    component={Paper} 
+                  <Box
+                    component={Paper}
                     sx={{
                       p: { xs: 2, sm: 3 },
                       mb: 2,
@@ -889,19 +896,19 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                         <Avatar
                           src={creator?.user?.photoURL}
                           alt={creator?.user?.name}
-                          sx={{ 
-                            width: 40, 
+                          sx={{
+                            width: 40,
                             height: 40,
-                            border: '1px solid #e7e7e7'
+                            border: '1px solid #e7e7e7',
                           }}
                         >
                           {creator?.user?.name?.charAt(0).toUpperCase()}
                         </Avatar>
-                        <Typography 
+                        <Typography
                           variant="subtitle2"
-                          sx={{ 
+                          sx={{
                             fontSize: '1.05rem',
-                            mt: -2.5
+                            mt: -2.5,
                           }}
                         >
                           {creator?.user?.name}
@@ -909,14 +916,14 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                       </Stack>
 
                       {/* Content Section */}
-                      <Box sx={{ pl: 7 }}> 
+                      <Box sx={{ pl: 7 }}>
                         {/* Description Section */}
                         <Box sx={{ mt: -3.5 }}>
-                          <Typography 
-                            variant="body1" 
-                            sx={{ 
+                          <Typography
+                            variant="body1"
+                            sx={{
                               fontSize: '0.95rem',
-                              color: '#48484A'
+                              color: '#48484A',
                             }}
                           >
                             <strong>Description:</strong> {submission?.caption}
@@ -933,7 +940,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                             borderRadius: 2,
                             overflow: 'hidden',
                             boxShadow: 3,
-                            mt: 2
+                            mt: 2,
                           }}
                           onClick={() => setVideoModalOpen(true)}
                         >
@@ -975,7 +982,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                       width: '100%',
                       height: '1px',
                       bgcolor: 'divider',
-                      my: 3
+                      my: 3,
                     }}
                   />
 
@@ -1103,4 +1110,3 @@ FinalDraft.propTypes = {
   submission: PropTypes.object,
   creator: PropTypes.object,
 };
-

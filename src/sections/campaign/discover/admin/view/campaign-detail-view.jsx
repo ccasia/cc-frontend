@@ -448,10 +448,8 @@ const CampaignDetailView = ({ id }) => {
 
   const isDisabled = useMemo(() => {
     return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
     );
   }, [user, campaign]);
 
@@ -459,7 +457,7 @@ const CampaignDetailView = ({ id }) => {
   //   if (!campaignLoading && campaign) {
   //     console.log("Campaign Object:", campaign);
   //   }
-  // }, [campaignLoading, campaign]); 
+  // }, [campaignLoading, campaign]);
 
   // console.log("User:", user);
 
@@ -583,7 +581,7 @@ const CampaignDetailView = ({ id }) => {
                       opacity: isDisabled ? 0.3 : 1,
                     }}
                   />
-                }                
+                }
                 onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
                 disabled={isDisabled}
                 sx={{

@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
 import Box from '@mui/material/Box';
@@ -20,9 +20,10 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
-import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
@@ -41,18 +42,12 @@ export default function UserCard({
   const confirmationDialog = useBoolean();
   const { user } = useAuthContext();
 
-  const isDisabled = useMemo(() => {
-    return (user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
-    );
-  }, [user, campaign]); 
-
-  // console.log("User Id:", user?.id);
-  // console.log("Campaign Id:", campaign?.id);
-  // console.log("Campaign Admin:", campaign?.campaignAdmin);
-  // console.log("Button:", isDisabled);
+  const isDisabled = useMemo(
+    () =>
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id),
+    [user, campaign]
+  );
 
   const handleCardClick = () => {
     if (isSent) {
@@ -309,7 +304,7 @@ export default function UserCard({
               e.stopPropagation();
               handleCardClick();
             }}
-            disabled= {!isSent && isDisabled}
+            disabled={!isSent && isDisabled}
             sx={{
               mx: 'auto',
               width: '100%',
@@ -330,7 +325,6 @@ export default function UserCard({
           >
             {isSent ? 'View Profile' : 'Complete Agreement'}
           </Button>
-
 
           <Button
             fullWidth
@@ -413,4 +407,5 @@ UserCard.propTypes = {
   onEditAgreement: PropTypes.func,
   key: PropTypes.string,
   campaignMutate: PropTypes.func,
+  campaign: PropTypes.object,
 };

@@ -135,10 +135,8 @@ const CampaignDetailManageView = ({ id }) => {
 
   const isDisabled = useMemo(() => {
     return (
-      user?.admin?.mode === 'advanced' && 
-      !campaign?.campaignAdmin?.some(
-        (adminObj) => adminObj?.admin?.user?.id === user?.id
-      )
+      user?.admin?.mode === 'advanced' ||
+      !campaign?.campaignAdmin?.some((adminObj) => adminObj?.admin?.user?.id === user?.id)
     );
   }, [user, campaign]);
 
@@ -530,12 +528,14 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="User Persona"
             secondary={
-              <Box sx={{
-                wordWrap: 'break-word',  
-                overflowWrap: 'break-word', 
-                whiteSpace: 'pre-wrap', 
-                maxWidth: '100%' 
-              }}>
+              <Box
+                sx={{
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  maxWidth: '100%',
+                }}
+              >
                 {formatText(campaign?.campaignRequirement?.user_persona)}
               </Box>
             }
