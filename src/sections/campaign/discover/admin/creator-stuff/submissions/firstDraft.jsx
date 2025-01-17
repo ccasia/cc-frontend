@@ -62,6 +62,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
   const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const { user } = useAuthContext();
+  const [content, setContent] = useState(null);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -392,11 +393,16 @@ const FirstDraft = ({ campaign, submission, creator }) => {
     return [];
   }, [submission?.feedback]);
 
+  const handleOpenModal = (item) => {
+    setContent(item);
+    setVideoModalOpen(true);
+  };
+
   return (
     <Box>
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          <Box component={Paper} p={{ xs: 1, sm: 1.5 }}>
+          <Box component={Paper} p={{ xs: 2, sm: 3 }}>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               spacing={{ xs: 1, sm: 3 }}
@@ -438,7 +444,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                 </Stack>
               </Stack>
             </Stack>
-
             {/* Feedback History Button */}
             {/* <Box sx={{ display: 'flex', mb: 2 }}>
               <Button 
@@ -452,7 +457,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                 View Feedback History
               </Button>
             </Box> */}
-
             {/* Commented out feedback history modal */}
             {/* <Modal
               open={openFeedbackModal}
@@ -571,9 +575,9 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                 </Box>
               </Box>
             </Modal> */}
-
             {submission?.status === 'NOT_STARTED' && <EmptyContent title="Not Started" />}
             {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No Submission" />}
+
             {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
@@ -626,8 +630,53 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                             <strong>Description:</strong> {submission?.caption}
                           </Typography>
                         </Box>
-
                         {/* Video Thumbnail Section */}
+                        {submission?.video?.length &&
+                          submission.video.map((item) => (
+                            <Box
+                              key={item.id}
+                              sx={{
+                                position: 'relative',
+                                cursor: 'pointer',
+                                width: { xs: '100%', sm: '300px' },
+                                height: { xs: '200px', sm: '169px' },
+                                borderRadius: 2,
+                                overflow: 'hidden',
+                                boxShadow: 3,
+                                mt: 2,
+                              }}
+                              onClick={() => handleOpenModal(item.url)}
+                            >
+                              <Box
+                                component="video"
+                                sx={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  borderRadius: 2,
+                                }}
+                              >
+                                <source src={item?.url} />
+                              </Box>
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  bgcolor: 'rgba(0, 0, 0, 0.4)',
+                                  borderRadius: 2,
+                                }}
+                              >
+                                <VisibilityIcon sx={{ color: 'white', fontSize: 32 }} />
+                              </Box>
+                            </Box>
+                          ))}
+
                         <Box
                           sx={{
                             position: 'relative',
@@ -639,7 +688,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                             boxShadow: 3,
                             mt: 2,
                           }}
-                          onClick={() => setVideoModalOpen(true)}
+                          onClick={() => handleOpenModal(submission?.content)}
                         >
                           <Box
                             component="video"
@@ -787,6 +836,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                           {confirmationApproveModal(approve.value, approve.onFalse)}
                         </FormProvider>
                       )}
+
                       {type === 'request' && (
                         <>
                           <Typography variant="h6" mb={1} mx={1}>
@@ -883,6 +933,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                 </Grid>
               </Grid>
             )}
+
             {submission?.status === 'CHANGES_REQUIRED' && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
@@ -1069,6 +1120,8 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                 </Grid>
               </Grid>
             )}
+
+            {submission?.status === 'ON_HOLD' && <Typography>Video is processing</Typography>}
           </Box>
         </Grid>
       </Grid>
@@ -1102,7 +1155,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
               maxHeight: '80vh',
             }}
           >
-            <source src={submission?.content} />
+            <source src={content} />
           </Box>
         </Box>
       </Modal>

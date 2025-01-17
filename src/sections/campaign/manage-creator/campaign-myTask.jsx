@@ -189,7 +189,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   // }
 
   return (
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ width: '100%' }}>
+    <>
       {campaign.status === 'PAUSED' ? (
         <Box component={Card} p={{ xs: 3, md: 20 }}>
           <Stack alignItems="center" justifyContent="center" spacing={2}>
@@ -203,16 +203,20 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
         <>
           {/* Left Column - Navigation */}
           {!submissionLoading && (
-            <>
+            <Box
+              display="grid"
+              gridTemplateColumns={{ xs: 'repeat(1,1fr)', md: '1fr 1.5fr' }}
+              gap={3}
+            >
               <Card
                 sx={{
-                  width: { xs: '100%', md: '50%' },
-                  minWidth: { md: '320px' },
-                  maxWidth: { md: '600px' },
+                  // width: { xs: '100%', md: '100%' },
+                  // minWidth: { md: '320px' },
+                  // maxWidth: { md: '600px' },
                   boxShadow: 'none',
                   ml: { xs: 0, md: -2 },
                   mr: { xs: 0, md: -1.5 },
-                  mt: { xs: 0, md: -3.9 },
+                  // mt: { xs: 0, md: -3.9 },
                   mb: { xs: 2, md: 0 },
                 }}
               >
@@ -343,13 +347,11 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
               {/* Right Column - Content */}
               <Card
                 sx={{
-                  width: { xs: '100%', md: '60%' },
+                  // width: { xs: '100%', md: '60%' },
                   flexGrow: 1,
                   boxShadow: 'none',
                   border: '1px solid',
                   borderColor: 'divider',
-                  mr: { xs: 0, md: 0 },
-                  mt: { xs: 0, md: -2 },
                   maxWidth: '100%',
                   overflow: 'hidden',
                 }}
@@ -377,6 +379,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                       getDependency={getDependency}
                       openLogisticTab={openLogisticTab}
                       setCurrentTab={setCurrentTab}
+                      submissionMutate={submissionMutate}
                     />
                   )}
                   {selectedStage === 'FINAL_DRAFT' && (
@@ -400,7 +403,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                   )}
                 </Box>
               </Card>
-            </>
+            </Box>
           )}
 
           {submissionLoading && (
@@ -421,7 +424,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
           )}
         </>
       )}
-    </Stack>
+    </>
   );
 };
 
