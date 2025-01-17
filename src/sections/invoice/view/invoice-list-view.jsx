@@ -1,6 +1,6 @@
 import sumBy from 'lodash/sumBy';
 import PropTypes from 'prop-types';
-import { useState, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -22,6 +22,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { isAfter, isBetween } from 'src/utils/format-time';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { _invoices, INVOICE_SERVICE_OPTIONS } from 'src/_mock';
 
 import Label from 'src/components/label';
@@ -70,6 +71,8 @@ export default function InvoiceListView({ campId, invoices }) {
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
   const settings = useSettingsContext();
+
+  const { user } = useAuthContext();
 
   const router = useRouter();
 
@@ -211,6 +214,11 @@ export default function InvoiceListView({ campId, invoices }) {
     [handleFilters]
   );
 
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
+
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -301,7 +309,7 @@ export default function InvoiceListView({ campId, invoices }) {
                   </Tooltip>
 
                   <Tooltip title="Delete">
-                    <IconButton color="primary" onClick={confirm.onTrue}>
+                    <IconButton color="primary" onClick={confirm.onTrue} disabled={isDisabled}>
                       <Iconify icon="solar:trash-bin-trash-bold" />
                     </IconButton>
                   </Tooltip>
@@ -381,6 +389,7 @@ export default function InvoiceListView({ campId, invoices }) {
           <Button
             variant="contained"
             color="error"
+            disabled={isDisabled}
             onClick={() => {
               handleDeleteRows();
               confirm.onFalse();

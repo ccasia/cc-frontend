@@ -76,6 +76,11 @@ const CampaignView = () => {
 
   const lgUp = useResponsive('up', 'lg');
 
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
+
   const getKey = (pageIndex, previousPageData) => {
     // If there's no previous page data, start from the first page
     if (pageIndex === 0)
@@ -280,10 +285,11 @@ const CampaignView = () => {
             <Button
               onClick={handleClick}
               endIcon={<Iconify icon="eva:chevron-down-fill" width={20} height={20} />}
+              disabled={isDisabled}
               sx={{
-                bgcolor: '#203ff5',
-                color: 'white',
-                borderBottom: '3px solid #102387',
+                bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+                color: isDisabled ? '#9e9e9e' : 'white',
+                borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
                 borderRadius: '8px',
                 padding: '8px 20px',
                 position: 'absolute',
@@ -291,9 +297,10 @@ const CampaignView = () => {
                 top: -3,
                 minWidth: '150px',
                 fontSize: '0.9rem',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
                 '&:hover': {
-                  bgcolor: '#203ff5',
-                  opacity: 0.9,
+                  bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+                  opacity: isDisabled ? 1 : 0.9,
                 },
               }}
             >
@@ -360,7 +367,7 @@ const CampaignView = () => {
           },
         }}
       >
-        <MenuItem onClick={handleNewCampaign}>
+        <MenuItem onClick={handleNewCampaign} disabled={isDisabled}>
           <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2 }} />
           New Campaign
         </MenuItem>

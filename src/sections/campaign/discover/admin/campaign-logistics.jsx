@@ -1,8 +1,9 @@
 import { mutate } from 'swr';
+import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 
-import { 
+import {
   Box,
   Table,
   Button,
@@ -44,16 +45,21 @@ const CampaignLogistics = ({ campaign }) => {
     }
   };
 
-  console.log(campaign)
+  console.log(campaign);
 
   const campaignLogistics = campaign?.logistic || [];
+
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   return (
     <Box>
       <Scrollbar>
-        <TableContainer 
-          sx={{ 
-            minWidth: 800, 
+        <TableContainer
+          sx={{
+            minWidth: 800,
             position: 'relative',
             bgcolor: 'transparent',
             borderBottom: '1px solid',
@@ -63,10 +69,10 @@ const CampaignLogistics = ({ campaign }) => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell 
-                  sx={{ 
-                    py: 1, 
-                    color: '#221f20', 
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
                     fontWeight: 600,
                     borderRadius: '10px 0 0 10px',
                     bgcolor: '#f5f5f5',
@@ -75,10 +81,10 @@ const CampaignLogistics = ({ campaign }) => {
                 >
                   Creator
                 </TableCell>
-                <TableCell 
-                  sx={{ 
-                    py: 1, 
-                    color: '#221f20', 
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
                     fontWeight: 600,
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
@@ -86,10 +92,10 @@ const CampaignLogistics = ({ campaign }) => {
                 >
                   Item
                 </TableCell>
-                <TableCell 
-                  sx={{ 
-                    py: 1, 
-                    color: '#221f20', 
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
                     fontWeight: 600,
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
@@ -97,10 +103,10 @@ const CampaignLogistics = ({ campaign }) => {
                 >
                   Courier
                 </TableCell>
-                <TableCell 
-                  sx={{ 
-                    py: 1, 
-                    color: '#221f20', 
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
                     fontWeight: 600,
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
@@ -108,10 +114,10 @@ const CampaignLogistics = ({ campaign }) => {
                 >
                   Tracking Number
                 </TableCell>
-                <TableCell 
-                  sx={{ 
-                    py: 1, 
-                    color: '#221f20', 
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
                     fontWeight: 600,
                     bgcolor: '#f5f5f5',
                     whiteSpace: 'nowrap',
@@ -119,10 +125,10 @@ const CampaignLogistics = ({ campaign }) => {
                 >
                   Status
                 </TableCell>
-                <TableCell 
-                  sx={{ 
-                    py: 1, 
-                    color: '#221f20', 
+                <TableCell
+                  sx={{
+                    py: 1,
+                    color: '#221f20',
                     fontWeight: 600,
                     borderRadius: '0 10px 10px 0',
                     bgcolor: '#f5f5f5',
@@ -148,7 +154,7 @@ const CampaignLogistics = ({ campaign }) => {
                 </TableRow>
               ) : (
                 campaignLogistics?.map((logistic) => (
-                  <TableRow 
+                  <TableRow
                     key={logistic?.id}
                     hover
                     sx={{
@@ -164,20 +170,20 @@ const CampaignLogistics = ({ campaign }) => {
                     </TableCell>
                     <TableCell sx={{ padding: '16px 12px' }}>{logistic?.itemName}</TableCell>
                     <TableCell sx={{ padding: '16px 12px' }}>{logistic?.courier}</TableCell>
-                    <TableCell 
-                      sx={{ 
+                    <TableCell
+                      sx={{
                         padding: '16px 12px',
                         color: logistic?.trackingNumber ? '#203ff5' : 'text.secondary',
                         textDecoration: logistic?.trackingNumber ? 'underline' : 'none',
-                        cursor: logistic?.trackingNumber ? 'pointer' : 'default'
+                        cursor: logistic?.trackingNumber ? 'pointer' : 'default',
                       }}
                     >
                       {logistic?.trackingNumber || 'Not available'}
                     </TableCell>
                     <TableCell sx={{ padding: '16px 12px' }}>
-                      <Typography 
+                      <Typography
                         variant="body2"
-                        sx={{ 
+                        sx={{
                           textTransform: 'uppercase',
                           fontWeight: 700,
                           display: 'inline-block',
@@ -197,10 +203,11 @@ const CampaignLogistics = ({ campaign }) => {
                     </TableCell>
                     <TableCell sx={{ padding: '16px 12px' }}>
                       {logistic?.status === 'Pending_Delivery_Confirmation' && (
-                        <Button 
+                        <Button
                           variant="contained"
                           size="small"
                           onClick={() => onClickConfirm(logistic?.id)}
+                          disabled={isDisabled}
                         >
                           Confirm Receipt
                         </Button>

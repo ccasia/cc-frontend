@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -30,6 +30,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { RHFSelect } from 'src/components/hook-form';
@@ -39,6 +41,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 const CampaignDetailPitchContent = ({ data, timelines }) => {
   const modal = useBoolean();
   const loading = useBoolean();
+  const { user } = useAuthContext();
 
   const methods = useForm({
     defaultValues: {
@@ -57,6 +60,11 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
     setValue('status', data?.status);
     setValue('pitchId', data?.id);
   }, [setValue, data]);
+
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   const handleChange = async (val) => {
     if (val.target.value === 'approved') {
@@ -145,7 +153,13 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
         <Button size="small" onClick={modal.onFalse} variant="outlined">
           Cancel
         </Button>
-        <LoadingButton variant="contained" size="small" onClick={onConfirm} loading={loading.value}>
+        <LoadingButton
+          variant="contained"
+          size="small"
+          onClick={onConfirm}
+          loading={loading.value}
+          disabled={isDisabled}
+        >
           Shortlist {data?.user?.name}
         </LoadingButton>
       </DialogActions>
@@ -169,6 +183,7 @@ const CampaignDetailPitchContent = ({ data, timelines }) => {
               name="status"
               sx={{ width: 150 }}
               onChange={(e, val) => handleChange(e)}
+              disabled={isDisabled}
             >
               <MenuItem value="undecided">
                 <Stack direction="row" alignItems="center">

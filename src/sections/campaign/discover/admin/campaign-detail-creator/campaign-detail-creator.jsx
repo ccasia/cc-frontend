@@ -30,6 +30,7 @@ import { useGetAgreements } from 'src/hooks/use-get-agreeements';
 
 import { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
 
 import Iconify from 'src/components/iconify';
@@ -56,6 +57,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
   const [selectedAgreement, setSelectedAgreement] = useState(null);
+  const { user } = useAuthContext();
 
   const methods = useForm({
     defaultValues: {
@@ -69,6 +71,16 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     reset,
     formState: { isSubmitting },
   } = methods;
+
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
+
+  // console.log("User Id Detail:", user?.id);
+  // console.log("Campaign Id Detail:", campaign?.id);
+  // console.log("Campaign Admin List:", campaign?.campaignAdmin);
+  // console.log("Button Detail:", isDisabled);
 
   const creatorsWithAgreements = useMemo(() => {
     if (!agreements || !campaign?.shortlisted) return campaign?.shortlisted;
@@ -162,7 +174,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                 multiple
                 disableCloseOnSelect
                 options={data?.filter(
-                  (user) => user.status === 'active' && user?.creator?.isFormCompleted
+                  (item) => item.status === 'active' && item?.creator?.isFormCompleted
                 )}
                 filterOptions={(option, state) => {
                   const options = option.filter((item) => !shortlistedCreatorsId.includes(item.id));
@@ -260,7 +272,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
 
           <LoadingButton
             type="submit"
-            disabled={!selectedCreator.length || isSubmitting}
+            disabled={isDisabled || !selectedCreator.length || isSubmitting}
             loading={loading.value}
             sx={{
               bgcolor: '#203ff5',
@@ -333,6 +345,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
           ) : (
             <Button
               onClick={modal.onTrue}
+              disabled={isDisabled}
               sx={{
                 bgcolor: '#ffffff',
                 border: '1px solid #e7e7e7',
@@ -376,6 +389,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                   key={elem?.id}
                   creator={elem?.user}
                   campaignId={campaign?.id}
+                  campaign={campaign}
                   isSent={elem.isSent}
                   onEditAgreement={() => handleEditAgreement(elem)}
                   agreementStatus={elem.agreementStatus}

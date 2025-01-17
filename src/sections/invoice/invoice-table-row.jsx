@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import Link from '@mui/material/Link';
@@ -38,6 +39,11 @@ export default function InvoiceTableRow({
 
   const popover = usePopover();
   const { user } = useAuthContext();
+
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   return (
     <>
@@ -143,6 +149,7 @@ export default function InvoiceTableRow({
         {user?.admin?.role?.name !== 'CSM' && (
           <>
             <MenuItem
+              disabled={isDisabled}
               onClick={() => {
                 onEditRow();
                 popover.onClose();
@@ -155,6 +162,7 @@ export default function InvoiceTableRow({
             <Divider sx={{ borderStyle: 'dashed' }} />
 
             <MenuItem
+              disabled={isDisabled}
               onClick={() => {
                 confirm.onTrue();
                 popover.onClose();
@@ -174,7 +182,7 @@ export default function InvoiceTableRow({
         title="Delete"
         content="Are you sure want to delete?"
         action={
-          <Button variant="contained" color="error" onClick={onDeleteRow}>
+          <Button variant="contained" color="error" onClick={onDeleteRow} disabled={isDisabled}>
             Delete
           </Button>
         }

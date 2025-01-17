@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -27,12 +27,15 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const Posting = ({ campaign, submission, creator }) => {
   const dialogApprove = useBoolean();
   const dialogReject = useBoolean();
+  const { user } = useAuthContext();
   const [feedback, setFeedback] = useState('');
   const loading = useBoolean();
   const postingDate = useBoolean();
@@ -113,6 +116,11 @@ const Posting = ({ campaign, submission, creator }) => {
     }
   }, [date]);
 
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
+
   return (
     <Box sx={{ width: '100%', maxWidth: '100%' }}>
       <Grid container spacing={2} sx={{ width: '100%' }}>
@@ -177,7 +185,16 @@ const Posting = ({ campaign, submission, creator }) => {
                   </Typography>
                 </Stack>
               </Stack>
-              <Button variant="outlined" onClick={postingDate.onTrue}>
+              <Button
+                variant="outlined"
+                onClick={postingDate.onTrue}
+                disabled={isDisabled}
+                sx={{
+                  '&:disabled': {
+                    display: 'none',
+                  },
+                }}
+              >
                 Change Posting Date
               </Button>
             </Stack>
@@ -276,6 +293,7 @@ const Posting = ({ campaign, submission, creator }) => {
               <Stack my={2} textAlign="end" direction="row" spacing={1.5} justifyContent="end">
                 <Button
                   onClick={dialogReject.onTrue}
+                  disabled={isDisabled}
                   size="small"
                   variant="contained"
                   startIcon={<Iconify icon="solar:close-circle-bold" />}
@@ -291,6 +309,9 @@ const Posting = ({ campaign, submission, creator }) => {
                       bgcolor: 'error.lighter',
                       borderColor: '#e7e7e7',
                     },
+                    '&:disabled': {
+                      display: 'none',
+                    },
                     textTransform: 'none',
                     px: 2.5,
                     py: 1.2,
@@ -304,6 +325,7 @@ const Posting = ({ campaign, submission, creator }) => {
                 <LoadingButton
                   size="small"
                   onClick={dialogApprove.onTrue}
+                  disabled={isDisabled}
                   variant="contained"
                   startIcon={<Iconify icon="solar:check-circle-bold" />}
                   loading={loading.value}
@@ -318,6 +340,9 @@ const Posting = ({ campaign, submission, creator }) => {
                     '&:hover': {
                       bgcolor: '#2e6c56',
                       opacity: 0.9,
+                    },
+                    '&:disabled': {
+                      display: 'none',
                     },
                     fontSize: '0.875rem',
                     minWidth: '80px',

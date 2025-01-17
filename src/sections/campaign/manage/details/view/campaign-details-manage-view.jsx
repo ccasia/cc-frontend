@@ -42,6 +42,7 @@ import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import { formatText } from 'src/utils/format-test';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
 import withPermission from 'src/auth/guard/withPermissions';
 
 import Label from 'src/components/label';
@@ -95,6 +96,8 @@ const CampaignDetailManageView = ({ id }) => {
     [campaign, campaignLoading]
   );
 
+  const { user } = useAuthContext();
+
   const modalConfirm = useBoolean();
 
   const loadingButton = useBoolean();
@@ -129,6 +132,10 @@ const CampaignDetailManageView = ({ id }) => {
 
   const isEditable = campaign?.status !== 'ACTIVE';
 
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
   const handleChangeStatus = async (status) => {
     if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate).isBefore(dayjs, 'date')) {
       enqueueSnackbar('You cannot publish a campaign that is already end.', {
@@ -229,7 +236,7 @@ const CampaignDetailManageView = ({ id }) => {
         >
           {!smUp && <Chip label={campaign?.status} size="small" color={statusColor} />}
           {isEditable && (
-            <Tooltip title="Edit Campaign Information" arrow>
+            <Tooltip title="Edit Campaign Information" disabled={isDisabled} arrow>
               <IconButton
                 sx={{
                   '&.MuiIconButton-root': {
@@ -287,6 +294,7 @@ const CampaignDetailManageView = ({ id }) => {
         {isEditable && (
           <EditButton
             tooltip="Edit Brand"
+            disabled={isDisabled}
             onClick={() =>
               setOpen((prev) => ({
                 ...prev,
@@ -344,6 +352,7 @@ const CampaignDetailManageView = ({ id }) => {
         {isEditable && (
           <EditButton
             tooltip="Edit Company"
+            disabled={isDisabled}
             onClick={() =>
               setOpen((prev) => ({
                 ...prev,
@@ -375,6 +384,7 @@ const CampaignDetailManageView = ({ id }) => {
         {isEditable && (
           <EditButton
             tooltip="Edit Dos and Don'ts"
+            disabled={isDisabled}
             onClick={() =>
               setOpen((prev) => ({
                 ...prev,
@@ -437,6 +447,7 @@ const CampaignDetailManageView = ({ id }) => {
         {isEditable && (
           <EditButton
             tooltip="Edit Requirements"
+            disabled={isDisabled}
             onClick={() =>
               setOpen((prev) => ({
                 ...prev,
@@ -513,12 +524,14 @@ const CampaignDetailManageView = ({ id }) => {
           <ListItemText
             primary="User Persona"
             secondary={
-              <Box sx={{
-                wordWrap: 'break-word',  
-                overflowWrap: 'break-word', 
-                whiteSpace: 'pre-wrap', 
-                maxWidth: '100%' 
-              }}>
+              <Box
+                sx={{
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  maxWidth: '100%',
+                }}
+              >
                 {formatText(campaign?.campaignRequirement?.user_persona)}
               </Box>
             }
@@ -566,6 +579,7 @@ const CampaignDetailManageView = ({ id }) => {
                 timeline: true,
               }))
             }
+            disabled={isDisabled}
           />
         )}
 
@@ -605,6 +619,7 @@ const CampaignDetailManageView = ({ id }) => {
               campaignAdmin: true,
             }))
           }
+          disabled={isDisabled}
         />
       )}
       <List>
@@ -667,6 +682,7 @@ const CampaignDetailManageView = ({ id }) => {
                 campaignAgreement: true,
               }))
             }
+            disabled={isDisabled}
           />
         )}
 
@@ -727,6 +743,7 @@ const CampaignDetailManageView = ({ id }) => {
                 campaignImages: true,
               }))
             }
+            disabled={isDisabled}
           />
         )}
         <Box my={4} maxHeight={500} overflow="auto" textAlign="center">
@@ -750,6 +767,7 @@ const CampaignDetailManageView = ({ id }) => {
                 campaignAttachments: true,
               }))
             }
+            disabled={isDisabled}
           />
         )}
         {campaign?.campaignBrief?.otherAttachments?.length ? (
@@ -784,6 +802,7 @@ const CampaignDetailManageView = ({ id }) => {
                 campaignReferences: true,
               }))
             }
+            disabled={isDisabled}
           />
         )}
 
@@ -884,6 +903,7 @@ const CampaignDetailManageView = ({ id }) => {
                 color="error"
                 onClick={modalConfirm.onTrue}
                 size="small"
+                disabled={isDisabled}
               >
                 End Campaign
               </LoadingButton>
@@ -895,6 +915,7 @@ const CampaignDetailManageView = ({ id }) => {
                   color="success"
                   onClick={() => handleChangeStatus('ACTIVE')}
                   size="small"
+                  disabled={isDisabled}
                 >
                   Start Campaign
                 </LoadingButton>
@@ -910,6 +931,7 @@ const CampaignDetailManageView = ({ id }) => {
                   startIcon={<Iconify icon="eva:cloud-upload-fill" />}
                   onClick={() => handleChangeStatus('ACTIVE')}
                   loading={loadingButton.value}
+                  disabled={isDisabled}
                 >
                   Publish
                 </LoadingButton>
@@ -922,6 +944,7 @@ const CampaignDetailManageView = ({ id }) => {
                 startIcon={<Iconify icon="solar:file-text-bold" />}
                 onClick={() => handleChangeStatus('PAUSED')}
                 loading={loadingButton.value}
+                disabled={isDisabled}
               >
                 Pause
               </LoadingButton>

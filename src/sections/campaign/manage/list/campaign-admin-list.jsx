@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 
 import { Box, Card, Chip, Stack, Divider, MenuItem, IconButton, Typography } from '@mui/material';
 
@@ -21,6 +21,11 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
 
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
   const onCloseCampaignLog = () => setCampaignLogIsOpen(false);
+
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
 
   return (
     <>
@@ -131,6 +136,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete }) => {
         sx={{ width: 140 }}
       >
         <MenuItem
+          disabled={isDisabled}
           onClick={() => {
             popover.onClose();
             onView();

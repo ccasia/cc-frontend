@@ -102,8 +102,9 @@ const CampaignFinalDraft = ({
   const [progress, setProgress] = useState(0);
   const display = useBoolean();
   const inQueue = useBoolean();
+  const savedCaption = localStorage.getItem('caption');
 
-  const { user } = useAuthContext();
+  const { user, dispatch } = useAuthContext();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -111,7 +112,7 @@ const CampaignFinalDraft = ({
   const methods = useForm({
     defaultValues: {
       draft: '',
-      caption: '',
+      caption: savedCaption || '',
     },
     resolver: (values) => {
       const errors = {};
@@ -135,7 +136,10 @@ const CampaignFinalDraft = ({
     setValue,
     reset,
     formState: { isSubmitting, isDirty },
+    watch,
   } = methods;
+
+  const caption = watch('caption');
 
   const handleRemoveFile = () => {
     setValue('draft', '');
@@ -282,8 +286,22 @@ const CampaignFinalDraft = ({
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
       setSubmitStatus('success');
       inQueue.onTrue();
+      if (savedCaption) localStorage.removeItem('caption');
     } catch (error) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      if (error?.message === 'Forbidden') {
+        if (caption) {
+          localStorage.setItem('caption', caption);
+        }
+        dispatch({
+          type: 'LOGOUT',
+        });
+        enqueueSnackbar('Your session is expired. Please re-login', {
+          variant: 'error',
+        });
+        return;
+      }
       enqueueSnackbar('Failed to submit draft', {
         variant: 'error',
       });

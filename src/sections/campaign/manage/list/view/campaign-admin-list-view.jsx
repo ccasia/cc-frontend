@@ -140,6 +140,11 @@ const CampaignListView = () => {
     };
   }, [handleScroll, mainRef, lgUp]);
 
+  const isDisabled = useMemo(
+    () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
+    [user]
+  );
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
