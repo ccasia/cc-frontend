@@ -96,7 +96,14 @@ export function RHFUpload({ name, multiple, type, helperText, uploadType, ...oth
         multiple ? (
           <Upload
             multiple
-            accept={type === 'file' ? { 'image/*': [] } : { 'image/*': [] }}
+            accept={
+              // eslint-disable-next-line no-nested-ternary
+              type === 'file'
+                ? { 'image/*': [] }
+                : type === 'video'
+                  ? { 'video/*': [] }
+                  : { 'image/*': [] }
+            }
             files={field.value}
             error={!!error}
             helperText={

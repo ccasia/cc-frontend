@@ -59,7 +59,7 @@ export default function Upload({
       onClick={open}
       sx={{
         display: 'flex',
-        border: 1,
+        // border: 1,
         borderColor: grey[300],
         justifyContent: 'center',
         alignItems: 'center',
@@ -70,7 +70,8 @@ export default function Upload({
           opacity: 0.4,
         },
         minHeight: 250,
-        borderRadius: 2,
+        borderRadius: 1,
+        borderStyle: 'dashed',
         ...(isDragActive && {
           opacity: 0.3,
         }),
@@ -86,88 +87,150 @@ export default function Upload({
       }}
     >
       <input {...getInputProps()} />
-
       <Stack alignItems="center" spacing={2}>
-        <Box
-          sx={{
-            bgcolor: '#203ff5',
-            borderRadius: '50%',
-            width: 40,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Iconify
-            icon="fluent:add-24-filled"
-            width={26}
-            sx={{
-              color: '#fff',
-            }}
-          />
-        </Box>
-
         {Object.keys(other.accept).includes('application/vnd.ms-powerpoint') ? (
-          <ListItemText
-            primary="Choose a file or drag and drop here"
-            secondary="Acceptable files: PDF, Powerpoint"
-            primaryTypographyProps={{
-              textAlign: 'center',
-              variant: 'h5',
-            }}
-            secondaryTypographyProps={{
-              textAlign: 'center',
-              variant: 'body1',
-              color: '#8E8E93',
-            }}
-          />
+          <>
+            <Box
+              sx={{
+                border: 1,
+                borderColor: '#ebebeb',
+                borderRadius: '10%',
+                width: 60,
+                height: 60,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 4,
+              }}
+            >
+              <Iconify icon="solar:file-broken" width={30} />
+            </Box>
+            <ListItemText
+              primary="Choose a file or drag and drop here"
+              secondary="Acceptable files: PDF, Powerpoint"
+              primaryTypographyProps={{
+                textAlign: 'center',
+                variant: 'h5',
+              }}
+              secondaryTypographyProps={{
+                textAlign: 'center',
+                variant: 'body1',
+                color: '#8E8E93',
+              }}
+            />
+          </>
         ) : Object.keys(other.accept)[0].includes('video') ? (
-          <ListItemText
-            primary="Choose a file or drag and drop here"
-            secondary="Acceptable files: MP4, MOV"
-            primaryTypographyProps={{
-              textAlign: 'center',
-              variant: 'h5',
-            }}
-            secondaryTypographyProps={{
-              textAlign: 'center',
-              variant: 'body1',
-              color: '#8E8E93',
-            }}
-          />
+          <>
+            <Box
+              sx={{
+                border: 1,
+                borderColor: '#ebebeb',
+                borderRadius: '10%',
+                width: 60,
+                height: 60,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 4,
+              }}
+            >
+              <Iconify icon="mingcute:video-line" width={30} />
+            </Box>
+
+            <ListItemText
+              // primary="Choose a file or drag and drop here"
+              primary="Drag and drop or select video files to upload"
+              // secondary="Acceptable files: MP4, MOV"
+              primaryTypographyProps={{
+                textAlign: 'center',
+                fontWeight: 500,
+                fontSize: 17,
+              }}
+              secondaryTypographyProps={{
+                textAlign: 'center',
+                variant: 'body2',
+                color: '#8E8E93',
+              }}
+            />
+          </>
         ) : Object.keys(other.accept)[0].includes('application/pdf') ? (
-          <ListItemText
-            primary="Choose a file or drag and drop here"
-            secondary="Acceptable files: PDF"
-            primaryTypographyProps={{
-              textAlign: 'center',
-              variant: 'h5',
-            }}
-            secondaryTypographyProps={{
-              textAlign: 'center',
-              variant: 'body1',
-              color: '#8E8E93',
-            }}
-          />
+          <>
+            <Box
+              sx={{
+                border: 1,
+                borderColor: '#ebebeb',
+                borderRadius: '10%',
+                width: 60,
+                height: 60,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 4,
+              }}
+            >
+              <Iconify icon="teenyicons:pdf-outline" width={30} />
+            </Box>
+            <ListItemText
+              primary="Drag and drop or select pdf file to upload"
+              secondary="Acceptable files: PDF"
+              primaryTypographyProps={{
+                textAlign: 'center',
+                fontWeight: 500,
+                fontSize: 17,
+              }}
+              secondaryTypographyProps={{
+                textAlign: 'center',
+                variant: 'body2',
+                color: '#8E8E93',
+              }}
+            />
+          </>
         ) : (
-          <ListItemText
-            primary="Choose a file or drag and drop here"
-            secondary={
-              uploadType === 'pitch'
-                ? 'Upload a video that does not exceed 30 seconds'
-                : 'Acceptable files: JPG, PNG, SVG'
-            }
-            primaryTypographyProps={{
-              textAlign: 'center',
-              variant: 'h5',
-            }}
-            secondaryTypographyProps={{
-              textAlign: 'center',
-              variant: 'body1',
-              color: '#8E8E93',
-            }}
-          />
+          <>
+            <Box
+              sx={{
+                border: 1,
+                borderColor: '#ebebeb',
+                borderRadius: '10%',
+                width: 60,
+                height: 60,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 4,
+              }}
+            >
+              <Iconify icon="material-symbols-light:image-outline" width={30} />
+            </Box>
+            <ListItemText
+              primary="Drag and drop or select image files to upload"
+              primaryTypographyProps={{
+                textAlign: 'center',
+                fontWeight: 500,
+                fontSize: 17,
+              }}
+              secondaryTypographyProps={{
+                textAlign: 'center',
+                variant: 'body2',
+                color: '#8E8E93',
+              }}
+              // primary="Choose a file or drag and drop here"
+              // secondary={
+              //   uploadType === 'pitch'
+              //     ? 'Upload a video that does not exceed 30 seconds'
+              //     : 'Acceptable files: JPG, PNG, SVG'
+              // }
+              // primaryTypographyProps={{
+              //   textAlign: 'center',
+              //   variant: 'h5',
+              // }}
+              // secondaryTypographyProps={{
+              //   textAlign: 'center',
+              //   variant: 'body1',
+              //   color: '#8E8E93',
+              // }}
+            />
+          </>
         )}
       </Stack>
     </Box>
@@ -228,6 +291,28 @@ export default function Upload({
     <Box sx={{ width: 1, position: 'relative', ...sx }}>
       {hasFile ? renderSinglePreview : renderPlaceholder}
 
+      {Object.keys(other.accept)[0].includes('video') && (
+        <Stack mt={0.5} direction="row" justifyContent="space-between">
+          <Typography variant="body2" color="grey">
+            Acceptable files: MP4, MOV
+          </Typography>
+          <Typography variant="body2" color="grey">
+            Maximum size: 400MB
+          </Typography>
+        </Stack>
+      )}
+
+      {Object.keys(other.accept)[0].includes('image') && (
+        <Stack mt={0.5} direction="row" justifyContent="space-between">
+          <Typography variant="body2" color="grey">
+            Acceptable files: JPG, PNG, SVG
+          </Typography>
+          <Typography variant="body2" color="grey">
+            Maximum size: 3MB
+          </Typography>
+        </Stack>
+      )}
+
       {removeSinglePreview}
 
       {helperText && (
@@ -235,10 +320,9 @@ export default function Upload({
           {helperText}
         </Typography>
       )}
-
       <RejectionFiles fileRejections={fileRejections} />
 
-      {renderMultiPreview}
+      {!Object.keys(other.accept)[0].includes('video') && renderMultiPreview}
     </Box>
   );
 }
