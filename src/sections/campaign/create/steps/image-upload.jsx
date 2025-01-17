@@ -39,6 +39,7 @@ const CampaignImageUpload = () => {
       <RHFUpload
         multiple
         thumbnail
+        type="file"
         name="campaignImages"
         maxSize={3145728}
         onDrop={handleDropMultiFile}

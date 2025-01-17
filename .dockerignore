@@ -8,3 +8,4 @@ Dockerfile
 .dockerignore
 build
 dist
+*.log
