@@ -172,7 +172,7 @@ export default function AccountSocialLinks() {
             variant="outlined"
             onClick={disconnectTiktok}
             color="error"
-            sx={{ borderRadius: 2, pointerEvents: 'none', color: 'green', borderColor: 'green' }}
+            sx={{ borderRadius: 2 }}
             loading={loading.value}
           >
             Disconnect
