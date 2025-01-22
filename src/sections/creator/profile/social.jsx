@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { LoadingButton } from '@mui/lab';
 import { Stack, Button, Typography } from '@mui/material';
+
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import { initFacebookSDK } from 'src/utils/FacebookSDK';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -17,6 +20,7 @@ import { useSnackbar } from 'src/components/snackbar';
 export default function AccountSocialLinks() {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
+  const loading = useBoolean();
 
   const methods = useForm({
     defaultValues: {
@@ -73,6 +77,24 @@ export default function AccountSocialLinks() {
       window.location.href = url;
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const disconnectTiktok = async () => {
+    try {
+      loading.onTrue();
+      const res = await axiosInstance.post(`/api/social/tiktok/disconnect`, {
+        userId: user.id,
+      });
+
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error disconnecting tiktok account', {
+        variant: 'error',
+      });
+      console.log(error);
+    } finally {
+      loading.onFalse();
     }
   };
 
@@ -145,14 +167,16 @@ export default function AccountSocialLinks() {
           <Image src="/tiktok/Tiktok_Login.png" width={30} />
           <Typography variant="subtitle1">TikTok</Typography>
         </Stack>
-        {user?.creator?.tiktokToken ? (
-          <Button
+        {user?.creator?.isTiktokConnected ? (
+          <LoadingButton
             variant="outlined"
-            onClick={connectTiktok}
+            onClick={disconnectTiktok}
+            color="error"
             sx={{ borderRadius: 2, pointerEvents: 'none', color: 'green', borderColor: 'green' }}
+            loading={loading.value}
           >
-            Connected
-          </Button>
+            Disconnect
+          </LoadingButton>
         ) : (
           <Button
             variant="outlined"
