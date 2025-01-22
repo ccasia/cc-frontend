@@ -38,7 +38,7 @@ const Overview = () => {
   const { data, isLoading } = useGetOverview();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creator, setCreator] = useState(null);
-  const { data: res, isLoading: userLoading } = useSWR(endpoints.auth.checkCreator, fetcher);
+  const { data: res } = useSWR(endpoints.auth.checkCreator, fetcher);
 
   const renderOverview = (
     <Grid container spacing={2}>
@@ -442,7 +442,7 @@ const Overview = () => {
   );
 
   const isFormCompleted = useMemo(
-    () => !res?.creator?.isInfoCompleted || !user?.creator?.isInfoCompleted,
+    () => !res?.creator?.pronounce || !user?.creator?.pronounce,
     [res, user]
   );
 
