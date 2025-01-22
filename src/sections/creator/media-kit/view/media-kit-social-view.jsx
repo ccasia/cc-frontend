@@ -20,12 +20,12 @@ const MediaKitSocial = ({ currentTab, data, isLoading }) => (
   >
     {isLoading && <Typography>Loading...</Typography>}
 
-    {currentTab === 'instagram' && (
+    {/* {currentTab === 'instagram' && (
       <Stack gap={4}>
         <MediaKitSocialContentInstagram instagram={data?.instagram} />
         <MediaKitAnalytics />
       </Stack>
-    )}
+    )} */}
 
     {currentTab === 'tiktok' && (
       <Stack gap={4}>

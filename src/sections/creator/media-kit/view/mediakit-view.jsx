@@ -41,7 +41,7 @@ const MediaKitCreator = () => {
 
   setTiktok(socialData);
 
-  const [currentTab, setCurrentTab] = useState('instagram');
+  const [currentTab, setCurrentTab] = useState('tiktok');
 
   const [openSetting, setOpenSetting] = useState(false);
 
@@ -76,7 +76,7 @@ const MediaKitCreator = () => {
     setOpenSetting(!openSetting);
   };
 
-  if (socialError) return <Typography>Failed to fetch tiktok data</Typography>;
+  // if (socialError) return <Typography>Failed to fetch tiktok data</Typography>;
 
   return (
     <Container maxWidth="xl">
@@ -359,7 +359,7 @@ const MediaKitCreator = () => {
       </Typography>
 
       <Stack direction="row" alignItems="center" spacing={1} my={2} color="text.secondary">
-        <Button
+        {/* <Button
           variant="outlined"
           startIcon={<Iconify icon="mdi:instagram" width={20} />}
           sx={{
@@ -372,7 +372,7 @@ const MediaKitCreator = () => {
           onClick={() => setCurrentTab('instagram')}
         >
           Instagram
-        </Button>
+        </Button> */}
         <Button
           variant="outlined"
           startIcon={<Iconify icon="ic:baseline-tiktok" width={20} />}

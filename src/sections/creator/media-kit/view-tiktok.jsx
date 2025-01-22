@@ -3,9 +3,11 @@ import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { keyframes } from '@emotion/react';
 
-import { Box, Grid, useTheme, Typography, useMediaQuery } from '@mui/material';
+import { Box, Grid, Button, useTheme, Typography, useMediaQuery } from '@mui/material';
 
 import { useSocialMediaData } from 'src/utils/store';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -149,10 +151,17 @@ TopContentGrid.propTypes = {
 
 const MediaKitSocialContent = ({ tiktok }) => {
   const theme = useTheme();
+  const { user } = useAuthContext();
 
   const tiktokData = useSocialMediaData((state) => state.tiktok);
 
-  // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  if (!user?.creator?.isTiktokConnected)
+    return (
+      <Box sx={{ height: 200, position: 'relative' }}>
+        <Typography>Your tiktok account is not connected.</Typography>
+        <Button>Connect TikTok</Button>
+      </Box>
+    );
 
   return (
     <Box>
