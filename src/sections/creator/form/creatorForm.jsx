@@ -474,7 +474,7 @@ export default function CreatorForm({ creator, open, onClose }) {
     <Dialog
       fullWidth
       fullScreen
-      open
+      open={open}
       scroll="paper"
       PaperProps={{
         sx: {
