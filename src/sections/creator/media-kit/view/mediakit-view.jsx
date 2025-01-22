@@ -279,7 +279,7 @@ const MediaKitCreator = () => {
               secondary={
                 socialMediaAnalytics.engagement_rate
                   ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
-                  : 'No data'
+                  : 0
               }
               primaryTypographyProps={{
                 variant: 'caption',
