@@ -23,7 +23,7 @@ export default function UserCardsView() {
 
   return (
     <Box position="absolute" top="50%" left="50%" sx={{ transform: 'translate(-50%, -50%)' }}>
-      <Stack alignItems="center" maxWidth={300}>
+      <Stack alignItems="center" width={300}>
         <Avatar sx={{ bgcolor: '#8A5AFE', width: 60, height: 60, fontSize: 35 }}>⚒️</Avatar>
         <ListItemText
           primary="Check back later"

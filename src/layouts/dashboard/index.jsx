@@ -263,7 +263,7 @@ export default function DashboardLayout({ children }) {
 
         <Box
           sx={{
-            position: 'relative',
+            // position: 'relative',
             ...(lgUp && {
               width: 1,
               height: '95vh',
