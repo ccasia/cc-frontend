@@ -55,10 +55,13 @@ const GeneralCampaign = () => (
 
     <FormField label="Campaign Objectives">
       <RHFSelect name="campaignObjectives" label="Campaign Objective">
-        <MenuItem value="I'm launching a new product">I&apos;m launching a new product</MenuItem>
-        <MenuItem value="I'm launching a new service">I&apos;m launching a new service</MenuItem>
-        <MenuItem value="I want to drive brand awareness">I want to drive brand awareness</MenuItem>
-        <MenuItem value="Want to drive product awareness">Want to drive product awareness</MenuItem>
+        <MenuItem value="New Product Launch">New Product Launch</MenuItem>
+        <MenuItem value="New Service Launch">New Service Launch</MenuItem>
+        <MenuItem value="Increase Brand Awareness">Increase Brand Awareness</MenuItem>
+        <MenuItem value="Drive Product Awareness">Drive Product Awareness</MenuItem>
+        <MenuItem value="Drive Service Awareness">Drive Service Awareness</MenuItem>
+        <MenuItem value="Increase Purchase Intent">Increase Purchase Intent</MenuItem>
+        <MenuItem value="Increase Reach of Audience">Increase Reach of Audience</MenuItem>
       </RHFSelect>
     </FormField>
 
