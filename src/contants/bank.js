@@ -48,6 +48,9 @@ export const banks = [
     bank: 'Bank Paribas Berhad',
   },
   {
+    bank: 'Barclays Bank',
+  },
+  {
     bank: 'China Construction Bank (Malaysia) Berhad',
   },
   {
