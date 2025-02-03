@@ -39,59 +39,55 @@ function CreateBrand() {
   }, []);
 
   return (
-    <>
-      <Container maxWidth="lg">
-        <CustomBreadcrumbs
-          heading="Create Company & Brand"
-          links={[
-            { name: 'Dashboard', href: paths.dashboard.root },
-            { name: 'Brand', href: paths.dashboard.company.discover },
-            { name: 'Create' },
-          ]}
-        />
+    <Container maxWidth="lg">
+      <CustomBreadcrumbs
+        heading="Create Company & Brand"
+        links={[
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'Brand', href: paths.dashboard.company.discover },
+          { name: 'Create' },
+        ]}
+      />
 
-        <Box
-          sx={{
-            my: 2,
-            p: {
-              md: 3,
-            },
-            boxShadow: (theme) => theme.customShadows.z24,
-            borderRadius: '10px',
-          }}
-        >
-          <Stack spacing={2} sx={{ width: 1 }}>
-            <Tabs value={currentTab} onChange={handleChangeTab}>
-              {TABS.slice(0, 3).map((tab) => (
-                <Tab
+      <Box
+        sx={{
+          my: 2,
+          p: {
+            md: 3,
+          },
+
+          borderRadius: '10px',
+        }}
+      >
+        <Stack spacing={2} sx={{ width: 1 }}>
+          <Tabs value={currentTab} onChange={handleChangeTab}>
+            {TABS.slice(0, 3).map((tab) => (
+              <Tab
+                key={tab.value}
+                value={tab.value}
+                label={tab.label}
+                sx={{ cursor: tab.disabled && 'not-allowed' }}
+              />
+            ))}
+          </Tabs>
+
+          {TABS.slice(0, 3).map(
+            (tab) =>
+              tab.value === currentTab && (
+                <Box
                   key={tab.value}
-                  value={tab.value}
-                  label={tab.label}
-                  // disabled={tab.disabled}
-                  sx={{ cursor: tab.disabled && 'not-allowed' }}
-                />
-              ))}
-            </Tabs>
-
-            {TABS.slice(0, 3).map(
-              (tab) =>
-                tab.value === currentTab && (
-                  <Box
-                    key={tab.value}
-                    sx={{
-                      p: 2,
-                      borderRadius: 1,
-                    }}
-                  >
-                    {tab.form}
-                  </Box>
-                )
-            )}
-          </Stack>
-        </Box>
-      </Container>
-      {/* <SnackbarProvider /> */}
-    </>
+                  sx={{
+                    p: 2,
+                    borderRadius: 1,
+                  }}
+                >
+                  {tab.form}
+                </Box>
+              )
+          )}
+        </Stack>
+      </Box>
+    </Container>
   );
 }
 

@@ -19,11 +19,13 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {
   Stack,
+  Avatar,
   Tooltip,
   IconButton,
   ListItemText,
   InputAdornment,
   LinearProgress,
+  CircularProgress,
 } from '@mui/material';
 
 import useGetCompany from 'src/hooks/use-get-company';
@@ -45,7 +47,7 @@ dayjs.extend(localizedFormat);
 function CompanyBrandBasic() {
   const [activeStep, setActiveStep] = useState(0);
   const { data: companies, isLoading } = useGetCompany();
-  const [openCreate, setOpenCreate] = useState();
+  const [openCreate, setOpenCreate] = useState(false);
   const [loading, setLoading] = useState(false);
   const smUp = useResponsive('up', 'sm');
 
@@ -95,7 +97,10 @@ function CompanyBrandBasic() {
     control,
     register,
     formState: { errors },
+    watch,
   } = methods;
+
+  const company = watch('companyId');
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -134,17 +139,19 @@ function CompanyBrandBasic() {
     const selectCompany = (
       <Stack gap={2}>
         <Button
-          variant="outlined"
-          color="primary"
+          variant="contained"
+          // color="primary"
           size="small"
           onClick={() => {
             setOpenCreate(true);
           }}
           sx={{
-            width: 200,
             p: 1,
             ml: 'auto',
+            borderRadius: 0.6,
           }}
+          startIcon={<Iconify icon="mdi:company" width={20} />}
+          fullWidth={!smUp}
         >
           Create a new company
         </Button>
@@ -163,18 +170,9 @@ function CompanyBrandBasic() {
           renderOption={(props, option) => (
             <li {...props}>
               <Stack direction="row" alignItems="center" gap={2}>
-                <img
-                  loading="lazy"
-                  width="35"
-                  height="35"
-                  src={option?.logo || ''}
-                  srcSet={option?.logo || ''}
-                  alt={option?.name}
-                  style={{
-                    borderRadius: 50,
-                  }}
-                />
-                <Typography>{option?.name}</Typography>
+                <Avatar src={option?.logo}>{option?.name[0]}</Avatar>
+
+                <Typography variant="subtitle2">{option?.name}</Typography>
               </Stack>
             </li>
           )}
@@ -362,6 +360,27 @@ function CompanyBrandBasic() {
     </Stack>
   );
 
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
@@ -385,9 +404,19 @@ function CompanyBrandBasic() {
           {steps.map((label, index) => {
             const stepProps = {};
             const labelProps = {};
-            // labelProps.error = stepError.includes(index) && true;
             return (
-              <Step key={label} {...stepProps}>
+              <Step
+                key={label}
+                {...stepProps}
+                sx={{
+                  '& .MuiStepIcon-root.Mui-completed': {
+                    color: 'black',
+                  },
+                  '& .MuiStepIcon-root.Mui-active': {
+                    color: 'black',
+                  },
+                }}
+              >
                 <StepLabel {...labelProps}>{label}</StepLabel>
               </Step>
             );
@@ -422,9 +451,6 @@ function CompanyBrandBasic() {
             >
               Reset
             </Button>
-            {/* <Button onClick={finalSubmit} color="inherit">
-              Submit
-            </Button> */}
           </Box>
         </>
       ) : (
@@ -441,8 +467,6 @@ function CompanyBrandBasic() {
               p: 0.5,
               my: 0.5,
               mx: 1,
-              // bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-
               width: '80%',
             }}
           >
@@ -460,16 +484,22 @@ function CompanyBrandBasic() {
               onClick={handleBack}
               sx={{ mr: 1 }}
               size="small"
+              variant="outlined"
             >
               Back
             </Button>
             <Box sx={{ flexGrow: 1 }} />
             {activeStep === steps.length - 1 ? (
-              <LoadingButton loading={loading} variant="contained" onClick={onSubmit}>
+              <LoadingButton loading={loading} variant="contained" onClick={onSubmit} size="small">
                 Submit
               </LoadingButton>
             ) : (
-              <Button variant="contained" onClick={handleNext} size="small">
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                size="small"
+                disabled={!company?.value}
+              >
                 Next
               </Button>
             )}
