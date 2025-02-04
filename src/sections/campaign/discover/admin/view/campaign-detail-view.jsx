@@ -156,7 +156,6 @@ const CampaignDetailView = ({ id }) => {
           width: '100%',
           overflowX: 'auto',
           '&::-webkit-scrollbar': { display: 'none' },
-          scrollbarWidth: 'none',
           '&::after': {
             content: '""',
             position: 'absolute',
@@ -174,6 +173,7 @@ const CampaignDetailView = ({ id }) => {
           sx={{
             width: { xs: '100%', sm: 'auto' },
             overflowX: 'auto',
+            scrollbarWidth: 'none',
           }}
         >
           {[
@@ -450,18 +450,6 @@ const CampaignDetailView = ({ id }) => {
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
-
-  // useEffect(() => {
-  //   if (!campaignLoading && campaign) {
-  //     console.log("Campaign Object:", campaign);
-  //   }
-  // }, [campaignLoading, campaign]);
-
-  // console.log("User:", user);
-
-  // useEffect(() => {
-  //   console.log('Is Disabled:', isDisabled);
-  // }, [isDisabled]);
 
   return (
     <Container
