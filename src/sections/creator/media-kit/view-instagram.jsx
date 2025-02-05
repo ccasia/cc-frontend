@@ -83,6 +83,7 @@ const TopContentGrid = ({ topContents }) => {
           sm={4}
           key={index}
           component={m.div}
+          c
           variants={{
             hidden: { opacity: 0, y: 50 },
             show: { opacity: 1, y: 0 },
@@ -93,10 +94,9 @@ const TopContentGrid = ({ topContents }) => {
             onClick={() => {
               const a = document.createElement('a');
               a.href = content?.permalink;
-              a.target = '__blank';
-              document.body.appendChild(a);
+              a.target = '_blank';
               a.onClick();
-              document.body.removeChild(a);
+              document.removeChild(a);
             }}
             sx={{
               position: 'relative',
