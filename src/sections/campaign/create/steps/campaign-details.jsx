@@ -195,7 +195,7 @@ const CampaignDetails = () => {
         </Stack>
 
         <Stack spacing={3}>
-          <FormField label="User Persona">
+          <FormField label="Creator Persona">
             <RHFTextField
               name="audienceUserPersona"
               placeholder=" let us know who you want your campaign to reach!"

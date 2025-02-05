@@ -164,6 +164,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
   const confirmClose = () => {
     reset();
     openConfirmation.onFalse();
+    setActiveStep(0);
     setOpenCreate(false);
   };
 

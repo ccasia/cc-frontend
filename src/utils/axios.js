@@ -156,6 +156,7 @@ export const endpoints = {
     update: '/api/event/updateEvent',
   },
   campaign: {
+    total: '/api/campaign/total',
     createCampaign: '/api/campaign/createCampaign',
     spreadsheet: '/api/campaign/spreadsheet',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
