@@ -11,11 +11,15 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
 import Dialog from '@mui/material/Dialog';
-import { Stack, Avatar, Button, InputAdornment, LinearProgress } from '@mui/material';
+import { Stack, Avatar, Button, IconButton, InputAdornment, LinearProgress } from '@mui/material';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { useResponsive } from 'src/hooks/use-responsive';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
@@ -98,6 +102,8 @@ export default function CreatorForm({ creator, open, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const theme = useTheme();
   const router = useRouter();
+  const { logout } = useAuthContext();
+  const smDown = useResponsive('down', 'sm');
 
   const resolver = yupResolver(stepSchemas[activeStep > 0 && activeStep]);
 
@@ -121,18 +127,6 @@ export default function CreatorForm({ creator, open, onClose }) {
       />
     </Avatar>
   );
-
-  // const testSchema = Yup.object().shape({
-  //   phone: Yup.string().required('Phone number is required'),
-  //   pronounce: Yup.string().required('Pronouns are required'),
-  //   location: Yup.string().required('City/Area is required'),
-  //   interests: Yup.array().min(3, 'Choose at least three option'),
-  //   languages: Yup.array().min(1, 'Choose at least one option'),
-  //   employment: Yup.string().required('Employment status is required'),
-  //   birthDate: Yup.mixed().nullable().required('Please enter your birth date'),
-  //   Nationality: Yup.string().required('Nationality is required'),
-  //   instagram: Yup.string().required('Please enter your instagram username'),
-  // });
 
   const defaultValues = useMemo(
     () => ({
@@ -201,8 +195,6 @@ export default function CreatorForm({ creator, open, onClose }) {
       setIsSubmitting(false);
     }
   });
-
-
 
   useEffect(() => {
     if (languages.includes('All of the above')) {
@@ -380,137 +372,42 @@ export default function CreatorForm({ creator, open, onClose }) {
         </Stack>
       </FormProvider>
 
-      {/* <Box sx={{ display: 'flex', m: 2 }}>
-        <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
-          Back
-        </Button>
-        <Box sx={{ flexGrow: 1 }} />
-        {activeStep === steps.length - 1 ? (
-          <Button variant="contained" onClick={onSubmit} disabled={isSubmitting}>
-            {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Submit'}
-          </Button>
-        ) : (
-          <Button variant="contained" onClick={handleNext}>
-            Next
-          </Button>
-        )}
-      </Box> */}
-
-      {/* <Stepper
+      <Box
         sx={{
-          pt: 2,
-          m: 1,
+          ...(smDown
+            ? {
+                position: 'absolute',
+                top: 20,
+                right: 20,
+              }
+            : {
+                position: 'absolute',
+                bottom: 20,
+                left: 20,
+              }),
         }}
-        activeStep={activeStep}
-        alternativeLabel
       >
-        {steps.map((label, index) => {
-          const stepProps = {};
-          const labelProps = {};
-          return (
-            <Step key={index} {...stepProps}>
-              <StepLabel {...labelProps}>{label.title}</StepLabel>
-            </Step>
-          );
-        })}
-      </Stepper> */}
-
-      {/* <>
-        <Stepper
-          sx={{
-            pt: 2,
-            m: 1,
-          }}
-          activeStep={activeStep}
-          alternativeLabel
-        >
-          {steps.map((label, index) => {
-            const stepProps = {};
-            const labelProps = {};
-            return (
-              <Step key={label} {...stepProps}>
-                <StepLabel {...labelProps}>{label}</StepLabel>
-              </Step>
-            );
-          })}
-        </Stepper>
-
-        {activeStep === steps.length ? (
-          <>
-            <Paper
-              sx={{
-                p: 3,
-                my: 3,
-                minHeight: 120,
-                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-              }}
-            >
-              <Typography sx={{ my: 1 }}>All steps completed - you&apos;re finished</Typography>
-            </Paper>
-
-            <Box sx={{ display: 'flex', m: 2 }}>
-              <Button
-                color="inherit"
-                disabled={activeStep === 0}
-                onClick={handleBack}
-                sx={{ mr: 1 }}
-              >
-                Back
-              </Button>
-
-              <Box sx={{ flexGrow: 1 }} />
-              <Button
-                onClick={() => {
-                  reset();
-                  setActiveStep((prevActiveStep) => prevActiveStep - 2);
-                }}
-              >
-                Reset
-              </Button>
-              <Button onClick={finalSubmit} color="inherit">
-                Submit
-              </Button>
-            </Box>
-          </>
+        {smDown ? (
+          <IconButton
+            variant="outlined"
+            onClick={async () => {
+              await logout();
+            }}
+          >
+            <Iconify icon="tabler:logout-2" width={20} />
+          </IconButton>
         ) : (
-          <>
-            <Paper
-              sx={{
-                p: 1,
-                my: 1,
-
-                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-              }}
-            >
-              <Box sx={{ my: 3 }}>
-                <FormProvider methods={methods} onSubmit={onSubmit}>
-                  {getStepContent(activeStep)}
-                </FormProvider>
-              </Box>
-            </Paper>
-            <Box sx={{ display: 'flex', m: 2 }}>
-              <Button
-                color="inherit"
-                disabled={activeStep === 0}
-                onClick={handleBack}
-                sx={{ mr: 1 }}
-              >
-                Back
-              </Button>
-              <Box sx={{ flexGrow: 1 }} />
-              {activeStep === steps.length - 1 ? (
-                <Button variant="contained" onClick={onSubmit} disabled={isSubmitting}>
-                  {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Submit'}
-                </Button>
-              ) : (
-                <Button variant="contained" onClick={handleNext}>
-                  Next
-                </Button>
-              )}
-            </Box>
-          </>
+          <Button
+            variant="outlined"
+            onClick={async () => {
+              await logout();
+            }}
+            startIcon={<Iconify icon="tabler:logout-2" width={20} />}
+          >
+            Logout
+          </Button>
         )}
-      </> */}
+      </Box>
     </Dialog>
   );
 }
