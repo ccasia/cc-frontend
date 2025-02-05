@@ -41,7 +41,7 @@ const MediaKitCreator = () => {
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateOnMount: false,
+      // revalidateOnMount: false,
     }
   );
 
@@ -52,7 +52,7 @@ const MediaKitCreator = () => {
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateOnMount: false,
+      // revalidateOnMount: false,
     }
   );
 
