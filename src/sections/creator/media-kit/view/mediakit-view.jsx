@@ -70,9 +70,9 @@ const MediaKitCreator = () => {
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
-        followers: instagram?.user?.follower_count || 0,
-        engagement_rate: instagram?.user?.follower_count || 0,
-        averageLikes: instagram?.user?.follower_count || 0,
+        followers: instagram?.user?.followers_count || 0,
+        engagement_rate: instagram?.user?.followers_count || 0,
+        averageLikes: instagram?.user?.followers_count || 0,
       };
     }
 
