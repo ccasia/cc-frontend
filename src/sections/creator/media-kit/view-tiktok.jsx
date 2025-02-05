@@ -189,6 +189,7 @@ const MediaKitSocialContent = ({ tiktok }) => {
           borderStyle: 'dashed',
           borderWidth: 1.5,
           bgcolor: (theme) => alpha(theme.palette.info.main, 0.16),
+          width: 1,
         }}
       >
         <Stack spacing={1} alignItems="center">
@@ -201,7 +202,7 @@ const MediaKitSocialContent = ({ tiktok }) => {
     );
 
   return (
-    <Box>
+    <Box width={1}>
       {tiktokData?.videos?.data?.videos.length ? (
         <TopContentGrid topContents={tiktokData?.videos?.data?.videos} />
       ) : (

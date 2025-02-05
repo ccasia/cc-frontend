@@ -145,7 +145,9 @@ const MediaKitSocialContent = ({ instagram }) => (
       <TopContentGrid topContents={instagram.data.top_contents} />
     ) : (
       // Later need to implement "Connect to your instagram business account to see analytics"
-      <Typography>No top content data available</Typography>
+      <Typography variant="subtitle1" color="text.secondary" textAlign="center">
+        No top content data available
+      </Typography>
     )}
   </Box>
 );

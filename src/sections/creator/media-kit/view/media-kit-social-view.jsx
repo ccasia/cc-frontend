@@ -1,40 +1,44 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 
 import MediaKitSocialContentTiktok from '../view-tiktok';
 import MediaKitPartnership from '../medit-kit-partnerships';
 import MediaKitSocialContentInstagram from '../view-instagram';
-import MediaKitAnalytics from '../../media-kit-creator-view/media-kit-social/media-kit-analytic/view';
 
-const MediaKitSocial = ({ currentTab, data, isLoading }) => (
-  <Box
-    sx={{
-      borderRadius: 2,
-      [`& .Mui-selected`]: {
-        bgcolor: (theme) => theme.palette.background.paper,
-        borderRadius: 1.5,
-      },
-    }}
-  >
-    {isLoading && <Typography>Loading...</Typography>}
+const MediaKitSocial = ({ currentTab, data, isLoading }) => {
+  if (isLoading) {
+    return (
+      <Box textAlign="center">
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
 
-    {/* {currentTab === 'instagram' && (
-      <Stack gap={4}>
-        <MediaKitSocialContentInstagram instagram={data?.instagram} />
-        <MediaKitAnalytics />
-      </Stack>
-    )} */}
-
-    {currentTab === 'tiktok' && (
-      <Stack gap={4}>
-        <MediaKitSocialContentTiktok tiktok={data?.tiktok} />
-      </Stack>
-    )}
-    {currentTab === 'partnerships' && <MediaKitPartnership />}
-  </Box>
-);
+  return (
+    <Box
+      sx={{
+        borderRadius: 2,
+        [`& .Mui-selected`]: {
+          bgcolor: (theme) => theme.palette.background.paper,
+          borderRadius: 1.5,
+        },
+      }}
+    >
+      {currentTab === 'instagram' && <MediaKitSocialContentInstagram instagram={data?.instagram} />}
+      {currentTab === 'tiktok' && <MediaKitSocialContentTiktok tiktok={data?.tiktok} />}
+      {currentTab === 'partnerships' && <MediaKitPartnership />}
+    </Box>
+  );
+};
 
 export default MediaKitSocial;
 

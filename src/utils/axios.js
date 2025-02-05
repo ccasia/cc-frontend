@@ -106,6 +106,7 @@ export const endpoints = {
     getPartnerships: (id) => `/api/creator/getPartnerships/${id}`,
     social: {
       tiktok: (id) => `/api/social/tiktok/${id}`,
+      instagram: (id) => `/api/social/instagram/${id}`,
     },
   },
   users: {

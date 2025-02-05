@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 import { m } from 'framer-motion';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -12,13 +12,13 @@ import {
   Container,
   Typography,
   ListItemText,
+  CircularProgress,
 } from '@mui/material';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 import { useSocialMediaData } from 'src/utils/store';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useGetSocialMedia } from 'src/api/socialMedia';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -31,37 +31,56 @@ const MediaKitCreator = () => {
 
   const { user } = useAuthContext();
 
-  const { data: socialData, error: socialError } = useSWR(
+  const { data: socialData, isLoading } = useSWR(
     endpoints.creators.social.tiktok(user.id),
-    fetcher
+    fetcher,
+    {
+      revalidateOnFocus: true,
+    }
+  );
+
+  const { data: instaData, isLoading: instaLoading } = useSWR(
+    endpoints.creators.social.instagram(user.id),
+    fetcher,
+    {
+      revalidateOnFocus: true,
+    }
   );
 
   const setTiktok = useSocialMediaData((state) => state.setTiktok);
+  const setInstagram = useSocialMediaData((state) => state.setInstagram);
   const tiktok = useSocialMediaData((state) => state.tiktok);
+  const instagram = useSocialMediaData((state) => state.instagram);
 
-  setTiktok(socialData);
+  useEffect(() => {
+    setTiktok(socialData);
+  }, [socialData, setTiktok]);
+
+  useEffect(() => {
+    setInstagram(instaData);
+  }, [instaData, setInstagram]);
 
   const [currentTab, setCurrentTab] = useState('tiktok');
 
   const [openSetting, setOpenSetting] = useState(false);
 
   // Function to get existing social media data
-  const { data, isLoading } = useGetSocialMedia();
+  // const { data, isLoading } = useGetSocialMedia();
 
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
-        followers: data?.instagram?.data?.followers,
-        engagement_rate: data?.instagram?.data?.engagement_rate,
-        averageLikes: data?.instagram?.data?.user_performance?.avg_likes_per_post,
+        followers: instagram?.user?.follower_count || 0,
+        engagement_rate: instagram?.user?.follower_count || 0,
+        averageLikes: instagram?.user?.follower_count || 0,
       };
     }
 
     if (currentTab === 'tiktok') {
       return {
-        followers: data?.tiktok?.data?.followers,
-        engagement_rate: data?.tiktok?.data?.engagement_rate,
-        averageLikes: data?.tiktok?.data?.user_performance?.avg_likes_per_post,
+        followers: tiktok?.user?.data?.user?.follower_count || 0,
+        engagement_rate: tiktok?.user?.data?.user?.follower_count || 0,
+        averageLikes: tiktok?.user?.data?.user?.follower_count || 0,
       };
     }
 
@@ -70,13 +89,26 @@ const MediaKitCreator = () => {
       engagement_rate: 0,
       averageLikes: 0,
     };
-  }, [currentTab, data]);
+  }, [currentTab, tiktok, instagram]);
 
   const handleClose = () => {
     setOpenSetting(!openSetting);
   };
 
-  // if (socialError) return <Typography>Failed to fetch tiktok data</Typography>;
+  if (isLoading || instaLoading) {
+    return (
+      <Box position="absolute" top="50%" left="50%">
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="xl">
@@ -220,7 +252,7 @@ const MediaKitCreator = () => {
             <ListItemText
               primary="FOLLOWERS"
               secondary={
-                tiktok?.user?.data?.user?.follower_count || 0
+                socialMediaAnalytics.followers
                 // socialMediaAnalytics.followers
                 //   ? formatNumber(socialMediaAnalytics.followers)
                 //   : 'No data'
@@ -276,11 +308,12 @@ const MediaKitCreator = () => {
             </Avatar>
             <ListItemText
               primary="ENGAGEMENT RATE"
-              secondary={
-                socialMediaAnalytics.engagement_rate
-                  ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
-                  : 0
-              }
+              secondary={socialMediaAnalytics.followers}
+              // secondary={
+              //   socialMediaAnalytics.engagement_rate
+              //     ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
+              //     : 0
+              // }
               primaryTypographyProps={{
                 variant: 'caption',
                 color: 'text.secondary',
@@ -322,7 +355,8 @@ const MediaKitCreator = () => {
             <ListItemText
               primary="AVERAGE LIKES"
               secondary={
-                tiktok?.user?.data?.user?.likes_count || 0
+                socialMediaAnalytics.followers
+                // tiktok?.user?.data?.user?.likes_count || 0
                 // socialMediaAnalytics.averageLikes
                 //   ? formatNumber(socialMediaAnalytics.averageLikes)
                 //   : 'No data'
@@ -359,7 +393,7 @@ const MediaKitCreator = () => {
       </Typography>
 
       <Stack direction="row" alignItems="center" spacing={1} my={2} color="text.secondary">
-        {/* <Button
+        <Button
           variant="outlined"
           startIcon={<Iconify icon="mdi:instagram" width={20} />}
           sx={{
@@ -372,7 +406,7 @@ const MediaKitCreator = () => {
           onClick={() => setCurrentTab('instagram')}
         >
           Instagram
-        </Button> */}
+        </Button>
         <Button
           variant="outlined"
           startIcon={<Iconify icon="ic:baseline-tiktok" width={20} />}
@@ -403,7 +437,7 @@ const MediaKitCreator = () => {
         </Button>
       </Stack>
 
-      <MediaKitSocial currentTab={currentTab} data={data} isLoading={isLoading} />
+      <MediaKitSocial currentTab={currentTab} isLoading={isLoading} />
       <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} />
     </Container>
   );
