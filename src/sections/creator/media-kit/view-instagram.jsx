@@ -89,6 +89,13 @@ const TopContentGrid = ({ topContents }) => {
           }}
         >
           <Box
+            component="div"
+            onClick={() => {
+              const a = document.createElement('a');
+              a.href = content?.permalink;
+              a.target = '__blank';
+              document.removeChild(a);
+            }}
             sx={{
               position: 'relative',
               height: 600,
