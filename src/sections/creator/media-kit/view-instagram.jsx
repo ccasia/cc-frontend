@@ -94,7 +94,9 @@ const TopContentGrid = ({ topContents }) => {
               const a = document.createElement('a');
               a.href = content?.permalink;
               a.target = '__blank';
-              document.removeChild(a);
+              document.body.appendChild(a);
+              a.onClick();
+              document.body.removeChild(a);
             }}
             sx={{
               position: 'relative',
