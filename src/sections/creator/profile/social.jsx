@@ -152,14 +152,26 @@ export default function AccountSocialLinks() {
           <Image src="/instagram/insta.webp" width={30} />
           <Typography variant="subtitle1">Instagram</Typography>
         </Stack>
-        <Button
-          variant="outlined"
-          onClick={connectFacebook}
-          startIcon={<Iconify icon="material-symbols:add-rounded" />}
-          sx={{ borderRadius: 2 }}
-        >
-          Add account
-        </Button>
+        {user?.creator?.isFacebookConnected ? (
+          <Button
+            variant="outlined"
+            onClick={() => alert('Instagram disconnected')}
+            color="error"
+            sx={{ borderRadius: 2 }}
+            loading={loading.value}
+          >
+            Disconnect
+          </Button>
+        ) : (
+          <Button
+            variant="outlined"
+            onClick={connectFacebook}
+            startIcon={<Iconify icon="material-symbols:add-rounded" />}
+            sx={{ borderRadius: 2 }}
+          >
+            Add account
+          </Button>
+        )}
       </Stack>
 
       <Stack direction="row" alignItems="center" justifyContent="space-between" width={1}>
