@@ -28,23 +28,33 @@ import MediaKitSocial from './media-kit-social-view';
 
 const MediaKitCreator = () => {
   const theme = useTheme();
-
   const { user } = useAuthContext();
-
-  const { data: socialData, isLoading } = useSWR(
-    endpoints.creators.social.tiktok(user.id),
-    fetcher
-  );
-
-  const { data: instaData, isLoading: instaLoading } = useSWR(
-    endpoints.creators.social.instagram(user.id),
-    fetcher
-  );
-
   const setTiktok = useSocialMediaData((state) => state.setTiktok);
   const setInstagram = useSocialMediaData((state) => state.setInstagram);
   const tiktok = useSocialMediaData((state) => state.tiktok);
   const instagram = useSocialMediaData((state) => state.instagram);
+
+  const { data: socialData, isLoading } = useSWR(
+    endpoints.creators.social.tiktok(user.id),
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateOnMount: false,
+    }
+  );
+
+  const { data: instaData, isLoading: instaLoading } = useSWR(
+    endpoints.creators.social.instagram(user.id),
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateOnMount: false,
+    }
+  );
 
   useEffect(() => {
     setTiktok(socialData);
