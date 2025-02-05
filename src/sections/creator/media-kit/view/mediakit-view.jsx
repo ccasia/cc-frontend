@@ -33,18 +33,12 @@ const MediaKitCreator = () => {
 
   const { data: socialData, isLoading } = useSWR(
     endpoints.creators.social.tiktok(user.id),
-    fetcher,
-    {
-      revalidateOnFocus: true,
-    }
+    fetcher
   );
 
   const { data: instaData, isLoading: instaLoading } = useSWR(
     endpoints.creators.social.instagram(user.id),
-    fetcher,
-    {
-      revalidateOnFocus: true,
-    }
+    fetcher
   );
 
   const setTiktok = useSocialMediaData((state) => state.setTiktok);
