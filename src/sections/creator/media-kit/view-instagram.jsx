@@ -91,8 +91,8 @@ const TopContentGrid = ({ topContents }) => {
             const a = document.createElement('a');
             a.href = content?.permalink;
             a.target = '_blank';
-            a.onClick();
-            document.removeChild(a);
+            a.click();
+            document.body.removeChild(a);
           }}
         >
           <Box
