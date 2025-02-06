@@ -5,7 +5,6 @@ import { enqueueSnackbar } from 'notistack';
 import { PDFViewer } from '@react-pdf/renderer';
 import React, { useMemo, useState, useEffect } from 'react';
 
-import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
@@ -331,7 +330,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                   }}
                 />
               </Typography>
-              {!isInvoiceGenerated && (
+
+              {/* {!isInvoiceGenerated && (
                 <LoadingButton
                   variant="outlined"
                   sx={{ mx: 2 }}
@@ -340,7 +340,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                 >
                   Generate invoice
                 </LoadingButton>
-              )}
+              )} */}
+
               <Stack direction="row" spacing={1}>
                 {data?.user?.creator?.instagram && (
                   <IconButton
