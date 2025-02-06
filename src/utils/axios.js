@@ -270,6 +270,7 @@ export const endpoints = {
     xeroGetContacts: '/api/invoice/getXeroContacts',
     xeroCheckRefreshToken: '/api/invoice/checkRefreshToken',
     getCreatorInvoice: `/api/invoice/creatorInvoice`,
+    delete: (id) => `/api/invoice/${id}`,
   },
   agreementTemplate: {
     all: '/api/campaign/template',
