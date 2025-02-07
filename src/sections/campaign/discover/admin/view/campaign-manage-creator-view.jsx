@@ -389,15 +389,15 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
 
           {currentTab === 'profile' && (
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} px={{ md: 3 }}>
-              {/* Stats Section */}
+              {/* Left Column - Stats Section */}
               <Box
                 sx={{
-                  // width: { xs: '100%', sm: '80%', md: '50%', lg: '35%' },
                   border: '1px solid #e7e7e7',
                   borderRadius: 2,
                   p: 3,
                   ml: { xs: 0, sm: -3 },
-                  // bgcolor: 'background.paper',
+                  width: { md: '25%' }, 
+                  height: '100%', 
                 }}
               >
                 <Stack spacing={3}>
@@ -477,9 +477,13 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                       },
                       {
                         label: 'Interests',
-                        value: data?.user?.creator?.interests?.map((interest) => (
+                        value: [
+                          ...new Set(
+                            data?.user?.creator?.interests?.map((interest) => interest.name)
+                          ),
+                        ].map((name) => (
                           <Box
-                            key={interest.name}
+                            key={name}
                             component="span"
                             sx={{
                               display: 'inline-block',
@@ -496,12 +500,12 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                               fontSize: '0.8rem',
                             }}
                           >
-                            {interest.name}
+                            {name}
                           </Box>
                         )),
                         fallback: 'Not specified',
-                      },
-                    ].map((item) => (
+                      }
+                      ].map((item) => (
                       <Stack key={item.label} spacing={1}>
                         <Typography
                           variant="subtitle2"
@@ -527,90 +531,189 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                 </Stack>
               </Box>
 
-              <Box sx={{ ...BoxStyle }}>
-                <Box className="header">
-                  <img
-                    src="/assets/icons/overview/bluesmileyface.svg"
-                    alt="Campaign Info"
-                    style={{
-                      width: 20,
-                      height: 20,
-                      color: '#203ff5',
-                    }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#221f20',
-                      fontWeight: 600,
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    Payment Information
-                  </Typography>
+              {/* Right Column */}
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>  
+                {/* Payment Information Box */}
+                <Box sx={{ ...BoxStyle, mb: 2, flex: 1 }}>
+                  <Box className="header">
+                    <img
+                      src="/assets/icons/overview/bluesmileyface.svg"
+                      alt="Campaign Info"
+                      style={{
+                        width: 20,
+                        height: 20,
+                        color: '#203ff5',
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#221f20',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      Payment Information
+                    </Typography>
+                  </Box>
+
+                  <Stack spacing={2}>
+                    <ListItemText
+                      primary="Account Name"
+                      secondary={data?.user?.paymentForm?.bankAccountName || 'N/A'}
+                      primaryTypographyProps={{
+                        color: '#8e8e93',
+                        fontWeight: 600,
+                        mt: -0.5,
+                        variant: 'subtitle2',
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'body2',
+                        color: 'black',
+                      }}
+                    />
+
+                    <ListItemText
+                      primary="Bank Name"
+                      secondary={data?.user?.paymentForm?.bankName || 'N/A'}
+                      primaryTypographyProps={{
+                        color: '#8e8e93',
+                        fontWeight: 600,
+                        mt: -0.5,
+                        variant: 'subtitle2',
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'body2',
+                        color: 'black',
+                      }}
+                    />
+
+                    <ListItemText
+                      primary="Account Number"
+                      secondary={data?.user?.paymentForm?.bankAccountNumber || 'N/A'}
+                      primaryTypographyProps={{
+                        color: '#8e8e93',
+                        fontWeight: 600,
+                        mt: -0.5,
+                        variant: 'subtitle2',
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'body2',
+                        color: 'black',
+                      }}
+                    />
+
+                    <ListItemText
+                      primary="IC/Passport Number"
+                      secondary={data?.user?.paymentForm?.icNumber || 'N/A'}
+                      primaryTypographyProps={{
+                        color: '#8e8e93',
+                        fontWeight: 600,
+                        mt: -0.5,
+                        variant: 'subtitle2',
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'body2',
+                        color: 'black',
+                      }}
+                    />
+                  </Stack>
                 </Box>
 
-                <Stack spacing={2}>
-                  <ListItemText
-                    primary="Account Name"
-                    secondary={data?.user?.paymentForm?.bankAccountName || 'N/A'}
-                    primaryTypographyProps={{
-                      color: '#8e8e93',
-                      fontWeight: 600,
-                      mt: -0.5,
-                      variant: 'subtitle2',
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'body2',
-                      color: 'black',
-                    }}
-                  />
+                {/* Submission Status Box */}
+                <Box sx={{ ...BoxStyle, flex: 1 }}>
+                  <Box className="header">
+                    <Iconify
+                      icon="mdi:clipboard-check-outline"
+                      style={{
+                        width: 20,
+                        height: 20,
+                        color: '#203ff5',
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#221f20',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      Submission Status
+                    </Typography>
+                  </Box>
 
-                  <ListItemText
-                    primary="Bank Name"
-                    secondary={data?.user?.paymentForm?.bankName || 'N/A'}
-                    primaryTypographyProps={{
-                      color: '#8e8e93',
-                      fontWeight: 600,
-                      mt: -0.5,
-                      variant: 'subtitle2',
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'body2',
-                      color: 'black',
-                    }}
-                  />
+                  <Stack spacing={2}>
+                    {[
+                      { type: 'AGREEMENT_FORM', label: 'Agreement' },
+                      { type: 'FIRST_DRAFT', label: 'First Draft' },
+                      { type: 'FINAL_DRAFT', label: 'Final Draft' },
+                      { type: 'POSTING', label: 'Posting' },
+                    ].map((item) => {
+                      const submission = submissions?.find(
+                        (sub) => sub.submissionType?.type === item.type
+                      );
+                      const status = submission?.status || 'NOT_STARTED';
 
-                  <ListItemText
-                    primary="Account Number"
-                    secondary={data?.user?.paymentForm?.bankAccountNumber || 'N/A'}
-                    primaryTypographyProps={{
-                      color: '#8e8e93',
-                      fontWeight: 600,
-                      mt: -0.5,
-                      variant: 'subtitle2',
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'body2',
-                      color: 'black',
-                    }}
-                  />
-
-                  <ListItemText
-                    primary="IC/Passport Number"
-                    secondary={data?.user?.paymentForm?.icNumber || 'N/A'}
-                    primaryTypographyProps={{
-                      color: '#8e8e93',
-                      fontWeight: 600,
-                      mt: -0.5,
-                      variant: 'subtitle2',
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'body2',
-                      color: 'black',
-                    }}
-                  />
-                </Stack>
+                      return (
+                        <ListItemText
+                          key={item.type}
+                          primary={item.label}
+                          secondary={
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                px: 1,
+                                py: 0.5,
+                                borderRadius: 0.7,
+                                display: 'inline-block',
+                                color:
+                                  status === 'APPROVED'
+                                    ? '#2e6c56'
+                                    : status === 'REJECTED' || status === 'CHANGES_REQUIRED'
+                                    ? '#FF4842'
+                                    : status === 'PENDING_REVIEW'
+                                    ? '#f19f39'
+                                    : '#8e8e93',
+                                border: `1px solid ${
+                                  status === 'APPROVED'
+                                    ? '#2e6c56'
+                                    : status === 'REJECTED' || status === 'CHANGES_REQUIRED'
+                                    ? '#FF4842'
+                                    : status === 'PENDING_REVIEW'
+                                    ? '#f19f39'
+                                    : '#8e8e93'
+                                }`,
+                                borderBottom: `3px solid ${
+                                  status === 'APPROVED'
+                                    ? '#2e6c56'
+                                    : status === 'REJECTED' || status === 'CHANGES_REQUIRED'
+                                    ? '#FF4842'
+                                    : status === 'PENDING_REVIEW'
+                                    ? '#f19f39'
+                                    : '#8e8e93'
+                                }`,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {status === 'NOT_STARTED' ? 'Not Started' : status.replace(/_/g, ' ')}
+                            </Typography>
+                          }
+                          primaryTypographyProps={{
+                            color: '#8e8e93',
+                            fontWeight: 600,
+                            mt: -0.5,
+                            variant: 'subtitle2',
+                          }}
+                          secondaryTypographyProps={{
+                            component: 'div',
+                            sx: { mt: 0.5 },
+                          }}
+                        />
+                      );
+                    })}
+                  </Stack>
+                </Box>
               </Box>
             </Stack>
           )}

@@ -24,6 +24,7 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  Grid,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -37,6 +38,13 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
+
+import { useResponsive } from 'src/hooks/use-responsive';
+import { grey } from '@mui/material/colors';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 // eslint-disable-next-line react/prop-types
 // const AvatarIcon = ({ icon, ...props }) => (
@@ -133,11 +141,17 @@ const CampaignFirstDraft = ({
   // const [thumbnailUrl, setThumbnail] = useState(null);
   const inQueue = useBoolean();
   const savedCaption = localStorage.getItem('caption');
+  const [uploadTypeModalOpen, setUploadTypeModalOpen] = useState(false);
+  const [fullImageOpen, setFullImageOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const methods = useForm({
     defaultValues: {
-      draft: '',
+      // draft: '',
       caption: savedCaption || '',
+      draftVideo: [],
+      rawFootage: [],
+      photos: [],
     },
     resolver: (values) => {
       const errors = {};
@@ -187,7 +201,6 @@ const CampaignFirstDraft = ({
 
         // video.play();
 
-        // When video metadata is loaded, set the time to capture thumbnail
         video.addEventListener('loadeddata', () => {
           video.currentTime = 1; // Capture thumbnail at 1 second
         });
@@ -204,7 +217,7 @@ const CampaignFirstDraft = ({
 
             // Revoke object URL to free up memory
             URL.revokeObjectURL(video.src);
-            // Return the Base64 image URL
+        
             resolve(canvas.toDataURL());
           } else {
             reject(new Error('Failed to capture thumbnail: video not ready'));
@@ -218,43 +231,113 @@ const CampaignFirstDraft = ({
     []
   );
 
-  const handleDrop = useCallback(
-    async (acceptedFiles) => {
-      const file = acceptedFiles[0];
+  // Previous drop 
+  // const handleDrop = useCallback(
+  //   async (acceptedFiles) => {
+  //     const file = acceptedFiles[0];
 
-      const newFile = Object.assign(file, {
-        preview: URL.createObjectURL(file),
-      });
+  //     const newFile = Object.assign(file, {
+  //       preview: URL.createObjectURL(file),
+  //     });
 
-      try {
-        const thumbnail = await generateThumbnail(newFile);
-        newFile.thumbnail = thumbnail;
-      } catch (error) {
-        console.error('Error generating thumbnail:', error);
-      }
+  //     try {
+  //       const thumbnail = await generateThumbnail(newFile);
+  //       newFile.thumbnail = thumbnail;
+  //     } catch (error) {
+  //       console.error('Error generating thumbnail:', error);
+  //     }
 
-      setPreview(newFile.preview);
-      localStorage.setItem('preview', newFile.preview);
-      setUploadProgress(0);
+  //     setPreview(newFile.preview);
+  //     localStorage.setItem('preview', newFile.preview);
+  //     setUploadProgress(0);
 
-      if (file) {
-        setValue('draft', newFile, { shouldValidate: true });
+  //     if (file) {
+  //       setValue('draft', newFile, { shouldValidate: true });
 
-        // Simulate upload progress
-        const interval = setInterval(() => {
-          setUploadProgress((prev) => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              enqueueSnackbar('Upload complete!', { variant: 'success' });
-              return 100;
-            }
-            return prev + 10;
-          });
-        }, 200);
-      }
-    },
-    [setValue, generateThumbnail]
+  //       // Simulate upload progress
+  //       const interval = setInterval(() => {
+  //         setUploadProgress((prev) => {
+  //           if (prev >= 100) {
+  //             clearInterval(interval);
+  //             enqueueSnackbar('Upload complete!', { variant: 'success' });
+  //             return 100;
+  //           }
+  //           return prev + 10;
+  //         });
+  //       }, 200);
+  //     }
+  //   },
+  //   [setValue, generateThumbnail]
+  // );  
+
+  // handler for photos   
+ 
+  
+ // Handle dropping the draft video
+const handleDraftVideoDrop = useCallback((acceptedFiles) => {
+  const newFiles = acceptedFiles.map((file) =>
+    Object.assign(file, {
+      preview: URL.createObjectURL(file),
+    })
   );
+
+  // Append new files to the existing draftVideo array
+  setValue('draftVideo', [...methods.getValues('draftVideo'), ...newFiles], {
+    shouldValidate: true,
+  });
+}, [setValue, methods]);
+
+// Handle removing the draft video
+const handleRemoveDraftVideo = (fileToRemove) => {
+  const updatedFiles = methods
+    .getValues('draftVideo')
+    .filter((file) => file !== fileToRemove);
+
+  setValue('draftVideo', updatedFiles, { shouldValidate: true });
+};
+
+  const handleDropPhoto = useCallback((acceptedFiles) => {
+    const newFiles = acceptedFiles.map((file) =>
+      Object.assign(file, {
+        preview: URL.createObjectURL(file),
+      })
+    );
+  
+    // Append new files to the existing photos array
+    setValue('photos', [...methods.getValues('photos'), ...newFiles], {
+      shouldValidate: true,
+    });
+  }, [setValue, methods]);
+
+  const handleRemovePhoto = (fileToRemove) => {
+    const updatedFiles = methods
+      .getValues('photos')
+      .filter((file) => file !== fileToRemove);
+  
+    setValue('photos', updatedFiles, { shouldValidate: true });
+  };
+
+  // handler for rawFootage 
+  const handleRawFootageDrop = useCallback((acceptedFiles) => {
+    const newFiles = acceptedFiles.map((file) =>
+      Object.assign(file, {
+        preview: URL.createObjectURL(file),
+      })
+    );
+  
+    // Append new files to the existing rawFootage array
+    setValue('rawFootage', [...methods.getValues('rawFootage'), ...newFiles], {
+      shouldValidate: true,
+    });
+  }, [setValue, methods]);
+
+  const handleRemoveRawFootage = (fileToRemove) => {
+    const updatedFiles = methods
+      .getValues('rawFootage')
+      .filter((file) => file !== fileToRemove);
+  
+    setValue('rawFootage', updatedFiles, { shouldValidate: true });
+  };
 
   const onSubmit = handleSubmit(async (value) => {
     setOpenUploadModal(false);
@@ -264,8 +347,38 @@ const CampaignFirstDraft = ({
     const formData = new FormData();
     const newData = { caption: value.caption, submissionId: submission.id };
     formData.append('data', JSON.stringify(newData));
-    formData.append('draftVideo', value.draft);
+    //  formData.append('draftVideo', value.draft);
 
+    if (value.draftVideo && value.draftVideo.length > 0) {
+      value.draftVideo.forEach((file) => {
+        formData.append('draftVideo', file);
+      });
+    }
+    // Append each raw footage file to the form data
+    if (value.rawFootage && value.rawFootage.length > 0) {
+      value.rawFootage.forEach((file, index) => {
+        formData.append(`rawFootage`, file);
+      });
+    }
+
+    // Append each photo file to the form data
+    if (value.photos && value.photos.length > 0) {
+      value.photos.forEach((file) => {
+        formData.append('photos', file);
+      });
+    }
+
+  console.log('FormData:', {
+    caption: value.caption,
+    submissionId: submission.id,
+    draftVideo: value.draftVideo
+    ? value.draftVideo.map((file) => file.name)
+    : 'No draft video',
+    rawFootage: value.rawFootage
+      ? value.rawFootage.map((file) => file.name)
+      : 'No raw footage',
+    photos: value.photos ? value.photos.map((file) => file.name) : 'No photos',
+  });
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const res = await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
@@ -358,6 +471,121 @@ const CampaignFirstDraft = ({
   const handleCloseSubmitDialog = () => {
     setShowSubmitDialog(false);
     setSubmitStatus('');
+  };
+
+  const handleUploadTypeSelect = (type) => {
+    setOpenUploadModal(true);
+    setUploadTypeModalOpen(false);
+  };
+
+  const handleUploadClick = () => {
+    setUploadTypeModalOpen(true);
+  };
+
+  const UploadFileTypeModal = ({ open, handleClose, onSelectType }) => {
+    const smUp = useResponsive('up', 'sm');
+
+    const fileTypes = [
+      {
+        type: 'video',
+        icon: 'solar:video-library-bold',
+        title: 'Draft Video',
+        description: 'Upload your main draft video for the campaign',
+      },
+      {
+        type: 'rawFootage',
+        icon: 'solar:camera-bold',
+        title: 'Raw Footage',
+        description: 'Upload raw, unedited footage from your shoot',
+      },
+      {
+        type: 'photos',
+        icon: 'solar:gallery-wide-bold',
+        title: 'Photos',
+        description: 'Upload photos from your campaign shoot',
+      },
+    ];
+
+    return (
+      <Dialog open={open} fullScreen={!smUp} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h4">What would you like to upload? 📤</Typography>
+            <IconButton onClick={handleClose}>
+              <Iconify icon="hugeicons:cancel-01" width={20} />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            gap={2}
+            pb={4}
+            mt={1}
+          >
+            {fileTypes.map((type) => (
+              <Box
+                key={type.type}
+                sx={{
+                  border: 1,
+                  p: 2,
+                  borderRadius: 2,
+                  borderColor: grey[100],
+                  transition: 'all .2s ease',
+                  width: { xs: '100%', sm: 'auto' },
+                  '&:hover': {
+                    borderColor: grey[700],
+                    cursor: 'pointer',
+                    transform: 'scale(1.05)',
+                  },
+                }}
+                onClick={() => {
+                  handleClose();
+                  onSelectType(type.type);
+                }}
+              >
+                <Avatar sx={{ bgcolor: '#203ff5' }}>
+                  <Iconify icon={type.icon} />
+                </Avatar>
+                <ListItemText
+                  sx={{ mt: 2 }}
+                  primary={type.title}
+                  secondary={type.description}
+                  primaryTypographyProps={{
+                    variant: 'body1',
+                    fontWeight: 'bold',
+                    gutterBottom: 1,
+                  }}
+                  secondaryTypographyProps={{
+                    color: 'text.secondary',
+                    lineHeight: 1.2,
+                  }}
+                />
+              </Box>
+            ))}
+          </Stack>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  const handleImageClick = (index) => {
+    setCurrentImageIndex(index);
+    setFullImageOpen(true);
+  };
+
+  const handleFullImageClose = () => {
+    setFullImageOpen(false);
+  };
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + submission.photos.length) % submission.photos.length);
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % submission.photos.length);
   };
 
   return (
@@ -510,7 +738,7 @@ const CampaignFirstDraft = ({
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Button
                           variant="contained"
-                          onClick={() => setOpenUploadModal(true)}
+                          onClick={handleUploadClick}
                           startIcon={<Iconify icon="material-symbols:add" width={24} />}
                           sx={{
                             bgcolor: '#203ff5',
@@ -733,10 +961,13 @@ const CampaignFirstDraft = ({
                   p: 0,
                   maxWidth: { xs: '95vw', sm: '85vw', md: '75vw' },
                   margin: { xs: '16px', sm: '32px' },
+                  height: '90vh',
+                  display: 'flex',
+                  flexDirection: 'column',
                 },
               }}
             >
-              <DialogTitle sx={{ p: 3 }}>
+              <DialogTitle sx={{ p: 3, flexShrink: 0 }}>
                 <Stack direction="row" alignItems="center" gap={2}>
                   <Typography
                     variant="h5"
@@ -769,25 +1000,208 @@ const CampaignFirstDraft = ({
                   mx: 'auto',
                   borderBottom: '1px solid',
                   borderColor: 'divider',
+                  flexShrink: 0,
                 }}
               />
 
-              <DialogContent sx={{ p: 2.5 }}>
-                <Stack spacing={2}>
-                  <Box
-                    component="video"
-                    autoPlay
-                    controls
-                    sx={{
-                      width: '100%',
-                      maxHeight: '60vh',
-                      borderRadius: 1,
-                      bgcolor: 'background.neutral',
+              <DialogContent 
+                sx={{ 
+                  p: 2.5, 
+                  overflowY: 'auto',
+                  '&::-webkit-scrollbar': {
+                    width: '8px',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: 'rgba(0,0,0,0.1)',
+                    borderRadius: '4px',
+                  },
+                }}
+              >
+                <Stack spacing={3}>
+                  {/* Draft Videos Section */}
+                  <Accordion 
+                    defaultExpanded 
+                    sx={{ 
+                      boxShadow: 'none',
+                      '&:before': { display: 'none' },
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: '8px !important',
+                      overflow: 'hidden',
                     }}
                   >
-                    <source src={submission?.content} />
-                  </Box>
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      sx={{
+                        backgroundColor: (theme) => theme.palette.background.neutral,
+                        '&.Mui-expanded': {
+                          minHeight: 48,
+                        },
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Iconify icon="solar:video-library-bold" width={24} />
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                          Draft Videos
+                        </Typography>
+                      </Stack>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
+                      <Stack spacing={2}>
+                        {submission?.video?.length > 0 ? (
+                          submission.video.map((videoItem, index) => (
+                            <Box key={videoItem.id || index}>
+                              <Box
+                                component="video"
+                                autoPlay={false}
+                                controls
+                                sx={{
+                                  width: '100%',
+                                  height: '400px',
+                                  objectFit: 'contain',
+                                  bgcolor: 'black',
+                                  borderRadius: 1,
+                                }}
+                              >
+                                <source src={videoItem.url} />
+                              </Box>
+                            </Box>
+                          ))
+                        ) : (
+                          <Box
+                            component="video"
+                            autoPlay={false}
+                            controls
+                            sx={{
+                              width: '100%',
+                              height: '400px',
+                              objectFit: 'contain',
+                              bgcolor: 'black',
+                              borderRadius: 1,
+                            }}
+                          >
+                            <source src={submission?.content} />
+                          </Box>
+                        )}
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
 
+                  {/* Raw Footages Section */}
+                  {submission?.rawFootages?.length > 0 && (
+                    <Accordion 
+                      sx={{ 
+                        boxShadow: 'none',
+                        '&:before': { display: 'none' },
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: '8px !important',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.neutral,
+                          '&.Mui-expanded': {
+                            minHeight: 48,
+                          },
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Iconify icon="solar:camera-bold" width={24} />
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            Raw Footages
+                          </Typography>
+                        </Stack>
+                      </AccordionSummary>
+                      <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
+                        <Stack spacing={2}>
+                          {submission.rawFootages.map((footage, index) => (
+                            <Box key={footage.id || index}>
+                              <Box
+                                component="video"
+                                autoPlay={false}
+                                controls
+                                sx={{
+                                  width: '100%',
+                                  height: '400px',
+                                  objectFit: 'contain',
+                                  bgcolor: 'black',
+                                  borderRadius: 1,
+                                }}
+                              >
+                                <source src={footage.url} />
+                              </Box>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </AccordionDetails>
+                    </Accordion>
+                  )}
+
+                  {/* Photos Section */}
+                  {submission?.photos?.length > 0 && (
+                    <Accordion 
+                      sx={{ 
+                        boxShadow: 'none',
+                        '&:before': { display: 'none' },
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: '8px !important',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        sx={{
+                          backgroundColor: (theme) => theme.palette.background.neutral,
+                          '&.Mui-expanded': {
+                            minHeight: 48,
+                          },
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Iconify icon="solar:gallery-wide-bold" width={24} />
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            Photos
+                          </Typography>
+                        </Stack>
+                      </AccordionSummary>
+                      <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
+                        <Grid container spacing={2}>
+                          {submission.photos.map((photo, index) => (
+                            <Grid item xs={12} sm={6} md={4} key={photo.id || index}>
+                              <Box
+                                sx={{
+                                  position: 'relative',
+                                  borderRadius: 2,
+                                  overflow: 'hidden',
+                                  boxShadow: 2,
+                                  height: '169px',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() => handleImageClick(index)}
+                              >
+                                <Box
+                                  component="img"
+                                  src={photo.url}
+                                  alt={`Photo ${index + 1}`}
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                  }}
+                                />
+                              </Box>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </AccordionDetails>
+                    </Accordion>
+                  )}
+
+                  {/* Caption Section */}
                   {submission?.caption && (
                     <Box
                       sx={{
@@ -796,23 +1210,10 @@ const CampaignFirstDraft = ({
                         bgcolor: 'background.neutral',
                       }}
                     >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: 'text.secondary',
-                          display: 'block',
-                          mb: 0.5,
-                        }}
-                      >
+                      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5, fontWeight: 600 }}>
                         Caption
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: 'text.primary',
-                          lineHeight: 1.6,
-                        }}
-                      >
+                      <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6 }}>
                         {submission?.caption}
                       </Typography>
                     </Box>
@@ -822,6 +1223,12 @@ const CampaignFirstDraft = ({
             </Dialog>
 
             {/* New Upload Modal */}
+            <UploadFileTypeModal
+              open={uploadTypeModalOpen}
+              handleClose={() => setUploadTypeModalOpen(false)}
+              onSelectType={handleUploadTypeSelect}
+            />
+
             <Dialog
               open={openUploadModal}
               fullWidth
@@ -868,7 +1275,54 @@ const CampaignFirstDraft = ({
                 <FormProvider methods={methods} onSubmit={onSubmit}>
                   <Stack spacing={3} sx={{ pt: 1 }}>
                     <Box>
-                      {localStorage.getItem('preview') || preview ? (
+                    <Typography variant="subtitle2" sx={{ color: '#636366' }}>
+                      Upload Draft{' '}
+                      <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                    </Typography>
+
+                    <RHFUpload
+                      name="draftVideo"
+                      type="video"
+                      onDrop={handleDraftVideoDrop}
+                      onRemove={handleRemoveDraftVideo}
+                      multiple
+                    />
+
+  {/* Display uploaded draft video files - Already Exists */}
+  {/* {methods.watch('draftVideo')?.map((file, index) => (
+    <Box
+      key={index}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        mt: 2,
+        p: 2,
+        border: '1px solid',
+        borderColor: '#e7e7e7',
+        borderRadius: 1.2,
+        bgcolor: '#ffffff',
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box
+          component="img"
+          src={file.preview}
+          sx={{
+            width: 64,
+            height: 64,
+            borderRadius: 1,
+            objectFit: 'cover',
+          }}
+        />
+        <Typography variant="body2">{file.name}</Typography>
+      </Box>
+      <IconButton onClick={() => handleRemoveDraftVideo(file)}>
+        X
+      </IconButton>
+    </Box>
+  ))} */}
+                      {/* {localStorage.getItem('preview') || preview ? (
                         <Box sx={{ position: 'relative' }}>
                           <Stack
                             spacing={2}
@@ -1051,15 +1505,124 @@ const CampaignFirstDraft = ({
                             </Stack>
                           </Stack>
                         </Box>
-                      ) : (
-                        <RHFUpload
+                      ) : ( */}
+                        {/* <RHFUpload
                           name="draft"
-                          type="video"
-                          onDrop={handleDrop}
-                          onRemove={handleRemoveFile}
-                        />
-                      )}
+                          type='video'
+                          multiple
+                          onDrop={handleDraftVideoDrop}
+                          onRemove={handleRemoveDraftVideo}
+                        /> */}
+                      {/* )} */}
                     </Box>
+
+                  {/* rawFootages */}
+                  {campaign.rawFootage && (
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ color: '#636366' }}>
+                        Upload Raw Footages{' '}
+                        <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                      </Typography>
+                      <RHFUpload
+                        name="rawFootage"
+                        type='video'
+                        onDrop={handleRawFootageDrop}
+                        onRemove={handleRemoveRawFootage}
+                        multiple 
+                      />
+
+                      {/* Display uploaded raw footage files */}
+                      {/* {methods.watch('rawFootage')?.map((file, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            mt: 2,
+                            p: 2,
+                            border: '1px solid',
+                            borderColor: '#e7e7e7',
+                            borderRadius: 1.2,
+                            bgcolor: '#ffffff',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box
+                              component="img"
+                              src={file.preview}
+                              sx={{
+                                width: 64,
+                                height: 64,
+                                borderRadius: 1,
+                                objectFit: 'cover',
+                              }}
+                            />
+                            <Typography variant="body2">{file.name}</Typography>
+                          </Box>
+                          <IconButton onClick={() => handleRemoveRawFootage(file)}>
+                            X
+                          </IconButton>
+                        </Box>
+                      ))} */}
+                    </Box>
+                  )}
+
+
+{campaign.photos && (
+  <Box sx={{ mt: 2 }}>
+    <Typography variant="subtitle2" sx={{ color: '#636366' }}>
+      Upload Photos{' '}
+      <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+    </Typography>
+
+ {/* Upload Section */} 
+ <RHFUpload
+      name="photos"
+      type="file"
+      multiple
+      onDrop={handleDropPhoto}
+      onRemove={handleRemovePhoto} 
+    />
+        {/* Display uploaded photos */}
+        {/* {methods.watch('photos')?.map((photo, index) => (
+        <Box
+          key={index}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mt: 2,
+            p: 2,
+            border: '1px solid',
+            borderColor: '#e7e7e7',
+            borderRadius: 1.2,
+            bgcolor: '#ffffff',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              component="img"
+              src={photo.preview}
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: 1,
+                objectFit: 'cover',
+              }}
+            />
+            <Typography variant="body2">{photo.name}</Typography>
+          </Box>
+          <IconButton onClick={() => handleRemovePhoto(photo)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      ))} */}
+    
+
+   
+  </Box>
+)} 
 
                     <Box>
                       <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, color: '#636366' }}>
@@ -1272,6 +1835,96 @@ const CampaignFirstDraft = ({
             </DialogActions>
           )}
         </Dialog>
+
+        {/* Photo Modal */}
+        <Dialog
+          open={fullImageOpen}
+          onClose={handleFullImageClose}
+          maxWidth={false}
+          PaperProps={{
+            sx: {
+              maxWidth: { xs: '90vw', md: '50vw' },
+              maxHeight: { xs: '90vh', md: '120vh' },
+              m: 'auto',
+              borderRadius: 2,
+              overflow: 'hidden',
+              bgcolor: 'background.paper',
+            },
+          }}
+        >
+          <DialogContent
+            sx={{
+              p: 0,
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'transparent',
+            }}
+          >
+            <IconButton
+              onClick={handleFullImageClose}
+              sx={{
+                position: 'fixed',
+                right: 16,
+                top: 16,
+                color: 'white',
+                bgcolor: 'rgba(0, 0, 0, 0.5)',
+                '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                zIndex: 1,
+              }}
+            >
+              <Iconify icon="eva:close-fill" />
+            </IconButton>
+
+            {submission?.photos?.[currentImageIndex] && (
+              <Box
+                component="img"
+                src={submission.photos[currentImageIndex].url}
+                alt={`Full size photo ${currentImageIndex + 1}`}
+                sx={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            )}
+            
+            {submission?.photos && submission.photos.length > 1 && (
+              <>
+                <IconButton
+                  onClick={handlePrevImage}
+                  sx={{
+                    position: 'fixed',
+                    left: 16,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    bgcolor: 'rgba(0, 0, 0, 0.5)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                  }}
+                >
+                  <Iconify icon="eva:arrow-ios-back-fill" />
+                </IconButton>
+                <IconButton
+                  onClick={handleNextImage}
+                  sx={{
+                    position: 'fixed',
+                    right: 16,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    bgcolor: 'rgba(0, 0, 0, 0.5)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                  }}
+                >
+                  <Iconify icon="eva:arrow-ios-forward-fill" />
+                </IconButton>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </Box>
     )
   );
@@ -1288,3 +1941,4 @@ CampaignFirstDraft.propTypes = {
   openLogisticTab: PropTypes.func,
   setCurrentTab: PropTypes.func,
 };
+

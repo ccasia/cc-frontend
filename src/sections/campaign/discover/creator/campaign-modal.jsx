@@ -38,15 +38,29 @@ import Iconify from 'src/components/iconify';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal'; // Import an appropriate icon
 
 const ChipStyle = {
-  bgcolor: '#e4e4e4',
+  bgcolor: '#FFF',
+  border: 1,
+  borderColor: '#EBEBEB',
+  borderRadius: 1,
   color: '#636366',
-  borderRadius: 16,
+  height: '32px', 
+  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
     px: 1.5,
-    py: 0.5,
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: '-3px',
   },
-  '&:hover': { bgcolor: '#e4e4e4' },
+  '&:hover': { bgcolor: '#FFF' },
+};
+
+const capitalizeFirstLetter = (string) => {
+  if (!string) return '';
+  if (string.toLowerCase() === 'f&b') return 'F&B';
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 };
 
 const CampaignModal = ({
@@ -857,6 +871,63 @@ const CampaignModal = ({
                         </Stack>
                       </Box>
 
+                      {/* Campaign Deliverables */}
+                      <Box sx={{ mb: 3 }}>
+                        <Box
+                          sx={{
+                            border: '1.5px solid #203ff5',
+                            borderBottom: '4px solid #203ff5',
+                            borderRadius: 1,
+                            p: 1,
+                            mb: 1,
+                            width: 'fit-content',
+                          }}
+                        >
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Iconify
+                              icon="mdi:cube-outline"
+                              sx={{
+                                color: '#203ff5',
+                                width: 20,
+                                height: 20,
+                              }}
+                            />
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#203ff5',
+                                fontWeight: 600,
+                              }}
+                            >
+                              CAMPAIGN DELIVERABLES
+                            </Typography>
+                          </Stack>
+                        </Box>
+                        <Stack spacing={1} sx={{ pl: 0.5 }}>
+                          {[
+                            { label: 'UGC Videos', value: true },
+                            { label: 'Raw Footage', value: campaign?.rawFootage },
+                            { label: 'Photos', value: campaign?.photos },
+                            { label: 'Ads', value: campaign?.ads },
+                          ].map((deliverable) => (
+                            deliverable.value && (
+                              <Stack key={deliverable.label} direction="row" spacing={1} alignItems="center">
+                                <Iconify
+                                  icon="octicon:dot-fill-16"
+                                  sx={{
+                                    color: '#000000',
+                                    width: 12,
+                                    height: 12,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                <Typography variant="body2">{deliverable.label}</Typography>
+                              </Stack>
+                            )
+                          ))}
+                        </Stack>
+                      </Box>
+
                       {/* Campaign Do's */}
                       <Box sx={{ mb: 3 }}>
                         <Box
@@ -1021,7 +1092,7 @@ const CampaignModal = ({
                 <Stack spacing={2}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {[
-                      { label: 'Gender', data: campaign?.campaignRequirement?.gender },
+                      { label: 'Gender', data: campaign?.campaignRequirement?.gender?.map(capitalizeFirstLetter) },
                       { label: 'Age', data: campaign?.campaignRequirement?.age },
                       {
                         label: 'Geo Location',
@@ -1030,7 +1101,9 @@ const CampaignModal = ({
                       { label: 'Language', data: campaign?.campaignRequirement?.language },
                       {
                         label: 'Creator Persona',
-                        data: campaign?.campaignRequirement?.creator_persona,
+                        data: campaign?.campaignRequirement?.creator_persona?.map(value => 
+                          value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
+                        ),
                       },
                     ].map((item, index) => (
                       <Box key={index}>
@@ -1044,11 +1117,7 @@ const CampaignModal = ({
                           {item.data?.map((value, idx) => (
                             <Chip
                               key={idx}
-                              label={
-                                item.label === 'Creator Persona'
-                                  ? value.charAt(0).toUpperCase() + value.slice(1)
-                                  : value
-                              }
+                              label={value}
                               size="small"
                               sx={ChipStyle}
                             />

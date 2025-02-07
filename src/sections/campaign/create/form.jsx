@@ -47,10 +47,11 @@ import CampaignAdminManager from './steps/admin-manager';
 import OtherAttachments from './steps/other-attachments';
 import TimelineTypeModal from './steps/timeline-type-modal';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`
+// new URL(
+//   `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`,
+//   import.meta.url
+// ).toString();
 
 const steps = [
   { title: 'Select Client or Agency', logo: '👾', color: '#D8FF01' },
@@ -225,6 +226,13 @@ function CreateCampaignForm({ onClose }) {
 
   const campaignTypeSchema = Yup.object().shape({
     campaignType: Yup.string().required('Campaign type is required.'),
+    deliverables: Yup.array()
+    .min(1, 'At least one deliverable is required')
+    .test('has-ugc-videos', 'UGC Videos is required', (value) => value?.includes('UGC_VIDEOS'))
+    .required('Deliverables are required'),
+    rawFootage: Yup.boolean(),
+    photos: Yup.boolean(),
+    ads: Yup.boolean(),
   });
 
   const getSchemaForStep = (step) => {
@@ -298,6 +306,9 @@ function CreateCampaignForm({ onClose }) {
     otherAttachments: [],
     referencesLinks: [],
     campaignType: '',
+    deliverables: ['UGC_VIDEOS'], 
+    rawFootage: false,
+    photos: false,
   };
 
   const methods = useForm({
@@ -418,11 +429,19 @@ function CreateCampaignForm({ onClose }) {
 
   const onSubmit = handleSubmit(async (data, stage) => {
     const formData = new FormData();
-
+    console.log("form data", formData)
     const adjustedData = {
       ...data,
       audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
+      rawFootage: data.deliverables.includes('RAW_FOOTAGES'),  // Convert based on deliverables
+      photos: data.deliverables.includes('PHOTOS'),
     };
+
+    console.log('Adjusted Data before sending:', adjustedData);  // Debug log
+
+    // Append data correctly to FormData
+    formData.append('rawFootage', adjustedData.rawFootage ? 'true' : 'false');
+    formData.append('photos', adjustedData.photos ? 'true' : 'false');
 
     delete adjustedData?.othersAudienceLocation;
 
@@ -666,117 +685,7 @@ function CreateCampaignForm({ onClose }) {
           </Box>
         </Box>
 
-        {/* <Stepper
-          sx={{
-            pt: 2,
-            m: 1,
-          }}
-          activeStep={activeStep}
-          orientation="vertical"
-        >
-          {steps.map((label, index) => {
-            const stepProps = {};
-            const labelProps = {};
-            if (isStepOptional(index)) {
-              labelProps.optional = <Typography variant="caption">Optional</Typography>;
-            }
-            return (
-              <Step key={label} {...stepProps}>
-                <StepLabel {...labelProps}>{label}</StepLabel>
-                <StepContent>
-                  {getStepContent(activeStep)}
-                  {activeStep !== steps.length - 1 && (
-                    <Stack mt={2} direction="row" gap={2}>
-                      <Button
-                        disabled={activeStep === 0}
-                        onClick={handleBack}
-                        variant="outlined"
-                        size="small"
-                      >
-                        Back
-                      </Button>
-
-                      <Button variant="contained" size="small" onClick={handleNext}>
-                        Next
-                      </Button>
-                    </Stack>
-                  )}
-                </StepContent>
-              </Step>
-            );
-          })}
-        </Stepper> */}
-
-        {/* <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Paper
-            sx={{
-              p: 0.5,
-              my: 0.5,
-              mx: 1,
-              width: '100%',
-            }}
-          >
-            <Box sx={{ my: 1 }}>
-              {activeStep === steps.length - 1 && (
-                <Box sx={{ display: 'flex', m: 2, direction: { xs: 'column', md: 'row' } }}>
-                  <Button
-                    color="inherit"
-                    disabled={activeStep === 0}
-                    onClick={handleBack}
-                    sx={{ mr: 1 }}
-                  >
-                    Back
-                  </Button>
-                  <Box sx={{ flexGrow: 1 }} />
-                  {activeStep === steps.length - 1 ? (
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                      <LoadingButton
-                        variant="outlined"
-                        onClick={() => onSubmit('DRAFT')}
-                        startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
-                        loading={isLoading}
-                      >
-                        Draft
-                      </LoadingButton>
-                      {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
-                        <LoadingButton
-                          variant="contained"
-                          color="primary"
-                          onClick={() => onSubmit('ACTIVE')}
-                          startIcon={<Iconify icon="material-symbols:publish" width={16} />}
-                          loading={isLoading}
-                        >
-                          Publish now
-                        </LoadingButton>
-                      ) : (
-                        <LoadingButton
-                          variant="contained"
-                          color="primary"
-                          onClick={() => onSubmit('SCHEDULED')}
-                          startIcon={<Iconify icon="material-symbols:publish" width={16} />}
-                          loading={isLoading}
-                        >
-                          Schedule on {dayjs(startDate).format('ddd LL')}
-                        </LoadingButton>
-                      )}
-                    </Stack>
-                  ) : (
-                    <Button variant="contained" onClick={handleNext}>
-                      Next
-                    </Button>
-                  )}
-                </Box>
-              )}
-            </Box>
-          </Paper>
-        </Box> */}
+  
 
         <Dialog
           open={confirmation.value}

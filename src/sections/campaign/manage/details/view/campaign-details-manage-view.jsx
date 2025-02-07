@@ -463,7 +463,7 @@ const CampaignDetailManageView = ({ id }) => {
               <Stack spacing={1} direction="row" flexWrap="wrap">
                 {campaign?.campaignRequirement?.gender?.map((e, index) => (
                   <Label key={index} color="secondary">
-                    {formatText(e)}
+                    {e}
                   </Label>
                 )) || null}
               </Stack>
@@ -517,10 +517,6 @@ const CampaignDetailManageView = ({ id }) => {
               </Stack>
             }
           />
-          {/* <ListItemText
-            primary="User Persona"
-            secondary={formatText(campaign?.campaignRequirement?.user_persona)}
-          /> */}
           <ListItemText
             primary="User Persona"
             secondary={
@@ -557,6 +553,25 @@ const CampaignDetailManageView = ({ id }) => {
                     {formatText(e)}
                   </Label>
                 )) || null}
+              </Stack>
+            }
+          />
+          <ListItemText
+            primary="Deliverables"
+            secondary={
+              <Stack spacing={1} direction="row" flexWrap="wrap">
+                {[
+                  { label: 'UGC Videos', value: true },
+                  { label: 'Raw Footage', value: campaign?.rawFootage },
+                  { label: 'Photos', value: campaign?.photos },
+                  { label: 'Ads', value: campaign?.ads },
+                ].map((deliverable) => (
+                  deliverable.value && (
+                    <Label key={deliverable.label} color="secondary">
+                      {deliverable.label}
+                    </Label>
+                  )
+                ))}
               </Stack>
             }
           />
@@ -834,52 +849,6 @@ const CampaignDetailManageView = ({ id }) => {
       {isEditable && <EditReferences open={open} campaign={campaign} onClose={onClose} />}
     </>
   );
-
-  // const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
-
-  // const copyDialogContainer = (
-  //   <Dialog
-  //     open={copyDialog.value}
-  //     maxWidth="md"
-  //     fullWidth
-  //     sx={{
-  //       '& .MuiDialog-paper': {
-  //         p: 2,
-  //       },
-  //     }}
-  //   >
-  //     <Box
-  //       sx={{
-  //         p: 1,
-  //         bgcolor: theme.palette.background.paper,
-  //         border: 1,
-  //         borderRadius: 1,
-  //         borderColor: '#EBEBEB',
-  //       }}
-  //     >
-  //       <Stack direction="row" alignItems="center">
-  //         <Typography sx={{ flexGrow: 1, color: 'text.secondary' }} variant="subtitle2">
-  //           {url || 'No url found.'}
-  //         </Typography>
-  //         {!copy.value ? (
-  //           <IconButton onClick={copyURL}>
-  //             <Iconify icon="solar:copy-line-duotone" />
-  //           </IconButton>
-  //         ) : (
-  //           <IconButton disabled>
-  //             <Iconify icon="charm:tick" color="success.main" />
-  //           </IconButton>
-  //         )}
-  //       </Stack>
-  //     </Box>
-
-  //     <DialogActions>
-  //       <Button onClick={copyDialog.onFalse} size="small" variant="outlined" sx={{ mx: 'auto' }}>
-  //         Done
-  //       </Button>
-  //     </DialogActions>
-  //   </Dialog>
-  // );
 
   return (
     <Container maxWidth="lg">
