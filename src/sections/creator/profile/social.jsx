@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { LoadingButton } from '@mui/lab';
@@ -6,8 +5,7 @@ import { Stack, Button, Typography } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { initFacebookSDK } from 'src/utils/FacebookSDK';
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -19,8 +17,10 @@ import { useSnackbar } from 'src/components/snackbar';
 
 export default function AccountSocialLinks() {
   const { enqueueSnackbar } = useSnackbar();
-  const { user } = useAuthContext();
-  const loading = useBoolean();
+  const { user, initialize } = useAuthContext();
+
+  const tikTokLoading = useBoolean();
+  const facebookLoading = useBoolean();
 
   const methods = useForm({
     defaultValues: {
@@ -29,33 +29,30 @@ export default function AccountSocialLinks() {
     },
   });
 
-  const {
-    handleSubmit,
-    formState: { isDirty, isSubmitting },
-  } = methods;
+  const { handleSubmit } = methods;
 
-  const onSubmit = handleSubmit(async (data) => {
-    try {
-      const res = await axiosInstance.patch(endpoints.creators.updateSocialMediaUsername, data);
-      enqueueSnackbar(res?.data?.message);
-    } catch (error) {
-      enqueueSnackbar(error?.message, {
-        variant: 'error',
-      });
-    }
-  });
+  // const onSubmit = handleSubmit(async (data) => {
+  //   try {
+  //     const res = await axiosInstance.patch(endpoints.creators.updateSocialMediaUsername, data);
+  //     enqueueSnackbar(res?.data?.message);
+  //   } catch (error) {
+  //     enqueueSnackbar(error?.message, {
+  //       variant: 'error',
+  //     });
+  //   }
+  // });
 
-  useEffect(() => {
-    // Check if the Facebook SDK has loaded
-    if (window.FB) {
-      initFacebookSDK();
-      window.FB.getLoginStatus((response) => {
-        if (response.status === 'connected') {
-          console.log('User is already logged in.');
-        }
-      });
-    }
-  }, []);
+  // useEffect(() => {
+  //   // Check if the Facebook SDK has loaded
+  //   if (window.FB) {
+  //     initFacebookSDK();
+  //     window.FB.getLoginStatus((response) => {
+  //       if (response.status === 'connected') {
+  //         console.log('User is already logged in.');
+  //       }
+  //     });
+  //   }
+  // }, []);
 
   const handleLogin = () => {
     window.FB.login(
@@ -82,11 +79,12 @@ export default function AccountSocialLinks() {
 
   const disconnectTiktok = async () => {
     try {
-      loading.onTrue();
+      tikTokLoading.onTrue();
       const res = await axiosInstance.post(`/api/social/tiktok/disconnect`, {
         userId: user.id,
       });
 
+      initialize();
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Error disconnecting tiktok account', {
@@ -94,7 +92,26 @@ export default function AccountSocialLinks() {
       });
       console.log(error);
     } finally {
-      loading.onFalse();
+      tikTokLoading.onFalse();
+    }
+  };
+
+  const disconnectFacebook = async () => {
+    try {
+      facebookLoading.onTrue();
+      const res = await axiosInstance.post(`/api/social/facebook/disconnect`, {
+        userId: user.id,
+      });
+
+      initialize();
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error disconnecting tiktok account', {
+        variant: 'error',
+      });
+      console.log(error);
+    } finally {
+      facebookLoading.onFalse();
     }
   };
 
@@ -153,15 +170,15 @@ export default function AccountSocialLinks() {
           <Typography variant="subtitle1">Instagram</Typography>
         </Stack>
         {user?.creator?.isFacebookConnected ? (
-          <Button
+          <LoadingButton
             variant="outlined"
-            onClick={() => alert('Instagram disconnected')}
+            onClick={disconnectFacebook}
             color="error"
             sx={{ borderRadius: 2 }}
-            loading={loading.value}
+            loading={facebookLoading.value}
           >
             Disconnect
-          </Button>
+          </LoadingButton>
         ) : (
           <Button
             variant="outlined"
@@ -185,7 +202,7 @@ export default function AccountSocialLinks() {
             onClick={disconnectTiktok}
             color="error"
             sx={{ borderRadius: 2 }}
-            loading={loading.value}
+            loading={tikTokLoading.value}
           >
             Disconnect
           </LoadingButton>
