@@ -105,27 +105,6 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
     }
   };
 
-  // const pitch = useMemo(
-  //   () => campaign?.pitch?.filter((elem) => elem.userId.includes(user?.id))[0],
-  //   [campaign, user]
-  // );
-
-  // const pitch = useMemo(
-  //   () => campaign?.pitch?.find((elem) => elem.userId === user?.id),
-  //   [campaign, user]
-  // );
-
-  // const shortlisted = useMemo(
-  //   () => campaign?.shortlisted?.filter((elem) => elem.userId.includes(user?.id))[0],
-  //   [campaign, user]
-  // );
-
-  // const campaignIds = useMemo(() => user?.pitch?.map((item) => item.campaignId), [user]) || [];
-
-  // const handleClose = () => {
-  //   setOpen(false);
-  // };
-
   const campaignInfo = useBoolean();
 
   const handleCardClick = () => {

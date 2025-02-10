@@ -14,6 +14,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { banks } from 'src/contants/bank';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -37,6 +38,7 @@ const FormField = ({ label, children }) => (
 );
 
 const CreatorForm = ({ dialog, user, display, backdrop }) => {
+  const { initialize } = useAuthContext();
   const schema = yup.object().shape({
     fullName: yup.string().required('Full name is required'),
     icNumber: yup.string().required('IC/Passport number is required'),
@@ -71,6 +73,7 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
         userId: user?.id,
       });
       enqueueSnackbar(res?.data?.message);
+      initialize();
       dialog.onFalse();
       backdrop?.onFalse();
       mutate(endpoints.auth.me);
