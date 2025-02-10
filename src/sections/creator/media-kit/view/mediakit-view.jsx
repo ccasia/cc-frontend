@@ -449,7 +449,7 @@ const MediaKitCreator = () => {
         </Button>
       </Stack>
 
-      <MediaKitSocial currentTab={currentTab} isLoading={isLoading} />
+      <MediaKitSocial currentTab={currentTab} />
       <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} />
     </Container>
   );
