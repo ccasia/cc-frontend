@@ -34,6 +34,9 @@ const MediaKitCreator = () => {
   const tiktok = useSocialMediaData((state) => state.tiktok);
   const instagram = useSocialMediaData((state) => state.instagram);
 
+  const [currentTab, setCurrentTab] = useState('tiktok');
+  const [openSetting, setOpenSetting] = useState(false);
+
   const { data: socialData, isLoading } = useSWR(
     endpoints.creators.social.tiktok(user.id),
     fetcher,
@@ -61,10 +64,6 @@ const MediaKitCreator = () => {
   // useEffect(() => {
   //   setInstagram(instaData);
   // }, [instaData, setInstagram]);
-
-  const [currentTab, setCurrentTab] = useState('tiktok');
-
-  const [openSetting, setOpenSetting] = useState(false);
 
   // Function to get existing social media data
   // const { data, isLoading } = useGetSocialMedia();
@@ -310,7 +309,7 @@ const MediaKitCreator = () => {
             </Avatar>
             <ListItemText
               primary="ENGAGEMENT RATE"
-              secondary={socialMediaAnalytics.followers}
+              secondary={socialMediaAnalytics.engagement_rate}
               // secondary={
               //   socialMediaAnalytics.engagement_rate
               //     ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
@@ -357,7 +356,7 @@ const MediaKitCreator = () => {
             <ListItemText
               primary="AVERAGE LIKES"
               secondary={
-                socialMediaAnalytics.followers
+                socialMediaAnalytics.averageLikes
                 // tiktok?.user?.data?.user?.likes_count || 0
                 // socialMediaAnalytics.averageLikes
                 //   ? formatNumber(socialMediaAnalytics.averageLikes)
