@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 import { m } from 'framer-motion';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   Box,
@@ -38,10 +38,14 @@ const MediaKitCreator = () => {
     endpoints.creators.social.tiktok(user.id),
     fetcher,
     {
+      onSuccess: (data) => {
+        setTiktok(data);
+      },
+    },
+    {
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      // revalidateOnMount: false,
     }
   );
 
@@ -49,20 +53,24 @@ const MediaKitCreator = () => {
     endpoints.creators.social.instagram(user.id),
     fetcher,
     {
+      onSuccess: (data) => {
+        setInstagram(data);
+      },
+    },
+    {
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      // revalidateOnMount: false,
     }
   );
 
-  useEffect(() => {
-    setTiktok(socialData);
-  }, [socialData, setTiktok]);
+  // useEffect(() => {
+  //   setTiktok(socialData);
+  // }, [socialData, setTiktok]);
 
-  useEffect(() => {
-    setInstagram(instaData);
-  }, [instaData, setInstagram]);
+  // useEffect(() => {
+  //   setInstagram(instaData);
+  // }, [instaData, setInstagram]);
 
   const [currentTab, setCurrentTab] = useState('tiktok');
 
