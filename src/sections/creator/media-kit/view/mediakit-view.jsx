@@ -15,8 +15,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { fetcher, endpoints } from 'src/utils/axios';
 import { useSocialMediaData } from 'src/utils/store';
+import { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -41,6 +41,8 @@ const MediaKitCreator = () => {
     endpoints.creators.social.tiktok(user.id),
     fetcher,
     {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
       onSuccess: (data) => {
         setTiktok(data);
       },
@@ -51,6 +53,8 @@ const MediaKitCreator = () => {
     endpoints.creators.social.instagram(user.id),
     fetcher,
     {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
       onSuccess: (data) => {
         setInstagram(data);
       },
@@ -200,6 +204,7 @@ const MediaKitCreator = () => {
             key={interest?.id}
             sx={{
               border: 1,
+              height: 30,
               borderColor: '#EBEBEB',
               boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
               bgcolor: 'white',
