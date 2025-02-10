@@ -41,11 +41,6 @@ const MediaKitCreator = () => {
       onSuccess: (data) => {
         setTiktok(data);
       },
-    },
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
     }
   );
 
@@ -56,11 +51,6 @@ const MediaKitCreator = () => {
       onSuccess: (data) => {
         setInstagram(data);
       },
-    },
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
     }
   );
 
