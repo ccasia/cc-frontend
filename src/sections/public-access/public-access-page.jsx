@@ -1,3 +1,4 @@
+/* eslint-disable perfectionist/sort-imports */
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { useParams } from 'react-router-dom';
@@ -37,10 +38,10 @@ import { useSettingsContext } from 'src/components/settings';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { usePublicCampaign } from 'src/routes/hooks/use-public-campaign';
-import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
+import { useGetCampaignById } from 'src/routes/hooks/use-public-campaign';
+//  import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import { format } from 'date-fns';
-
+import axiosInstance, { endpoints } from 'src/utils/axios';
 import { LoadingScreen } from 'src/components/loading-screen';
 
 import CampaignOverview from '../campaign/discover/admin/campaign-overview';
@@ -52,8 +53,10 @@ import CampaignDetailContent from '../campaign/discover/admin/campaign-detail-co
 import CampaignDraftSubmissions from '../campaign/discover/admin/campaign-draft-submission';
 import CampaignDetailPitch from '../campaign/discover/admin/campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign/discover/admin/campaign-detail-creator/campaign-detail-creator';
-import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import PublicCampaignDetailContent from './publicCampaignDetail';
+import PublicCampaignOverview from './publicOverview';
+import PublicCreatorDetail from './publicCreatorDetail';
 
 const PublicAccessPage = () => {
   const { id } = useParams();
@@ -64,6 +67,7 @@ const PublicAccessPage = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+
     const router = useRouter();
     // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
     const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -245,9 +249,9 @@ const PublicAccessPage = () => {
     }, [open]);
 
     const renderTabContent = {
-      overview: <CampaignOverview campaign={campaign} />,
+      overview: <PublicCampaignOverview campaign={campaign} />,
       'campaign-content': <PublicCampaignDetailContent campaign={campaign} />,
-      creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
+      creator: <PublicCreatorDetail campaign={campaign} campaignMutate={campaignMutate} />,
       // agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
       logistics: <CampaignLogistics campaign={campaign} campaignMutate={campaignMutate} />,
       invoices: <CampaignInvoicesList campId={campaign?.id} campaignMutate={campaignMutate} />,
