@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable jsx-a11y/media-has-caption */
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
@@ -14,14 +15,16 @@ import Avatar from '@mui/material/Avatar';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
+  Tab,
   Grid,
   Chip,
+  Tabs,
   Paper,
   Stack,
-  Modal,
   Button,
   Dialog,
   Typography,
+  IconButton,
   DialogTitle,
   DialogActions,
   DialogContent,
@@ -55,6 +58,78 @@ const options_changes = [
   'Speling in subtitles',
 ];
 
+const PreviewModal = ({ open, onClose, selectedMedia, mediaType }) => (
+  <Dialog
+    open={open}
+    onClose={onClose}
+    maxWidth="md"
+    sx={{
+      '& .MuiDialog-paper': {
+        p: 0,
+        maxWidth: { xs: '95vw', sm: '85vw', md: '75vw' },
+        margin: { xs: '16px', sm: '32px' },
+      },
+    }}
+  >
+    <DialogTitle sx={{ p: 3 }}>
+      <Stack direction="row" alignItems="center" gap={2}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontFamily: 'Instrument Serif, serif',
+            fontSize: { xs: '2rem', sm: '2.4rem' },
+            fontWeight: 550,
+            m: 0,
+          }}
+        >
+          Preview Draft
+        </Typography>
+
+        <IconButton
+          onClick={onClose}
+          sx={{
+            ml: 'auto',
+            color: 'text.secondary',
+            '&:hover': { bgcolor: 'action.hover' },
+          }}
+        >
+          <Iconify icon="hugeicons:cancel-01" width={20} />
+        </IconButton>
+      </Stack>
+    </DialogTitle>
+
+    <DialogContent sx={{ p: 2.5 }}>
+      {mediaType === 'video' ? (
+        <Box
+          component="video"
+          autoPlay
+          controls
+          src={selectedMedia}
+          sx={{
+            width: '100%',
+            maxHeight: '60vh',
+            borderRadius: 1,
+            bgcolor: 'background.neutral',
+          }}
+        />
+      ) : (
+        <Box
+          component="img"
+          src={selectedMedia}
+          alt="Preview"
+          sx={{
+            width: '100%',
+            maxHeight: '60vh',
+            objectFit: 'contain',
+            borderRadius: 1,
+            bgcolor: 'background.neutral',
+          }}
+        />
+      )}
+    </DialogContent>
+  </Dialog>
+);
+
 const FirstDraft = ({ campaign, submission, creator }) => {
   const [type, setType] = useState('approve');
   const approve = useBoolean();
@@ -62,6 +137,13 @@ const FirstDraft = ({ campaign, submission, creator }) => {
   const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const { user } = useAuthContext();
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [mediaType, setMediaType] = useState(null);
+  const [selectedTab, setSelectedTab] = useState('video');
+  const [fullImageOpen, setFullImageOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [selectedVideo, setSelectedVideo] = useState(null);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -79,7 +161,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
   const methods = useForm({
     resolver: type === 'request' ? yupResolver(requestSchema) : yupResolver(normalSchema),
     defaultValues: {
-      feedback: 'Thank you for submitting',
+      feedback: 'Thank you for submitting!',
       type: '',
       reasons: [],
       schedule: {
@@ -103,6 +185,8 @@ const FirstDraft = ({ campaign, submission, creator }) => {
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+
+  // console.log(submission);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -392,16 +476,46 @@ const FirstDraft = ({ campaign, submission, creator }) => {
     return [];
   }, [submission?.feedback]);
 
+  const handlePreviewClick = (mediaUrl) => {
+    setSelectedMedia(mediaUrl);
+    setMediaType(type);
+    setPreviewModalOpen(true);
+  };
+
+  const handleImageClick = (index) => {
+    setCurrentImageIndex(index);
+    setFullImageOpen(true);
+  };
+
+  const handleFullImageClose = () => {
+    setFullImageOpen(false);
+  };
+
+  const handlePrevImage = (event) => {
+    event.stopPropagation();
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex > 0 ? prevIndex - 1 : submission.photos.length - 1
+    );
+  };
+
+  const handleNextImage = (event) => {
+    event.stopPropagation();
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex < submission.photos.length - 1 ? prevIndex + 1 : 0
+    );
+  };
+
+  const handleVideoClick = (videoUrl) => {
+    setSelectedVideo(videoUrl);
+    setVideoModalOpen(true);
+  };
+
   return (
     <Box>
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <Box component={Paper} p={{ xs: 1, sm: 1.5 }}>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={{ xs: 1, sm: 3 }}
-              sx={{ mb: 3, mt: -2 }}
-            >
+            <Stack direction="column" spacing={2} sx={{ mb: 3 }}>
               <Stack spacing={0.5}>
                 <Stack direction="row" spacing={0.5}>
                   <Typography
@@ -572,314 +686,643 @@ const FirstDraft = ({ campaign, submission, creator }) => {
               </Box>
             </Modal> */}
 
-            {submission?.status === 'NOT_STARTED' && <EmptyContent title="Not Started" />}
-            {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No Submission" />}
-            {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
+            {submission?.status === 'NOT_STARTED' && <EmptyContent title="No Submission" />}
+            {submission?.status === 'IN_PROGRESS' &&
+              !submission?.content &&
+              !submission?.videos?.length &&
+              !submission?.photos?.length &&
+              !submission?.rawFootages?.length && (
+                <EmptyContent title="Creator has not uploaded any deliverables yet." />
+              )}
+            {(submission?.status === 'PENDING_REVIEW' ||
+              submission?.status === 'APPROVED' ||
+              (submission?.status === 'IN_PROGRESS' &&
+                (submission?.content ||
+                  submission?.videos?.length > 0 ||
+                  submission?.photos?.length > 0 ||
+                  submission?.rawFootages?.length > 0))) && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <Box
                     component={Paper}
                     sx={{
-                      p: { xs: 2, sm: 3 },
-                      mb: 2,
                       borderRadius: 1,
                       border: '1px solid',
                       borderColor: 'divider',
+                      overflow: 'hidden',
                     }}
                   >
-                    <Box display="flex" flexDirection="column" gap={2}>
-                      {/* User Profile Section */}
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar
-                          src={creator?.user?.photoURL}
-                          alt={creator?.user?.name}
-                          sx={{
-                            width: 40,
-                            height: 40,
-                            border: '1px solid #e7e7e7',
-                          }}
-                        >
-                          {creator?.user?.name?.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            fontSize: '1.05rem',
-                            mt: -2.5,
-                          }}
-                        >
-                          {creator?.user?.name}
-                        </Typography>
-                      </Stack>
-
-                      {/* Content Section */}
-                      <Box sx={{ pl: 7 }}>
-                        {/* Description Section */}
-                        <Box sx={{ mt: -3.5 }}>
-                          <Typography
-                            variant="body1"
-                            sx={{
-                              fontSize: '0.95rem',
-                              color: '#48484A',
-                            }}
-                          >
-                            <strong>Description:</strong> {submission?.caption}
-                          </Typography>
-                        </Box>
-
-                        {/* Video Thumbnail Section */}
-                        <Box
-                          sx={{
-                            position: 'relative',
-                            cursor: 'pointer',
-                            width: { xs: '100%', sm: '300px' },
-                            height: { xs: '200px', sm: '169px' },
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            boxShadow: 3,
-                            mt: 2,
-                          }}
-                          onClick={() => setVideoModalOpen(true)}
-                        >
-                          <Box
-                            component="video"
-                            sx={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              borderRadius: 2,
-                            }}
-                          >
-                            <source src={submission?.content} />
-                          </Box>
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              bgcolor: 'rgba(0, 0, 0, 0.4)',
-                              borderRadius: 2,
-                            }}
-                          >
-                            <VisibilityIcon sx={{ color: 'white', fontSize: 32 }} />
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Box>
-                  </Box>
-
-                  {submission?.status === 'PENDING_REVIEW' && (
-                    <Box
-                      component={Paper}
+                    {/* Tabs */}
+                    <Tabs
+                      value={selectedTab}
+                      onChange={(_, newValue) => setSelectedTab(newValue)}
                       sx={{
-                        p: { xs: 2, sm: 3 },
-                        borderRadius: 1,
-                        border: '1px solid',
+                        '& .MuiTabs-indicator': {
+                          display: 'none',
+                        },
+                        '& .MuiTabs-flexContainer': {
+                          display: 'flex',
+                        },
+                        '& .MuiTab-root': {
+                          minHeight: '48px',
+                          color: 'text.secondary',
+                          flex: 1,
+                          '&.Mui-selected': {
+                            flex: 1,
+                            color: '#ffffff',
+                            backgroundColor: '#304cf4',
+                            '&:hover': {
+                              backgroundColor: '#304cf4',
+                            },
+                          },
+                          '&:hover': {
+                            backgroundColor: 'rgba(48, 76, 244, 0.2)',
+                          },
+                        },
+                        borderBottom: 1,
                         borderColor: 'divider',
                       }}
                     >
-                      {type === 'approve' && (
-                        <FormProvider methods={methods} onSubmit={onSubmit}>
-                          <Stack gap={1} mb={2}>
-                            <Typography variant="subtitle1" mb={1} mx={1}>
-                              Schedule This Post
-                            </Typography>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} gap={{ xs: 2, sm: 3 }}>
-                              <RHFDatePicker
-                                name="schedule.startDate"
-                                label="Start Date"
-                                minDate={dayjs()}
-                              />
-                              <RHFDatePicker
-                                name="schedule.endDate"
-                                label="End Date"
-                                minDate={dayjs(scheduleStartDate)}
-                              />
-                            </Stack>
-                          </Stack>
-                          <Typography variant="subtitle1" mb={1} mx={1}>
-                            Comments For Creator
-                          </Typography>
-                          <Stack gap={2}>
-                            <RHFTextField
-                              name="feedback"
-                              multiline
-                              minRows={5}
-                              placeholder="Comment"
-                            />
-                            <Stack
-                              alignItems={{ xs: 'stretch', sm: 'center' }}
-                              direction={{ xs: 'column', sm: 'row' }}
-                              gap={1.5}
-                              justifyContent="end"
-                            >
-                              <Button
-                                onClick={() => {
-                                  setType('request');
-                                  setValue('type', 'request');
-                                  setValue('feedback', '');
-                                }}
-                                disabled={isDisabled}
-                                size="small"
-                                variant="contained"
-                                startIcon={<Iconify icon="solar:close-circle-bold" />}
-                                sx={{
-                                  bgcolor: 'white',
-                                  border: 1,
-                                  borderRadius: 0.8,
-                                  borderColor: '#e7e7e7',
-                                  borderBottom: 3,
-                                  borderBottomColor: '#e7e7e7',
-                                  color: 'error.main',
-                                  '&:hover': {
-                                    bgcolor: 'error.lighter',
-                                    borderColor: '#e7e7e7',
-                                  },
-                                  '&:disabled': {
-                                    display: 'none',
-                                  },
-                                  textTransform: 'none',
-                                  px: 2.5,
-                                  py: 1.2,
-                                  fontSize: '0.875rem',
-                                  minWidth: '80px',
-                                  height: '45px',
-                                }}
-                              >
-                                Request a change
-                              </Button>
-                              <LoadingButton
-                                onClick={approve.onTrue}
-                                disabled={isDisabled}
-                                variant="contained"
-                                size="small"
-                                startIcon={<Iconify icon="solar:check-circle-bold" />}
-                                loading={isSubmitting}
-                                sx={{
-                                  bgcolor: '#2e6c56',
-                                  color: 'white',
-                                  borderBottom: 3,
-                                  borderBottomColor: '#1a3b2f',
-                                  borderRadius: 0.8,
-                                  px: 2.5,
-                                  py: 1.2,
-                                  '&:hover': {
-                                    bgcolor: '#2e6c56',
-                                    opacity: 0.9,
-                                  },
-                                  '&:disabled': {
-                                    display: 'none',
-                                  },
-                                  fontSize: '0.875rem',
-                                  minWidth: '80px',
-                                  height: '45px',
-                                }}
-                              >
-                                Approve
-                              </LoadingButton>
-                            </Stack>
-                          </Stack>
-                          {confirmationApproveModal(approve.value, approve.onFalse)}
-                        </FormProvider>
-                      )}
-                      {type === 'request' && (
+                      <Tab label="Video Draft" value="video" />
+                      <Tab
+                        label={`Raw Footages (${submission?.rawFootages?.length || 0})`}
+                        value="rawFootages"
+                      />
+                      <Tab label={`Photos (${submission?.photos?.length || 0})`} value="photos" />
+                    </Tabs>
+
+                    {/* Tab Content */}
+                    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+                      {selectedTab === 'video' && (
                         <>
-                          <Typography variant="h6" mb={1} mx={1}>
-                            Request Changes
-                          </Typography>
-                          <FormProvider methods={methods} onSubmit={onSubmit} disabled={isDisabled}>
-                            <Stack gap={2}>
-                              <RHFMultiSelect
-                                name="reasons"
-                                checkbox
-                                chip
-                                options={options_changes.map((item) => ({
-                                  value: item,
-                                  label: item,
-                                }))}
-                                label="Reasons"
-                              />
-                              <RHFTextField
-                                name="feedback"
-                                multiline
-                                minRows={5}
-                                placeholder="Feedback"
-                              />
+                          {/* Video Draft Section */}
+                          {submission?.video?.length > 0 ||
+                          submission?.videos?.[0]?.url ||
+                          submission?.content ||
+                          submission?.draftVideo?.[0]?.preview ? (
+                            <Grid container spacing={2} sx={{ mb: 3 }}>
+                              {submission.video.map((videoItem, index) => (
+                                <Grid item xs={12} key={videoItem.id || index}>
+                                  {/* Video Container with Creator Info */}
+                                  <Box sx={{ position: 'relative', mb: 2 }}>
+                                    {/* Creator Info Overlay */}
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bgcolor: 'rgba(0, 0, 0, 0.7)',
+                                        p: 2,
+                                        transition: 'opacity 0.3s ease',
+                                        opacity: 1,
+                                        zIndex: 1,
+                                        '&:hover': {
+                                          opacity: 0,
+                                        },
+                                        borderTopLeftRadius: 1,
+                                        borderTopRightRadius: 1,
+                                      }}
+                                    >
+                                      <Stack direction="row" alignItems="center" spacing={2}>
+                                        <Avatar
+                                          src={creator?.user?.photoURL}
+                                          alt={creator?.user?.name}
+                                          sx={{
+                                            width: 40,
+                                            height: 40,
+                                            border: '2px solid #ffffff',
+                                          }}
+                                        >
+                                          {creator?.user?.name?.charAt(0).toUpperCase()}
+                                        </Avatar>
+                                        <Typography
+                                          variant="subtitle1"
+                                          sx={{
+                                            color: 'white',
+                                            fontWeight: 600,
+                                          }}
+                                        >
+                                          {creator?.user?.name}
+                                        </Typography>
+                                      </Stack>
+                                    </Box>
 
-                              <Stack
-                                alignItems={{ xs: 'stretch', sm: 'center' }}
-                                direction={{ xs: 'column', sm: 'row' }}
-                                gap={1.5}
-                                alignSelf="end"
+                                    {/* Video Player */}
+                                    <Box
+                                      sx={{
+                                        position: 'relative',
+                                        width: '100%',
+                                        pt: '56.25%',
+                                        bgcolor: 'black',
+                                        borderRadius: 1,
+                                        overflow: 'hidden',
+                                      }}
+                                    >
+                                      {/* Play Icon Overlay */}
+                                      <Box
+                                        sx={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          left: 0,
+                                          right: 0,
+                                          bottom: 0,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          cursor: 'pointer',
+                                          zIndex: 2,
+                                        }}
+                                        onClick={(e) => {
+                                          const video = e.currentTarget.nextElementSibling;
+                                          if (video.paused) {
+                                            video.play();
+                                          } else {
+                                            video.pause();
+                                          }
+                                        }}
+                                      >
+                                        <Iconify
+                                          icon="mdi:play"
+                                          sx={{
+                                            width: 60,
+                                            height: 60,
+                                            color: 'white',
+                                            opacity: 0.9,
+                                            '&:hover': {
+                                              opacity: 1,
+                                            },
+                                          }}
+                                        />
+                                      </Box>
+
+                                      <Box
+                                        component="video"
+                                        controls
+                                        playsInline
+                                        src={videoItem?.url}
+                                        sx={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          left: 0,
+                                          width: '100%',
+                                          height: '100%',
+                                          objectFit: 'contain',
+                                        }}
+                                        onPlay={(e) => {
+                                          const overlay = e.currentTarget.previousElementSibling;
+                                          overlay.style.display = 'none';
+                                        }}
+                                        onPause={(e) => {
+                                          const overlay = e.currentTarget.previousElementSibling;
+                                          overlay.style.display = 'flex';
+                                        }}
+                                      />
+                                    </Box>
+                                  </Box>
+
+                                  {/* Caption for each video if available */}
+                                  {videoItem?.caption && (
+                                    <Box
+                                      sx={{
+                                        p: 2,
+                                        borderRadius: 1,
+                                        bgcolor: 'background.neutral',
+                                        mb: 2,
+                                      }}
+                                    >
+                                      <Typography
+                                        variant="caption"
+                                        sx={{
+                                          color: 'text.secondary',
+                                          display: 'block',
+                                          mb: 0.5,
+                                          fontWeight: 650,
+                                        }}
+                                      >
+                                        Caption
+                                      </Typography>
+                                      <Typography
+                                        variant="body2"
+                                        sx={{
+                                          color: 'text.primary',
+                                          lineHeight: 1.6,
+                                          whiteSpace: 'pre-wrap',
+                                        }}
+                                      >
+                                        {videoItem.caption}
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                </Grid>
+                              ))}
+                            </Grid>
+                          ) : (
+                            <Typography>No video draft uploaded yet.</Typography>
+                          )}
+
+                          {/* Caption Section for legacy support */}
+                          {submission?.caption && !submission?.videos?.length && (
+                            <Box
+                              sx={{
+                                p: 2,
+                                borderRadius: 1,
+                                bgcolor: 'background.neutral',
+                                mb: 4,
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: 'text.secondary',
+                                  display: 'block',
+                                  mb: 0.5,
+                                  fontWeight: 650,
+                                }}
                               >
-                                <Button
-                                  onClick={() => {
-                                    setType('approve');
-                                    setValue('type', 'approve');
-                                    setValue('feedback', '');
-                                    setValue('reasons', []);
-                                  }}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: 'white',
-                                    border: 1,
-                                    borderRadius: 0.8,
-                                    borderColor: '#e7e7e7',
-                                    borderBottom: 3,
-                                    borderBottomColor: '#e7e7e7',
-                                    color: 'text.primary',
-                                    '&:hover': {
-                                      bgcolor: '#f5f5f5',
-                                      borderColor: '#e7e7e7',
-                                    },
-                                    textTransform: 'none',
-                                    px: 2.5,
-                                    py: 1.2,
-                                    fontSize: '0.875rem',
-                                    minWidth: '80px',
-                                    height: '45px',
-                                  }}
-                                >
-                                  Back
-                                </Button>
-                                <LoadingButton
-                                  variant="contained"
-                                  size="small"
-                                  onClick={request.onTrue}
-                                  sx={{
-                                    bgcolor: '#2e6c56',
-                                    color: 'white',
-                                    borderBottom: 3,
-                                    borderBottomColor: '#1a3b2f',
-                                    borderRadius: 0.8,
-                                    px: 2.5,
-                                    py: 1.2,
-                                    '&:hover': {
-                                      bgcolor: '#2e6c56',
-                                      opacity: 0.9,
-                                    },
-                                    fontSize: '0.875rem',
-                                    minWidth: '80px',
-                                    height: '45px',
-                                    textTransform: 'none',
-                                  }}
-                                >
-                                  Submit
-                                </LoadingButton>
-                              </Stack>
-                            </Stack>
+                                Caption
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: 'text.primary',
+                                  lineHeight: 1.6,
+                                  whiteSpace: 'pre-wrap',
+                                }}
+                              >
+                                {submission.caption}
+                              </Typography>
+                            </Box>
+                          )}
 
-                            {confirmationRequestModal(request.value, request.onFalse)}
-                          </FormProvider>
+                          {/* Schedule Post and Request Changes Section */}
+                          {submission?.status === 'PENDING_REVIEW' && (
+                            <Box
+                              component={Paper}
+                              sx={{
+                                p: { xs: 2, sm: 3 },
+                                borderRadius: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                              }}
+                            >
+                              {type === 'approve' && (
+                                <FormProvider methods={methods} onSubmit={onSubmit}>
+                                  <Stack gap={1} mb={2}>
+                                    <Typography variant="subtitle1" mb={1} mx={1}>
+                                      Schedule This Post
+                                    </Typography>
+                                    <Stack
+                                      direction={{ xs: 'column', sm: 'row' }}
+                                      gap={{ xs: 2, sm: 3 }}
+                                    >
+                                      <RHFDatePicker
+                                        name="schedule.startDate"
+                                        label="Start Date"
+                                        minDate={dayjs()}
+                                      />
+                                      <RHFDatePicker
+                                        name="schedule.endDate"
+                                        label="End Date"
+                                        minDate={dayjs(scheduleStartDate)}
+                                      />
+                                    </Stack>
+                                  </Stack>
+                                  <Typography variant="subtitle1" mb={1} mx={1}>
+                                    Comments For Creator
+                                  </Typography>
+                                  <Stack gap={2}>
+                                    <RHFTextField
+                                      name="feedback"
+                                      multiline
+                                      minRows={5}
+                                      placeholder="Comment"
+                                    />
+                                    <Stack
+                                      alignItems={{ xs: 'stretch', sm: 'center' }}
+                                      direction={{ xs: 'column', sm: 'row' }}
+                                      gap={1.5}
+                                      justifyContent="end"
+                                    >
+                                      <Button
+                                        onClick={() => {
+                                          setType('request');
+                                          setValue('type', 'request');
+                                          setValue('feedback', '');
+                                        }}
+                                        disabled={isDisabled}
+                                        size="small"
+                                        variant="contained"
+                                        startIcon={<Iconify icon="solar:close-circle-bold" />}
+                                        sx={{
+                                          bgcolor: 'white',
+                                          border: 1,
+                                          borderRadius: 0.8,
+                                          borderColor: '#e7e7e7',
+                                          borderBottom: 3,
+                                          borderBottomColor: '#e7e7e7',
+                                          color: 'error.main',
+                                          '&:hover': {
+                                            bgcolor: 'error.lighter',
+                                            borderColor: '#e7e7e7',
+                                          },
+                                          '&:disabled': {
+                                            display: 'none',
+                                          },
+                                          textTransform: 'none',
+                                          px: 2.5,
+                                          py: 1.2,
+                                          fontSize: '0.875rem',
+                                          minWidth: '80px',
+                                          height: '45px',
+                                        }}
+                                      >
+                                        Request a change
+                                      </Button>
+                                      <LoadingButton
+                                        onClick={approve.onTrue}
+                                        disabled={isDisabled}
+                                        variant="contained"
+                                        size="small"
+                                        startIcon={<Iconify icon="solar:check-circle-bold" />}
+                                        loading={isSubmitting}
+                                        sx={{
+                                          bgcolor: '#2e6c56',
+                                          color: 'white',
+                                          borderBottom: 3,
+                                          borderBottomColor: '#1a3b2f',
+                                          borderRadius: 0.8,
+                                          px: 2.5,
+                                          py: 1.2,
+                                          '&:hover': {
+                                            bgcolor: '#2e6c56',
+                                            opacity: 0.9,
+                                          },
+                                          '&:disabled': {
+                                            display: 'none',
+                                          },
+                                          fontSize: '0.875rem',
+                                          minWidth: '80px',
+                                          height: '45px',
+                                        }}
+                                      >
+                                        Approve
+                                      </LoadingButton>
+                                    </Stack>
+                                  </Stack>
+                                  {confirmationApproveModal(approve.value, approve.onFalse)}
+                                </FormProvider>
+                              )}
+                              {type === 'request' && (
+                                <>
+                                  <Typography variant="h6" mb={1} mx={1}>
+                                    Request Changes
+                                  </Typography>
+                                  <FormProvider
+                                    methods={methods}
+                                    onSubmit={onSubmit}
+                                    disabled={isDisabled}
+                                  >
+                                    <Stack gap={2}>
+                                      <RHFMultiSelect
+                                        name="reasons"
+                                        checkbox
+                                        chip
+                                        options={options_changes.map((item) => ({
+                                          value: item,
+                                          label: item,
+                                        }))}
+                                        label="Reasons"
+                                      />
+                                      <RHFTextField
+                                        name="feedback"
+                                        multiline
+                                        minRows={5}
+                                        placeholder="Feedback"
+                                      />
+
+                                      <Stack
+                                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        gap={1.5}
+                                        alignSelf="end"
+                                      >
+                                        <Button
+                                          onClick={() => {
+                                            setType('approve');
+                                            setValue('type', 'approve');
+                                            setValue('feedback', '');
+                                            setValue('reasons', []);
+                                          }}
+                                          size="small"
+                                          sx={{
+                                            bgcolor: 'white',
+                                            border: 1,
+                                            borderRadius: 0.8,
+                                            borderColor: '#e7e7e7',
+                                            borderBottom: 3,
+                                            borderBottomColor: '#e7e7e7',
+                                            color: 'text.primary',
+                                            '&:hover': {
+                                              bgcolor: '#f5f5f5',
+                                              borderColor: '#e7e7e7',
+                                            },
+                                            textTransform: 'none',
+                                            px: 2.5,
+                                            py: 1.2,
+                                            fontSize: '0.875rem',
+                                            minWidth: '80px',
+                                            height: '45px',
+                                          }}
+                                        >
+                                          Back
+                                        </Button>
+                                        <LoadingButton
+                                          variant="contained"
+                                          size="small"
+                                          onClick={request.onTrue}
+                                          sx={{
+                                            bgcolor: '#2e6c56',
+                                            color: 'white',
+                                            borderBottom: 3,
+                                            borderBottomColor: '#1a3b2f',
+                                            borderRadius: 0.8,
+                                            px: 2.5,
+                                            py: 1.2,
+                                            '&:hover': {
+                                              bgcolor: '#2e6c56',
+                                              opacity: 0.9,
+                                            },
+                                            fontSize: '0.875rem',
+                                            minWidth: '80px',
+                                            height: '45px',
+                                            textTransform: 'none',
+                                          }}
+                                        >
+                                          Submit
+                                        </LoadingButton>
+                                      </Stack>
+                                    </Stack>
+
+                                    {confirmationRequestModal(request.value, request.onFalse)}
+                                  </FormProvider>
+                                </>
+                              )}
+                            </Box>
+                          )}
+                        </>
+                      )}
+
+                      {/* {selectedTab === 'rawFootages' && submission?.rawFootages?.length > 0 && (
+                        <Grid container spacing={2}>
+                          {submission.rawFootages.map((footage, index) => (
+                            <Grid item xs={12} sm={6} md={4} key={footage.id || index}>
+                              <Box
+                                sx={{
+                                  position: 'relative',
+                                  borderRadius: 2,
+                                  overflow: 'hidden',
+                                  boxShadow: 2,
+                                  height: '169px',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() => handleVideoClick(footage.url)}
+                              >
+                                <Box
+                                  component="video"
+                                  src={footage.url}
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                  }}
+                                />
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'rgba(0, 0, 0, 0.3)',
+                                  }}
+                                >
+                                  <Iconify
+                                    icon="mdi:play"
+                                    sx={{
+                                      width: 40,
+                                      height: 40,
+                                      color: 'white',
+                                      opacity: 0.9,
+                                    }}
+                                  />
+                                </Box>
+                              </Box>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      )} */}
+
+                      {selectedTab === 'rawFootages' && (
+                        <>
+                          {submission?.rawFootages?.length > 0 ? (
+                            <Grid container spacing={2}>
+                              {submission.rawFootages.map((footage, index) => (
+                                <Grid item xs={12} sm={6} md={4} key={footage.id || index}>
+                                  <Box
+                                    sx={{
+                                      position: 'relative',
+                                      borderRadius: 2,
+                                      overflow: 'hidden',
+                                      boxShadow: 2,
+                                      height: '169px',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() => handleVideoClick(footage.url)}
+                                  >
+                                    <Box
+                                      component="video"
+                                      src={footage.url}
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                      }}
+                                    />
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        bgcolor: 'rgba(0, 0, 0, 0.3)',
+                                      }}
+                                    >
+                                      <Iconify
+                                        icon="mdi:play"
+                                        sx={{
+                                          width: 40,
+                                          height: 40,
+                                          color: 'white',
+                                          opacity: 0.9,
+                                        }}
+                                      />
+                                    </Box>
+                                  </Box>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          ) : (
+                            <Typography>No raw footage uploaded yet.</Typography>
+                          )}
+                        </>
+                      )}
+
+                      {selectedTab === 'photos' && (
+                        <>
+                          {submission?.photos?.length > 0 ? (
+                            <Grid container spacing={2}>
+                              {submission.photos.map((photo, index) => (
+                                <Grid item xs={12} sm={6} md={4} key={photo.id || index}>
+                                  <Box
+                                    sx={{
+                                      position: 'relative',
+                                      borderRadius: 2,
+                                      overflow: 'hidden',
+                                      boxShadow: 2,
+                                      height: '169px',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() => handleImageClick(index)}
+                                  >
+                                    <Box
+                                      component="img"
+                                      src={photo.url}
+                                      alt={`Photo ${index + 1}`}
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                      }}
+                                    />
+                                  </Box>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          ) : (
+                            <Typography>No photos uploaded yet.</Typography>
+                          )}
                         </>
                       )}
                     </Box>
-                  )}
+                  </Box>
                 </Grid>
               </Grid>
             )}
@@ -915,7 +1358,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                           variant="subtitle2"
                           sx={{
                             fontSize: '1.05rem',
-                            mt: -2.5,
                           }}
                         >
                           {creator?.user?.name}
@@ -937,7 +1379,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                           </Typography>
                         </Box>
 
-                        {/* Video Thumbnail Section */}
+                        {/* Main Draft Video */}
                         <Box
                           sx={{
                             position: 'relative',
@@ -948,8 +1390,9 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                             overflow: 'hidden',
                             boxShadow: 3,
                             mt: 2,
+                            mb: 3,
                           }}
-                          onClick={() => setVideoModalOpen(true)}
+                          onClick={() => handlePreviewClick(submission?.content, 'video')}
                         >
                           <Box
                             component="video"
@@ -1073,39 +1516,146 @@ const FirstDraft = ({ campaign, submission, creator }) => {
         </Grid>
       </Grid>
 
+      {/* Video/Photo Modal */}
+      <PreviewModal
+        open={previewModalOpen}
+        onClose={() => {
+          setPreviewModalOpen(false);
+          setSelectedMedia(null);
+          setMediaType(null);
+        }}
+        selectedMedia={selectedMedia}
+        mediaType={mediaType}
+      />
+
       {/* Video Modal */}
-      <Modal
+      <Dialog
         open={videoModalOpen}
         onClose={() => setVideoModalOpen(false)}
-        aria-labelledby="video-modal"
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: { xs: '95%', sm: '90%' },
-            maxWidth: '1000px',
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: { xs: 1, sm: 2 },
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            maxWidth: { xs: '90vw', md: '60vw' },
+            maxHeight: { xs: '90vh', md: '120vh' },
+            m: 'auto',
             borderRadius: 2,
-          }}
-        >
-          <Box
-            component="video"
-            autoPlay
-            controls
+            overflow: 'hidden',
+            bgcolor: 'background.paper',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0, position: 'relative' }}>
+          <IconButton
+            onClick={() => setVideoModalOpen(false)}
             sx={{
-              width: '100%',
-              maxHeight: '80vh',
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: 'white',
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+              zIndex: 1,
             }}
           >
-            <source src={submission?.content} />
-          </Box>
-        </Box>
-      </Modal>
+            <Iconify icon="eva:close-fill" />
+          </IconButton>
+          <Box
+            component="video"
+            src={selectedVideo}
+            controls
+            autoPlay
+            sx={{ width: '100%', display: 'block' }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Modal */}
+      <Dialog
+        open={fullImageOpen}
+        onClose={handleFullImageClose}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            maxWidth: { xs: '90vw', md: '50vw' },
+            maxHeight: { xs: '90vh', md: '120vh' },
+            m: 'auto',
+            borderRadius: 2,
+            overflow: 'hidden',
+            bgcolor: 'background.paper',
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            p: 0,
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'transparent',
+          }}
+        >
+          <IconButton
+            onClick={handleFullImageClose}
+            sx={{
+              position: 'fixed',
+              right: 16,
+              top: 16,
+              color: 'white',
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+              zIndex: 1,
+            }}
+          >
+            <Iconify icon="eva:close-fill" />
+          </IconButton>
+          {submission?.photos?.[currentImageIndex] && (
+            <Box
+              component="img"
+              src={submission.photos[currentImageIndex].url}
+              alt={`Full size photo ${currentImageIndex + 1}`}
+              sx={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          )}
+          {submission?.photos && submission.photos.length > 1 && (
+            <>
+              <IconButton
+                onClick={handlePrevImage}
+                sx={{
+                  position: 'fixed',
+                  left: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                }}
+              >
+                <Iconify icon="eva:arrow-ios-back-fill" />
+              </IconButton>
+              <IconButton
+                onClick={handleNextImage}
+                sx={{
+                  position: 'fixed',
+                  right: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                }}
+              >
+                <Iconify icon="eva:arrow-ios-forward-fill" />
+              </IconButton>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

@@ -6,7 +6,11 @@ import { fetcher, endpoints } from 'src/utils/axios';
 const useGetInvoiceByCreatorAndCampaign = (creatorId, campaignId) => {
   const { data, isLoading } = useSWR(
     endpoints.invoice.getInvoicesByCreatorAndCampiagn(creatorId, campaignId),
-    fetcher
+    fetcher,
+    {
+      revalidateOnMount: true,
+      revalidateOnFocus: true,
+    }
   );
 
   const memoizedValue = useMemo(

@@ -1,5 +1,6 @@
+import useSWR from 'swr';
 import dayjs from 'dayjs';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -21,7 +22,7 @@ import { RouterLink } from 'src/routes/components';
 
 import useGetOverview from 'src/hooks/use-get-overview';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import resources from 'src/assets/resources/blogs.json';
@@ -37,6 +38,11 @@ const Overview = () => {
   const { data, isLoading } = useGetOverview();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creator, setCreator] = useState(null);
+  const {
+    data: res,
+    isLoading: checingCreator,
+    mutate,
+  } = useSWR(endpoints.auth.checkCreator, fetcher);
 
   const renderOverview = (
     <Grid container spacing={2}>
@@ -439,20 +445,31 @@ const Overview = () => {
     </>
   );
 
-  const statusCheck = useCallback(async () => {
-    const res = await axiosInstance.get(endpoints.auth.checkCreator);
-    if (res?.data?.creator?.user?.status?.includes('pending')) {
-      setDialogOpen(true);
-    }
-
-    setCreator(res?.data?.creator);
-  }, []);
+  const isFormCompleted = useMemo(
+    () => !res?.creator?.pronounce || !user?.creator?.pronounce,
+    [res, user]
+  );
 
   useEffect(() => {
-    statusCheck();
-  }, [statusCheck]);
+    setCreator(res?.creator);
+  }, [res]);
 
-  if (isLoading) {
+  // const statusCheck = useCallback(async () => {
+  //   const res = await axiosInstance.get(endpoints.auth.checkCreator);
+
+  //   // if (res?.data?.creator?.user?.status?.includes('pending') || user?.status === 'pending') {
+  //   if (!res?.data?.creator?.isInfoCompleted || !user?.creator?.isInfoCompleted) {
+  //     setDialogOpen(true);
+  //   }
+
+  //   setCreator(res?.data?.creator);
+  // }, [user]);
+
+  // useEffect(() => {
+  //   statusCheck();
+  // }, [statusCheck]);
+
+  if (isLoading || checingCreator) {
     return (
       <Box
         sx={{
@@ -496,9 +513,15 @@ const Overview = () => {
 
       {renderResources}
 
-      {dialogOpen && (
+      <CreatorForm
+        open={isFormCompleted}
+        onClose={() => setDialogOpen(false)}
+        // creator={creator}
+        mutate={mutate}
+      />
+      {/* {dialogOpen && (
         <CreatorForm open={dialogOpen} onClose={() => setDialogOpen(false)} creator={creator} />
-      )}
+      )} */}
     </Container>
   );
 };

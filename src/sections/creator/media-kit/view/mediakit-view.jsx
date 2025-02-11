@@ -12,13 +12,13 @@ import {
   Container,
   Typography,
   ListItemText,
+  CircularProgress,
 } from '@mui/material';
 
-import { fetcher, endpoints } from 'src/utils/axios';
 import { useSocialMediaData } from 'src/utils/store';
+import { fetcher, endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useGetSocialMedia } from 'src/api/socialMedia';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -28,40 +28,64 @@ import MediaKitSocial from './media-kit-social-view';
 
 const MediaKitCreator = () => {
   const theme = useTheme();
-
   const { user } = useAuthContext();
-
-  const { data: socialData, error: socialError } = useSWR(
-    endpoints.creators.social.tiktok(user.id),
-    fetcher
-  );
-
   const setTiktok = useSocialMediaData((state) => state.setTiktok);
+  const setInstagram = useSocialMediaData((state) => state.setInstagram);
   const tiktok = useSocialMediaData((state) => state.tiktok);
+  const instagram = useSocialMediaData((state) => state.instagram);
 
-  setTiktok(socialData);
-
-  const [currentTab, setCurrentTab] = useState('instagram');
-
+  const [currentTab, setCurrentTab] = useState('tiktok');
   const [openSetting, setOpenSetting] = useState(false);
 
+  const { data: socialData, isLoading } = useSWR(
+    endpoints.creators.social.tiktok(user.id),
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      onSuccess: (data) => {
+        setTiktok(data);
+      },
+    }
+  );
+
+  const { data: instaData, isLoading: instaLoading } = useSWR(
+    endpoints.creators.social.instagram(user.id),
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      onSuccess: (data) => {
+        setInstagram(data);
+      },
+    }
+  );
+
+  // useEffect(() => {
+  //   setTiktok(socialData);
+  // }, [socialData, setTiktok]);
+
+  // useEffect(() => {
+  //   setInstagram(instaData);
+  // }, [instaData, setInstagram]);
+
   // Function to get existing social media data
-  const { data, isLoading } = useGetSocialMedia();
+  // const { data, isLoading } = useGetSocialMedia();
 
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
-        followers: data?.instagram?.data?.followers,
-        engagement_rate: data?.instagram?.data?.engagement_rate,
-        averageLikes: data?.instagram?.data?.user_performance?.avg_likes_per_post,
+        followers: instagram?.user?.followers_count || 0,
+        engagement_rate: instagram?.user?.followers_count || 0,
+        averageLikes: instagram?.user?.followers_count || 0,
       };
     }
 
     if (currentTab === 'tiktok') {
       return {
-        followers: data?.tiktok?.data?.followers,
-        engagement_rate: data?.tiktok?.data?.engagement_rate,
-        averageLikes: data?.tiktok?.data?.user_performance?.avg_likes_per_post,
+        followers: tiktok?.user?.data?.user?.follower_count || 0,
+        engagement_rate: tiktok?.user?.data?.user?.follower_count || 0,
+        averageLikes: tiktok?.user?.data?.user?.likes_count || 0,
       };
     }
 
@@ -70,13 +94,26 @@ const MediaKitCreator = () => {
       engagement_rate: 0,
       averageLikes: 0,
     };
-  }, [currentTab, data]);
+  }, [currentTab, tiktok, instagram]);
 
   const handleClose = () => {
     setOpenSetting(!openSetting);
   };
 
-  if (socialError) return <Typography>Failed to fetch tiktok data</Typography>;
+  if (isLoading || instaLoading) {
+    return (
+      <Box position="absolute" top="50%" left="50%">
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="xl">
@@ -167,6 +204,7 @@ const MediaKitCreator = () => {
             key={interest?.id}
             sx={{
               border: 1,
+              height: 30,
               borderColor: '#EBEBEB',
               boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
               bgcolor: 'white',
@@ -220,7 +258,7 @@ const MediaKitCreator = () => {
             <ListItemText
               primary="FOLLOWERS"
               secondary={
-                tiktok?.user?.data?.user?.follower_count || 0
+                socialMediaAnalytics.followers
                 // socialMediaAnalytics.followers
                 //   ? formatNumber(socialMediaAnalytics.followers)
                 //   : 'No data'
@@ -276,11 +314,12 @@ const MediaKitCreator = () => {
             </Avatar>
             <ListItemText
               primary="ENGAGEMENT RATE"
-              secondary={
-                socialMediaAnalytics.engagement_rate
-                  ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
-                  : 'No data'
-              }
+              secondary={socialMediaAnalytics.engagement_rate}
+              // secondary={
+              //   socialMediaAnalytics.engagement_rate
+              //     ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
+              //     : 0
+              // }
               primaryTypographyProps={{
                 variant: 'caption',
                 color: 'text.secondary',
@@ -322,7 +361,8 @@ const MediaKitCreator = () => {
             <ListItemText
               primary="AVERAGE LIKES"
               secondary={
-                tiktok?.user?.data?.user?.likes_count || 0
+                socialMediaAnalytics.averageLikes
+                // tiktok?.user?.data?.user?.likes_count || 0
                 // socialMediaAnalytics.averageLikes
                 //   ? formatNumber(socialMediaAnalytics.averageLikes)
                 //   : 'No data'
@@ -403,7 +443,7 @@ const MediaKitCreator = () => {
         </Button>
       </Stack>
 
-      <MediaKitSocial currentTab={currentTab} data={data} isLoading={isLoading} />
+      <MediaKitSocial currentTab={currentTab} />
       <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} />
     </Container>
   );

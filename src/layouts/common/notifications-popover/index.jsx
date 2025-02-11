@@ -26,7 +26,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { varHover } from 'src/components/animate';
@@ -151,18 +150,26 @@ export default function NotificationsPopover() {
               },
             }}
             startIcon={
-                <img 
-                    src={totalUnRead < 1 ? "/assets/icons/notification/ic_mark_read_gray.svg" : "/assets/icons/notification/ic_mark_read.svg"} 
-                />
+              <img
+                alt="sda"
+                src={
+                  totalUnRead < 1
+                    ? '/assets/icons/notification/ic_mark_read_gray.svg'
+                    : '/assets/icons/notification/ic_mark_read.svg'
+                }
+              />
             }
             disabled={totalUnRead < 1}
           >
-            <Typography variant="body2" sx={{ 
-              fontWeight: 600, 
-              color: totalUnRead < 1 ? '#8E8E93' : '#026D54',
-              fontSize: '14px',
-              lineHeight: '18px',
-            }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                color: totalUnRead < 1 ? '#8E8E93' : '#026D54',
+                fontSize: '14px',
+                lineHeight: '18px',
+              }}
+            >
               Mark all as Read
             </Typography>
           </Button>
@@ -242,7 +249,7 @@ export default function NotificationsPopover() {
               fontWeight: 600,
             },
             '&:not(.Mui-selected)': {
-              color: '#8E8E93',  
+              color: '#8E8E93',
             },
             '&:not(:last-of-type)': {
               mr: 0,
@@ -250,7 +257,6 @@ export default function NotificationsPopover() {
           }}
           value={tab.value}
           label={tab.value === 'unread' ? `Unread (${totalUnRead})` : tab.label}
-          
         />
       ))}
     </Tabs>
@@ -366,9 +372,7 @@ export default function NotificationsPopover() {
           variant="dot"
         >
           <Iconify>
-            <img 
-              src="/assets/icons/notification/ic_bell.svg" 
-            />
+            <img alt="asd" src="/assets/icons/notification/ic_bell.svg" />
           </Iconify>
         </Badge>
       </IconButton>

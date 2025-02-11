@@ -128,9 +128,9 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
+  // useEffect(() => {
+  //   initialize();
+  // }, [initialize]);
 
   useEffect(() => {
     initialize();

@@ -2,10 +2,25 @@ import React from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { keyframes } from '@emotion/react';
+import { enqueueSnackbar } from 'notistack';
 
-import { Box, Grid, useTheme, Typography, useMediaQuery } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Stack,
+  alpha,
+  Button,
+  useTheme,
+  Typography,
+  useMediaQuery,
+} from '@mui/material';
 
+import axiosInstance from 'src/utils/axios';
 import { useSocialMediaData } from 'src/utils/store';
+
+import { useAuthContext } from 'src/auth/hooks';
+
+import Label from 'src/components/label';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -148,18 +163,52 @@ TopContentGrid.propTypes = {
 };
 
 const MediaKitSocialContent = ({ tiktok }) => {
-  const theme = useTheme();
+  // const theme = useTheme();
+  const { user } = useAuthContext();
 
   const tiktokData = useSocialMediaData((state) => state.tiktok);
 
-  // const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const connectTiktok = async () => {
+    try {
+      const { data: url } = await axiosInstance.get('/api/social/oauth/tiktok');
+      enqueueSnackbar('Redirecting...');
+      window.location.href = url;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  if (!user?.creator?.isTiktokConnected)
+    return (
+      <Label
+        color="info"
+        sx={{
+          height: 250,
+          textAlign: 'center',
+          borderRadius: 1,
+          borderStyle: 'dashed',
+          borderWidth: 1.5,
+          bgcolor: (theme) => alpha(theme.palette.info.main, 0.16),
+          width: 1,
+        }}
+      >
+        <Stack spacing={1} alignItems="center">
+          <Typography variant="subtitle1">Your tiktok account is not connected.</Typography>
+          <Button variant="contained" size="small" onClick={connectTiktok}>
+            Connect TikTok
+          </Button>
+        </Stack>
+      </Label>
+    );
 
   return (
-    <Box>
+    <Box width={1}>
       {tiktokData?.videos?.data?.videos.length ? (
         <TopContentGrid topContents={tiktokData?.videos?.data?.videos} />
       ) : (
-        <Typography>No top content data available</Typography>
+        <Typography variant="subtitle1" color="text.secondary" textAlign="center">
+          No top content data available
+        </Typography>
       )}
     </Box>
   );

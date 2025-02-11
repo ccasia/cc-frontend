@@ -1,12 +1,11 @@
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import { Avatar, IconButton } from '@mui/material';
+import { IconButton } from '@mui/material';
 
 import { hideScroll } from 'src/theme/css';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
-import Iconify from 'src/components/iconify';
 import { NavSectionMini } from 'src/components/nav-section';
 import { useSettingsContext } from 'src/components/settings';
 

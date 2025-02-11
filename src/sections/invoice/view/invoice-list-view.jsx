@@ -21,6 +21,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { isAfter, isBetween } from 'src/utils/format-time';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { _invoices, INVOICE_SERVICE_OPTIONS } from 'src/_mock';
@@ -80,7 +81,8 @@ export default function InvoiceListView({ campId, invoices }) {
 
   const confirm = useBoolean();
 
-  const tableData = invoices?.campaigns ? invoices.campaigns : _invoices;
+  // const tableData = invoices?.campaigns ? invoices.campaigns : _invoices;
+  const [tableData, setTableData] = useState(invoices?.campaigns ? invoices.campaigns : _invoices);
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -168,29 +170,46 @@ export default function InvoiceListView({ campId, invoices }) {
   }, []);
 
   const handleDeleteRow = useCallback(
-    (id) => {
+    async (id) => {
       const deleteRow = tableData.filter((row) => row.id !== id);
 
-      enqueueSnackbar('Delete success!');
+      try {
+        const res = await axiosInstance.delete(endpoints.invoice.delete(id));
+        enqueueSnackbar(res?.data?.message);
 
-      // setTableData(deleteRow);
-
-      table.onUpdatePageDeleteRow(dataInPage.length);
+        setTableData(deleteRow);
+      } catch (error) {
+        enqueueSnackbar(error?.message, {
+          variant: 'error',
+        });
+      } finally {
+        table.onUpdatePageDeleteRow(dataInPage.length);
+      }
     },
     [dataInPage.length, enqueueSnackbar, table, tableData]
   );
 
-  const handleDeleteRows = useCallback(() => {
-    const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
+  const handleDeleteRows = useCallback(async () => {
+    try {
+      const removed = await Promise.all(
+        table.selected.map((id) => axiosInstance.delete(endpoints.invoice.delete(id)))
+      );
 
-    enqueueSnackbar('Delete success!');
+      enqueueSnackbar(`Successfully deleted ${removed.length} items`);
 
-    // setTableData(deleteRows);
+      const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
 
-    table.onUpdatePageDeleteRows({
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered?.length,
-    });
+      setTableData(deleteRows);
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      table.onUpdatePageDeleteRows({
+        totalRowsInPage: dataInPage.length,
+        totalRowsFiltered: dataFiltered?.length,
+      });
+    }
   }, [dataFiltered?.length, dataInPage.length, enqueueSnackbar, table, tableData]);
 
   const handleEditRow = useCallback(

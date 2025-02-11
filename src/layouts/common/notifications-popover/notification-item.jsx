@@ -2,11 +2,11 @@ import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Badge from '@mui/material/Badge';
+import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
-import Badge from '@mui/material/Badge';
-import Divider from '@mui/material/Divider';
 
 // import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -131,8 +131,7 @@ export default function NotificationItem({ notification, markAsRead }) {
       color="error"
       variant="dot"
       sx={{ marginRight: '1px' }}
-    >
-    </Badge>
+     />
   );
 
   const renderReadStatus = notification.read && (

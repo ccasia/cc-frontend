@@ -204,10 +204,6 @@ const FirstDraft = ({ campaign, submission, user }) => {
                     </FormProvider>
                   </Box>
                 )}
-
-                {/* <FormProvider methods={methods}>
-       <RHFTextField name="reason" />
-     </FormProvider> */}
               </Grid>
             </Grid>
           )}

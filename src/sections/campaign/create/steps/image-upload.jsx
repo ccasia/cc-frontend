@@ -8,11 +8,13 @@ import { RHFUpload } from 'src/components/hook-form';
 const CampaignImageUpload = () => {
   const { setValue, watch } = useFormContext();
 
-  const values = watch();
+  const images = watch('campaignImages');
+
+  console.log(images);
 
   const handleDropMultiFile = useCallback(
     (acceptedFiles) => {
-      const files = values.campaignImages || [];
+      const files = images || [];
 
       const newFiles = acceptedFiles.map((file) =>
         Object.assign(file, {
@@ -22,7 +24,7 @@ const CampaignImageUpload = () => {
 
       setValue('campaignImages', [...files, ...newFiles], { shouldValidate: true });
     },
-    [setValue, values.campaignImages]
+    [setValue, images]
   );
 
   return (
@@ -39,13 +41,14 @@ const CampaignImageUpload = () => {
       <RHFUpload
         multiple
         thumbnail
+        type="file"
         name="campaignImages"
         maxSize={3145728}
         onDrop={handleDropMultiFile}
         onRemove={(inputFile) =>
           setValue(
             'campaignImages',
-            values.campaignImages && values.campaignImages?.filter((file) => file !== inputFile),
+            images && images?.filter((file) => file !== inputFile),
             { shouldValidate: true }
           )
         }

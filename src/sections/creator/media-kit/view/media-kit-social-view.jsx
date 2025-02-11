@@ -1,14 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 
 import MediaKitSocialContentTiktok from '../view-tiktok';
 import MediaKitPartnership from '../medit-kit-partnerships';
 import MediaKitSocialContentInstagram from '../view-instagram';
-import MediaKitAnalytics from '../../media-kit-creator-view/media-kit-social/media-kit-analytic/view';
 
-const MediaKitSocial = ({ currentTab, data, isLoading }) => (
+const MediaKitSocial = ({ currentTab, data }) => (
   <Box
     sx={{
       borderRadius: 2,
@@ -18,20 +17,8 @@ const MediaKitSocial = ({ currentTab, data, isLoading }) => (
       },
     }}
   >
-    {isLoading && <Typography>Loading...</Typography>}
-
-    {currentTab === 'instagram' && (
-      <Stack gap={4}>
-        <MediaKitSocialContentInstagram instagram={data?.instagram} />
-        <MediaKitAnalytics />
-      </Stack>
-    )}
-
-    {currentTab === 'tiktok' && (
-      <Stack gap={4}>
-        <MediaKitSocialContentTiktok tiktok={data?.tiktok} />
-      </Stack>
-    )}
+    {currentTab === 'instagram' && <MediaKitSocialContentInstagram instagram={data?.instagram} />}
+    {currentTab === 'tiktok' && <MediaKitSocialContentTiktok tiktok={data?.tiktok} />}
     {currentTab === 'partnerships' && <MediaKitPartnership />}
   </Box>
 );
@@ -41,5 +28,4 @@ export default MediaKitSocial;
 MediaKitSocial.propTypes = {
   currentTab: PropTypes.string.isRequired,
   data: PropTypes.object,
-  isLoading: PropTypes.bool,
 };

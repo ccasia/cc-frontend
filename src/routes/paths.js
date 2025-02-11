@@ -100,6 +100,9 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/roles`,
       manage: (id) => `${ROOTS.DASHBOARD}/roles/manage/${id}`,
     },
+    packages: {
+      root: `${ROOTS.DASHBOARD}/packages`,
+    },
     template: {
       root: `${ROOTS.DASHBOARD}/template`,
     },
@@ -110,6 +113,10 @@ export const paths = {
   public: {
     creator: {
       mediaKit: (id) => `${ROOTS.PUBLIC}/media-kits/creator/${id}`,
+    },
+    manageCreator: (campaignId, creatorId, params) => {
+      const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+      return `${ROOTS.PUBLIC}/campaign/discover/detail/${campaignId}/creator/${creatorId}${queryString}`;
     },
   },
 };

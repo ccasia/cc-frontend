@@ -6,7 +6,6 @@ import { Badge } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
-import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -91,94 +90,94 @@ export default function AccountPopover({ isOnline }) {
           }),
         }}
       >
-        <Badge 
+        <Badge
           color={isOnline ? 'success' : 'error'}
-            variant="dot"
-            sx={{
-              position: 'relative',
-              top: 0,
-              right: 0,
-              zIndex: 1,
-              '& .MuiBadge-dot': {
-                width: '12px',
-                height: '12px',
-                top: '8px',
-                right: '5px',
-                border: '2px solid #FFFFFF',
-                borderRadius: '500px',
-              },
-            }}
-        >
-        <Avatar
-          src={user?.photoURL}
-          alt={user?.name}
+          variant="dot"
           sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: '5px',
-            isolation: 'isolate',
-            width: 40,
-            height: 40,
-            border: (theme) => `solid 2px ${theme.palette.background.default}`,
-            borderRadius: '500px',
             position: 'relative',
+            top: 0,
+            right: 0,
+            zIndex: 1,
+            '& .MuiBadge-dot': {
+              width: '12px',
+              height: '12px',
+              top: '8px',
+              right: '5px',
+              border: '2px solid #FFFFFF',
+              borderRadius: '500px',
+            },
           }}
         >
-          {user?.name?.charAt(0).toUpperCase()}
-        </Avatar>
+          <Avatar
+            src={user?.photoURL}
+            alt={user?.name}
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '5px',
+              isolation: 'isolate',
+              width: 40,
+              height: 40,
+              border: (theme) => `solid 2px ${theme.palette.background.default}`,
+              borderRadius: '500px',
+              position: 'relative',
+            }}
+          >
+            {user?.name?.charAt(0).toUpperCase()}
+          </Avatar>
         </Badge>
       </IconButton>
 
-      <CustomPopover 
-        open={popover.open} 
-        onClose={popover.onClose} 
-        hiddenArrow={true} 
-        sx={{ mt:0.5, ml:0, p:0, minWidth: '240px' }}
-        >
-          <Box sx={{ p: 2, pb: 1 }}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Avatar
-                src={user?.photoURL}
-                // sx={{
-                //   width: 40,
-                //   height: 40,
-                //   border: (theme) => `solid 2px ${theme.palette.background.default}`,
-                // }}
-              />
-              <Box>
-                <Typography variant="subtitle2" noWrap>
-                  {user?.name}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-                  {user?.email}
-                </Typography>
-              </Box>
-            </Stack>
-          </Box>
-
-          <Stack sx={{ p: 1}}>
-            {OPTIONS.map((option) => (
-              <MenuItem
-                key={option.label}
-                sx={{ minHeight: '40px' }}
-                onClick={() => handleClickItem(option.linkTo, option.label)}
-              >
-                {option.label}
-              </MenuItem>
-            ))}
+      <CustomPopover
+        open={popover.open}
+        onClose={popover.onClose}
+        hiddenArrow
+        sx={{ mt: 0.5, ml: 0, p: 0, minWidth: '240px' }}
+      >
+        <Box sx={{ p: 2, pb: 1 }}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Avatar
+              src={user?.photoURL}
+              // sx={{
+              //   width: 40,
+              //   height: 40,
+              //   border: (theme) => `solid 2px ${theme.palette.background.default}`,
+              // }}
+            />
+            <Box>
+              <Typography variant="subtitle2" noWrap>
+                {user?.name}
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
+                {user?.email}
+              </Typography>
+            </Box>
           </Stack>
+        </Box>
 
-          <Divider sx={{ marginLeft: '10px', marginRight: '10px' }} />
+        <Stack sx={{ p: 1 }}>
+          {OPTIONS.map((option) => (
+            <MenuItem
+              key={option.label}
+              sx={{ minHeight: '40px' }}
+              onClick={() => handleClickItem(option.linkTo, option.label)}
+            >
+              {option.label}
+            </MenuItem>
+          ))}
+        </Stack>
 
-          <MenuItem
-            onClick={handleLogout}
-            sx={{ m: 1, minHeight: '40px', fontWeight: 'fontWeightBold', color: 'error.main' }}
-          >
-            Log out
-          </MenuItem>
-        </CustomPopover>
+        <Divider sx={{ marginLeft: '10px', marginRight: '10px' }} />
+
+        <MenuItem
+          onClick={handleLogout}
+          sx={{ m: 1, minHeight: '40px', fontWeight: 'fontWeightBold', color: 'error.main' }}
+        >
+          Log out
+        </MenuItem>
+      </CustomPopover>
     </>
   );
 }

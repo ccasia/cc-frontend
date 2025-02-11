@@ -1,10 +1,12 @@
 import React from 'react';
+import * as yup from 'yup';
 import PropTypes from 'prop-types';
-import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Paper, TextField, Typography } from '@mui/material';
 
 import { banks } from 'src/contants/bank';
 import { updatePaymentForm } from 'src/api/paymentForm';
@@ -12,16 +14,29 @@ import { updatePaymentForm } from 'src/api/paymentForm';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
+const schema = yup.object().shape({
+  bankName: yup.string().required('Bank name is required'),
+  bankNumber: yup
+    .string()
+    .min(0, 'Bank account number cannot be negative')
+    .required('Bank account number is required'),
+  bankAccName: yup.string().required('Bank account name is required'),
+  icPassportNumber: yup.string().required('IC / Passport Number is required.'),
+});
+
 const PaymentFormProfile = ({ user }) => {
   const paymentForm = user?.paymentForm;
 
   const methods = useForm({
+    resolver: yupResolver(schema),
     defaultValues: {
-      bankName: null || { bank: paymentForm?.bankName },
+      bankName: paymentForm?.bankName || '',
       bankNumber: paymentForm?.bankAccountNumber || '',
       bankAccName: paymentForm?.bankAccountName || '',
       icPassportNumber: paymentForm?.icNumber || '',
     },
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
   const {
@@ -54,10 +69,22 @@ const PaymentFormProfile = ({ user }) => {
           <RHFAutocomplete
             label="Choose a bank"
             name="bankName"
-            options={banks}
-            getOptionLabel={(option) => option.bank}
+            options={banks.map((bank) => bank.bank)}
+            getOptionLabel={(option) => option}
           />
-          <RHFTextField name="bankNumber" type="number" label="Bank Account Number" />
+          {/* <RHFTextField name="bankNumber" type="number" label="Bank Account Number" /> */}
+          <Controller
+            name="bankNumber"
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                type="number"
+                label="Bank Account Number"
+                error={!!error}
+                helperText={!!error && error?.message}
+              />
+            )}
+          />
           <RHFTextField name="bankAccName" label="Bank Account Name" />
           <RHFTextField name="icPassportNumber" label="IC / Passport Number" />
         </Box>

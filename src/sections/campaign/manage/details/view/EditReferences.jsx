@@ -62,7 +62,7 @@ const EditReferences = ({ open, campaign, onClose }) => {
   return (
     <Dialog open={open.campaignReferences} maxWidth="md" fullWidth>
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>Campaign References Links</DialogTitle>
+        <DialogTitle>Campaign Reference Links</DialogTitle>
         <DialogContent>
           <Box>
             {fields.map((field, index) => (
