@@ -23,7 +23,7 @@ import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { useAuthContext } from 'src/auth/hooks';
+//  import { useAuthContext } from 'src/auth/hooks';
 
 import PitchModal from '../campaign/discover/admin/pitch-modal';
 
