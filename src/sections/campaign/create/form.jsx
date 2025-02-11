@@ -47,10 +47,11 @@ import CampaignAdminManager from './steps/admin-manager';
 import OtherAttachments from './steps/other-attachments';
 import TimelineTypeModal from './steps/timeline-type-modal';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`
+// new URL(
+//   `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`,
+//   import.meta.url
+// ).toString();
 
 const steps = [
   { title: 'Select Client or Agency', logo: '👾', color: '#D8FF01' },
@@ -224,6 +225,13 @@ function CreateCampaignForm({ onClose }) {
 
   const campaignTypeSchema = Yup.object().shape({
     campaignType: Yup.string().required('Campaign type is required.'),
+    deliverables: Yup.array()
+    .min(1, 'At least one deliverable is required')
+    .test('has-ugc-videos', 'UGC Videos is required', (value) => value?.includes('UGC_VIDEOS'))
+    .required('Deliverables are required'),
+    rawFootage: Yup.boolean(),
+    photos: Yup.boolean(),
+    ads: Yup.boolean(),
   });
 
   const getSchemaForStep = (step) => {
@@ -287,6 +295,9 @@ function CreateCampaignForm({ onClose }) {
     otherAttachments: [],
     referencesLinks: [],
     campaignType: '',
+    deliverables: ['UGC_VIDEOS'], 
+    rawFootage: false,
+    photos: false,
     campaignCredits: null,
   };
 
@@ -408,11 +419,19 @@ function CreateCampaignForm({ onClose }) {
 
   const onSubmit = handleSubmit(async (data, stage) => {
     const formData = new FormData();
-
+    console.log("form data", formData)
     const adjustedData = {
       ...data,
       audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
+      rawFootage: data.deliverables.includes('RAW_FOOTAGES'),  // Convert based on deliverables
+      photos: data.deliverables.includes('PHOTOS'),
     };
+
+    console.log('Adjusted Data before sending:', adjustedData);  // Debug log
+
+    // Append data correctly to FormData
+    formData.append('rawFootage', adjustedData.rawFootage ? 'true' : 'false');
+    formData.append('photos', adjustedData.photos ? 'true' : 'false');
 
     delete adjustedData?.othersAudienceLocation;
 
@@ -644,7 +663,7 @@ function CreateCampaignForm({ onClose }) {
             </Box>
           </Box>
         </Box>
-
+               
         <Dialog
           open={confirmation.value}
           fullWidth
