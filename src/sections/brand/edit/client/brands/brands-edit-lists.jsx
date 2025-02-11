@@ -43,6 +43,7 @@ const TABLE_HEAD = [
   { id: 'website', label: 'Website', width: 100 },
   { id: 'instagram', label: 'Instagram', width: 100 },
   { id: 'tiktok', label: 'Tiktok', width: 100 },
+  { id: '', label:"UGC"  ,width:88 },
   { id: '', width: 88 },
 ];
 

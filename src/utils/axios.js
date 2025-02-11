@@ -156,6 +156,7 @@ export const endpoints = {
     update: '/api/event/updateEvent',
   },
   campaign: {
+    total: '/api/campaign/total',
     createCampaign: '/api/campaign/createCampaign',
     spreadsheet: '/api/campaign/spreadsheet',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
@@ -252,6 +253,13 @@ export const endpoints = {
     root: '/api/role',
     get: (id) => `/api/role/${id}`,
     update: (id) => `/api/role/${id}`,
+  },
+  packages: {
+    root: '/api/packages/fetchAll',
+    seed: '/api/packages/seedPackages',
+    get: (id) => `/api/packages/${id}`,
+    update: (id) => `/api/packages/${id}`,
+    history: `/api/packages/history/`,
   },
   invoice: {
     getAll: '/api/invoice/',
