@@ -15,6 +15,7 @@ import {
   Skeleton,
   Container,
   Typography,
+  Chip,
   DialogContent,
 } from '@mui/material';
 
@@ -29,9 +30,64 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 
+import useGetClientHistory from 'src/hooks/use-get-package-history';
 import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
 import BrandEditLists from './brands/brands-edit-lists';
+import PackageHistoryList from './pakcage-history-list';
+
+const pakcagesArray = [
+  {
+    type: 'Trail',
+    valueMYR: 2800,
+    valueSGD: 3100,
+    totalCredits: 5,
+    validityPeriod: 1,
+  },
+  {
+    type: 'Basic',
+    valueMYR: 8000,
+    valueSGD: 8900,
+    totalCredits: 15,
+    validityPeriod: 2,
+  },
+  {
+    type: 'Essential',
+    valueMYR: 15000,
+    valueSGD: 17500,
+    totalCredits: 30,
+    validityPeriod: 3,
+  },
+  {
+    type: 'Pro',
+    valueMYR: 23000,
+    valueSGD: 29000,
+    totalCredits: 50,
+    validityPeriod: 5,
+  },
+  {
+    type: 'Custom',
+    valueMYR: 1,
+    valueSGD: 1,
+    totalCredits: 1,
+    validityPeriod: 1,
+  },
+];
+
+const findLatestPackage = (packages) => {
+  if (packages?.length === 0) {
+    return null; // Return null if the array is empty
+  }
+
+  const latestPackage = packages.reduce((latest, current) => {
+    const latestDate = new Date(latest.createdAt);
+    const currentDate = new Date(current.createdAt);
+
+    return currentDate > latestDate ? current : latest;
+  });
+
+  return latestPackage;
+};
 
 const CompanyEditView = ({ id }) => {
   // const [company, setCompany] = useState();
@@ -39,6 +95,9 @@ const CompanyEditView = ({ id }) => {
   const router = useRouter();
   const dialog = useBoolean();
   const { data: company, isLoading, mutate } = useGetCompanyById(id);
+  const history = useGetClientHistory(id);
+
+  const currentPackage = history?.data ? findLatestPackage(history?.data) : null;
 
   // useEffect(() => {
   //   const getCompany = async () => {
@@ -173,16 +232,37 @@ const CompanyEditView = ({ id }) => {
             mt: 3,
           }}
         >
-          <Typography
-            // variant="h5"
+          <Box
+            mb={3}
             sx={{
-              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-              fontSize: 40,
-              fontWeight: 'normal',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
-            {company?.brand?.length ? 'Agency' : 'Client'} Information
-          </Typography>
+            <Typography
+              // variant="h5"
+              sx={{
+                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                fontSize: 40,
+                fontWeight: 'normal',
+              }}
+            >
+              {company?.brand?.length ? 'Agency' : 'Client'} Information
+            </Typography>
+            {history && currentPackage && (
+              <>
+                <Chip
+                  label={`Remning Credits : ${currentPackage?.availableCredits || 0}`}
+                  sx={{
+                    padding: '8px',
+                  }}
+                  size="medium"
+                  color={currentPackage.availableCredits > 0 ? 'success' : 'error'}
+                />
+              </>
+            )}
+          </Box>
           <FormProvider methods={methods} onSubmit={onSubmit}>
             <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
             <Box textAlign="end">
@@ -225,6 +305,34 @@ const CompanyEditView = ({ id }) => {
               <BrandEditLists dataFiltered={company?.brand} onClose={onClose} />
             </Card>
           )}
+
+          <Card sx={{ my: 3, p: 2 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography
+                sx={{
+                  fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                  fontSize: 30,
+                  fontWeight: 'normal',
+                  mb: 2,
+                }}
+              >
+                Package History
+              </Typography>
+              <Button
+                variant="outlined"
+                sx={{
+                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                }}
+                // onClick={dialog.onTrue}
+                disabled={currentPackage?.states === 'inactive' && currentPackage ? false : true}
+              >
+                Renew Package
+              </Button>
+            </Stack>
+            {!history.isLoading && (
+              <PackageHistoryList dataFiltered={history?.data} onClose={onClose} />
+            )}
+          </Card>
         </Box>
       )}
 

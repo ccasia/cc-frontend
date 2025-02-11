@@ -9,6 +9,7 @@ import {
   TableRow,
   TableCell,
   ListItemText,
+  Chip,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -20,15 +21,84 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import useGetClientHistory from 'src/hooks/use-get-package-history';
+import { chip } from 'src/theme/overrides/components/chip';
+
+const findLatestPackage = (packages) => {
+  if (packages.length === 0) {
+    return null; // Return null if the array is empty
+  }
+
+  const latestPackage = packages.reduce((latest, current) => {
+    const latestDate = new Date(latest.createdAt);
+    const currentDate = new Date(current.createdAt);
+
+    return currentDate > latestDate ? current : latest;
+  });
+
+  return latestPackage;
+};
+function getRemainingTime(createdDate, months) {
+  const created = new Date(createdDate);
+  const expiryDate = new Date(created);
+  expiryDate.setMonth(expiryDate.getMonth() + months);
+
+  const today = new Date();
+  const diffTime = expiryDate - today;
+
+  const remainingDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  return remainingDays;
+}
 
 const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) => {
-  const { logo, name, email, phone, website, campaign, brand, id } = row;
+  const { logo, name, email, phone, website, campaign, brand, id, PackagesClient } = row;
 
   const confirm = useBoolean();
 
   const router = useRouter();
 
   const popover = usePopover();
+  const latestPackageItem = PackagesClient ? findLatestPackage(PackagesClient) : null;
+
+  function Validity() {
+    if (latestPackageItem && latestPackageItem.invoiceDate) {
+      if (getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod) > 0) {
+        return (
+          <TableCell sx={{ whiteSpace: 'nowrap' }}>
+            <Chip
+              label={getRemainingTime(
+                latestPackageItem.invoiceDate,
+                latestPackageItem.validityPeriod
+              )}
+              variant="outlined"
+              color="default"
+            />{' '}
+            days left
+          </TableCell>
+        );
+      } else {
+        return (
+          <TableCell sx={{ whiteSpace: 'nowrap' }}>
+            <Chip
+              label={Math.abs(
+                getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod)
+              )}
+              variant="outlined"
+              color="error"
+            />
+            days overdue
+          </TableCell>
+        );
+      }
+    } else {
+      return (
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Label>no Days added</Label>
+        </TableCell>
+      );
+    }
+  }
 
   return (
     <>
@@ -63,6 +133,16 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label>{campaign?.length || '0'}</Label>
         </TableCell>
+
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          <Chip
+            label={latestPackageItem ? latestPackageItem.states : null}
+            variant="outlined"
+            color={latestPackageItem && latestPackageItem.states === 'active' ? 'success' : 'error'}
+          />
+        </TableCell>
+
+        {Validity()}
 
         <TableCell sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Edit" placement="top" arrow>

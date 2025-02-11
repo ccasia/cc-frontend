@@ -33,6 +33,8 @@ const TABLE_HEAD = [
   // { id: 'website', label: 'Website', width: 100 },
   { id: 'brand', label: 'Brands', width: 100 },
   { id: 'campaigns', label: 'Campaigns', width: 100 },
+  { id: 'status', label: 'Status', width: 100 },
+  { id: 'validity', label: 'Validity', width: 100 },
   { id: '', width: 88 },
 ];
 
@@ -41,6 +43,10 @@ const BrandLists = ({ dataFiltered }) => {
   const [filters, setFilters] = useState(defaultFilters);
   const confirm = useBoolean();
 
+
+  console.log('datafiltered', dataFiltered);
+  
+ 
   const denseHeight = table.dense ? 56 : 56 + 20;
 
   const canReset = !isEqual(defaultFilters, filters);
@@ -50,6 +56,7 @@ const BrandLists = ({ dataFiltered }) => {
     comparator: getComparator(table.order, table.orderBy),
     filters,
   });
+
 
   const notFound = (!filteredData?.length && canReset) || !filteredData?.length;
 

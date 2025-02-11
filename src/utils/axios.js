@@ -254,6 +254,13 @@ export const endpoints = {
     get: (id) => `/api/role/${id}`,
     update: (id) => `/api/role/${id}`,
   },
+  packages: {
+    root: '/api/packages/fetchAll',
+    seed: '/api/packages/seedPackages',
+    get: (id) => `/api/packages/${id}`,
+    update: (id) => `/api/packages/${id}`,
+    history: `/api/packages/history/`,
+  },
   invoice: {
     getAll: '/api/invoice/',
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,

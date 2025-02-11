@@ -20,6 +20,8 @@ import {
   IconButton,
   DialogTitle,
   DialogContent,
+  Select,
+  Divider,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -30,11 +32,12 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
-import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
 
 import UploadPhoto from 'src/sections/profile/dropzone';
+import useGetPackages from 'src/hooks/use-get-packges';
 
-const COMPANY_STEPS = ['Company Information', 'Person In Charge'];
+const COMPANY_STEPS = ['Company Information', 'Person In Charge', 'Package Information'];
 
 const companySchema = Yup.object().shape({
   companyName: Yup.string().required('Name is required'),
@@ -53,8 +56,19 @@ const secondStepSchema = Yup.object().shape({
   personInChargeName: Yup.string().required('PIC name is required.'),
   personInChargeDesignation: Yup.string().required('PIC designation is required.'),
 });
+const thirdStepSchema = Yup.object().shape({
+  currency: Yup.string().required('currency is required'),
+  packageType: Yup.string().required('Package Type is required '),
+  packageId: Yup.string().required('pakcage id is required'),
+  packageValue: Yup.string().required('value is required'),
+  pakcageTotalCredits: Yup.string().required('totalCreadits is required'),
+  packageValidityPeriod: Yup.number()
+    .positive('number should be in  positive value')
+    .required('Validity period is required '),
+  invoiceDate: Yup.date().notRequired().nullable().typeError('PackageInvoice must be a valid date'),
+});
 
-const validationSchema = [companySchema, secondStepSchema];
+const validationSchema = [companySchema, secondStepSchema, thirdStepSchema];
 
 const defaultValuesOne = {
   companyName: '',
@@ -67,6 +81,13 @@ const defaultValuesOne = {
   type: '',
   personInChargeName: '',
   personInChargeDesignation: '',
+  packageType: '',
+  packageId: '1',
+  packageValue: '',
+  pakcageTotalCredits: '',
+  packageValidityPeriod: '',
+  currency: 'MYR',
+  invoiceDate: null,
 };
 
 const defaultValuesTwo = {
@@ -78,6 +99,7 @@ const defaultValues = [defaultValuesOne, defaultValuesTwo];
 
 // eslint-disable-next-line react/prop-types
 const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
+  const { data, isLoading } = useGetPackages();
   const [image, setImage] = useState(null);
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -85,6 +107,8 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
   const { mutate } = useGetCompany();
   const openConfirmation = useBoolean();
   const smUp = useResponsive('up', 'sm');
+  const [activeType, setActiveType] = useState('');
+  const [activeCurrency, setActiveCurrency] = useState('MYR');
 
   const methods = useForm({
     resolver: yupResolver(validationSchema[activeStep]),
@@ -115,7 +139,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     },
     [setValue]
   );
-
+  // eslint-disable-next-line
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
 
@@ -129,6 +153,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
           'Content-Type': 'multipart/form-data',
         },
       });
+      // const res = await axiosInstance.post(endpoints.company.create, formData);
 
       set(
         'companyId',
@@ -139,7 +164,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
       setActiveStep(0);
       reset();
       mutate();
-      enqueueSnackbar(res?.data?.message, {
+      enqueueSnackbar('Company created successfully', {
         variant: 'success',
       });
     } catch (error) {
@@ -169,7 +194,8 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
   };
 
   const onNext = async () => {
-    const isFilled = await trigger(); // Validate current step
+    const isFilled = await trigger();
+    // Validate current step
     if (isFilled) {
       setActiveStep((prev) => prev + 1);
     }
@@ -182,13 +208,144 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     </Stack>
   );
 
+  const CompanyPackage = (
+    <>
+      <Box
+        rowGap={1}
+        columnGap={2}
+        display="grid"
+        m={3}
+        mb={5}
+        // justifyContent={'space-between'}
+        gridTemplateColumns={{
+          xs: 'repeat(1, 1fr)',
+          sm: 'repeat(1, 1fr)',
+        }}
+      >
+        <Typography
+          sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
+          fontSize={30}
+        >
+          Package Information
+        </Typography>
+        <Divider />
+        <Box
+          rowGap={2}
+          columnGap={2}
+          mt={2}
+          display="flex"
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+        >
+          <Box
+            display="flex"
+            flexDirection="row"
+            justifyContent="center"
+            alignItems="center"
+            gap={1}
+          >
+            <Typography variant="subtitle1">Package Type</Typography>
+            <Select sx={{ width: '15vh' }}>
+              {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
+                <MenuItem key={e} value={e} onClick={() => setActiveType(e)}>
+                  {e}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+          <Box
+            display="flex"
+            flexDirection="row"
+            justifyContent="center"
+            alignItems="center"
+            gap={2}
+          >
+            <Typography variant="subtitle1">Currency</Typography>
+            <Select sx={{ width: '15vh' }}>
+              {['MYR', 'SGD'].map((e) => (
+                <MenuItem key={e} value={e} onClick={() => setActiveCurrency(e)}>
+                  {e}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        </Box>
+        <Box
+          rowGap={3}
+          columnGap={1}
+          display="grid"
+          mt={1}
+          gridTemplateColumns={{
+            xs: 'repeat(1, 1fr)',
+            sm: 'repeat(1, 1fr)',
+          }}
+        >
+          <RHFTextField key="packageType" name="packageType" label="Package Type" disabled={true} />
+          <RHFTextField
+            key="packageValue"
+            name="packageValue"
+            label="Package Value"
+            disabled={activeType !== 'Custom'}
+          />
+          <RHFTextField
+            key="pakcageTotalCredits"
+            name="pakcageTotalCredits"
+            label="Total UGC Credits"
+            disabled={activeType !== 'Custom'}
+          />
+          <RHFTextField
+            key="packageValidityPeriod"
+            name="packageValidityPeriod"
+            label="Validity Period"
+            disabled={activeType !== 'Custom'}
+          />
+        </Box>
+
+        <Box
+          display="flex"
+          mt={3}
+          mb={2}
+          flexDirection={{ xs: 'column', sm: 'column' }}
+          justifyContent="space-between"
+        >
+          <Typography
+            sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
+            fontSize={30}
+          >
+            Invoice Details
+          </Typography>
+          {/* add invoice details here */}
+          <Box display="flex" flexDirection="row" justifyContent="start" alignItems="start" gap={2}>
+            {/* add remarks and attachemts here */}
+            <RHFDatePicker name="invoiceDate" label="Invoice Date" />
+          </Box>
+        </Box>
+      </Box>
+
+      {/* {companyObjectives} */}
+    </>
+  );
+
+  // useEffect(() => {
+  //   if (type && type !== 'agency') {
+  //     setCompanySteps((prev) => [...prev, 'Package Information']);
+  //     return;
+  //   }
+  //   setCompanySteps(COMPANY_STEPS);
+  // }, [type]);
+
   useEffect(() => {
-    if (type && type !== 'agency') {
-      setCompanySteps((prev) => [...prev, 'Package Information']);
-      return;
-    }
-    setCompanySteps(COMPANY_STEPS);
-  }, [type]);
+    const getPackage = data?.find((e) => e.type === activeType);
+    setValue('packageId', getPackage?.id);
+    setValue('packageType', getPackage?.type);
+    setValue(
+      'packageValue',
+      activeCurrency === 'MYR' ? getPackage?.valueMYR : getPackage?.valueSGD
+    );
+    setValue('pakcageTotalCredits', getPackage?.totalUGCCredits);
+    setValue('packageValidityPeriod', getPackage?.validityPeriod);
+    setValue('currency', activeCurrency);
+  }, [activeType, activeCurrency, setValue, data]);
 
   return (
     <>
@@ -321,7 +478,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
             {activeStep === 1 && renderPICForm}
 
             {/* For Mohand to handle the package forms */}
-            {activeStep === 2 && <Typography>For Mohand</Typography>}
+            {activeStep === 2 && CompanyPackage}
 
             <Stack direction="row" spacing={1} justifyContent="end" my={3}>
               {activeStep > 0 && (
@@ -345,7 +502,11 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
                   Create
                 </LoadingButton>
               ) : (
-                <Button variant="contained" sx={{ borderRadius: 0.6 }} onClick={() => onNext()}>
+                <Button
+                  variant="contained"
+                  sx={{ borderRadius: 0.6 }}
+                  onClick={() => setActiveStep(activeStep + 1)}
+                >
                   Next
                 </Button>
               )}

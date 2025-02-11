@@ -54,6 +54,7 @@ const BrandEditRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =>
         <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{instagram || ''}</TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{tiktok || ''}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{10 || ''}</TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Quick Edit" placement="top" arrow>
