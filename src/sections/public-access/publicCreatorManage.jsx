@@ -161,7 +161,7 @@ const PublicManageCreatorView = () => {
             { label: 'Submissions', value: 'submission' },
             // { label: 'Invoice', value: 'invoice' },
             // { label: 'Logistics', value: 'logistics' },
-            { label: 'Timeline', value: 'timeline' }, 
+            // { label: 'Timeline', value: 'timeline' }, 
           ].map((tab) => (
             <Button
               key={tab.value}
@@ -621,7 +621,7 @@ const PublicManageCreatorView = () => {
             />
           ) : null} */}
 
-          {currentTab === 'timeline' && <TimelineCreator campaign={campaign} creator={data} />}
+          {/* {currentTab === 'timeline' && <TimelineCreator campaign={campaign} creator={data} />} */}
         </>
       )}
     </Container>
