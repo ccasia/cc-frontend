@@ -288,4 +288,11 @@ export const endpoints = {
   bug: {
     create: '/api/bug',
   },
+  public: {
+    generatelink: '/api/public/generate',
+    regeneratepass: '/api/public/regenerate',
+    validate: '/api/public/validate',
+    getDetails: (id) => `/api/public/details/${id}`,
+    clientFeedback : '/api/public/client-feedback',
+  }
 };
