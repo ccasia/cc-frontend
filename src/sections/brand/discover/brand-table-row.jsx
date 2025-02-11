@@ -1,7 +1,8 @@
-import React from 'react';
 import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 
 import {
+  Chip,
   Avatar,
   Button,
   Tooltip,
@@ -9,7 +10,6 @@ import {
   TableRow,
   TableCell,
   ListItemText,
-  Chip,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -19,10 +19,13 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
-import useGetClientHistory from 'src/hooks/use-get-package-history';
-import { chip } from 'src/theme/overrides/components/chip';
+
+const dictionary = {
+  active: 'Active',
+  inactive: 'Inactive',
+  expired: 'Expired',
+};
 
 const findLatestPackage = (packages) => {
   if (packages.length === 0) {
@@ -58,47 +61,60 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
 
   const router = useRouter();
 
-  const popover = usePopover();
+  // const popover = usePopover();
   const latestPackageItem = PackagesClient ? findLatestPackage(PackagesClient) : null;
 
-  function Validity() {
+  console.log(latestPackageItem);
+
+  const validity = useMemo(() => {
     if (latestPackageItem && latestPackageItem.invoiceDate) {
       if (getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod) > 0) {
-        return (
-          <TableCell sx={{ whiteSpace: 'nowrap' }}>
-            <Chip
-              label={getRemainingTime(
-                latestPackageItem.invoiceDate,
-                latestPackageItem.validityPeriod
-              )}
-              variant="outlined"
-              color="default"
-            />{' '}
-            days left
-          </TableCell>
-        );
-      } else {
-        return (
-          <TableCell sx={{ whiteSpace: 'nowrap' }}>
-            <Chip
-              label={Math.abs(
-                getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod)
-              )}
-              variant="outlined"
-              color="error"
-            />
-            days overdue
-          </TableCell>
-        );
+        return `${getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod)} days left`;
       }
-    } else {
-      return (
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          <Label>no Days added</Label>
-        </TableCell>
-      );
+      return `${Math.abs(
+        getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod)
+      )} days overdue`;
     }
-  }
+
+    return 'No Days Added';
+  }, [latestPackageItem]);
+
+  // function Validity() {
+  //   if (latestPackageItem && latestPackageItem.invoiceDate) {
+  //     if (getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod) > 0) {
+  //       return (
+  //         <TableCell sx={{ whiteSpace: 'nowrap' }}>
+  //           <Chip
+  //             label={getRemainingTime(
+  //               latestPackageItem.invoiceDate,
+  //               latestPackageItem.validityPeriod
+  //             )}
+  //             variant="outlined"
+  //             color="default"
+  //           />{' '}
+  //           days left
+  //         </TableCell>
+  //       );
+  //     }
+  //     return (
+  //       <TableCell sx={{ whiteSpace: 'nowrap' }}>
+  //         <Chip
+  //           label={Math.abs(
+  //             getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod)
+  //           )}
+  //           variant="outlined"
+  //           color="error"
+  //         />
+  //         days overdue
+  //       </TableCell>
+  //     );
+  //   }
+  //   return (
+  //     <TableCell sx={{ whiteSpace: 'nowrap' }}>
+  //       <Label>no Days added</Label>
+  //     </TableCell>
+  //   );
+  // }
 
   return (
     <>
@@ -136,13 +152,16 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Chip
-            label={latestPackageItem ? latestPackageItem.states : null}
+            label={latestPackageItem ? dictionary[latestPackageItem.status] : 'N/A'}
             variant="outlined"
-            color={latestPackageItem && latestPackageItem.states === 'active' ? 'success' : 'error'}
+            color={latestPackageItem && latestPackageItem.status === 'active' ? 'success' : 'error'}
           />
         </TableCell>
 
-        {Validity()}
+        {/* {Validity()} */}
+        <TableCell>
+          <Label>{validity}</Label>
+        </TableCell>
 
         <TableCell sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Edit" placement="top" arrow>

@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -14,18 +15,18 @@ import {
   Button,
   Dialog,
   Stepper,
+  Divider,
   MenuItem,
   StepLabel,
   Typography,
   IconButton,
   DialogTitle,
   DialogContent,
-  Select,
-  Divider,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompany from 'src/hooks/use-get-company';
+import useGetPackages from 'src/hooks/use-get-packges';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -35,7 +36,6 @@ import { ConfirmDialog } from 'src/components/custom-dialog';
 import FormProvider, { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
 
 import UploadPhoto from 'src/sections/profile/dropzone';
-import useGetPackages from 'src/hooks/use-get-packges';
 
 const COMPANY_STEPS = ['Company Information', 'Person In Charge', 'Package Information'];
 
@@ -56,6 +56,7 @@ const secondStepSchema = Yup.object().shape({
   personInChargeName: Yup.string().required('PIC name is required.'),
   personInChargeDesignation: Yup.string().required('PIC designation is required.'),
 });
+
 const thirdStepSchema = Yup.object().shape({
   currency: Yup.string().required('currency is required'),
   packageType: Yup.string().required('Package Type is required '),
@@ -81,8 +82,8 @@ const defaultValuesOne = {
   type: '',
   personInChargeName: '',
   personInChargeDesignation: '',
+  packageId: '',
   packageType: '',
-  packageId: '1',
   packageValue: '',
   pakcageTotalCredits: '',
   packageValidityPeriod: '',
@@ -117,18 +118,14 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     reValidateMode: 'onChange',
   });
 
-  const {
-    handleSubmit,
-    setValue,
-    reset,
-    trigger,
-    watch,
-    formState: { errors },
-  } = methods;
+  const { handleSubmit, setValue, reset, trigger, watch } = methods;
 
   const values = watch();
 
+  const daysLeft = dayjs().add(values.packageValidityPeriod, 'month').diff(dayjs(), 'days');
+
   const { type } = values;
+
   const hasTruthyValues = Object.values(values).some((value) => Boolean(value));
 
   const onDrop = useCallback(
@@ -193,14 +190,6 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     setOpenCreate(false);
   };
 
-  const onNext = async () => {
-    const isFilled = await trigger();
-    // Validate current step
-    if (isFilled) {
-      setActiveStep((prev) => prev + 1);
-    }
-  };
-
   const renderPICForm = (
     <Stack direction="row" alignItems="center" mt={3} gap={2}>
       <RHFTextField name="personInChargeName" label="PIC Name" />
@@ -209,134 +198,143 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
   );
 
   const CompanyPackage = (
-    <>
+    <Box
+      rowGap={1}
+      columnGap={2}
+      display="grid"
+      m={3}
+      mb={5}
+      gridTemplateColumns={{
+        xs: 'repeat(1, 1fr)',
+        sm: 'repeat(1, 1fr)',
+      }}
+    >
+      <Typography
+        sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
+        fontSize={30}
+      >
+        Package Information
+      </Typography>
+
+      <Divider />
+
       <Box
-        rowGap={1}
+        rowGap={2}
         columnGap={2}
+        mt={2}
+        display="flex"
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+      >
+        <Box
+          display="flex"
+          flexDirection="row"
+          justifyContent="center"
+          alignItems="center"
+          gap={1}
+          width={1}
+        >
+          <Typography variant="subtitle1">Package Type</Typography>
+          <RHFSelect name="packageType" label="Package Type">
+            {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
+              <MenuItem key={e} value={e} onClick={() => setActiveType(e)}>
+                {e}
+              </MenuItem>
+            ))}
+          </RHFSelect>
+        </Box>
+
+        <Box
+          display="flex"
+          flexDirection="row"
+          justifyContent="center"
+          alignItems="center"
+          gap={2}
+          width={1}
+        >
+          <Typography variant="subtitle1">Currency</Typography>
+          <RHFSelect name="currency" label="Currency">
+            {['MYR', 'SGD'].map((e) => (
+              <MenuItem key={e} value={e} onClick={() => setActiveCurrency(e)}>
+                {e}
+              </MenuItem>
+            ))}
+          </RHFSelect>
+        </Box>
+      </Box>
+
+      <Box
+        rowGap={3}
+        columnGap={1}
         display="grid"
-        m={3}
-        mb={5}
-        // justifyContent={'space-between'}
+        mt={1}
         gridTemplateColumns={{
           xs: 'repeat(1, 1fr)',
           sm: 'repeat(1, 1fr)',
         }}
       >
+        <RHFTextField
+          key="packageId"
+          name="packageId"
+          label="Package ID"
+          disabled={activeType !== 'Custom'}
+        />
+        <RHFTextField key="packageType" name="packageType" label="Package Type" disabled />
+        <RHFTextField
+          key="packageValue"
+          name="packageValue"
+          label="Package Value"
+          disabled={activeType !== 'Custom'}
+        />
+
+        <RHFTextField
+          key="pakcageTotalCredits"
+          name="pakcageTotalCredits"
+          label="Total UGC Credits"
+          disabled={activeType !== 'Custom'}
+        />
+
+        <RHFTextField
+          key="packageValidityPeriod"
+          name="packageValidityPeriod"
+          label="Validity Period"
+          disabled={activeType !== 'Custom'}
+          helperText={`${daysLeft} days left`}
+        />
+      </Box>
+
+      <Box
+        display="flex"
+        mt={3}
+        mb={2}
+        flexDirection={{ xs: 'column', sm: 'column' }}
+        justifyContent="space-between"
+      >
         <Typography
           sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
           fontSize={30}
         >
-          Package Information
+          Invoice Details
         </Typography>
-        <Divider />
-        <Box
-          rowGap={2}
-          columnGap={2}
-          mt={2}
-          display="flex"
-          flexDirection={{ xs: 'column', sm: 'row' }}
-          justifyContent="space-between"
-        >
-          <Box
-            display="flex"
-            flexDirection="row"
-            justifyContent="center"
-            alignItems="center"
-            gap={1}
-          >
-            <Typography variant="subtitle1">Package Type</Typography>
-            <Select sx={{ width: '15vh' }}>
-              {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
-                <MenuItem key={e} value={e} onClick={() => setActiveType(e)}>
-                  {e}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-          <Box
-            display="flex"
-            flexDirection="row"
-            justifyContent="center"
-            alignItems="center"
-            gap={2}
-          >
-            <Typography variant="subtitle1">Currency</Typography>
-            <Select sx={{ width: '15vh' }}>
-              {['MYR', 'SGD'].map((e) => (
-                <MenuItem key={e} value={e} onClick={() => setActiveCurrency(e)}>
-                  {e}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-        </Box>
-        <Box
-          rowGap={3}
-          columnGap={1}
-          display="grid"
-          mt={1}
-          gridTemplateColumns={{
-            xs: 'repeat(1, 1fr)',
-            sm: 'repeat(1, 1fr)',
-          }}
-        >
-          <RHFTextField key="packageType" name="packageType" label="Package Type" disabled={true} />
-          <RHFTextField
-            key="packageValue"
-            name="packageValue"
-            label="Package Value"
-            disabled={activeType !== 'Custom'}
-          />
-          <RHFTextField
-            key="pakcageTotalCredits"
-            name="pakcageTotalCredits"
-            label="Total UGC Credits"
-            disabled={activeType !== 'Custom'}
-          />
-          <RHFTextField
-            key="packageValidityPeriod"
-            name="packageValidityPeriod"
-            label="Validity Period"
-            disabled={activeType !== 'Custom'}
-          />
-        </Box>
 
-        <Box
-          display="flex"
-          mt={3}
-          mb={2}
-          flexDirection={{ xs: 'column', sm: 'column' }}
-          justifyContent="space-between"
-        >
-          <Typography
-            sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
-            fontSize={30}
-          >
-            Invoice Details
-          </Typography>
-          {/* add invoice details here */}
-          <Box display="flex" flexDirection="row" justifyContent="start" alignItems="start" gap={2}>
-            {/* add remarks and attachemts here */}
-            <RHFDatePicker name="invoiceDate" label="Invoice Date" />
-          </Box>
+        <Box display="flex" flexDirection="row" justifyContent="start" alignItems="start" gap={2}>
+          <RHFDatePicker name="invoiceDate" label="Invoice Date" />
         </Box>
       </Box>
-
-      {/* {companyObjectives} */}
-    </>
+    </Box>
   );
 
-  // useEffect(() => {
-  //   if (type && type !== 'agency') {
-  //     setCompanySteps((prev) => [...prev, 'Package Information']);
-  //     return;
-  //   }
-  //   setCompanySteps(COMPANY_STEPS);
-  // }, [type]);
+  const onNext = async () => {
+    const isFilled = await trigger();
+    // Validate current step
+    if (isFilled) {
+      setActiveStep((prev) => prev + 1);
+    }
+  };
 
   useEffect(() => {
     const getPackage = data?.find((e) => e.type === activeType);
-    setValue('packageId', getPackage?.id);
+    setValue('packageId', getPackage?.packageId);
     setValue('packageType', getPackage?.type);
     setValue(
       'packageValue',
@@ -505,7 +503,8 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
                 <Button
                   variant="contained"
                   sx={{ borderRadius: 0.6 }}
-                  onClick={() => setActiveStep(activeStep + 1)}
+                  onClick={onNext}
+                  // onClick={() => setActiveStep(activeStep + 1)}
                 >
                   Next
                 </Button>

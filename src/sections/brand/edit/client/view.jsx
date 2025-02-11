@@ -12,11 +12,10 @@ import {
   Stack,
   Button,
   Dialog,
-  Skeleton,
   Container,
   Typography,
-  Chip,
   DialogContent,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -24,17 +23,19 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompanyById from 'src/hooks/use-get-company-by-id';
+import useGetClientHistory from 'src/hooks/use-get-package-history';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-import useGetClientHistory from 'src/hooks/use-get-package-history';
 import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
 import BrandEditLists from './brands/brands-edit-lists';
 import PackageHistoryList from './pakcage-history-list';
+import PackageCreateDialog from '../package-create-dialog';
 
 const pakcagesArray = [
   {
@@ -90,32 +91,14 @@ const findLatestPackage = (packages) => {
 };
 
 const CompanyEditView = ({ id }) => {
-  // const [company, setCompany] = useState();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const dialog = useBoolean();
+  const packageDialog = useBoolean();
   const { data: company, isLoading, mutate } = useGetCompanyById(id);
   const history = useGetClientHistory(id);
 
-  const currentPackage = history?.data ? findLatestPackage(history?.data) : null;
-
-  // useEffect(() => {
-  //   const getCompany = async () => {
-  //     setLoading(true);
-  //     try {
-  //       const res = await axiosInstance.get(`${endpoints.company.getCompany}/${id}`);
-  //       setCompany(res?.data);
-  //       setLoading(false);
-  //     } catch (error) {
-  //       enqueueSnackbar('Client data not found.', {
-  //         variant: 'error',
-  //       });
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   getCompany();
-  // }, [id]);
+  const currentPackage = history?.data?.length ? findLatestPackage(history?.data) : null;
 
   const companySchema = Yup.object().shape({
     companyName: Yup.string().required('Name is required'),
@@ -126,11 +109,11 @@ const CompanyEditView = ({ id }) => {
     companyAddress: Yup.string().required('Address is required'),
     companyWebsite: Yup.string().required('Website is required'),
     companyAbout: Yup.string().required('About Description is required'),
-    companyObjectives: Yup.array().of(
-      Yup.object().shape({
-        value: Yup.string().required('Value is required'),
-      })
-    ),
+    // companyObjectives: Yup.array().of(
+    //   Yup.object().shape({
+    //     value: Yup.string().required('Value is required'),
+    //   })
+    // ),
     companyRegistrationNumber: Yup.string().required('RegistrationNumber is required'),
   });
 
@@ -142,11 +125,11 @@ const CompanyEditView = ({ id }) => {
     companyAddress: '',
     companyWebsite: '',
     companyAbout: '',
-    companyObjectives: [
-      {
-        value: '',
-      },
-    ],
+    // companyObjectives: [
+    //   {
+    //     value: '',
+    //   },
+    // ],
     companyRegistrationNumber: '',
   };
 
@@ -182,11 +165,12 @@ const CompanyEditView = ({ id }) => {
     const newData = {
       ...data,
       companyId: company?.id,
-      companyObjectives: data.companyObjectives.filter((item) => item.value !== ''),
+      // companyObjectives: data.companyObjectives.filter((item) => item.value !== ''),
     };
 
     formData.append('data', JSON.stringify(newData));
     formData.append('companyLogo', data.companyLogo);
+
     try {
       setLoading(true);
       const res = await axiosInstance.patch(endpoints.company.edit, formData, {
@@ -209,6 +193,27 @@ const CompanyEditView = ({ id }) => {
     dialog.onFalse();
   }, [dialog]);
 
+  if (isLoading || history.isLoading) {
+    return (
+      <Box
+        sx={{
+          position: 'relative',
+          top: 200,
+          textAlign: 'center',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Container maxWidth="lg">
       <Button
@@ -217,95 +222,57 @@ const CompanyEditView = ({ id }) => {
       >
         Back
       </Button>
-      {isLoading ? (
-        <Skeleton
-          sx={{
-            height: 200,
-          }}
-        />
-      ) : (
+
+      <Box
+        sx={{
+          bgcolor: (theme) => theme.palette.background.paper,
+          p: 3,
+          borderRadius: 2,
+          mt: 3,
+        }}
+      >
         <Box
+          mb={3}
           sx={{
-            bgcolor: (theme) => theme.palette.background.paper,
-            p: 3,
-            borderRadius: 2,
-            mt: 3,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          <Box
-            mb={3}
+          <Typography
             sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              fontSize: 40,
+              fontWeight: 'normal',
             }}
           >
-            <Typography
-              // variant="h5"
+            {company?.brand?.length ? 'Agency' : 'Client'} Information
+          </Typography>
+
+          {history && currentPackage && (
+            <Label color="success">
+              Remaining Credits: {currentPackage?.availableCredits || 0}
+            </Label>
+          )}
+        </Box>
+
+        <FormProvider methods={methods} onSubmit={onSubmit}>
+          <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
+          <Box textAlign="end">
+            <LoadingButton
+              loading={loading}
+              type="submit"
+              variant="contained"
               sx={{
-                fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                fontSize: 40,
-                fontWeight: 'normal',
+                width: 100,
               }}
             >
-              {company?.brand?.length ? 'Agency' : 'Client'} Information
-            </Typography>
-            {history && currentPackage && (
-              <>
-                <Chip
-                  label={`Remning Credits : ${currentPackage?.availableCredits || 0}`}
-                  sx={{
-                    padding: '8px',
-                  }}
-                  size="medium"
-                  color={currentPackage.availableCredits > 0 ? 'success' : 'error'}
-                />
-              </>
-            )}
+              Save
+            </LoadingButton>
           </Box>
-          <FormProvider methods={methods} onSubmit={onSubmit}>
-            <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
-            <Box textAlign="end">
-              <LoadingButton
-                loading={loading}
-                type="submit"
-                variant="contained"
-                sx={{
-                  width: 100,
-                }}
-              >
-                Save
-              </LoadingButton>
-            </Box>
-          </FormProvider>
-          {company?.brand?.length > 0 && (
-            <Card sx={{ my: 3, p: 2 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography
-                  sx={{
-                    fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                    fontSize: 30,
-                    fontWeight: 'normal',
-                    mb: 2,
-                  }}
-                >
-                  Brand Information
-                </Typography>
-                <Button
-                  variant="outlined"
-                  sx={{
-                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  }}
-                  onClick={dialog.onTrue}
-                >
-                  Create new brand
-                </Button>
-              </Stack>
+        </FormProvider>
 
-              <BrandEditLists dataFiltered={company?.brand} onClose={onClose} />
-            </Card>
-          )}
-
+        {company?.brand?.length > 0 && (
           <Card sx={{ my: 3, p: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Typography
@@ -316,25 +283,69 @@ const CompanyEditView = ({ id }) => {
                   mb: 2,
                 }}
               >
-                Package History
+                Brand Information
               </Typography>
               <Button
                 variant="outlined"
                 sx={{
                   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                 }}
-                // onClick={dialog.onTrue}
-                disabled={currentPackage?.states === 'inactive' && currentPackage ? false : true}
+                onClick={dialog.onTrue}
               >
-                Renew Package
+                Create new brand
               </Button>
             </Stack>
-            {!history.isLoading && (
-              <PackageHistoryList dataFiltered={history?.data} onClose={onClose} />
-            )}
+
+            <BrandEditLists dataFiltered={company?.brand} onClose={onClose} />
           </Card>
-        </Box>
-      )}
+        )}
+
+        <Card sx={{ my: 3, p: 2, borderRadius: 1 }}>
+          {!history.data.length ? (
+            <Stack spacing={2} alignItems="center">
+              <Typography variant="subtitle1" color="text.secondary">
+                No package is connected
+              </Typography>
+              <Button
+                variant="outlined"
+                sx={{ boxShadow: '0px -3px 0px 0px #E7E7E7 inset' }}
+                startIcon={<Iconify icon="bx:package" width={22} />}
+                onClick={packageDialog.onTrue}
+              >
+                Connect package
+              </Button>
+            </Stack>
+          ) : (
+            <>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography
+                  sx={{
+                    fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                    fontSize: 30,
+                    fontWeight: 'normal',
+                    mb: 2,
+                  }}
+                >
+                  Package History
+                </Typography>
+
+                <Button
+                  variant="outlined"
+                  sx={{
+                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                  }}
+                  // onClick={dialog.onTrue}
+                  disabled={!(currentPackage?.status === 'inactive' && currentPackage)}
+                >
+                  Renew Package
+                </Button>
+              </Stack>
+
+              <PackageHistoryList dataFiltered={history.data} />
+            </>
+          )}
+        </Card>
+      </Box>
 
       {/* Create new brand dialog */}
       <Dialog open={dialog.value}>
@@ -342,6 +353,10 @@ const CompanyEditView = ({ id }) => {
           <CreateBrand companyId={company?.id} onClose={onClose} />
         </DialogContent>
       </Dialog>
+
+      {/* <PackageCreate open={packageDialog.value} onClose={packageDialog.onFalse} /> */}
+
+      <PackageCreateDialog packageDialog={packageDialog} companyId={id} />
     </Container>
   );
 };

@@ -43,10 +43,6 @@ const BrandLists = ({ dataFiltered }) => {
   const [filters, setFilters] = useState(defaultFilters);
   const confirm = useBoolean();
 
-
-  console.log('datafiltered', dataFiltered);
-  
- 
   const denseHeight = table.dense ? 56 : 56 + 20;
 
   const canReset = !isEqual(defaultFilters, filters);
@@ -56,7 +52,6 @@ const BrandLists = ({ dataFiltered }) => {
     comparator: getComparator(table.order, table.orderBy),
     filters,
   });
-
 
   const notFound = (!filteredData?.length && canReset) || !filteredData?.length;
 

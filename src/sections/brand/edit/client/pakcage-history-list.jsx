@@ -1,25 +1,22 @@
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 
 import {
   Card,
   Table,
-  Dialog,
-  Tooltip,
-  TableBody,
-  IconButton,
-  DialogContent,
-  TableContainer,
-  TableHead,
   TableRow,
+  TableBody,
+  TableHead,
   TableCell,
+  TableContainer,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Scrollbar from 'src/components/scrollbar';
 import { useTable, TableNoData, getComparator, TableSelectedAction } from 'src/components/table';
+
 import PackageHistoryRow from './package-history-row';
 
 const defaultFilters = {
@@ -29,22 +26,18 @@ const defaultFilters = {
 const TABLE_HEAD = [
   { id: 'name', label: '', width: 180 },
   { id: 'id', label: 'id', width: 88 },
-  //   { id: 'name', label: '', width: 180 },
   { id: 'type', label: 'Type', width: 220 },
   { id: 'value', label: 'Value', width: 180 },
-  //   { id: 'valueSGD', label: 'valueSGD', width: 100 },
   { id: 'UgcCredits', label: 'Total credits', width: 100 },
-  { id: 'remaining credits', label: 'remaining', width: 88 },
-  { id: 'Validity', label: 'time left ', width: 100 },
-  { id: 'status', label: 'status ', width: 50 },
-  //   { id: '', label: 'UGC', width: 88 },
+  { id: 'remaining credits', label: 'Credits Remaining', width: 88 },
+  { id: 'Validity', label: 'Validity', width: 100 },
+  { id: 'status', label: 'Status ', width: 50 },
 ];
 
 const PackageHistoryList = ({ dataFiltered }) => {
   const table = useTable();
   const [filters, setFilters] = useState(defaultFilters);
   const confirm = useBoolean();
-  const editDialog = useBoolean();
 
   const denseHeight = table.dense ? 56 : 56 + 20;
 
@@ -58,56 +51,18 @@ const PackageHistoryList = ({ dataFiltered }) => {
 
   const notFound = (!filteredData?.length && canReset) || !filteredData?.length;
 
-  const handleFilters = useCallback(
-    (type, value) => {
-      table.onResetPage();
-      setFilters((prevState) => ({
-        ...prevState,
-        [type]: value,
-      }));
-    },
-    [table]
-  );
-  console.log(filteredData);
-
-  //   const handleDeleteRow = useCallback((id) => {
-  //     console.log(id);
-  //   }, []);
-
-  //   const handleEditRow = useCallback(
-  //     (data) => {
-  //       setBrandData(data);
-  //       editDialog.onTrue();
-  //     },
-  //     [editDialog]
-  //   );
-
   return (
     <Card>
       <TableContainer sx={{ maxHeight: 500 }}>
         <Scrollbar>
           <Table>
-            {/* <TableHeadCustom
-              head={TABLE_HEAD}
-              denseHeight={denseHeight}
-              table={table}
-            //   filters={filters}
-            //   onFilters={handleFilters}
-            /> */}
             <TableHead>
               <TableRow>
-                {TABLE_HEAD.map((item) => {
-                  return (
-                    <TableCell
-                      key={item.id}
-                      align={'left'}
-                      // sortDirection={orderBy === headCell.id ? order : false}
-                      //   sx={{ width: headCell.width, minWidth: headCell.minWidth }}
-                    >
-                      {item.label}
-                    </TableCell>
-                  );
-                })}
+                {TABLE_HEAD.map((item) => (
+                  <TableCell key={item.id} align="left">
+                    {item.label}
+                  </TableCell>
+                ))}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -119,16 +74,13 @@ const PackageHistoryList = ({ dataFiltered }) => {
                 />
               ) : (
                 <>
-                  {' '}
-                  {dataFiltered?.map((e) => {
-                    return (
-                      <PackageHistoryRow
-                        row={e}
-                        key={e.id}
-                        selected={table.selected.includes(e.type)}
-                      />
-                    );
-                  })}
+                  {dataFiltered?.map((e) => (
+                    <PackageHistoryRow
+                      row={e}
+                      key={e.id}
+                      selected={table.selected.includes(e.type)}
+                    />
+                  ))}
                 </>
               )}
             </TableBody>
@@ -137,16 +89,6 @@ const PackageHistoryList = ({ dataFiltered }) => {
       </TableContainer>
 
       <TableSelectedAction selected={table.selected.length} onDelete={() => confirm.onTrue()} />
-
-      {/* <TablePaginationCustom
-        count={filteredData.length}
-        page={table.page}
-        rowsPerPage={table.rowsPerPage}
-        onPageChange={table.onChangePage}
-        onRowsPerPageChange={table.onChangeRowsPerPage}
-        dense={table.dense}
-        onChangeDense={table.onChangeDense}
-      /> */}
     </Card>
   );
 };

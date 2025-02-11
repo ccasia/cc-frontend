@@ -4,12 +4,14 @@ import { Button, Container } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
+import useGetPackages from 'src/hooks/use-get-packges';
+
 import Iconify from 'src/components/iconify';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
-import useGetPackages from 'src/hooks/use-get-packges';
-import PackageLists from './packages-list';
-import PackageCreate from './package-create';
-import PackageEdit from './package-edit';
+
+import PackageEdit from '../package-edit';
+import PackageLists from '../packages-list';
+import PackageCreate from '../package-create';
 
 const pakcagesArray = [
   {
@@ -54,6 +56,7 @@ const Packages = () => {
   const { data, isLoading } = useGetPackages();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
+
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -69,6 +72,9 @@ const Packages = () => {
             variant="contained"
             onClick={() => setOpen(true)}
             startIcon={<Iconify icon="mingcute:add-fill" />}
+            sx={{
+              borderRadius: 0.5,
+            }}
           >
             Create new Package
           </Button>

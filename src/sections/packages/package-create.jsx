@@ -1,22 +1,22 @@
 import React from 'react';
-import { useForm, Controller, FormProvider } from 'react-hook-form';
+import * as Yup from 'yup';
+import PropTypes from 'prop-types';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, FormProvider } from 'react-hook-form';
+
 import {
   Box,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Stack,
+  Button,
+  Dialog,
   Typography,
   IconButton,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
+
 import Iconify from 'src/components/iconify';
-import * as Yup from 'yup';
 import { RHFTextField } from 'src/components/hook-form';
-import PropTypes from 'prop-types';
 
 const packageSchema = Yup.object().shape({
   packageName: Yup.string().required('Package Name is required'),
@@ -53,7 +53,6 @@ const PackageCreate = ({ open, onClose }) => {
   });
 
   const {
-    control,
     handleSubmit,
     formState: { errors },
   } = methods;
@@ -100,82 +99,6 @@ const PackageCreate = ({ open, onClose }) => {
               sm: 'repeat(2, 1fr)',
             }}
           >
-            {/* <Controller
-              name="packageName"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Package Name"
-                  error={!!errors.packageName}
-                  helperText={errors.packageName ? errors.packageName.message : ''}
-                />
-              )}
-            />
-            <Controller
-              name="packageType"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Package Type"
-                  error={!!errors.packageType}
-                  helperText={errors.packageType ? errors.packageType.message : ''}
-                />
-              )}
-            />
-            <Controller
-              name="valueMYR"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Value in MYR"
-                  type="number"
-                  error={!!errors.valueMYR}
-                  helperText={errors.valueMYR ? errors.valueMYR.message : ''}
-                />
-              )}
-            />
-            <Controller
-              name="valueSGD"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Value in SGD"
-                  type="number"
-                  error={!!errors.valueSGD}
-                  helperText={errors.valueSGD ? errors.valueSGD.message : ''}
-                />
-              )}
-            />
-            <Controller
-              name="totalUGCCredits"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Total UGC Credits"
-                  type="number"
-                  error={!!errors.totalUGCCredits}
-                  helperText={errors.totalUGCCredits ? errors.totalUGCCredits.message : ''}
-                />
-              )}
-            />
-            <Controller
-              name="validityPeriod"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Validity Period"
-                  type="number"
-                  error={!!errors.validityPeriod}
-                  helperText={errors.validityPeriod ? errors.validityPeriod.message : ''}
-                />
-              )}
-            /> */}
             <RHFTextField
               name="packageName"
               label="Package Name"
@@ -222,12 +145,6 @@ const PackageCreate = ({ open, onClose }) => {
               Cancel
             </Button>
             <Box mr={1} />
-            {/* <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              onClick={handleSubmit(onSubmit)}
-            > */}
 
             <Button
               type="submit"
