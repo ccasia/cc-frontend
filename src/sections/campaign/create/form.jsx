@@ -148,9 +148,6 @@ function CreateCampaignForm({ onClose }) {
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    // campaignIndustries: Yup.array()
-    //   .min(1, 'At least one industry is required')
-    //   .required('Campaign Industry is required.'),
     campaignIndustries: Yup.string().required('Campaign industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string().required('Campaign title is required'),
@@ -284,17 +281,7 @@ function CreateCampaignForm({ onClose }) {
     campaignImages: [],
     adminManager: [],
     agreementFrom: null,
-    timeline: [
-      // {
-      //   timeline_type: {},
-      //   id: '',
-      //   duration: undefined,
-      //   for: 'creator',
-      //   startDate: '',
-      //   endDate: '',
-      //   isSubmissionNeeded: false,
-      // },
-    ],
+    timeline: [],
     campaignTasksAdmin: [],
     campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
     otherAttachments: [],
@@ -499,8 +486,6 @@ function CreateCampaignForm({ onClose }) {
   const startDate = getValues('campaignStartDate');
   const campaignStartDate = watch('campaignStartDate');
 
-  console.log(errors);
-
   return (
     <Box>
       <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -624,7 +609,7 @@ function CreateCampaignForm({ onClose }) {
           </Stack>
         </Stack>
 
-        <Box sx={{ height: '85vh', overflow: 'auto', mt: 1 }}>
+        <Box sx={{ height: '85vh', overflow: 'auto', mt: 1, scrollbarWidth: 'thin' }}>
           <Box
             sx={{
               display: 'flex',

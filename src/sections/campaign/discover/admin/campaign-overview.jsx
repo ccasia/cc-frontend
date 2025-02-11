@@ -25,6 +25,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
+
 import PitchModal from './pitch-modal';
 
 const BoxStyle = {
@@ -78,6 +80,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const dialog = useBoolean();
   const [localCampaign, setLocalCampaign] = useState(campaign);
+  const client = campaign?.company;
 
   useEffect(() => {
     setLocalCampaign(campaign);
@@ -516,6 +519,63 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Box>
         </Zoom>
       </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Zoom in>
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify icon="noto:letter-c" width={20} />
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Credits Tracking
+                </Typography>
+              </Stack>
+            </Box>
+
+            <Stack spacing={[1]}>
+              {campaign?.campaignCredits ? (
+                <Stack spacing={1} color="text.secondary">
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2">Campaign Credits</Typography>
+                    <Typography variant="subtitle2">
+                      {campaign?.campaignCredits} UGC Credits
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2">Credits Utilized</Typography>
+                    <Typography variant="subtitle2">
+                      {client?.PackagesClient[0]?.creditsUtilized} UGC Credits
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2">Credits Pending</Typography>
+                    <Typography variant="subtitle2">
+                      {(campaign?.campaignCredits ?? 0) -
+                        (client?.PackagesClient?.[0]?.creditsUtilized ?? 0)}{' '}
+                      UGC Credits
+                    </Typography>
+                  </Stack>
+                </Stack>
+              ) : (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}
+                >
+                  Not connected to any package
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+        </Zoom>
+      </Grid>
+
       <Dialog open={dialog.value} onClose={dialog.onFalse}>
         <DialogTitle>Decline Pitch</DialogTitle>
         <DialogContent>
@@ -530,6 +590,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
       <PitchModal
         pitch={selectedPitch}
         open={openPitchModal}

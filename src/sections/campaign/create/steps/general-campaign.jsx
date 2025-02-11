@@ -1,5 +1,6 @@
 import useSWR from 'swr';
 import React, { memo, useEffect } from 'react';
+import { useFormContext } from 'react-hook-form';
 
 import { Box, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
 
@@ -30,6 +31,7 @@ const FormField = ({ label, children }) => (
 
 const GeneralCampaign = () => {
   const { data, isLoading, mutate } = useSWR(endpoints.campaign.total, fetcher);
+  const { setValue } = useFormContext();
 
   useEffect(() => {
     if (socket) {
@@ -40,6 +42,10 @@ const GeneralCampaign = () => {
 
     return () => socket.off('campaign');
   }, [mutate]);
+
+  useEffect(() => {
+    setValue('campaignId', `C${data + 1 < 10 ? `0${data + 1}` : data + 1}`);
+  }, [setValue, data]);
 
   return (
     <>
