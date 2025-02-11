@@ -63,6 +63,8 @@ const FirstDraft = ({ campaign, submission, creator }) => {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const { user } = useAuthContext();
 
+
+  console.log("submissions", submission)
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
     type: Yup.string(),
@@ -282,7 +284,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
             Are you sure you want to submit this change request?
           </DialogContentText>
 
-          {/* Show selected reasons if any */}
           {watch('reasons')?.length > 0 && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -683,6 +684,81 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                         borderColor: 'divider',
                       }}
                     >
+                            {submission.publicFeedback
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                        .map((feedback, index) => (
+                          <Box
+                            key={index}
+                            mb={2}
+                            p={2}
+                            border={1}
+                            borderColor="grey.300"
+                            borderRadius={1}
+                            display="flex"
+                            alignItems="flex-start"
+                            flexDirection="column"
+                          >
+                            {/* Title for Client Feedback */}
+                            <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: 2  }}>
+                              Client Feedback
+                            </Typography>
+                            {/* Use company logo or fallback avatar */}
+                            <Avatar
+                              src={campaign?.company?.logoURL || '/default-avatar.png'}
+                              alt={campaign?.company?.name || 'Company'}
+                              sx={{ mr: 2 , mb:2 }}
+                            />
+                            <Box flexGrow={1} sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                            
+                              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', marginBottom: '2px' }}>
+                                {campaign?.company?.name || 'Unknown Company'}
+                              </Typography>
+
+                              {/* Feedback Content */}
+                              <Box sx={{ textAlign: 'left', mt: 1 }}>
+                                {feedback.content.split('\n').map((line, i) => (
+                                  <Typography key={i} variant="body2">
+                                    {line}
+                                  </Typography>
+                                ))}
+
+                                {/* Display reasons if available */}
+                                {feedback.reasons && feedback.reasons.length > 0 && (
+                                  <Box mt={1} sx={{ textAlign: 'left' }}>
+                                    <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                      {feedback.reasons.map((reason, idx) => (
+                                        <Box
+                                          key={idx}
+                                          sx={{
+                                            border: '1.5px solid #e7e7e7',
+                                            borderBottom: '4px solid #e7e7e7',
+                                            borderRadius: 1,
+                                            p: 0.5,
+                                            display: 'inline-flex',
+                                          }}
+                                        >
+                                          <Chip
+                                            label={reason}
+                                            size="small"
+                                            color="default"
+                                            variant="outlined"
+                                            sx={{
+                                              border: 'none',
+                                              color: '#8e8e93',
+                                              fontSize: '0.75rem',
+                                              padding: '1px 2px',
+                                            }}
+                                          />
+                                        </Box>
+                                      ))}
+                                    </Stack>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Box>
+                          </Box>
+                        ))}
+                        
                       {type === 'approve' && (
                         <FormProvider methods={methods} onSubmit={onSubmit}>
                           <Stack gap={1} mb={2}>
@@ -787,6 +863,10 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                           {confirmationApproveModal(approve.value, approve.onFalse)}
                         </FormProvider>
                       )}
+
+
+                
+
                       {type === 'request' && (
                         <>
                           <Typography variant="h6" mb={1} mx={1}>
