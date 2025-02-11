@@ -5,8 +5,15 @@ import { LoadingScreen } from 'src/components/loading-screen';
 
 
 const PublicMediaKitPage = lazy(() => import('src/pages/public/creator/mediaKit'));
-const PublicAccessDummyPage = lazy(() => import('src/sections/public-access/dummy'));
+//  const PublicAccessDummyPage = lazy(() => import('src/sections/public-access/dummy'));
 const PublicAccessPage = lazy(() => import('src/sections/public-access/public-access-page'))
+
+const PublicManageCreatorView = lazy (() => import('src/sections/public-access/publicCreatorManage'))
+
+
+const CampaignManageCreatorView = lazy(
+  () => import('src/pages/dashboard/campaign/admin/creator/campaign-manage-creator')
+);
 
 // ----------------------------------------------------------------------
 
@@ -24,11 +31,10 @@ export const publicRoutes = [
         element: <PublicMediaKitPage />,
       },
       {
-        path: 'access', 
+        path: 'campaign/discover/detail/:campaignId/creator/:creatorId',
         element: (
         <Suspense fallback={<LoadingScreen />}>
-         {/* <PublicAccessPage/> */}
-          <PublicAccessDummyPage/> 
+         <PublicManageCreatorView/> 
         </Suspense>
         ),
       },

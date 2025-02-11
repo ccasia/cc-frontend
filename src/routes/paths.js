@@ -111,5 +111,9 @@ export const paths = {
     creator: {
       mediaKit: (id) => `${ROOTS.PUBLIC}/media-kits/creator/${id}`,
     },
+    manageCreator: (campaignId, creatorId, params) => {
+      const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+      return `${ROOTS.PUBLIC}/campaign/discover/detail/${campaignId}/creator/${creatorId}${queryString}`;
+    },
   },
 };
