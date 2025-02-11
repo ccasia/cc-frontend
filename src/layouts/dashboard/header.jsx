@@ -1,3 +1,4 @@
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 
 import Stack from '@mui/material/Stack';
@@ -13,8 +14,9 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { bgBlur } from 'src/theme/css';
 
 import Logo from 'src/components/logo';
+import Iconify from 'src/components/iconify';
 // import ContactsPopover from '../common/contacts-popover';
-import SvgColor from 'src/components/svg-color';
+import { varHover } from 'src/components/animate';
 import { useSettingsContext } from 'src/components/settings';
 
 import { HEADER } from '../config-layout';
@@ -65,9 +67,42 @@ export default function Header({ onOpenNav, isOnline }) {
     <>
       {lgUp && isNavHorizontal && <Logo sx={{ mr: 2.5 }} />}
 
-      {!lgUp && (
+      {/* {!lgUp && (
         <IconButton onClick={onOpenNav}>
           <SvgColor src="/assets/icons/navbar/ic_menu_item.svg" />
+        </IconButton>
+      )} */}
+
+      {!lgUp && (
+        <IconButton
+          sx={{
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '6px 10px 9px',
+            gap: '2px',
+            width: '40px',
+            height: '40px',
+            background: '#FFFFFF',
+            border: '1px solid #E8E8E8',
+            boxShadow: 'inset 0px -3px 0px #E7E7E7',
+            borderRadius: '8px',
+            '& .MuiBadge-dot': {
+              top: '5px',
+              right: '5px',
+              border: '1px solid #FFFFFF',
+              borderRadius: '500px',
+            },
+          }}
+          component={m.button}
+          whileTap="tap"
+          whileHover="hover"
+          variants={varHover(1.05)}
+          onClick={onOpenNav}
+        >
+          <Iconify icon="stash:burger-classic-duotone" width={20} color="blue" />
         </IconButton>
       )}
 
@@ -94,7 +129,7 @@ export default function Header({ onOpenNav, isOnline }) {
     <>
       <AppBar
         sx={{
-          position: lgUp && 'absolute',
+          position: 'absolute',
           borderBottom: 1,
           borderBottomColor: theme.palette.divider,
           height: HEADER.H_MOBILE,

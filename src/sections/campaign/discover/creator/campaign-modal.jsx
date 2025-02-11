@@ -521,7 +521,7 @@ const CampaignModal = ({
                 justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
                 sx={{ mt: { xs: 1.5, sm: 0 } }}
               >
-                {!isFormCompleted ? (
+                {!isFormCompleted || !user?.paymentForm?.bankAccountName ? (
                   <Button
                     variant="contained"
                     onClick={dialog.onTrue}
@@ -724,23 +724,23 @@ const CampaignModal = ({
                   },
                   overflow: {
                     xs: 'visible',
-                    md: 'auto'
+                    md: 'auto',
                   },
                   pb: 3,
                   '&::-webkit-scrollbar': {
-                    width: '8px'
+                    width: '8px',
                   },
                   '&::-webkit-scrollbar-track': {
                     background: '#f1f1f1',
-                    borderRadius: '4px'
+                    borderRadius: '4px',
                   },
                   '&::-webkit-scrollbar-thumb': {
                     background: '#888',
-                    borderRadius: '4px'
+                    borderRadius: '4px',
                   },
                   '&::-webkit-scrollbar-thumb:hover': {
-                    background: '#555'
-                  }
+                    background: '#555',
+                  },
                 }}
               >
                 <Stack spacing={2}>
@@ -810,7 +810,7 @@ const CampaignModal = ({
                             wordWrap: 'break-word',
                             overflowWrap: 'break-word',
                             whiteSpace: 'pre-wrap',
-                            maxWidth: '100%'
+                            maxWidth: '100%',
                           }}
                         >
                           {campaign?.description}
@@ -859,13 +859,15 @@ const CampaignModal = ({
                               flexShrink: 0,
                             }}
                           />
-                          <Typography variant="body2"
-                          sx={{
-                            wordWrap: 'break-word',  
-                            overflowWrap: 'break-word', 
-                            whiteSpace: 'pre-wrap', 
-                            maxWidth: '100%' 
-                          }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              wordWrap: 'break-word',
+                              overflowWrap: 'break-word',
+                              whiteSpace: 'pre-wrap',
+                              maxWidth: '100%',
+                            }}
+                          >
                             {campaign?.campaignBrief?.objectives}
                           </Typography>
                         </Stack>
@@ -960,8 +962,7 @@ const CampaignModal = ({
                             </Typography>
                           </Stack>
                         </Box>
-                        <Stack spacing={1} 
-                        sx={{ pl: 0.5 }}>
+                        <Stack spacing={1} sx={{ pl: 0.5 }}>
                           {campaign?.campaignBrief?.campaigns_do?.map((item, index) => (
                             <Stack key={index} direction="row" spacing={1} alignItems="center">
                               <Iconify
@@ -973,13 +974,17 @@ const CampaignModal = ({
                                   flexShrink: 0,
                                 }}
                               />
-                              <Typography variant="body2"   
+                              <Typography
+                                variant="body2"
                                 sx={{
-                                wordWrap: 'break-word',  
-                                overflowWrap: 'break-word', 
-                                whiteSpace: 'pre-wrap', 
-                                maxWidth: '100%' 
-                              }}>{item.value}</Typography>
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  whiteSpace: 'pre-wrap',
+                                  maxWidth: '100%',
+                                }}
+                              >
+                                {item.value}
+                              </Typography>
                             </Stack>
                           ))}
                         </Stack>
@@ -1029,13 +1034,17 @@ const CampaignModal = ({
                                   flexShrink: 0,
                                 }}
                               />
-                              <Typography variant="body2" 
-                              sx={{
-                                wordWrap: 'break-word',  
-                                overflowWrap: 'break-word', 
-                                whiteSpace: 'pre-wrap', 
-                                maxWidth: '100%' 
-                              }}>{item.value}</Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  whiteSpace: 'pre-wrap',
+                                  maxWidth: '100%',
+                                }}
+                              >
+                                {item.value}
+                              </Typography>
                             </Stack>
                           ))}
                         </Stack>
@@ -1054,7 +1063,9 @@ const CampaignModal = ({
                 display: { xs: 'none', md: 'block' },
                 mr: '-1px',
                 mt: '-8px',
-                height: { md: 'calc(98vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))' },
+                height: {
+                  md: 'calc(98vh - 470px - min(80px, max(0px, var(--campaign-name-height, 0px))))',
+                },
               }}
             />
 
@@ -1070,23 +1081,23 @@ const CampaignModal = ({
                   },
                   overflow: {
                     xs: 'visible',
-                    md: 'auto'
+                    md: 'auto',
                   },
                   pb: 3,
                   '&::-webkit-scrollbar': {
-                    width: '8px'
+                    width: '8px',
                   },
                   '&::-webkit-scrollbar-track': {
                     background: '#f1f1f1',
-                    borderRadius: '4px'
+                    borderRadius: '4px',
                   },
                   '&::-webkit-scrollbar-thumb': {
                     background: '#888',
-                    borderRadius: '4px'
+                    borderRadius: '4px',
                   },
                   '&::-webkit-scrollbar-thumb:hover': {
-                    background: '#555'
-                  }
+                    background: '#555',
+                  },
                 }}
               >
                 <Stack spacing={2}>
@@ -1132,14 +1143,14 @@ const CampaignModal = ({
                       >
                         User Persona
                       </Typography>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
+                      <Typography
+                        variant="body2"
+                        sx={{
                           fontWeight: 420,
-                          wordWrap: 'break-word',  
-                          overflowWrap: 'break-word', 
-                          whiteSpace: 'pre-wrap', 
-                          maxWidth: '100%' 
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                          maxWidth: '100%',
                         }}
                       >
                         {campaign?.campaignRequirement?.user_persona}

@@ -136,17 +136,6 @@ export default function KanbanView() {
 
       {boardLoading && renderSkeleton}
 
-      {/* {boardEmpty && (
-        <EmptyContent
-          filled
-          title="No Data"
-          sx={{
-            py: 10,
-            maxHeight: { md: 480 },
-          }}
-        />
-      )} */}
-      {/* <Box sx={{ maxHeight: '75vh', overflow: 'hidden' }}> */}
       {!!board?.columns.length && (
         <DragDropContext
           onDragEnd={onDragEnd}

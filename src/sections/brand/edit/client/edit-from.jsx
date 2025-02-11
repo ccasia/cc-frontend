@@ -3,15 +3,14 @@ import React, { useCallback } from 'react';
 import { Controller } from 'react-hook-form';
 import { formatIncompletePhoneNumber } from 'libphonenumber-js';
 
-import { Box, Stack, Button, TextField, Typography, IconButton } from '@mui/material';
+import { Box, Stack, TextField } from '@mui/material';
 
 // import { Box, Stack, Button, TextField, Typography } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
 import { RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
 
 const CompanyEditForm = ({ company, fieldsArray, methods }) => {
-  const { fields, append, control, remove } = fieldsArray;
+  const { control } = fieldsArray;
 
   const { setValue } = methods;
 
@@ -74,7 +73,7 @@ const CompanyEditForm = ({ company, fieldsArray, methods }) => {
         <RHFTextField name="companyRegistrationNumber" label="Company registration number" />
       </Box>
 
-      <Typography variant="h5">Objectives</Typography>
+      {/* <Typography variant="h5">Objectives</Typography>
 
       <Stack spacing={2}>
         {fields.map((elem, index) => (
@@ -100,7 +99,7 @@ const CompanyEditForm = ({ company, fieldsArray, methods }) => {
         >
           +
         </Button>
-      </Stack>
+      </Stack> */}
     </Stack>
   );
 };

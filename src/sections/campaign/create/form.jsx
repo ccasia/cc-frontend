@@ -110,7 +110,7 @@ function CreateCampaignForm({ onClose }) {
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
-    productName: Yup.string().required('Product or Service name is required.'),
+    // productName: Yup.string().required('Product or Service name is required.'),
     audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
     audienceGender: Yup.array()
       .min(1, 'At least one option')
@@ -149,15 +149,12 @@ function CreateCampaignForm({ onClose }) {
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    // campaignIndustries: Yup.array()
-    //   .min(1, 'At least one industry is required')
-    //   .required('Campaign Industry is required.'),
     campaignIndustries: Yup.string().required('Campaign industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
-    productName: Yup.string().required('Product or Service name is required.'),
+    productName: Yup.string(),
   });
 
   const campaignRequirementSchema = Yup.object().shape({
@@ -210,14 +207,16 @@ function CreateCampaignForm({ onClose }) {
 
   const clientSchema = Yup.object().shape({
     client: Yup.object().required('Client is required.'),
-    hasBrand: Yup.bool(),
     campaignBrand: Yup.object()
       .nullable()
-      .when('hasBrand', {
-        is: true,
+      .when('client', {
+        is: (val) => val === 'agency',
         then: (s) => s.required('Brand is required.'),
         otherwise: (s) => s,
       }),
+    campaignCredits: Yup.number()
+      .min(1, 'Minimum need to be 1')
+      .required('Campaign credits is required'),
   });
 
   const agreementSchema = Yup.object().shape({
@@ -290,17 +289,7 @@ function CreateCampaignForm({ onClose }) {
     campaignImages: [],
     adminManager: [],
     agreementFrom: null,
-    timeline: [
-      // {
-      //   timeline_type: {},
-      //   id: '',
-      //   duration: undefined,
-      //   for: 'creator',
-      //   startDate: '',
-      //   endDate: '',
-      //   isSubmissionNeeded: false,
-      // },
-    ],
+    timeline: [],
     campaignTasksAdmin: [],
     campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
     otherAttachments: [],
@@ -309,13 +298,14 @@ function CreateCampaignForm({ onClose }) {
     deliverables: ['UGC_VIDEOS'], 
     rawFootage: false,
     photos: false,
+    campaignCredits: null,
   };
 
   const methods = useForm({
     resolver: yupResolver(getSchemaForStep(activeStep)),
     defaultValues,
-    reValidateMode: 'onChange',
     mode: 'onChange',
+    // reValidateMode: 'onChange',
   });
 
   const {
@@ -326,7 +316,7 @@ function CreateCampaignForm({ onClose }) {
     setValue,
     watch,
     trigger,
-    formState: { errors, isValid },
+    formState: { isValid, errors },
   } = methods;
 
   const values = watch();
@@ -516,15 +506,7 @@ function CreateCampaignForm({ onClose }) {
   const campaignStartDate = watch('campaignStartDate');
 
   return (
-    <Box
-    // sx={{
-    //   boxShadow: (theme) => theme.customShadows.z20,
-    //   borderRadius: '20px',
-    //   mt: 3,
-    //   bgcolor: 'background.paper',
-    //   p: { xs: 1, md: 3 },
-    // }}
-    >
+    <Box>
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <IconButton
@@ -635,12 +617,9 @@ function CreateCampaignForm({ onClose }) {
                 variant="contained"
                 sx={{
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                  // bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'whitesmoke' : 'black'),
-                  // '#3A3A3C',
-                  // color: (theme) => (theme.palette.mode === 'dark' ? 'black' : 'whitesmoke'),
                   py: 1,
                 }}
-                disabled={!isValid}
+                disabled={!isValid || errors?.campaignCredit}
                 onClick={handleNext}
               >
                 Next
@@ -649,7 +628,7 @@ function CreateCampaignForm({ onClose }) {
           </Stack>
         </Stack>
 
-        <Box sx={{ height: '85vh', overflow: 'auto', mt: 1 }}>
+        <Box sx={{ height: '85vh', overflow: 'auto', mt: 1, scrollbarWidth: 'thin' }}>
           <Box
             sx={{
               display: 'flex',
@@ -684,9 +663,7 @@ function CreateCampaignForm({ onClose }) {
             </Box>
           </Box>
         </Box>
-
-  
-
+               
         <Dialog
           open={confirmation.value}
           fullWidth
