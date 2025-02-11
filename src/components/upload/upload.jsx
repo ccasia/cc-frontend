@@ -50,6 +50,8 @@ export default function Upload({
 
   const hasError = isDragReject || !!error;
 
+  console.log(other);
+
   const renderPlaceholder = (
     <Box
       component="div"
@@ -108,7 +110,7 @@ export default function Upload({
           />
         </Box>
 
-        {Object.keys(other.accept).includes('application/vnd.ms-powerpoint') ? (
+        {Object.keys(other.accept).includes('application/msword') ? (
           <ListItemText
             primary="Choose a file or drag and drop here"
             secondary="Acceptable files: PDF, Powerpoint"
@@ -172,6 +174,8 @@ export default function Upload({
       </Stack>
     </Box>
   );
+
+  console.log(files);
 
   const renderSinglePreview = (
     <SingleFilePreview imgUrl={typeof file === 'string' ? file : file?.preview} />

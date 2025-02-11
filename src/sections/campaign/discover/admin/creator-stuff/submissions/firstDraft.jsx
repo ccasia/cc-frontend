@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable jsx-a11y/media-has-caption */
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
@@ -14,21 +15,20 @@ import Avatar from '@mui/material/Avatar';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
+  Tab,
   Grid,
   Chip,
+  Tabs,
   Paper,
   Stack,
-  Modal,
   Button,
   Dialog,
   Typography,
+  IconButton,
   DialogTitle,
   DialogActions,
   DialogContent,
   DialogContentText,
-  IconButton,
-  Tabs,
-  Tab,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -41,7 +41,6 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
-
 
 const options_changes = [
   'Missing caption requirements',
@@ -146,8 +145,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedVideo, setSelectedVideo] = useState(null);
 
-
-  console.log("submissions", submission)
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
     type: Yup.string(),
@@ -369,6 +366,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
             Are you sure you want to submit this change request?
           </DialogContentText>
 
+          {/* Show selected reasons if any */}
           {watch('reasons')?.length > 0 && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -495,12 +493,16 @@ const FirstDraft = ({ campaign, submission, creator }) => {
 
   const handlePrevImage = (event) => {
     event.stopPropagation();
-    setCurrentImageIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : submission.photos.length - 1));
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex > 0 ? prevIndex - 1 : submission.photos.length - 1
+    );
   };
 
   const handleNextImage = (event) => {
     event.stopPropagation();
-    setCurrentImageIndex((prevIndex) => (prevIndex < submission.photos.length - 1 ? prevIndex + 1 : 0));
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex < submission.photos.length - 1 ? prevIndex + 1 : 0
+    );
   };
 
   const handleVideoClick = (videoUrl) => {
@@ -513,11 +515,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <Box component={Paper} p={{ xs: 1, sm: 1.5 }}>
-            <Stack
-              direction="column"
-              spacing={2}
-              sx={{ mb: 3 }}
-            >
+            <Stack direction="column" spacing={2} sx={{ mb: 3 }}>
               <Stack spacing={0.5}>
                 <Stack direction="row" spacing={0.5}>
                   <Typography
@@ -689,21 +687,20 @@ const FirstDraft = ({ campaign, submission, creator }) => {
             </Modal> */}
 
             {submission?.status === 'NOT_STARTED' && <EmptyContent title="No Submission" />}
-            {submission?.status === 'IN_PROGRESS' && 
-              !submission?.content && 
-              !submission?.videos?.length && 
-              !submission?.photos?.length && 
+            {submission?.status === 'IN_PROGRESS' &&
+              !submission?.content &&
+              !submission?.videos?.length &&
+              !submission?.photos?.length &&
               !submission?.rawFootages?.length && (
-              <EmptyContent title="Creator has not uploaded any deliverables yet." />
-            )}
-            {(submission?.status === 'PENDING_REVIEW' || 
-              submission?.status === 'APPROVED' || 
-              (submission?.status === 'IN_PROGRESS' && (
-                submission?.content || 
-                submission?.videos?.length > 0 || 
-                submission?.photos?.length > 0 || 
-                submission?.rawFootages?.length > 0
-              ))) && (
+                <EmptyContent title="Creator has not uploaded any deliverables yet." />
+              )}
+            {(submission?.status === 'PENDING_REVIEW' ||
+              submission?.status === 'APPROVED' ||
+              (submission?.status === 'IN_PROGRESS' &&
+                (submission?.content ||
+                  submission?.videos?.length > 0 ||
+                  submission?.photos?.length > 0 ||
+                  submission?.rawFootages?.length > 0))) && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <Box
@@ -716,10 +713,10 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                     }}
                   >
                     {/* Tabs */}
-                    <Tabs 
-                      value={selectedTab} 
+                    <Tabs
+                      value={selectedTab}
                       onChange={(_, newValue) => setSelectedTab(newValue)}
-                      sx={{ 
+                      sx={{
                         '& .MuiTabs-indicator': {
                           display: 'none',
                         },
@@ -727,7 +724,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                           display: 'flex',
                         },
                         '& .MuiTab-root': {
-                          minHeight: '48px',  
+                          minHeight: '48px',
                           color: 'text.secondary',
                           flex: 1,
                           '&.Mui-selected': {
@@ -746,129 +743,12 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                         borderColor: 'divider',
                       }}
                     >
-//asdasd
-                            {submission.publicFeedback
-                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                        .map((feedback, index) => (
-                          <Box
-                            key={index}
-                            mb={2}
-                            p={2}
-                            border={1}
-                            borderColor="grey.300"
-                            borderRadius={1}
-                            display="flex"
-                            alignItems="flex-start"
-                            flexDirection="column"
-                          >
-                            {/* Title for Client Feedback */}
-                            <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: 2  }}>
-                              Client Feedback
-                            </Typography>
-                            {/* Use company logo or fallback avatar */}
-                            <Avatar
-                              src={campaign?.company?.logoURL || '/default-avatar.png'}
-                              alt={campaign?.company?.name || 'Company'}
-                              sx={{ mr: 2 , mb:2 }}
-                            />
-                            <Box flexGrow={1} sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                            
-                              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', marginBottom: '2px' }}>
-                                {campaign?.company?.name || 'Unknown Company'}
-                              </Typography>
-
-                              {/* Feedback Content */}
-                              <Box sx={{ textAlign: 'left', mt: 1 }}>
-                                {feedback.content.split('\n').map((line, i) => (
-                                  <Typography key={i} variant="body2">
-                                    {line}
-                                  </Typography>
-                                ))}
-
-                                {/* Display reasons if available */}
-                                {feedback.reasons && feedback.reasons.length > 0 && (
-                                  <Box mt={1} sx={{ textAlign: 'left' }}>
-                                    <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                                      {feedback.reasons.map((reason, idx) => (
-                                        <Box
-                                          key={idx}
-                                          sx={{
-                                            border: '1.5px solid #e7e7e7',
-                                            borderBottom: '4px solid #e7e7e7',
-                                            borderRadius: 1,
-                                            p: 0.5,
-                                            display: 'inline-flex',
-                                          }}
-                                        >
-                                          <Chip
-                                            label={reason}
-                                            size="small"
-                                            color="default"
-                                            variant="outlined"
-                                            sx={{
-                                              border: 'none',
-                                              color: '#8e8e93',
-                                              fontSize: '0.75rem',
-                                              padding: '1px 2px',
-                                            }}
-                                          />
-                                        </Box>
-                                      ))}
-                                    </Stack>
-                                  </Box>
-                                )}
-                              </Box>
-                            </Box>
-                          </Box>
-                        ))}
-                        
-                      {type === 'approve' && (
-                        <FormProvider methods={methods} onSubmit={onSubmit}>
-                          <Stack gap={1} mb={2}>
-                            <Typography variant="subtitle1" mb={1} mx={1}>
-                              Schedule This Post
-                            </Typography>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} gap={{ xs: 2, sm: 3 }}>
-                              <RHFDatePicker
-                                name="schedule.startDate"
-                                label="Start Date"
-                                minDate={dayjs()}
-                              />
-                              <RHFDatePicker
-                                name="schedule.endDate"
-                                label="End Date"
-                                minDate={dayjs(scheduleStartDate)}
-                              />
-                            </Stack>
-                          </Stack>
-                          <Typography variant="subtitle1" mb={1} mx={1}>
-                            Comments For Creator
-                          </Typography>
-                          <Stack gap={2}>
-                            <RHFTextField
-                              name="feedback"
-                              multiline
-                              minRows={5}
-                              placeholder="Comment"
-                            />
-                            <Stack
-                              alignItems={{ xs: 'stretch', sm: 'center' }}
-                              direction={{ xs: 'column', sm: 'row' }}
-                              gap={1.5}
-                              justifyContent="end"
-//asdasdsad
-                      <Tab 
-                        label="Video Draft" 
-                        value="video"
-                      />
-                      <Tab 
+                      <Tab label="Video Draft" value="video" />
+                      <Tab
                         label={`Raw Footages (${submission?.rawFootages?.length || 0})`}
                         value="rawFootages"
                       />
-                      <Tab 
-                        label={`Photos (${submission?.photos?.length || 0})`}
-                        value="photos"
-                      />
+                      <Tab label={`Photos (${submission?.photos?.length || 0})`} value="photos" />
                     </Tabs>
 
                     {/* Tab Content */}
@@ -876,7 +756,10 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                       {selectedTab === 'video' && (
                         <>
                           {/* Video Draft Section */}
-                          {(submission?.video?.length > 0 || submission?.videos?.[0]?.url || submission?.content || submission?.draftVideo?.[0]?.preview) ? (
+                          {submission?.video?.length > 0 ||
+                          submission?.videos?.[0]?.url ||
+                          submission?.content ||
+                          submission?.draftVideo?.[0]?.preview ? (
                             <Grid container spacing={2} sx={{ mb: 3 }}>
                               {submission.video.map((videoItem, index) => (
                                 <Grid item xs={12} key={videoItem.id || index}>
@@ -1047,7 +930,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                 bgcolor: 'background.neutral',
                                 mb: 4,
                               }}
-//asdasdasd
                             >
                               <Typography
                                 variant="caption"
@@ -1090,7 +972,10 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                     <Typography variant="subtitle1" mb={1} mx={1}>
                                       Schedule This Post
                                     </Typography>
-                                    <Stack direction={{ xs: 'column', sm: 'row' }} gap={{ xs: 2, sm: 3 }}>
+                                    <Stack
+                                      direction={{ xs: 'column', sm: 'row' }}
+                                      gap={{ xs: 2, sm: 3 }}
+                                    >
                                       <RHFDatePicker
                                         name="schedule.startDate"
                                         label="Start Date"
@@ -1193,7 +1078,11 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                   <Typography variant="h6" mb={1} mx={1}>
                                     Request Changes
                                   </Typography>
-                                  <FormProvider methods={methods} onSubmit={onSubmit} disabled={isDisabled}>
+                                  <FormProvider
+                                    methods={methods}
+                                    onSubmit={onSubmit}
+                                    disabled={isDisabled}
+                                  >
                                     <Stack gap={2}>
                                       <RHFMultiSelect
                                         name="reasons"
@@ -1284,30 +1173,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                         </>
                       )}
 
-                      {type === 'request' && (
-                        <>
-                          <Typography variant="h6" mb={1} mx={1}>
-                            Request Changes
-                          </Typography>
-                          <FormProvider methods={methods} onSubmit={onSubmit} disabled={isDisabled}>
-                            <Stack gap={2}>
-                              <RHFMultiSelect
-                                name="reasons"
-                                checkbox
-                                chip
-                                options={options_changes.map((item) => ({
-                                  value: item,
-                                  label: item,
-                                }))}
-                                label="Reasons"
-                              />
-                              <RHFTextField
-                                name="feedback"
-                                multiline
-                                minRows={5}
-                                placeholder="Feedback"
-                              />
-
                       {/* {selectedTab === 'rawFootages' && submission?.rawFootages?.length > 0 && (
                         <Grid container spacing={2}>
                           {submission.rawFootages.map((footage, index) => (
@@ -1361,7 +1226,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                         </Grid>
                       )} */}
 
-                        {selectedTab === 'rawFootages' && (
+                      {selectedTab === 'rawFootages' && (
                         <>
                           {submission?.rawFootages?.length > 0 ? (
                             <Grid container spacing={2}>
@@ -1419,8 +1284,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                           )}
                         </>
                       )}
-
-
 
                       {selectedTab === 'photos' && (
                         <>
