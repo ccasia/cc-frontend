@@ -25,6 +25,7 @@ import {
   DialogActions,
   CircularProgress,
   Grid,
+  LinearProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -144,6 +145,11 @@ const CampaignFirstDraft = ({
   const [uploadTypeModalOpen, setUploadTypeModalOpen] = useState(false);
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [draftVideoModalOpen, setDraftVideoModalOpen] = useState(false);
+  const [rawFootageModalOpen, setRawFootageModalOpen] = useState(false);
+  const [photosModalOpen, setPhotosModalOpen] = useState(false);
+  const [currentFile, setCurrentFile] = useState(null);
+  const [showUploadSuccess, setShowUploadSuccess] = useState(false);
 
   const methods = useForm({
     defaultValues: {
@@ -281,6 +287,23 @@ const handleDraftVideoDrop = useCallback((acceptedFiles) => {
     })
   );
 
+  // Show upload progress for each file
+  newFiles.forEach((file) => {
+    setCurrentFile(file);
+    setUploadProgress(0);
+    
+    // Simulate upload progress
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+  });
+
   // Append new files to the existing draftVideo array
   setValue('draftVideo', [...methods.getValues('draftVideo'), ...newFiles], {
     shouldValidate: true,
@@ -303,6 +326,23 @@ const handleRemoveDraftVideo = (fileToRemove) => {
       })
     );
   
+    // Show upload progress for each file
+    newFiles.forEach((file) => {
+      setCurrentFile(file);
+      setUploadProgress(0);
+      
+      // Simulate upload progress
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 200);
+    });
+
     // Append new files to the existing photos array
     setValue('photos', [...methods.getValues('photos'), ...newFiles], {
       shouldValidate: true,
@@ -325,6 +365,23 @@ const handleRemoveDraftVideo = (fileToRemove) => {
       })
     );
   
+    // Show upload progress for each file
+    newFiles.forEach((file) => {
+      setCurrentFile(file);
+      setUploadProgress(0);
+      
+      // Simulate upload progress
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 200);
+    });
+
     // Append new files to the existing rawFootage array
     setValue('rawFootage', [...methods.getValues('rawFootage'), ...newFiles], {
       shouldValidate: true,
@@ -459,6 +516,27 @@ const handleRemoveDraftVideo = (fileToRemove) => {
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
+  useEffect(() => {
+    if (progress === 100) {
+      setShowUploadSuccess(true);
+      // Delay hiding the upload progress UI
+      const timer = setTimeout(() => {
+        setShowUploadSuccess(false);
+        setIsProcessing(false);
+        reset();
+        setPreview('');
+        setProgressName('');
+        localStorage.removeItem('preview');
+        
+        if (socket) {
+          mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+        }
+      }, 2000); // 2 second delay
+
+      return () => clearTimeout(timer);
+    }
+  }, [progress, reset, campaign?.id, user?.id, socket]);
+
   const handleCancel = () => {
     if (isProcessing) {
       socket?.emit('cancel-processing', { submissionId: submission.id });
@@ -474,16 +552,53 @@ const handleRemoveDraftVideo = (fileToRemove) => {
   };
 
   const handleUploadTypeSelect = (type) => {
-    setOpenUploadModal(true);
+    // Check if submission is under review
+    if (submission?.status === 'PENDING_REVIEW') {
+      enqueueSnackbar('Cannot upload while submission is under review', { variant: 'warning' });
+      return;
+    }
+
+    // Check if this type is already uploaded
+    if (
+      (type === 'video' && submission?.video?.length > 0) ||
+      (type === 'rawFootage' && submission?.rawFootages?.length > 0) ||
+      (type === 'photos' && submission?.photos?.length > 0)
+    ) {
+      enqueueSnackbar(`${type} has already been uploaded`, { variant: 'warning' });
+      return;
+    }
+
+    switch (type) {
+      case 'video':
+        setDraftVideoModalOpen(true);
+        break;
+      case 'rawFootage':
+        setRawFootageModalOpen(true);
+        break;
+      case 'photos':
+        setPhotosModalOpen(true);
+        break;
+      default:
+        break;
+    }
     setUploadTypeModalOpen(false);
   };
 
   const handleUploadClick = () => {
+    if (submission?.status === 'PENDING_REVIEW') {
+      enqueueSnackbar('Cannot upload while submission is under review', { variant: 'warning' });
+      return;
+    }
     setUploadTypeModalOpen(true);
   };
 
-  const UploadFileTypeModal = ({ open, handleClose, onSelectType }) => {
+  const UploadFileTypeModal = ({ open, handleClose, onSelectType, campaign }) => {
     const smUp = useResponsive('up', 'sm');
+
+    // Get current submission status and uploaded files
+    const hasVideo = submission?.video?.length > 0;
+    const hasRawFootage = submission?.rawFootages?.length > 0;
+    const hasPhotos = submission?.photos?.length > 0;
 
     const fileTypes = [
       {
@@ -491,30 +606,66 @@ const handleRemoveDraftVideo = (fileToRemove) => {
         icon: 'solar:video-library-bold',
         title: 'Draft Video',
         description: 'Upload your main draft video for the campaign',
+        isUploaded: hasVideo,
+        disabled: hasVideo || submission?.status === 'PENDING_REVIEW',
       },
       {
         type: 'rawFootage',
         icon: 'solar:camera-bold',
         title: 'Raw Footage',
         description: 'Upload raw, unedited footage from your shoot',
+        isUploaded: hasRawFootage,
+        disabled: hasRawFootage || submission?.status === 'PENDING_REVIEW',
       },
       {
         type: 'photos',
         icon: 'solar:gallery-wide-bold',
         title: 'Photos',
         description: 'Upload photos from your campaign shoot',
+        isUploaded: hasPhotos,
+        disabled: hasPhotos || submission?.status === 'PENDING_REVIEW',
       },
     ];
+
+    // Filter based on campaign settings and submission status
+    const filteredFileTypes = fileTypes.filter((type) => {
+      if (type.type === 'rawFootage' && !campaign.rawFootage) return false;
+      if (type.type === 'photos' && !campaign.photos) return false;
+      return true;
+    });
 
     return (
       <Dialog open={open} fullScreen={!smUp} maxWidth="sm" fullWidth>
         <DialogTitle>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h4">What would you like to upload? 📤</Typography>
-            <IconButton onClick={handleClose}>
+          <Stack direction="row" alignItems="flex-start" gap={2}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: { xs: '1.8rem', sm: '2.4rem' },
+                fontWeight: 550,
+              }}
+            >
+              What would you like to upload? 📤
+            </Typography>
+
+            <IconButton
+              onClick={handleClose}
+              sx={{
+                ml: 'auto',
+                color: '#636366',
+              }}
+            >
               <Iconify icon="hugeicons:cancel-01" width={20} />
             </IconButton>
           </Stack>
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ mt: 1 }}
+          >
+            Submit all the deliverables so our admins can start reviewing your draft!
+          </Typography>
         </DialogTitle>
         <DialogContent>
           <Stack
@@ -525,44 +676,120 @@ const handleRemoveDraftVideo = (fileToRemove) => {
             pb={4}
             mt={1}
           >
-            {fileTypes.map((type) => (
+            {filteredFileTypes.map((type) => (
               <Box
                 key={type.type}
                 sx={{
+                  position: 'relative',
                   border: 1,
                   p: 2,
                   borderRadius: 2,
-                  borderColor: grey[100],
+                  borderColor: type.isUploaded ? '#5abc6f' : grey[100],
                   transition: 'all .2s ease',
-                  width: { xs: '100%', sm: 'auto' },
+                  width: { 
+                    xs: '100%', 
+                    sm: `${100 / filteredFileTypes.length}%` 
+                  },
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  opacity: type.disabled ? 0.5 : 1,
+                  cursor: type.disabled ? 'not-allowed' : 'pointer',
                   '&:hover': {
-                    borderColor: grey[700],
-                    cursor: 'pointer',
-                    transform: 'scale(1.05)',
+                    borderColor: type.disabled ? (type.isUploaded ? '#5abc6f' : grey[100]) : grey[700],
+                    transform: type.disabled ? 'none' : 'scale(1.05)',
                   },
                 }}
                 onClick={() => {
-                  handleClose();
-                  onSelectType(type.type);
+                  if (!type.disabled) {
+                    handleClose();
+                    onSelectType(type.type);
+                  }
                 }}
               >
-                <Avatar sx={{ bgcolor: '#203ff5' }}>
-                  <Iconify icon={type.icon} />
-                </Avatar>
-                <ListItemText
-                  sx={{ mt: 2 }}
-                  primary={type.title}
-                  secondary={type.description}
-                  primaryTypographyProps={{
-                    variant: 'body1',
-                    fontWeight: 'bold',
-                    gutterBottom: 1,
-                  }}
-                  secondaryTypographyProps={{
-                    color: 'text.secondary',
-                    lineHeight: 1.2,
-                  }}
-                />
+                {type.isUploaded && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -10,
+                      right: -10,
+                      bgcolor: '#5abc6f',
+                      borderRadius: '50%',
+                      width: 28,
+                      height: 28,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      zIndex: 1,
+                    }}
+                  >
+                    <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
+                  </Box>
+                )}
+                {type.disabled && submission?.status === 'PENDING_REVIEW' && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -10,
+                      right: -10,
+                      bgcolor: grey[500],
+                      borderRadius: '50%',
+                      width: 28,
+                      height: 28,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      zIndex: 1,
+                    }}
+                  >
+                    <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
+                  </Box>
+                )}
+                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <Avatar 
+                    sx={{ 
+                      bgcolor: type.isUploaded ? '#5abc6f' : '#203ff5',
+                      mb: 2 
+                    }}
+                  >
+                    <Iconify icon={type.icon} />
+                  </Avatar>
+                  
+                  <ListItemText
+                    sx={{ 
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                    primary={type.title}
+                    secondary={
+                      type.disabled && submission?.status === 'PENDING_REVIEW'
+                        ? 'Submission under review'
+                        : type.isUploaded
+                        ? 'Already uploaded'
+                        : type.description
+                    }
+                    primaryTypographyProps={{
+                      variant: 'body1',
+                      fontWeight: 'bold',
+                      gutterBottom: true,
+                      sx: { mb: 1 }
+                    }}
+                    secondaryTypographyProps={{
+                      color: 'text.secondary',
+                      lineHeight: 1.2,
+                      sx: { 
+                        minHeight: '2.4em',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }
+                    }}
+                  />
+                </Box>
               </Box>
             ))}
           </Stack>
@@ -570,6 +797,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
       </Dialog>
     );
   };
+
 
   const handleImageClick = (index) => {
     setCurrentImageIndex(index);
@@ -586,6 +814,389 @@ const handleRemoveDraftVideo = (fileToRemove) => {
 
   const handleNextImage = () => {
     setCurrentImageIndex((prevIndex) => (prevIndex + 1) % submission.photos.length);
+  };
+
+  const UploadDraftVideoModal = ({ open, onClose, campaign }) => {
+    const methods = useForm({
+      defaultValues: {
+        draftVideo: [],
+        caption: '',
+      },
+    });
+
+    const { handleSubmit, setValue } = methods;
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const onSubmit = handleSubmit(async (data) => {
+      try {
+        setIsSubmitting(true);
+        const formData = new FormData();
+        const newData = { caption: data.caption, submissionId: submission.id };
+        formData.append('data', JSON.stringify(newData));
+
+        // Handle multiple files
+        if (data.draftVideo && data.draftVideo.length > 0) {
+          data.draftVideo.forEach((file) => {
+            formData.append('draftVideo', file);
+          });
+        }
+
+        await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        enqueueSnackbar('Draft videos uploaded successfully');
+        onClose();
+        mutate(endpoints.kanban.root);
+        mutate(endpoints.campaign.creator.getCampaign(campaign.id));
+      } catch (error) {
+        console.error('Upload error:', error);
+        enqueueSnackbar('Failed to upload draft videos', { variant: 'error' });
+      } finally {
+        setIsSubmitting(false);
+      }
+    });
+
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
+        <Stack direction="row" alignItems="center" gap={2}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontFamily: 'Instrument Serif, serif',
+              fontSize: { xs: '1.8rem', sm: '2.4rem' },
+              fontWeight: 550,
+            }}
+          >
+            Upload Draft Videos
+          </Typography>
+          <IconButton
+            onClick={onClose}
+            sx={{
+              ml: 'auto',
+              color: '#636366',
+            }}
+          >
+            <Iconify icon="hugeicons:cancel-01" width={20} />
+          </IconButton>
+        </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
+          {campaign?.ads && (
+            <Box sx={{ mb: 2 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  color: 'warning.main',
+                  bgcolor: 'warning.lighter',
+                  p: 1.5,
+                  borderRadius: 1,
+                  fontWeight: 500
+                }}
+              >
+                <Iconify 
+                  icon="solar:bell-bing-bold-duotone" 
+                  width={16} 
+                  sx={{ mr: 0.5, verticalAlign: 'text-bottom' }}
+                />
+                UGC Video Drafts may also be used as Ads.
+              </Typography>
+            </Box>
+          )}
+          <FormProvider methods={methods}>
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+                  Upload Videos <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                </Typography>
+                <RHFUpload
+                  name="draftVideo"
+                  type="video"
+                  multiple
+                  accept={{ 'video/*': [] }}
+                />
+              </Box>
+              <RHFTextField
+                name="caption"
+                label="Caption"
+                multiline
+                rows={4}
+              />
+            </Stack>
+          </FormProvider>
+        </DialogContent>
+        <DialogActions sx={{ bgcolor: '#f4f4f4' }}>
+          <LoadingButton
+            fullWidth
+            loading={isSubmitting}
+            loadingPosition="center"
+            loadingIndicator={
+              <CircularProgress 
+                color="inherit" 
+                size={24} 
+              />
+            }
+            variant="contained"
+            onClick={onSubmit}
+            sx={{
+              bgcolor: '#203ff5',
+              color: 'white',
+              borderBottom: 3.5,
+              borderBottomColor: '#112286',
+              borderRadius: 1.5,
+              px: 2.5,
+              py: 1.2,
+              '&:hover': {
+                bgcolor: '#203ff5',
+                opacity: 0.9,
+              },
+            }}
+          >
+            Upload Videos
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
+  const UploadRawFootageModal = ({ open, onClose }) => {
+    const methods = useForm({
+      defaultValues: {
+        rawFootage: [],
+      },
+    });
+
+    const { handleSubmit, setValue } = methods;
+
+    const onSubmit = handleSubmit(async (data) => {
+      try {
+        const formData = new FormData();
+        const newData = { submissionId: submission.id }; // No caption needed
+        formData.append('data', JSON.stringify(newData));
+
+        if (data.rawFootage && data.rawFootage.length > 0) {
+          data.rawFootage.forEach((file) => {
+            formData.append('rawFootage', file);
+          });
+        }
+
+        await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        enqueueSnackbar('Raw footage uploaded successfully');
+        onClose();
+        mutate(endpoints.kanban.root);
+        mutate(endpoints.campaign.creator.getCampaign(campaign.id));
+      } catch (error) {
+        enqueueSnackbar('Failed to upload raw footage', { variant: 'error' });
+      }
+    });
+
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
+          <Stack direction="row" alignItems="center" gap={2}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: { xs: '1.8rem', sm: '2.4rem' },
+                fontWeight: 550,
+              }}
+            >
+              Upload Raw Footage
+            </Typography>
+            <IconButton
+              onClick={onClose}
+              sx={{
+                ml: 'auto',
+                color: '#636366',
+              }}
+            >
+              <Iconify icon="hugeicons:cancel-01" width={20} />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
+          <FormProvider methods={methods}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+                Upload Raw Footage <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+              </Typography>
+              <RHFUpload
+                name="rawFootage"
+                type="video"
+                multiple
+                onUploadSuccess={(files) => {
+                  setValue('rawFootage', files);
+                }}
+              />
+            </Box>
+          </FormProvider>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
+          <LoadingButton
+            fullWidth
+            variant="contained"
+            onClick={onSubmit}
+            sx={{
+              bgcolor: '#203ff5',
+              color: 'white',
+              borderBottom: 3.5,
+              borderBottomColor: '#112286',
+              borderRadius: 1.5,
+              px: 2.5,
+              py: 1.2,
+              '&:hover': {
+                bgcolor: '#203ff5',
+                opacity: 0.9,
+              },
+            }}
+          >
+            Upload Raw Footage
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
+  const UploadPhotosModal = ({ open, onClose }) => {
+    const methods = useForm({
+      defaultValues: {
+        photos: [],
+      },
+    });
+
+    const { handleSubmit, setValue } = methods;
+
+    const onSubmit = handleSubmit(async (data) => {
+      try {
+        const formData = new FormData();
+        const newData = { submissionId: submission.id }; // No caption needed
+        formData.append('data', JSON.stringify(newData));
+
+        if (data.photos && data.photos.length > 0) {
+          data.photos.forEach((file) => {
+            formData.append('photos', file);
+          });
+        }
+
+        await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        enqueueSnackbar('Photos uploaded successfully!');
+        onClose();
+        mutate(endpoints.kanban.root);
+        mutate(endpoints.campaign.creator.getCampaign(campaign.id));
+      } catch (error) {
+        enqueueSnackbar('Failed to upload photos', { variant: 'error' });
+      }
+    });
+
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
+          <Stack direction="row" alignItems="center" gap={2}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: { xs: '1.8rem', sm: '2.4rem' },
+                fontWeight: 550,
+              }}
+            >
+              Upload Photos
+            </Typography>
+            <IconButton
+              onClick={onClose}
+              sx={{
+                ml: 'auto',
+                color: '#636366',
+              }}
+            >
+              <Iconify icon="hugeicons:cancel-01" width={20} />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
+          <FormProvider methods={methods}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+                Upload Photos <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+              </Typography>
+              <RHFUpload
+                name="photos"
+                type="file"
+                multiple
+                onUploadSuccess={(files) => {
+                  setValue('photos', files);
+                }}
+              />
+            </Box>
+          </FormProvider>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
+          <LoadingButton
+            fullWidth
+            variant="contained"
+            onClick={onSubmit}
+            sx={{
+              bgcolor: '#203ff5',
+              color: 'white',
+              borderBottom: 3.5,
+              borderBottomColor: '#112286',
+              borderRadius: 1.5,
+              px: 2.5,
+              py: 1.2,
+              '&:hover': {
+                bgcolor: '#203ff5',
+                opacity: 0.9,
+              },
+            }}
+          >
+            Upload Photos
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+    );
   };
 
   return (
@@ -650,56 +1261,94 @@ const handleRemoveDraftVideo = (fileToRemove) => {
             )}
             {submission?.status === 'IN_PROGRESS' && (
               <>
-                {inQueue.value && <Typography>In queue</Typography>}
-                {isProcessing ? (
-                  <Stack justifyContent="center" alignItems="center" gap={1}>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        display: 'inline-flex',
-                      }}
-                    >
-                      <CircularProgress
-                        variant="determinate"
-                        thickness={5}
-                        value={progress}
-                        size={200}
-                        sx={{
-                          ' .MuiCircularProgress-circle': {
-                            stroke: (theme) =>
-                              theme.palette.mode === 'dark'
-                                ? theme.palette.common.white
-                                : theme.palette.common.black,
-                            strokeLinecap: 'round',
-                          },
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          top: 0,
-                          left: 0,
-                          bottom: 0,
-                          right: 0,
-                          position: 'absolute',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Typography variant="h3" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
-                          {`${Math.round(progress)}%`}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Stack gap={1}>
-                      <Typography variant="caption">{progressName && progressName}</Typography>
-                      {/* <LinearProgress variant="determinate" value={progress} /> */}
+                {(isProcessing || showUploadSuccess) ? (
+                  <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                    {(progress > 0 || showUploadSuccess) && (
+                      <Stack spacing={2}>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          {currentFile?.type?.startsWith('video') ? (
+                            <Box
+                              sx={{
+                                width: 120,
+                                height: 68,
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                position: 'relative',
+                                bgcolor: 'background.paper',
+                                boxShadow: (theme) => theme.customShadows.z8,
+                              }}
+                            >
+                              {currentFile.preview ? (
+                                <Box
+                                  component="img"
+                                  src={currentFile.preview}
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'background.neutral',
+                                  }}
+                                >
+                                  <Iconify icon="solar:video-library-bold" width={24} sx={{ color: 'text.secondary' }} />
+                                </Box>
+                              )}
+                            </Box>
+                          ) : (
+                            <Box
+                              component="img"
+                              src="/assets/icons/files/ic_img.svg"
+                              sx={{ width: 40, height: 40 }}
+                            />
+                          )}
 
-                      <Button variant="contained" size="small" onClick={() => handleCancel()}>
-                        Cancel
-                      </Button>
-                    </Stack>
-                  </Stack>
+                          <Stack spacing={1} flexGrow={1}>
+                            <Typography variant="subtitle2" noWrap>
+                              {currentFile?.name || 'Uploading file...'}
+                            </Typography>
+                            <Stack spacing={1}>
+                              <LinearProgress 
+                                variant="determinate" 
+                                value={progress}
+                                sx={{
+                                  height: 6,
+                                  borderRadius: 1,
+                                  bgcolor: 'background.paper',
+                                  '& .MuiLinearProgress-bar': {
+                                    borderRadius: 1,
+                                    bgcolor: progress === 100 ? 'success.main' : 'primary.main',
+                                  },
+                                }}
+                              />
+                              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {progress === 100 ? (
+                                    <Box component="span" sx={{ color: 'success.main', fontWeight: 600 }}>
+                                      Upload Complete
+                                    </Box>
+                                  ) : (
+                                    `${progressName || 'Uploading'}... ${progress}%`
+                                  )}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {formatFileSize(currentFile?.size || 0)}
+                                </Typography>
+                              </Stack>
+                            </Stack>
+                          </Stack>
+                        </Stack>
+                      </Stack>
+                    )}
+                  </Box>
                 ) : (
                   <Stack gap={2}>
                     <Box>
@@ -1227,452 +1876,249 @@ const handleRemoveDraftVideo = (fileToRemove) => {
               open={uploadTypeModalOpen}
               handleClose={() => setUploadTypeModalOpen(false)}
               onSelectType={handleUploadTypeSelect}
+              campaign={campaign}
+            />
+
+            <UploadDraftVideoModal
+              open={draftVideoModalOpen}
+              onClose={() => setDraftVideoModalOpen(false)}
+              campaign={campaign}
+            />
+
+            <UploadRawFootageModal
+              open={rawFootageModalOpen}
+              onClose={() => setRawFootageModalOpen(false)}
+            />
+
+            <UploadPhotosModal
+              open={photosModalOpen}
+              onClose={() => setPhotosModalOpen(false)}
             />
 
             <Dialog
-              open={openUploadModal}
+              open={showSubmitDialog}
+              maxWidth="xs"
               fullWidth
-              maxWidth="md"
-              sx={{
-                '& .MuiDialog-paper': {
-                  width: { xs: 'calc(100% - 32px)', sm: '100%' },
-                  m: { xs: 2, sm: 32 },
-                },
-              }}
             >
-              <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
-                <Stack direction="row" alignItems="center" gap={2}>
-                  <Box>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        fontFamily: 'Instrument Serif, serif',
-                        fontSize: { xs: '1.8rem', sm: '2.4rem' },
-                        fontWeight: 550,
-                      }}
-                    >
-                      Upload Draft
-                    </Typography>
-                  </Box>
-
-                  <IconButton
-                    onClick={() => setOpenUploadModal(false)}
+              <DialogContent>
+                <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
+                  {submitStatus === 'submitting' && (
+                    <>
+                      <Box
+                        sx={{
+                          width: 100,
+                          height: 100,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          bgcolor: '#f4b84a',
+                          fontSize: '50px',
+                          mb: -2,
+                        }}
+                      >
+                        🛫
+                      </Box>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          display: 'flex',
+                          fontFamily: 'Instrument Serif, serif',
+                          fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                          fontWeight: 550,
+                        }}
+                      >
+                        Submitting Draft
+                        <LoadingDots />
+                      </Typography>
+                    </>
+                  )}
+                  {submitStatus === 'success' && (
+                    <>
+                      <Box
+                        sx={{
+                          width: 100,
+                          height: 100,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          bgcolor: '#835cf5',
+                          fontSize: '50px',
+                          mb: -2,
+                        }}
+                      >
+                        🚀
+                      </Box>
+                      <Stack spacing={1} alignItems="center">
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontFamily: 'Instrument Serif, serif',
+                            fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                            fontWeight: 550,
+                          }}
+                        >
+                          Draft Submitted!
+                        </Typography>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            color: '#636366',
+                            mt: -2,
+                          }}
+                        >
+                          Your draft has been sent.
+                        </Typography>
+                      </Stack>
+                    </>
+                  )}
+                  {submitStatus === 'error' && (
+                    <>
+                      <Box
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          bgcolor: 'error.lighter',
+                          fontSize: '40px',
+                          mb: 2,
+                        }}
+                      >
+                        <Iconify icon="mdi:error" sx={{ width: 60, height: 60, color: 'error.main' }} />
+                      </Box>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontFamily: 'Instrument Serif, serif',
+                          fontSize: { xs: '1.5rem', sm: '1.8rem' },
+                          fontWeight: 550,
+                        }}
+                      >
+                        Submission Failed
+                      </Typography>
+                    </>
+                  )}
+                </Stack>
+              </DialogContent>
+              {(submitStatus === 'success' || submitStatus === 'error') && (
+                <DialogActions sx={{ pb: 3, px: 3 }}>
+                  <Button
+                    onClick={handleCloseSubmitDialog}
+                    variant="contained"
+                    fullWidth
                     sx={{
-                      ml: 'auto',
-                      '& svg': {
-                        width: { xs: 20, sm: 24 },
-                        height: { xs: 20, sm: 24 },
-                        color: '#636366',
+                      bgcolor: '#3a3a3c',
+                      color: '#ffffff',
+                      borderBottom: 3.5,
+                      borderBottomColor: '#202021',
+                      borderRadius: 1.5,
+                      mt: -4,
+                      px: 2.5,
+                      py: 1.2,
+                      '&:hover': {
+                        bgcolor: '#3a3a3c',
+                        opacity: 0.9,
                       },
                     }}
                   >
-                    <Iconify icon="hugeicons:cancel-01" />
-                  </IconButton>
-                </Stack>
-              </DialogTitle>
+                    Done
+                  </Button>
+                </DialogActions>
+              )}
+            </Dialog>
 
-              <DialogContent sx={{ bgcolor: '#f4f4f4' }}>
-                <FormProvider methods={methods} onSubmit={onSubmit}>
-                  <Stack spacing={3} sx={{ pt: 1 }}>
-                    <Box>
-                    <Typography variant="subtitle2" sx={{ color: '#636366' }}>
-                      Upload Draft{' '}
-                      <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-                    </Typography>
-
-                    <RHFUpload
-                      name="draftVideo"
-                      type="video"
-                      onDrop={handleDraftVideoDrop}
-                      onRemove={handleRemoveDraftVideo}
-                      multiple
-                    />
-
-  {/* Display uploaded draft video files - Already Exists */}
-  {/* {methods.watch('draftVideo')?.map((file, index) => (
-    <Box
-      key={index}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        mt: 2,
-        p: 2,
-        border: '1px solid',
-        borderColor: '#e7e7e7',
-        borderRadius: 1.2,
-        bgcolor: '#ffffff',
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Box
-          component="img"
-          src={file.preview}
-          sx={{
-            width: 64,
-            height: 64,
-            borderRadius: 1,
-            objectFit: 'cover',
-          }}
-        />
-        <Typography variant="body2">{file.name}</Typography>
-      </Box>
-      <IconButton onClick={() => handleRemoveDraftVideo(file)}>
-        X
-      </IconButton>
-    </Box>
-  ))} */}
-                      {/* {localStorage.getItem('preview') || preview ? (
-                        <Box sx={{ position: 'relative' }}>
-                          <Stack
-                            spacing={2}
-                            sx={{
-                              p: 2,
-                              border: '1px solid',
-                              borderColor: '#e7e7e7',
-                              borderRadius: 1.2,
-                              bgcolor: '#ffffff',
-                            }}
-                          >
-                            <Stack
-                              direction="row"
-                              spacing={2}
-                              sx={{
-                                flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                              }}
-                            >
-                              <Box
-                                component="img"
-                                src={methods.getValues('draft').thumbnail}
-                                sx={{
-                                  width: 64,
-                                  height: 64,
-                                  flexShrink: 0,
-                                  borderRadius: 1,
-                                  objectFit: 'cover',
-                                }}
-                              />
-
-                              <Box
-                                sx={{
-                                  flexGrow: 1,
-                                  minWidth: { xs: '100%', sm: 'auto' },
-                                  mt: { xs: 1, sm: 0 },
-                                }}
-                              >
-                                <Typography
-                                  variant="subtitle2"
-                                  noWrap
-                                  sx={{
-                                    color: 'text.primary',
-                                    fontWeight: 600,
-                                    fontSize: '1rem',
-                                    maxWidth: { xs: '100%', sm: '300px' },
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {methods.watch('draft').name}
-                                </Typography>
-
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    color: 'text.secondary',
-                                    display: 'block',
-                                    mt: 0.5,
-                                    fontSize: '0.875rem',
-                                  }}
-                                >
-                                  {uploadProgress < 100
-                                    ? `Uploading ${uploadProgress}%`
-                                    : formatFileSize(methods.watch('draft').size)}
-                                </Typography>
-                              </Box>
-
-                              <Stack
-                                direction="row"
-                                spacing={2}
-                                alignItems="center"
-                                sx={{
-                                  width: { xs: '100%', sm: 'auto' },
-                                  justifyContent: { xs: 'flex-end', sm: 'flex-start' },
-                                  mt: { xs: 2, sm: 0 },
-                                }}
-                              >
-                                {uploadProgress < 100 ? (
-                                  <Stack direction="row" spacing={2} alignItems="center">
-                                    <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                                      <CircularProgress
-                                        variant="determinate"
-                                        value={100}
-                                        size={30}
-                                        thickness={6}
-                                        sx={{ color: 'grey.300' }}
-                                      />
-                                      <CircularProgress
-                                        variant="determinate"
-                                        value={uploadProgress}
-                                        size={30}
-                                        thickness={6}
-                                        sx={{
-                                          color: '#5abc6f',
-                                          position: 'absolute',
-                                          left: 0,
-                                          strokeLinecap: 'round',
-                                        }}
-                                      />
-                                    </Box>
-                                    <Button
-                                      onClick={handleRemoveFile}
-                                      variant="contained"
-                                      sx={{
-                                        bgcolor: 'white',
-                                        border: 1,
-                                        borderColor: '#e7e7e7',
-                                        borderBottom: 3,
-                                        borderBottomColor: '#e7e7e7',
-                                        color: '#221f20',
-                                        '&:hover': {
-                                          bgcolor: 'white',
-                                          borderColor: '#e7e7e7',
-                                        },
-                                        textTransform: 'none',
-                                        px: 2,
-                                        py: 1.5,
-                                        fontSize: '0.875rem',
-                                        minWidth: '80px',
-                                        height: '45px',
-                                      }}
-                                    >
-                                      Cancel
-                                    </Button>
-                                  </Stack>
-                                ) : (
-                                  <Stack direction="row" spacing={1}>
-                                    <Button
-                                      onClick={display.onTrue}
-                                      variant="contained"
-                                      sx={{
-                                        bgcolor: 'white',
-                                        border: 1,
-                                        borderColor: '#e7e7e7',
-                                        borderBottom: 3,
-                                        borderBottomColor: '#e7e7e7',
-                                        color: '#221f20',
-                                        '&:hover': {
-                                          bgcolor: 'white',
-                                          borderColor: '#e7e7e7',
-                                        },
-                                        textTransform: 'none',
-                                        px: 2,
-                                        py: 1.5,
-                                        fontSize: '0.875rem',
-                                        minWidth: '80px',
-                                        height: '45px',
-                                      }}
-                                    >
-                                      Preview
-                                    </Button>
-                                    <Button
-                                      onClick={handleRemoveFile}
-                                      variant="contained"
-                                      sx={{
-                                        bgcolor: 'white',
-                                        border: 1,
-                                        borderColor: '#e7e7e7',
-                                        borderBottom: 3,
-                                        borderBottomColor: '#e7e7e7',
-                                        color: '#221f20',
-                                        '&:hover': {
-                                          bgcolor: 'white',
-                                          borderColor: '#e7e7e7',
-                                        },
-                                        textTransform: 'none',
-                                        px: 2,
-                                        py: 1.5,
-                                        fontSize: '0.875rem',
-                                        minWidth: '80px',
-                                        height: '45px',
-                                      }}
-                                    >
-                                      Remove
-                                    </Button>
-                                  </Stack>
-                                )}
-                              </Stack>
-                            </Stack>
-                          </Stack>
-                        </Box>
-                      ) : ( */}
-                        {/* <RHFUpload
-                          name="draft"
-                          type='video'
-                          multiple
-                          onDrop={handleDraftVideoDrop}
-                          onRemove={handleRemoveDraftVideo}
-                        /> */}
-                      {/* )} */}
-                    </Box>
-
-                  {/* rawFootages */}
-                  {campaign.rawFootage && (
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ color: '#636366' }}>
-                        Upload Raw Footages{' '}
-                        <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-                      </Typography>
-                      <RHFUpload
-                        name="rawFootage"
-                        type='video'
-                        onDrop={handleRawFootageDrop}
-                        onRemove={handleRemoveRawFootage}
-                        multiple 
-                      />
-
-                      {/* Display uploaded raw footage files */}
-                      {/* {methods.watch('rawFootage')?.map((file, index) => (
-                        <Box
-                          key={index}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            mt: 2,
-                            p: 2,
-                            border: '1px solid',
-                            borderColor: '#e7e7e7',
-                            borderRadius: 1.2,
-                            bgcolor: '#ffffff',
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Box
-                              component="img"
-                              src={file.preview}
-                              sx={{
-                                width: 64,
-                                height: 64,
-                                borderRadius: 1,
-                                objectFit: 'cover',
-                              }}
-                            />
-                            <Typography variant="body2">{file.name}</Typography>
-                          </Box>
-                          <IconButton onClick={() => handleRemoveRawFootage(file)}>
-                            X
-                          </IconButton>
-                        </Box>
-                      ))} */}
-                    </Box>
-                  )}
-
-
-{campaign.photos && (
-  <Box sx={{ mt: 2 }}>
-    <Typography variant="subtitle2" sx={{ color: '#636366' }}>
-      Upload Photos{' '}
-      <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-    </Typography>
-
- {/* Upload Section */} 
- <RHFUpload
-      name="photos"
-      type="file"
-      multiple
-      onDrop={handleDropPhoto}
-      onRemove={handleRemovePhoto} 
-    />
-        {/* Display uploaded photos */}
-        {/* {methods.watch('photos')?.map((photo, index) => (
-        <Box
-          key={index}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mt: 2,
-            p: 2,
-            border: '1px solid',
-            borderColor: '#e7e7e7',
-            borderRadius: 1.2,
-            bgcolor: '#ffffff',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box
-              component="img"
-              src={photo.preview}
-              sx={{
-                width: 64,
-                height: 64,
-                borderRadius: 1,
-                objectFit: 'cover',
+            {/* Photo Modal */}
+            <Dialog
+              open={fullImageOpen}
+              onClose={handleFullImageClose}
+              maxWidth={false}
+              PaperProps={{
+                sx: {
+                  maxWidth: { xs: '90vw', md: '50vw' },
+                  maxHeight: { xs: '90vh', md: '120vh' },
+                  m: 'auto',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  bgcolor: 'background.paper',
+                },
               }}
-            />
-            <Typography variant="body2">{photo.name}</Typography>
-          </Box>
-          <IconButton onClick={() => handleRemovePhoto(photo)}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      ))} */}
-    
-
-   
-  </Box>
-)} 
-
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, color: '#636366' }}>
-                        Post Caption{' '}
-                        <Box component="span" sx={{ color: 'error.main' }}>
-                          *
-                        </Box>
-                      </Typography>
-                      <RHFTextField
-                        name="caption"
-                        placeholder="Type your caption here..."
-                        multiline
-                        rows={4}
-                        required
-                        sx={{
-                          bgcolor: '#ffffff !important',
-                          border: '0px solid #e7e7e7',
-                          borderRadius: 1.2,
-                        }}
-                      />
-                    </Box>
-                  </Stack>
-                </FormProvider>
-              </DialogContent>
-
-              <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
-                <LoadingButton
-                  loading={isSubmitting}
-                  variant="contained"
-                  onClick={onSubmit}
-                  disabled={!isDirty}
+            >
+              <DialogContent
+                sx={{
+                  p: 0,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <IconButton
+                  onClick={handleFullImageClose}
                   sx={{
-                    fontSize: '0.95rem',
-                    fontWeight: 600,
-                    bgcolor: isDirty ? '#203ff5' : '#b0b0b1 !important',
-                    color: '#ffffff !important',
-                    borderBottom: 3.5,
-                    borderBottomColor: isDirty ? '#112286' : '#9e9e9f',
-                    borderRadius: 1.5,
-                    px: 2.5,
-                    py: 1.2,
-                    '&:hover': {
-                      bgcolor: isDirty ? '#203ff5' : '#b0b0b1',
-                      opacity: 0.9,
-                    },
+                    position: 'fixed',
+                    right: 16,
+                    top: 16,
+                    color: 'white',
+                    bgcolor: 'rgba(0, 0, 0, 0.5)',
+                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                    zIndex: 1,
                   }}
                 >
-                  Submit
-                </LoadingButton>
-              </DialogActions>
+                  <Iconify icon="eva:close-fill" />
+                </IconButton>
+
+                {submission?.photos?.[currentImageIndex] && (
+                  <Box
+                    component="img"
+                    src={submission.photos[currentImageIndex].url}
+                    alt={`Full size photo ${currentImageIndex + 1}`}
+                    sx={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'contain',
+                    }}
+                  />
+                )}
+                
+                {submission?.photos && submission.photos.length > 1 && (
+                  <>
+                    <IconButton
+                      onClick={handlePrevImage}
+                      sx={{
+                        position: 'fixed',
+                        left: 16,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        bgcolor: 'rgba(0, 0, 0, 0.5)',
+                        color: 'white',
+                        '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                      }}
+                    >
+                      <Iconify icon="eva:arrow-ios-back-fill" />
+                    </IconButton>
+                    <IconButton
+                      onClick={handleNextImage}
+                      sx={{
+                        position: 'fixed',
+                        right: 16,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        bgcolor: 'rgba(0, 0, 0, 0.5)',
+                        color: 'white',
+                        '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                      }}
+                    >
+                      <Iconify icon="eva:arrow-ios-forward-fill" />
+                    </IconButton>
+                  </>
+                )}
+              </DialogContent>
             </Dialog>
           </Box>
         ) : (
@@ -1703,228 +2149,6 @@ const handleRemoveDraftVideo = (fileToRemove) => {
             </Typography> */}
           </Stack>
         )}
-
-        <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>
-          <DialogContent>
-            <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
-              {submitStatus === 'submitting' && (
-                <>
-                  <Box
-                    sx={{
-                      width: 100,
-                      height: 100,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '50%',
-                      bgcolor: '#f4b84a',
-                      fontSize: '50px',
-                      mb: -2,
-                    }}
-                  >
-                    🛫
-                  </Box>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      display: 'flex',
-                      fontFamily: 'Instrument Serif, serif',
-                      fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                      fontWeight: 550,
-                    }}
-                  >
-                    Submitting Draft
-                    <LoadingDots />
-                  </Typography>
-                </>
-              )}
-              {submitStatus === 'success' && (
-                <>
-                  <Box
-                    sx={{
-                      width: 100,
-                      height: 100,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '50%',
-                      bgcolor: '#835cf5',
-                      fontSize: '50px',
-                      mb: -2,
-                    }}
-                  >
-                    🚀
-                  </Box>
-                  <Stack spacing={1} alignItems="center">
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontFamily: 'Instrument Serif, serif',
-                        fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                        fontWeight: 550,
-                      }}
-                    >
-                      Draft Submitted!
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: '#636366',
-                        mt: -2,
-                      }}
-                    >
-                      Your draft has been sent.
-                    </Typography>
-                  </Stack>
-                </>
-              )}
-              {submitStatus === 'error' && (
-                <>
-                  <Box
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '50%',
-                      bgcolor: 'error.lighter',
-                      fontSize: '40px',
-                      mb: 2,
-                    }}
-                  >
-                    <Iconify icon="mdi:error" sx={{ width: 60, height: 60, color: 'error.main' }} />
-                  </Box>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontFamily: 'Instrument Serif, serif',
-                      fontSize: { xs: '1.5rem', sm: '1.8rem' },
-                      fontWeight: 550,
-                    }}
-                  >
-                    Submission Failed
-                  </Typography>
-                </>
-              )}
-            </Stack>
-          </DialogContent>
-          {(submitStatus === 'success' || submitStatus === 'error') && (
-            <DialogActions sx={{ pb: 3, px: 3 }}>
-              <Button
-                onClick={handleCloseSubmitDialog}
-                variant="contained"
-                fullWidth
-                sx={{
-                  bgcolor: '#3a3a3c',
-                  color: '#ffffff',
-                  borderBottom: 3.5,
-                  borderBottomColor: '#202021',
-                  borderRadius: 1.5,
-                  mt: -4,
-                  px: 2.5,
-                  py: 1.2,
-                  '&:hover': {
-                    bgcolor: '#3a3a3c',
-                    opacity: 0.9,
-                  },
-                }}
-              >
-                Done
-              </Button>
-            </DialogActions>
-          )}
-        </Dialog>
-
-        {/* Photo Modal */}
-        <Dialog
-          open={fullImageOpen}
-          onClose={handleFullImageClose}
-          maxWidth={false}
-          PaperProps={{
-            sx: {
-              maxWidth: { xs: '90vw', md: '50vw' },
-              maxHeight: { xs: '90vh', md: '120vh' },
-              m: 'auto',
-              borderRadius: 2,
-              overflow: 'hidden',
-              bgcolor: 'background.paper',
-            },
-          }}
-        >
-          <DialogContent
-            sx={{
-              p: 0,
-              position: 'relative',
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'transparent',
-            }}
-          >
-            <IconButton
-              onClick={handleFullImageClose}
-              sx={{
-                position: 'fixed',
-                right: 16,
-                top: 16,
-                color: 'white',
-                bgcolor: 'rgba(0, 0, 0, 0.5)',
-                '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
-                zIndex: 1,
-              }}
-            >
-              <Iconify icon="eva:close-fill" />
-            </IconButton>
-
-            {submission?.photos?.[currentImageIndex] && (
-              <Box
-                component="img"
-                src={submission.photos[currentImageIndex].url}
-                alt={`Full size photo ${currentImageIndex + 1}`}
-                sx={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain',
-                }}
-              />
-            )}
-            
-            {submission?.photos && submission.photos.length > 1 && (
-              <>
-                <IconButton
-                  onClick={handlePrevImage}
-                  sx={{
-                    position: 'fixed',
-                    left: 16,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    bgcolor: 'rgba(0, 0, 0, 0.5)',
-                    color: 'white',
-                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
-                  }}
-                >
-                  <Iconify icon="eva:arrow-ios-back-fill" />
-                </IconButton>
-                <IconButton
-                  onClick={handleNextImage}
-                  sx={{
-                    position: 'fixed',
-                    right: 16,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    bgcolor: 'rgba(0, 0, 0, 0.5)',
-                    color: 'white',
-                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
-                  }}
-                >
-                  <Iconify icon="eva:arrow-ios-forward-fill" />
-                </IconButton>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
       </Box>
     )
   );
@@ -1940,5 +2164,5 @@ CampaignFirstDraft.propTypes = {
   fullSubmission: PropTypes.array,
   openLogisticTab: PropTypes.func,
   setCurrentTab: PropTypes.func,
+  onSelectType: PropTypes.func,
 };
-

@@ -60,40 +60,16 @@ RHFUploadBox.propTypes = {
 
 // ----------------------------------------------------------------------
 
-export function RHFUpload({ name, multiple, type, helperText, uploadType, ...other }) {
+export function RHFUpload({ name, multiple, type, helperText, uploadType, onUploadSuccess, ...other }) {
   const { control } = useFormContext();
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [currentFile, setCurrentFile] = useState(null);
 
-
-  // Only accept pdf and powerpoint filetype
-  if (type === 'otherAttachment') {
-    return (
-      <Controller
-        name={name}
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          <Upload
-            multiple
-            accept={{
-              'application/pdf': [], // Accept PDF files
-              'application/vnd.ms-powerpoint': [], // Accept .ppt files
-              'application/vnd.openxmlformats-officedocument.presentationml.presentation': [],
-            }}
-            files={field.value}
-            error={!!error}
-            helperText={
-              (!!error || helperText) && (
-                <FormHelperText error={!!error} sx={{ px: 2 }}>
-                  {error ? error?.message : helperText}
-                </FormHelperText>
-              )
-            }
-            {...other}
-          />
-        )}
-      />
-    );
-  }
+  const handleUploadProgress = (file) => {
+    setCurrentFile(file);
+    setUploadProgress(0);
+  };
 
   const accept = {
     file: { 'image/*': [] },
@@ -113,8 +89,8 @@ export function RHFUpload({ name, multiple, type, helperText, uploadType, ...oth
         <Upload
           multiple={multiple}
           accept={accept}
-          files={multiple ? field.value : undefined}
-          file={multiple ? undefined : field.value}
+          files={multiple ? uploadedFiles : undefined}
+          file={multiple ? undefined : uploadedFiles[0]}
           error={!!error}
           uploadType={uploadType}
           onDrop={(acceptedFiles) => {
@@ -126,9 +102,26 @@ export function RHFUpload({ name, multiple, type, helperText, uploadType, ...oth
             });
             
             if (multiple) {
-              field.onChange([...(field.value || []), ...newFiles]);
+              const updatedFiles = [...uploadedFiles, ...newFiles];
+              setUploadedFiles(updatedFiles);
+              field.onChange(updatedFiles);
+              if (onUploadSuccess) {
+                onUploadSuccess(updatedFiles);
+              }
             } else {
+              setUploadedFiles([newFiles[0]]);
               field.onChange(newFiles[0]);
+              if (onUploadSuccess) {
+                onUploadSuccess(newFiles[0]);
+              }
+            }
+          }}
+          onRemove={(fileToRemove) => {
+            const filteredFiles = uploadedFiles.filter((file) => file !== fileToRemove);
+            setUploadedFiles(filteredFiles);
+            field.onChange(multiple ? filteredFiles : null);
+            if (onUploadSuccess) {
+              onUploadSuccess(multiple ? filteredFiles : null);
             }
           }}
           uploadProgress={uploadProgress}
@@ -156,7 +149,13 @@ export function RHFUpload({ name, multiple, type, helperText, uploadType, ...oth
                 />
               </Box>
               <Button
-                onClick={() => field.onChange(multiple ? [] : null)}
+                onClick={() => {
+                  setUploadedFiles([]);
+                  field.onChange(multiple ? [] : null);
+                  if (onUploadSuccess) {
+                    onUploadSuccess(multiple ? [] : null);
+                  }
+                }}
                 variant="contained"
                 sx={{
                   bgcolor: 'white',
@@ -201,4 +200,5 @@ RHFUpload.propTypes = {
   name: PropTypes.string,
   type: PropTypes.string,
   uploadType: PropTypes.string,
+  onUploadSuccess: PropTypes.func,
 };

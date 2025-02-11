@@ -687,9 +687,22 @@ const FirstDraft = ({ campaign, submission, creator }) => {
               </Box>
             </Modal> */}
 
-            {submission?.status === 'NOT_STARTED' && <EmptyContent title="Not Started" />}
-            {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No Submission" />}
-            {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
+            {submission?.status === 'NOT_STARTED' && <EmptyContent title="No Submission" />}
+            {submission?.status === 'IN_PROGRESS' && 
+              !submission?.content && 
+              !submission?.videos?.length && 
+              !submission?.photos?.length && 
+              !submission?.rawFootages?.length && (
+              <EmptyContent title="Creator has not uploaded any deliverables yet." />
+            )}
+            {(submission?.status === 'PENDING_REVIEW' || 
+              submission?.status === 'APPROVED' || 
+              (submission?.status === 'IN_PROGRESS' && (
+                submission?.content || 
+                submission?.videos?.length > 0 || 
+                submission?.photos?.length > 0 || 
+                submission?.rawFootages?.length > 0
+              ))) && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <Box
@@ -701,7 +714,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                       overflow: 'hidden',
                     }}
                   >
-
                     {/* Tabs */}
                     <Tabs 
                       value={selectedTab} 
@@ -752,7 +764,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                       {selectedTab === 'video' && (
                         <>
                           {/* Video Draft Section */}
-                          {submission?.video?.length > 0 ? (
+                          {(submission?.video?.length > 0 || submission?.videos?.[0]?.url || submission?.content || submission?.draftVideo?.[0]?.preview) ? (
                             <Grid container spacing={2} sx={{ mb: 3 }}>
                               {submission.video.map((videoItem, index) => (
                                 <Grid item xs={12} key={videoItem.id || index}>
@@ -911,124 +923,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                               ))}
                             </Grid>
                           ) : (
-                            // Fallback for legacy single video support
-                            <Box sx={{ position: 'relative', mb: 3 }}>
-                              {/* Video Draft Section with Creator Info */}
-                              <Box
-                                sx={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  bgcolor: 'rgba(0, 0, 0, 0.7)',
-                                  p: 2,
-                                  transition: 'opacity 0.3s ease',
-                                  opacity: 1,
-                                  zIndex: 1,
-                                  '&:hover': {
-                                    opacity: 0,
-                                  },
-                                  borderTopLeftRadius: 1,
-                                  borderTopRightRadius: 1,
-                                }}
-                              >
-                                <Stack direction="row" alignItems="center" spacing={2}>
-                                  <Avatar
-                                    src={creator?.user?.photoURL}
-                                    alt={creator?.user?.name}
-                                    sx={{
-                                      width: 40,
-                                      height: 40,
-                                      border: '2px solid #ffffff',
-                                    }}
-                                  >
-                                    {creator?.user?.name?.charAt(0).toUpperCase()}
-                                  </Avatar>
-                                  <Typography
-                                    variant="subtitle1"
-                                    sx={{
-                                      color: 'white',
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    {creator?.user?.name}
-                                  </Typography>
-                                </Stack>
-                              </Box>
-
-                              {/* Video Player */}
-                              <Box
-                                sx={{
-                                  position: 'relative',
-                                  width: '100%',
-                                  pt: '56.25%',
-                                  bgcolor: 'black',
-                                  borderRadius: 1,
-                                  overflow: 'hidden',
-                                }}
-                              >
-                                {/* Play Icon Overlay */}
-                                <Box
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    zIndex: 2,
-                                  }}
-                                  onClick={(e) => {
-                                    const video = e.currentTarget.nextElementSibling;
-                                    if (video.paused) {
-                                      video.play();
-                                    } else {
-                                      video.pause();
-                                    }
-                                  }}
-                                >
-                                  <Iconify
-                                    icon="mdi:play"
-                                    sx={{
-                                      width: 60,
-                                      height: 60,
-                                      color: 'white',
-                                      opacity: 0.9,
-                                      '&:hover': {
-                                        opacity: 1,
-                                      },
-                                    }}
-                                  />
-                                </Box>
-
-                                <Box
-                                  component="video"
-                                  controls
-                                  playsInline
-                                  src={submission?.videos?.[0]?.url || submission?.content || submission?.draftVideo?.[0]?.preview}
-                                  poster={submission?.thumbnail}
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'contain',
-                                  }}
-                                  onPlay={(e) => {
-                                    const overlay = e.currentTarget.previousElementSibling;
-                                    overlay.style.display = 'none';
-                                  }}
-                                  onPause={(e) => {
-                                    const overlay = e.currentTarget.previousElementSibling;
-                                    overlay.style.display = 'flex';
-                                  }}
-                                />
-                              </Box>
-                            </Box>
+                            <Typography>No video draft uploaded yet.</Typography>
                           )}
 
                           {/* Caption Section for legacy support */}
@@ -1276,7 +1171,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                         </>
                       )}
 
-                      {selectedTab === 'rawFootages' && submission?.rawFootages?.length > 0 && (
+                      {/* {selectedTab === 'rawFootages' && submission?.rawFootages?.length > 0 && (
                         <Grid container spacing={2}>
                           {submission.rawFootages.map((footage, index) => (
                             <Grid item xs={12} sm={6} md={4} key={footage.id || index}>
@@ -1327,37 +1222,104 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                             </Grid>
                           ))}
                         </Grid>
+                      )} */}
+
+                        {selectedTab === 'rawFootages' && (
+                        <>
+                          {submission?.rawFootages?.length > 0 ? (
+                            <Grid container spacing={2}>
+                              {submission.rawFootages.map((footage, index) => (
+                                <Grid item xs={12} sm={6} md={4} key={footage.id || index}>
+                                  <Box
+                                    sx={{
+                                      position: 'relative',
+                                      borderRadius: 2,
+                                      overflow: 'hidden',
+                                      boxShadow: 2,
+                                      height: '169px',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() => handleVideoClick(footage.url)}
+                                  >
+                                    <Box
+                                      component="video"
+                                      src={footage.url}
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                      }}
+                                    />
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        bgcolor: 'rgba(0, 0, 0, 0.3)',
+                                      }}
+                                    >
+                                      <Iconify
+                                        icon="mdi:play"
+                                        sx={{
+                                          width: 40,
+                                          height: 40,
+                                          color: 'white',
+                                          opacity: 0.9,
+                                        }}
+                                      />
+                                    </Box>
+                                  </Box>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          ) : (
+                            <Typography>No raw footage uploaded yet.</Typography>
+                          )}
+                        </>
                       )}
 
-                      {selectedTab === 'photos' && submission?.photos?.length > 0 && (
-                        <Grid container spacing={2}>
-                          {submission.photos.map((photo, index) => (
-                            <Grid item xs={12} sm={6} md={4} key={photo.id || index}>
-                              <Box
-                                sx={{
-                                  position: 'relative',
-                                  borderRadius: 2,
-                                  overflow: 'hidden',
-                                  boxShadow: 2,
-                                  height: '169px',
-                                  cursor: 'pointer',
-                                }}
-                                onClick={() => handleImageClick(index)}
-                              >
-                                <Box
-                                  component="img"
-                                  src={photo.url}
-                                  alt={`Photo ${index + 1}`}
-                                  sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                  }}
-                                />
-                              </Box>
+
+
+                      {selectedTab === 'photos' && (
+                        <>
+                          {submission?.photos?.length > 0 ? (
+                            <Grid container spacing={2}>
+                              {submission.photos.map((photo, index) => (
+                                <Grid item xs={12} sm={6} md={4} key={photo.id || index}>
+                                  <Box
+                                    sx={{
+                                      position: 'relative',
+                                      borderRadius: 2,
+                                      overflow: 'hidden',
+                                      boxShadow: 2,
+                                      height: '169px',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() => handleImageClick(index)}
+                                  >
+                                    <Box
+                                      component="img"
+                                      src={photo.url}
+                                      alt={`Photo ${index + 1}`}
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                      }}
+                                    />
+                                  </Box>
+                                </Grid>
+                              ))}
                             </Grid>
-                          ))}
-                        </Grid>
+                          ) : (
+                            <Typography>No photos uploaded yet.</Typography>
+                          )}
+                        </>
                       )}
                     </Box>
                   </Box>
