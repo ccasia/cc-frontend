@@ -63,7 +63,7 @@ const PublicAccessPage = () => {
    const settings = useSettingsContext();
    const [openModal, setOpenModal] = useState(true);
     //  const settings = useSettingsContext();
-    const [isValid, setIsValid] = useState(false);
+    // const [isValid, setIsValid] = useState(false);
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
@@ -90,24 +90,6 @@ const PublicAccessPage = () => {
       localStorage.getItem('campaigndetail') || 'campaign-content'
     );
   
-    const validatePassword = async () => {
-      try {
-        // API call to validate the password
-        const response = await axiosInstance.post(endpoints.public.validate, { 
-          campaignId: id, 
-          inputPassword: password 
-        });
-      
-        if (response.data.success) {
-          setIsValid(true); 
-          enqueueSnackbar('Welcome to the Cult!', { variant: 'success' });
-          setOpenModal(false);
-        }
-      } catch (err) {
-        // setError(err.response?.data?.message || 'Invalid password');
-        enqueueSnackbar(err.response?.data?.message || 'Invalid password', { variant: 'error' });
-      }
-    };
 
     const handleChangeTab = useCallback((event, newValue) => {
       localStorage.setItem('campaigndetail', newValue);
@@ -272,49 +254,14 @@ const PublicAccessPage = () => {
       ),
       submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
     };
-
-    const handlePasswordChange = (e) => setPassword(e.target.value);
   
-    if (!isValid) {
-      return (
-        <Modal open={openModal} onClose={() => {}} aria-labelledby="password-validation-modal">
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 400,
-              bgcolor: 'white',
-              borderRadius: 2,
-              boxShadow: 24,
-              p: 4,
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Please enter the password for Access
-            </Typography>
-            <TextField
-              label="Password"
-              type="password"
-              fullWidth
-              value={password}
-              onChange={handlePasswordChange}
-              sx={{ mb: 2 }}
-            />
-            {/* {error && <Typography color="error" variant="body2">{error}</Typography>} */}
-            <Button variant="contained" color="primary" onClick={validatePassword}>
-              Validate
-            </Button>
-          </Box>
-        </Modal>
-      );
-    }
+  
   return (
     <Container
     maxWidth={settings.themeStretch ? false : 'xl'}
     sx={{
       px: { xs: 2, sm: 5 },
+      m: { xs: 2, sm: 5 },
     }}
   >
     <Stack spacing={1}>

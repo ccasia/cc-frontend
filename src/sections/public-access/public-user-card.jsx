@@ -55,12 +55,6 @@ export default function UserCard({
     } else {
       console.error("Missing campaignId or creatorId");
     }
-    // if (isSent) {
-    //   router.push(paths.public.manageCreator(campaignId, creator?.id));
-    // } else {
-    //   router.push(paths.public.manageCreator(campaignId, creator?.id));
-    // }
-    //router.push(paths.public.manageCreator(campaignId, creator?.id));
   };
 
   console.log({ creator, campaign, campaignId, isSent })

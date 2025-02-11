@@ -259,8 +259,24 @@ const PublicManageCreatorView = () => {
       maxWidth="xl"
       sx={{
         px: { xs: 2, sm: 5 },
+        pt: { xs: 2, sm: 5 },
       }}
     >
+        <Button
+              color="inherit"
+              startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
+              // onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id))}
+              onClick={() => router.push(`/public/view/${campaignId}`)} 
+
+              sx={{
+                alignSelf: 'flex-start',
+                color: '#636366',
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              }}
+            >
+              Back
+            </Button>
+
       {(isLoading || submissionLoading || campaignLoading) && (
         <Box
           sx={{

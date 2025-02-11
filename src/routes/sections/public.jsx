@@ -5,7 +5,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 
 
 const PublicMediaKitPage = lazy(() => import('src/pages/public/creator/mediaKit'));
-//  const PublicAccessDummyPage = lazy(() => import('src/sections/public-access/dummy'));
+const PublicValidate = lazy(() => import('src/sections/public-access/validation' ));
 const PublicAccessPage = lazy(() => import('src/sections/public-access/public-access-page'))
 
 const PublicManageCreatorView = lazy (() => import('src/sections/public-access/publicCreatorManage'))
@@ -40,6 +40,14 @@ export const publicRoutes = [
       },
       {
         path: 'access/:id', 
+        element: (
+        <Suspense fallback={<LoadingScreen />}>
+         <PublicValidate/>
+        </Suspense>
+        ),
+      },
+      {
+        path: 'view/:id', 
         element: (
         <Suspense fallback={<LoadingScreen />}>
          <PublicAccessPage/>
