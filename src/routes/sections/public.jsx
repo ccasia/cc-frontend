@@ -3,7 +3,6 @@ import { Outlet } from 'react-router-dom';
 
 import { LoadingScreen } from 'src/components/loading-screen';
 
-
 const PublicMediaKitPage = lazy(() => import('src/pages/public/creator/mediaKit'));
 const PublicValidate = lazy(() => import('src/sections/public-access/validation' ));
 const PublicAccessPage = lazy(() => import('src/sections/public-access/public-access-page'))

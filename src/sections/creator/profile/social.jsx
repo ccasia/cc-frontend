@@ -1,23 +1,26 @@
 import { useForm } from 'react-hook-form';
 
-import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
-import { InputAdornment } from '@mui/material';
+import { Stack, Button, Typography } from '@mui/material';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
 export default function AccountSocialLinks() {
   const { enqueueSnackbar } = useSnackbar();
-  const { user } = useAuthContext();
+  const { user, initialize } = useAuthContext();
+
+  const tikTokLoading = useBoolean();
+  const facebookLoading = useBoolean();
 
   const methods = useForm({
     defaultValues: {
@@ -26,57 +29,194 @@ export default function AccountSocialLinks() {
     },
   });
 
-  const {
-    handleSubmit,
-    formState: { isDirty, isSubmitting },
-  } = methods;
+  const { handleSubmit } = methods;
 
-  const onSubmit = handleSubmit(async (data) => {
+  // const onSubmit = handleSubmit(async (data) => {
+  //   try {
+  //     const res = await axiosInstance.patch(endpoints.creators.updateSocialMediaUsername, data);
+  //     enqueueSnackbar(res?.data?.message);
+  //   } catch (error) {
+  //     enqueueSnackbar(error?.message, {
+  //       variant: 'error',
+  //     });
+  //   }
+  // });
+
+  // useEffect(() => {
+  //   // Check if the Facebook SDK has loaded
+  //   if (window.FB) {
+  //     initFacebookSDK();
+  //     window.FB.getLoginStatus((response) => {
+  //       if (response.status === 'connected') {
+  //         console.log('User is already logged in.');
+  //       }
+  //     });
+  //   }
+  // }, []);
+
+  const handleLogin = () => {
+    window.FB.login(
+      (response) => {
+        if (response.authResponse) {
+          console.log('Facebook login successful:', response);
+        } else {
+          console.log('Facebook login failed');
+        }
+      },
+      { scope: 'public_profile,email' }
+    );
+  };
+
+  const connectTiktok = async () => {
     try {
-      const res = await axiosInstance.patch(endpoints.creators.updateSocialMediaUsername, data);
+      const { data: url } = await axiosInstance.get('/api/social/oauth/tiktok');
+      enqueueSnackbar('Redirecting...');
+      window.location.href = url;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const disconnectTiktok = async () => {
+    try {
+      tikTokLoading.onTrue();
+      const res = await axiosInstance.post(`/api/social/tiktok/disconnect`, {
+        userId: user.id,
+      });
+
+      initialize();
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      enqueueSnackbar(error?.message, {
+      enqueueSnackbar('Error disconnecting tiktok account', {
         variant: 'error',
       });
+      console.log(error);
+    } finally {
+      tikTokLoading.onFalse();
     }
-  });
+  };
 
+  const disconnectFacebook = async () => {
+    try {
+      facebookLoading.onTrue();
+      const res = await axiosInstance.post(`/api/social/facebook/disconnect`, {
+        userId: user.id,
+      });
+
+      initialize();
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error disconnecting tiktok account', {
+        variant: 'error',
+      });
+      console.log(error);
+    } finally {
+      facebookLoading.onFalse();
+    }
+  };
+
+  const connectFacebook = async () => {
+    try {
+      const { data: url } = await axiosInstance.get('/api/social/auth/facebook');
+      enqueueSnackbar('Redirecting...');
+      window.location.href = url;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // return (
+  //   <FormProvider methods={methods} onSubmit={onSubmit}>
+  //     <Stack component={Card} spacing={3} sx={{ p: 3 }} alignItems="flex-end">
+  //       <RHFTextField
+  //         name="instagram"
+  //         label="Instagram"
+  //         InputProps={{
+  //           startAdornment: (
+  //             <InputAdornment position="start">
+  //               <Iconify icon="mdi:instagram" width={20} />
+  //             </InputAdornment>
+  //           ),
+  //         }}
+  //       />
+  //       <RHFTextField
+  //         name="tiktok"
+  //         label="Tiktok"
+  //         InputProps={{
+  //           startAdornment: (
+  //             <InputAdornment position="start">
+  //               <Iconify icon="ic:baseline-tiktok" width={20} />
+  //             </InputAdornment>
+  //           ),
+  //         }}
+  //       />
+  //       <LoadingButton
+  //         type="submit"
+  //         variant="outlined"
+  //         disabled={!isDirty}
+  //         size="small"
+  //         loading={isSubmitting}
+  //       >
+  //         Save changes
+  //       </LoadingButton>
+  //     </Stack>
+  //   </FormProvider>
+  // );
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Stack component={Card} spacing={3} sx={{ p: 3 }} alignItems="flex-end">
-        <RHFTextField
-          name="instagram"
-          label="Instagram"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="mdi:instagram" width={20} />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <RHFTextField
-          name="tiktok"
-          label="Tiktok"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="ic:baseline-tiktok" width={20} />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <LoadingButton
-          type="submit"
-          variant="outlined"
-          disabled={!isDirty}
-          size="small"
-          loading={isSubmitting}
-        >
-          Save changes
-        </LoadingButton>
+    <Stack spacing={2} border={1} p={2} borderRadius={2} borderColor="#EBEBEB" px={2}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" width={1}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Image src="/instagram/insta.webp" width={30} />
+          <Typography variant="subtitle1">Instagram</Typography>
+        </Stack>
+        {user?.creator?.isFacebookConnected ? (
+          <LoadingButton
+            variant="outlined"
+            onClick={disconnectFacebook}
+            color="error"
+            sx={{ borderRadius: 2 }}
+            loading={facebookLoading.value}
+          >
+            Disconnect
+          </LoadingButton>
+        ) : (
+          <Button
+            variant="outlined"
+            onClick={connectFacebook}
+            startIcon={<Iconify icon="material-symbols:add-rounded" />}
+            sx={{ borderRadius: 2 }}
+          >
+            Add account
+          </Button>
+        )}
       </Stack>
-    </FormProvider>
+
+      <Stack direction="row" alignItems="center" justifyContent="space-between" width={1}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Image src="/tiktok/Tiktok_Login.png" width={30} />
+          <Typography variant="subtitle1">TikTok</Typography>
+        </Stack>
+        {user?.creator?.isTiktokConnected ? (
+          <LoadingButton
+            variant="outlined"
+            onClick={disconnectTiktok}
+            color="error"
+            sx={{ borderRadius: 2 }}
+            loading={tikTokLoading.value}
+          >
+            Disconnect
+          </LoadingButton>
+        ) : (
+          <Button
+            variant="outlined"
+            onClick={connectTiktok}
+            startIcon={<Iconify icon="material-symbols:add-rounded" />}
+            sx={{ borderRadius: 2 }}
+          >
+            Add account
+          </Button>
+        )}
+      </Stack>
+    </Stack>
   );
 }

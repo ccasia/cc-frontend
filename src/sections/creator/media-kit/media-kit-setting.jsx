@@ -43,18 +43,6 @@ const FormField = ({ label, children }) => (
 );
 
 const MediaKitSetting = ({ open, handleClose, user }) => {
-  // const style = {
-  //   position: 'absolute',
-  //   top: '50%',
-  //   left: '50%',
-  //   transform: 'translate(-50%, -50%)',
-  //   minWidth: 300,
-  //   bgcolor: 'background.paper',
-  //   boxShadow: 24,
-  //   p: 2,
-  //   borderRadius: 2,
-  // };
-
   const success = useBoolean();
 
   const schema = Yup.object().shape({
@@ -95,11 +83,6 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
       const formData = new FormData();
       formData.append('profilePhoto', data.profilePhoto);
       formData.append('data', JSON.stringify({ ...data, creatorId: user?.creator?.id }));
-
-      // await axiosInstance.patch(endpoints.creators.updateMediaKit, {
-      //   ...data,
-      //   creatorId: user?.creator?.id,
-      // });
 
       await axiosInstance.patch(endpoints.creators.updateMediaKit, formData, {
         headers: {

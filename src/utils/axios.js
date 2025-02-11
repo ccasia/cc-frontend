@@ -104,6 +104,10 @@ export const endpoints = {
     updateSocialMediaUsername: '/api/creator/updateSocialMediaUsername',
     getMyCampaigns: (userId) => `/api/campaign/getMyCampaigns/${userId}`,
     getPartnerships: (id) => `/api/creator/getPartnerships/${id}`,
+    social: {
+      tiktok: (id) => `/api/social/tiktok/${id}`,
+      instagram: (id) => `/api/social/instagram/${id}`,
+    },
   },
   users: {
     newAdmin: '/api/user/admins',

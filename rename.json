@@ -1,0 +1,133 @@
+{
+  "userInfo": {
+    "data": {
+      "user": {
+        "union_id": "7bf6ed79-c71c-5e54-a66f-42d038533763",
+        "avatar_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/d04be60bd9e390b24504374e47298988~c5_168x168.jpeg?lk3s=a5d48078&nonce=75907&refresh_token=d37d1e1944795ed6f828bd7b3e035883&x-expires=1737007200&x-signature=dRnnoksdBO4VaWMt%2B7jvto63AHc%3D&shp=a5d48078&shcp=8aecc5ac",
+        "display_name": "aryphland",
+        "follower_count": 48,
+        "following_count": 75,
+        "likes_count": 489,
+        "open_id": "-000ZE0B6TuVVIEccOVZl8OwXzv1v-O1Xmbn"
+      }
+    },
+    "error": {
+      "code": "ok",
+      "message": "",
+      "log_id": "202501140636505D2969EE05E02B0C1CD7"
+    }
+  },
+  "videoInfo": {
+    "data": {
+      "cursor": 1649537508000,
+      "has_more": true,
+      "videos": [
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oMEjgQI1w13ES0DFCAf8FfAoBfExAaN6Dg6OCI~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=75426&refresh_token=3da352f71229a8bb60d92bc9ac875dc2&x-expires=1736920800&x-signature=d9Hqj3dpmTO56yQVckHwVMm%2BUrk%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7454873548222385426",
+          "title": ""
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oUIl1vFEYUYIt0VVVATiXin5rtBZy3AIBvHzB~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=4176&refresh_token=3500cb6a987c57a7434c6dcec45ed887&x-expires=1736920800&x-signature=tn7crlQ07efNzfJFSWYXvvLOYE0%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7454872984382115079",
+          "title": "better qualitayhhhh"
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oMIowqjIQDAeegkwEOGADEpYoCL923mGGeQp8U~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=40428&refresh_token=2efda53f2a4b0e7c0814d3ff832c5f69&x-expires=1736920800&x-signature=6Kqcs0dSZBR0zEqm%2BZ4aOThFOcA%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7443385789339208968",
+          "title": ""
+        },
+        {
+          "title": "",
+          "cover_image_url": "https://image-sg.tiktokv.com/tos-alisg-i-photomode-sg/b55fd8f07b06416884f8e2a2e1cae6a1~tplv-photomode-2k-shrink-v1:1200:0:q70.webp?dr=1342&nonce=27552&policy=eyJ2bSI6MywidWlkIjoiNjc4MTE1MjA1OTUxOTMyMTA5MCJ9&refresh_token=1b6efd920ac0c3b066aa31ae3152ecbf&x-orig-authkey=953b87ea9b474969e4eab20d5c7fa858d23f02a8&x-orig-expires=1738130400&x-orig-sign=mRL5D5Ws7r4e%2BLdMnZDWv6H2MqI%3D&biz_tag=tt_photomode&idc=maliva&ps=d5b8ac02&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=5897f7ec",
+          "id": "7441257348091415816"
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oI2DuDACiAA8Yc1zBYkkZOAiEBmBBEXOPVIQE~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=80344&refresh_token=720ac53a4c005b0437854be5abb2f7a6&x-expires=1736920800&x-signature=fwYzrLDQKghz2sbdOqcKcBTTyaQ%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7437131934318218503",
+          "title": ""
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/osG0PRAO8ABeeNBaOMjOUxCpRQDoWIecpitAnz~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=2735&refresh_token=8a6f75fb2a146721b7f645207af5f98b&x-expires=1736920800&x-signature=c4%2FHhXOqzQ%2Bk5MyGypIOMI388r4%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7430114402608680213",
+          "title": "\u003C3"
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/c9a15a079c2d4fd9963059070d6e90f6_1728905242~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=70695&refresh_token=67109dc1bcfc0be9bb8dd262465a8a13&x-expires=1736920800&x-signature=TU%2FoHKDiyqAtkG1p1X0Iebc554Y%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7425591453558000914",
+          "title": ""
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/049f8537e13741c6b764d08996849fb6_1728034074~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=85629&refresh_token=d791d5b84c55f73c412d700de97a6dd0&x-expires=1736920800&x-signature=%2FrzqSFep8MhBaCEHHVcdl3ZXf%2FU%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7421835850171944199",
+          "title": "Congratulations my man ð«¶ vlog 4/10/2024"
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/59b11be32ae84842ac849a48394a5efe_1724922331~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=97067&refresh_token=418d62e24df298ac1742cbcab00a5539&x-expires=1736920800&x-signature=yUd8Wvj4kTbp6UrsO1b%2FSoys2hQ%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7408484901596531984",
+          "title": "ð"
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oA6LcICfI5jouX5Z0ehsbQ6vNqjp3GfqmAIAAD~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=68006&refresh_token=d58095e0eb670112fa3a49bee4783139&x-expires=1736920800&x-signature=9k8wLDfeGCmdKSC3oyNjuDbgqKw%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7407809306281692433",
+          "title": "to the way it used to be :("
+        },
+        {
+          "title": "Langit",
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oE8ND8CdAAAIAjWeAILcVooGBeWpfI6IDIEFXQ~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=27313&refresh_token=3779f50c44c51ef2c66a6ee91f894c50&x-expires=1736920800&x-signature=cSpZiWiK6j7kTvYEoo9xM7XvluU%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7398235763772542225"
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/ogIlRmkEnBS2UgRmgtQAeFEB6LD6dkBarfEkwU~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=3336&refresh_token=f3844bd0c7489cbc34037f810fae9624&x-expires=1736920800&x-signature=HYjvYIVMxhOqyo0IJaOEWBHWZBA%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7390740146699635985",
+          "title": "Weak 14"
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oQmCwfoy5gQVDBWQAhiEAnBQjBsFIydply4OeK~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=15698&refresh_token=9fa13d067339815a6571d582a34fa517&x-expires=1736920800&x-signature=sNCz7yb%2FFyux35AEkDni%2FkowylE%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7328076082664492289",
+          "title": "for fun cuy"
+        },
+        {
+          "id": "7313167911420546305",
+          "title": "kopi dulu baru lu",
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oEeUHfqUDDBKF58E49ElZjI3fCoQaCsAvzrSaA~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=82700&refresh_token=cbf911c7830053b8c301408848b18a4a&x-expires=1736920800&x-signature=dKjDrfi7jjo5RULfByLJjrJ4MAQ%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480"
+        },
+        {
+          "id": "7269755300452846849",
+          "title": "- minat yang belum mahir",
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/osMCmn84eInlbLAAvIqgb5D6kGQTV4HBQuf1tB~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=98042&refresh_token=3aeacf68e2020059da6a1956b59d439d&x-expires=1736920800&x-signature=c0xka%2BAM2VhE3XOmFE8nA%2FDz4wE%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480"
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oo6IgQvEkaHMBCkebeT3CKD39nPzbYAKVABLSQ~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=11196&refresh_token=20ac53bcbb13dd893ada2bb4265d5da2&x-expires=1736920800&x-signature=X%2Ff98tYO6aqv%2BlEQOkGXzLCRs6U%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7259014465042140417",
+          "title": "- short and semi raw"
+        },
+        {
+          "cover_image_url": "https://p16-sign-sg.tiktokcdn.com/tos-alisg-p-0037/oMcAiBfErg4VlYVQMIBFVDAOd7EmF7C4DfLAAg~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=54544&refresh_token=d50647ea7f444bbf895e7db94d144533&x-expires=1736920800&x-signature=AV%2FXuqRWQppV3EMGsF4BNvmhjQM%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7207151316223708442",
+          "title": "#bornpinkinkl #blackpink "
+        },
+        {
+          "cover_image_url": "https://p16-sign-useast2a.tiktokcdn.com/tos-useast2a-p-0037-aiso/9554dd29310749c88fcdfdc7c8b22089~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=66074&refresh_token=99af7451cefa1cbfabc1d85ff51bc4cf&x-expires=1736920800&x-signature=veU8psnz%2FVgIXw309EUUyXKzuLE%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7151241109652524314",
+          "title": "my ears are free now #nomoreheadsets"
+        },
+        {
+          "cover_image_url": "https://image-useast2a.tiktokv.com/tos-useast2a-i-photomode-aiso/7dfbeb7034de439baff5a7a62a6f6344~tplv-photomode-image-v1:q70.webp?dr=1299&nonce=83614&policy=eyJ2bSI6MywidWlkIjoiNjc4MTE1MjA1OTUxOTMyMTA5MCJ9&refresh_token=6335064143b4cedc81f080f166b10ee5&x-orig-authkey=953b87ea9b474969e4eab20d5c7fa858d23f02a8&x-orig-expires=1738130400&x-orig-sign=HjVJTtwVLkNis%2BlfbZNlMwKlKa4%3D&biz_tag=tt_photomode&idc=maliva&ps=d5b8ac02&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=5897f7ec",
+          "id": "7139666159422442778",
+          "title": "shots on day 2 of #sneakerlah2022 "
+        },
+        {
+          "cover_image_url": "https://p16-sign-useast2a.tiktokcdn.com/tos-useast2a-p-0037-aiso/a3cda62a10a44293a8fb653e3e6a5775~tplv-tiktokx-cropcenter-q:300:400:q72.jpeg?dr=14782&nonce=12316&refresh_token=34b338e71e2b7e73a7c0a8b8df75585e&x-expires=1736920800&x-signature=Uh2frOe%2F4dVh0zlNUx9V%2FXTiBXc%3D&biz_tag=tt_video&idc=maliva&ps=933b5bde&s=TIKTOK_FOR_DEVELOPER&sc=cover&shcp=8aecc5ac&shp=d05b14bd&t=bacd0480",
+          "id": "7084709636040969499",
+          "title": "editor photographer videographer director tak berbayar"
+        }
+      ]
+    },
+    "error": {
+      "code": "ok",
+      "message": "",
+      "log_id": "20250114063650EC0F4B9FD44E7159EA07"
+    }
+  }
+}

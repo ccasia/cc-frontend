@@ -19,7 +19,10 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import MediaKitSocial from './media-kit-social/view';
-import { formatNumber } from '../media-kit-creator-view/media-kit-social/media-kit-social-content/view-instagram';
+import { formatNumber } from '../media-kit/view-instagram';
+
+// import MediaKitSocial from '../media-kit-creator-view/media-kit-social/view';
+// import { formatNumber } from '../media-kit-creator-view/media-kit-social/media-kit-social-content/view-instagram';
 
 // eslint-disable-next-line react/prop-types
 const MediaKit = ({ id, noBigScreen }) => {
