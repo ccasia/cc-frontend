@@ -170,9 +170,6 @@ const Register = () => {
     watch();
   }, [watch]);
 
-  console.log(isValid);
-  console.log(errors);
-
   const errorRecaptcha = errors?.recaptcha;
 
   const curPassword = watch('password');
@@ -206,6 +203,8 @@ const Register = () => {
       enqueueSnackbar(err?.message, {
         variant: 'error',
       });
+    } finally {
+      setValue('recaptcha', '', { shouldValidate: true });
     }
   });
 

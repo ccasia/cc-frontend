@@ -3,7 +3,6 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
-import { useTheme } from '@emotion/react';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useMemo, useState, useEffect, useCallback } from 'react';
@@ -12,8 +11,6 @@ import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
 import Dialog from '@mui/material/Dialog';
 import { Stack, Avatar, Button, IconButton, InputAdornment, LinearProgress } from '@mui/material';
-
-import { useRouter } from 'src/routes/hooks';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
@@ -49,10 +46,10 @@ const steps = [
     title: 'Fill up some extra details 😉',
     description: 'We’ll use this to make tailored recommendations.',
   },
-  {
-    title: 'Lastly, what are your socials 🤳',
-    description: 'This will help add further content to your profile!',
-  },
+  // {
+  //   title: 'Lastly, what are your socials 🤳',
+  //   description: 'This will help add further content to your profile!',
+  // },
 ];
 
 export const interestsList = [
@@ -94,15 +91,14 @@ const stepSchemas = [
   }),
 ];
 
-export default function CreatorForm({ creator, open, onClose }) {
+export default function CreatorForm({ mutate, open, onClose }) {
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
   const [ratingIndustries, setRatingIndustries] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const theme = useTheme();
-  const router = useRouter();
-  const { logout } = useAuthContext();
+
+  const { logout, initialize } = useAuthContext();
   const smDown = useResponsive('down', 'sm');
 
   const resolver = yupResolver(stepSchemas[activeStep > 0 && activeStep]);
@@ -174,18 +170,18 @@ export default function CreatorForm({ creator, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     setIsSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     try {
-      // const socialMediaData = await fetchSocialMediaData(data.instagram, data.tiktok);
-      // console.log(socialMediaData);
       const newData = {
         ...data,
-        // socialMediaData,
         pronounce: otherPronounce || pronounce,
       };
+
       const res = await axiosInstance.put(endpoints.auth.updateCreator, newData);
       enqueueSnackbar(`Welcome ${res.data.name}!`);
-
+      initialize();
+      mutate();
       onClose();
     } catch (error) {
       enqueueSnackbar('Something went wrong', {
@@ -289,6 +285,8 @@ export default function CreatorForm({ creator, open, onClose }) {
           p: 4,
           m: 2,
           height: '97vh',
+          position: 'relative',
+          overflow: 'hidden',
         },
       }}
     >
@@ -315,62 +313,75 @@ export default function CreatorForm({ creator, open, onClose }) {
         />
       </Box>
 
-      <FormProvider methods={methods}>
-        <Stack
-          alignItems="center"
-          sx={{
-            mt: 5,
-          }}
-        >
-          <Box sx={{ flexGrow: 3 }}>{renderForm(steps[activeStep])}</Box>
+      <Stack
+        alignItems="center"
+        sx={{
+          mt: 5,
+          height: 1,
+          overflow: 'auto',
+          scrollbarWidth: 'none',
+        }}
+      >
+        <FormProvider methods={methods}>
+          <Box>{renderForm(steps[activeStep])}</Box>
 
-          {activeStep > 0 && activeStep < steps.length - 1 && (
-            <Button
-              onClick={handleNext}
-              disabled={!isValid}
-              sx={{
-                // position: 'absolute',
-                // bottom: 20,
-                // left: '50%',
-                // transform: 'translate(-50%)',
-                bgcolor: '#1340FF',
-                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                color: '#FFF',
-                px: 6,
-                py: 1,
-                '&:hover': {
+          <Box
+            sx={{
+              width: 1,
+              px: 4,
+              zIndex: 999,
+              textAlign: 'center',
+              ...(smDown && {
+                position: 'fixed',
+                bottom: 30,
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }),
+            }}
+          >
+            {activeStep > 0 && activeStep < steps.length - 1 && (
+              <Button
+                onClick={handleNext}
+                disabled={!isValid}
+                fullWidth={smDown}
+                sx={{
                   bgcolor: '#1340FF',
-                },
-              }}
-            >
-              Next
-            </Button>
-          )}
-          {activeStep === steps.length - 1 && (
-            <LoadingButton
-              sx={{
-                // position: 'absolute',
-                // bottom: 20,
-                // left: '50%',
-                // transform: 'translate(-50%)',
-                bgcolor: '#1340FF',
-                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                color: '#FFF',
-                px: 6,
-                py: 1,
-                '&:hover': {
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                  color: '#FFF',
+                  px: 6,
+                  py: 1,
+                  '&:hover': {
+                    bgcolor: '#1340FF',
+                  },
+                }}
+              >
+                Next
+              </Button>
+            )}
+
+            {activeStep === steps.length - 1 && (
+              <LoadingButton
+                fullWidth={smDown}
+                sx={{
                   bgcolor: '#1340FF',
-                },
-              }}
-              variant="contained"
-              onClick={onSubmit}
-              loading={isSubmitting}
-            >
-              Get Started
-            </LoadingButton>
-          )}
-        </Stack>
-      </FormProvider>
+                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                  color: '#FFF',
+                  px: 6,
+                  py: 1,
+                  '&:hover': {
+                    bgcolor: '#1340FF',
+                  },
+                }}
+                variant="contained"
+                onClick={onSubmit}
+                loading={isSubmitting}
+              >
+                Get Started
+              </LoadingButton>
+            )}
+          </Box>
+        </FormProvider>
+      </Stack>
 
       <Box
         sx={{
@@ -413,7 +424,7 @@ export default function CreatorForm({ creator, open, onClose }) {
 }
 
 CreatorForm.propTypes = {
-  creator: PropTypes.object,
+  mutate: PropTypes.func,
   open: PropTypes.bool,
   onClose: PropTypes.func,
 };
