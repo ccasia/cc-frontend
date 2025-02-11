@@ -87,6 +87,9 @@ const Overview = lazy(() => import('src/pages/dashboard/creator/overview'));
 
 const InvoiceDetail = lazy(() => import('src/pages/dashboard/creator/invoice-details'));
 
+// import the packages pages
+const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -496,6 +499,10 @@ export const dashboardRoutes = [
             element: <ManageRole />,
           },
         ],
+      },
+      {
+        path: 'packages',
+        element: <Packages />,
       },
       {
         path: 'template',

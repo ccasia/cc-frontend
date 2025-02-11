@@ -33,6 +33,8 @@ const TABLE_HEAD = [
   // { id: 'website', label: 'Website', width: 100 },
   { id: 'brand', label: 'Brands', width: 100 },
   { id: 'campaigns', label: 'Campaigns', width: 100 },
+  { id: 'status', label: 'Status', width: 100 },
+  { id: 'validity', label: 'Validity', width: 100 },
   { id: '', width: 88 },
 ];
 

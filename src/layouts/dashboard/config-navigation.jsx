@@ -202,6 +202,12 @@ export function useNavData() {
             path: paths.dashboard.roles.root,
             icon: <Iconify icon="oui:app-users-roles" width={25} />,
           },
+          {
+            roles: ['superadmin'],
+            title: 'Packages',
+            path: paths.dashboard.packages.root,
+            icon: <Iconify icon="carbon:package" width={25} />,
+          },
           // {
           //   title: 'Template',
           //   path: paths.dashboard.template.root,

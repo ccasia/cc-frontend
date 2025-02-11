@@ -148,6 +148,7 @@ export const endpoints = {
     editBrand: '/api/company/editBrand',
     getOptions: '/api/company/getOptions',
     getBrandsByClientId: (id) => `/api/company/getBrands/${id}`,
+    linkPackage: (id) => `/api/company/linkPackage/${id}`,
   },
   event: {
     list: '/api/event/',
@@ -156,6 +157,7 @@ export const endpoints = {
     update: '/api/event/updateEvent',
   },
   campaign: {
+    total: '/api/campaign/total',
     createCampaign: '/api/campaign/createCampaign',
     spreadsheet: '/api/campaign/spreadsheet',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
@@ -253,6 +255,13 @@ export const endpoints = {
     get: (id) => `/api/role/${id}`,
     update: (id) => `/api/role/${id}`,
   },
+  packages: {
+    root: '/api/packages/fetchAll',
+    seed: '/api/packages/seedPackages',
+    get: (id) => `/api/packages/${id}`,
+    update: (id) => `/api/packages/${id}`,
+    history: `/api/packages/history/`,
+  },
   invoice: {
     getAll: '/api/invoice/',
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,
@@ -270,6 +279,7 @@ export const endpoints = {
     xeroGetContacts: '/api/invoice/getXeroContacts',
     xeroCheckRefreshToken: '/api/invoice/checkRefreshToken',
     getCreatorInvoice: `/api/invoice/creatorInvoice`,
+    delete: (id) => `/api/invoice/${id}`,
   },
   agreementTemplate: {
     all: '/api/campaign/template',

@@ -22,16 +22,30 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { MultiFilePreview } from 'src/components/upload';
 
+const capitalizeFirstLetter = (string) => {
+  if (!string) return '';
+  if (string.toLowerCase() === 'f&b') return 'F&B';
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+};
+
 const ChipStyle = {
-  bgcolor: '#e4e4e4',
+  bgcolor: '#FFF',
+  border: 1,
+  borderColor: '#EBEBEB',
+  borderRadius: 1,
   color: '#636366',
-  borderRadius: 16,
+  height: '32px', 
+  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
     px: 1.5,
-    py: 0.5,
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: '-3px',
   },
-  '&:hover': { bgcolor: '#e4e4e4' },
+  '&:hover': { bgcolor: '#FFF' },
 };
 
 const BoxStyle = {
@@ -126,9 +140,14 @@ const CampaignInfo = ({ campaign }) => {
               {/* Left Column */}
               <Stack spacing={2} sx={{ flex: 1 }}>
                 {[
-                  { label: 'Gender', data: requirement?.gender },
+                  { label: 'Gender', data: requirement?.gender?.map(capitalizeFirstLetter) },
                   { label: 'Geo Location', data: requirement?.geoLocation },
-                  { label: 'Creator Persona', data: requirement?.creator_persona },
+                  { 
+                    label: 'Creator Persona', 
+                    data: requirement?.creator_persona?.map(value => 
+                      value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
+                    ) 
+                  },
                 ].map((item) => (
                   <Box key={item.label}>
                     <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
@@ -321,7 +340,7 @@ const CampaignInfo = ({ campaign }) => {
                   fontSize: '0.875rem',
                 }}
               >
-                {'References Links'.toUpperCase()}
+                REFERENCE LINKS
               </Typography>
             </Box>
 
@@ -437,7 +456,7 @@ const CampaignInfo = ({ campaign }) => {
                   <Chip
                     label={campaign?.campaignBrief?.industries || 'Not specified'}
                     size="small"
-                    sx={{ ...ChipStyle, height: 24, '& .MuiChip-label': { fontSize: '0.8rem' } }}
+                    sx={ChipStyle}
                   />
                 </Box>
               </Box>
@@ -449,7 +468,7 @@ const CampaignInfo = ({ campaign }) => {
             sx={{
               ...BoxStyle,
               mr: { xs: 0, md: 0 },
-              mt: 2,
+              mt: 0.5,
               width: '100%',
             }}
           >
@@ -511,12 +530,61 @@ const CampaignInfo = ({ campaign }) => {
             </Stack>
           </Box>
 
+          {/* Deliverables Box */}
+          <Box
+            sx={{
+              ...BoxStyle,
+              mr: { xs: 0, md: 0 },
+              mt: 0.5,
+              width: '100%',
+            }}
+          >
+            <Box className="header">
+              <Iconify
+                icon="mdi:cube-outline"
+                sx={{
+                  color: '#203ff5',
+                  width: 18,
+                  height: 18,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}
+              >
+                CAMPAIGN DELIVERABLES
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {[
+                { label: 'UGC Videos', value: true },
+                { label: 'Raw Footage', value: campaign?.rawFootage },
+                { label: 'Photos', value: campaign?.photos },
+                { label: 'Ads', value: campaign?.ads },
+              ].map((deliverable) => (
+                deliverable.value && (
+                  <Chip
+                    key={deliverable.label}
+                    label={deliverable.label}
+                    size="small"
+                    sx={ChipStyle}
+                  />
+                )
+              ))}
+            </Box>
+          </Box>
+
           {/* Campaign attachments */}
           <Box
             sx={{
               ...BoxStyle,
               mr: { xs: 0, md: 0 },
-              mt: 2,
+              mt: 0.5,
               width: '100%',
             }}
           >
@@ -537,7 +605,7 @@ const CampaignInfo = ({ campaign }) => {
                   fontSize: '0.8rem',
                 }}
               >
-                {'Other Attachments'.toUpperCase()}
+                OTHER ATTACHMENTS
               </Typography>
             </Box>
             {campaign?.campaignBrief?.otherAttachments?.length > 0 ? (
@@ -553,42 +621,6 @@ const CampaignInfo = ({ campaign }) => {
                 No attachments
               </Typography>
             )}
-
-            {/* <Stack spacing={1}>
-              {campaign?.campaignAdmin?.map((elem) => (
-                <Stack
-                  key={elem.id}
-                  direction="row"
-                  alignItems="center"
-                  spacing={1}
-                  sx={{ py: 0.75 }}
-                >
-                  <Avatar src={elem.admin.user.photoURL} sx={{ width: 32, height: 32 }} />
-                  <Typography variant="body2" sx={{ flex: 1, fontSize: '0.8rem' }}>
-                    {elem.admin.user.name}
-                  </Typography>
-                  <Box
-                    onClick={() => handleChatClick(elem.admin)}
-                    sx={{
-                      cursor: 'pointer',
-                      px: 1.5,
-                      py: 0.5,
-                      border: '1px solid #e7e7e7',
-                      borderBottom: '3px solid #e7e7e7',
-                      borderRadius: 1,
-                      color: '#203ff5',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      '&:hover': {
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      },
-                    }}
-                  >
-                    Message
-                  </Box>
-                </Stack>
-              ))}
-            </Stack> */}
           </Box>
         </Stack>
       </Stack>

@@ -100,6 +100,9 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/roles`,
       manage: (id) => `${ROOTS.DASHBOARD}/roles/manage/${id}`,
     },
+    packages: {
+      root: `${ROOTS.DASHBOARD}/packages`,
+    },
     template: {
       root: `${ROOTS.DASHBOARD}/template`,
     },

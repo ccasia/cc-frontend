@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
+import { Avatar } from '@mui/material';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
-import { Avatar, Typography } from '@mui/material';
 import ListItemText from '@mui/material/ListItemText';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -83,7 +83,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
           </Label>
         </TableCell>
 
-        <TableCell>
+        {/* <TableCell>
           <Button
             variant="outlined"
             onClick={handleOpenMediaKit}
@@ -94,7 +94,7 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
               Media Kit
             </Typography>
           </Button>
-        </TableCell>
+        </TableCell> */}
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label color={creator?.isFormCompleted ? 'success' : 'warning'}>

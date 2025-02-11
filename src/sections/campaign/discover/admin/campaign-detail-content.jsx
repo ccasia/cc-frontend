@@ -46,13 +46,16 @@ const ChipStyle = {
   borderColor: '#EBEBEB',
   borderRadius: 1,
   color: '#636366',
-  py: 2,
-  px: 1,
+  height: '32px', 
   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
     px: 1.5,
-    py: 0.5,
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: '-3px',
   },
   '&:hover': { bgcolor: '#FFF' },
 };
@@ -85,6 +88,12 @@ const CompactHeaderStyle = {
     pb: 1.5,
     minHeight: 'auto',
   },
+};
+
+const capitalizeFirstLetter = (string) => {
+  if (!string) return '';
+  if (string.toLowerCase() === 'f&b') return 'F&B';
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 };
 
 const CampaignDetailContent = ({ campaign }) => {
@@ -202,9 +211,14 @@ const CampaignDetailContent = ({ campaign }) => {
               {/* Left Column */}
               <Stack spacing={2} sx={{ flex: 1 }}>
                 {[
-                  { label: 'Gender', data: requirement?.gender },
+                  { label: 'Gender', data: requirement?.gender?.map(capitalizeFirstLetter) },
                   { label: 'Geo Location', data: requirement?.geoLocation },
-                  { label: 'Creator Persona', data: requirement?.creator_persona },
+                  { 
+                    label: 'Creator Persona', 
+                    data: requirement?.creator_persona?.map(value => 
+                      value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
+                    ) 
+                  },
                 ].map((item) => (
                   <Box key={item.label}>
                     <Typography variant="body2" sx={{ color: '#8e8e93', mb: 0.5, fontWeight: 650 }}>
@@ -491,48 +505,6 @@ const CampaignDetailContent = ({ campaign }) => {
               </Table>
             </TableContainer>
           </Box>
-
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <Iconify
-                icon="ep:guide"
-                sx={{
-                  color: '#203ff5',
-                  width: 20,
-                  height: 20,
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                }}
-              >
-                {'References Links'.toUpperCase()}
-              </Typography>
-            </Box>
-
-            {campaign?.campaignBrief?.referencesLinks?.length > 0 ? (
-              <List>
-                {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
-                  <ListItem key={index}>
-                    <ListItemIcon>
-                      <Iconify icon="ix:reference" />
-                    </ListItemIcon>
-                    <Link key={index} href={link} target="_blank">
-                      {link}
-                    </Link>
-                  </ListItem>
-                ))}
-              </List>
-            ) : (
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                No references found.
-              </Typography>
-            )}
-          </Box>
         </Stack>
 
         {/* Right Column */}
@@ -741,6 +713,48 @@ const CampaignDetailContent = ({ campaign }) => {
             </Stack>
           </Box>
 
+          {/* Deliverables Box */}
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="mdi:cube-outline"
+                sx={{
+                  color: '#203ff5',
+                  width: 18,
+                  height: 18,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}
+              >
+                DELIVERABLES
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {[
+                { label: 'UGC Videos', value: true },
+                { label: 'Raw Footage', value: campaign?.rawFootage },
+                { label: 'Photos', value: campaign?.photos },
+                { label: 'Ads', value: campaign?.ads },
+              ].map((deliverable) => (
+                deliverable.value && (
+                  <Chip
+                    key={deliverable.label}
+                    label={deliverable.label}
+                    size="small"
+                    sx={ChipStyle}
+                  />
+                )
+              ))}
+            </Box>
+          </Box>
+
           {/* Agreement Form Box */}
           <Box sx={BoxStyle}>
             <Box className="header">
@@ -825,6 +839,49 @@ const CampaignDetailContent = ({ campaign }) => {
                 }}
               >
                 No attachments
+              </Typography>
+            )}
+          </Box>
+
+          {/* Reference Links Box */}
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="ep:guide"
+                sx={{
+                  color: '#203ff5',
+                  width: 18,
+                  height: 18,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}
+              >
+                REFERENCE LINKS
+              </Typography>
+            </Box>
+
+            {campaign?.campaignBrief?.referencesLinks?.length > 0 ? (
+              <List>
+                {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
+                  <ListItem key={index}>
+                    <ListItemIcon>
+                      <Iconify icon="ix:reference" />
+                    </ListItemIcon>
+                    <Link key={index} href={link} target="_blank">
+                      {link}
+                    </Link>
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                No references found.
               </Typography>
             )}
           </Box>

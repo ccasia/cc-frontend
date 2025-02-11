@@ -59,7 +59,7 @@ const TABLE_HEAD = [
   // { id: 'instagram', label: 'Instagram', width: 150 },
   { id: 'country', label: 'Country', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
-  { id: 'mediaKit', label: 'Media Kit', width: 180 },
+  // { id: 'mediaKit', label: 'Media Kit', width: 180 },
   { id: 'paymentFormStatus', label: 'Payment Form Status', width: 180 },
   { id: '', label: '', width: 88 },
 ];

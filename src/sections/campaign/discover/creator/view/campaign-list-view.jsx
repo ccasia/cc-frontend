@@ -76,14 +76,12 @@ export default function CampaignListView() {
     return `/api/campaign/matchCampaignWithCreator?search=${encodeURIComponent(debouncedQuery)}&take=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
-  const { data, error, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(
-    getKey,
-    fetcher,
-    { revalidateFirstPage: false }
-  );
+  const { data, size, setSize, isValidating, isLoading, mutate } = useSWRInfinite(getKey, fetcher, {
+    revalidateFirstPage: false,
+  });
 
   const { user } = useAuthContext();
-  const dialog = useBoolean(!user?.creator?.isFormCompleted);
+  const dialog = useBoolean(!user?.creator?.isFormCompleted || !user?.paymentForm?.bankAccountName);
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
 
   const load = useBoolean();
@@ -97,13 +95,13 @@ export default function CampaignListView() {
 
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const [page, setPage] = useState(1);
-  const MAX_ITEM = 9;
+  // const [page, setPage] = useState(1);
+  // const MAX_ITEM = 9;
 
-  const onOpenCreatorForm = () => {
-    backdrop.onTrue();
-    dialog.onTrue();
-  };
+  // const onOpenCreatorForm = () => {
+  //   backdrop.onTrue();
+  //   dialog.onTrue();
+  // };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -222,9 +220,9 @@ export default function CampaignListView() {
     </Box>
   );
 
-  const handlePageChange = (event, value) => {
-    setPage(value);
-  };
+  // const handlePageChange = (event, value) => {
+  //   setPage(value);
+  // };
 
   // const filteredData = useMemo(() => {
   //   const indexOfLastItem = page * MAX_ITEM;
@@ -258,29 +256,29 @@ export default function CampaignListView() {
   //   [data]
   // );
 
-  const handleSearch = useCallback(
-    (inputValue) => {
-      setSearch((prevState) => ({
-        ...prevState,
-        query: inputValue,
-      }));
+  // const handleSearch = useCallback(
+  //   (inputValue) => {
+  //     setSearch((prevState) => ({
+  //       ...prevState,
+  //       query: inputValue,
+  //     }));
 
-      if (inputValue && filteredData) {
-        const filteredCampaigns = applyFilter({ inputData: filteredData, filter, user });
-        const results = filteredCampaigns.filter(
-          (campaign) =>
-            campaign.name.toLowerCase().includes(inputValue.toLowerCase()) ||
-            campaign.company.name.toLowerCase().includes(inputValue.toLowerCase())
-        );
+  //     if (inputValue && filteredData) {
+  //       const filteredCampaigns = applyFilter({ inputData: filteredData, filter, user });
+  //       const results = filteredCampaigns.filter(
+  //         (campaign) =>
+  //           campaign.name.toLowerCase().includes(inputValue.toLowerCase()) ||
+  //           campaign.company.name.toLowerCase().includes(inputValue.toLowerCase())
+  //       );
 
-        setSearch((prevState) => ({
-          ...prevState,
-          results,
-        }));
-      }
-    },
-    [filteredData, filter, user]
-  );
+  //       setSearch((prevState) => ({
+  //         ...prevState,
+  //         results,
+  //       }));
+  //     }
+  //   },
+  //   [filteredData, filter, user]
+  // );
 
   // const handleScroll = useCallback(() => {
   //   if (!scrollContainerRef.current) return;
@@ -351,9 +349,9 @@ export default function CampaignListView() {
   //   return filteredData?.slice(indexOfFirstItem, indexOfLastItem);
   // }, [filteredData, page]);
 
-  useEffect(() => {
-    setPage(1); // Reset to first page when search query changes
-  }, [search.query]);
+  // useEffect(() => {
+  //   setPage(1); // Reset to first page when search query changes
+  // }, [search.query]);
 
   return (
     <Container
@@ -811,50 +809,6 @@ export default function CampaignListView() {
 
       {upload.length > 0 && renderUploadProgress}
 
-      {/* <Dialog open={backdrop.value} sx={{ zIndex: theme.zIndex.drawer + 1 }}>
-        <Box
-          sx={{
-            padding: '20px',
-            width: '580px',
-            height: '638px',
-            background: '#f4f4f4',
-            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.15)',
-            borderRadius: '20px',
-            overflow: 'auto',
-          }}
-        >
-          <IconButton
-            onClick={backdrop.onFalse}
-            sx={{
-              position: 'absolute',
-              top: 16,
-              right: 16,
-              color: 'text.secondary',
-              '&:hover': {
-                bgcolor: 'rgba(0, 0, 0, 0.04)',
-              },
-            }}
-          >
-            <Iconify icon="mingcute:close-fill" width={24} />
-          </IconButton>
-
-          <Stack spacing={0}>
-            <Typography
-              variant="body1"
-              sx={{
-                fontFamily: theme.typography.fontSecondaryFamily,
-                flexGrow: 1,
-                fontWeight: 'normal',
-                fontSize: '32px',
-              }}
-            >
-              💰 Fill in your payment details
-            </Typography>
-
-            <Divider sx={{ my: 2, mb: 0 }} />
-          </Stack>
-        </Box>
-      </Dialog> */}
       <CreatorForm dialog={dialog} user={user} backdrop={backdrop} />
 
       {showScrollTop && (
@@ -909,47 +863,3 @@ const applyFilter = ({ inputData, filter, user, sortBy, search }) => {
 
   return inputData;
 };
-
-// const applyFilter = ({ inputData, filters, sortBy, dateError }) => {
-//   const { services, destination, startDate, endDate, tourGuides } = filters;
-
-//   const tourGuideIds = tourGuides.map((tourGuide) => tourGuide.id);
-
-//   // SORT BY
-//   if (sortBy === 'latest') {
-//     inputData = orderBy(inputData, ['createdAt'], ['desc']);
-//   }
-
-//   if (sortBy === 'oldest') {
-//     inputData = orderBy(inputData, ['createdAt'], ['asc']);
-//   }
-
-//   if (sortBy === 'popular') {
-//     inputData = orderBy(inputData, ['totalViews'], ['desc']);
-//   }
-
-//   // FILTERS
-//   if (destination.length) {
-//     inputData = inputData.filter((tour) => destination.includes(tour.destination));
-//   }
-
-//   if (tourGuideIds.length) {
-//     inputData = inputData.filter((tour) =>
-//       tour.tourGuides.some((filterItem) => tourGuideIds.includes(filterItem.id))
-//     );
-//   }
-
-//   if (services.length) {
-//     inputData = inputData.filter((tour) => tour.services.some((item) => services.includes(item)));
-//   }
-
-//   if (!dateError) {
-//     if (startDate && endDate) {
-//       inputData = inputData.filter((tour) =>
-//         isBetween(startDate, tour.available.startDate, tour.available.endDate)
-//       );
-//     }
-//   }
-
-//   return inputData;
-// };

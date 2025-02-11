@@ -1,3 +1,4 @@
+import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -16,10 +17,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-// import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
-
-import { debounce } from 'lodash';
-
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
@@ -36,11 +33,6 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import CreateCampaignForm from 'src/sections/campaign/create/form';
 
 import CampaignLists from '../campaign-list';
-
-// const defaultFilters = {
-//   status: '',
-//   brands: [],
-// };
 
 const CampaignView = () => {
   const settings = useSettingsContext();
