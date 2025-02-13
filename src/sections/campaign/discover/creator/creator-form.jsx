@@ -1,13 +1,22 @@
-import React from 'react';
 import * as yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Dialog, Divider, FormLabel, Typography, IconButton } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Dialog,
+  Divider,
+  FormLabel,
+  Typography,
+  IconButton,
+  createFilterOptions,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -37,6 +46,8 @@ const FormField = ({ label, children }) => (
   </Stack>
 );
 
+const filter = createFilterOptions();
+
 const CreatorForm = ({ dialog, user, display, backdrop }) => {
   const { initialize } = useAuthContext();
   const schema = yup.object().shape({
@@ -63,9 +74,14 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
   const {
     handleSubmit,
     formState: { isValid },
+    setValue,
+    watch,
   } = methods;
 
+  const bankName = watch('bankName');
+
   const onSubmit = handleSubmit(async (data) => {
+    console.log(data);
     try {
       loading.onTrue();
       const res = await axiosInstance.patch(endpoints.creators.updateCreatorform, {
@@ -85,6 +101,13 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
       loading.onFalse();
     }
   });
+
+  useEffect(() => {
+    if (bankName && bankName.includes('Add')) {
+      const value = bankName.split(' ').slice(1).join(' ');
+      setValue('bankName', value);
+    }
+  }, [bankName, setValue]);
 
   return display ? (
     <FormProvider methods={methods} onSubmit={onSubmit}>
@@ -303,10 +326,25 @@ const CreatorForm = ({ dialog, user, display, backdrop }) => {
                 <RHFAutocomplete
                   selectOnFocus
                   clearOnBlur
-                  label="Select Bank"
+                  placeholder="Select Bank"
                   name="bankName"
                   options={banks.map((item) => item.bank)}
                   getOptionLabel={(option) => option}
+                  filterOptions={(options, params) => {
+                    const { inputValue } = params;
+                    const filtered = filter(options, params);
+
+                    // Suggest the creation of a new value
+                    const isExisting = options.some(
+                      (option) => option.toLowerCase() === inputValue.toLowerCase()
+                    );
+
+                    if (inputValue !== '' && !isExisting) {
+                      filtered.push(`Add ${inputValue}`);
+                    }
+
+                    return filtered;
+                  }}
                   sx={{
                     '& .MuiInputBase-root': {
                       background: '#FFFFFF',

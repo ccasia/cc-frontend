@@ -117,7 +117,10 @@ export default function AccountSocialLinks() {
 
   const connectFacebook = async () => {
     try {
-      const { data: url } = await axiosInstance.get('/api/social/auth/facebook');
+      // const { data: url } = await axiosInstance.get('/api/social/auth/facebook');
+      const { data: url } = await axiosInstance.get(
+        'https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=529931609539167&redirect_uri=https://staging.cultcreativeasia.com/api/social/auth/facebook/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights'
+      );
       enqueueSnackbar('Redirecting...');
       window.location.href = url;
     } catch (error) {
@@ -181,8 +184,11 @@ export default function AccountSocialLinks() {
           </LoadingButton>
         ) : (
           <Button
+            LinkComponent="a"
+            href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=529931609539167&redirect_uri=https://staging.cultcreativeasia.com/api/social/auth/facebook/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
+            target="_blank"
             variant="outlined"
-            onClick={connectFacebook}
+            // onClick={connectFacebook}
             startIcon={<Iconify icon="material-symbols:add-rounded" />}
             sx={{ borderRadius: 2 }}
           >
