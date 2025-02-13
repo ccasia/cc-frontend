@@ -61,17 +61,6 @@ const MediaKitCreator = () => {
     }
   );
 
-  // useEffect(() => {
-  //   setTiktok(socialData);
-  // }, [socialData, setTiktok]);
-
-  // useEffect(() => {
-  //   setInstagram(instaData);
-  // }, [instaData, setInstagram]);
-
-  // Function to get existing social media data
-  // const { data, isLoading } = useGetSocialMedia();
-
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
@@ -133,27 +122,8 @@ const MediaKitCreator = () => {
             gap: 1.5,
           }}
         >
-          {/* <Button
-            size="small"
-            variant="contained"
-            sx={{
-              boxShadow: 2,
-            }}
-            startIcon={<Iconify icon="material-symbols:refresh" />}
-            onClick={() => {
-              const res = checkSocialMediaUsername();
-              if (res) {
-                dialog.onTrue();
-              } else {
-                fetchNewSocialMediaData();
-              }
-            }}
-          >
-            {loading.value ? 'Loading...' : 'Refresh'}
-          </Button> */}
           <Button
             startIcon={<Iconify icon="solar:settings-linear" />}
-            // startIcon={<Iconify icon="lucide:edit" />}
             variant="outlined"
             sx={{
               color: 'black',
@@ -166,7 +136,6 @@ const MediaKitCreator = () => {
           </Button>
         </Box>
       </Stack>
-
       <Stack>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography
@@ -193,11 +162,9 @@ const MediaKitCreator = () => {
           </Typography>
         </Stack>
       </Stack>
-
       <Typography variant="subtitle2" my={1}>
         {user?.creator?.mediaKit?.about}
       </Typography>
-
       <Stack direction="row" alignItems="center" spacing={1} mb={2} flexWrap="wrap">
         {user?.creator?.interests.map((interest) => (
           <Label
@@ -214,7 +181,6 @@ const MediaKitCreator = () => {
           </Label>
         ))}
       </Stack>
-
       <Stack
         direction="row"
         alignItems="center"
@@ -389,15 +355,11 @@ const MediaKitCreator = () => {
           </Stack>
         </Box>
       </Stack>
-
       <Divider sx={{ my: 3 }} />
-
       {/* Bottom View */}
-
       <Typography fontWeight={400} fontFamily="Instrument Serif" fontSize="40px">
         Top Content
       </Typography>
-
       <Stack direction="row" alignItems="center" spacing={1} my={2} color="text.secondary">
         <Button
           variant="outlined"
@@ -442,7 +404,7 @@ const MediaKitCreator = () => {
           Partnerships
         </Button>
       </Stack>
-
+      {JSON.stringify(instagram)}
       <MediaKitSocial currentTab={currentTab} />
       <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} />
     </Container>
