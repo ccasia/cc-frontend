@@ -404,7 +404,7 @@ const MediaKitCreator = () => {
           Partnerships
         </Button>
       </Stack>
-      {JSON.stringify(instagram)}
+
       <MediaKitSocial currentTab={currentTab} />
       <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} />
     </Container>

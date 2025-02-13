@@ -106,7 +106,7 @@ export const endpoints = {
     getPartnerships: (id) => `/api/creator/getPartnerships/${id}`,
     social: {
       tiktok: (id) => `/api/social/tiktok/${id}`,
-      instagram: (id) => `/api/social/instagram/${id}`,
+      instagram: (id) => `/api/social/instagram/overview/${id}`,
     },
   },
   users: {
@@ -259,8 +259,9 @@ export const endpoints = {
     get: (id) => `/api/role/${id}`,
     update: (id) => `/api/role/${id}`,
   },
-  packages: {
-    root: '/api/packages/fetchAll',
+  package: {
+    create: '/api/package/',
+    root: '/api/package/',
     seed: '/api/packages/seedPackages',
     get: (id) => `/api/packages/${id}`,
     update: (id) => `/api/packages/${id}`,
@@ -297,6 +298,6 @@ export const endpoints = {
     regeneratepass: '/api/public/regenerate',
     validate: '/api/public/validate',
     getDetails: (id) => `/api/public/details/${id}`,
-    clientFeedback : '/api/public/client-feedback',
-  }
+    clientFeedback: '/api/public/client-feedback',
+  },
 };
