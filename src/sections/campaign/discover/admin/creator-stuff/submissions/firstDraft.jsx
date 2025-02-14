@@ -547,7 +547,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                   >
                     {submission?.isReview
                       ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
-                      : 'Pending Review'}
+                      : '-'}
                   </Typography>
                 </Stack>
               </Stack>
