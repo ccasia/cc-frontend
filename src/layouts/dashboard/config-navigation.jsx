@@ -340,8 +340,8 @@ export function useNavData() {
       if (user?.role === 'superadmin') {
         return [
           {
+            ...adminNavigations,
             items: [
-              ...adminNavigations,
               {
                 title: 'Invoices',
                 path: paths.dashboard.finance.invoice,
