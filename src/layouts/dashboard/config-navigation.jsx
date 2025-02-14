@@ -333,8 +333,23 @@ export function useNavData() {
       if (user?.role === 'admin' && user?.admin?.role?.name === 'Finance') {
         return financeNavigations;
       }
-      if (user?.role === 'superadmin' || user?.admin?.role?.name === 'CSM') {
+      if (user?.admin?.role?.name === 'CSM') {
         return adminNavigations;
+      }
+
+      if (user?.role === 'superadmin') {
+        return [
+          {
+            items: [
+              ...adminNavigations,
+              {
+                title: 'Invoices',
+                path: paths.dashboard.finance.invoice,
+                icon: <Iconify icon="iconamoon:invoice" width={25} />,
+              },
+            ],
+          },
+        ];
       }
 
       return [];
