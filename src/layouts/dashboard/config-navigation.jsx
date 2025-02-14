@@ -345,8 +345,8 @@ export function useNavData() {
 
       if (user?.role === 'superadmin') {
         return [
+          ...adminNavigations,
           {
-            ...adminNavigations,
             items: [
               {
                 title: 'Invoices',
