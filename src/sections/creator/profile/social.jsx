@@ -131,6 +131,7 @@ export default function AccountSocialLinks() {
   const disconnectInstagram = async () => {
     try {
       const res = await axiosInstance.delete(`/api/social/instagram/permissions/${user.id}`);
+      initialize();
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar(error?.message, {
