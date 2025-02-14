@@ -128,43 +128,17 @@ export default function AccountSocialLinks() {
     }
   };
 
-  // return (
-  //   <FormProvider methods={methods} onSubmit={onSubmit}>
-  //     <Stack component={Card} spacing={3} sx={{ p: 3 }} alignItems="flex-end">
-  //       <RHFTextField
-  //         name="instagram"
-  //         label="Instagram"
-  //         InputProps={{
-  //           startAdornment: (
-  //             <InputAdornment position="start">
-  //               <Iconify icon="mdi:instagram" width={20} />
-  //             </InputAdornment>
-  //           ),
-  //         }}
-  //       />
-  //       <RHFTextField
-  //         name="tiktok"
-  //         label="Tiktok"
-  //         InputProps={{
-  //           startAdornment: (
-  //             <InputAdornment position="start">
-  //               <Iconify icon="ic:baseline-tiktok" width={20} />
-  //             </InputAdornment>
-  //           ),
-  //         }}
-  //       />
-  //       <LoadingButton
-  //         type="submit"
-  //         variant="outlined"
-  //         disabled={!isDirty}
-  //         size="small"
-  //         loading={isSubmitting}
-  //       >
-  //         Save changes
-  //       </LoadingButton>
-  //     </Stack>
-  //   </FormProvider>
-  // );
+  const disconnectInstagram = async () => {
+    try {
+      const res = await axiosInstance.delete(`/api/social/instagram/permissions/${user.id}`);
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    }
+  };
+
   return (
     <Stack spacing={2} border={1} p={2} borderRadius={2} borderColor="#EBEBEB" px={2}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" width={1}>
@@ -175,7 +149,8 @@ export default function AccountSocialLinks() {
         {user?.creator?.isFacebookConnected ? (
           <LoadingButton
             variant="outlined"
-            onClick={disconnectFacebook}
+            // onClick={disconnectFacebook}
+            onClick={disconnectInstagram}
             color="error"
             sx={{ borderRadius: 2 }}
             loading={facebookLoading.value}
