@@ -21,7 +21,7 @@ export default function RoleBasedGuard({ hasContent, roles, children, sx }) {
   const router = useRouter();
 
   if (typeof roles !== 'undefined' && roles?.includes('god')) {
-    if (!roles?.includes(user?.admin?.mode)) {
+    if (!roles?.includes(user?.admin?.mode) || !roles?.includes(user?.role)) {
       return hasContent ? (
         <Container component={MotionContainer} sx={{ textAlign: 'center', ...sx }}>
           <m.div variants={varBounce().in}>
