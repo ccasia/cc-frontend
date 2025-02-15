@@ -2,15 +2,17 @@ import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import Iconify from 'src/components/iconify';
-import { usePopover } from 'src/components/custom-popover';
+import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export default function BrandsToolBar({
+export default function PackageTableToolbar({
   filters,
   onFilters,
   //
@@ -25,15 +27,15 @@ export default function BrandsToolBar({
     [onFilters]
   );
 
-  // const handleFilterRole = useCallback(
-  //   (event) => {
-  //     onFilters(
-  //       'role',
-  //       typeof event.target.value === 'string' ? event.target.value.split(',') : event.target.value
-  //     );
-  //   },
-  //   [onFilters]
-  // );
+  const handleFilterRole = useCallback(
+    (event) => {
+      onFilters(
+        'role',
+        typeof event.target.value === 'string' ? event.target.value.split(',') : event.target.value
+      );
+    },
+    [onFilters]
+  );
 
   return (
     <>
@@ -84,7 +86,7 @@ export default function BrandsToolBar({
             fullWidth
             value={filters.name}
             onChange={handleFilterName}
-            placeholder="Search by client name"
+            placeholder="Search..."
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -94,13 +96,13 @@ export default function BrandsToolBar({
             }}
           />
 
-          {/* <IconButton onClick={popover.onOpen}>
+          <IconButton onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
-          </IconButton> */}
+          </IconButton>
         </Stack>
       </Stack>
 
-      {/* <CustomPopover
+      <CustomPopover
         open={popover.open}
         onClose={popover.onClose}
         arrow="right-top"
@@ -132,12 +134,12 @@ export default function BrandsToolBar({
           <Iconify icon="solar:export-bold" />
           Export
         </MenuItem>
-      </CustomPopover> */}
+      </CustomPopover>
     </>
   );
 }
 
-BrandsToolBar.propTypes = {
+PackageTableToolbar.propTypes = {
   filters: PropTypes.object,
   onFilters: PropTypes.func,
   roleOptions: PropTypes.array,

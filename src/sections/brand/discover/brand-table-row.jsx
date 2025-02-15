@@ -1,14 +1,15 @@
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 
 import {
-  Chip,
   Avatar,
   Button,
   Tooltip,
   Checkbox,
   TableRow,
   TableCell,
+  Typography,
   ListItemText,
 } from '@mui/material';
 
@@ -41,6 +42,7 @@ const findLatestPackage = (packages) => {
 
   return latestPackage;
 };
+
 function getRemainingTime(createdDate, months) {
   const created = new Date(createdDate);
   const expiryDate = new Date(created);
@@ -55,66 +57,55 @@ function getRemainingTime(createdDate, months) {
 }
 
 const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) => {
-  const { logo, name, email, phone, website, campaign, brand, id, PackagesClient } = row;
+  const { logo, name, campaign, brand, id, subscriptions } = row;
 
   const confirm = useBoolean();
 
   const router = useRouter();
 
-  // const popover = usePopover();
-  const latestPackageItem = PackagesClient ? findLatestPackage(PackagesClient) : null;
-
-  console.log(latestPackageItem);
+  const packageItem = subscriptions ? findLatestPackage(subscriptions) : null;
 
   const validity = useMemo(() => {
-    if (latestPackageItem && latestPackageItem.invoiceDate) {
-      if (getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod) > 0) {
-        return `${getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod)} days left`;
+    if (packageItem) {
+      if (dayjs().isAfter(dayjs(packageItem?.expiredAt), 'date')) {
+        const overdue = dayjs().diff(dayjs(packageItem?.expiredAt), 'days');
+        return `${overdue} days overdue`;
       }
-      return `${Math.abs(
-        getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod)
-      )} days overdue`;
+      const remainingdays = dayjs(packageItem?.expiredAt).diff(dayjs(), 'days');
+      return `${remainingdays} days left`;
     }
+    return null;
+  }, [packageItem]);
 
-    return 'No Days Added';
-  }, [latestPackageItem]);
-
-  // function Validity() {
-  //   if (latestPackageItem && latestPackageItem.invoiceDate) {
-  //     if (getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod) > 0) {
-  //       return (
-  //         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-  //           <Chip
-  //             label={getRemainingTime(
-  //               latestPackageItem.invoiceDate,
-  //               latestPackageItem.validityPeriod
-  //             )}
-  //             variant="outlined"
-  //             color="default"
-  //           />{' '}
-  //           days left
-  //         </TableCell>
-  //       );
-  //     }
-  //     return (
-  //       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-  //         <Chip
-  //           label={Math.abs(
-  //             getRemainingTime(latestPackageItem.invoiceDate, latestPackageItem.validityPeriod)
-  //           )}
-  //           variant="outlined"
-  //           color="error"
-  //         />
-  //         days overdue
-  //       </TableCell>
-  //     );
-  //   }
-  //   return (
-  //     <TableCell sx={{ whiteSpace: 'nowrap' }}>
-  //       <Label>no Days added</Label>
-  //     </TableCell>
-  //   );
-  // }
+  const renderPackageContents = packageItem ? (
+    <>
+      <TableCell>
+        <Label color={packageItem?.status === 'active' ? 'error' : 'success'}>
+          {packageItem?.status}
+        </Label>
+      </TableCell>
+      <TableCell>
+        <Label color={validity?.includes('overdue') ? 'error' : 'default'}>{validity}</Label>
+      </TableCell>
+    </>
+  ) : (
+    <>
+      <TableCell>
+        <Label>
+          <Typography variant="caption" fontWeight={800}>
+            No package is linked
+          </Typography>
+        </Label>
+      </TableCell>
+      <TableCell>
+        <Label>
+          <Typography variant="caption" fontWeight={800}>
+            No package is linked
+          </Typography>
+        </Label>
+      </TableCell>
+    </>
+  );
 
   return (
     <>
@@ -136,12 +127,6 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
           />
         </TableCell>
 
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{email || 'null'}</TableCell> */}
-
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{phone || 'null'}</TableCell> */}
-
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{website || 'null'}</TableCell> */}
-
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label>{brand?.length || '0'}</Label>
         </TableCell>
@@ -150,18 +135,7 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
           <Label>{campaign?.length || '0'}</Label>
         </TableCell>
 
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          <Chip
-            label={latestPackageItem ? dictionary[latestPackageItem.status] : 'N/A'}
-            variant="outlined"
-            color={latestPackageItem && latestPackageItem.status === 'active' ? 'success' : 'error'}
-          />
-        </TableCell>
-
-        {/* {Validity()} */}
-        <TableCell>
-          <Label>{validity}</Label>
-        </TableCell>
+        {renderPackageContents}
 
         <TableCell sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Edit" placement="top" arrow>

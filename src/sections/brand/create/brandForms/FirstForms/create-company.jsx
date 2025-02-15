@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { NumericFormat } from 'react-number-format';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useState, useEffect, useCallback } from 'react';
 
@@ -15,9 +16,10 @@ import {
   Button,
   Dialog,
   Stepper,
-  Divider,
   MenuItem,
   StepLabel,
+  FormLabel,
+  TextField,
   Typography,
   IconButton,
   DialogTitle,
@@ -58,15 +60,14 @@ const secondStepSchema = Yup.object().shape({
 });
 
 const thirdStepSchema = Yup.object().shape({
-  currency: Yup.string().required('currency is required'),
-  packageType: Yup.string().required('Package Type is required '),
-  packageId: Yup.string().required('pakcage id is required'),
-  packageValue: Yup.string().required('value is required'),
-  pakcageTotalCredits: Yup.string().required('totalCreadits is required'),
-  packageValidityPeriod: Yup.number()
-    .positive('number should be in  positive value')
-    .required('Validity period is required '),
-  invoiceDate: Yup.date().notRequired().nullable().typeError('PackageInvoice must be a valid date'),
+  currency: Yup.string().required('Currency is required'),
+  packageType: Yup.string().required('Package type is required '),
+  packageValue: Yup.string().required('Package price is required'),
+  totalUGCCredits: Yup.string().required('Total credits is required'),
+  validityPeriod: Yup.string().required('Validity period is required'),
+  invoiceDate: Yup.date()
+    .required('Invoice date is required')
+    .typeError('PackageInvoice must be a valid date'),
 });
 
 const validationSchema = [companySchema, secondStepSchema, thirdStepSchema];
@@ -85,9 +86,9 @@ const defaultValuesOne = {
   packageId: '',
   packageType: '',
   packageValue: '',
-  pakcageTotalCredits: '',
-  packageValidityPeriod: '',
-  currency: 'MYR',
+  totalUGCCredits: '',
+  validityPeriod: '',
+  currency: '',
   invoiceDate: null,
 };
 
@@ -99,8 +100,18 @@ const defaultValuesTwo = {
 const defaultValues = [defaultValuesOne, defaultValuesTwo];
 
 // eslint-disable-next-line react/prop-types
+const FormField = ({ label, children, ...others }) => (
+  <Stack spacing={0.5} alignItems="start" width={1}>
+    <FormLabel required sx={{ fontWeight: 500, color: '#636366', fontSize: '12px' }} {...others}>
+      {label}
+    </FormLabel>
+    {children}
+  </Stack>
+);
+
+// eslint-disable-next-line react/prop-types
 const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
-  const { data, isLoading } = useGetPackages();
+  const { data: packages, isLoading } = useGetPackages();
   const [image, setImage] = useState(null);
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -108,8 +119,6 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
   const { mutate } = useGetCompany();
   const openConfirmation = useBoolean();
   const smUp = useResponsive('up', 'sm');
-  const [activeType, setActiveType] = useState('');
-  const [activeCurrency, setActiveCurrency] = useState('MYR');
 
   const methods = useForm({
     resolver: yupResolver(validationSchema[activeStep]),
@@ -118,11 +127,22 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     reValidateMode: 'onChange',
   });
 
-  const { handleSubmit, setValue, reset, trigger, watch } = methods;
+  const {
+    handleSubmit,
+    setValue,
+    reset,
+    trigger,
+    watch,
+    formState: { errors },
+  } = methods;
 
   const values = watch();
 
-  const daysLeft = dayjs().add(values.packageValidityPeriod, 'month').diff(dayjs(), 'days');
+  const packageType = watch('packageType');
+  const currency = watch('currency');
+  const invoiceDate = watch('invoiceDate');
+  const validitiyPeriod = watch('validityPeriod');
+  const packageValue = watch('packageValue');
 
   const { type } = values;
 
@@ -150,7 +170,6 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      // const res = await axiosInstance.post(endpoints.company.create, formData);
 
       set(
         'companyId',
@@ -197,153 +216,268 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     </Stack>
   );
 
-  const CompanyPackage = (
+  // const CompanyPackage = (
+  //   <Box
+  //     rowGap={1}
+  //     columnGap={2}
+  //     display="grid"
+  //     m={3}
+  //     mb={5}
+  //     gridTemplateColumns={{
+  //       xs: 'repeat(1, 1fr)',
+  //       sm: 'repeat(1, 1fr)',
+  //     }}
+  //   >
+  //     {/* <Typography
+  //       sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
+  //       fontSize={30}
+  //     >
+  //       Package Information
+  //     </Typography>
+
+  //     <Divider /> */}
+
+  //     <Box
+  //       rowGap={2}
+  //       columnGap={2}
+  //       mt={2}
+  //       display="flex"
+  //       flexDirection={{ xs: 'column', sm: 'row' }}
+  //       justifyContent="space-between"
+  //     >
+  //       <Box
+  //         display="flex"
+  //         flexDirection="row"
+  //         justifyContent="center"
+  //         alignItems="center"
+  //         gap={1}
+  //         width={1}
+  //       >
+  //         <FormField label="Package Type">
+  //           <RHFSelect name="packageType">
+  //             <MenuItem disabled sx={{ fontStyle: 'italic' }}>
+  //               Select Package Type
+  //             </MenuItem>
+  //             {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
+  //               <MenuItem key={e} value={e} onClick={() => setActiveType(e)}>
+  //                 {e}
+  //               </MenuItem>
+  //             ))}
+  //           </RHFSelect>
+  //         </FormField>
+  //       </Box>
+
+  //       <Box
+  //         display="flex"
+  //         flexDirection="row"
+  //         justifyContent="center"
+  //         alignItems="center"
+  //         gap={2}
+  //         width={1}
+  //       >
+  //         <Typography variant="subtitle1">Currency</Typography>
+  //         <RHFSelect name="currency" label="Currency">
+  //           {['MYR', 'SGD'].map((e) => (
+  //             <MenuItem key={e} value={e} onClick={() => setActiveCurrency(e)}>
+  //               {e}
+  //             </MenuItem>
+  //           ))}
+  //         </RHFSelect>
+  //       </Box>
+  //     </Box>
+
+  //     <Box
+  //       rowGap={3}
+  //       columnGap={1}
+  //       display="grid"
+  //       mt={1}
+  //       gridTemplateColumns={{
+  //         xs: 'repeat(1, 1fr)',
+  //         sm: 'repeat(1, 1fr)',
+  //       }}
+  //     >
+  //       <RHFTextField
+  //         key="packageId"
+  //         name="packageId"
+  //         label="Package ID"
+  //         disabled={activeType !== 'Custom'}
+  //       />
+  //       <RHFTextField key="packageType" name="packageType" label="Package Type" disabled />
+  //       <RHFTextField
+  //         key="packageValue"
+  //         name="packageValue"
+  //         label="Package Value"
+  //         disabled={activeType !== 'Custom'}
+  //       />
+
+  //       <RHFTextField
+  //         key="pakcageTotalCredits"
+  //         name="pakcageTotalCredits"
+  //         label="Total UGC Credits"
+  //         disabled={activeType !== 'Custom'}
+  //       />
+
+  //       <RHFTextField
+  //         key="packageValidityPeriod"
+  //         name="packageValidityPeriod"
+  //         label="Validity Period"
+  //         disabled={activeType !== 'Custom'}
+  //         helperText={`${daysLeft} days left`}
+  //       />
+  //     </Box>
+
+  //     <Box
+  //       display="flex"
+  //       mt={3}
+  //       mb={2}
+  //       flexDirection={{ xs: 'column', sm: 'column' }}
+  //       justifyContent="space-between"
+  //     >
+  //       <Typography
+  //         sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
+  //         fontSize={30}
+  //       >
+  //         Invoice Details
+  //       </Typography>
+
+  //       <Box display="flex" flexDirection="row" justifyContent="start" alignItems="start" gap={2}>
+  //         <RHFDatePicker name="invoiceDate" label="Invoice Date" />
+  //       </Box>
+  //     </Box>
+  //   </Box>
+  // );
+
+  const companyPackage = (
     <Box
-      rowGap={1}
-      columnGap={2}
-      display="grid"
-      m={3}
-      mb={5}
-      gridTemplateColumns={{
-        xs: 'repeat(1, 1fr)',
-        sm: 'repeat(1, 1fr)',
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: 'repeat(2, 1fr)' },
+        gap: 2,
+        mt: 2,
       }}
     >
-      <Typography
-        sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
-        fontSize={30}
-      >
-        Package Information
-      </Typography>
+      <FormField required={false} label="Package Type">
+        <RHFSelect name="packageType">
+          <MenuItem disabled sx={{ fontStyle: 'italic' }}>
+            Select package type
+          </MenuItem>
+          {/* {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
+            <MenuItem key={e} value={e}>
+              {e}
+            </MenuItem>
+          ))} */}
+          {packages?.map((item) => (
+            <MenuItem key={item.id} value={item.id}>
+              {item.name}
+            </MenuItem>
+          ))}
+          <MenuItem key="custom" value="Custom">
+            Custom
+          </MenuItem>
+        </RHFSelect>
+      </FormField>
 
-      <Divider />
+      <FormField required={false} label="Currency">
+        <RHFSelect name="currency">
+          <MenuItem disabled sx={{ fontStyle: 'italic' }}>
+            Select currency
+          </MenuItem>
+          {['MYR', 'SGD'].map((e) => (
+            <MenuItem key={e} value={e}>
+              {e}
+            </MenuItem>
+          ))}
+        </RHFSelect>
+      </FormField>
 
-      <Box
-        rowGap={2}
-        columnGap={2}
-        mt={2}
-        display="flex"
-        flexDirection={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-      >
-        <Box
-          display="flex"
-          flexDirection="row"
-          justifyContent="center"
-          alignItems="center"
-          gap={1}
-          width={1}
-        >
-          <Typography variant="subtitle1">Package Type</Typography>
-          <RHFSelect name="packageType" label="Package Type">
-            {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
-              <MenuItem key={e} value={e} onClick={() => setActiveType(e)}>
-                {e}
-              </MenuItem>
-            ))}
-          </RHFSelect>
-        </Box>
+      {packageType && currency && (
+        <>
+          <FormField required={false} label="Package Value">
+            <NumericFormat
+              value={packageValue}
+              disabled={packageType !== 'Custom'}
+              customInput={TextField}
+              thousandSeparator
+              prefix={currency === 'MYR' ? 'RM ' : '$ '}
+              decimalScale={2}
+              fixedDecimalScale
+              allowNegative={false}
+              onValueChange={(items) => setValue('packageValue', items.value)}
+              placeholder={currency === 'MYR' ? 'Price in MYR' : 'Price in SGD'}
+              variant="outlined"
+              fullWidth
+              error={errors.packageValue}
+              helperText={errors.packageValue && errors.packageValue.message}
+            />
+          </FormField>
+          <FormField required={false} label="Total UGC Credits">
+            <RHFTextField
+              name="totalUGCCredits"
+              disabled={packageType !== 'Custom'}
+              placeholder="Total UGC Credits"
+              type={packageType === 'Custom' ? 'number' : ''}
+              onKeyDown={(e) => {
+                if (e.key === '-' || e.key === 'e') {
+                  e.preventDefault();
+                }
+              }}
+              InputProps={{ inputProps: { min: 1 } }}
+            />
+          </FormField>
 
-        <Box
-          display="flex"
-          flexDirection="row"
-          justifyContent="center"
-          alignItems="center"
-          gap={2}
-          width={1}
-        >
-          <Typography variant="subtitle1">Currency</Typography>
-          <RHFSelect name="currency" label="Currency">
-            {['MYR', 'SGD'].map((e) => (
-              <MenuItem key={e} value={e} onClick={() => setActiveCurrency(e)}>
-                {e}
-              </MenuItem>
-            ))}
-          </RHFSelect>
-        </Box>
-      </Box>
+          <FormField required={false} label="Validity Period">
+            <RHFTextField
+              name="validityPeriod"
+              disabled={packageType !== 'Custom'}
+              placeholder="Validity Period"
+              type={packageType === 'Custom' ? 'number' : ''}
+              onKeyDown={(e) => {
+                if (e.key === '-' || e.key === 'e') {
+                  e.preventDefault();
+                }
+              }}
+              InputProps={{ inputProps: { min: 1 } }}
+              helperText={
+                invoiceDate
+                  ? `Valid until ${dayjs(invoiceDate).add(validitiyPeriod, 'month').format('LL')}`
+                  : ''
+              }
+            />
+          </FormField>
 
-      <Box
-        rowGap={3}
-        columnGap={1}
-        display="grid"
-        mt={1}
-        gridTemplateColumns={{
-          xs: 'repeat(1, 1fr)',
-          sm: 'repeat(1, 1fr)',
-        }}
-      >
-        <RHFTextField
-          key="packageId"
-          name="packageId"
-          label="Package ID"
-          disabled={activeType !== 'Custom'}
-        />
-        <RHFTextField key="packageType" name="packageType" label="Package Type" disabled />
-        <RHFTextField
-          key="packageValue"
-          name="packageValue"
-          label="Package Value"
-          disabled={activeType !== 'Custom'}
-        />
-
-        <RHFTextField
-          key="pakcageTotalCredits"
-          name="pakcageTotalCredits"
-          label="Total UGC Credits"
-          disabled={activeType !== 'Custom'}
-        />
-
-        <RHFTextField
-          key="packageValidityPeriod"
-          name="packageValidityPeriod"
-          label="Validity Period"
-          disabled={activeType !== 'Custom'}
-          helperText={`${daysLeft} days left`}
-        />
-      </Box>
-
-      <Box
-        display="flex"
-        mt={3}
-        mb={2}
-        flexDirection={{ xs: 'column', sm: 'column' }}
-        justifyContent="space-between"
-      >
-        <Typography
-          sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
-          fontSize={30}
-        >
-          Invoice Details
-        </Typography>
-
-        <Box display="flex" flexDirection="row" justifyContent="start" alignItems="start" gap={2}>
-          <RHFDatePicker name="invoiceDate" label="Invoice Date" />
-        </Box>
-      </Box>
+          <FormField label="Invoice Date">
+            <RHFDatePicker name="invoiceDate" />
+          </FormField>
+        </>
+      )}
     </Box>
   );
 
   const onNext = async () => {
     const isFilled = await trigger();
     // Validate current step
-    if (isFilled) {
-      setActiveStep((prev) => prev + 1);
-    }
+    // if (isFilled) {
+    setActiveStep((prev) => prev + 1);
+    // }
   };
 
   useEffect(() => {
-    const getPackage = data?.find((e) => e.type === activeType);
-    setValue('packageId', getPackage?.packageId);
-    setValue('packageType', getPackage?.type);
-    setValue(
-      'packageValue',
-      activeCurrency === 'MYR' ? getPackage?.valueMYR : getPackage?.valueSGD
-    );
-    setValue('pakcageTotalCredits', getPackage?.totalUGCCredits);
-    setValue('packageValidityPeriod', getPackage?.validityPeriod);
-    setValue('currency', activeCurrency);
-  }, [activeType, activeCurrency, setValue, data]);
+    if (packageType && currency) {
+      if (packageType !== 'Custom') {
+        const item = packages.find((c) => c.id === packageType);
+
+        const amount = item.prices.find((c) => c.currency === currency)?.amount;
+        setValue('packageId', item.id);
+        setValue('validityPeriod', item.validityPeriod);
+        setValue('packageValue', parseFloat(amount));
+        setValue('totalUGCCredits', item.credits);
+      } else {
+        setValue('validityPeriod', '');
+        setValue('packageValue', '');
+        setValue('totalUGCCredits', '');
+      }
+    }
+  }, [setValue, packageType, currency, packages]);
 
   return (
     <>
@@ -476,7 +610,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
             {activeStep === 1 && renderPICForm}
 
             {/* For Mohand to handle the package forms */}
-            {activeStep === 2 && CompanyPackage}
+            {activeStep === 2 && companyPackage}
 
             <Stack direction="row" spacing={1} justifyContent="end" my={3}>
               {activeStep > 0 && (
