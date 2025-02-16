@@ -25,7 +25,7 @@ import useGetPackages from 'src/hooks/use-get-packges';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFTextField, RHFDatePicker } from 'src/components/hook-form';
 
 const packageSchema = Yup.object().shape({
   packageName: Yup.string().required('Package Name is required'),
@@ -51,6 +51,7 @@ const defaultValues = {
   priceSGD: '',
   totalUGCCredits: '',
   validityPeriod: '',
+  invoiceDate: '',
 };
 
 // eslint-disable-next-line react/prop-types
@@ -189,6 +190,10 @@ const PackageCreate = ({ open, onClose }) => {
                   }
                 }}
               />
+            </FormField>
+
+            <FormField label="Invoice Date">
+              <RHFDatePicker name="invoiceDate" />
             </FormField>
           </Box>
 

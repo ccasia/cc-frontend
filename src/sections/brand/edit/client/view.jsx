@@ -90,6 +90,13 @@ const CompanyEditView = ({ id }) => {
   const packageDialog = useBoolean();
   const [activeTab, setActiveTab] = useState('package');
 
+  const campaigns = useMemo(() => {
+    if (company?.type === 'agency' || company?.brand?.length) {
+      return company?.brand?.flatMap((item) => item?.campaign);
+    }
+    return company?.campaign;
+  }, [company]);
+
   const currentPackage = useMemo(
     () => (company?.subscriptions?.length ? findLatestPackage(company?.subscriptions) : null),
     [company]
@@ -327,7 +334,7 @@ const CompanyEditView = ({ id }) => {
               </>
             )}
 
-            {activeTab === 'campaign' && <CampaignClientList campaigns={company?.campaign} />}
+            {activeTab === 'campaign' && <CampaignClientList campaigns={campaigns} />}
 
             {activeTab === 'pic' && <PICList personIncharge={company?.pic} />}
           </Box>

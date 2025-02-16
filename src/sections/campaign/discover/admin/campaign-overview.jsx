@@ -98,7 +98,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   const client = campaign?.company || campaign?.brand?.company;
 
   const latestPackageItem = useMemo(() => {
-    if (client && client?.subscriptions.length) {
+    if (client && client?.subscriptions?.length) {
       let packageItem = findLatestPackage(client?.subscriptions);
       packageItem = {
         ...packageItem,
