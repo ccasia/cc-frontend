@@ -96,33 +96,6 @@ const PublicCampaignDetailContent = ({ campaign }) => {
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setError] = useState(null);
 
-  // const handleChatClick = async (admin) => {
-  //   try {
-  //     const response = await axiosInstance.get(endpoints.threads.getAll);
-  //     const existingThread = response.data.find((thread) => {
-  //       const userIdsInThread = thread.UserThread.map((userThread) => userThread.userId);
-  //       return (
-  //         userIdsInThread.includes(user.id) &&
-  //         userIdsInThread.includes(admin.user.id) &&
-  //         !thread.isGroup
-  //       );
-  //     });
-
-  //     if (existingThread) {
-  //       navigate(`/dashboard/chat/thread/${existingThread.id}`);
-  //     } else {
-  //       const newThreadResponse = await axiosInstance.post(endpoints.threads.create, {
-  //         title: `Chat between ${user.name} & ${admin.user.name}`,
-  //         description: '',
-  //         userIds: [user.id, admin.user.id],
-  //         isGroup: false,
-  //       });
-  //       navigate(`/dashboard/chat/thread/${newThreadResponse.data.id}`);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error creating or finding chat thread:', error);
-  //   }
-  // };
 
   const requirement = campaign?.campaignRequirement;
 

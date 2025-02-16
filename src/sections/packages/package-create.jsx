@@ -1,32 +1,39 @@
 import React from 'react';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
+import { NumericFormat } from 'react-number-format';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm, FormProvider } from 'react-hook-form';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
   Button,
   Dialog,
+  FormLabel,
+  TextField,
   Typography,
   IconButton,
   DialogTitle,
   DialogContent,
 } from '@mui/material';
 
+import useGetPackages from 'src/hooks/use-get-packges';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import Iconify from 'src/components/iconify';
-import { RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 const packageSchema = Yup.object().shape({
   packageName: Yup.string().required('Package Name is required'),
-  packageType: Yup.string().required('Package Type is required'),
-  valueMYR: Yup.number()
-    .required('Value in MYR is required')
-    .positive('Value must be a positive number'),
-  valueSGD: Yup.number()
-    .required('Value in SGD is required')
-    .positive('Value must be a positive number'),
+  // packageType: Yup.string().required('Package Type is required'),
+  priceMYR: Yup.string().required('Price in MYR is required'),
+  // .positive('Value must be a positive number'),
+  priceSGD: Yup.string().required('Price in SGD is required'),
+  // .positive('Value must be a positive number'),
   totalUGCCredits: Yup.number()
     .required('Total UGC Credits is required')
     .positive('Total UGC Credits must be a positive number')
@@ -39,12 +46,22 @@ const packageSchema = Yup.object().shape({
 
 const defaultValues = {
   packageName: '',
-  packageType: '',
-  valueMYR: '',
-  valueSGD: '',
+  // packageType: '',
+  priceMYR: '',
+  priceSGD: '',
   totalUGCCredits: '',
   validityPeriod: '',
 };
+
+// eslint-disable-next-line react/prop-types
+const FormField = ({ label, children, ...others }) => (
+  <Stack spacing={0.5} alignItems="start" width={1}>
+    <FormLabel required sx={{ fontWeight: 500, color: '#636366', fontSize: '12px' }} {...others}>
+      {label}
+    </FormLabel>
+    {children}
+  </Stack>
+);
 
 const PackageCreate = ({ open, onClose }) => {
   const methods = useForm({
@@ -52,15 +69,25 @@ const PackageCreate = ({ open, onClose }) => {
     defaultValues,
   });
 
+  const { mutate } = useGetPackages();
+
   const {
     handleSubmit,
     formState: { errors },
+    setValue,
   } = methods;
 
-  const onSubmit = (data) => {
-    console.log(data);
-    // Handle form submission
-  };
+  const onSubmit = handleSubmit(async (data) => {
+    try {
+      const res = await axiosInstance.post(endpoints.package.create, data);
+
+      enqueueSnackbar(res?.data?.message);
+      mutate();
+      onClose();
+    } catch (error) {
+      enqueueSnackbar(error?.message, { variant: 'error' });
+    }
+  });
 
   return (
     <Dialog
@@ -75,7 +102,10 @@ const PackageCreate = ({ open, onClose }) => {
         <Stack direction="row" alignItems="center" spacing={1}>
           <Iconify icon="mdi:package-variant-closed" width={28} />
           <Typography
-            sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
+            sx={{
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              flexGrow: 1,
+            }}
             fontSize={30}
           >
             Create a new package
@@ -87,7 +117,7 @@ const PackageCreate = ({ open, onClose }) => {
       </DialogTitle>
 
       <DialogContent>
-        <FormProvider {...methods}>
+        <FormProvider methods={methods} onSubmit={onSubmit}>
           <Box
             rowGap={2}
             columnGap={3}
@@ -99,61 +129,78 @@ const PackageCreate = ({ open, onClose }) => {
               sm: 'repeat(2, 1fr)',
             }}
           >
-            <RHFTextField
-              name="packageName"
-              label="Package Name"
-              error={!!errors.packageName}
-              helperText={errors.packageName ? errors.packageName.message : ''}
-            />
-            <RHFTextField
-              name="packageType"
-              label="Package Type"
-              error={!!errors.packageType}
-              helperText={errors.packageType ? errors.packageType.message : ''}
-            />
-            <RHFTextField
-              name="valueMYR"
-              label="Value in MYR"
-              type="number"
-              error={!!errors.valueMYR}
-              helperText={errors.valueMYR ? errors.valueMYR.message : ''}
-            />
-            <RHFTextField
-              name="valueSGD"
-              label="Value in SGD"
-              type="number"
-              error={!!errors.valueSGD}
-              helperText={errors.valueSGD ? errors.valueSGD.message : ''}
-            />
-            <RHFTextField
-              name="totalUGCCredits"
-              label="Total UGC Credits"
-              type="number"
-              error={!!errors.totalUGCCredits}
-              helperText={errors.totalUGCCredits ? errors.totalUGCCredits.message : ''}
-            />
-            <RHFTextField
-              name="validityPeriod"
-              label="Validity Period"
-              type="number"
-              error={!!errors.validityPeriod}
-              helperText={errors.validityPeriod ? errors.validityPeriod.message : ''}
-            />
+            <FormField label="Package Name">
+              <RHFTextField name="packageName" placeholder="Package Name" />
+            </FormField>
+
+            <FormField label="Price in MYR">
+              <NumericFormat
+                customInput={TextField}
+                thousandSeparator
+                prefix="RM "
+                decimalScale={2}
+                fixedDecimalScale
+                allowNegative={false}
+                onValueChange={(values) => setValue('priceMYR', values.value)}
+                placeholder="Price in MYR"
+                variant="outlined"
+                fullWidth
+                error={errors.priceMYR}
+                helperText={errors.priceMYR && errors.priceMYR.message}
+              />
+            </FormField>
+
+            <FormField label="Price in SGD">
+              <NumericFormat
+                customInput={TextField}
+                thousandSeparator
+                prefix="$ "
+                decimalScale={2}
+                fixedDecimalScale
+                allowNegative={false}
+                onValueChange={(values) => setValue('priceSGD', values.value)}
+                placeholder="Price in SGD"
+                variant="outlined"
+                fullWidth
+                error={errors.priceSGD}
+                helperText={errors.priceSGD && errors.priceSGD.message}
+              />
+            </FormField>
+            <FormField label="Total UGC Credits">
+              <RHFTextField
+                name="totalUGCCredits"
+                placeholder="Total UGC Credits"
+                type="number"
+                onKeyDown={(e) => {
+                  if (e.key === '-' || e.key === 'e') {
+                    e.preventDefault();
+                  }
+                }}
+              />
+            </FormField>
+            <FormField label="Validity Period ( in months )">
+              <RHFTextField
+                name="validityPeriod"
+                placeholder="Validity Period"
+                type="number"
+                onKeyDown={(e) => {
+                  if (e.key === '-' || e.key === 'e') {
+                    e.preventDefault();
+                  }
+                }}
+              />
+            </FormField>
           </Box>
+
           <Box mt={2} mb={2} display="flex" justifyContent="flex-end">
-            <Button variant="outlined" color="error" onClick={onClose}>
+            <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 0.8 }}>
               Cancel
             </Button>
             <Box mr={1} />
 
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              onClick={handleSubmit(onSubmit)}
-            >
-              Submit
-            </Button>
+            <LoadingButton type="submit" variant="contained" sx={{ borderRadius: 0.8 }}>
+              Create
+            </LoadingButton>
           </Box>
         </FormProvider>
       </DialogContent>

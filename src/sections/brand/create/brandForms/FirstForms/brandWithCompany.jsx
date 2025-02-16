@@ -226,7 +226,6 @@ function BrandWithCompany() {
             mt: 3,
           }}
         >
-          {' '}
           Brand Information
         </Typography>
         <Box sx={{ flexGrow: 1 }} />

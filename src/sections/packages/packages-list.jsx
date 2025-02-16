@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -15,9 +15,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import PackageItem from './packages-item';
-import PackageEdit from './package-edit';
 
-// eslint-disable-next-line react/prop-types
 const PackageLists = ({ packages }) => {
   const router = useRouter();
 
@@ -31,15 +29,15 @@ const PackageLists = ({ packages }) => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Type</TableCell>
-              <TableCell>Package Value</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Price</TableCell>
               <TableCell>UGC Credits</TableCell>
               <TableCell>Validity Period</TableCell>
               <TableCell />
             </TableRow>
           </TableHead>
+
           <TableBody>
-         
             {packages?.map((item) => (
               <PackageItem key={item.id} packageItem={item} />
             ))}
@@ -51,3 +49,7 @@ const PackageLists = ({ packages }) => {
 };
 
 export default PackageLists;
+
+PackageLists.propTypes = {
+  packages: PropTypes.array,
+};

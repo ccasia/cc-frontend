@@ -9,15 +9,13 @@ import Iconify from 'src/components/iconify';
 // import Iconify from 'src/components/iconify/Iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
-
-import Agreement from '../campaign/discover/admin/creator-stuff/submissions/agreement';
-import FirstDraft from '../campaign/discover/admin/creator-stuff/submissions/firstDraft';
-import FinalDraft from '../campaign/discover/admin/creator-stuff/submissions/finalDraft';
-import Posting from '../campaign/discover/admin/creator-stuff/submissions/posting/posting';
 import PublicFirstDraft from './publicFirstDraft';
+import PublicFinalDraft from './publicFinalDraft';
+import Agreement from '../campaign/discover/admin/creator-stuff/submissions/agreement';
+import Posting from '../campaign/discover/admin/creator-stuff/submissions/posting/posting';
 
 const PublicSubmissionsView = ({ campaign, submissions, creator }) => {
-  const [currentTab, setCurrentTab] = useState('agreement');
+  const [currentTab, setCurrentTab] = useState('drafts');
 
   const agreementSubmission = useMemo(
     () => submissions?.find((item) => item.submissionType.type === 'AGREEMENT_FORM'),
@@ -42,11 +40,11 @@ const PublicSubmissionsView = ({ campaign, submissions, creator }) => {
   const getVisibleStages = () => {
     let stages = [];
 
-    stages.push({
-      name: 'Agreement Submission',
-      value: 'agreement',
-      type: 'AGREEMENT_FORM',
-    });
+    // stages.push({
+    //   name: 'Agreement Submission',
+    //   value: 'agreement',
+    //   type: 'AGREEMENT_FORM',
+    // });
 
     // Show Draft Submissions if Agreement is approved
     if (agreementSubmission?.status === 'APPROVED') {
@@ -259,8 +257,13 @@ const PublicSubmissionsView = ({ campaign, submissions, creator }) => {
                 {agreementSubmission.status}
               </Label>
             </Stack>
-    
-            {/* <Agreement submission={agreementSubmission} campaign={campaign} creator={creator} />  */}
+
+            <Agreement
+              submission={agreementSubmission}
+              campaign={campaign}
+              creator={creator}
+              isForClient
+            />
           </Box>
         )}
 
@@ -331,7 +334,7 @@ const PublicSubmissionsView = ({ campaign, submissions, creator }) => {
                     {finalDraftSubmission.status}
                   </Label>
                 </Stack>
-                <FinalDraft
+                <PublicFinalDraft
                   submission={finalDraftSubmission}
                   campaign={campaign}
                   creator={creator}

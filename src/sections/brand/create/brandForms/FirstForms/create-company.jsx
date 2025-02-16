@@ -1,8 +1,11 @@
 /* eslint-disable no-unused-vars */
+import useSWR from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
+import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { NumericFormat } from 'react-number-format';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useState, useEffect, useCallback } from 'react';
 
@@ -15,13 +18,15 @@ import {
   Button,
   Dialog,
   Stepper,
-  Divider,
   MenuItem,
   StepLabel,
+  FormLabel,
+  TextField,
   Typography,
   IconButton,
   DialogTitle,
   DialogContent,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -29,7 +34,7 @@ import useGetCompany from 'src/hooks/use-get-company';
 import useGetPackages from 'src/hooks/use-get-packges';
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
@@ -41,37 +46,40 @@ const COMPANY_STEPS = ['Company Information', 'Person In Charge', 'Package Infor
 
 const companySchema = Yup.object().shape({
   companyName: Yup.string().required('Name is required'),
-  companyEmail: Yup.string()
-    .required('Email is required')
-    .email('Email must be a valid email address'),
+  // companyEmail: Yup.string()
+  //   .required('Email is required')
+  //   .email('Email must be a valid email address'),
   companyPhone: Yup.string().required('Phone is required'),
-  companyAddress: Yup.string().required('Address is required'),
-  companyWebsite: Yup.string().required('Website is required'),
-  companyAbout: Yup.string().required('About Description is required'),
-  companyRegistrationNumber: Yup.string().required('RegistrationNumber is required'),
+  // companyAddress: Yup.string().required('Address is required'),
+  // companyWebsite: Yup.string().required('Website is required'),
+  // companyAbout: Yup.string().required('About Description is required'),
+  // companyRegistrationNumber: Yup.string().required('RegistrationNumber is required'),
   type: Yup.string().required('Type is required'),
 });
 
 const secondStepSchema = Yup.object().shape({
   personInChargeName: Yup.string().required('PIC name is required.'),
   personInChargeDesignation: Yup.string().required('PIC designation is required.'),
+  personInChargeEmail: Yup.string()
+    .required('PIC email is required')
+    .email('Email must be a valid email address'),
 });
 
 const thirdStepSchema = Yup.object().shape({
-  currency: Yup.string().required('currency is required'),
-  packageType: Yup.string().required('Package Type is required '),
-  packageId: Yup.string().required('pakcage id is required'),
-  packageValue: Yup.string().required('value is required'),
-  pakcageTotalCredits: Yup.string().required('totalCreadits is required'),
-  packageValidityPeriod: Yup.number()
-    .positive('number should be in  positive value')
-    .required('Validity period is required '),
-  invoiceDate: Yup.date().notRequired().nullable().typeError('PackageInvoice must be a valid date'),
+  currency: Yup.string().required('Currency is required'),
+  packageType: Yup.string().required('Package type is required '),
+  packageValue: Yup.string().required('Package price is required'),
+  totalUGCCredits: Yup.string().required('Total credits is required'),
+  validityPeriod: Yup.string().required('Validity period is required'),
+  invoiceDate: Yup.date()
+    .required('Invoice date is required')
+    .typeError('PackageInvoice must be a valid date'),
 });
 
 const validationSchema = [companySchema, secondStepSchema, thirdStepSchema];
 
 const defaultValuesOne = {
+  companyID: '',
   companyName: '',
   companyEmail: '',
   companyPhone: '',
@@ -82,12 +90,13 @@ const defaultValuesOne = {
   type: '',
   personInChargeName: '',
   personInChargeDesignation: '',
+  personInChargeEmail: '',
   packageId: '',
   packageType: '',
   packageValue: '',
-  pakcageTotalCredits: '',
-  packageValidityPeriod: '',
-  currency: 'MYR',
+  totalUGCCredits: '',
+  validityPeriod: '',
+  currency: '',
   invoiceDate: null,
 };
 
@@ -99,17 +108,31 @@ const defaultValuesTwo = {
 const defaultValues = [defaultValuesOne, defaultValuesTwo];
 
 // eslint-disable-next-line react/prop-types
-const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
-  const { data, isLoading } = useGetPackages();
+const FormField = ({ label, children, ...others }) => (
+  <Stack spacing={0.5} alignItems="start" width={1}>
+    <FormLabel required sx={{ fontWeight: 500, color: '#636366', fontSize: '12px' }} {...others}>
+      {label}
+    </FormLabel>
+    {children}
+  </Stack>
+);
+
+const CreateCompany = ({
+  setOpenCreate,
+  openCreate,
+  set,
+  isDialog = true,
+  isForCampaign = false,
+}) => {
+  const { data: packages, isLoading } = useGetPackages();
   const [image, setImage] = useState(null);
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [companySteps, setCompanySteps] = useState(COMPANY_STEPS);
-  const { mutate } = useGetCompany();
+  const { data, mutate, isLoading: companyLoading } = useGetCompany();
   const openConfirmation = useBoolean();
   const smUp = useResponsive('up', 'sm');
-  const [activeType, setActiveType] = useState('');
-  const [activeCurrency, setActiveCurrency] = useState('MYR');
+  const { data: subscriptions } = useSWR('/api/subscription/', fetcher);
 
   const methods = useForm({
     resolver: yupResolver(validationSchema[activeStep]),
@@ -118,11 +141,22 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     reValidateMode: 'onChange',
   });
 
-  const { handleSubmit, setValue, reset, trigger, watch } = methods;
+  const {
+    handleSubmit,
+    setValue,
+    reset,
+    trigger,
+    watch,
+    formState: { errors },
+  } = methods;
 
   const values = watch();
 
-  const daysLeft = dayjs().add(values.packageValidityPeriod, 'month').diff(dayjs(), 'days');
+  const packageType = watch('packageType');
+  const currency = watch('currency');
+  const invoiceDate = watch('invoiceDate');
+  const validitiyPeriod = watch('validityPeriod');
+  const packageValue = watch('packageValue');
 
   const { type } = values;
 
@@ -136,6 +170,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     },
     [setValue]
   );
+
   // eslint-disable-next-line
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
@@ -145,19 +180,31 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
 
     try {
       setLoading(true);
+      await new Promise((resolve) => setTimeout(() => resolve(), 3000));
       const res = await axiosInstance.post(endpoints.company.create, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      // const res = await axiosInstance.post(endpoints.company.create, formData);
 
-      set(
-        'companyId',
-        { value: res.data?.company.id, name: res?.data?.company?.name },
-        { shouldValidate: true }
-      );
-      setOpenCreate(false);
+      if (isDialog) {
+        if (isForCampaign) {
+          set(
+            'client',
+            { value: res.data?.company.id, name: res?.data?.company?.name },
+            { shouldValidate: true }
+          );
+          setOpenCreate();
+        } else {
+          set(
+            'companyId',
+            { value: res.data?.company.id, name: res?.data?.company?.name },
+            { shouldValidate: true }
+          );
+          setOpenCreate(false);
+        }
+      }
+
       setActiveStep(0);
       reset();
       mutate();
@@ -191,136 +238,123 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
   };
 
   const renderPICForm = (
-    <Stack direction="row" alignItems="center" mt={3} gap={2}>
+    <Stack direction="row" alignItems="center" mt={3} gap={2} flexWrap="wrap">
       <RHFTextField name="personInChargeName" label="PIC Name" />
       <RHFTextField name="personInChargeDesignation" label="PIC Designation" />
+      <RHFTextField name="personInChargeEmail" label="PIC Email" />
     </Stack>
   );
 
-  const CompanyPackage = (
+  const companyPackage = (
     <Box
-      rowGap={1}
-      columnGap={2}
-      display="grid"
-      m={3}
-      mb={5}
-      gridTemplateColumns={{
-        xs: 'repeat(1, 1fr)',
-        sm: 'repeat(1, 1fr)',
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: 'repeat(2, 1fr)' },
+        gap: 2,
+        mt: 2,
       }}
     >
-      <Typography
-        sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
-        fontSize={30}
-      >
-        Package Information
-      </Typography>
+      <FormField required={false} label="Package Type">
+        <RHFSelect name="packageType">
+          <MenuItem disabled sx={{ fontStyle: 'italic' }}>
+            Select package type
+          </MenuItem>
+          {/* {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
+            <MenuItem key={e} value={e}>
+              {e}
+            </MenuItem>
+          ))} */}
+          {packages?.map((item) => (
+            <MenuItem key={item.id} value={item.id}>
+              {item.name}
+            </MenuItem>
+          ))}
+          <MenuItem key="custom" value="Custom">
+            Custom
+          </MenuItem>
+        </RHFSelect>
+      </FormField>
 
-      <Divider />
+      <FormField required={false} label="Currency">
+        <RHFSelect name="currency">
+          <MenuItem disabled sx={{ fontStyle: 'italic' }}>
+            Select currency
+          </MenuItem>
+          {['MYR', 'SGD'].map((e) => (
+            <MenuItem key={e} value={e}>
+              {e}
+            </MenuItem>
+          ))}
+        </RHFSelect>
+      </FormField>
 
-      <Box
-        rowGap={2}
-        columnGap={2}
-        mt={2}
-        display="flex"
-        flexDirection={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-      >
-        <Box
-          display="flex"
-          flexDirection="row"
-          justifyContent="center"
-          alignItems="center"
-          gap={1}
-          width={1}
-        >
-          <Typography variant="subtitle1">Package Type</Typography>
-          <RHFSelect name="packageType" label="Package Type">
-            {['Trail', 'Basic', 'Essential', 'Pro', 'Custom'].map((e) => (
-              <MenuItem key={e} value={e} onClick={() => setActiveType(e)}>
-                {e}
-              </MenuItem>
-            ))}
-          </RHFSelect>
-        </Box>
+      {packageType && currency && (
+        <>
+          <FormField required={false} label="Package ID">
+            <RHFTextField
+              name="subsID"
+              disabled={packageType !== 'Custom'}
+              placeholder="Package ID"
+            />
+          </FormField>
+          <FormField required={false} label="Package Value">
+            <NumericFormat
+              value={packageValue}
+              disabled={packageType !== 'Custom'}
+              customInput={TextField}
+              thousandSeparator
+              prefix={currency === 'MYR' ? 'RM ' : '$ '}
+              decimalScale={2}
+              fixedDecimalScale
+              allowNegative={false}
+              onValueChange={(items) => setValue('packageValue', items.value)}
+              placeholder={currency === 'MYR' ? 'Price in MYR' : 'Price in SGD'}
+              variant="outlined"
+              fullWidth
+              error={errors.packageValue}
+              helperText={errors.packageValue && errors.packageValue.message}
+            />
+          </FormField>
+          <FormField required={false} label="Total UGC Credits">
+            <RHFTextField
+              name="totalUGCCredits"
+              disabled={packageType !== 'Custom'}
+              placeholder="Total UGC Credits"
+              type={packageType === 'Custom' ? 'number' : ''}
+              onKeyDown={(e) => {
+                if (e.key === '-' || e.key === 'e') {
+                  e.preventDefault();
+                }
+              }}
+              InputProps={{ inputProps: { min: 1 } }}
+            />
+          </FormField>
 
-        <Box
-          display="flex"
-          flexDirection="row"
-          justifyContent="center"
-          alignItems="center"
-          gap={2}
-          width={1}
-        >
-          <Typography variant="subtitle1">Currency</Typography>
-          <RHFSelect name="currency" label="Currency">
-            {['MYR', 'SGD'].map((e) => (
-              <MenuItem key={e} value={e} onClick={() => setActiveCurrency(e)}>
-                {e}
-              </MenuItem>
-            ))}
-          </RHFSelect>
-        </Box>
-      </Box>
+          <FormField required={false} label="Validity Period">
+            <RHFTextField
+              name="validityPeriod"
+              disabled={packageType !== 'Custom'}
+              placeholder="Validity Period"
+              type={packageType === 'Custom' ? 'number' : ''}
+              onKeyDown={(e) => {
+                if (e.key === '-' || e.key === 'e') {
+                  e.preventDefault();
+                }
+              }}
+              InputProps={{ inputProps: { min: 1 } }}
+              helperText={
+                invoiceDate
+                  ? `Valid until ${dayjs(invoiceDate).add(validitiyPeriod, 'month').format('LL')}`
+                  : ''
+              }
+            />
+          </FormField>
 
-      <Box
-        rowGap={3}
-        columnGap={1}
-        display="grid"
-        mt={1}
-        gridTemplateColumns={{
-          xs: 'repeat(1, 1fr)',
-          sm: 'repeat(1, 1fr)',
-        }}
-      >
-        <RHFTextField
-          key="packageId"
-          name="packageId"
-          label="Package ID"
-          disabled={activeType !== 'Custom'}
-        />
-        <RHFTextField key="packageType" name="packageType" label="Package Type" disabled />
-        <RHFTextField
-          key="packageValue"
-          name="packageValue"
-          label="Package Value"
-          disabled={activeType !== 'Custom'}
-        />
-
-        <RHFTextField
-          key="pakcageTotalCredits"
-          name="pakcageTotalCredits"
-          label="Total UGC Credits"
-          disabled={activeType !== 'Custom'}
-        />
-
-        <RHFTextField
-          key="packageValidityPeriod"
-          name="packageValidityPeriod"
-          label="Validity Period"
-          disabled={activeType !== 'Custom'}
-          helperText={`${daysLeft} days left`}
-        />
-      </Box>
-
-      <Box
-        display="flex"
-        mt={3}
-        mb={2}
-        flexDirection={{ xs: 'column', sm: 'column' }}
-        justifyContent="space-between"
-      >
-        <Typography
-          sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
-          fontSize={30}
-        >
-          Invoice Details
-        </Typography>
-
-        <Box display="flex" flexDirection="row" justifyContent="start" alignItems="start" gap={2}>
-          <RHFDatePicker name="invoiceDate" label="Invoice Date" />
-        </Box>
-      </Box>
+          <FormField label="Invoice Date">
+            <RHFDatePicker name="invoiceDate" />
+          </FormField>
+        </>
+      )}
     </Box>
   );
 
@@ -332,187 +366,390 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
     }
   };
 
+  const getUniqueId = useCallback(async () => {
+    try {
+      const res = await axiosInstance.get(`/api/company/getUniqueCompanyId?type=${type}`);
+      setValue('companyID', res.data, {
+        shouldValidate: true,
+        shouldTouch: true,
+      });
+      return res.data;
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+      return error;
+    }
+  }, [type, setValue]);
+
   useEffect(() => {
-    const getPackage = data?.find((e) => e.type === activeType);
-    setValue('packageId', getPackage?.packageId);
-    setValue('packageType', getPackage?.type);
-    setValue(
-      'packageValue',
-      activeCurrency === 'MYR' ? getPackage?.valueMYR : getPackage?.valueSGD
+    if (packageType && currency) {
+      if (packageType !== 'Custom') {
+        const item = packages.find((c) => c.id === packageType);
+
+        const amount = item.prices.find((c) => c.currency === currency)?.amount;
+        setValue('packageId', item.id);
+        setValue('validityPeriod', item.validityPeriod);
+        setValue('packageValue', parseFloat(amount));
+        setValue('totalUGCCredits', item.credits);
+      } else {
+        setValue('packageId', '');
+        setValue('validityPeriod', '');
+        setValue('packageValue', '');
+        setValue('totalUGCCredits', '');
+      }
+      setValue('subsID', `P000${subscriptions.length + 1}`);
+    }
+  }, [setValue, packageType, currency, packages, subscriptions]);
+
+  useEffect(() => {
+    if (type) {
+      getUniqueId();
+    }
+  }, [setValue, type, getUniqueId]);
+
+  useEffect(() => {
+    if (packageType && currency) {
+      getUniqueId();
+    }
+  }, [setValue, packageType, currency, getUniqueId]);
+
+  if (companyLoading || isLoading) {
+    return (
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
     );
-    setValue('pakcageTotalCredits', getPackage?.totalUGCCredits);
-    setValue('packageValidityPeriod', getPackage?.validityPeriod);
-    setValue('currency', activeCurrency);
-  }, [activeType, activeCurrency, setValue, data]);
+  }
 
   return (
     <>
-      <Dialog
-        fullWidth
-        open={openCreate}
-        fullScreen={!smUp}
-        PaperProps={{
-          sx: { maxWidth: 720, borderRadius: 0.8 },
-        }}
-      >
-        <DialogTitle>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Iconify icon="mdi:company" width={28} />
-            <Typography
-              sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
-              fontSize={30}
-            >
-              Create a new company
-            </Typography>
-            <IconButton size="small" sx={{ borderRadius: 1 }} onClick={handleClose}>
-              <Iconify icon="material-symbols:close-rounded" width={24} />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
-
-        <DialogContent>
-          <FormProvider methods={methods}>
-            {type && (
-              <Stepper activeStep={activeStep}>
-                {companySteps.map((label, index) => {
-                  const stepProps = {};
-                  const labelProps = {};
-
-                  return (
-                    <Step
-                      key={label}
-                      {...stepProps}
-                      sx={{
-                        '& .MuiStepIcon-root.Mui-completed': {
-                          color: 'black',
-                        },
-                        '& .MuiStepIcon-root.Mui-active': {
-                          color: 'black',
-                        },
-                        '& .MuiStepIcon-root.Mui-error': {
-                          color: 'red',
-                        },
-                      }}
-                    >
-                      <StepLabel {...labelProps}>{label}</StepLabel>
-                    </Step>
-                  );
-                })}
-              </Stepper>
-            )}
-
-            {/* Step 1  */}
-            {activeStep === 0 && (
-              <Box
-                rowGap={2}
-                columnGap={3}
-                display="grid"
-                mt={1}
-                gridTemplateColumns={{
-                  xs: 'repeat(1, 1fr)',
-                  sm: 'repeat(2, 1fr)',
-                }}
+      {isDialog ? (
+        <Dialog
+          fullWidth
+          open={openCreate}
+          fullScreen={!smUp}
+          PaperProps={{
+            sx: { maxWidth: 720, borderRadius: 0.8 },
+          }}
+        >
+          <DialogTitle>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Iconify icon="mdi:company" width={28} />
+              <Typography
+                sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
+                fontSize={30}
               >
-                <Box sx={{ flexGrow: 1 }} />
+                Create a new company
+              </Typography>
+              <IconButton size="small" sx={{ borderRadius: 1 }} onClick={handleClose}>
+                <Iconify icon="material-symbols:close-rounded" width={24} />
+              </IconButton>
+            </Stack>
+          </DialogTitle>
+
+          <DialogContent>
+            <FormProvider methods={methods}>
+              {type && (
+                <Stepper activeStep={activeStep}>
+                  {companySteps.map((label, index) => {
+                    const stepProps = {};
+                    const labelProps = {};
+
+                    return (
+                      <Step
+                        key={label}
+                        {...stepProps}
+                        sx={{
+                          '& .MuiStepIcon-root.Mui-completed': {
+                            color: 'black',
+                          },
+                          '& .MuiStepIcon-root.Mui-active': {
+                            color: 'black',
+                          },
+                          '& .MuiStepIcon-root.Mui-error': {
+                            color: 'red',
+                          },
+                        }}
+                      >
+                        <StepLabel {...labelProps}>{label}</StepLabel>
+                      </Step>
+                    );
+                  })}
+                </Stepper>
+              )}
+
+              {/* Step 1  */}
+              {activeStep === 0 && (
                 <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    flexDirection: 'column',
-                    gap: 2,
-                    p: 1,
-                    gridColumn: '1 / -1',
+                  rowGap={2}
+                  columnGap={3}
+                  display="grid"
+                  mt={1}
+                  gridTemplateColumns={{
+                    xs: 'repeat(1, 1fr)',
+                    sm: 'repeat(2, 1fr)',
                   }}
                 >
-                  <UploadPhoto onDrop={onDrop}>
-                    <Avatar
-                      sx={{
-                        width: 1,
-                        height: 1,
-                        borderRadius: '50%',
-                      }}
-                      src={image || null}
-                    />
-                  </UploadPhoto>
-                  <Typography
-                    variant="h4"
-                    sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
-                    letterSpacing={0.5}
+                  <Box sx={{ flexGrow: 1 }} />
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      flexDirection: 'column',
+                      gap: 2,
+                      p: 1,
+                      gridColumn: '1 / -1',
+                    }}
                   >
-                    Company Logo
-                  </Typography>
+                    <UploadPhoto onDrop={onDrop}>
+                      <Avatar
+                        sx={{
+                          width: 1,
+                          height: 1,
+                          borderRadius: '50%',
+                        }}
+                        src={image || null}
+                      />
+                    </UploadPhoto>
+                    <Typography
+                      variant="h4"
+                      sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
+                      letterSpacing={0.5}
+                    >
+                      Company Logo
+                    </Typography>
+                  </Box>
+                  <RHFTextField key="companyID" name="companyID" label="Company ID" disabled />
+                  <RHFTextField key="companyName" name="companyName" label="Company Name" />
+                  {/* <RHFTextField key="companyEmail" name="companyEmail" label="Company Email" /> */}
+                  <RHFTextField key="companyPhone" name="companyPhone" label="Company Phone" />
+                  <RHFTextField
+                    key="companyAddress"
+                    name="companyAddress"
+                    label="Company Address"
+                    multiline
+                  />
+                  <RHFTextField
+                    key="companyWebsite"
+                    name="companyWebsite"
+                    label="Company Website"
+                  />
+                  <RHFTextField
+                    key="companyAbout"
+                    name="companyAbout"
+                    label="Company About"
+                    multiline
+                  />
+                  <RHFTextField
+                    key="companyRegistrationNumber"
+                    name="companyRegistrationNumber"
+                    label="Company Registration Number"
+                  />
+                  <RHFSelect name="type" label="Client type">
+                    <MenuItem disabled>Select an option</MenuItem>
+                    <MenuItem value="agency">Agency</MenuItem>
+                    <MenuItem value="directClient">Direct Client</MenuItem>
+                  </RHFSelect>
                 </Box>
+              )}
 
-                <RHFTextField key="companyName" name="companyName" label="Company Name" />
-                <RHFTextField key="companyEmail" name="companyEmail" label="Company Email" />
-                <RHFTextField key="companyPhone" name="companyPhone" label="Company Phone" />
-                <RHFTextField
-                  key="companyAddress"
-                  name="companyAddress"
-                  label="Company Address"
-                  multiline
-                />
-                <RHFTextField key="companyWebsite" name="companyWebsite" label="Company Website" />
-                <RHFTextField
-                  key="companyAbout"
-                  name="companyAbout"
-                  label="Company About"
-                  multiline
-                />
-                <RHFTextField
-                  key="companyRegistrationNumber"
-                  name="companyRegistrationNumber"
-                  label="Company Registration Number"
-                />
-                <RHFSelect name="type" label="Client type">
-                  <MenuItem disabled>Select an option</MenuItem>
-                  <MenuItem value="agency">Agency</MenuItem>
-                  <MenuItem value="directClient">Direct Client</MenuItem>
-                </RHFSelect>
+              {activeStep === 1 && renderPICForm}
+
+              {/* For Mohand to handle the package forms */}
+              {activeStep === 2 && companyPackage}
+
+              <Stack direction="row" spacing={1} justifyContent="end" my={3}>
+                {activeStep > 0 && (
+                  <Button
+                    onClick={() => setActiveStep(activeStep - 1)}
+                    disabled={activeStep === 0}
+                    variant="outlined"
+                    sx={{ borderRadius: 0.6 }}
+                  >
+                    Back
+                  </Button>
+                )}
+
+                {activeStep === companySteps.length - 1 ? (
+                  <LoadingButton
+                    loading={loading}
+                    variant="contained"
+                    onClick={onSubmit}
+                    sx={{ borderRadius: 0.6 }}
+                  >
+                    Create
+                  </LoadingButton>
+                ) : (
+                  <Button
+                    variant="contained"
+                    sx={{ borderRadius: 0.6 }}
+                    onClick={onNext}
+                    // onClick={() => setActiveStep(activeStep + 1)}
+                  >
+                    Next
+                  </Button>
+                )}
+              </Stack>
+            </FormProvider>
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <FormProvider methods={methods}>
+          {type && (
+            <Stepper activeStep={activeStep}>
+              {companySteps.map((label, index) => {
+                const stepProps = {};
+                const labelProps = {};
+
+                return (
+                  <Step
+                    key={label}
+                    {...stepProps}
+                    sx={{
+                      '& .MuiStepIcon-root.Mui-completed': {
+                        color: 'black',
+                      },
+                      '& .MuiStepIcon-root.Mui-active': {
+                        color: 'black',
+                      },
+                      '& .MuiStepIcon-root.Mui-error': {
+                        color: 'red',
+                      },
+                    }}
+                  >
+                    <StepLabel {...labelProps}>{label}</StepLabel>
+                  </Step>
+                );
+              })}
+            </Stepper>
+          )}
+
+          {/* Step 1  */}
+          {activeStep === 0 && (
+            <Box
+              rowGap={2}
+              columnGap={3}
+              display="grid"
+              mt={1}
+              gridTemplateColumns={{
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+              }}
+            >
+              <Box sx={{ flexGrow: 1 }} />
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'column',
+                  gap: 2,
+                  p: 1,
+                  gridColumn: '1 / -1',
+                }}
+              >
+                <UploadPhoto onDrop={onDrop}>
+                  <Avatar
+                    sx={{
+                      width: 1,
+                      height: 1,
+                      borderRadius: '50%',
+                    }}
+                    src={image || null}
+                  />
+                </UploadPhoto>
+                <Typography
+                  variant="h4"
+                  sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
+                  letterSpacing={0.5}
+                >
+                  Company Logo
+                </Typography>
               </Box>
+              <RHFTextField key="companyID" name="companyID" label="Company ID" disabled />
+              <RHFTextField key="companyName" name="companyName" label="Company Name" />
+              {/* <RHFTextField key="companyEmail" name="companyEmail" label="Company Email" /> */}
+              <RHFTextField key="companyPhone" name="companyPhone" label="Company Phone" />
+              <RHFTextField
+                key="companyAddress"
+                name="companyAddress"
+                label="Company Address"
+                multiline
+              />
+              <RHFTextField key="companyWebsite" name="companyWebsite" label="Company Website" />
+              <RHFTextField
+                key="companyAbout"
+                name="companyAbout"
+                label="Company About"
+                multiline
+              />
+              <RHFTextField
+                key="companyRegistrationNumber"
+                name="companyRegistrationNumber"
+                label="Company Registration Number"
+              />
+              <RHFSelect name="type" label="Client type">
+                <MenuItem disabled>Select an option</MenuItem>
+                <MenuItem value="agency">Agency</MenuItem>
+                <MenuItem value="directClient">Direct Client</MenuItem>
+              </RHFSelect>
+            </Box>
+          )}
+
+          {activeStep === 1 && renderPICForm}
+
+          {/* For Mohand to handle the package forms */}
+          {activeStep === 2 && companyPackage}
+
+          <Stack direction="row" spacing={1} justifyContent="end" my={3}>
+            {activeStep > 0 && (
+              <Button
+                onClick={() => setActiveStep(activeStep - 1)}
+                disabled={activeStep === 0}
+                variant="outlined"
+                sx={{ borderRadius: 0.6 }}
+              >
+                Back
+              </Button>
             )}
 
-            {activeStep === 1 && renderPICForm}
-
-            {/* For Mohand to handle the package forms */}
-            {activeStep === 2 && CompanyPackage}
-
-            <Stack direction="row" spacing={1} justifyContent="end" my={3}>
-              {activeStep > 0 && (
-                <Button
-                  onClick={() => setActiveStep(activeStep - 1)}
-                  disabled={activeStep === 0}
-                  variant="outlined"
-                  sx={{ borderRadius: 0.6 }}
-                >
-                  Back
-                </Button>
-              )}
-
-              {activeStep === companySteps.length - 1 ? (
-                <LoadingButton
-                  loading={loading}
-                  variant="contained"
-                  onClick={onSubmit}
-                  sx={{ borderRadius: 0.6 }}
-                >
-                  Create
-                </LoadingButton>
-              ) : (
-                <Button
-                  variant="contained"
-                  sx={{ borderRadius: 0.6 }}
-                  onClick={onNext}
-                  // onClick={() => setActiveStep(activeStep + 1)}
-                >
-                  Next
-                </Button>
-              )}
-            </Stack>
-          </FormProvider>
-        </DialogContent>
-      </Dialog>
+            {activeStep === companySteps.length - 1 ? (
+              <LoadingButton
+                loading={loading}
+                variant="contained"
+                onClick={onSubmit}
+                sx={{ borderRadius: 0.6 }}
+              >
+                Create
+              </LoadingButton>
+            ) : (
+              <Button
+                variant="contained"
+                sx={{ borderRadius: 0.6 }}
+                onClick={onNext}
+                // onClick={() => setActiveStep(activeStep + 1)}
+              >
+                Next
+              </Button>
+            )}
+          </Stack>
+        </FormProvider>
+      )}
 
       <ConfirmDialog
         title="Unsaved Changes"
@@ -530,3 +767,11 @@ const CreateCompany = ({ setOpenCreate, openCreate, set }) => {
 };
 
 export default CreateCompany;
+
+CreateCompany.propTypes = {
+  setOpenCreate: PropTypes.func,
+  openCreate: PropTypes.string,
+  set: PropTypes.func,
+  isDialog: PropTypes.bool,
+  isForCampaign: PropTypes.bool,
+};

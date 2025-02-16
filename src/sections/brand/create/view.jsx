@@ -10,28 +10,26 @@ import { paths } from 'src/routes/paths';
 
 import withPermission from 'src/auth/guard/withPermissions';
 
-import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import CompanyBrandForm from './brandForms/companyBrandForm';
+import CreateCompany from './brandForms/FirstForms/create-company';
 
 const TABS = [
-  { label: 'Company & Brand', value: 'client', form: <CompanyBrandForm /> },
-  { label: 'Sup Brand', value: 'subClient', form: <h1>supBrand</h1>, disabled: true },
-  { label: 'Sup Sup Brand', value: 'subSubClient', form: <h1>supSupBrand</h1>, disabled: true },
+  { label: 'Create Company', value: 'client', form: <CreateCompany isDialog={false} /> },
+  { label: 'Create Brand', value: 'brand', form: <CompanyBrandForm /> },
+  // { label: 'Sup Sup Brand', value: 'subSubClient', form: <h1>supSupBrand</h1>, disabled: true },
 ];
 
 function CreateBrand() {
-  // useGetCompany();
-  const settings = useSettingsContext();
   const [currentTab, setCurrentTab] = useState('client');
 
   const [scrollableTab, setScrollableTab] = useState('client');
 
   const handleChangeTab = useCallback((event, newValue) => {
-    if (TABS.find((tab) => tab.value !== newValue).disabled) {
-      setCurrentTab(newValue);
-    }
+    // if (TABS.find((tab) => tab.value !== newValue).disabled) {
+    setCurrentTab(newValue);
+    // }
   }, []);
 
   const handleChangeScrollableTab = useCallback((event, newValue) => {
@@ -55,7 +53,6 @@ function CreateBrand() {
           p: {
             md: 3,
           },
-
           borderRadius: '10px',
         }}
       >

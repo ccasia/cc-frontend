@@ -2,8 +2,8 @@ import * as Yup from 'yup';
 import { mutate } from 'swr';
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { formatIncompletePhoneNumber } from 'libphonenumber-js';
 
@@ -15,7 +15,7 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import { TextField, InputAdornment } from '@mui/material';
+import { Stack, Typography, InputAdornment } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -29,7 +29,7 @@ export default function CreateBrand({ setBrand, open, onClose, brandName, client
     name: Yup.string().required('Name is required'),
     email: Yup.string().email('Must be a valid email').required('Email is required'),
     phone: Yup.string().required('Phone is required'),
-    brandInstagram: Yup.string().required('Instagram is required'),
+    brandInstagram: Yup.string(),
     brandTiktok: Yup.string(),
     brandFacebook: Yup.string(),
     brandIndustries: Yup.array()
@@ -103,10 +103,20 @@ export default function CreateBrand({ setBrand, open, onClose, brandName, client
       }}
       fullWidth
     >
-      <DialogTitle>Create Brand for {client?.name}</DialogTitle>
+      <DialogTitle>
+        <Typography
+          variant="h4"
+          sx={{
+            mb: 2,
+            mt: 3,
+          }}
+        >
+          Create Brand for {client?.name}
+        </Typography>
+      </DialogTitle>
       <DialogContent>
         <FormProvider methods={methods} onSubmit={onSubmit}>
-          <Box
+          {/* <Box
             rowGap={2}
             columnGap={3}
             display="grid"
@@ -117,94 +127,7 @@ export default function CreateBrand({ setBrand, open, onClose, brandName, client
             }}
           >
             <RHFTextField name="name" label="Name" fullWidth />
-            {/* <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignContent: 'center',
-              }}
-            >
-              {!isLoading && (
-                <RHFAutocomplete
-                  fullWidth
-                  key="companyChoice"
-                  name="companyChoice"
-                  placeholder="Company"
-                  options={companyState ? [companyState] : company}
-                  getOptionLabel={(option) => option.name || ''}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                  renderOption={(props, option) => {
-                    // eslint-disable-next-line react/prop-types
-                    const { key, ...optionProps } = props;
-
-                    if (!option.id) {
-                      return null;
-                    }
-
-                    return (
-                      <Stack
-                        component="li"
-                        key={key}
-                        direction="row"
-                        spacing={1}
-                        p={1}
-                        {...optionProps}
-                      >
-                        <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
-                        <ListItemText primary={option.name} />
-                      </Stack>
-                    );
-                  }}
-                />
-              )}
-
-              <Box
-                sx={{
-                  alignContent: 'center',
-                }}
-              >
-                <IconButton
-                  sx={{
-                    mx: 1,
-                    bgcolor: 'whitesmoke',
-                  }}
-                  onClick={handleClick}
-                >
-                  <Iconify icon="mingcute:add-line" />
-                </IconButton>
-                <Menu
-                  id="basic-menu"
-                  anchorEl={anchorEl}
-                  open={openMenu}
-                  onClose={handleClose}
-                  MenuListProps={{
-                    'aria-labelledby': 'basic-button',
-                  }}
-                  anchorOrigin={{
-                    vertical: 'center',
-                    horizontal: 'left',
-                  }}
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                >
-                  <MenuItem
-                    onClick={() => {
-                      setOpenCompany(true);
-                    }}
-                  >
-                    <Stack direction="row" alignItems="center" gap={1}>
-                      <Iconify icon="mdi:invite" />
-                      <Typography variant="button">Create Company</Typography>
-                    </Stack>
-                  </MenuItem>
-                </Menu>
-              </Box>
-            </Box> */}
             <RHFTextField name="email" label="Email" fullWidth />
-            {/* <RHFTextField name="phone" label="Phone" /> */}
             <Controller
               name="phone"
               control={control}
@@ -286,7 +209,105 @@ export default function CreateBrand({ setBrand, open, onClose, brandName, client
                 ))
               }
             />
+          </Box> */}
+
+          <Box
+            rowGap={2}
+            columnGap={3}
+            display="grid"
+            mt={1}
+            gridTemplateColumns={{
+              xs: 'repeat(1, 1fr)',
+              sm: 'repeat(2, 1fr)',
+            }}
+          >
+            {/* <Box sx={{ flexGrow: 1 }} /> */}
+            <RHFTextField key="brandName" name="name" label="Brand  Name" />
+            <RHFTextField key="brandEmail" name="email" label="Brand Email" />
+            <RHFTextField key="brandPhone" name="phone" label="Brand  Phone" />
+
+            <RHFAutocomplete
+              key="brandIndustries"
+              name="brandIndustries"
+              placeholder="+ Brand Industries"
+              multiple
+              freeSolo="true"
+              disableCloseOnSelect
+              options={interestsLists.map((option) => option)}
+              getOptionLabel={(option) => option}
+              renderOption={(props, option) => (
+                <li {...props} key={option}>
+                  {option}
+                </li>
+              )}
+              renderTags={(selected, getTagProps) =>
+                selected.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option}
+                    label={option}
+                    size="small"
+                    color="info"
+                    variant="soft"
+                  />
+                ))
+              }
+            />
           </Box>
+
+          <Stack mt={5}>
+            <Typography variant="h5">Social Media</Typography>
+
+            <Stack
+              direction="row"
+              spacing={3}
+              my={2}
+              sx={{
+                flexWrap: {
+                  xs: 'wrap',
+                  md: 'nowrap',
+                },
+              }}
+            >
+              <RHFTextField
+                key="brandInstagram"
+                name="brandInstagram"
+                label="Instagram"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="ant-design:instagram-filled" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <RHFTextField
+                key="brandTiktok"
+                name="brandTiktok"
+                label="Tiktok"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="ic:baseline-tiktok" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <RHFTextField
+                key="brandWebsite"
+                name="brandWebsite"
+                label="Website"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="fluent-mdl2:website" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Stack>
+          </Stack>
+
           <DialogActions>
             <Button size="small" onClick={onClose}>
               Cancel

@@ -1,11 +1,23 @@
+import dayjs from 'dayjs';
 import { isEqual } from 'lodash';
 import PropTypes from 'prop-types';
 import React, { useState, useCallback } from 'react';
 
-import { Card, Table, Tooltip, TableBody, IconButton, TableContainer } from '@mui/material';
+import {
+  Tab,
+  Card,
+  Tabs,
+  Table,
+  alpha,
+  Tooltip,
+  TableBody,
+  IconButton,
+  TableContainer,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import {
@@ -24,19 +36,51 @@ import BrandTableRow from './brand-table-row';
 
 const defaultFilters = {
   name: '',
+  status: 'all',
 };
 
 const TABLE_HEAD = [
-  { id: 'name', label: 'Name', width: 180 },
-  // { id: 'email', label: 'Email', width: 220 },
-  // { id: 'phoneNumber', label: 'Phone Number', width: 180 },
-  // { id: 'website', label: 'Website', width: 100 },
-  { id: 'brand', label: 'Brands', width: 100 },
-  { id: 'campaigns', label: 'Campaigns', width: 100 },
+  { id: 'name', label: 'Client name', width: 180 },
+  { id: 'brand', label: 'Total linked brands', width: 100 },
+  { id: 'campaigns', label: 'Total Campaigns', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
   { id: 'validity', label: 'Validity', width: 100 },
   { id: '', width: 88 },
 ];
+
+const STATUS_OPTIONS = [
+  {
+    value: 'all',
+    label: 'All',
+  },
+  {
+    value: 'ACTIVE',
+    label: 'Active',
+  },
+  {
+    value: 'INACTIVE',
+    label: 'Inactive',
+  },
+  {
+    value: 'unlinkPackage',
+    label: 'Unlinked package',
+  },
+];
+
+const findLatestPackage = (packages) => {
+  if (packages.length === 0) {
+    return null; // Return null if the array is empty
+  }
+
+  const latestPackage = packages.reduce((latest, current) => {
+    const latestDate = new Date(latest.createdAt);
+    const currentDate = new Date(current.createdAt);
+
+    return currentDate > latestDate ? current : latest;
+  });
+
+  return latestPackage;
+};
 
 const BrandLists = ({ dataFiltered }) => {
   const table = useTable();
@@ -53,7 +97,24 @@ const BrandLists = ({ dataFiltered }) => {
     filters,
   });
 
-  const notFound = (!filteredData?.length && canReset) || !filteredData?.length;
+  const totalStatus = useCallback(
+    (status) => {
+      if (status === 'all') {
+        return dataFiltered?.length;
+      }
+
+      if (status === 'unlinkPackage') {
+        return dataFiltered.filter((client) => findLatestPackage(client?.subscriptions) === null)
+          ?.length;
+      }
+
+      return (
+        dataFiltered.filter((client) => findLatestPackage(client.subscriptions)?.status === status)
+          .length || 0
+      );
+    },
+    [dataFiltered]
+  );
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -74,9 +135,44 @@ const BrandLists = ({ dataFiltered }) => {
     console.log(id);
   }, []);
 
+  const notFound = (!filteredData?.length && canReset) || !filteredData?.length;
+
   return (
     <Card>
+      <Tabs
+        value={filters.status}
+        onChange={(e, val) => handleFilters('status', val)}
+        sx={{
+          px: 2.5,
+          boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+        }}
+      >
+        {STATUS_OPTIONS.map((tab) => (
+          <Tab
+            key={tab.value}
+            iconPosition="end"
+            value={tab.value}
+            label={tab.label}
+            icon={
+              <Label
+                variant={
+                  ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
+                }
+                color={
+                  (tab.value === 'ACTIVE' && 'success') ||
+                  (tab.value === 'INACTIVE' && 'error') ||
+                  'default'
+                }
+              >
+                {totalStatus(tab.value)}
+              </Label>
+            }
+          />
+        ))}
+      </Tabs>
+
       <BrandsToolBar filters={filters} onFilters={handleFilters} />
+
       <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
         <TableSelectedAction
           dense={table.dense}
@@ -162,7 +258,9 @@ BrandLists.propTypes = {
 };
 
 function applyFilter({ inputData, comparator, filters }) {
-  const { name } = filters;
+  const { name, status } = filters;
+
+  console.log(status);
 
   const stabilizedThis = inputData?.map((el, index) => [el, index]);
 
@@ -172,11 +270,23 @@ function applyFilter({ inputData, comparator, filters }) {
     return a[1] - b[1];
   });
 
-  inputData = stabilizedThis?.map((el) => el[0]);
+  inputData = stabilizedThis
+    ?.map((el) => el[0])
+    .sort((a, b) => (dayjs(a.createdAt).isBefore(dayjs(b.createdAt)) ? 1 : -1));
 
   if (name) {
     inputData = inputData.filter(
       (user) => user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
+    );
+  }
+
+  if (status === 'unlinkPackage') {
+    inputData = inputData?.filter((client) => findLatestPackage(client?.subscriptions) === null);
+  }
+
+  if (status !== 'all' && status !== 'unlinkPackage') {
+    inputData = inputData?.filter(
+      (client) => findLatestPackage(client.subscriptions)?.status === status
     );
   }
 

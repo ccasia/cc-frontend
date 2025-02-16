@@ -1,12 +1,10 @@
 /* eslint-disable perfectionist/sort-imports */
 import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
-import { enqueueSnackbar } from 'notistack';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import { LoadingButton } from '@mui/lab';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
@@ -19,12 +17,9 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { ConfirmDialog } from 'src/components/custom-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -49,22 +44,15 @@ export default function UserCard({
   );
 
   const handleCardClick = () => {
-    console.log("campaignId:", campaignId, "creatorId:", creator?.id);
     if (campaignId && creator?.id) {
       router.push(paths.public.manageCreator(campaignId, creator.id));
-    } else {
-      console.error("Missing campaignId or creatorId");
     }
   };
-
-  console.log({ creator, campaign, campaignId, isSent })
-  
 
   return (
     <Box
       key={key}
       component="div"
-      // onClick={handleCardClick}
       sx={{
         position: 'relative',
         cursor: 'pointer',
@@ -287,7 +275,6 @@ export default function UserCard({
               e.stopPropagation();
               handleCardClick();
             }}
-            //  disabled={!isSent && isDisabled}
             sx={{
               mx: 'auto',
               width: '100%',
@@ -309,10 +296,8 @@ export default function UserCard({
             View Profile
             {/* {isSent ? 'View Profile' : 'Complete Agreement'} */}
           </Button>
-
         </Stack>
       </Card>
-
     </Box>
   );
 }

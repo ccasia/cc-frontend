@@ -10,7 +10,7 @@ import { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export default function BrandsToolBar({
+export default function CampaignToolBar({
   filters,
   onFilters,
   //
@@ -82,7 +82,7 @@ export default function BrandsToolBar({
         <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
           <TextField
             fullWidth
-            value={filters.name}
+            // value={filters.name}
             onChange={handleFilterName}
             placeholder="Search by client name"
             InputProps={{
@@ -137,7 +137,7 @@ export default function BrandsToolBar({
   );
 }
 
-BrandsToolBar.propTypes = {
+CampaignToolBar.propTypes = {
   filters: PropTypes.object,
   onFilters: PropTypes.func,
   roleOptions: PropTypes.array,

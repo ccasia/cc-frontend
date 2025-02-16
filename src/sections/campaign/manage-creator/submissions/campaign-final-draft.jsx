@@ -109,9 +109,14 @@ const CampaignFinalDraft = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  
+  // console.log("Campagin Data Final Draft ", campaign);
+
+  // console.log("submissions final", submission)
+
   const methods = useForm({
     defaultValues: {
-      draft: '',
+      draft: [],
       caption: savedCaption || '',
     },
     resolver: (values) => {
@@ -184,6 +189,22 @@ const CampaignFinalDraft = ({
   //     });
   //   });
   // };
+
+  const handleDraftVideoDrop = useCallback(
+    (acceptedFiles) => {
+      const currentFiles = Array.isArray(watch("draftVideo")) ? watch("draftVideo") : [];
+      setValue("draftVideo", [...currentFiles, ...acceptedFiles], { shouldValidate: true });
+    },
+    [watch, setValue]
+  );
+
+  const handleRemoveDraftVideo = useCallback(
+    (fileToRemove) => {
+      const updatedFiles = watch("draftVideo").filter((file) => file !== fileToRemove);
+      setValue("draftVideo", updatedFiles, { shouldValidate: true });
+    },
+    [watch, setValue]
+  );
 
   const generateThumbnail = useCallback(
     (file) =>
@@ -263,51 +284,56 @@ const CampaignFinalDraft = ({
     [setValue, generateThumbnail]
   );
 
-  const onSubmit = handleSubmit(async (value) => {
-    setOpenUploadModal(false);
-    setShowSubmitDialog(true);
-    setSubmitStatus('submitting');
+  // const onSubmit = handleSubmit(async (value) => {
+  //   setOpenUploadModal(false);
+  //   setShowSubmitDialog(true);
+  //   setSubmitStatus('submitting');
 
-    const formData = new FormData();
-    const newData = { caption: value.caption, submissionId: submission.id };
-    formData.append('data', JSON.stringify(newData));
-    formData.append('draftVideo', value.draft);
+  //   const formData = new FormData();
+  //   const newData = { caption: value.caption, submissionId: submission.id };
+  //   formData.append('data', JSON.stringify(newData));
+  //   //  formData.append('draftVideo', value.draft);
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const res = await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      enqueueSnackbar(res.data.message);
-      mutate(endpoints.kanban.root);
-      mutate(endpoints.campaign.creator.getCampaign(campaign.id));
-      setSubmitStatus('success');
-      inQueue.onTrue();
-      if (savedCaption) localStorage.removeItem('caption');
-    } catch (error) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+  //   if (value.draft) {
+  //     formData.append('draftVideo', value.draft); // Ensure the file is added
+  //   } else {
+  //     console.warn("No draft video found in value.draft");
+  //   }
+  //   try {
+  //     await new Promise((resolve) => setTimeout(resolve, 1000));
+  //     const res = await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+  //       headers: {
+  //         'Content-Type': 'multipart/form-data',
+  //       },
+  //     });
+  //     await new Promise((resolve) => setTimeout(resolve, 1500));
+  //     enqueueSnackbar(res.data.message);
+  //     mutate(endpoints.kanban.root);
+  //     mutate(endpoints.campaign.creator.getCampaign(campaign.id));
+  //     setSubmitStatus('success');
+  //     inQueue.onTrue();
+  //     if (savedCaption) localStorage.removeItem('caption');
+  //   } catch (error) {
+  //     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      if (error?.message === 'Forbidden') {
-        if (caption) {
-          localStorage.setItem('caption', caption);
-        }
-        dispatch({
-          type: 'LOGOUT',
-        });
-        enqueueSnackbar('Your session is expired. Please re-login', {
-          variant: 'error',
-        });
-        return;
-      }
-      enqueueSnackbar('Failed to submit draft', {
-        variant: 'error',
-      });
-      setSubmitStatus('error');
-    }
-  });
+  //     if (error?.message === 'Forbidden') {
+  //       if (caption) {
+  //         localStorage.setItem('caption', caption);
+  //       }
+  //       dispatch({
+  //         type: 'LOGOUT',
+  //       });
+  //       enqueueSnackbar('Your session is expired. Please re-login', {
+  //         variant: 'error',
+  //       });
+  //       return;
+  //     }
+  //     enqueueSnackbar('Failed to submit draft', {
+  //       variant: 'error',
+  //     });
+  //     setSubmitStatus('error');
+  //   }
+  // });
 
   const handleCancel = () => {
     if (isProcessing) {
@@ -363,6 +389,173 @@ const CampaignFinalDraft = ({
       socket.off('checkQueue');
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
+
+
+  const UploadFinalDraftVideoModal = ({ open, onClose, campaign }) => {
+    const methods = useForm({
+      defaultValues: {
+        finalDraftVideo: [],
+        caption: '',
+      },
+    });
+  
+    const { handleSubmit, setValue } = methods;
+    const [isSubmitting, setIsSubmitting] = useState(false);
+  
+    const onSubmit = handleSubmit(async (value) => {
+      console.log('Form values on submit:', value); 
+
+      setOpenUploadModal(false);
+      setShowSubmitDialog(true);
+      setSubmitStatus('submitting');
+    
+      const formData = new FormData();
+      const newData = { 
+        caption: value.caption, 
+        submissionId: submission.id 
+      };
+    
+      formData.append('data', JSON.stringify(newData));
+
+      // Ensure draftVideo has files
+      if (value.draftVideo && value.draftVideo.length > 0) {
+        value.draftVideo.forEach((file) => {
+          console.log('Appending file:', file); 
+          formData.append('draftVideo', file);
+        });
+      } else {
+        console.warn("No draft video found in value.draftVideo");
+      }
+    
+      // Debugging logs to verify data
+      console.log('New Data:', newData);
+      console.log('FormData Content:', {
+        caption: value.caption,
+        submissionId: submission.id,
+        draftVideo: value.draftVideo
+      });
+    
+
+    
+      try {
+        const res = await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+    
+        enqueueSnackbar(res.data.message || 'Final draft videos uploaded successfully');
+        mutate(endpoints.kanban.root);
+        mutate(endpoints.campaign.creator.getCampaign(submission.id));
+        setSubmitStatus('success');
+        inQueue.onTrue();
+    
+        // Remove saved caption if it exists
+        if (savedCaption) localStorage.removeItem('caption');
+    
+      } catch (error) {
+        if (error?.message === 'Forbidden') {
+          if (value.caption) {
+            localStorage.setItem('caption', value.caption);
+          }
+          dispatch({ type: 'LOGOUT' });
+          enqueueSnackbar('Your session has expired. Please re-login', { variant: 'error' });
+          return;
+        }
+    
+        enqueueSnackbar('Failed to submit draft', { variant: 'error' });
+        console.error('Upload error:', error);
+        setSubmitStatus('error');
+    
+      } finally {
+        setIsSubmitting(false);
+      }
+    });
+    
+    
+    
+  
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
+          <Stack direction="row" alignItems="center" gap={2}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: { xs: '1.8rem', sm: '2.4rem' },
+                fontWeight: 550,
+              }}
+            >
+              Upload Final Draft Videos
+            </Typography>
+            <IconButton
+              onClick={onClose}
+              sx={{
+                ml: 'auto',
+                color: '#636366',
+              }}
+            >
+              <Iconify icon="hugeicons:cancel-01" width={20} />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
+          <FormProvider methods={methods}>
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+                  Upload Final Draft Videos <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                </Typography>
+                <RHFUpload
+                  name="draftVideo"
+                  type="video"
+                  multiple
+                  accept={{ 'video/*': [] }}
+                />
+              </Box>
+              <RHFTextField
+                name="caption"
+                label="Caption"
+                multiline
+                rows={4}
+              />
+            </Stack>
+          </FormProvider>
+        </DialogContent>
+        <DialogActions sx={{ bgcolor: '#f4f4f4' }}>
+          <LoadingButton
+            fullWidth
+            loading={isSubmitting}
+            loadingPosition="center"
+            loadingIndicator={<CircularProgress color="inherit" size={24} />}
+            variant="contained"
+            onClick={onSubmit}
+            sx={{
+              bgcolor: '#203ff5',
+              color: 'white',
+              borderBottom: 3.5,
+              borderBottomColor: '#112286',
+              borderRadius: 1.5,
+              px: 2.5,
+              py: 1.2,
+              '&:hover': {
+                bgcolor: '#203ff5',
+                opacity: 0.9,
+              },
+            }}
+          >
+            Upload Videos
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+  
 
   return (
     previewSubmission?.status === 'CHANGES_REQUIRED' && (
@@ -516,6 +709,11 @@ const CampaignFinalDraft = ({
                     >
                       Upload
                     </Button>
+                    <UploadFinalDraftVideoModal
+                 open={openUploadModal}
+                 onClose={() => setOpenUploadModal(false)}
+                 campaign={campaign} 
+              />
                   </Box>
                 </Box>
               </Stack>
@@ -640,6 +838,13 @@ const CampaignFinalDraft = ({
                 >
                   Re-Upload
                 </Button>
+
+                <UploadFinalDraftVideoModal
+                 open={openUploadModal}
+                 onClose={() => setOpenUploadModal(false)}
+                 campaign={campaign} 
+              />
+
               </Box>
             </Box>
           </Stack>
@@ -675,7 +880,7 @@ const CampaignFinalDraft = ({
           </Stack>
         )}
 
-        <Dialog
+        {/* <Dialog
           open={openUploadModal}
           fullWidth
           maxWidth="md"
@@ -908,6 +1113,7 @@ const CampaignFinalDraft = ({
                     <RHFUpload
                       name="draft"
                       type="video"
+                      multiple
                       onDrop={handleDrop}
                       onRemove={handleRemoveFile}
                     />
@@ -963,7 +1169,7 @@ const CampaignFinalDraft = ({
               Submit
             </LoadingButton>
           </DialogActions>
-        </Dialog>
+        </Dialog> */}
 
         <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>
           <DialogContent>

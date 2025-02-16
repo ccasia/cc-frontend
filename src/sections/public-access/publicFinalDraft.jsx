@@ -16,7 +16,6 @@ import {
   Box,
   Grid,
   Chip,
-  Paper,
   Stack,
   Modal,
   Button,
@@ -34,10 +33,9 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
-import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 
 const options_changes = [
   'Missing caption requirements',
@@ -55,13 +53,17 @@ const options_changes = [
   'Speling in subtitles',
 ];
 
-const FinalDraft = ({ campaign, submission, creator }) => {
+const PublicFinalDraft = ({ campaign, submission, creator }) => {
   const [type, setType] = useState('approve');
   const approve = useBoolean();
   const request = useBoolean();
   const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const { user } = useAuthContext();
+
+  console.log('Campagin Data Final Draft ', campaign);
+
+  console.log('submissions final', submission);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -106,10 +108,14 @@ const FinalDraft = ({ campaign, submission, creator }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await axiosInstance.patch(endpoints.submission.admin.draft, {
+      //   const res = await axiosInstance.patch(endpoints.submission.admin.draft, {
+      //     ...data,
+      //     submissionId: submission.id,
+      //     userId: creator?.user?.id,
+      //   });
+      const res = await axiosInstance.patch(endpoints.public.clientFeedback, {
         ...data,
         submissionId: submission.id,
-        userId: creator?.user?.id,
       });
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
@@ -119,15 +125,9 @@ const FinalDraft = ({ campaign, submission, creator }) => {
       request.onFalse();
       reset();
     } catch (error) {
-      if (error) {
-        enqueueSnackbar(error, {
-          variant: 'error',
-        });
-      } else {
-        enqueueSnackbar('Error submitting', {
-          variant: 'error',
-        });
-      }
+      enqueueSnackbar('Error submitting', {
+        variant: 'error',
+      });
       approve.onFalse();
       request.onFalse();
     }
@@ -439,7 +439,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                   >
                     {submission?.isReview
                       ? dayjs(submission?.updatedAt).format('ddd, D MMM YYYY')
-                      : '-'}
+                      : 'Pending Review'}
                   </Typography>
                 </Stack>
               </Stack>
@@ -584,7 +584,6 @@ const FinalDraft = ({ campaign, submission, creator }) => {
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <Box
-                    // component={Paper}
                     sx={{
                       p: { xs: 2, sm: 3 },
                       mb: 2,
@@ -681,11 +680,10 @@ const FinalDraft = ({ campaign, submission, creator }) => {
 
                   {submission?.status === 'PENDING_REVIEW' && (
                     <Box
-                      // component={Paper}
                       sx={{
-                        // p: { xs: 2, sm: 3 },
+                        p: { xs: 2, sm: 3 },
                         borderRadius: 1,
-                        // border: '1px solid',
+                        border: '1px solid',
                         borderColor: 'divider',
                       }}
                     >
@@ -715,11 +713,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                             />
                             <Box
                               flexGrow={1}
-                              sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                textAlign: 'left',
-                              }}
+                              sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
                             >
                               <Typography
                                 variant="subtitle1"
@@ -772,9 +766,10 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                             </Box>
                           </Box>
                         ))}
+
                       {type === 'approve' && (
                         <FormProvider methods={methods} onSubmit={onSubmit}>
-                          <Stack gap={1} mb={2}>
+                          {/* <Stack gap={1} mb={2}>
                             <Typography variant="subtitle1" mb={1} mx={1}>
                               Schedule This Post
                             </Typography>
@@ -793,14 +788,14 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                           </Stack>
                           <Typography variant="subtitle1" mb={1} mx={1}>
                             Comments For Creator
-                          </Typography>
+                          </Typography> */}
                           <Stack gap={2}>
-                            <RHFTextField
+                            {/* <RHFTextField
                               name="feedback"
                               multiline
                               minRows={5}
                               placeholder="Comment"
-                            />
+                            /> */}
                             <Stack
                               alignItems={{ xs: 'stretch', sm: 'center' }}
                               direction={{ xs: 'column', sm: 'row' }}
@@ -816,7 +811,6 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                                 disabled={isDisabled}
                                 size="small"
                                 variant="contained"
-                                startIcon={<Iconify icon="solar:close-circle-bold" />}
                                 sx={{
                                   bgcolor: 'white',
                                   border: 1,
@@ -824,7 +818,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                                   borderColor: '#e7e7e7',
                                   borderBottom: 3,
                                   borderBottomColor: '#e7e7e7',
-                                  color: 'error.main',
+                                  color: 'black',
                                   '&:hover': {
                                     bgcolor: 'error.lighter',
                                     borderColor: '#e7e7e7',
@@ -840,9 +834,9 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                                   height: '45px',
                                 }}
                               >
-                                Request a change
+                                Add a feedback
                               </Button>
-                              <LoadingButton
+                              {/* <LoadingButton
                                 onClick={approve.onTrue}
                                 disabled={isDisabled}
                                 variant="contained"
@@ -870,7 +864,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                                 }}
                               >
                                 Approve
-                              </LoadingButton>
+                              </LoadingButton> */}
                             </Stack>
                           </Stack>
                           {confirmationApproveModal(approve.value, approve.onFalse)}
@@ -972,13 +966,11 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                 </Grid>
               </Grid>
             )}
-
             {submission?.status === 'CHANGES_REQUIRED' && (
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   {/* Video Box */}
                   <Box
-                    component={Paper}
                     sx={{
                       p: { xs: 2, sm: 3 },
                       mb: 2,
@@ -1200,9 +1192,9 @@ const FinalDraft = ({ campaign, submission, creator }) => {
   );
 };
 
-export default FinalDraft;
+export default PublicFinalDraft;
 
-FinalDraft.propTypes = {
+PublicFinalDraft.propTypes = {
   campaign: PropTypes.object,
   submission: PropTypes.object,
   creator: PropTypes.object,
