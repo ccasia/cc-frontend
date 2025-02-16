@@ -24,13 +24,12 @@ const defaultFilters = {
 };
 
 const TABLE_HEAD = [
-  { id: 'name', label: '', width: 180 },
-  { id: 'id', label: 'id', width: 88 },
-  { id: 'type', label: 'Type', width: 220 },
-  { id: 'value', label: 'Value', width: 180 },
-  { id: 'UgcCredits', label: 'Total credits', width: 100 },
-  { id: 'remaining credits', label: 'Credits Remaining', width: 88 },
-  { id: 'Validity', label: 'Validity', width: 100 },
+  { id: 'packageId', label: 'Package ID', width: 180 },
+  { id: 'type', label: 'Package type', width: 220 },
+  { id: 'price', label: 'Package Value', width: 180 },
+  { id: 'totalUGCCredits', label: 'Credits Utilized', width: 100 },
+  { id: 'remainingCredits', label: 'Available Credits', width: 88 },
+  { id: 'Validity', label: 'Validity period', width: 100 },
   { id: 'status', label: 'Status ', width: 50 },
 ];
 

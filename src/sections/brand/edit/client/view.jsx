@@ -3,13 +3,16 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, useFieldArray } from 'react-hook-form';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
+  Tab,
   Card,
+  Tabs,
   Stack,
+  alpha,
   Button,
   Dialog,
   Container,
@@ -23,7 +26,6 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompanyById from 'src/hooks/use-get-company-by-id';
-import useGetClientHistory from 'src/hooks/use-get-package-history';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -31,49 +33,13 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 
+import PICList from './pic/pic-list';
 import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
 import BrandEditLists from './brands/brands-edit-lists';
 import PackageHistoryList from './pakcage-history-list';
 import PackageCreateDialog from '../package-create-dialog';
-
-const pakcagesArray = [
-  {
-    type: 'Trail',
-    valueMYR: 2800,
-    valueSGD: 3100,
-    totalCredits: 5,
-    validityPeriod: 1,
-  },
-  {
-    type: 'Basic',
-    valueMYR: 8000,
-    valueSGD: 8900,
-    totalCredits: 15,
-    validityPeriod: 2,
-  },
-  {
-    type: 'Essential',
-    valueMYR: 15000,
-    valueSGD: 17500,
-    totalCredits: 30,
-    validityPeriod: 3,
-  },
-  {
-    type: 'Pro',
-    valueMYR: 23000,
-    valueSGD: 29000,
-    totalCredits: 50,
-    validityPeriod: 5,
-  },
-  {
-    type: 'Custom',
-    valueMYR: 1,
-    valueSGD: 1,
-    totalCredits: 1,
-    validityPeriod: 1,
-  },
-];
+import CampaignClientList from './campaign-client/view/campaign-list';
 
 const findLatestPackage = (packages) => {
   if (packages?.length === 0) {
@@ -90,48 +56,44 @@ const findLatestPackage = (packages) => {
   return latestPackage;
 };
 
+const defaultValues = {
+  companyLogo: {},
+  companyName: '',
+  companyEmail: '',
+  companyPhone: '',
+  companyAddress: '',
+  companyWebsite: '',
+  companyAbout: '',
+  type: '',
+  companyId: '',
+  companyRegistrationNumber: '',
+};
+
+const companySchema = Yup.object().shape({
+  companyName: Yup.string().required('Name is required'),
+  // companyEmail: Yup.string()
+  //   .required('Email is required')
+  //   .email('Email must be a valid email address'),
+  companyPhone: Yup.string().required('Phone is required'),
+  // companyAddress: Yup.string().required('Address is required'),
+  // companyWebsite: Yup.string().required('Website is required'),
+  // companyAbout: Yup.string().required('About Description is required'),
+  // companyRegistrationNumber: Yup.string().required('RegistrationNumber is required'),
+  type: Yup.string().required('Client type is required'),
+});
+
 const CompanyEditView = ({ id }) => {
+  const { data: company, isLoading, mutate } = useGetCompanyById(id);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const dialog = useBoolean();
   const packageDialog = useBoolean();
-  const { data: company, isLoading, mutate } = useGetCompanyById(id);
-  const history = useGetClientHistory(id);
+  const [activeTab, setActiveTab] = useState('package');
 
-  const currentPackage = history?.data?.length ? findLatestPackage(history?.data) : null;
-
-  const companySchema = Yup.object().shape({
-    companyName: Yup.string().required('Name is required'),
-    companyEmail: Yup.string()
-      .required('Email is required')
-      .email('Email must be a valid email address'),
-    companyPhone: Yup.string().required('Phone is required'),
-    companyAddress: Yup.string().required('Address is required'),
-    companyWebsite: Yup.string().required('Website is required'),
-    companyAbout: Yup.string().required('About Description is required'),
-    // companyObjectives: Yup.array().of(
-    //   Yup.object().shape({
-    //     value: Yup.string().required('Value is required'),
-    //   })
-    // ),
-    companyRegistrationNumber: Yup.string().required('RegistrationNumber is required'),
-  });
-
-  const defaultValues = {
-    companyLogo: {},
-    companyName: '',
-    companyEmail: '',
-    companyPhone: '',
-    companyAddress: '',
-    companyWebsite: '',
-    companyAbout: '',
-    // companyObjectives: [
-    //   {
-    //     value: '',
-    //   },
-    // ],
-    companyRegistrationNumber: '',
-  };
+  const currentPackage = useMemo(
+    () => (company?.subscriptions?.length ? findLatestPackage(company?.subscriptions) : null),
+    [company]
+  );
 
   const methods = useForm({
     resolver: yupResolver(companySchema),
@@ -147,6 +109,7 @@ const CompanyEditView = ({ id }) => {
 
   useEffect(() => {
     reset({
+      companyId: company?.clientId,
       companyLogo: company?.logo,
       companyName: company?.name,
       companyEmail: company?.email,
@@ -156,6 +119,7 @@ const CompanyEditView = ({ id }) => {
       companyAbout: company?.about,
       companyObjectives: company?.objectives,
       companyRegistrationNumber: company?.registration_number,
+      type: company?.type,
     });
   }, [company, reset]);
 
@@ -193,7 +157,7 @@ const CompanyEditView = ({ id }) => {
     dialog.onFalse();
   }, [dialog]);
 
-  if (isLoading || history.isLoading) {
+  if (isLoading) {
     return (
       <Box
         sx={{
@@ -219,6 +183,7 @@ const CompanyEditView = ({ id }) => {
       <Button
         startIcon={<Iconify icon="ion:chevron-back" />}
         onClick={() => router.push(paths.dashboard.company.discover)}
+        variant="outlined"
       >
         Back
       </Button>
@@ -249,16 +214,16 @@ const CompanyEditView = ({ id }) => {
             {company?.brand?.length ? 'Agency' : 'Client'} Information
           </Typography>
 
-          {history && currentPackage && (
+          {currentPackage && (
             <Label color="success">
-              Remaining Credits: {currentPackage?.availableCredits || 0}
+              Remaining Credits: {currentPackage.totalCredits - currentPackage.creditsUsed || 0}
             </Label>
           )}
         </Box>
-
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <CompanyEditForm company={company} fieldsArray={fieldsArray} methods={methods} />
-          <Box textAlign="end">
+
+          <Box textAlign="end" mt={2}>
             <LoadingButton
               loading={loading}
               type="submit"
@@ -271,7 +236,6 @@ const CompanyEditView = ({ id }) => {
             </LoadingButton>
           </Box>
         </FormProvider>
-
         {company?.brand?.length > 0 && (
           <Card sx={{ my: 3, p: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -300,50 +264,73 @@ const CompanyEditView = ({ id }) => {
           </Card>
         )}
 
-        <Card sx={{ my: 3, p: 2, borderRadius: 1 }}>
-          {!history.data.length ? (
-            <Stack spacing={2} alignItems="center">
-              <Typography variant="subtitle1" color="text.secondary">
-                No package is connected
-              </Typography>
-              <Button
-                variant="outlined"
-                sx={{ boxShadow: '0px -3px 0px 0px #E7E7E7 inset' }}
-                startIcon={<Iconify icon="bx:package" width={22} />}
-                onClick={packageDialog.onTrue}
-              >
-                Connect package
-              </Button>
-            </Stack>
-          ) : (
-            <>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography
-                  sx={{
-                    fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                    fontSize: 30,
-                    fontWeight: 'normal',
-                    mb: 2,
-                  }}
-                >
-                  Package History
-                </Typography>
+        <Card sx={{ borderRadius: 1, mt: 2 }}>
+          <Tabs
+            value={activeTab}
+            onChange={(e, val) => setActiveTab(val)}
+            sx={{
+              px: 2.5,
+              boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+            }}
+          >
+            <Tab value="package" label="Package" />
+            <Tab value="campaign" label="Campaign" />
+            <Tab value="pic" label="Person In Charge" />
+          </Tabs>
 
-                <Button
-                  variant="outlined"
-                  sx={{
-                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  }}
-                  // onClick={dialog.onTrue}
-                  disabled={!(currentPackage?.status === 'inactive' && currentPackage)}
-                >
-                  Renew Package
-                </Button>
-              </Stack>
+          <Box p={2}>
+            {activeTab === 'package' && (
+              <>
+                {!currentPackage ? (
+                  <Stack spacing={2} alignItems="center">
+                    <Typography variant="subtitle1" color="text.secondary">
+                      No package is connected
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      sx={{ boxShadow: '0px -3px 0px 0px #E7E7E7 inset' }}
+                      startIcon={<Iconify icon="bx:package" width={22} />}
+                      onClick={packageDialog.onTrue}
+                    >
+                      Connect package
+                    </Button>
+                  </Stack>
+                ) : (
+                  <>
+                    <Stack direction="row" alignItems="center" justifyContent="end" mb={2}>
+                      {/* <Typography
+                      sx={{
+                        fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                        fontSize: 30,
+                        fontWeight: 'normal',
+                        mb: 2,
+                      }}
+                    >
+                      Package History
+                    </Typography> */}
 
-              <PackageHistoryList dataFiltered={history.data} />
-            </>
-          )}
+                      {/* <Button
+                      variant="outlined"
+                      sx={{
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      }}
+                      // onClick={dialog.onTrue}
+                      disabled={!(currentPackage?.status === 'inactive' && currentPackage)}
+                    >
+                      Renew Package
+                    </Button> */}
+                    </Stack>
+
+                    <PackageHistoryList dataFiltered={company?.subscriptions} />
+                  </>
+                )}
+              </>
+            )}
+
+            {activeTab === 'campaign' && <CampaignClientList campaigns={company?.campaign} />}
+
+            {activeTab === 'pic' && <PICList personIncharge={company?.pic} />}
+          </Box>
         </Card>
       </Box>
 

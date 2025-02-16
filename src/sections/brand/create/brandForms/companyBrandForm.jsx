@@ -6,15 +6,7 @@ import CompanyBrandBasic from './FirstForms/companyBrandBasic';
 
 function CompanyBrandForm() {
   return (
-    <Box
-    // sx={{
-    //   p: 1,
-    //   display: 'flex',
-    //   flexDirection: 'column',
-    //   justifyContent: 'center',
-    //   alignContent: 'center',
-    // }}
-    >
+    <Box>
       <CompanyBrandBasic />
     </Box>
   );
