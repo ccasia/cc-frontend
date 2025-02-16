@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Box, Typography, TextField, Button, Modal } from '@mui/material';
-import { useRouter } from 'src/routes/hooks';
 import { enqueueSnackbar } from 'notistack';
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import { useParams } from 'react-router-dom';
 
+import { Box, Modal, Button, TextField, Typography } from '@mui/material';
+
+import { useRouter } from 'src/routes/hooks';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 const PublicValidate = () => {
   const [password, setPassword] = useState('');
@@ -22,8 +24,8 @@ const PublicValidate = () => {
 
       if (response.data.success) {
         enqueueSnackbar('Access granted!', { variant: 'success' });
-        //router.push(`/public-access/${id}`);  
-        router.push(`/public/view/${id}`)
+        // router.push(`/public-access/${id}`);
+        router.push(`/public/view/${id}`);
       }
     } catch (err) {
       enqueueSnackbar(err.response?.data?.message || 'Invalid password', { variant: 'error' });
@@ -31,7 +33,7 @@ const PublicValidate = () => {
   };
 
   return (
-    <Modal open={true} onClose={() => {}} aria-labelledby="password-validation-modal">
+    <Modal open onClose={() => {}} aria-labelledby="password-validation-modal">
       <Box
         sx={{
           position: 'absolute',

@@ -18,7 +18,6 @@ import {
   Grid,
   Chip,
   Tabs,
-  Paper,
   Stack,
   Button,
   Dialog,
@@ -39,7 +38,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
-import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 
 const options_changes = [
   'Missing caption requirements',
@@ -57,6 +56,7 @@ const options_changes = [
   'Speling in subtitles',
 ];
 
+// eslint-disable-next-line react/prop-types
 const PreviewModal = ({ open, onClose, selectedMedia, mediaType }) => (
   <Dialog
     open={open}
@@ -129,12 +129,11 @@ const PreviewModal = ({ open, onClose, selectedMedia, mediaType }) => (
   </Dialog>
 );
 
-
 const PublicFirstDraft = ({ campaign, submission, creator }) => {
   const [type, setType] = useState('approve');
   const approve = useBoolean();
   const request = useBoolean();
-  const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
+  // const [openFeedbackModal, setOpenFeedbackModal] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const { user } = useAuthContext();
   const [selectedMedia, setSelectedMedia] = useState(null);
@@ -179,15 +178,11 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
     formState: { isSubmitting },
   } = methods;
 
-  const scheduleStartDate = watch('schedule.startDate');
-
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
 
-  console.log("submissions public", submission)
-  console.log("campaign draft data", campaign)
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.patch(endpoints.public.clientFeedback, {
@@ -512,7 +507,7 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
     <Box>
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          <Box component={Paper} p={{ xs: 1, sm: 1.5 }}>
+          <Box p={{ xs: 1, sm: 1.5 }}>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               spacing={{ xs: 1, sm: 3 }}
@@ -694,7 +689,6 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <Box
-                    component={Paper}
                     sx={{
                       p: { xs: 2, sm: 3 },
                       mb: 2,
@@ -704,8 +698,8 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                       overflow: 'hidden',
                     }}
                   >
-                      {/* Tabs */}
-                      <Tabs
+                    {/* Tabs */}
+                    <Tabs
                       value={selectedTab}
                       onChange={(_, newValue) => setSelectedTab(newValue)}
                       sx={{
@@ -948,7 +942,7 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                           )}
 
                           {/* Schedule Post and Request Changes Section */}
-                          {submission?.status === 'PENDING_REVIEW' && (
+                          {/* {submission?.status === 'PENDING_REVIEW' && (
                             <Box
                               component={Paper}
                               sx={{
@@ -958,113 +952,6 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                                 borderColor: 'divider',
                               }}
                             >
-                              {/* {type === 'approve' && (
-                                <FormProvider methods={methods} onSubmit={onSubmit}>
-                                  <Stack gap={1} mb={2}>
-                                    <Typography variant="subtitle1" mb={1} mx={1}>
-                                      Schedule This Post
-                                    </Typography>
-                                    <Stack
-                                      direction={{ xs: 'column', sm: 'row' }}
-                                      gap={{ xs: 2, sm: 3 }}
-                                    >
-                                      <RHFDatePicker
-                                        name="schedule.startDate"
-                                        label="Start Date"
-                                        minDate={dayjs()}
-                                      />
-                                      <RHFDatePicker
-                                        name="schedule.endDate"
-                                        label="End Date"
-                                        minDate={dayjs(scheduleStartDate)}
-                                      />
-                                    </Stack>
-                                  </Stack>
-                                  <Typography variant="subtitle1" mb={1} mx={1}>
-                                    Comments For Creator
-                                  </Typography>
-                                  <Stack gap={2}>
-                                    <RHFTextField
-                                      name="feedback"
-                                      multiline
-                                      minRows={5}
-                                      placeholder="Comment"
-                                    />
-                                    <Stack
-                                      alignItems={{ xs: 'stretch', sm: 'center' }}
-                                      direction={{ xs: 'column', sm: 'row' }}
-                                      gap={1.5}
-                                      justifyContent="end"
-                                    >
-                                      <Button
-                                        onClick={() => {
-                                          setType('request');
-                                          setValue('type', 'request');
-                                          setValue('feedback', '');
-                                        }}
-                                        disabled={isDisabled}
-                                        size="small"
-                                        variant="contained"
-                                        startIcon={<Iconify icon="solar:close-circle-bold" />}
-                                        sx={{
-                                          bgcolor: 'white',
-                                          border: 1,
-                                          borderRadius: 0.8,
-                                          borderColor: '#e7e7e7',
-                                          borderBottom: 3,
-                                          borderBottomColor: '#e7e7e7',
-                                          color: 'error.main',
-                                          '&:hover': {
-                                            bgcolor: 'error.lighter',
-                                            borderColor: '#e7e7e7',
-                                          },
-                                          '&:disabled': {
-                                            display: 'none',
-                                          },
-                                          textTransform: 'none',
-                                          px: 2.5,
-                                          py: 1.2,
-                                          fontSize: '0.875rem',
-                                          minWidth: '80px',
-                                          height: '45px',
-                                        }}
-                                      >
-                                        Request a change
-                                      </Button>
-                                      <LoadingButton
-                                        onClick={approve.onTrue}
-                                        disabled={isDisabled}
-                                        variant="contained"
-                                        size="small"
-                                        startIcon={<Iconify icon="solar:check-circle-bold" />}
-                                        loading={isSubmitting}
-                                        sx={{
-                                          bgcolor: '#2e6c56',
-                                          color: 'white',
-                                          borderBottom: 3,
-                                          borderBottomColor: '#1a3b2f',
-                                          borderRadius: 0.8,
-                                          px: 2.5,
-                                          py: 1.2,
-                                          '&:hover': {
-                                            bgcolor: '#2e6c56',
-                                            opacity: 0.9,
-                                          },
-                                          '&:disabled': {
-                                            display: 'none',
-                                          },
-                                          fontSize: '0.875rem',
-                                          minWidth: '80px',
-                                          height: '45px',
-                                        }}
-                                      >
-                                        Approve
-                                      </LoadingButton>
-                                    </Stack>
-                                  </Stack>
-                                  {confirmationApproveModal(approve.value, approve.onFalse)}
-                                </FormProvider>
-                              )} */}
                               {type === 'request' && (
                                 <>
                                   <Typography variant="h6" mb={1} mx={1}>
@@ -1161,62 +1048,9 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                                 </>
                               )}
                             </Box>
-                          )}
+                          )} */}
                         </>
                       )}
-
-                      {/* {selectedTab === 'rawFootages' && submission?.rawFootages?.length > 0 && (
-                        <Grid container spacing={2}>
-                          {submission.rawFootages.map((footage, index) => (
-                            <Grid item xs={12} sm={6} md={4} key={footage.id || index}>
-                              <Box
-                                sx={{
-                                  position: 'relative',
-                                  borderRadius: 2,
-                                  overflow: 'hidden',
-                                  boxShadow: 2,
-                                  height: '169px',
-                                  cursor: 'pointer',
-                                }}
-                                onClick={() => handleVideoClick(footage.url)}
-                              >
-                                <Box
-                                  component="video"
-                                  src={footage.url}
-                                  sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                  }}
-                                />
-                                <Box
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: 'rgba(0, 0, 0, 0.3)',
-                                  }}
-                                >
-                                  <Iconify
-                                    icon="mdi:play"
-                                    sx={{
-                                      width: 40,
-                                      height: 40,
-                                      color: 'white',
-                                      opacity: 0.9,
-                                    }}
-                                  />
-                                </Box>
-                              </Box>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      )} */}
 
                       {selectedTab === 'rawFootages' && (
                         <>
@@ -1318,7 +1152,6 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
 
                   {submission?.status === 'PENDING_REVIEW' && (
                     <Box
-                      component={Paper}
                       sx={{
                         p: { xs: 2, sm: 3 },
                         borderRadius: 1,
@@ -1326,7 +1159,6 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                         borderColor: 'divider',
                       }}
                     >
-
                       {submission.publicFeedback
                         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                         .map((feedback, index) => (
@@ -1351,9 +1183,14 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                               alt={campaign?.company?.name || 'Company'}
                               sx={{ mr: 2, mb: 2 }}
                             />
-                            <Box flexGrow={1} sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-
-                              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', marginBottom: '2px' }}>
+                            <Box
+                              flexGrow={1}
+                              sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+                            >
+                              <Typography
+                                variant="subtitle1"
+                                sx={{ fontWeight: 'bold', marginBottom: '2px' }}
+                              >
                                 {campaign?.company?.name || 'Unknown Company'}
                               </Typography>
 
@@ -1402,36 +1239,9 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                           </Box>
                         ))}
 
-
                       {type === 'approve' && (
                         <FormProvider methods={methods} onSubmit={onSubmit}>
-                          {/* <Stack gap={1} mb={2}>
-                            <Typography variant="subtitle1" mb={1} mx={1}>
-                              Schedule This Post
-                            </Typography>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} gap={{ xs: 2, sm: 3 }}>
-                              <RHFDatePicker
-                                name="schedule.startDate"
-                                label="Start Date"
-                                minDate={dayjs()}
-                              />
-                              <RHFDatePicker
-                                name="schedule.endDate"
-                                label="End Date"
-                                minDate={dayjs(scheduleStartDate)}
-                              />
-                            </Stack>
-                          </Stack>
-                          <Typography variant="subtitle1" mb={1} mx={1}>
-                            Comments For Creator
-                          </Typography> */}
                           <Stack gap={2}>
-                            {/* <RHFTextField
-                              name="feedback"
-                              multiline
-                              minRows={5}
-                              placeholder="Comment"
-                            /> */}
                             <Stack
                               alignItems={{ xs: 'stretch', sm: 'center' }}
                               direction={{ xs: 'column', sm: 'row' }}
@@ -1447,7 +1257,7 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                                 disabled={isDisabled}
                                 size="small"
                                 variant="contained"
-                                startIcon={<Iconify icon="solar:close-circle-bold" />}
+                                // startIcon={<Iconify icon="solar:close-circle-bold" />}
                                 sx={{
                                   bgcolor: 'white',
                                   border: 1,
@@ -1455,7 +1265,7 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                                   borderColor: '#e7e7e7',
                                   borderBottom: 3,
                                   borderBottomColor: '#e7e7e7',
-                                  color: 'error.main',
+                                  color: 'black',
                                   '&:hover': {
                                     bgcolor: 'error.lighter',
                                     borderColor: '#e7e7e7',
@@ -1471,42 +1281,14 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                                   height: '45px',
                                 }}
                               >
-                                Add a Feedback
+                                Add a feedback
                               </Button>
-                              {/* <LoadingButton
-                                onClick={approve.onTrue}
-                                disabled={isDisabled}
-                                variant="contained"
-                                size="small"
-                                startIcon={<Iconify icon="solar:check-circle-bold" />}
-                                loading={isSubmitting}
-                                sx={{
-                                  bgcolor: '#2e6c56',
-                                  color: 'white',
-                                  borderBottom: 3,
-                                  borderBottomColor: '#1a3b2f',
-                                  borderRadius: 0.8,
-                                  px: 2.5,
-                                  py: 1.2,
-                                  '&:hover': {
-                                    bgcolor: '#2e6c56',
-                                    opacity: 0.9,
-                                  },
-                                  '&:disabled': {
-                                    display: 'none',
-                                  },
-                                  fontSize: '0.875rem',
-                                  minWidth: '80px',
-                                  height: '45px',
-                                }}
-                              >
-                                Approve
-                              </LoadingButton> */}
                             </Stack>
                           </Stack>
                           {confirmationApproveModal(approve.value, approve.onFalse)}
                         </FormProvider>
                       )}
+
                       {type === 'request' && (
                         <>
                           <Typography variant="h6" mb={1} mx={1}>
@@ -1608,7 +1390,6 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                 <Grid item xs={12}>
                   {/* Video Box */}
                   <Box
-                    component={Paper}
                     sx={{
                       p: { xs: 2, sm: 3 },
                       mb: 2,
@@ -1713,8 +1494,6 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
                     }}
                   />
 
-
-
                   {/* Admin Feedback */}
                   {submission.feedback
                     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -1795,146 +1574,146 @@ const PublicFirstDraft = ({ campaign, submission, creator }) => {
         </Grid>
       </Grid>
 
-     {/* Video/Photo Modal */}
-          <PreviewModal
-            open={previewModalOpen}
-            onClose={() => {
-              setPreviewModalOpen(false);
-              setSelectedMedia(null);
-              setMediaType(null);
-            }}
-            selectedMedia={selectedMedia}
-            mediaType={mediaType}
-          />
-    
-          {/* Video Modal */}
-          <Dialog
-            open={videoModalOpen}
-            onClose={() => setVideoModalOpen(false)}
-            maxWidth={false}
-            PaperProps={{
-              sx: {
-                maxWidth: { xs: '90vw', md: '60vw' },
-                maxHeight: { xs: '90vh', md: '120vh' },
-                m: 'auto',
-                borderRadius: 2,
-                overflow: 'hidden',
-                bgcolor: 'background.paper',
-              },
+      {/* Video/Photo Modal */}
+      <PreviewModal
+        open={previewModalOpen}
+        onClose={() => {
+          setPreviewModalOpen(false);
+          setSelectedMedia(null);
+          setMediaType(null);
+        }}
+        selectedMedia={selectedMedia}
+        mediaType={mediaType}
+      />
+
+      {/* Video Modal */}
+      <Dialog
+        open={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            maxWidth: { xs: '90vw', md: '60vw' },
+            maxHeight: { xs: '90vh', md: '120vh' },
+            m: 'auto',
+            borderRadius: 2,
+            overflow: 'hidden',
+            bgcolor: 'background.paper',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0, position: 'relative' }}>
+          <IconButton
+            onClick={() => setVideoModalOpen(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: 'white',
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+              zIndex: 1,
             }}
           >
-            <DialogContent sx={{ p: 0, position: 'relative' }}>
+            <Iconify icon="eva:close-fill" />
+          </IconButton>
+          <Box
+            component="video"
+            src={selectedVideo}
+            controls
+            autoPlay
+            sx={{ width: '100%', display: 'block' }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Modal */}
+      <Dialog
+        open={fullImageOpen}
+        onClose={handleFullImageClose}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            maxWidth: { xs: '90vw', md: '50vw' },
+            maxHeight: { xs: '90vh', md: '120vh' },
+            m: 'auto',
+            borderRadius: 2,
+            overflow: 'hidden',
+            bgcolor: 'background.paper',
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            p: 0,
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'transparent',
+          }}
+        >
+          <IconButton
+            onClick={handleFullImageClose}
+            sx={{
+              position: 'fixed',
+              right: 16,
+              top: 16,
+              color: 'white',
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+              zIndex: 1,
+            }}
+          >
+            <Iconify icon="eva:close-fill" />
+          </IconButton>
+          {submission?.photos?.[currentImageIndex] && (
+            <Box
+              component="img"
+              src={submission.photos[currentImageIndex].url}
+              alt={`Full size photo ${currentImageIndex + 1}`}
+              sx={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          )}
+          {submission?.photos && submission.photos.length > 1 && (
+            <>
               <IconButton
-                onClick={() => setVideoModalOpen(false)}
+                onClick={handlePrevImage}
                 sx={{
-                  position: 'absolute',
-                  right: 8,
-                  top: 8,
-                  color: 'white',
+                  position: 'fixed',
+                  left: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
                   '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
-                  zIndex: 1,
                 }}
               >
-                <Iconify icon="eva:close-fill" />
+                <Iconify icon="eva:arrow-ios-back-fill" />
               </IconButton>
-              <Box
-                component="video"
-                src={selectedVideo}
-                controls
-                autoPlay
-                sx={{ width: '100%', display: 'block' }}
-              />
-            </DialogContent>
-          </Dialog>
-    
-          {/* Photo Modal */}
-          <Dialog
-            open={fullImageOpen}
-            onClose={handleFullImageClose}
-            maxWidth={false}
-            PaperProps={{
-              sx: {
-                maxWidth: { xs: '90vw', md: '50vw' },
-                maxHeight: { xs: '90vh', md: '120vh' },
-                m: 'auto',
-                borderRadius: 2,
-                overflow: 'hidden',
-                bgcolor: 'background.paper',
-              },
-            }}
-          >
-            <DialogContent
-              sx={{
-                p: 0,
-                position: 'relative',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'transparent',
-              }}
-            >
               <IconButton
-                onClick={handleFullImageClose}
+                onClick={handleNextImage}
                 sx={{
                   position: 'fixed',
                   right: 16,
-                  top: 16,
-                  color: 'white',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
                   '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
-                  zIndex: 1,
                 }}
               >
-                <Iconify icon="eva:close-fill" />
+                <Iconify icon="eva:arrow-ios-forward-fill" />
               </IconButton>
-              {submission?.photos?.[currentImageIndex] && (
-                <Box
-                  component="img"
-                  src={submission.photos[currentImageIndex].url}
-                  alt={`Full size photo ${currentImageIndex + 1}`}
-                  sx={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    objectFit: 'contain',
-                  }}
-                />
-              )}
-              {submission?.photos && submission.photos.length > 1 && (
-                <>
-                  <IconButton
-                    onClick={handlePrevImage}
-                    sx={{
-                      position: 'fixed',
-                      left: 16,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      bgcolor: 'rgba(0, 0, 0, 0.5)',
-                      color: 'white',
-                      '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
-                    }}
-                  >
-                    <Iconify icon="eva:arrow-ios-back-fill" />
-                  </IconButton>
-                  <IconButton
-                    onClick={handleNextImage}
-                    sx={{
-                      position: 'fixed',
-                      right: 16,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      bgcolor: 'rgba(0, 0, 0, 0.5)',
-                      color: 'white',
-                      '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
-                    }}
-                  >
-                    <Iconify icon="eva:arrow-ios-forward-fill" />
-                  </IconButton>
-                </>
-              )}
-            </DialogContent>
-          </Dialog>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };
