@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 import { m } from 'framer-motion';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import {
   Box,
@@ -61,11 +61,21 @@ const MediaKitCreator = () => {
     }
   );
 
+  const calculateEngagementRate = useCallback(
+    (totalLikes, followers) =>
+      (parseInt(totalLikes, 10) / parseInt(followers, 10) / 100).toFixed(2),
+    []
+  );
+
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
         followers: instagram?.user?.followers_count || 0,
-        engagement_rate: instagram?.user?.followers_count || 0,
+        engagement_rate:
+          calculateEngagementRate(
+            instagram?.contents?.reduce((sum, acc) => sum + acc.like_count, 0),
+            instagram?.user?.followers_count
+          ) || 0,
         averageLikes: instagram?.user?.followers_count || 0,
       };
     }
@@ -83,7 +93,7 @@ const MediaKitCreator = () => {
       engagement_rate: 0,
       averageLikes: 0,
     };
-  }, [currentTab, tiktok, instagram]);
+  }, [currentTab, tiktok, instagram, calculateEngagementRate]);
 
   const handleClose = () => {
     setOpenSetting(!openSetting);
