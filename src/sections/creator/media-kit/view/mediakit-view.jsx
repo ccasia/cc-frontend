@@ -63,7 +63,7 @@ const MediaKitCreator = () => {
 
   const calculateEngagementRate = useCallback(
     (totalLikes, followers) =>
-      (parseInt(totalLikes, 10) / parseInt(followers, 10) / 100).toFixed(2),
+      ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2),
     []
   );
 
@@ -71,11 +71,12 @@ const MediaKitCreator = () => {
     if (currentTab === 'instagram') {
       return {
         followers: instagram?.user?.followers_count || 0,
-        engagement_rate:
+        engagement_rate: `${
           calculateEngagementRate(
-            instagram?.contents?.reduce((sum, acc) => sum + acc.like_count, 0),
+            instagram?.contents?.reduce((sum, acc) => sum + parseInt(acc.like_count, 10), 0),
             instagram?.user?.followers_count
-          ) || 0,
+          ) || 0
+        }%`,
         averageLikes: instagram?.user?.followers_count || 0,
       };
     }
