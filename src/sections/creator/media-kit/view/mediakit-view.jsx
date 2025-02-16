@@ -61,11 +61,10 @@ const MediaKitCreator = () => {
     }
   );
 
-  const calculateEngagementRate = useCallback(
-    (totalLikes, followers) =>
-      ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2),
-    []
-  );
+  const calculateEngagementRate = useCallback((totalLikes, followers) => {
+    if (!(totalLikes || followers)) return null;
+    return ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2);
+  }, []);
 
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
