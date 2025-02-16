@@ -102,8 +102,7 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId }) => {
       mutate();
       onClose();
     } catch (error) {
-      console.log(error);
-      enqueueSnackbar('error', { variant: 'error' });
+      enqueueSnackbar(error, { variant: 'error' });
     }
   });
 

@@ -17,6 +17,7 @@ import {
 
 import useGetCompany from 'src/hooks/use-get-company';
 
+import Iconify from 'src/components/iconify';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 const filter = createFilterOptions();
@@ -263,86 +264,104 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
             </Button>
           </Box>
         ) : (
-          <Stack
-            direction={{ sm: 'column', md: 'row' }}
-            justifyContent="space-between"
-            gap={2}
-            mt={3}
-          >
-            <Stack
-              spacing={2}
-              minWidth={1 / 2}
-              sx={{
-                position: 'relative',
-                border: 1,
-                p: 2,
-                borderRadius: 1,
-                borderColor: (theme) => theme.palette.divider,
-                ':before': {
-                  content: "'Package Information'",
-                  position: 'absolute',
-                  top: -18,
-                  fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                  letterSpacing: 0.7,
-                  fontWeight: 600,
-                  fontSize: 20,
-                  bgcolor: 'white',
-                },
-              }}
-            >
-              <Stack>
-                <FormLabel
-                  sx={{
-                    fontWeight: 600,
-                    color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                  }}
+          <>
+            {dayjs(latestPackageItem?.expiredAt).isBefore(dayjs(), 'date') ? (
+              <Stack mt={2} alignItems="center" spacing={1}>
+                <Avatar
+                  sx={{ bgcolor: (theme) => theme.palette.warning.light, width: 60, height: 60 }}
                 >
-                  Available Credits
-                </FormLabel>
-                <TextField
-                  value={`${latestPackageItem?.availableCredits} UGC Credits`}
-                  InputProps={{
-                    disabled: true,
-                  }}
-                />
+                  <Iconify icon="pajamas:expire" width={26} />
+                </Avatar>
+                <Typography variant="subtitle2">
+                  Package with ID {latestPackageItem?.subscriptionId} is expired
+                </Typography>
+                <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
+                  Renew package
+                </Button>
               </Stack>
-
-              <Stack>
-                <FormLabel
-                  sx={{
-                    fontWeight: 600,
-                    color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                  }}
-                >
-                  Validity
-                </FormLabel>
-                <TextField
-                  value={`${getRemainingTime(latestPackageItem?.expiredAt)} days left`}
-                  InputProps={{
-                    disabled: true,
-                  }}
-                />
-              </Stack>
-            </Stack>
-            <Stack spacing={1} minWidth={1 / 2}>
-              <FormLabel
-                required
-                sx={{
-                  fontWeight: 600,
-                  color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                }}
+            ) : (
+              <Stack
+                direction={{ sm: 'column', md: 'row' }}
+                justifyContent="space-between"
+                gap={2}
+                mt={3}
               >
-                Campaign Credits
-              </FormLabel>
-              <RHFTextField
-                name="campaignCredits"
-                type="number"
-                placeholder="UGC Credits"
-                error={errors?.campaignCredit || errors?.campaignCredits}
-                helperText={errors?.campaignCredit?.message}
-              />
-            </Stack>
-          </Stack>
+                <Stack
+                  spacing={2}
+                  minWidth={1 / 2}
+                  sx={{
+                    position: 'relative',
+                    border: 1,
+                    p: 2,
+                    borderRadius: 1,
+                    borderColor: (theme) => theme.palette.divider,
+                    ':before': {
+                      content: "'Package Information'",
+                      position: 'absolute',
+                      top: -18,
+                      fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                      letterSpacing: 0.7,
+                      fontWeight: 600,
+                      fontSize: 20,
+                      bgcolor: 'white',
+                    },
+                  }}
+                >
+                  <Stack>
+                    <FormLabel
+                      sx={{
+                        fontWeight: 600,
+                        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                      }}
+                    >
+                      Available Credits
+                    </FormLabel>
+                    <TextField
+                      value={`${latestPackageItem?.availableCredits} UGC Credits`}
+                      InputProps={{
+                        disabled: true,
+                      }}
+                    />
+                  </Stack>
+
+                  <Stack>
+                    <FormLabel
+                      sx={{
+                        fontWeight: 600,
+                        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                      }}
+                    >
+                      Validity
+                    </FormLabel>
+                    <TextField
+                      value={`${getRemainingTime(latestPackageItem?.expiredAt)} days left`}
+                      InputProps={{
+                        disabled: true,
+                      }}
+                    />
+                  </Stack>
+                </Stack>
+                <Stack spacing={1} minWidth={1 / 2}>
+                  <FormLabel
+                    required
+                    sx={{
+                      fontWeight: 600,
+                      color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                    }}
+                  >
+                    Campaign Credits
+                  </FormLabel>
+                  <RHFTextField
+                    name="campaignCredits"
+                    type="number"
+                    placeholder="UGC Credits"
+                    error={errors?.campaignCredit || errors?.campaignCredits}
+                    helperText={errors?.campaignCredit?.message}
+                  />
+                </Stack>
+              </Stack>
+            )}
+          </>
         ))}
     </Box>
   );

@@ -9,7 +9,7 @@ import Label from 'src/components/label';
 const dictionary = {
   ACTIVE: 'Active',
   INACTIVE: 'Inactive',
-  expired: 'Expired',
+  EXPIRED: 'Expired',
 };
 
 // {
