@@ -2,6 +2,7 @@
 import useSWR from 'swr';
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
+import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { NumericFormat } from 'react-number-format';
@@ -116,8 +117,13 @@ const FormField = ({ label, children, ...others }) => (
   </Stack>
 );
 
-// eslint-disable-next-line react/prop-types
-const CreateCompany = ({ setOpenCreate, openCreate, set, isDialog = true }) => {
+const CreateCompany = ({
+  setOpenCreate,
+  openCreate,
+  set,
+  isDialog = true,
+  isForCampaign = false,
+}) => {
   const { data: packages, isLoading } = useGetPackages();
   const [image, setImage] = useState(null);
   const [activeStep, setActiveStep] = useState(0);
@@ -182,13 +188,23 @@ const CreateCompany = ({ setOpenCreate, openCreate, set, isDialog = true }) => {
       });
 
       if (isDialog) {
-        set(
-          'companyId',
-          { value: res.data?.company.id, name: res?.data?.company?.name },
-          { shouldValidate: true }
-        );
-        setOpenCreate(false);
+        if (isForCampaign) {
+          set(
+            'client',
+            { value: res.data?.company.id, name: res?.data?.company?.name },
+            { shouldValidate: true }
+          );
+          setOpenCreate();
+        } else {
+          set(
+            'companyId',
+            { value: res.data?.company.id, name: res?.data?.company?.name },
+            { shouldValidate: true }
+          );
+          setOpenCreate(false);
+        }
       }
+
       setActiveStep(0);
       reset();
       mutate();
@@ -377,6 +393,7 @@ const CreateCompany = ({ setOpenCreate, openCreate, set, isDialog = true }) => {
         setValue('packageValue', parseFloat(amount));
         setValue('totalUGCCredits', item.credits);
       } else {
+        setValue('packageId', '');
         setValue('validityPeriod', '');
         setValue('packageValue', '');
         setValue('totalUGCCredits', '');
@@ -750,3 +767,11 @@ const CreateCompany = ({ setOpenCreate, openCreate, set, isDialog = true }) => {
 };
 
 export default CreateCompany;
+
+CreateCompany.propTypes = {
+  setOpenCreate: PropTypes.func,
+  openCreate: PropTypes.string,
+  set: PropTypes.func,
+  isDialog: PropTypes.bool,
+  isForCampaign: PropTypes.bool,
+};

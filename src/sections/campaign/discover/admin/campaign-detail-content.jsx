@@ -46,7 +46,7 @@ const ChipStyle = {
   borderColor: '#EBEBEB',
   borderRadius: 1,
   color: '#636366',
-  height: '32px', 
+  height: '32px',
   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
@@ -213,11 +213,11 @@ const CampaignDetailContent = ({ campaign }) => {
                 {[
                   { label: 'Gender', data: requirement?.gender?.map(capitalizeFirstLetter) },
                   { label: 'Geo Location', data: requirement?.geoLocation },
-                  { 
-                    label: 'Creator Persona', 
-                    data: requirement?.creator_persona?.map(value => 
+                  {
+                    label: 'Creator Persona',
+                    data: requirement?.creator_persona?.map((value) =>
                       value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
-                    ) 
+                    ),
                   },
                 ].map((item) => (
                   <Box key={item.label}>
@@ -636,7 +636,10 @@ const CampaignDetailContent = ({ campaign }) => {
 
               {/* Additional Company Info */}
               {[
-                { label: 'About', value: campaign?.company?.about ?? campaign?.brand?.about },
+                {
+                  label: 'About',
+                  value: campaign?.company?.about || campaign?.brand?.about || 'None',
+                },
                 { label: 'Brand Tone', value: campaign?.brandTone },
                 { label: 'Product / Service Name', value: campaign?.productName },
               ].map((item) => (
@@ -665,7 +668,10 @@ const CampaignDetailContent = ({ campaign }) => {
 
               {/* Continue with remaining items */}
               {[
-                { label: 'Email', value: campaign?.company?.email ?? campaign?.brand?.email },
+                {
+                  label: 'Email',
+                  value: campaign?.company?.email || campaign?.brand?.email || 'None',
+                },
                 {
                   label: 'Website',
                   value: campaign?.company?.website ?? campaign?.brand?.website,
@@ -735,23 +741,24 @@ const CampaignDetailContent = ({ campaign }) => {
                 DELIVERABLES
               </Typography>
             </Box>
-            
+
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {[
                 { label: 'UGC Videos', value: true },
                 { label: 'Raw Footage', value: campaign?.rawFootage },
                 { label: 'Photos', value: campaign?.photos },
                 { label: 'Ads', value: campaign?.ads },
-              ].map((deliverable) => (
-                deliverable.value && (
-                  <Chip
-                    key={deliverable.label}
-                    label={deliverable.label}
-                    size="small"
-                    sx={ChipStyle}
-                  />
-                )
-              ))}
+              ].map(
+                (deliverable) =>
+                  deliverable.value && (
+                    <Chip
+                      key={deliverable.label}
+                      label={deliverable.label}
+                      size="small"
+                      sx={ChipStyle}
+                    />
+                  )
+              )}
             </Box>
           </Box>
 

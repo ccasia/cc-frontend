@@ -78,7 +78,7 @@ const PackageHistoryRow = ({ row, selected }) => {
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-        <Label>{totalCredits || 'None'}</Label>
+        <Label>{creditsUsed || 'None'}</Label>
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>

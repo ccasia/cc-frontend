@@ -1,12 +1,13 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
+import React, { memo, useMemo, useEffect } from 'react';
 
 import {
   Box,
   Stack,
   Avatar,
+  Button,
   FormLabel,
   TextField,
   Typography,
@@ -19,11 +20,6 @@ import useGetCompany from 'src/hooks/use-get-company';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 const filter = createFilterOptions();
-
-const packageInfo = {
-  availableCredits: 10,
-  validity: dayjs(),
-};
 
 const findLatestPackage = (packages) => {
   if (packages.length === 0) {
@@ -40,13 +36,13 @@ const findLatestPackage = (packages) => {
   return latestPackage;
 };
 
-const getRemainingTime = (invoiceDate, months) => {
-  const remainingDays = dayjs(invoiceDate).add(months, 'month').diff(dayjs(), 'days');
+const getRemainingTime = (invoiceDate) => {
+  const remainingDays = dayjs(invoiceDate).diff(dayjs(), 'days');
 
   return remainingDays;
 };
 
-const SelectBrand = ({ openBrand, openCompany }) => {
+const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
   const { data, isLoading } = useGetCompany();
 
   const {
@@ -54,32 +50,54 @@ const SelectBrand = ({ openBrand, openCompany }) => {
     setError,
     clearErrors,
     watch,
+    setValue,
     formState: { errors },
   } = useFormContext();
+
   const client = getValues('client');
   const brand = getValues('campaignBrand');
   const campaignCredits = watch('campaignCredits');
 
-  const latestPackageItem =
-    client && client?.PackagesClient ? findLatestPackage(client?.PackagesClient) : null;
+  const latestPackageItem = useMemo(() => {
+    if (client?.id && client?.subscriptions.length) {
+      let packageItem = findLatestPackage(client?.subscriptions);
+      packageItem = {
+        ...packageItem,
+        totalCredits:
+          packageItem.totalCredits ||
+          packageItem.package.credits ||
+          packageItem.customPackage.customCredits,
+        availableCredits:
+          (packageItem.totalCredits ||
+            packageItem.package.credits ||
+            packageItem.customPackage.customCredits) - packageItem.creditsUsed,
+      };
+      return packageItem;
+    }
+
+    return null;
+  }, [client]);
 
   // useEffect(() => {
-  //   if (client && client.inputValue) {
-  //     openCompany.onTrue();
+  //   if (client && !latestPackageItem) {
+  //     openPackage.onTrue();
   //   }
-
-  //   latestPackageItem =
-  //     client && client?.PackagesClient ? findLatestPackage(client?.PackagesClient) : null;
-  // }, [client, openCompany]);
-
-  // useEffect(() => {
-  //   if (brand?.inputValue) {
-  //     openBrand.onTrue();
-  //   }
-  // }, [brand, openBrand]);
+  // }, [latestPackageItem, openPackage, client]);
 
   useEffect(() => {
-    if (campaignCredits > latestPackageItem?.availableCredits) {
+    if (client && client.inputValue) {
+      openCompany.onTrue();
+    }
+  }, [client, openCompany]);
+
+  useEffect(() => {
+    if (brand?.inputValue) {
+      openBrand.onTrue();
+    }
+  }, [brand, openBrand]);
+
+  useEffect(() => {
+    if (campaignCredits > latestPackageItem?.availableCredits || !latestPackageItem) {
       setError('campaignCredit', {
         type: 'onChange',
         message: 'Cannot exceeds available credits',
@@ -88,6 +106,12 @@ const SelectBrand = ({ openBrand, openCompany }) => {
       clearErrors('campaignCredit');
     }
   }, [campaignCredits, setError, clearErrors, latestPackageItem]);
+
+  useEffect(() => {
+    if (client && client?.type === 'directClient') {
+      setValue('campaignBrand', null, { shouldValidate: true });
+    }
+  }, [client, setValue]);
 
   return (
     <Box
@@ -137,28 +161,28 @@ const SelectBrand = ({ openBrand, openCompany }) => {
               </Stack>
             );
           }}
-          // filterOptions={(options, params) => {
-          //   const { inputValue } = params;
+          filterOptions={(options, params) => {
+            const { inputValue } = params;
 
-          //   const filtered = filter(options, params);
+            const filtered = filter(options, params);
 
-          //   const isExisting = options.some(
-          //     (option) => option.name.toLowerCase() === inputValue.toLowerCase()
-          //   );
+            const isExisting = options.some(
+              (option) => option.name.toLowerCase() === inputValue.toLowerCase()
+            );
 
-          //   if (inputValue !== '' && !isExisting) {
-          //     filtered.push({
-          //       inputValue,
-          //       name: `Add "${inputValue}"`,
-          //     });
-          //   }
+            if (inputValue !== '' && !isExisting) {
+              filtered.push({
+                inputValue,
+                name: `Add "${inputValue}"`,
+              });
+            }
 
-          //   return filtered;
-          // }}
+            return filtered;
+          }}
         />
       </Stack>
 
-      {client && client.type === 'agency' && (
+      {client && (client.type === 'agency' || !!client.brand.length) && (
         <Box mt={2}>
           <Stack spacing={1}>
             <FormLabel
@@ -204,25 +228,25 @@ const SelectBrand = ({ openBrand, openCompany }) => {
                   </Stack>
                 );
               }}
-              // filterOptions={(options, params) => {
-              //   const { inputValue } = params;
+              filterOptions={(options, params) => {
+                const { inputValue } = params;
 
-              //   const filtered = filter(options, params);
+                const filtered = filter(options, params);
 
-              //   // Suggest the creation of a new value
-              //   const isExisting = options.some(
-              //     (option) => option.name.toLowerCase() === inputValue.toLowerCase()
-              //   );
+                // Suggest the creation of a new value
+                const isExisting = options.some(
+                  (option) => option.name.toLowerCase() === inputValue.toLowerCase()
+                );
 
-              //   if (inputValue !== '' && !isExisting) {
-              //     filtered.push({
-              //       inputValue,
-              //       name: `Add "${inputValue}"`,
-              //     });
-              //   }
+                if (inputValue !== '' && !isExisting) {
+                  filtered.push({
+                    inputValue,
+                    name: `Add "${inputValue}"`,
+                  });
+                }
 
-              //   return filtered;
-              // }}
+                return filtered;
+              }}
             />
           </Stack>
         </Box>
@@ -234,6 +258,9 @@ const SelectBrand = ({ openBrand, openCompany }) => {
             <Typography variant="subtitle1" color="text.secondary">
               Package not found
             </Typography>
+            <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
+              Link a package
+            </Button>
           </Box>
         ) : (
           <Stack
@@ -290,10 +317,7 @@ const SelectBrand = ({ openBrand, openCompany }) => {
                   Validity
                 </FormLabel>
                 <TextField
-                  value={`${getRemainingTime(
-                    latestPackageItem?.invoiceDate,
-                    latestPackageItem?.validityPeriod
-                  )} days left`}
+                  value={`${getRemainingTime(latestPackageItem?.expiredAt)} days left`}
                   InputProps={{
                     disabled: true,
                   }}
@@ -329,4 +353,5 @@ export default memo(SelectBrand);
 SelectBrand.propTypes = {
   openCompany: PropTypes.object,
   openBrand: PropTypes.object,
+  openPackage: PropTypes.object,
 };

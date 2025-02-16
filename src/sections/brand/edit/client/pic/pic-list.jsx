@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { Table, TableRow, TableBody, TableCell, TableHead, TableContainer } from '@mui/material';
 
 import Scrollbar from 'src/components/scrollbar';
-import { useTable, TableNoData } from 'src/components/table';
+import { useTable, emptyRows, TableNoData, TableEmptyRows } from 'src/components/table';
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 220 },
@@ -50,6 +50,13 @@ const PICList = ({ personIncharge }) => {
                 ))}
               </>
             )}
+
+            <TableEmptyRows
+              height={denseHeight}
+              emptyRows={emptyRows(table.page, table.rowsPerPage, personIncharge.length)}
+            />
+
+            <TableNoData notFound={notFound} />
           </TableBody>
         </Table>
       </Scrollbar>

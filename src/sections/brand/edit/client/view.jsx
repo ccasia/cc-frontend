@@ -33,12 +33,12 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 
+import PackageCreateDialog from 'src/sections/packages/package-dialog';
+
 import PICList from './pic/pic-list';
 import CompanyEditForm from './edit-from';
 import CreateBrand from './brands/create/create-brand';
-import BrandEditLists from './brands/brands-edit-lists';
 import PackageHistoryList from './pakcage-history-list';
-import PackageCreateDialog from '../package-create-dialog';
 import CampaignClientList from './campaign-client/view/campaign-list';
 
 const findLatestPackage = (packages) => {
@@ -236,7 +236,7 @@ const CompanyEditView = ({ id }) => {
             </LoadingButton>
           </Box>
         </FormProvider>
-        {company?.brand?.length > 0 && (
+        {/* {company?.brand?.length > 0 && (
           <Card sx={{ my: 3, p: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Typography
@@ -262,7 +262,7 @@ const CompanyEditView = ({ id }) => {
 
             <BrandEditLists dataFiltered={company?.brand} onClose={onClose} />
           </Card>
-        )}
+        )} */}
 
         <Card sx={{ borderRadius: 1, mt: 2 }}>
           <Tabs
@@ -343,7 +343,12 @@ const CompanyEditView = ({ id }) => {
 
       {/* <PackageCreate open={packageDialog.value} onClose={packageDialog.onFalse} /> */}
 
-      <PackageCreateDialog packageDialog={packageDialog} companyId={id} />
+      {/* <PackageCreateDialog packageDialog={packageDialog} companyId={id} /> */}
+      <PackageCreateDialog
+        open={packageDialog.value}
+        onClose={packageDialog.onFalse}
+        clientId={id}
+      />
     </Container>
   );
 };
