@@ -10,11 +10,9 @@ import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 
-import Agreement from '../campaign/discover/admin/creator-stuff/submissions/agreement';
-import FirstDraft from '../campaign/discover/admin/creator-stuff/submissions/firstDraft';
-import FinalDraft from '../campaign/discover/admin/creator-stuff/submissions/finalDraft';
 import Posting from '../campaign/discover/admin/creator-stuff/submissions/posting/posting';
 import PublicFirstDraft from './publicFirstDraft';
+import PublicFinalDraft from './publicFinalDraft';
 
 const PublicSubmissionsView = ({ campaign, submissions, creator }) => {
   const [currentTab, setCurrentTab] = useState('agreement');
@@ -331,7 +329,7 @@ const PublicSubmissionsView = ({ campaign, submissions, creator }) => {
                     {finalDraftSubmission.status}
                   </Label>
                 </Stack>
-                <FinalDraft
+                <PublicFinalDraft
                   submission={finalDraftSubmission}
                   campaign={campaign}
                   creator={creator}
