@@ -95,7 +95,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const dialog = useBoolean();
   const [localCampaign, setLocalCampaign] = useState(campaign);
-  const client = campaign?.company;
+  const client = campaign?.company || campaign?.brand?.company;
 
   const latestPackageItem = useMemo(() => {
     if (client && client?.subscriptions.length) {
