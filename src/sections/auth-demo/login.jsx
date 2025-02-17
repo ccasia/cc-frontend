@@ -1,12 +1,25 @@
-import React from 'react';
 import * as Yup from 'yup';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
 import { LoadingButton } from '@mui/lab';
-import { Box, Stack, Typography, IconButton, InputAdornment } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Dialog,
+  Button,
+  Typography,
+  IconButton,
+  DialogTitle,
+  DialogContent,
+  useMediaQuery,
+  DialogActions,
+  InputAdornment,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -22,14 +35,79 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 // import error from '../../../public/sounds/error.mp3';
 
+// eslint-disable-next-line react/prop-types
+const PdfModal = ({ open, onClose, pdfFile, title }) => {
+  const [numPages, setNumPages] = useState(null);
+  // const [pageNumber, setPageNumber] = useState(1);
+  const isSmallScreen = useMediaQuery('(max-width: 600px)');
+
+  // eslint-disable-next-line no-shadow
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullScreen={isSmallScreen}>
+      <DialogTitle>{title}</DialogTitle>
+
+      <DialogContent>
+        <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
+          <Document
+            file={pdfFile}
+            onLoadSuccess={onDocumentLoadSuccess}
+            options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+          >
+            {Array.from(new Array(numPages), (el, index) => (
+              <div key={index} style={{ marginBottom: '0px' }}>
+                <Page
+                  key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
+                  pageNumber={index + 1}
+                  scale={isSmallScreen ? 0.7 : 1.5}
+                  renderAnnotationLayer={false}
+                  renderTextLayer={false}
+                  style={{ overflow: 'scroll' }}
+                  // style={{ margin: 0, padding: 0, position: 'relative' }}
+                />
+              </div>
+            ))}
+          </Document>
+        </Box>
+      </DialogContent>
+
+      {/* </DialogContent> */}
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const Login = () => {
   const password = useBoolean();
+  const [openTermsModal, setOpenTermsModal] = useState(false);
+  const [openPrivacyModal, setOpenPrivacyModal] = useState(false);
   // const [play] = useSound(error, {
   //   interrupt: true,
   // });
 
   const { login } = useAuthContext();
   const router = useRouter();
+
+  const handleOpenTerms = () => {
+    setOpenTermsModal(true);
+  };
+
+  const handleOpenPrivacy = () => {
+    setOpenPrivacyModal(true);
+  };
+
+  const handleCloseTerms = () => {
+    setOpenTermsModal(false);
+  };
+
+  const handleClosePrivacy = () => {
+    setOpenPrivacyModal(false);
+  };
 
   const LoginSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
@@ -131,49 +209,99 @@ const Login = () => {
     </Stack>
   );
 
-  return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Box
-        sx={{
-          p: 3,
-          bgcolor: '#F4F4F4',
-          borderRadius: 2,
-        }}
+  const renderTerms = (
+    <Typography
+      component="div"
+      sx={{
+        mt: 2.5,
+        textAlign: 'center',
+        typography: 'caption',
+        color: 'text.secondary',
+      }}
+    >
+      {'By signing up, I agree to '}
+      <Link
+        component="button"
+        underline="always"
+        color="text.primary"
+        onClick={handleOpenTerms}
+        type="button"
       >
-        <Typography
-          variant="h3"
-          // fontWeight="bold"
-          sx={{
-            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-            fontWeight: 400,
-          }}
-        >
-          Login 👾
-        </Typography>
+        Terms of Service
+      </Link>
+      {' and '}
+      <Link
+        component="button"
+        underline="always"
+        color="text.primary"
+        onClick={handleOpenPrivacy}
+        type="button"
+      >
+        Privacy Policy
+      </Link>
+      .
+    </Typography>
+  );
 
-        <Stack direction="row" spacing={0.5} my={2}>
-          <Typography variant="body2">New user?</Typography>
-
-          <Link
-            component={RouterLink}
-            href={paths.auth.jwt.register}
-            variant="body2"
-            color="#1340FF"
-            fontWeight={600}
-          >
-            Create an account
-          </Link>
-        </Stack>
-
+  return (
+    <>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
         <Box
           sx={{
-            mt: 3,
+            p: 3,
+            bgcolor: '#F4F4F4',
+            borderRadius: 2,
           }}
         >
-          {renderForm}
+          <Typography
+            variant="h3"
+            // fontWeight="bold"
+            sx={{
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              fontWeight: 400,
+            }}
+          >
+            Login 👾
+          </Typography>
+
+          <Stack direction="row" spacing={0.5} my={2}>
+            <Typography variant="body2">New user?</Typography>
+
+            <Link
+              component={RouterLink}
+              href={paths.auth.jwt.register}
+              variant="body2"
+              color="#1340FF"
+              fontWeight={600}
+            >
+              Create an account
+            </Link>
+          </Stack>
+
+          <Box
+            sx={{
+              mt: 3,
+            }}
+          >
+            {renderForm}
+          </Box>
+          {renderTerms}
         </Box>
-      </Box>
-    </FormProvider>
+      </FormProvider>
+      <PdfModal
+        open={openTermsModal}
+        onClose={handleCloseTerms}
+        pdfFile="/assets/pdf/tnc.pdf"
+        title="Terms and Conditions"
+      />
+
+      <PdfModal
+        open={openPrivacyModal}
+        onClose={handleClosePrivacy}
+        pdfFile="/assets/pdf/privacy-policy.pdf"
+        title="Privacy Policy"
+      />
+    </>
   );
 };
 
