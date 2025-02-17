@@ -76,7 +76,7 @@ const MediaKitCreator = () => {
             instagram?.user?.followers_count
           ) || 0
         }%`,
-        averageLikes: instagram?.user?.followers_count || 0,
+        averageLikes: instagram?.user?.average_like || 0,
       };
     }
 
