@@ -266,10 +266,9 @@ export default function ChatNav({}) {
           }}
           sx={{
             borderRadius: 2,
-            m: 1,
             '&.MuiTabs-root': {
               bgcolor: '#F4F4F4',
-              p: 1,
+              p: 0.5,
             },
             '& .MuiTabs-indicator': {
               position: 'absolute',
@@ -375,16 +374,31 @@ export default function ChatNav({}) {
 
   return (
     <>
-      {!mdUp && renderToggleBtn}
+      {/* {!mdUp && renderToggleBtn} */}
 
-      {mdUp ? (
+      <Stack
+        sx={{
+          height: 1,
+          flexShrink: 0,
+          width: NAV_WIDTH,
+          transition: theme.transitions.create(['width'], {
+            duration: theme.transitions.duration.shorter,
+          }),
+          ...(collapseDesktop && {
+            width: NAV_COLLAPSE_WIDTH,
+          }),
+        }}
+      >
+        {renderContent}
+      </Stack>
+
+      {/* {!mdUp ? (
         <Stack
           sx={{
             height: 1,
             flexShrink: 0,
             width: NAV_WIDTH,
             px: 0.5,
-            // borderRight: `solid 1px ${theme.palette.divider}`,
             transition: theme.transitions.create(['width'], {
               duration: theme.transitions.duration.shorter,
             }),
@@ -408,7 +422,7 @@ export default function ChatNav({}) {
         >
           {renderContent}
         </Drawer>
-      )}
+      )} */}
     </>
   );
 }

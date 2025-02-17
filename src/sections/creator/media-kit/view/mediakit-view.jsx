@@ -15,6 +15,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useResponsive } from 'src/hooks/use-responsive';
+
 import { useSocialMediaData } from 'src/utils/store';
 import { fetcher, endpoints } from 'src/utils/axios';
 
@@ -28,6 +30,7 @@ import MediaKitSocial from './media-kit-social-view';
 
 const MediaKitCreator = () => {
   const theme = useTheme();
+  const smDown = useResponsive('down', 'sm');
   const { user } = useAuthContext();
   const setTiktok = useSocialMediaData((state) => state.setTiktok);
   const setInstagram = useSocialMediaData((state) => state.setInstagram);
@@ -125,26 +128,28 @@ const MediaKitCreator = () => {
           src={user?.photoURL}
         />
 
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-          }}
-        >
-          <Button
-            startIcon={<Iconify icon="solar:settings-linear" />}
-            variant="outlined"
+        {!smDown && (
+          <Box
             sx={{
-              color: 'black',
-            }}
-            onClick={() => {
-              setOpenSetting(true);
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
             }}
           >
-            Settings
-          </Button>
-        </Box>
+            <Button
+              startIcon={<Iconify icon="solar:settings-linear" />}
+              variant="outlined"
+              sx={{
+                color: 'black',
+              }}
+              onClick={() => {
+                setOpenSetting(true);
+              }}
+            >
+              Settings
+            </Button>
+          </Box>
+        )}
       </Stack>
       <Stack>
         <Stack direction="row" alignItems="center" spacing={1}>
@@ -191,182 +196,291 @@ const MediaKitCreator = () => {
           </Label>
         ))}
       </Stack>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="stretch"
-        spacing={2}
-        flexWrap={{ xs: 'wrap', md: 'nowrap' }}
-        sx={{
-          borderTop: 1,
-          borderBottom: 1,
-          borderColor: '#EBEBEB',
-          py: 2,
-        }}
-      >
-        {/* Followers */}
-        <Box
-          sx={{
-            width: 1,
-            position: 'relative',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              right: 0,
-              height: '80%',
-              width: '2px',
-              backgroundColor: '#EBEBEB',
-            },
-          }}
-        >
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Avatar
-              sx={{
-                bgcolor: '#8A5AFE',
-                width: 60,
-                height: 60,
-              }}
-            >
-              <Iconify icon="ic:sharp-people-alt" width={30} />
-            </Avatar>
-            <ListItemText
-              primary="FOLLOWERS"
-              secondary={
-                socialMediaAnalytics.followers
-                // socialMediaAnalytics.followers
-                //   ? formatNumber(socialMediaAnalytics.followers)
-                //   : 'No data'
-              }
-              primaryTypographyProps={{
-                variant: 'caption',
-                color: 'text.secondary',
-                fontWeight: 600,
-              }}
-              secondaryTypographyProps={{
-                variant: 'h3',
-                color: 'black',
-                key: currentTab,
-                component: m.div,
-                initial: { scale: 0.5 },
-                animate: { scale: 1 },
-                transition: {
-                  duration: 1,
-                  type: 'spring',
-                },
-                lineHeight: 1,
-              }}
-            />
-          </Stack>
-        </Box>
 
-        {/* Engagement rate */}
-        <Box
-          sx={{
-            width: 1,
-            position: 'relative',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              right: 0,
-              height: '80%',
-              width: '2px',
-              backgroundColor: '#EBEBEB',
-            },
-          }}
-        >
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Avatar
-              sx={{
-                bgcolor: '#026D54',
-                width: 60,
-                height: 60,
-              }}
-            >
-              <Iconify icon="mage:chart-up-fill" width={30} />
-            </Avatar>
-            <ListItemText
-              primary="ENGAGEMENT RATE"
-              secondary={socialMediaAnalytics.engagement_rate}
-              // secondary={
-              //   socialMediaAnalytics.engagement_rate
-              //     ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
-              //     : 0
-              // }
-              primaryTypographyProps={{
-                variant: 'caption',
-                color: 'text.secondary',
-                fontWeight: 600,
-              }}
-              secondaryTypographyProps={{
-                variant: 'h3',
-                color: 'black',
-                key: currentTab,
-                component: m.div,
-                initial: { scale: 0.5 },
-                animate: { scale: 1 },
-                transition: {
-                  duration: 1,
-                  type: 'spring',
-                },
-                lineHeight: 1,
-              }}
-            />
-          </Stack>
+      {smDown && (
+        <Box my={1}>
+          <Button
+            fullWidth
+            startIcon={<Iconify icon="lucide:edit" width={20} />}
+            sx={{ border: 1, borderColor: '#E7E7E7', boxShadow: '0px -3px 0px 0px #E7E7E7 inset' }}
+            onClick={() => {
+              setOpenSetting(true);
+            }}
+          >
+            Edit Profile
+          </Button>
         </Box>
+      )}
 
-        {/* Average likes */}
-        <Box
-          sx={{
-            width: 1,
-          }}
-        >
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Avatar
+      {smDown ? (
+        <>
+          <Divider sx={{ my: 1.5 }} />
+          <Stack direction="row" spacing={1} alignItems="center">
+            {/* Followers */}
+            <Box
               sx={{
-                bgcolor: '#FF3500',
-                width: 60,
-                height: 60,
+                width: 1,
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  right: 0,
+                  height: '80%',
+                  width: '2px',
+                  backgroundColor: '#EBEBEB',
+                },
               }}
             >
-              <Iconify icon="hugeicons:play-list-favourite-02" width={30} />
-            </Avatar>
-            <ListItemText
-              primary="AVERAGE LIKES"
-              secondary={
-                socialMediaAnalytics.averageLikes
-                // tiktok?.user?.data?.user?.likes_count || 0
-                // socialMediaAnalytics.averageLikes
-                //   ? formatNumber(socialMediaAnalytics.averageLikes)
-                //   : 'No data'
-              }
-              primaryTypographyProps={{
-                variant: 'caption',
-                color: 'text.secondary',
-                fontWeight: 600,
-              }}
-              secondaryTypographyProps={{
-                variant: 'h3',
-                color: 'black',
-                key: currentTab,
-                component: m.div,
-                initial: { scale: 0.5 },
-                animate: { scale: 1 },
-                transition: {
-                  duration: 1,
-                  type: 'spring',
+              <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
+                <Avatar
+                  sx={{
+                    bgcolor: '#8A5AFE',
+                    width: 35,
+                    height: 35,
+                  }}
+                >
+                  <Iconify icon="ic:sharp-people-alt" width={20} />
+                </Avatar>
+
+                <Typography variant="subtitle1">{socialMediaAnalytics.followers}</Typography>
+              </Stack>
+            </Box>
+
+            {/* Engagement rate */}
+            <Box
+              sx={{
+                width: 1,
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  right: 0,
+                  height: '80%',
+                  width: '2px',
+                  backgroundColor: '#EBEBEB',
                 },
-                lineHeight: 1,
               }}
-            />
+            >
+              <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
+                <Avatar
+                  sx={{
+                    bgcolor: '#026D54',
+                    width: 35,
+                    height: 35,
+                  }}
+                >
+                  <Iconify icon="mage:chart-up-fill" width={20} />
+                </Avatar>
+                <Typography variant="subtitle1">{socialMediaAnalytics.engagement_rate}</Typography>
+              </Stack>
+            </Box>
+
+            {/* Average likes */}
+            <Box
+              sx={{
+                width: 1,
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={1.5} justifyContent="center">
+                <Avatar
+                  sx={{
+                    bgcolor: '#FF3500',
+                    width: 35,
+                    height: 35,
+                  }}
+                >
+                  <Iconify icon="hugeicons:play-list-favourite-02" width={20} />
+                </Avatar>
+                <Typography variant="subtitle1">{socialMediaAnalytics.averageLikes}</Typography>
+              </Stack>
+            </Box>
           </Stack>
-        </Box>
-      </Stack>
+          <Divider sx={{ my: 1.5 }} />
+        </>
+      ) : (
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="stretch"
+          spacing={2}
+          flexWrap={{ xs: 'wrap', md: 'nowrap' }}
+          sx={{
+            borderTop: 1,
+            borderBottom: 1,
+            borderColor: '#EBEBEB',
+            py: 2,
+          }}
+        >
+          {/* Followers */}
+          <Box
+            sx={{
+              width: 1,
+              position: 'relative',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                right: 0,
+                height: '80%',
+                width: '2px',
+                backgroundColor: '#EBEBEB',
+              },
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Avatar
+                sx={{
+                  bgcolor: '#8A5AFE',
+                  width: 60,
+                  height: 60,
+                }}
+              >
+                <Iconify icon="ic:sharp-people-alt" width={30} />
+              </Avatar>
+              <ListItemText
+                primary="FOLLOWERS"
+                secondary={
+                  socialMediaAnalytics.followers
+                  // socialMediaAnalytics.followers
+                  //   ? formatNumber(socialMediaAnalytics.followers)
+                  //   : 'No data'
+                }
+                primaryTypographyProps={{
+                  variant: 'caption',
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                }}
+                secondaryTypographyProps={{
+                  variant: 'h3',
+                  color: 'black',
+                  key: currentTab,
+                  component: m.div,
+                  initial: { scale: 0.5 },
+                  animate: { scale: 1 },
+                  transition: {
+                    duration: 1,
+                    type: 'spring',
+                  },
+                  lineHeight: 1,
+                }}
+              />
+            </Stack>
+          </Box>
+
+          {/* Engagement rate */}
+          <Box
+            sx={{
+              width: 1,
+              position: 'relative',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                right: 0,
+                height: '80%',
+                width: '2px',
+                backgroundColor: '#EBEBEB',
+              },
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Avatar
+                sx={{
+                  bgcolor: '#026D54',
+                  width: 60,
+                  height: 60,
+                }}
+              >
+                <Iconify icon="mage:chart-up-fill" width={30} />
+              </Avatar>
+              <ListItemText
+                primary="ENGAGEMENT RATE"
+                secondary={socialMediaAnalytics.engagement_rate}
+                // secondary={
+                //   socialMediaAnalytics.engagement_rate
+                //     ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
+                //     : 0
+                // }
+                primaryTypographyProps={{
+                  variant: 'caption',
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                }}
+                secondaryTypographyProps={{
+                  variant: 'h3',
+                  color: 'black',
+                  key: currentTab,
+                  component: m.div,
+                  initial: { scale: 0.5 },
+                  animate: { scale: 1 },
+                  transition: {
+                    duration: 1,
+                    type: 'spring',
+                  },
+                  lineHeight: 1,
+                }}
+              />
+            </Stack>
+          </Box>
+
+          {/* Average likes */}
+          <Box
+            sx={{
+              width: 1,
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Avatar
+                sx={{
+                  bgcolor: '#FF3500',
+                  width: 60,
+                  height: 60,
+                }}
+              >
+                <Iconify icon="hugeicons:play-list-favourite-02" width={30} />
+              </Avatar>
+              <ListItemText
+                primary="AVERAGE LIKES"
+                secondary={
+                  socialMediaAnalytics.averageLikes
+                  // tiktok?.user?.data?.user?.likes_count || 0
+                  // socialMediaAnalytics.averageLikes
+                  //   ? formatNumber(socialMediaAnalytics.averageLikes)
+                  //   : 'No data'
+                }
+                primaryTypographyProps={{
+                  variant: 'caption',
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                }}
+                secondaryTypographyProps={{
+                  variant: 'h3',
+                  color: 'black',
+                  key: currentTab,
+                  component: m.div,
+                  initial: { scale: 0.5 },
+                  animate: { scale: 1 },
+                  transition: {
+                    duration: 1,
+                    type: 'spring',
+                  },
+                  lineHeight: 1,
+                }}
+              />
+            </Stack>
+          </Box>
+        </Stack>
+      )}
+
       <Divider sx={{ my: 3 }} />
       {/* Bottom View */}
+
       <Typography fontWeight={400} fontFamily="Instrument Serif" fontSize="40px">
         Top Content
       </Typography>

@@ -3,13 +3,14 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'src/routes/hooks';
 import Stack from '@mui/material/Stack';
 import PropTypes from 'prop-types';
-import { Divider, Typography } from '@mui/material';
+import { Box, Divider, Typography } from '@mui/material';
 import ChatHeaderCompose from '../chat-header-compose';
 import ChatMessageInput from '../chat-message-input';
 import ChatMessageList from '../chat-message-list';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useAuthContext } from 'src/auth/hooks';
 import { markMessagesAsSeen, useTotalUnreadCount, useGetAllThreads } from 'src/api/chat';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 const ThreadMessages = ({ threadId }) => {
   const { socket } = useSocketContext();
@@ -19,6 +20,7 @@ const ThreadMessages = ({ threadId }) => {
   const { triggerRefetch } = useTotalUnreadCount();
   const { threads, threadrefetch } = useGetAllThreads();
   const [campaignStatus, setCampaignStatus] = useState(null);
+  const smDown = useResponsive('down', 'sm');
 
   useEffect(() => {
     // Listen for existing messages
@@ -106,7 +108,33 @@ const ThreadMessages = ({ threadId }) => {
           The campaign has ended.
         </Typography>
       ) : (
-        <ChatMessageInput threadId={threadId} onSendMessage={handleSendMessage} />
+        <Box
+          sx={
+            smDown && {
+              position: 'fixed',
+              bottom: 10,
+              width: 1,
+              px: 1,
+              zIndex: 111,
+              bgcolor: '#FFF',
+              left: 0,
+            }
+          }
+        >
+          <Box
+            sx={
+              smDown && {
+                px: 2,
+                border: 1,
+                borderRadius: 2,
+                borderColor: '#E7E7E7',
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              }
+            }
+          >
+            <ChatMessageInput threadId={threadId} onSendMessage={handleSendMessage} />
+          </Box>
+        </Box>
       )}
     </Stack>
   );
