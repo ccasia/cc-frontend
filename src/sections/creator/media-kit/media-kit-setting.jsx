@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -44,6 +45,7 @@ const FormField = ({ label, children }) => (
 
 const MediaKitSetting = ({ open, handleClose, user }) => {
   const success = useBoolean();
+  const smDown = useResponsive('down', 'sm');
 
   const schema = Yup.object().shape({
     profilePhoto: Yup.mixed().required(),
@@ -137,7 +139,13 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 1 } }}
+      >
         <Box
           sx={{
             p: 2,
@@ -272,6 +280,7 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
               </Button> */}
               <LoadingButton
                 variant="contained"
+                fullWidth={smDown}
                 sx={{
                   mt: 2,
                   bgcolor: '#1340FF',

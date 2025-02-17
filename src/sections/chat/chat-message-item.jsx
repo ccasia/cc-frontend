@@ -6,7 +6,6 @@ import Typography from '@mui/material/Typography';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-
 // ----------------------------------------------------------------------
 
 export default function ChatMessageItem({ message }) {
@@ -23,16 +22,16 @@ export default function ChatMessageItem({ message }) {
       noWrap
       variant="body2"
       sx={{
-        mb: 1,
         color: 'text.disabled',
         ...(!isMe && {
+          mb: 1,
           mr: 'auto',
         }),
       }}
     >
       {!isMe && (
         <>
-          {sender?.name}  
+          {sender?.name}
           {isAdmin && ` (Admin)`}
           {isSprAdmin && ` (Superadmin)`}
         </>
@@ -69,19 +68,23 @@ export default function ChatMessageItem({ message }) {
         maxWidth: 320,
         borderRadius: 1,
         typography: 'body2',
+        fontWeight: 300,
+        fontSize: 13,
         bgcolor: 'background.neutral',
         ...(isMe && {
-          color: 'grey.800',
-          bgcolor: '#F5F5F5',
+          color: 'white',
+          bgcolor: '#1340FF',
+          borderTopRightRadius: 0,
         }),
         ...(!isMe && {
           color: '#FFFFFF',
           bgcolor: '#1340FF',
           mr: 'auto',
+          borderTopLeftRadius: 0,
         }),
       }}
     >
-      <Typography 
+      <Typography
         variant="inherit"
         textTransform="none"
         sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
@@ -111,7 +114,6 @@ export default function ChatMessageItem({ message }) {
           }}
         >
           {renderBody}
-        
         </Stack>
         {/* {renderTimestamp} */}
       </Stack>

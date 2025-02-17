@@ -2,11 +2,13 @@ import { useParams } from 'react-router-dom';
 
 //  import Image from "material-ui-image";
 import Stack from '@mui/material/Stack';
-import { Box, Avatar } from '@mui/material';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import { Box, Avatar, Divider } from '@mui/material';
 
 import { useSearchParams } from 'src/routes/hooks';
+
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllThreads } from 'src/api/chat';
@@ -26,7 +28,8 @@ export default function ChatView() {
   const searchParams = useSearchParams();
   const unreadMessageCount = useUnreadMessageCount();
   const selectedConversationId = searchParams.get('id') || '';
-  const { threads, loading, error } = useGetAllThreads(); // Fetch all threads using hook
+  const { threads, loading } = useGetAllThreads(); // Fetch all threads using hook
+  const smDown = useResponsive('down', 'sm');
 
   // Filter threads to find those that the user is part of
   const userThreads = threads?.filter((thread) =>
@@ -174,49 +177,92 @@ export default function ChatView() {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
-      <Box
-        sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', mb: { xs: 3, md: 4 } }}
-      >
-        <Typography
-          variant="h2"
-          sx={{
-            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-            fontWeight: 'normal', 
-            px: 2,
-          }}
-        >
-          Chats 💬
-        </Typography>
-      </Box>
+      {!smDown && (
+        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', mb: { md: 4 } }}>
+          <Typography
+            variant="h2"
+            sx={{
+              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+              fontWeight: 'normal',
+              px: !smDown && 2,
+            }}
+          >
+            Chats 💬
+          </Typography>
+        </Box>
+      )}
 
-      <Stack direction="row" sx={{ height: '72vh' }} gap={2}>
-        <Box sx={{ border: 1, borderRadius: 2, borderColor: '#EBEBEB' }}>{renderNav}</Box>
+      {/* {smDown && <Divider sx={{ my: 1 }} />} */}
 
-        <Stack
-          sx={{
-            width: 1,
-            height: 1,
-            overflow: 'hidden',
-            border: 1,
-            borderRadius: 2,
-            borderColor: '#EBEBEB',
-          }}
-        >
+      {smDown && (
+        <>
+          {!id ? (
+            <>
+              <Box
+                sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', mb: { md: 4 } }}
+              >
+                <Typography
+                  variant="h2"
+                  sx={{
+                    fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                    fontWeight: 'normal',
+                    px: !smDown && 2,
+                  }}
+                >
+                  Chats 💬
+                </Typography>
+              </Box>
+              <Divider sx={{ my: 2 }} />
+              <ChatNav contacts={[]} selectedConversationId={selectedConversationId} />
+            </>
+          ) : (
+            <Stack
+              direction="row"
+              sx={{
+                width: 1,
+                height: 1,
+                overflow: 'hidden',
+                borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {renderContent()}
+            </Stack>
+          )}
+        </>
+      )}
+
+      {!smDown && (
+        <Stack direction="row" sx={{ height: '72vh' }} gap={2}>
+          <Box sx={{ border: 1, borderRadius: 2, borderColor: '#EBEBEB', p: 2 }}>{renderNav}</Box>
+
           <Stack
-            direction="row"
             sx={{
               width: 1,
               height: 1,
               overflow: 'hidden',
-              borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
-              alignItems: 'center',
-              justifyContent: 'center',
+              border: 1,
+              borderRadius: 2,
+              borderColor: '#EBEBEB',
             }}
           >
-            {renderContent()}
+            <Stack
+              direction="row"
+              sx={{
+                width: 1,
+                height: 1,
+                overflow: 'hidden',
+                borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {renderContent()}
+            </Stack>
           </Stack>
         </Stack>
-      </Stack>
+      )}
     </Container>
   );
 }
