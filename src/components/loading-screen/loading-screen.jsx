@@ -1,7 +1,18 @@
 import PropTypes from 'prop-types';
-
 import Box from '@mui/material/Box';
-import LinearProgress from '@mui/material/LinearProgress';
+import { keyframes } from '@mui/system';
+ 
+// animation
+const pulse = keyframes`
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+`;
+
+const rotate = keyframes`
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+`;
 
 // ----------------------------------------------------------------------
 
@@ -20,7 +31,16 @@ export default function LoadingScreen({ sx, ...other }) {
       }}
       {...other}
     >
-      <LinearProgress color="inherit" sx={{ width: 1, maxWidth: 360 }} />
+      <Box
+        component="img"
+        src="/logo/newlogo.svg"
+        sx={{
+          width: 60,
+          height: 60,
+          filter: 'invert(1)',
+          animation: `${pulse} 0.5s ease-in-out infinite, ${rotate} 0.5s linear infinite`,
+        }}
+      />
     </Box>
   );
 }
