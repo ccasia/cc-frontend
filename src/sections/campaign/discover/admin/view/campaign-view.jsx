@@ -85,7 +85,7 @@ const CampaignView = () => {
     return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
-  const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
+  const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher);
 
   const smDown = useResponsive('down', 'sm');
 
@@ -469,7 +469,7 @@ const CampaignView = () => {
         scroll="paper"
         open={create.value}
       >
-        <CreateCampaignForm onClose={create.onFalse} />
+        <CreateCampaignForm onClose={create.onFalse} mutate={mutate} />
       </Dialog>
     </Container>
   );

@@ -352,7 +352,6 @@ const Submissions = ({ campaign, submissions, creator }) => {
                   sx={{
                     mb: { xs: 2, md: 3 },
                     pb: 2,
-                    mb: 1,
                     gap: { xs: 1, sm: 0 },
                     borderBottom: '1px solid',
                     borderColor: 'divider',
