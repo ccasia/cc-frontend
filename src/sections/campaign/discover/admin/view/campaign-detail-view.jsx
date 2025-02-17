@@ -287,7 +287,6 @@ const CampaignDetailView = ({ id }) => {
         enqueueSnackbar('Failed to generate public URL', { variant: 'error' });
       }
     } catch (error) {
-      console.error('Error generating public URL:', error);
       enqueueSnackbar('An error occurred while generating the public URL.', { variant: 'error' });
     } finally {
       loading.onFalse();
