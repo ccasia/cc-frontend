@@ -462,14 +462,14 @@ const Register = () => {
       <PdfModal
         open={openTermsModal}
         onClose={handleCloseTerms}
-        pdfFile="/assets/pdf/tnc.pdf"
+        pdfFile="https://storage.googleapis.com/cult_production/pdf/tnc%20copy.pdf"
         title="Terms and Conditions"
       />
 
       <PdfModal
         open={openPrivacyModal}
         onClose={handleClosePrivacy}
-        pdfFile="/assets/pdf/privacy-policy.pdf"
+        pdfFile="https://storage.googleapis.com/cult_production/pdf/privacy-policy%20copy.pdf"
         title="Privacy Policy"
       />
     </FormProvider>
