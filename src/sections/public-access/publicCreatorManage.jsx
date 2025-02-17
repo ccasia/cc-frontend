@@ -1,13 +1,8 @@
 /* eslint-disable no-nested-ternary */
-import PropTypes from 'prop-types';
-import { useTheme } from '@emotion/react';
-import { enqueueSnackbar } from 'notistack';
-import { PDFViewer } from '@react-pdf/renderer';
-import React, { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router';
-import { LoadingScreen } from 'src/components/loading-screen';
+import { useTheme } from '@emotion/react';
+import React, { useMemo, useState } from 'react';
 
-import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
@@ -21,28 +16,17 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { paths } from 'src/routes/paths';
 import { useRouter, useSearchParams } from 'src/routes/hooks';
+import { useGetCampaignById } from 'src/routes/hooks/use-public-campaign';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
-import { useGetCampaignById } from 'src/routes/hooks/use-public-campaign';
 //  import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
-import useGetInvoiceByCreatorAndCampaign from 'src/hooks/use-get-invoice-creator-camp';
-
-import axiosInstance from 'src/utils/axios';
 
 //  import useSocketContext from 'src/socket/hooks/useSocketContext';
-import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
-import EmptyContent from 'src/components/empty-content/empty-content';
 
-import InvoicePDF from 'src/sections/invoice/invoice-pdf';
-
-import Submissions from '../campaign/discover/admin/creator-stuff/submissions';
-import TimelineCreator from '../campaign/discover/admin/creator-stuff/timeline/view/page';
-import LogisticView from '../campaign/discover/admin/creator-stuff/logistics/view/logistic-view';
 import PublicSubmissionsView from './PublicSubmissionView';
 
 const BoxStyle = {
@@ -66,8 +50,8 @@ const BoxStyle = {
 };
 
 const PublicManageCreatorView = () => {
-  const { campaignId, creatorId } = useParams(); 
-  
+  const { campaignId, creatorId } = useParams();
+
   //    const { mainRef } = useMainContext();
   const query = useSearchParams();
 
@@ -75,10 +59,9 @@ const PublicManageCreatorView = () => {
 
   const [currentTab, setCurrentTab] = useState(tabs ?? 'profile');
 
-    // const { socket } = useSocketContext();
+  // const { socket } = useSocketContext();
   const { data, isLoading } = useGetCreatorById(creatorId);
   const { campaign, campaignLoading } = useGetCampaignById(campaignId);
-  
 
   const theme = useTheme();
 
@@ -97,11 +80,11 @@ const PublicManageCreatorView = () => {
     const finalSubmission = submissions?.find((item) => item.submissionType.type === 'FINAL_DRAFT');
     const postingSubmission = submissions?.find((item) => item.submissionType.type === 'POSTING');
 
-    if (firstSubmission?.status === 'APPROVED' ) {
+    if (firstSubmission?.status === 'APPROVED') {
       return false;
     }
 
-    if (finalSubmission?.status === 'APPROVED' ) {
+    if (finalSubmission?.status === 'APPROVED') {
       return false;
     }
 
@@ -112,19 +95,19 @@ const PublicManageCreatorView = () => {
     return true;
   }, [submissions]);
 
-//   const generateInvoice = async () => {
-//     try {
-//       await axiosInstance.post(`/api/submission/generateInvoice`, {
-//         campaignId,
-//         userId: id,
-//       });
-//       enqueueSnackbar('Invoice has been successfully generated.');
-//     } catch (error) {
-//       enqueueSnackbar('Error generating invoice', {
-//         variant: 'error',
-//       });
-//     }
-//   };
+  //   const generateInvoice = async () => {
+  //     try {
+  //       await axiosInstance.post(`/api/submission/generateInvoice`, {
+  //         campaignId,
+  //         userId: id,
+  //       });
+  //       enqueueSnackbar('Invoice has been successfully generated.');
+  //     } catch (error) {
+  //       enqueueSnackbar('Error generating invoice', {
+  //         variant: 'error',
+  //       });
+  //     }
+  //   };
 
   const renderTabs = (
     <Box sx={{ mt: 2.5, mb: 2.5 }}>
@@ -161,7 +144,7 @@ const PublicManageCreatorView = () => {
             { label: 'Submissions', value: 'submission' },
             // { label: 'Invoice', value: 'invoice' },
             // { label: 'Logistics', value: 'logistics' },
-            // { label: 'Timeline', value: 'timeline' }, 
+            // { label: 'Timeline', value: 'timeline' },
           ].map((tab) => (
             <Button
               key={tab.value}
@@ -233,26 +216,26 @@ const PublicManageCreatorView = () => {
 
   // const currentIndex = shortlistedCreators.find((a) => a?.userId === id)?.index;
 
-//   useEffect(() => {
-//     if (socket) {
-//       socket.on('newSubmission', () => {
-//         mutate();
-//       });
-//     }
+  //   useEffect(() => {
+  //     if (socket) {
+  //       socket.on('newSubmission', () => {
+  //         mutate();
+  //       });
+  //     }
 
-//     return () => {
-//       socket?.off('newSubmission');
-//     };
-//   }, [socket, mutate]);
+  //     return () => {
+  //       socket?.off('newSubmission');
+  //     };
+  //   }, [socket, mutate]);
 
-//   useEffect(() => {
-//     if (!mainRef.current) return;
+  //   useEffect(() => {
+  //     if (!mainRef.current) return;
 
-//     mainRef?.current.scrollTo({
-//       top: 0,
-//       behavior: 'smooth', // Optional for smooth scrolling
-//     });
-//   }, [mainRef]);
+  //     mainRef?.current.scrollTo({
+  //       top: 0,
+  //       behavior: 'smooth', // Optional for smooth scrolling
+  //     });
+  //   }, [mainRef]);
 
   return (
     <Container
@@ -262,20 +245,19 @@ const PublicManageCreatorView = () => {
         pt: { xs: 2, sm: 5 },
       }}
     >
-        <Button
-              color="inherit"
-              startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-              // onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id))}
-              onClick={() => router.push(`/public/view/${campaignId}`)} 
-
-              sx={{
-                alignSelf: 'flex-start',
-                color: '#636366',
-                fontSize: { xs: '0.875rem', sm: '1rem' },
-              }}
-            >
-              Back
-            </Button>
+      <Button
+        color="inherit"
+        startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
+        // onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(campaign?.id))}
+        onClick={() => router.push(`/public/view/${campaignId}`)}
+        sx={{
+          alignSelf: 'flex-start',
+          color: '#636366',
+          fontSize: { xs: '0.875rem', sm: '1rem' },
+        }}
+      >
+        Back
+      </Button>
 
       {(isLoading || submissionLoading || campaignLoading) && (
         <Box
@@ -339,7 +321,7 @@ const PublicManageCreatorView = () => {
                   }}
                 />
               </Typography>
-    
+
               <Stack direction="row" spacing={1}>
                 {data?.user?.creator?.instagram && (
                   <IconButton
@@ -619,7 +601,7 @@ const PublicManageCreatorView = () => {
               campaign={campaign}
               submissions={submissions}
               creator={data}
-             // invoice={invoice}
+              // invoice={invoice}
             />
           )}
           {/* {currentTab === 'logistics' && <LogisticView campaign={campaign} creator={data} />} */}
@@ -646,7 +628,7 @@ const PublicManageCreatorView = () => {
 
 export default PublicManageCreatorView;
 
-PublicManageCreatorView.propTypes = {
-  id: PropTypes.string,
-  //  campaignId: PropTypes.string,
-};
+// PublicManageCreatorView.propTypes = {
+//   id: PropTypes.string,
+//   //  campaignId: PropTypes.string,
+// };

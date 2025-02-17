@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
-import { Page, Document } from 'react-pdf';
 import { useNavigate } from 'react-router-dom';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -13,32 +12,21 @@ import {
   List,
   Stack,
   Table,
-  Dialog,
   Avatar,
-  Button,
   TableRow,
   ListItem,
   TableHead,
   TableCell,
   TableBody,
-  IconButton,
   Typography,
-  DialogTitle,
   ListItemIcon,
-  DialogContent,
   TableContainer,
-  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
-import { useAuthContext } from 'src/auth/hooks';
-
 import Iconify from 'src/components/iconify';
-import { MultiFilePreview } from 'src/components/upload';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -667,11 +655,8 @@ const PublicCampaignDetailContent = ({ campaign }) => {
               ))}
             </Stack>
           </Box>
-
         </Stack>
       </Stack>
-
-      
     </Box>
   );
 };

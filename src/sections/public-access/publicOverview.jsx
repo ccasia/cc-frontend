@@ -83,7 +83,6 @@ const PublicCampaignOverview = ({ campaign, onUpdate }) => {
     setLocalCampaign(campaign);
   }, [campaign]);
 
-  
   const handleDecline = async (pitch) => {
     try {
       const response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {

@@ -280,7 +280,7 @@ const SelectTimeline = () => {
                               />
                             </FormField>
                             <FormField label="Assigned To">
-                              <RHFSelect name={`timeline[${index}].for`} label="For">
+                              <RHFSelect name={`timeline[${index}].for`} label="For" disabled>
                                 <MenuItem value="admin">Admin</MenuItem>
                                 <MenuItem value="creator">Creator</MenuItem>
                               </RHFSelect>
@@ -306,7 +306,7 @@ const SelectTimeline = () => {
                               />
                             </FormField>
 
-                            <IconButton
+                            {/* <IconButton
                               color="error"
                               sx={{
                                 border: 1,
@@ -316,7 +316,7 @@ const SelectTimeline = () => {
                               onClick={() => handleRemove(index, item)}
                             >
                               <Iconify icon="uil:trash" />
-                            </IconButton>
+                            </IconButton> */}
                           </Stack>
                         </Stack>
                       </Box>
@@ -329,10 +329,10 @@ const SelectTimeline = () => {
           )}
         </Droppable>
       </DragDropContext>
-
+      {/* 
       <Button variant="contained" onClick={handleAdd}>
         Add new timeline
-      </Button>
+      </Button> */}
     </Box>
   );
 

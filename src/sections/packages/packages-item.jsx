@@ -1,5 +1,4 @@
 import React from 'react';
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 
 import { Chip, TableRow, MenuItem, TableCell, Typography, IconButton } from '@mui/material';
