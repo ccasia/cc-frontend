@@ -69,7 +69,7 @@ const steps = [
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
 
-function CreateCampaignForm({ onClose }) {
+function CreateCampaignForm({ onClose, mutate }) {
   const { user } = useAuthContext();
   const openCompany = useBoolean();
   const openBrand = useBoolean();
@@ -469,6 +469,7 @@ function CreateCampaignForm({ onClose }) {
         variant: 'success',
       });
       reset();
+      mutate();
       setStatus('');
       confirmation.onFalse();
       setActiveStep(0);
@@ -817,4 +818,5 @@ export default CreateCampaignForm;
 
 CreateCampaignForm.propTypes = {
   onClose: PropTypes.func,
+  mutate: PropTypes.func,
 };

@@ -397,8 +397,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                   borderRadius: 2,
                   p: 3,
                   ml: { xs: 0, sm: -3 },
-                  width: { md: '25%' }, 
-                  height: '100%', 
+                  width: { md: '25%' },
+                  height: '100%',
                 }}
               >
                 <Stack spacing={3}>
@@ -505,8 +505,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                           </Box>
                         )),
                         fallback: 'Not specified',
-                      }
-                      ].map((item) => (
+                      },
+                    ].map((item) => (
                       <Stack key={item.label} spacing={1}>
                         <Typography
                           variant="subtitle2"
@@ -533,7 +533,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
               </Box>
 
               {/* Right Column */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>  
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
                 {/* Payment Information Box */}
                 <Box sx={{ ...BoxStyle, mb: 2, flex: 1 }}>
                   <Box className="header">
@@ -672,27 +672,27 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                                   status === 'APPROVED'
                                     ? '#2e6c56'
                                     : status === 'REJECTED' || status === 'CHANGES_REQUIRED'
-                                    ? '#FF4842'
-                                    : status === 'PENDING_REVIEW'
-                                    ? '#f19f39'
-                                    : '#8e8e93',
+                                      ? '#FF4842'
+                                      : status === 'PENDING_REVIEW'
+                                        ? '#f19f39'
+                                        : '#8e8e93',
                                 border: `1px solid ${
                                   status === 'APPROVED'
                                     ? '#2e6c56'
                                     : status === 'REJECTED' || status === 'CHANGES_REQUIRED'
-                                    ? '#FF4842'
-                                    : status === 'PENDING_REVIEW'
-                                    ? '#f19f39'
-                                    : '#8e8e93'
+                                      ? '#FF4842'
+                                      : status === 'PENDING_REVIEW'
+                                        ? '#f19f39'
+                                        : '#8e8e93'
                                 }`,
                                 borderBottom: `3px solid ${
                                   status === 'APPROVED'
                                     ? '#2e6c56'
                                     : status === 'REJECTED' || status === 'CHANGES_REQUIRED'
-                                    ? '#FF4842'
-                                    : status === 'PENDING_REVIEW'
-                                    ? '#f19f39'
-                                    : '#8e8e93'
+                                      ? '#FF4842'
+                                      : status === 'PENDING_REVIEW'
+                                        ? '#f19f39'
+                                        : '#8e8e93'
                                 }`,
                                 fontWeight: 600,
                               }}

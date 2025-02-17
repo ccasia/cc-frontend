@@ -52,7 +52,7 @@ export default function PackageTableRow({ row, selected, onEditRow, onSelectRow,
         >{`RM ${new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2 }).format(priceMYR.amount)}`}</TableCell>
         <TableCell
           sx={{ whiteSpace: 'nowrap' }}
-        >{`RM ${new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2 }).format(priceSGD.amount)}`}</TableCell>
+        >{`$ ${new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2 }).format(priceSGD.amount)}`}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
           <Label>{credits}</Label>
         </TableCell>

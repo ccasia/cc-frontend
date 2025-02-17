@@ -12,31 +12,6 @@ const dictionary = {
   EXPIRED: 'Expired',
 };
 
-// {
-//   "id": "cm763kw7n0003ry8lxjlc5kqn",
-//   "subscriptionId": "P0003",
-//   "companyId": "cm763kw7n0000ry8lhtod4iqn",
-//   "packageId": "cm74vq6j80001ryv1zc2nbmsq",
-//   "customPackageId": null,
-//   "currency": "SGD",
-//   "creditsUsed": 9,
-//   "totalCredits": 15,
-//   "packagePrice": 8900,
-//   "status": "ACTIVE",
-//   "createdAt": "2025-02-15T11:11:37.235Z",
-//   "updatedAt": "2025-02-15T13:16:21.541Z",
-//   "expiredAt": "2025-04-14T16:00:00.000Z",
-//   "package": {
-//       "id": "cm74vq6j80001ryv1zc2nbmsq",
-//       "name": "Basic",
-//       "credits": 15,
-//       "validityPeriod": 2,
-//       "createdAt": "2025-02-14T14:44:00.788Z",
-//       "updatedAt": "2025-02-14T14:44:00.788Z"
-//   },
-//   "customPackage": null
-// }
-
 const PackageHistoryRow = ({ row, selected }) => {
   const {
     subscriptionId,
