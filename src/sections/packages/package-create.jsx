@@ -51,6 +51,7 @@ const defaultValues = {
   priceSGD: '',
   totalUGCCredits: '',
   validityPeriod: '',
+  // invoiceDate: null,
 };
 
 // eslint-disable-next-line react/prop-types
@@ -190,6 +191,10 @@ const PackageCreate = ({ open, onClose }) => {
                 }}
               />
             </FormField>
+
+            {/* <FormField label="Invoice Date">
+              <RHFDatePicker name="invoiceDate" />
+            </FormField> */}
           </Box>
 
           <Box mt={2} mb={2} display="flex" justifyContent="flex-end">

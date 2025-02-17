@@ -236,9 +236,15 @@ const FinalDraft = ({ campaign, submission, creator }) => {
       request.onFalse();
       reset();
     } catch (error) {
-      enqueueSnackbar('Error submitting', {
-        variant: 'error',
-      });
+      if (error) {
+        enqueueSnackbar(error, {
+          variant: 'error',
+        });
+      } else {
+        enqueueSnackbar('Error submitting', {
+          variant: 'error',
+        });
+      }
       approve.onFalse();
       request.onFalse();
     }
@@ -712,7 +718,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
     <Box>
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          <Box component={Paper} p={{ xs: 1, sm: 1.5 }}>
+          <Box p={{ xs: 1, sm: 1.5 }}>
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               spacing={{ xs: 1, sm: 3 }}
@@ -888,6 +894,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
               </Box>
             </Modal> */}
 
+
             {submission?.status === 'NOT_STARTED' && <EmptyContent title="No Submission" />}
             {submission?.status === 'IN_PROGRESS' &&
               !submission?.content &&
@@ -919,6 +926,74 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                             bgcolor: 'background.paper',
                             borderRadius: 1,
                             boxShadow: '0 0 12px rgba(0,0,0,0.05)',
+
+//             {submission?.status === 'NOT_STARTED' && <EmptyContent title="Not Started" />}
+//             {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No Submission" />}
+//             {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
+//               <Grid container spacing={2}>
+//                 <Grid item xs={12}>
+//                   <Box
+//                     // component={Paper}
+//                     sx={{
+//                       p: { xs: 2, sm: 3 },
+//                       mb: 2,
+//                       borderRadius: 1,
+//                       border: '1px solid',
+//                       borderColor: 'divider',
+//                     }}
+//                   >
+//                     <Box display="flex" flexDirection="column" gap={2}>
+//                       {/* User Profile Section */}
+//                       <Stack direction="row" alignItems="center" spacing={2}>
+//                         <Avatar
+//                           src={creator?.user?.photoURL}
+//                           alt={creator?.user?.name}
+//                           sx={{
+//                             width: 40,
+//                             height: 40,
+//                             border: '1px solid #e7e7e7',
+//                           }}
+//                         >
+//                           {creator?.user?.name?.charAt(0).toUpperCase()}
+//                         </Avatar>
+//                         <Typography
+//                           variant="subtitle2"
+//                           sx={{
+//                             fontSize: '1.05rem',
+//                             mt: -2.5,
+//                           }}
+//                         >
+//                           {creator?.user?.name}
+//                         </Typography>
+//                       </Stack>
+
+//                       {/* Content Section */}
+//                       <Box sx={{ pl: 7 }}>
+//                         {/* Description Section */}
+//                         <Box sx={{ mt: -3.5 }}>
+//                           <Typography
+//                             variant="body1"
+//                             sx={{
+//                               fontSize: '0.95rem',
+//                               color: '#48484A',
+//                             }}
+//                           >
+//                             <strong>Description:</strong> {submission?.caption}
+//                           </Typography>
+//                         </Box>
+
+//                         {/* Video Thumbnail Section */}
+//                         <Box
+//                           sx={{
+//                             position: 'relative',
+//                             cursor: 'pointer',
+//                             width: { xs: '100%', sm: '300px' },
+//                             height: { xs: '200px', sm: '169px' },
+//                             borderRadius: 2,
+//                             overflow: 'hidden',
+//                             boxShadow: 3,
+//                             mt: 2,
+
                           }}
                         >
                           <Button
@@ -935,9 +1010,145 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                               },
                             }}
                           >
+
                             <Stack alignItems="center">
                               <Typography variant="subtitle2">Current Draft</Typography>
                               <Typography variant="caption">{getCurrentVideos().length} videos</Typography>
+
+                            <source src={submission?.content} />
+                          </Box>
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              bgcolor: 'rgba(0, 0, 0, 0.4)',
+                              borderRadius: 2,
+                            }}
+                          >
+                            <VisibilityIcon sx={{ color: 'white', fontSize: 32 }} />
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {submission?.status === 'PENDING_REVIEW' && (
+                    <Box
+                      // component={Paper}
+                      sx={{
+                        // p: { xs: 2, sm: 3 },
+                        borderRadius: 1,
+                        // border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      {submission.publicFeedback
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                        .map((feedback, index) => (
+                          <Box
+                            key={index}
+                            mb={2}
+                            p={2}
+                            border={1}
+                            borderColor="grey.300"
+                            borderRadius={1}
+                            display="flex"
+                            alignItems="flex-start"
+                            flexDirection="column"
+                          >
+                            {/* Title for Client Feedback */}
+                            <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: 2 }}>
+                              Client Feedback
+                            </Typography>
+                            {/* Use company logo or fallback avatar */}
+                            <Avatar
+                              src={campaign?.company?.logoURL || '/default-avatar.png'}
+                              alt={campaign?.company?.name || 'Company'}
+                              sx={{ mr: 2, mb: 2 }}
+                            />
+                            <Box
+                              flexGrow={1}
+                              sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                textAlign: 'left',
+                              }}
+                            >
+                              <Typography
+                                variant="subtitle1"
+                                sx={{ fontWeight: 'bold', marginBottom: '2px' }}
+                              >
+                                {campaign?.company?.name || 'Unknown Company'}
+                              </Typography>
+
+                              {/* Feedback Content */}
+                              <Box sx={{ textAlign: 'left', mt: 1 }}>
+                                {feedback.content.split('\n').map((line, i) => (
+                                  <Typography key={i} variant="body2">
+                                    {line}
+                                  </Typography>
+                                ))}
+
+                                {/* Display reasons if available */}
+                                {feedback.reasons && feedback.reasons.length > 0 && (
+                                  <Box mt={1} sx={{ textAlign: 'left' }}>
+                                    <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                      {feedback.reasons.map((reason, idx) => (
+                                        <Box
+                                          key={idx}
+                                          sx={{
+                                            border: '1.5px solid #e7e7e7',
+                                            borderBottom: '4px solid #e7e7e7',
+                                            borderRadius: 1,
+                                            p: 0.5,
+                                            display: 'inline-flex',
+                                          }}
+                                        >
+                                          <Chip
+                                            label={reason}
+                                            size="small"
+                                            color="default"
+                                            variant="outlined"
+                                            sx={{
+                                              border: 'none',
+                                              color: '#8e8e93',
+                                              fontSize: '0.75rem',
+                                              padding: '1px 2px',
+                                            }}
+                                          />
+                                        </Box>
+                                      ))}
+                                    </Stack>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Box>
+                          </Box>
+                        ))}
+                      {type === 'approve' && (
+                        <FormProvider methods={methods} onSubmit={onSubmit}>
+                          <Stack gap={1} mb={2}>
+                            <Typography variant="subtitle1" mb={1} mx={1}>
+                              Schedule This Post
+                            </Typography>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} gap={{ xs: 2, sm: 3 }}>
+                              <RHFDatePicker
+                                name="schedule.startDate"
+                                label="Start Date"
+                                minDate={dayjs()}
+                              />
+                              <RHFDatePicker
+                                name="schedule.endDate"
+                                label="End Date"
+                                minDate={dayjs(scheduleStartDate)}
+                              />
+
                             </Stack>
                           </Button>
     
@@ -1641,6 +1852,7 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                         }}
                       />
                     </Box>
+
                     
                     {/* Navigation Arrows */}
                     {submission?.rawFootages?.length > 1 && (
@@ -1649,6 +1861,32 @@ const FinalDraft = ({ campaign, submission, creator }) => {
                           onClick={() => setCurrentVideoIndex((prev) => 
                             prev > 0 ? prev - 1 : submission.rawFootages.length - 1
                           )}
+
+                  )}
+                </Grid>
+              </Grid>
+            )}
+
+            {submission?.status === 'CHANGES_REQUIRED' && (
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  {/* Video Box */}
+                  <Box
+                    component={Paper}
+                    sx={{
+                      p: { xs: 2, sm: 3 },
+                      mb: 2,
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Box display="flex" flexDirection="column" gap={2}>
+                      {/* User Profile Section */}
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar
+                          src={creator?.user?.photoURL}
+                          alt={creator?.user?.name}
                           sx={{
                             position: 'absolute',
                             left: -20,

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -71,6 +71,21 @@ const cardStyle = {
   },
 };
 
+const findLatestPackage = (packages) => {
+  if (packages.length === 0) {
+    return null; // Return null if the array is empty
+  }
+
+  const latestPackage = packages.reduce((latest, current) => {
+    const latestDate = new Date(latest.createdAt);
+    const currentDate = new Date(current.createdAt);
+
+    return currentDate > latestDate ? current : latest;
+  });
+
+  return latestPackage;
+};
+
 const CampaignOverview = ({ campaign, onUpdate }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
@@ -80,7 +95,27 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const dialog = useBoolean();
   const [localCampaign, setLocalCampaign] = useState(campaign);
-  const client = campaign?.company;
+  const client = campaign?.company || campaign?.brand?.company;
+
+  const latestPackageItem = useMemo(() => {
+    if (client && client?.subscriptions?.length) {
+      let packageItem = findLatestPackage(client?.subscriptions);
+      packageItem = {
+        ...packageItem,
+        totalCredits:
+          packageItem.totalCredits ||
+          packageItem.package.credits ||
+          packageItem.customPackage.customCredits,
+        availableCredits:
+          (packageItem.totalCredits ||
+            packageItem.package.credits ||
+            packageItem.customPackage.customCredits) - packageItem.creditsUsed,
+      };
+      return packageItem;
+    }
+
+    return null;
+  }, [client]);
 
   useEffect(() => {
     setLocalCampaign(campaign);
@@ -540,26 +575,24 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
             </Box>
 
             <Stack spacing={[1]}>
-              {campaign?.campaignCredits ? (
+              {campaign?.campaignCredits && latestPackageItem ? (
                 <Stack spacing={1} color="text.secondary">
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="subtitle2">Campaign Credits</Typography>
                     <Typography variant="subtitle2">
-                      {campaign?.campaignCredits} UGC Credits
+                      {campaign?.campaignCredits || 0} UGC Credits
                     </Typography>
                   </Stack>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="subtitle2">Credits Utilized</Typography>
                     <Typography variant="subtitle2">
-                      {client?.PackagesClient[0]?.creditsUtilized} UGC Credits
+                      {campaign?.creditsUtilized || 0} UGC Credits
                     </Typography>
                   </Stack>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="subtitle2">Credits Pending</Typography>
                     <Typography variant="subtitle2">
-                      {(campaign?.campaignCredits ?? 0) -
-                        (client?.PackagesClient?.[0]?.creditsUtilized ?? 0)}{' '}
-                      UGC Credits
+                      {campaign?.creditsPending ?? 0} UGC Credits
                     </Typography>
                   </Stack>
                 </Stack>

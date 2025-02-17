@@ -884,6 +884,299 @@ const CampaignFinalDraft = ({
           </Stack>
         )}
 
+
+        {/* <Dialog
+          open={openUploadModal}
+          fullWidth
+          maxWidth="md"
+          sx={{
+            '& .MuiDialog-paper': {
+              width: { xs: 'calc(100% - 32px)', sm: '100%' },
+              m: { xs: 2, sm: 32 },
+            },
+          }}
+        >
+          <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
+            <Stack direction="row" alignItems="center" gap={2}>
+              <Box>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontSize: { xs: '1.8rem', sm: '2.4rem' },
+                    fontWeight: 550,
+                  }}
+                >
+                  Re-upload 2nd Draft
+                </Typography>
+              </Box>
+
+              <IconButton
+                onClick={() => setOpenUploadModal(false)}
+                sx={{
+                  ml: 'auto',
+                  '& svg': {
+                    width: { xs: 20, sm: 24 },
+                    height: { xs: 20, sm: 24 },
+                    color: '#636366',
+                  },
+                }}
+              >
+                <Iconify icon="hugeicons:cancel-01" />
+              </IconButton>
+            </Stack>
+          </DialogTitle>
+
+          <DialogContent sx={{ bgcolor: '#f4f4f4' }}>
+            <FormProvider methods={methods} onSubmit={onSubmit}>
+              <Stack spacing={3} sx={{ pt: 1 }}>
+                <Box>
+                  {localStorage.getItem('preview') || preview ? (
+                    <Box sx={{ position: 'relative' }}>
+                      <Stack
+                        spacing={2}
+                        sx={{
+                          p: 2,
+                          border: '1px solid',
+                          borderColor: '#e7e7e7',
+                          borderRadius: 1.2,
+                          bgcolor: '#ffffff',
+                        }}
+                      >
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          sx={{
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                          }}
+                        >
+                          <Box
+                            component="img"
+                            src={methods.getValues('draft').thumbnail}
+                            sx={{
+                              width: 64,
+                              height: 64,
+                              flexShrink: 0,
+                              borderRadius: 1,
+                              objectFit: 'cover',
+                            }}
+                          />
+
+                          <Box
+                            sx={{
+                              flexGrow: 1,
+                              minWidth: { xs: '100%', sm: 'auto' },
+                              mt: { xs: 1, sm: 0 },
+                            }}
+                          >
+                            <Typography
+                              variant="subtitle2"
+                              noWrap
+                              sx={{
+                                color: 'text.primary',
+                                fontWeight: 600,
+                                fontSize: '1rem',
+                                maxWidth: { xs: '100%', sm: '300px' },
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {methods.watch('draft').name}
+                            </Typography>
+
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: 'text.secondary',
+                                display: 'block',
+                                mt: 0.5,
+                                fontSize: '0.875rem',
+                              }}
+                            >
+                              {uploadProgress < 100
+                                ? `Uploading ${uploadProgress}%`
+                                : formatFileSize(methods.watch('draft').size)}
+                            </Typography>
+                          </Box>
+
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                            sx={{
+                              width: { xs: '100%', sm: 'auto' },
+                              justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+                              mt: { xs: 2, sm: 0 },
+                            }}
+                          >
+                            {uploadProgress < 100 ? (
+                              <Stack direction="row" spacing={2} alignItems="center">
+                                <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                                  <CircularProgress
+                                    variant="determinate"
+                                    value={100}
+                                    size={30}
+                                    thickness={6}
+                                    sx={{ color: 'grey.300' }}
+                                  />
+                                  <CircularProgress
+                                    variant="determinate"
+                                    value={uploadProgress}
+                                    size={30}
+                                    thickness={6}
+                                    sx={{
+                                      color: '#5abc6f',
+                                      position: 'absolute',
+                                      left: 0,
+                                      strokeLinecap: 'round',
+                                    }}
+                                  />
+                                </Box>
+                                <Button
+                                  onClick={handleRemoveFile}
+                                  variant="contained"
+                                  sx={{
+                                    bgcolor: 'white',
+                                    border: 1,
+                                    borderColor: '#e7e7e7',
+                                    borderBottom: 3,
+                                    borderBottomColor: '#e7e7e7',
+                                    color: '#221f20',
+                                    '&:hover': {
+                                      bgcolor: 'white',
+                                      borderColor: '#e7e7e7',
+                                    },
+                                    textTransform: 'none',
+                                    px: 2,
+                                    py: 1.5,
+                                    fontSize: '0.875rem',
+                                    minWidth: '80px',
+                                    height: '45px',
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </Stack>
+                            ) : (
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Button
+                                  onClick={display.onTrue}
+                                  variant="contained"
+                                  sx={{
+                                    bgcolor: 'white',
+                                    border: 1,
+                                    borderColor: '#e7e7e7',
+                                    borderBottom: 3,
+                                    borderBottomColor: '#e7e7e7',
+                                    color: '#221f20',
+                                    '&:hover': {
+                                      bgcolor: 'white',
+                                      borderColor: '#e7e7e7',
+                                    },
+                                    textTransform: 'none',
+                                    px: 2,
+                                    py: 1.5,
+                                    fontSize: '0.875rem',
+                                    minWidth: '80px',
+                                    height: '45px',
+                                  }}
+                                >
+                                  Preview
+                                </Button>
+                                <Button
+                                  onClick={handleRemoveFile}
+                                  variant="contained"
+                                  sx={{
+                                    bgcolor: 'white',
+                                    border: 1,
+                                    borderColor: '#e7e7e7',
+                                    borderBottom: 3,
+                                    borderBottomColor: '#e7e7e7',
+                                    color: '#221f20',
+                                    '&:hover': {
+                                      bgcolor: 'white',
+                                      borderColor: '#e7e7e7',
+                                    },
+                                    textTransform: 'none',
+                                    px: 2,
+                                    py: 1.5,
+                                    fontSize: '0.875rem',
+                                    minWidth: '80px',
+                                    height: '45px',
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </Stack>
+                            )}
+                          </Stack>
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  ) : (
+                    <RHFUpload
+                      name="draft"
+                      type="video"
+                      multiple
+                      onDrop={handleDrop}
+                      onRemove={handleRemoveFile}
+                    />
+                  )}
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, color: '#636366' }}>
+                    Post Caption{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
+                  </Typography>
+                  <RHFTextField
+                    name="caption"
+                    placeholder="Type your caption here..."
+                    multiline
+                    rows={4}
+                    required
+                    sx={{
+                      bgcolor: '#ffffff !important',
+                      border: '0px solid #e7e7e7',
+                      borderRadius: 1.2,
+                    }}
+                  />
+                </Box>
+              </Stack>
+            </FormProvider>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
+            <LoadingButton
+              loading={isSubmitting}
+              variant="contained"
+              onClick={onSubmit}
+              disabled={!isDirty}
+              sx={{
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                bgcolor: isDirty ? '#203ff5' : '#b0b0b1 !important',
+                color: '#ffffff !important',
+                borderBottom: 3.5,
+                borderBottomColor: isDirty ? '#112286' : '#9e9e9f',
+                borderRadius: 1.5,
+                px: 2.5,
+                py: 1.2,
+                '&:hover': {
+                  bgcolor: isDirty ? '#203ff5' : '#b0b0b1',
+                  opacity: 0.9,
+                },
+              }}
+            >
+              Submit
+            </LoadingButton>
+          </DialogActions>
+        </Dialog> */}
+
+
         <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>
           <DialogContent>
             <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>

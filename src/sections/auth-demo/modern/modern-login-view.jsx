@@ -1,16 +1,26 @@
 import * as Yup from 'yup';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
-import { Alert } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import {
+  Box,
+  Alert,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  useMediaQuery,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -25,11 +35,76 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
+// eslint-disable-next-line react/prop-types
+const PdfModal = ({ open, onClose, pdfFile, title }) => {
+  const [numPages, setNumPages] = useState(null);
+  // const [pageNumber, setPageNumber] = useState(1);
+  const isSmallScreen = useMediaQuery('(max-width: 600px)');
+
+  // eslint-disable-next-line no-shadow
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullScreen={isSmallScreen}>
+      <DialogTitle>{title}</DialogTitle>
+
+      <DialogContent>
+        <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
+          <Document
+            file={pdfFile}
+            onLoadSuccess={onDocumentLoadSuccess}
+            options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+          >
+            {Array.from(new Array(numPages), (el, index) => (
+              <div key={index} style={{ marginBottom: '0px' }}>
+                <Page
+                  key={`${index}-${isSmallScreen ? '1' : '1.5'}`}
+                  pageNumber={index + 1}
+                  scale={isSmallScreen ? 0.7 : 1.5}
+                  renderAnnotationLayer={false}
+                  renderTextLayer={false}
+                  style={{ overflow: 'scroll' }}
+                  // style={{ margin: 0, padding: 0, position: 'relative' }}
+                />
+              </div>
+            ))}
+          </Document>
+        </Box>
+      </DialogContent>
+
+      {/* </DialogContent> */}
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 export default function ModernLoginView() {
   const password = useBoolean();
   const { login } = useAuthContext();
   const [error, setError] = useState();
   const router = useRouter();
+  const [openTermsModal, setOpenTermsModal] = useState(false);
+  const [openPrivacyModal, setOpenPrivacyModal] = useState(false);
+
+  const handleOpenTerms = () => {
+    setOpenTermsModal(true);
+  };
+
+  const handleOpenPrivacy = () => {
+    setOpenPrivacyModal(true);
+  };
+
+  const handleCloseTerms = () => {
+    setOpenTermsModal(false);
+  };
+
+  const handleClosePrivacy = () => {
+    setOpenPrivacyModal(false);
+  };
 
   const LoginSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
@@ -80,6 +155,28 @@ export default function ModernLoginView() {
     </Stack>
   );
 
+  const renderTerms = (
+    <Typography
+      component="div"
+      sx={{
+        mt: 2.5,
+        textAlign: 'center',
+        typography: 'caption',
+        color: 'text.secondary',
+      }}
+    >
+      {'By signing up, I agree to '}
+      <Link component="button" color="text.primary" onClick={handleOpenTerms} type="button">
+        Terms of Service
+      </Link>
+      {' and '}
+      <Link underline="always" color="text.primary" onClick={handleOpenPrivacy} type="button">
+        Privacy Policy
+      </Link>
+      .
+    </Typography>
+  );
+
   const renderForm = (
     <Stack spacing={2.5}>
       <RHFTextField name="email" label="Email address" />
@@ -126,16 +223,35 @@ export default function ModernLoginView() {
   );
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      {renderHead}
+    <>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        {renderHead}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-      {renderForm}
-    </FormProvider>
+        {renderForm}
+
+        {renderTerms}
+      </FormProvider>
+
+      <PdfModal
+        open={openTermsModal}
+        onClose={handleCloseTerms}
+        pdfFile="/assets/pdf/tnc.pdf"
+        title="Terms and Conditions"
+      />
+
+      {/* Privacy Policy Modal */}
+      <PdfModal
+        open={openPrivacyModal}
+        onClose={handleClosePrivacy}
+        pdfFile="/assets/pdf/privacy-policy.pdf"
+        title="Privacy Policy"
+      />
+    </>
   );
 }

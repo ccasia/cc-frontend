@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { fetcher, endpoints } from 'src/utils/axios';
 
 const useGetClientHistory = (id) => {
-  const { data, isLoading, mutate } = useSWR(`${endpoints.packages.history}/${id}`, fetcher, {
+  const { data, isLoading, mutate } = useSWR(`${endpoints.package.history}/${id}`, fetcher, {
     revalidateIfStale: true,
     revalidateOnMount: true,
   });

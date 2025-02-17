@@ -1,9 +1,9 @@
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm, useFieldArray } from 'react-hook-form';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import Box from '@mui/material/Box';
@@ -15,13 +15,10 @@ import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
 import StepLabel from '@mui/material/StepLabel';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {
   Stack,
   Avatar,
-  Tooltip,
-  IconButton,
   ListItemText,
   InputAdornment,
   LinearProgress,
@@ -40,7 +37,7 @@ import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook
 
 import CreateCompany from './create-company';
 
-const steps = ['Select or Create Company', 'Fill in Brand Information'];
+const steps = ['Select Company', 'Fill in Brand Information'];
 
 dayjs.extend(localizedFormat);
 
@@ -53,19 +50,14 @@ function CompanyBrandBasic() {
 
   // If existing company is selected
   const schemaTwo = Yup.object().shape({
-    brandName: Yup.string().required('name is required'),
-    brandEmail: Yup.string().required('Email is required'),
-    brandPhone: Yup.string().required('Phone is required'),
-    brandWebsite: Yup.string().required('Website is required'),
-    brandAbout: Yup.string().required('About Description is required'),
-    brandObjectives: Yup.array().of(
-      Yup.object().shape({
-        value: Yup.string().required('Value is required'),
-      })
-    ),
-    brandInstagram: Yup.string().required('Brand Instagram is required'),
-    brandTiktok: Yup.string().required('Brand Tiktok is required'),
-    brandIndustries: Yup.array().min(1, 'Brand Industries is required'),
+    brandName: Yup.string().required('Brand name is required'),
+    brandEmail: Yup.string().required('Brand email is required'),
+    // brandPhone: Yup.string().required('Phone is required'),
+    // brandWebsite: Yup.string().required('Website is required'),
+    // brandAbout: Yup.string().required('About Description is required'),
+    // brandInstagram: Yup.string().required('Brand Instagram is required'),
+    // brandTiktok: Yup.string().required('Brand Tiktok is required'),
+    // brandIndustries: Yup.array().min(1, 'Brand Industries is required'),
     companyId: Yup.object().required('Company is required'),
   });
 
@@ -75,11 +67,6 @@ function CompanyBrandBasic() {
     brandWebsite: '',
     brandAbout: '',
     companyId: { name: '', value: '' },
-    brandObjectives: [
-      {
-        value: '',
-      },
-    ],
     brandInstagram: '',
     brandTiktok: '',
     brandIndustries: [],
@@ -90,22 +77,14 @@ function CompanyBrandBasic() {
     defaultValues: defaultValuesOne,
   });
 
-  const {
-    handleSubmit,
-    setValue,
-    reset,
-    control,
-    register,
-    formState: { errors },
-    watch,
-  } = methods;
+  const { handleSubmit, setValue, reset, watch } = methods;
 
   const company = watch('companyId');
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'brandObjectives',
-  });
+  // const { fields, append, remove } = useFieldArray({
+  //   control,
+  //   name: 'brandObjectives',
+  // });
 
   const onSubmit = handleSubmit(async (data) => {
     const { companyId } = data;
@@ -138,7 +117,7 @@ function CompanyBrandBasic() {
   function companyInfo() {
     const selectCompany = (
       <Stack gap={2}>
-        <Button
+        {/* <Button
           variant="contained"
           // color="primary"
           size="small"
@@ -154,7 +133,7 @@ function CompanyBrandBasic() {
           fullWidth={!smUp}
         >
           Create a new company
-        </Button>
+        </Button> */}
 
         <RHFAutocomplete
           key="companyId"
@@ -163,7 +142,9 @@ function CompanyBrandBasic() {
           freeSolo
           options={
             companies?.length > 0
-              ? companies.map((item) => ({ name: item?.name, value: item?.id, logo: item?.logo }))
+              ? companies
+                  ?.filter((a) => a.type === 'agency')
+                  .map((item) => ({ name: item?.name, value: item?.id, logo: item?.logo }))
               : []
           }
           getOptionLabel={(option) => option?.name || ''}
@@ -296,7 +277,7 @@ function CompanyBrandBasic() {
           </Stack>
         </Stack>
 
-        <Stack mt={5}>
+        {/* <Stack mt={5}>
           <Typography variant="h5">Objectives</Typography>
 
           <Stack
@@ -337,7 +318,7 @@ function CompanyBrandBasic() {
               Add Objective
             </Button>
           </Stack>
-        </Stack>
+        </Stack> */}
       </>
     );
   }

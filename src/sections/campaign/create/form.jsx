@@ -34,8 +34,10 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
+import PackageCreateDialog from 'src/sections/packages/package-dialog';
+import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
+
 import CreateBrand from './brandDialog';
-import CreateCompany from './companyDialog';
 import SelectBrand from './steps/select-brand';
 import CampaignType from './steps/campaign-type';
 import SelectTimeline from './steps/select-timeline';
@@ -56,7 +58,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pd
 const steps = [
   { title: 'Select Client or Agency', logo: '👾', color: '#D8FF01' },
   { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
-  { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
+  { title: 'Creator Persona', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
   { title: 'Campaign Type', logo: '⎏', color: '#D8FF01' },
   { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
@@ -67,12 +69,13 @@ const steps = [
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
 
-function CreateCampaignForm({ onClose }) {
+function CreateCampaignForm({ onClose, mutate }) {
   const { user } = useAuthContext();
   const openCompany = useBoolean();
   const openBrand = useBoolean();
   const modal = useBoolean();
   const confirmation = useBoolean();
+  const openPackage = useBoolean();
 
   const [status, setStatus] = useState('');
   const [activeStep, setActiveStep] = useState(0);
@@ -125,7 +128,7 @@ function CreateCampaignForm({ onClose }) {
     audienceCreatorPersona: Yup.array()
       .min(1, 'At least one option')
       .required('Audience creator persona is required'),
-    audienceUserPersona: Yup.string().required('Audience influencer persona is required'),
+    audienceUserPersona: Yup.string(),
     campaignDo: Yup.array()
       .min(1, 'At least one option')
       .of(
@@ -146,6 +149,9 @@ function CreateCampaignForm({ onClose }) {
     adminManager: Yup.array()
       .min(1, 'At least One Admin is required')
       .required('Admin Manager is required'),
+    campaignCredits: Yup.number()
+      .min(1, 'Minimum need to be 1')
+      .required('Campaign credits is required'),
   });
 
   const campaignInformationSchema = Yup.object().shape({
@@ -172,7 +178,9 @@ function CreateCampaignForm({ onClose }) {
     audienceCreatorPersona: Yup.array()
       .min(1, 'At least one option')
       .required('Audience creator persona is required'),
-    audienceUserPersona: Yup.string().required('Audience influencer persona is required'),
+    audienceUserPersona: Yup.string(),
+    socialMediaPlatform: Yup.array().min(1, 'At least one option'),
+    videoAngle: Yup.array().min(1, 'At least one option'),
     campaignDo: Yup.array()
       .min(1, 'At least one option')
       .of(
@@ -210,7 +218,7 @@ function CreateCampaignForm({ onClose }) {
     campaignBrand: Yup.object()
       .nullable()
       .when('client', {
-        is: (val) => val === 'agency',
+        is: (val) => val.type === 'agency',
         then: (s) => s.required('Brand is required.'),
         otherwise: (s) => s,
       }),
@@ -419,7 +427,7 @@ function CreateCampaignForm({ onClose }) {
 
   const onSubmit = handleSubmit(async (data, stage) => {
     const formData = new FormData();
-    console.log('form data', formData);
+    // console.log('form data', formData);
     const adjustedData = {
       ...data,
       audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
@@ -461,14 +469,21 @@ function CreateCampaignForm({ onClose }) {
         variant: 'success',
       });
       reset();
+      mutate();
       setStatus('');
       confirmation.onFalse();
       setActiveStep(0);
       localStorage.setItem('activeStep', 0);
     } catch (error) {
-      enqueueSnackbar('Error creating campaign. Contact our admin', {
-        variant: 'error',
-      });
+      if (error) {
+        enqueueSnackbar(error, {
+          variant: 'error',
+        });
+      } else {
+        enqueueSnackbar('Error creating campaign. Contact our admin', {
+          variant: 'error',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -478,7 +493,13 @@ function CreateCampaignForm({ onClose }) {
     (step) => {
       switch (step) {
         case 0:
-          return <SelectBrand openCompany={openCompany} openBrand={openBrand} />;
+          return (
+            <SelectBrand
+              openCompany={openCompany}
+              openBrand={openBrand}
+              openPackage={openPackage}
+            />
+          );
         case 1:
           return <GeneralCampaign />;
         case 2:
@@ -499,7 +520,7 @@ function CreateCampaignForm({ onClose }) {
           return <SelectBrand />;
       }
     },
-    [pdfModal, openCompany, openBrand]
+    [pdfModal, openCompany, openBrand, openPackage]
   );
 
   const startDate = getValues('campaignStartDate');
@@ -757,15 +778,29 @@ function CreateCampaignForm({ onClose }) {
       />
 
       <CreateCompany
-        open={openCompany.value}
-        onClose={() => {
-          if (getValues('client')?.inputValue) {
-            setValue('client', null);
-          }
-          openCompany.onFalse();
-        }}
-        companyName={getValues('client')?.inputValue}
-        setCompany={(e) => setValue('client', e)}
+        setOpenCreate={() => openCompany.onFalse()}
+        openCreate={openCompany.value}
+        set={setValue}
+        isForCampaign
+      />
+
+      {/* // <CreateCompany
+      //   open={openCompany.value}
+      //   onClose={() => {
+      //     if (getValues('client')?.inputValue) {
+      //       setValue('client', null);
+      //     }
+      //     openCompany.onFalse();
+      //   }}
+      //   companyName={getValues('client')?.inputValue}
+      //   setCompany={(e) => setValue('client', e)}
+      // /> */}
+
+      <PackageCreateDialog
+        open={openPackage.value}
+        onClose={openPackage.onFalse}
+        setValue={setValue}
+        clientId={getValues('client')?.id}
       />
 
       <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
@@ -783,4 +818,5 @@ export default CreateCampaignForm;
 
 CreateCampaignForm.propTypes = {
   onClose: PropTypes.func,
+  mutate: PropTypes.func,
 };

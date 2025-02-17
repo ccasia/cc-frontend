@@ -1,79 +1,74 @@
-import React from 'react';
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 
-import { Chip, TableRow, TableCell, ListItemText } from '@mui/material';
+import { Chip, TableRow, TableCell } from '@mui/material';
+
+import Label from 'src/components/label';
 
 const dictionary = {
-  active: 'Active',
-  inactive: 'Inactive',
-  expired: 'Expired',
+  ACTIVE: 'Active',
+  INACTIVE: 'Inactive',
+  EXPIRED: 'Expired',
 };
 
 const PackageHistoryRow = ({ row, selected }) => {
   const {
-    id,
-    type,
-    value,
+    subscriptionId,
+    creditsUsed,
+    totalCredits,
+    packagePrice,
+    package: packageItem,
+    customPackage,
+    expiredAt,
     currency,
-    totalUGCCredits,
-    availableCredits,
-    validityPeriod,
     status,
-    invoiceDate,
   } = row;
 
-  console.log(row);
-
-  function getRemainingTime(createdDate, months) {
-    const created = new Date(createdDate);
-    const expiryDate = new Date(created);
-    expiryDate.setMonth(expiryDate.getMonth() + months);
-
-    const today = new Date();
-    const diffTime = expiryDate - today;
-
-    const remainingDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    return remainingDays;
-  }
+  const validity = useMemo(() => {
+    if (dayjs().isAfter(dayjs(expiredAt), 'date')) {
+      const overdue = dayjs().diff(dayjs(expiredAt), 'days');
+      return `${overdue} days overdue`;
+    }
+    const remainingdays = dayjs(expiredAt).diff(dayjs(), 'days');
+    return `${remainingdays} days left`;
+  }, [expiredAt]);
 
   return (
     <TableRow hover selected={selected}>
-      <TableCell sx={{ whiteSpace: 'nowrap' }} />
-
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>{id || 'null'}</TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <ListItemText
-          primary={type || 'null'}
-          primaryTypographyProps={{ typography: 'body2' }}
-          secondaryTypographyProps={{
-            component: 'span',
-            color: 'text.disabled',
-          }}
-        />
+        <Label>{subscriptionId || 'None'}</Label>
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        {value} {currency}
+        <Label>{packageItem?.name || customPackage?.customName}</Label>
+      </TableCell>
+
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+        <Label>
+          {currency === 'MYR'
+            ? `RM ${new Intl.NumberFormat('en-MY', { minimumFractionDigits: 2 }).format(packagePrice)}`
+            : `$ ${new Intl.NumberFormat('en-SG', { minimumFractionDigits: 2 }).format(packagePrice)}`}
+        </Label>
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-        {totalUGCCredits || 'null'}
+        <Label>{creditsUsed || 'None'}</Label>
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-        {availableCredits || ''}
+        <Label> {totalCredits - creditsUsed || 'None'}</Label>
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-        {invoiceDate ? getRemainingTime(invoiceDate, validityPeriod) : null} days
+        <Label>{validity}</Label>
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap', textAlign: 'left' }}>
         <Chip
           label={dictionary[status]}
           variant="outlined"
-          color={status === 'active' ? 'success' : 'error'}
+          color={status === 'ACTIVE' ? 'success' : 'error'}
         />
       </TableCell>
     </TableRow>

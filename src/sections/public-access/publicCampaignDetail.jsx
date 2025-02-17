@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
-import { Page, Document } from 'react-pdf';
 import { useNavigate } from 'react-router-dom';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -13,32 +12,21 @@ import {
   List,
   Stack,
   Table,
-  Dialog,
   Avatar,
-  Button,
   TableRow,
   ListItem,
   TableHead,
   TableCell,
   TableBody,
-  IconButton,
   Typography,
-  DialogTitle,
   ListItemIcon,
-  DialogContent,
   TableContainer,
-  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
-import { useAuthContext } from 'src/auth/hooks';
-
 import Iconify from 'src/components/iconify';
-import { MultiFilePreview } from 'src/components/upload';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -96,33 +84,6 @@ const PublicCampaignDetailContent = ({ campaign }) => {
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setError] = useState(null);
 
-  // const handleChatClick = async (admin) => {
-  //   try {
-  //     const response = await axiosInstance.get(endpoints.threads.getAll);
-  //     const existingThread = response.data.find((thread) => {
-  //       const userIdsInThread = thread.UserThread.map((userThread) => userThread.userId);
-  //       return (
-  //         userIdsInThread.includes(user.id) &&
-  //         userIdsInThread.includes(admin.user.id) &&
-  //         !thread.isGroup
-  //       );
-  //     });
-
-  //     if (existingThread) {
-  //       navigate(`/dashboard/chat/thread/${existingThread.id}`);
-  //     } else {
-  //       const newThreadResponse = await axiosInstance.post(endpoints.threads.create, {
-  //         title: `Chat between ${user.name} & ${admin.user.name}`,
-  //         description: '',
-  //         userIds: [user.id, admin.user.id],
-  //         isGroup: false,
-  //       });
-  //       navigate(`/dashboard/chat/thread/${newThreadResponse.data.id}`);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error creating or finding chat thread:', error);
-  //   }
-  // };
 
   const requirement = campaign?.campaignRequirement;
 
@@ -694,11 +655,8 @@ const PublicCampaignDetailContent = ({ campaign }) => {
               ))}
             </Stack>
           </Box>
-
         </Stack>
       </Stack>
-
-      
     </Box>
   );
 };
