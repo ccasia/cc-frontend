@@ -38,7 +38,6 @@ import FormProvider from 'src/components/hook-form/form-provider';
 // eslint-disable-next-line react/prop-types
 const PdfModal = ({ open, onClose, pdfFile, title }) => {
   const [numPages, setNumPages] = useState(null);
-  // const [pageNumber, setPageNumber] = useState(1);
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
   // eslint-disable-next-line no-shadow
@@ -55,7 +54,7 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
           <Document
             file={pdfFile}
             onLoadSuccess={onDocumentLoadSuccess}
-            options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+            // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
           >
             {Array.from(new Array(numPages), (el, index) => (
               <div key={index} style={{ marginBottom: '0px' }}>
