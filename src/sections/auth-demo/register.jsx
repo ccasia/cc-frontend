@@ -67,6 +67,7 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
             file={pdfFile}
             onLoadSuccess={onDocumentLoadSuccess}
             // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+            options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
           >
             {Array.from(new Array(numPages), (el, index) => (
               <div key={index} style={{ marginBottom: '0px' }}>
