@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
+
 import Box from '@mui/material/Box';
 import { keyframes } from '@mui/system';
- 
+
 // animation
 const pulse = keyframes`
   0% { transform: scale(1); opacity: 0.8; }

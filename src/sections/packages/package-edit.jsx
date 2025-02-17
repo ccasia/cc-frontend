@@ -1,21 +1,21 @@
-import PropTypes, { bool } from 'prop-types';
+import * as Yup from 'yup';
+import PropTypes from 'prop-types';
 import React, { useEffect } from 'react';
-import { useForm, Controller, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm, FormProvider } from 'react-hook-form';
+
 import {
-  Box,
+  Stack,
   Button,
-  TextField,
   Dialog,
+  Typography,
+  IconButton,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Stack,
-  Typography,
-  IconButton,
 } from '@mui/material';
+
 import Iconify from 'src/components/iconify';
-import * as Yup from 'yup';
 import { RHFTextField } from 'src/components/hook-form';
 
 const packageSchema = Yup.object().shape({

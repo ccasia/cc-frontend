@@ -218,7 +218,7 @@ function CreateCampaignForm({ onClose, mutate }) {
     campaignBrand: Yup.object()
       .nullable()
       .when('client', {
-        is: (val) => val.type === 'agency',
+        is: (val) => val?.type === 'agency',
         then: (s) => s.required('Brand is required.'),
         otherwise: (s) => s,
       }),

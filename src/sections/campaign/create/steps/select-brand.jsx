@@ -8,6 +8,7 @@ import {
   Stack,
   Avatar,
   Button,
+  Tooltip,
   FormLabel,
   TextField,
   Typography,
@@ -75,8 +76,18 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
       };
       return packageItem;
     }
-
     return null;
+  }, [client]);
+
+  const availabilityCredits = useMemo(() => {
+    let campaigns;
+    if ((client?.type && client?.type === 'directClient') || !client?.brand?.length) {
+      campaigns = client?.campaign;
+    } else {
+      campaigns = client?.brand?.flatMap((a) => a.campaign);
+    }
+
+    return campaigns?.reduce((acc, sum) => acc + sum.campaignCredits, 0);
   }, [client]);
 
   // useEffect(() => {
@@ -98,7 +109,11 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
   }, [brand, openBrand]);
 
   useEffect(() => {
-    if (campaignCredits > latestPackageItem?.availableCredits || !latestPackageItem) {
+    if (
+      (latestPackageItem &&
+        campaignCredits > latestPackageItem.totalCredits - availabilityCredits) ||
+      !latestPackageItem
+    ) {
       setError('campaignCredit', {
         type: 'onChange',
         message: 'Cannot exceeds available credits',
@@ -106,7 +121,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
     } else {
       clearErrors('campaignCredit');
     }
-  }, [campaignCredits, setError, clearErrors, latestPackageItem]);
+  }, [campaignCredits, setError, clearErrors, latestPackageItem, availabilityCredits]);
 
   useEffect(() => {
     if (client && client?.type === 'directClient') {
@@ -308,16 +323,28 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
                   }}
                 >
                   <Stack>
-                    <FormLabel
-                      sx={{
-                        fontWeight: 600,
-                        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                      }}
-                    >
-                      Available Credits
-                    </FormLabel>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <FormLabel
+                        sx={{
+                          fontWeight: 600,
+                          color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                        }}
+                      >
+                        Available Credits
+                      </FormLabel>
+                      <Tooltip title="Available Credits = Total Credits - Allocation Credits">
+                        <Iconify
+                          icon="material-symbols:info-outline-rounded"
+                          width="24"
+                          color="text.secondary"
+                          sx={{
+                            cursor: 'pointer',
+                          }}
+                        />
+                      </Tooltip>
+                    </Stack>
                     <TextField
-                      value={`${latestPackageItem?.availableCredits} UGC Credits`}
+                      value={`${latestPackageItem.totalCredits - availabilityCredits} UGC Credits`}
                       InputProps={{
                         disabled: true,
                       }}

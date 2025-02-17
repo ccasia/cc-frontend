@@ -1,19 +1,16 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
 
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import { alpha } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
-import ListItemText from '@mui/material/ListItemText';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
-
-import { fData } from 'src/utils/format-number';
 
 import Iconify from '../iconify';
 import { varFade } from '../animate';

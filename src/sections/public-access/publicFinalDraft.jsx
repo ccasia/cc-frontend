@@ -61,10 +61,6 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const { user } = useAuthContext();
 
-  console.log('Campagin Data Final Draft ', campaign);
-
-  console.log('submissions final', submission);
-
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
     type: Yup.string(),
@@ -99,8 +95,6 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
     formState: { isSubmitting },
   } = methods;
 
-  const scheduleStartDate = watch('schedule.startDate');
-
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
@@ -108,11 +102,6 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      //   const res = await axiosInstance.patch(endpoints.submission.admin.draft, {
-      //     ...data,
-      //     submissionId: submission.id,
-      //     userId: creator?.user?.id,
-      //   });
       const res = await axiosInstance.patch(endpoints.public.clientFeedback, {
         ...data,
         submissionId: submission.id,
@@ -769,33 +758,7 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
 
                       {type === 'approve' && (
                         <FormProvider methods={methods} onSubmit={onSubmit}>
-                          {/* <Stack gap={1} mb={2}>
-                            <Typography variant="subtitle1" mb={1} mx={1}>
-                              Schedule This Post
-                            </Typography>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} gap={{ xs: 2, sm: 3 }}>
-                              <RHFDatePicker
-                                name="schedule.startDate"
-                                label="Start Date"
-                                minDate={dayjs()}
-                              />
-                              <RHFDatePicker
-                                name="schedule.endDate"
-                                label="End Date"
-                                minDate={dayjs(scheduleStartDate)}
-                              />
-                            </Stack>
-                          </Stack>
-                          <Typography variant="subtitle1" mb={1} mx={1}>
-                            Comments For Creator
-                          </Typography> */}
                           <Stack gap={2}>
-                            {/* <RHFTextField
-                              name="feedback"
-                              multiline
-                              minRows={5}
-                              placeholder="Comment"
-                            /> */}
                             <Stack
                               alignItems={{ xs: 'stretch', sm: 'center' }}
                               direction={{ xs: 'column', sm: 'row' }}
@@ -836,35 +799,6 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
                               >
                                 Add a feedback
                               </Button>
-                              {/* <LoadingButton
-                                onClick={approve.onTrue}
-                                disabled={isDisabled}
-                                variant="contained"
-                                size="small"
-                                startIcon={<Iconify icon="solar:check-circle-bold" />}
-                                loading={isSubmitting}
-                                sx={{
-                                  bgcolor: '#2e6c56',
-                                  color: 'white',
-                                  borderBottom: 3,
-                                  borderBottomColor: '#1a3b2f',
-                                  borderRadius: 0.8,
-                                  px: 2.5,
-                                  py: 1.2,
-                                  '&:hover': {
-                                    bgcolor: '#2e6c56',
-                                    opacity: 0.9,
-                                  },
-                                  '&:disabled': {
-                                    display: 'none',
-                                  },
-                                  fontSize: '0.875rem',
-                                  minWidth: '80px',
-                                  height: '45px',
-                                }}
-                              >
-                                Approve
-                              </LoadingButton> */}
                             </Stack>
                           </Stack>
                           {confirmationApproveModal(approve.value, approve.onFalse)}
@@ -1003,7 +937,6 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
                           {creator?.user?.name}
                         </Typography>
                       </Stack>
-
                       {/* Content Section */}
                       <Box sx={{ pl: 7 }}>
                         {/* Description Section */}
@@ -1074,6 +1007,86 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
                       my: 3,
                     }}
                   />
+
+                  {submission.publicFeedback
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .map((feedback, index) => (
+                      <Box
+                        key={index}
+                        mb={2}
+                        p={2}
+                        border={1}
+                        borderColor="grey.300"
+                        borderRadius={1}
+                        display="flex"
+                        alignItems="flex-start"
+                        flexDirection="column"
+                      >
+                        {/* Title for Client Feedback */}
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', marginBottom: 2 }}>
+                          Client Feedback
+                        </Typography>
+                        {/* Use company logo or fallback avatar */}
+                        <Avatar
+                          src={campaign?.company?.logoURL || '/default-avatar.png'}
+                          alt={campaign?.company?.name || 'Company'}
+                          sx={{ mr: 2, mb: 2 }}
+                        />
+                        <Box
+                          flexGrow={1}
+                          sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+                        >
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 'bold', marginBottom: '2px' }}
+                          >
+                            {campaign?.company?.name || 'Unknown Company'}
+                          </Typography>
+
+                          {/* Feedback Content */}
+                          <Box sx={{ textAlign: 'left', mt: 1 }}>
+                            {feedback.content.split('\n').map((line, i) => (
+                              <Typography key={i} variant="body2">
+                                {line}
+                              </Typography>
+                            ))}
+
+                            {/* Display reasons if available */}
+                            {feedback.reasons && feedback.reasons.length > 0 && (
+                              <Box mt={1} sx={{ textAlign: 'left' }}>
+                                <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                  {feedback.reasons.map((reason, idx) => (
+                                    <Box
+                                      key={idx}
+                                      sx={{
+                                        border: '1.5px solid #e7e7e7',
+                                        borderBottom: '4px solid #e7e7e7',
+                                        borderRadius: 1,
+                                        p: 0.5,
+                                        display: 'inline-flex',
+                                      }}
+                                    >
+                                      <Chip
+                                        label={reason}
+                                        size="small"
+                                        color="default"
+                                        variant="outlined"
+                                        sx={{
+                                          border: 'none',
+                                          color: '#8e8e93',
+                                          fontSize: '0.75rem',
+                                          padding: '1px 2px',
+                                        }}
+                                      />
+                                    </Box>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    ))}
 
                   {/* Admin Feedback */}
                   {submission.feedback
@@ -1149,6 +1162,138 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
                       </Box>
                     ))}
                 </Grid>
+
+                <Box width={1} textAlign="end">
+                  {type === 'approve' && (
+                    <Button
+                      onClick={() => {
+                        setType('request');
+                        setValue('type', 'request');
+                        setValue('feedback', '');
+                      }}
+                      disabled={isDisabled}
+                      size="small"
+                      variant="contained"
+                      sx={{
+                        bgcolor: 'white',
+                        border: 1,
+                        borderRadius: 0.8,
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        color: 'black',
+                        '&:hover': {
+                          bgcolor: 'error.lighter',
+                          borderColor: '#e7e7e7',
+                        },
+                        '&:disabled': {
+                          display: 'none',
+                        },
+                        textTransform: 'none',
+                        px: 2.5,
+                        py: 1.2,
+                        fontSize: '0.875rem',
+                        minWidth: '80px',
+                        height: '45px',
+                      }}
+                    >
+                      Add a feedback
+                    </Button>
+                  )}
+                  {confirmationApproveModal(approve.value, approve.onFalse)}
+
+                  {type === 'request' && (
+                    <Box mt={1}>
+                      {/* <Typography variant="h6" mb={1} mx={1}>
+                          Request Changes
+                        </Typography> */}
+                      <FormProvider methods={methods} onSubmit={onSubmit} disabled={isDisabled}>
+                        <Stack gap={2}>
+                          <RHFMultiSelect
+                            name="reasons"
+                            checkbox
+                            chip
+                            options={options_changes.map((item) => ({
+                              value: item,
+                              label: item,
+                            }))}
+                            label="Reasons"
+                          />
+                          <RHFTextField
+                            name="feedback"
+                            multiline
+                            minRows={5}
+                            placeholder="Feedback"
+                          />
+
+                          <Stack
+                            alignItems={{ xs: 'stretch', sm: 'center' }}
+                            direction={{ xs: 'column', sm: 'row' }}
+                            gap={1.5}
+                            alignSelf="end"
+                          >
+                            <Button
+                              onClick={() => {
+                                setType('approve');
+                                setValue('type', 'approve');
+                                setValue('feedback', '');
+                                setValue('reasons', []);
+                              }}
+                              size="small"
+                              sx={{
+                                bgcolor: 'white',
+                                border: 1,
+                                borderRadius: 0.8,
+                                borderColor: '#e7e7e7',
+                                borderBottom: 3,
+                                borderBottomColor: '#e7e7e7',
+                                color: 'text.primary',
+                                '&:hover': {
+                                  bgcolor: '#f5f5f5',
+                                  borderColor: '#e7e7e7',
+                                },
+                                textTransform: 'none',
+                                px: 2.5,
+                                py: 1.2,
+                                fontSize: '0.875rem',
+                                minWidth: '80px',
+                                height: '45px',
+                              }}
+                            >
+                              Back
+                            </Button>
+                            <LoadingButton
+                              variant="contained"
+                              size="small"
+                              onClick={request.onTrue}
+                              sx={{
+                                bgcolor: '#2e6c56',
+                                color: 'white',
+                                borderBottom: 3,
+                                borderBottomColor: '#1a3b2f',
+                                borderRadius: 0.8,
+                                px: 2.5,
+                                py: 1.2,
+                                '&:hover': {
+                                  bgcolor: '#2e6c56',
+                                  opacity: 0.9,
+                                },
+                                fontSize: '0.875rem',
+                                minWidth: '80px',
+                                height: '45px',
+                                textTransform: 'none',
+                              }}
+                            >
+                              Submit
+                            </LoadingButton>
+                          </Stack>
+                        </Stack>
+
+                        {confirmationRequestModal(request.value, request.onFalse)}
+                      </FormProvider>
+                    </Box>
+                  )}
+                </Box>
               </Grid>
             )}
           </Box>

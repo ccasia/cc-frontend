@@ -8,10 +8,14 @@ import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Chip from '@mui/material/Chip';
-import { LoadingButton } from '@mui/lab';
+import Accordion from '@mui/material/Accordion';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
 // import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
+  Grid,
   Stack,
   Paper,
   Button,
@@ -23,8 +27,6 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
-  CircularProgress,
-  Grid,
   LinearProgress,
 } from '@mui/material';
 
@@ -37,15 +39,11 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
-import { useResponsive } from 'src/hooks/use-responsive';
-import { grey } from '@mui/material/colors';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import UploadPhotoModal from './components/photo';
+import UploadDraftVideoModal from './components/draft-video';
+import UploadRawFootageModal from './components/raw-footage';
+import UploadFileTypeModal from './components/filetype-modal';
 
 // eslint-disable-next-line react/prop-types
 // const AvatarIcon = ({ icon, ...props }) => (
@@ -223,7 +221,7 @@ const CampaignFirstDraft = ({
 
             // Revoke object URL to free up memory
             URL.revokeObjectURL(video.src);
-        
+
             resolve(canvas.toDataURL());
           } else {
             reject(new Error('Failed to capture thumbnail: video not ready'));
@@ -237,7 +235,7 @@ const CampaignFirstDraft = ({
     []
   );
 
-  // Previous drop 
+  // Previous drop
   // const handleDrop = useCallback(
   //   async (acceptedFiles) => {
   //     const file = acceptedFiles[0];
@@ -274,125 +272,127 @@ const CampaignFirstDraft = ({
   //     }
   //   },
   //   [setValue, generateThumbnail]
-  // );  
+  // );
 
-  // handler for photos   
- 
-  
- // Handle dropping the draft video
-const handleDraftVideoDrop = useCallback((acceptedFiles) => {
-  const newFiles = acceptedFiles.map((file) =>
-    Object.assign(file, {
-      preview: URL.createObjectURL(file),
-    })
+  // handler for photos
+
+  // Handle dropping the draft video
+  const handleDraftVideoDrop = useCallback(
+    (acceptedFiles) => {
+      const newFiles = acceptedFiles.map((file) =>
+        Object.assign(file, {
+          preview: URL.createObjectURL(file),
+        })
+      );
+
+      // Show upload progress for each file
+      newFiles.forEach((file) => {
+        setCurrentFile(file);
+        setUploadProgress(0);
+
+        // Simulate upload progress
+        const interval = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 100) {
+              clearInterval(interval);
+              return 100;
+            }
+            return prev + 10;
+          });
+        }, 200);
+      });
+
+      // Append new files to the existing draftVideo array
+      setValue('draftVideo', [...methods.getValues('draftVideo'), ...newFiles], {
+        shouldValidate: true,
+      });
+    },
+    [setValue, methods]
   );
 
-  // Show upload progress for each file
-  newFiles.forEach((file) => {
-    setCurrentFile(file);
-    setUploadProgress(0);
-    
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 10;
+  // Handle removing the draft video
+  const handleRemoveDraftVideo = (fileToRemove) => {
+    const updatedFiles = methods.getValues('draftVideo').filter((file) => file !== fileToRemove);
+
+    setValue('draftVideo', updatedFiles, { shouldValidate: true });
+  };
+
+  const handleDropPhoto = useCallback(
+    (acceptedFiles) => {
+      const newFiles = acceptedFiles.map((file) =>
+        Object.assign(file, {
+          preview: URL.createObjectURL(file),
+        })
+      );
+
+      // Show upload progress for each file
+      newFiles.forEach((file) => {
+        setCurrentFile(file);
+        setUploadProgress(0);
+
+        // Simulate upload progress
+        const interval = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 100) {
+              clearInterval(interval);
+              return 100;
+            }
+            return prev + 10;
+          });
+        }, 200);
       });
-    }, 200);
-  });
 
-  // Append new files to the existing draftVideo array
-  setValue('draftVideo', [...methods.getValues('draftVideo'), ...newFiles], {
-    shouldValidate: true,
-  });
-}, [setValue, methods]);
-
-// Handle removing the draft video
-const handleRemoveDraftVideo = (fileToRemove) => {
-  const updatedFiles = methods
-    .getValues('draftVideo')
-    .filter((file) => file !== fileToRemove);
-
-  setValue('draftVideo', updatedFiles, { shouldValidate: true });
-};
-
-  const handleDropPhoto = useCallback((acceptedFiles) => {
-    const newFiles = acceptedFiles.map((file) =>
-      Object.assign(file, {
-        preview: URL.createObjectURL(file),
-      })
-    );
-  
-    // Show upload progress for each file
-    newFiles.forEach((file) => {
-      setCurrentFile(file);
-      setUploadProgress(0);
-      
-      // Simulate upload progress
-      const interval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 200);
-    });
-
-    // Append new files to the existing photos array
-    setValue('photos', [...methods.getValues('photos'), ...newFiles], {
-      shouldValidate: true,
-    });
-  }, [setValue, methods]);
+      // Append new files to the existing photos array
+      setValue('photos', [...methods.getValues('photos'), ...newFiles], {
+        shouldValidate: true,
+      });
+    },
+    [setValue, methods]
+  );
 
   const handleRemovePhoto = (fileToRemove) => {
-    const updatedFiles = methods
-      .getValues('photos')
-      .filter((file) => file !== fileToRemove);
-  
+    const updatedFiles = methods.getValues('photos').filter((file) => file !== fileToRemove);
+
     setValue('photos', updatedFiles, { shouldValidate: true });
   };
 
-  // handler for rawFootage 
-  const handleRawFootageDrop = useCallback((acceptedFiles) => {
-    const newFiles = acceptedFiles.map((file) =>
-      Object.assign(file, {
-        preview: URL.createObjectURL(file),
-      })
-    );
-  
-    // Show upload progress for each file
-    newFiles.forEach((file) => {
-      setCurrentFile(file);
-      setUploadProgress(0);
-      
-      // Simulate upload progress
-      const interval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 200);
-    });
+  // handler for rawFootage
+  const handleRawFootageDrop = useCallback(
+    (acceptedFiles) => {
+      const newFiles = acceptedFiles.map((file) =>
+        Object.assign(file, {
+          preview: URL.createObjectURL(file),
+        })
+      );
 
-    // Append new files to the existing rawFootage array
-    setValue('rawFootage', [...methods.getValues('rawFootage'), ...newFiles], {
-      shouldValidate: true,
-    });
-  }, [setValue, methods]);
+      // Show upload progress for each file
+      newFiles.forEach((file) => {
+        setCurrentFile(file);
+        setUploadProgress(0);
+
+        // Simulate upload progress
+        const interval = setInterval(() => {
+          setUploadProgress((prev) => {
+            if (prev >= 100) {
+              clearInterval(interval);
+              return 100;
+            }
+            return prev + 10;
+          });
+        }, 200);
+      });
+
+      // Append new files to the existing rawFootage array
+      setValue('rawFootage', [...methods.getValues('rawFootage'), ...newFiles], {
+        shouldValidate: true,
+      });
+    },
+    [setValue, methods]
+  );
 
   const handleRemoveRawFootage = (fileToRemove) => {
-    const updatedFiles = methods
-      .getValues('rawFootage')
-      .filter((file) => file !== fileToRemove);
-  
+    const updatedFiles = methods.getValues('rawFootage').filter((file) => file !== fileToRemove);
+
     setValue('rawFootage', updatedFiles, { shouldValidate: true });
   };
 
@@ -425,17 +425,13 @@ const handleRemoveDraftVideo = (fileToRemove) => {
       });
     }
 
-  console.log('FormData:', {
-    caption: value.caption,
-    submissionId: submission.id,
-    draftVideo: value.draftVideo
-    ? value.draftVideo.map((file) => file.name)
-    : 'No draft video',
-    rawFootage: value.rawFootage
-      ? value.rawFootage.map((file) => file.name)
-      : 'No raw footage',
-    photos: value.photos ? value.photos.map((file) => file.name) : 'No photos',
-  });
+    console.log('FormData:', {
+      caption: value.caption,
+      submissionId: submission.id,
+      draftVideo: value.draftVideo ? value.draftVideo.map((file) => file.name) : 'No draft video',
+      rawFootage: value.rawFootage ? value.rawFootage.map((file) => file.name) : 'No raw footage',
+      photos: value.photos ? value.photos.map((file) => file.name) : 'No photos',
+    });
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const res = await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
@@ -516,35 +512,65 @@ const handleRemoveDraftVideo = (fileToRemove) => {
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
-  useEffect(() => {
+  const checkProgress = useCallback(() => {
     if (progress === 100) {
       setShowUploadSuccess(true);
-      // Delay hiding the upload progress UI
+
       const timer = setTimeout(() => {
         setShowUploadSuccess(false);
         setIsProcessing(false);
-        reset();
+        reset(); // Ensure reset is stable (use useCallback if necessary)
         setPreview('');
         setProgressName('');
         localStorage.removeItem('preview');
-        
+
         if (socket) {
           mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
         }
-      }, 2000); // 2 second delay
+      }, 2000);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }
+    return null;
   }, [progress, reset, campaign?.id, user?.id, socket]);
 
-  const handleCancel = () => {
-    if (isProcessing) {
-      socket?.emit('cancel-processing', { submissionId: submission.id });
-      setIsProcessing(false);
-      setProgress(0);
-      localStorage.removeItem('preview');
-    }
-  };
+  useEffect(() => {
+    checkProgress();
+  }, [checkProgress]);
+
+  // useEffect(() => {
+  //   if (progress === 100) {
+  //     setShowUploadSuccess(true);
+
+  //     const timer = setTimeout(() => {
+  //       setShowUploadSuccess(false);
+  //       setIsProcessing(false);
+  //       reset(); // Ensure reset is stable (use useCallback if necessary)
+  //       setPreview('');
+  //       setProgressName('');
+  //       localStorage.removeItem('preview');
+
+  //       if (socket) {
+  //         mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+  //       }
+  //     }, 2000);
+
+  //     return () => {
+  //       clearTimeout(timer);
+  //     };
+  //   }
+  // }, [progress, reset, campaign?.id, user?.id, socket]);
+
+  // const handleCancel = () => {
+  //   if (isProcessing) {
+  //     socket?.emit('cancel-processing', { submissionId: submission.id });
+  //     setIsProcessing(false);
+  //     setProgress(0);
+  //     localStorage.removeItem('preview');
+  //   }
+  // };
 
   const handleCloseSubmitDialog = () => {
     setShowSubmitDialog(false);
@@ -592,212 +618,211 @@ const handleRemoveDraftVideo = (fileToRemove) => {
     setUploadTypeModalOpen(true);
   };
 
-  const UploadFileTypeModal = ({ open, handleClose, onSelectType, campaign }) => {
-    const smUp = useResponsive('up', 'sm');
+  // const UploadFileTypeModal = ({ open, handleClose, onSelectType, campaign }) => {
+  //   const smUp = useResponsive('up', 'sm');
 
-    // Get current submission status and uploaded files
-    const hasVideo = submission?.video?.length > 0;
-    const hasRawFootage = submission?.rawFootages?.length > 0;
-    const hasPhotos = submission?.photos?.length > 0;
+  //   // Get current submission status and uploaded files
+  //   const hasVideo = submission?.video?.length > 0;
+  //   const hasRawFootage = submission?.rawFootages?.length > 0;
+  //   const hasPhotos = submission?.photos?.length > 0;
 
-    const fileTypes = [
-      {
-        type: 'video',
-        icon: 'solar:video-library-bold',
-        title: 'Draft Video',
-        description: 'Upload your main draft video for the campaign',
-        isUploaded: hasVideo,
-        disabled: hasVideo || submission?.status === 'PENDING_REVIEW',
-      },
-      {
-        type: 'rawFootage',
-        icon: 'solar:camera-bold',
-        title: 'Raw Footage',
-        description: 'Upload raw, unedited footage from your shoot',
-        isUploaded: hasRawFootage,
-        disabled: hasRawFootage || submission?.status === 'PENDING_REVIEW',
-      },
-      {
-        type: 'photos',
-        icon: 'solar:gallery-wide-bold',
-        title: 'Photos',
-        description: 'Upload photos from your campaign shoot',
-        isUploaded: hasPhotos,
-        disabled: hasPhotos || submission?.status === 'PENDING_REVIEW',
-      },
-    ];
+  //   const fileTypes = [
+  //     {
+  //       type: 'video',
+  //       icon: 'solar:video-library-bold',
+  //       title: 'Draft Video',
+  //       description: 'Upload your main draft video for the campaign',
+  //       isUploaded: hasVideo,
+  //       disabled: hasVideo || submission?.status === 'PENDING_REVIEW',
+  //     },
+  //     {
+  //       type: 'rawFootage',
+  //       icon: 'solar:camera-bold',
+  //       title: 'Raw Footage',
+  //       description: 'Upload raw, unedited footage from your shoot',
+  //       isUploaded: hasRawFootage,
+  //       disabled: hasRawFootage || submission?.status === 'PENDING_REVIEW',
+  //     },
+  //     {
+  //       type: 'photos',
+  //       icon: 'solar:gallery-wide-bold',
+  //       title: 'Photos',
+  //       description: 'Upload photos from your campaign shoot',
+  //       isUploaded: hasPhotos,
+  //       disabled: hasPhotos || submission?.status === 'PENDING_REVIEW',
+  //     },
+  //   ];
 
-    // Filter based on campaign settings and submission status
-    const filteredFileTypes = fileTypes.filter((type) => {
-      if (type.type === 'rawFootage' && !campaign.rawFootage) return false;
-      if (type.type === 'photos' && !campaign.photos) return false;
-      return true;
-    });
+  //   // Filter based on campaign settings and submission status
+  //   const filteredFileTypes = fileTypes.filter((type) => {
+  //     if (type.type === 'rawFootage' && !campaign.rawFootage) return false;
+  //     if (type.type === 'photos' && !campaign.photos) return false;
+  //     return true;
+  //   });
 
-    return (
-      <Dialog open={open} fullScreen={!smUp} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Stack direction="row" alignItems="flex-start" gap={2}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.8rem', sm: '2.4rem' },
-                fontWeight: 550,
-              }}
-            >
-              What would you like to upload? 📤
-            </Typography>
+  //   return (
+  //     <Dialog open={open} fullScreen={!smUp} maxWidth="sm" fullWidth>
+  //       <DialogTitle>
+  //         <Stack direction="row" alignItems="flex-start" gap={2}>
+  //           <Typography
+  //             variant="h5"
+  //             sx={{
+  //               fontFamily: 'Instrument Serif, serif',
+  //               fontSize: { xs: '1.8rem', sm: '2.4rem' },
+  //               fontWeight: 550,
+  //             }}
+  //           >
+  //             What would you like to upload? 📤
+  //           </Typography>
 
-            <IconButton
-              onClick={handleClose}
-              sx={{
-                ml: 'auto',
-                color: '#636366',
-              }}
-            >
-              <Iconify icon="hugeicons:cancel-01" width={20} />
-            </IconButton>
-          </Stack>
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            sx={{ mt: 1 }}
-          >
-            Submit all the deliverables so our admins can start reviewing your draft!
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            justifyContent="space-between"
-            alignItems={{ xs: 'stretch', sm: 'center' }}
-            gap={2}
-            pb={4}
-            mt={1}
-          >
-            {filteredFileTypes.map((type) => (
-              <Box
-                key={type.type}
-                sx={{
-                  position: 'relative',
-                  border: 1,
-                  p: 2,
-                  borderRadius: 2,
-                  borderColor: type.isUploaded ? '#5abc6f' : grey[100],
-                  transition: 'all .2s ease',
-                  width: { 
-                    xs: '100%', 
-                    sm: `${100 / filteredFileTypes.length}%` 
-                  },
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  opacity: type.disabled ? 0.5 : 1,
-                  cursor: type.disabled ? 'not-allowed' : 'pointer',
-                  '&:hover': {
-                    borderColor: type.disabled ? (type.isUploaded ? '#5abc6f' : grey[100]) : grey[700],
-                    transform: type.disabled ? 'none' : 'scale(1.05)',
-                  },
-                }}
-                onClick={() => {
-                  if (!type.disabled) {
-                    handleClose();
-                    onSelectType(type.type);
-                  }
-                }}
-              >
-                {type.isUploaded && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: -10,
-                      right: -10,
-                      bgcolor: '#5abc6f',
-                      borderRadius: '50%',
-                      width: 28,
-                      height: 28,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                      zIndex: 1,
-                    }}
-                  >
-                    <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
-                  </Box>
-                )}
-                {type.disabled && submission?.status === 'PENDING_REVIEW' && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: -10,
-                      right: -10,
-                      bgcolor: grey[500],
-                      borderRadius: '50%',
-                      width: 28,
-                      height: 28,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                      zIndex: 1,
-                    }}
-                  >
-                    <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
-                  </Box>
-                )}
-                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <Avatar 
-                    sx={{ 
-                      bgcolor: type.isUploaded ? '#5abc6f' : '#203ff5',
-                      mb: 2 
-                    }}
-                  >
-                    <Iconify icon={type.icon} />
-                  </Avatar>
-                  
-                  <ListItemText
-                    sx={{ 
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                    }}
-                    primary={type.title}
-                    secondary={
-                      type.disabled && submission?.status === 'PENDING_REVIEW'
-                        ? 'Submission under review'
-                        : type.isUploaded
-                        ? 'Already uploaded'
-                        : type.description
-                    }
-                    primaryTypographyProps={{
-                      variant: 'body1',
-                      fontWeight: 'bold',
-                      gutterBottom: true,
-                      sx: { mb: 1 }
-                    }}
-                    secondaryTypographyProps={{
-                      color: 'text.secondary',
-                      lineHeight: 1.2,
-                      sx: { 
-                        minHeight: '2.4em',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        </DialogContent>
-      </Dialog>
-    );
-  };
+  //           <IconButton
+  //             onClick={handleClose}
+  //             sx={{
+  //               ml: 'auto',
+  //               color: '#636366',
+  //             }}
+  //           >
+  //             <Iconify icon="hugeicons:cancel-01" width={20} />
+  //           </IconButton>
+  //         </Stack>
+  //         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+  //           Submit all the deliverables so our admins can start reviewing your draft!
+  //         </Typography>
+  //       </DialogTitle>
+  //       <DialogContent>
+  //         <Stack
+  //           direction={{ xs: 'column', sm: 'row' }}
+  //           justifyContent="space-between"
+  //           alignItems={{ xs: 'stretch', sm: 'center' }}
+  //           gap={2}
+  //           pb={4}
+  //           mt={1}
+  //         >
+  //           {filteredFileTypes.map((type) => (
+  //             <Box
+  //               key={type.type}
+  //               sx={{
+  //                 position: 'relative',
+  //                 border: 1,
+  //                 p: 2,
+  //                 borderRadius: 2,
+  //                 borderColor: type.isUploaded ? '#5abc6f' : grey[100],
+  //                 transition: 'all .2s ease',
+  //                 width: {
+  //                   xs: '100%',
+  //                   sm: `${100 / filteredFileTypes.length}%`,
+  //                 },
+  //                 height: '100%',
+  //                 display: 'flex',
+  //                 flexDirection: 'column',
+  //                 opacity: type.disabled ? 0.5 : 1,
+  //                 cursor: type.disabled ? 'not-allowed' : 'pointer',
+  //                 '&:hover': {
+  //                   borderColor: type.disabled
+  //                     ? type.isUploaded
+  //                       ? '#5abc6f'
+  //                       : grey[100]
+  //                     : grey[700],
+  //                   transform: type.disabled ? 'none' : 'scale(1.05)',
+  //                 },
+  //               }}
+  //               onClick={() => {
+  //                 if (!type.disabled) {
+  //                   handleClose();
+  //                   onSelectType(type.type);
+  //                 }
+  //               }}
+  //             >
+  //               {type.isUploaded && (
+  //                 <Box
+  //                   sx={{
+  //                     position: 'absolute',
+  //                     top: -10,
+  //                     right: -10,
+  //                     bgcolor: '#5abc6f',
+  //                     borderRadius: '50%',
+  //                     width: 28,
+  //                     height: 28,
+  //                     display: 'flex',
+  //                     alignItems: 'center',
+  //                     justifyContent: 'center',
+  //                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+  //                     zIndex: 1,
+  //                   }}
+  //                 >
+  //                   <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
+  //                 </Box>
+  //               )}
+  //               {type.disabled && submission?.status === 'PENDING_REVIEW' && (
+  //                 <Box
+  //                   sx={{
+  //                     position: 'absolute',
+  //                     top: -10,
+  //                     right: -10,
+  //                     bgcolor: grey[500],
+  //                     borderRadius: '50%',
+  //                     width: 28,
+  //                     height: 28,
+  //                     display: 'flex',
+  //                     alignItems: 'center',
+  //                     justifyContent: 'center',
+  //                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+  //                     zIndex: 1,
+  //                   }}
+  //                 >
+  //                   <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
+  //                 </Box>
+  //               )}
+  //               <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+  //                 <Avatar
+  //                   sx={{
+  //                     bgcolor: type.isUploaded ? '#5abc6f' : '#203ff5',
+  //                     mb: 2,
+  //                   }}
+  //                 >
+  //                   <Iconify icon={type.icon} />
+  //                 </Avatar>
 
+  //                 <ListItemText
+  //                   sx={{
+  //                     flex: 1,
+  //                     display: 'flex',
+  //                     flexDirection: 'column',
+  //                   }}
+  //                   primary={type.title}
+  //                   secondary={
+  //                     type.disabled && submission?.status === 'PENDING_REVIEW'
+  //                       ? 'Submission under review'
+  //                       : type.isUploaded
+  //                         ? 'Already uploaded'
+  //                         : type.description
+  //                   }
+  //                   primaryTypographyProps={{
+  //                     variant: 'body1',
+  //                     fontWeight: 'bold',
+  //                     gutterBottom: true,
+  //                     sx: { mb: 1 },
+  //                   }}
+  //                   secondaryTypographyProps={{
+  //                     color: 'text.secondary',
+  //                     lineHeight: 1.2,
+  //                     sx: {
+  //                       minHeight: '2.4em',
+  //                       display: '-webkit-box',
+  //                       WebkitLineClamp: 2,
+  //                       WebkitBoxOrient: 'vertical',
+  //                       overflow: 'hidden',
+  //                     },
+  //                   }}
+  //                 />
+  //               </Box>
+  //             </Box>
+  //           ))}
+  //         </Stack>
+  //       </DialogContent>
+  //     </Dialog>
+  //   );
+  // };
 
   const handleImageClick = (index) => {
     setCurrentImageIndex(index);
@@ -809,395 +834,391 @@ const handleRemoveDraftVideo = (fileToRemove) => {
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + submission.photos.length) % submission.photos.length);
+    setCurrentImageIndex(
+      (prevIndex) => (prevIndex - 1 + submission.photos.length) % submission.photos.length
+    );
   };
 
   const handleNextImage = () => {
     setCurrentImageIndex((prevIndex) => (prevIndex + 1) % submission.photos.length);
   };
 
-  const UploadDraftVideoModal = ({ open, onClose, campaign }) => {
-    const methods = useForm({
-      defaultValues: {
-        draftVideo: [],
-        caption: '',
-      },
-    });
+  // const UploadDraftVideoModal = ({ open, onClose, campaign }) => {
+  //   const methods = useForm({
+  //     defaultValues: {
+  //       draftVideo: [],
+  //       caption: '',
+  //     },
+  //   });
 
-    const { handleSubmit, setValue } = methods;
-    const [isSubmitting, setIsSubmitting] = useState(false);
+  //   const { handleSubmit, setValue } = methods;
+  //   const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const onSubmit = handleSubmit(async (data) => {
-      try {
-        setIsSubmitting(true);
-        const formData = new FormData();
-        const newData = { caption: data.caption, submissionId: submission.id };
-        formData.append('data', JSON.stringify(newData));
+  //   const onSubmit = handleSubmit(async (data) => {
+  //     try {
+  //       setIsSubmitting(true);
+  //       const formData = new FormData();
+  //       const newData = { caption: data.caption, submissionId: submission.id };
+  //       formData.append('data', JSON.stringify(newData));
 
-        // Handle multiple files
-        if (data.draftVideo && data.draftVideo.length > 0) {
-          data.draftVideo.forEach((file) => {
-            formData.append('draftVideo', file);
-          });
-        }
+  //       // Handle multiple files
+  //       if (data.draftVideo && data.draftVideo.length > 0) {
+  //         data.draftVideo.forEach((file) => {
+  //           formData.append('draftVideo', file);
+  //         });
+  //       }
 
-        await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+  //       await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+  //         headers: {
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       });
 
-        enqueueSnackbar('Draft videos uploaded successfully');
-        onClose();
-        mutate(endpoints.kanban.root);
-        mutate(endpoints.campaign.creator.getCampaign(campaign.id));
-      } catch (error) {
-        console.error('Upload error:', error);
-        enqueueSnackbar('Failed to upload draft videos', { variant: 'error' });
-      } finally {
-        setIsSubmitting(false);
-      }
-    });
+  //       enqueueSnackbar('Draft videos uploaded successfully');
+  //       onClose();
+  //       mutate(endpoints.kanban.root);
+  //       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
+  //     } catch (error) {
+  //       console.error('Upload error:', error);
+  //       enqueueSnackbar('Failed to upload draft videos', { variant: 'error' });
+  //     } finally {
+  //       setIsSubmitting(false);
+  //     }
+  //   });
 
-    return (
-      <Dialog
-        open={open}
-        onClose={onClose}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2 }
-        }}
-      >
-        <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
-        <Stack direction="row" alignItems="center" gap={2}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontFamily: 'Instrument Serif, serif',
-              fontSize: { xs: '1.8rem', sm: '2.4rem' },
-              fontWeight: 550,
-            }}
-          >
-            Upload Draft Videos
-          </Typography>
-          <IconButton
-            onClick={onClose}
-            sx={{
-              ml: 'auto',
-              color: '#636366',
-            }}
-          >
-            <Iconify icon="hugeicons:cancel-01" width={20} />
-          </IconButton>
-        </Stack>
-        </DialogTitle>
-        <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
-          {campaign?.ads && (
-            <Box sx={{ mb: 2 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  display: 'block',
-                  color: 'warning.main',
-                  bgcolor: 'warning.lighter',
-                  p: 1.5,
-                  borderRadius: 1,
-                  fontWeight: 500
-                }}
-              >
-                <Iconify 
-                  icon="solar:bell-bing-bold-duotone" 
-                  width={16} 
-                  sx={{ mr: 0.5, verticalAlign: 'text-bottom' }}
-                />
-                UGC Draft Videos may also be used as Ads.
-              </Typography>
-            </Box>
-          )}
-          <FormProvider methods={methods}>
-            <Stack spacing={3}>
-              <Box>
-                <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
-                  Upload Videos <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-                </Typography>
-                <RHFUpload
-                  name="draftVideo"
-                  type="video"
-                  multiple
-                  accept={{ 'video/*': [] }}
-                />
-              </Box>
-              <RHFTextField
-                name="caption"
-                label="Caption"
-                multiline
-                rows={4}
-              />
-            </Stack>
-          </FormProvider>
-        </DialogContent>
-        <DialogActions sx={{ bgcolor: '#f4f4f4' }}>
-          <LoadingButton
-            fullWidth
-            loading={isSubmitting}
-            loadingPosition="center"
-            loadingIndicator={
-              <CircularProgress 
-                color="inherit" 
-                size={24} 
-              />
-            }
-            variant="contained"
-            onClick={onSubmit}
-            sx={{
-              bgcolor: '#203ff5',
-              color: 'white',
-              borderBottom: 3.5,
-              borderBottomColor: '#112286',
-              borderRadius: 1.5,
-              px: 2.5,
-              py: 1.2,
-              '&:hover': {
-                bgcolor: '#203ff5',
-                opacity: 0.9,
-              },
-            }}
-          >
-            Upload Videos
-          </LoadingButton>
-        </DialogActions>
-      </Dialog>
-    );
-  };
+  //   return (
+  //     <Dialog
+  //       open={open}
+  //       onClose={onClose}
+  //       maxWidth="md"
+  //       fullWidth
+  //       PaperProps={{
+  //         sx: { borderRadius: 2 },
+  //       }}
+  //     >
+  //       <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
+  //         <Stack direction="row" alignItems="center" gap={2}>
+  //           <Typography
+  //             variant="h5"
+  //             sx={{
+  //               fontFamily: 'Instrument Serif, serif',
+  //               fontSize: { xs: '1.8rem', sm: '2.4rem' },
+  //               fontWeight: 550,
+  //             }}
+  //           >
+  //             Upload Draft Videos
+  //           </Typography>
+  //           <IconButton
+  //             onClick={onClose}
+  //             sx={{
+  //               ml: 'auto',
+  //               color: '#636366',
+  //             }}
+  //           >
+  //             <Iconify icon="hugeicons:cancel-01" width={20} />
+  //           </IconButton>
+  //         </Stack>
+  //       </DialogTitle>
+  //       <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
+  //         {campaign?.ads && (
+  //           <Box sx={{ mb: 2 }}>
+  //             <Typography
+  //               variant="caption"
+  //               sx={{
+  //                 display: 'block',
+  //                 color: 'warning.main',
+  //                 bgcolor: 'warning.lighter',
+  //                 p: 1.5,
+  //                 borderRadius: 1,
+  //                 fontWeight: 500,
+  //               }}
+  //             >
+  //               <Iconify
+  //                 icon="solar:bell-bing-bold-duotone"
+  //                 width={16}
+  //                 sx={{ mr: 0.5, verticalAlign: 'text-bottom' }}
+  //               />
+  //               UGC Draft Videos may also be used as Ads.
+  //             </Typography>
+  //           </Box>
+  //         )}
+  //         <FormProvider methods={methods}>
+  //           <Stack spacing={3}>
+  //             <Box>
+  //               <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+  //                 Upload Videos{' '}
+  //                 <Box component="span" sx={{ color: 'error.main' }}>
+  //                   *
+  //                 </Box>
+  //               </Typography>
+  //               <RHFUpload name="draftVideo" type="video" multiple accept={{ 'video/*': [] }} />
+  //             </Box>
+  //             <RHFTextField name="caption" label="Caption" multiline rows={4} />
+  //           </Stack>
+  //         </FormProvider>
+  //       </DialogContent>
+  //       <DialogActions sx={{ bgcolor: '#f4f4f4' }}>
+  //         <LoadingButton
+  //           fullWidth
+  //           loading={isSubmitting}
+  //           loadingPosition="center"
+  //           loadingIndicator={<CircularProgress color="inherit" size={24} />}
+  //           variant="contained"
+  //           onClick={onSubmit}
+  //           sx={{
+  //             bgcolor: '#203ff5',
+  //             color: 'white',
+  //             borderBottom: 3.5,
+  //             borderBottomColor: '#112286',
+  //             borderRadius: 1.5,
+  //             px: 2.5,
+  //             py: 1.2,
+  //             '&:hover': {
+  //               bgcolor: '#203ff5',
+  //               opacity: 0.9,
+  //             },
+  //           }}
+  //         >
+  //           Upload Videos
+  //         </LoadingButton>
+  //       </DialogActions>
+  //     </Dialog>
+  //   );
+  // };
 
-  const UploadRawFootageModal = ({ open, onClose }) => {
-    const methods = useForm({
-      defaultValues: {
-        rawFootage: [],
-      },
-    });
+  // const UploadRawFootageModal = ({ open, onClose }) => {
+  //   const methods = useForm({
+  //     defaultValues: {
+  //       rawFootage: [],
+  //     },
+  //   });
 
-    const { handleSubmit, setValue } = methods;
+  //   const { handleSubmit, setValue } = methods;
 
-    const onSubmit = handleSubmit(async (data) => {
-      try {
-        const formData = new FormData();
-        const newData = { submissionId: submission.id }; // No caption needed
-        formData.append('data', JSON.stringify(newData));
+  //   const onSubmit = handleSubmit(async (data) => {
+  //     try {
+  //       const formData = new FormData();
+  //       const newData = { submissionId: submission.id }; // No caption needed
+  //       formData.append('data', JSON.stringify(newData));
 
-        if (data.rawFootage && data.rawFootage.length > 0) {
-          data.rawFootage.forEach((file) => {
-            formData.append('rawFootage', file);
-          });
-        }
+  //       if (data.rawFootage && data.rawFootage.length > 0) {
+  //         data.rawFootage.forEach((file) => {
+  //           formData.append('rawFootage', file);
+  //         });
+  //       }
 
-        await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+  //       await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+  //         headers: {
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       });
 
-        enqueueSnackbar('Raw footage uploaded successfully');
-        onClose();
-        mutate(endpoints.kanban.root);
-        mutate(endpoints.campaign.creator.getCampaign(campaign.id));
-      } catch (error) {
-        enqueueSnackbar('Failed to upload raw footage', { variant: 'error' });
-      }
-    });
+  //       enqueueSnackbar('Raw footage uploaded successfully');
+  //       onClose();
+  //       mutate(endpoints.kanban.root);
+  //       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
+  //     } catch (error) {
+  //       enqueueSnackbar('Failed to upload raw footage', { variant: 'error' });
+  //     }
+  //   });
 
-    return (
-      <Dialog
-        open={open}
-        onClose={onClose}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2 }
-        }}
-      >
-        <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
-          <Stack direction="row" alignItems="center" gap={2}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.8rem', sm: '2.4rem' },
-                fontWeight: 550,
-              }}
-            >
-              Upload Raw Footage
-            </Typography>
-            <IconButton
-              onClick={onClose}
-              sx={{
-                ml: 'auto',
-                color: '#636366',
-              }}
-            >
-              <Iconify icon="hugeicons:cancel-01" width={20} />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
+  //   return (
+  //     <Dialog
+  //       open={open}
+  //       onClose={onClose}
+  //       maxWidth="md"
+  //       fullWidth
+  //       PaperProps={{
+  //         sx: { borderRadius: 2 },
+  //       }}
+  //     >
+  //       <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
+  //         <Stack direction="row" alignItems="center" gap={2}>
+  //           <Typography
+  //             variant="h5"
+  //             sx={{
+  //               fontFamily: 'Instrument Serif, serif',
+  //               fontSize: { xs: '1.8rem', sm: '2.4rem' },
+  //               fontWeight: 550,
+  //             }}
+  //           >
+  //             Upload Raw Footage
+  //           </Typography>
+  //           <IconButton
+  //             onClick={onClose}
+  //             sx={{
+  //               ml: 'auto',
+  //               color: '#636366',
+  //             }}
+  //           >
+  //             <Iconify icon="hugeicons:cancel-01" width={20} />
+  //           </IconButton>
+  //         </Stack>
+  //       </DialogTitle>
 
-        <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
-          <FormProvider methods={methods}>
-            <Box>
-              <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
-                Upload Raw Footage <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-              </Typography>
-              <RHFUpload
-                name="rawFootage"
-                type="video"
-                multiple
-                onUploadSuccess={(files) => {
-                  setValue('rawFootage', files);
-                }}
-              />
-            </Box>
-          </FormProvider>
-        </DialogContent>
+  //       <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
+  //         <FormProvider methods={methods}>
+  //           <Box>
+  //             <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+  //               Upload Raw Footage{' '}
+  //               <Box component="span" sx={{ color: 'error.main' }}>
+  //                 *
+  //               </Box>
+  //             </Typography>
+  //             <RHFUpload
+  //               name="rawFootage"
+  //               type="video"
+  //               multiple
+  //               onUploadSuccess={(files) => {
+  //                 setValue('rawFootage', files);
+  //               }}
+  //             />
+  //           </Box>
+  //         </FormProvider>
+  //       </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
-          <LoadingButton
-            fullWidth
-            variant="contained"
-            onClick={onSubmit}
-            sx={{
-              bgcolor: '#203ff5',
-              color: 'white',
-              borderBottom: 3.5,
-              borderBottomColor: '#112286',
-              borderRadius: 1.5,
-              px: 2.5,
-              py: 1.2,
-              '&:hover': {
-                bgcolor: '#203ff5',
-                opacity: 0.9,
-              },
-            }}
-          >
-            Upload Raw Footage
-          </LoadingButton>
-        </DialogActions>
-      </Dialog>
-    );
-  };
+  //       <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
+  //         <LoadingButton
+  //           fullWidth
+  //           variant="contained"
+  //           onClick={onSubmit}
+  //           sx={{
+  //             bgcolor: '#203ff5',
+  //             color: 'white',
+  //             borderBottom: 3.5,
+  //             borderBottomColor: '#112286',
+  //             borderRadius: 1.5,
+  //             px: 2.5,
+  //             py: 1.2,
+  //             '&:hover': {
+  //               bgcolor: '#203ff5',
+  //               opacity: 0.9,
+  //             },
+  //           }}
+  //         >
+  //           Upload Raw Footage
+  //         </LoadingButton>
+  //       </DialogActions>
+  //     </Dialog>
+  //   );
+  // };
 
-  const UploadPhotosModal = ({ open, onClose }) => {
-    const methods = useForm({
-      defaultValues: {
-        photos: [],
-      },
-    });
+  // const UploadPhotosModal = ({ open, onClose }) => {
+  //   const methods = useForm({
+  //     defaultValues: {
+  //       photos: [],
+  //     },
+  //   });
 
-    const { handleSubmit, setValue } = methods;
+  //   const { handleSubmit, setValue } = methods;
 
-    const onSubmit = handleSubmit(async (data) => {
-      try {
-        const formData = new FormData();
-        const newData = { submissionId: submission.id }; // No caption needed
-        formData.append('data', JSON.stringify(newData));
+  //   const onSubmit = handleSubmit(async (data) => {
+  //     try {
+  //       const formData = new FormData();
+  //       const newData = { submissionId: submission.id }; // No caption needed
+  //       formData.append('data', JSON.stringify(newData));
 
-        if (data.photos && data.photos.length > 0) {
-          data.photos.forEach((file) => {
-            formData.append('photos', file);
-          });
-        }
+  //       if (data.photos && data.photos.length > 0) {
+  //         data.photos.forEach((file) => {
+  //           formData.append('photos', file);
+  //         });
+  //       }
 
-        await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+  //       await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
+  //         headers: {
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       });
 
-        enqueueSnackbar('Photos uploaded successfully!');
-        onClose();
-        mutate(endpoints.kanban.root);
-        mutate(endpoints.campaign.creator.getCampaign(campaign.id));
-      } catch (error) {
-        enqueueSnackbar('Failed to upload photos', { variant: 'error' });
-      }
-    });
+  //       enqueueSnackbar('Photos uploaded successfully!');
+  //       onClose();
+  //       mutate(endpoints.kanban.root);
+  //       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
+  //     } catch (error) {
+  //       enqueueSnackbar('Failed to upload photos', { variant: 'error' });
+  //     }
+  //   });
 
-    return (
-      <Dialog
-        open={open}
-        onClose={onClose}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2 }
-        }}
-      >
-        <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
-          <Stack direction="row" alignItems="center" gap={2}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.8rem', sm: '2.4rem' },
-                fontWeight: 550,
-              }}
-            >
-              Upload Photos
-            </Typography>
-            <IconButton
-              onClick={onClose}
-              sx={{
-                ml: 'auto',
-                color: '#636366',
-              }}
-            >
-              <Iconify icon="hugeicons:cancel-01" width={20} />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
+  //   return (
+  //     <Dialog
+  //       open={open}
+  //       onClose={onClose}
+  //       maxWidth="md"
+  //       fullWidth
+  //       PaperProps={{
+  //         sx: { borderRadius: 2 },
+  //       }}
+  //     >
+  //       <DialogTitle sx={{ bgcolor: '#f4f4f4' }}>
+  //         <Stack direction="row" alignItems="center" gap={2}>
+  //           <Typography
+  //             variant="h5"
+  //             sx={{
+  //               fontFamily: 'Instrument Serif, serif',
+  //               fontSize: { xs: '1.8rem', sm: '2.4rem' },
+  //               fontWeight: 550,
+  //             }}
+  //           >
+  //             Upload Photos
+  //           </Typography>
+  //           <IconButton
+  //             onClick={onClose}
+  //             sx={{
+  //               ml: 'auto',
+  //               color: '#636366',
+  //             }}
+  //           >
+  //             <Iconify icon="hugeicons:cancel-01" width={20} />
+  //           </IconButton>
+  //         </Stack>
+  //       </DialogTitle>
 
-        <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
-          <FormProvider methods={methods}>
-            <Box>
-              <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
-                Upload Photos <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-              </Typography>
-              <RHFUpload
-                name="photos"
-                type="file"
-                multiple
-                onUploadSuccess={(files) => {
-                  setValue('photos', files);
-                }}
-              />
-            </Box>
-          </FormProvider>
-        </DialogContent>
+  //       <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
+  //         <FormProvider methods={methods}>
+  //           <Box>
+  //             <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+  //               Upload Photos{' '}
+  //               <Box component="span" sx={{ color: 'error.main' }}>
+  //                 *
+  //               </Box>
+  //             </Typography>
+  //             <RHFUpload
+  //               name="photos"
+  //               type="file"
+  //               multiple
+  //               onUploadSuccess={(files) => {
+  //                 setValue('photos', files);
+  //               }}
+  //             />
+  //           </Box>
+  //         </FormProvider>
+  //       </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
-          <LoadingButton
-            fullWidth
-            variant="contained"
-            onClick={onSubmit}
-            sx={{
-              bgcolor: '#203ff5',
-              color: 'white',
-              borderBottom: 3.5,
-              borderBottomColor: '#112286',
-              borderRadius: 1.5,
-              px: 2.5,
-              py: 1.2,
-              '&:hover': {
-                bgcolor: '#203ff5',
-                opacity: 0.9,
-              },
-            }}
-          >
-            Upload Photos
-          </LoadingButton>
-        </DialogActions>
-      </Dialog>
-    );
-  };
+  //       <DialogActions sx={{ px: 3, pb: 3, bgcolor: '#f4f4f4' }}>
+  //         <LoadingButton
+  //           fullWidth
+  //           variant="contained"
+  //           onClick={onSubmit}
+  //           sx={{
+  //             bgcolor: '#203ff5',
+  //             color: 'white',
+  //             borderBottom: 3.5,
+  //             borderBottomColor: '#112286',
+  //             borderRadius: 1.5,
+  //             px: 2.5,
+  //             py: 1.2,
+  //             '&:hover': {
+  //               bgcolor: '#203ff5',
+  //               opacity: 0.9,
+  //             },
+  //           }}
+  //         >
+  //           Upload Photos
+  //         </LoadingButton>
+  //       </DialogActions>
+  //     </Dialog>
+  //   );
+  // };
 
   return (
     previousSubmission?.status === 'APPROVED' && (
@@ -1261,7 +1282,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
             )}
             {submission?.status === 'IN_PROGRESS' && (
               <>
-                {(isProcessing || showUploadSuccess) ? (
+                {isProcessing || showUploadSuccess ? (
                   <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
                     {(progress > 0 || showUploadSuccess) && (
                       <Stack spacing={2}>
@@ -1299,7 +1320,11 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                                     bgcolor: 'background.neutral',
                                   }}
                                 >
-                                  <Iconify icon="solar:video-library-bold" width={24} sx={{ color: 'text.secondary' }} />
+                                  <Iconify
+                                    icon="solar:video-library-bold"
+                                    width={24}
+                                    sx={{ color: 'text.secondary' }}
+                                  />
                                 </Box>
                               )}
                             </Box>
@@ -1316,8 +1341,8 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                               {currentFile?.name || 'Uploading file...'}
                             </Typography>
                             <Stack spacing={1}>
-                              <LinearProgress 
-                                variant="determinate" 
+                              <LinearProgress
+                                variant="determinate"
                                 value={progress}
                                 sx={{
                                   height: 6,
@@ -1329,10 +1354,17 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                                   },
                                 }}
                               />
-                              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                              >
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                   {progress === 100 ? (
-                                    <Box component="span" sx={{ color: 'success.main', fontWeight: 600 }}>
+                                    <Box
+                                      component="span"
+                                      sx={{ color: 'success.main', fontWeight: 600 }}
+                                    >
                                       Upload Complete
                                     </Box>
                                   ) : (
@@ -1486,12 +1518,16 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                               {/* Videos that need changes */}
                               {feedback.videosToUpdate && feedback.videosToUpdate.length > 0 && (
                                 <Box mt={2}>
-                                  <Typography variant="subtitle2" color="warning.darker" sx={{ mb: 1 }}>
+                                  <Typography
+                                    variant="subtitle2"
+                                    color="warning.darker"
+                                    sx={{ mb: 1 }}
+                                  >
                                     Videos that need changes:
                                   </Typography>
                                   <Stack spacing={2}>
                                     {submission.video
-                                      .filter(video => feedback.videosToUpdate.includes(video.id))
+                                      .filter((video) => feedback.videosToUpdate.includes(video.id))
                                       .map((video, videoIndex) => (
                                         <Box
                                           key={video.id}
@@ -1506,17 +1542,28 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                                           <Stack direction="column" spacing={2}>
                                             <Stack direction="column" spacing={1}>
                                               <Box>
-                                                <Typography variant="subtitle2" color="warning.darker">
+                                                <Typography
+                                                  variant="subtitle2"
+                                                  color="warning.darker"
+                                                >
                                                   Video {videoIndex + 1}
                                                 </Typography>
-                                                <Typography variant="caption" color="warning.darker" sx={{ opacity: 0.8 }}>
+                                                <Typography
+                                                  variant="caption"
+                                                  color="warning.darker"
+                                                  sx={{ opacity: 0.8 }}
+                                                >
                                                   Requires changes
                                                 </Typography>
                                               </Box>
 
                                               {/* Original Chip Design */}
                                               {feedback.reasons && feedback.reasons.length > 0 && (
-                                                <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                                <Stack
+                                                  direction="row"
+                                                  spacing={0.5}
+                                                  flexWrap="wrap"
+                                                >
                                                   {feedback.reasons.map((reason, idx) => (
                                                     <Box
                                                       key={idx}
@@ -1546,7 +1593,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                                                 </Stack>
                                               )}
                                             </Stack>
-                                            
+
                                             <Box
                                               sx={{
                                                 position: 'relative',
@@ -1611,6 +1658,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                 </Button>
               </Stack>
             )}
+
             <Dialog
               open={display.value}
               onClose={display.onFalse}
@@ -1663,8 +1711,8 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                 }}
               />
 
-              <DialogContent 
-                sx={{ 
+              <DialogContent
+                sx={{
                   p: 2.5,
                   flexGrow: 1,
                   height: 0,
@@ -1680,9 +1728,9 @@ const handleRemoveDraftVideo = (fileToRemove) => {
               >
                 <Stack spacing={3} sx={{ maxWidth: '100%' }}>
                   {/* Draft Videos Section */}
-                  <Accordion 
-                    defaultExpanded 
-                    sx={{ 
+                  <Accordion
+                    defaultExpanded
+                    sx={{
                       boxShadow: 'none',
                       '&:before': { display: 'none' },
                       border: '1px solid',
@@ -1711,7 +1759,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                       <Stack spacing={2} sx={{ maxWidth: 'md', mx: 'auto' }}>
                         {submission?.video?.length > 0 ? (
                           submission.video.map((videoItem, index) => (
-                            <Box 
+                            <Box
                               key={videoItem.id || index}
                               sx={{
                                 position: 'relative',
@@ -1742,7 +1790,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                             </Box>
                           ))
                         ) : (
-                          <Box 
+                          <Box
                             sx={{
                               position: 'relative',
                               width: '100%',
@@ -1777,8 +1825,8 @@ const handleRemoveDraftVideo = (fileToRemove) => {
 
                   {/* Raw Footages Section */}
                   {submission?.rawFootages?.length > 0 && (
-                    <Accordion 
-                      sx={{ 
+                    <Accordion
+                      sx={{
                         boxShadow: 'none',
                         '&:before': { display: 'none' },
                         border: '1px solid',
@@ -1806,7 +1854,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                       <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
                         <Stack spacing={2} sx={{ maxWidth: 'md', mx: 'auto' }}>
                           {submission.rawFootages.map((footage, index) => (
-                            <Box 
+                            <Box
                               key={footage.id || index}
                               sx={{
                                 position: 'relative',
@@ -1843,8 +1891,8 @@ const handleRemoveDraftVideo = (fileToRemove) => {
 
                   {/* Photos Section */}
                   {submission?.photos?.length > 0 && (
-                    <Accordion 
-                      sx={{ 
+                    <Accordion
+                      sx={{
                         boxShadow: 'none',
                         '&:before': { display: 'none' },
                         border: '1px solid',
@@ -1914,7 +1962,10 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                         bgcolor: 'background.neutral',
                       }}
                     >
-                      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5, fontWeight: 600 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: 'text.secondary', display: 'block', mb: 0.5, fontWeight: 600 }}
+                      >
                         Caption
                       </Typography>
                       <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6 }}>
@@ -1928,13 +1979,35 @@ const handleRemoveDraftVideo = (fileToRemove) => {
 
             {/* New Upload Modal */}
             <UploadFileTypeModal
+              submission={submission}
               open={uploadTypeModalOpen}
               handleClose={() => setUploadTypeModalOpen(false)}
               onSelectType={handleUploadTypeSelect}
               campaign={campaign}
             />
 
+            <UploadPhotoModal
+              submissionId={submission?.id}
+              campaignId={campaign?.id}
+              open={photosModalOpen}
+              onClose={() => setPhotosModalOpen(false)}
+            />
+
             <UploadDraftVideoModal
+              submissionId={submission?.id}
+              campaign={campaign}
+              open={draftVideoModalOpen}
+              onClose={() => setDraftVideoModalOpen(false)}
+            />
+
+            <UploadRawFootageModal
+              open={rawFootageModalOpen}
+              onClose={() => setRawFootageModalOpen(false)}
+              submissionId={submission?.id}
+              campaign={campaign}
+            />
+
+            {/* <UploadDraftVideoModal
               open={draftVideoModalOpen}
               onClose={() => setDraftVideoModalOpen(false)}
               campaign={campaign}
@@ -1945,16 +2018,9 @@ const handleRemoveDraftVideo = (fileToRemove) => {
               onClose={() => setRawFootageModalOpen(false)}
             />
 
-            <UploadPhotosModal
-              open={photosModalOpen}
-              onClose={() => setPhotosModalOpen(false)}
-            />
+            <UploadPhotosModal open={photosModalOpen} onClose={() => setPhotosModalOpen(false)} /> */}
 
-            <Dialog
-              open={showSubmitDialog}
-              maxWidth="xs"
-              fullWidth
-            >
+            <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>
               <DialogContent>
                 <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
                   {submitStatus === 'submitting' && (
@@ -2014,7 +2080,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                             fontWeight: 550,
                           }}
                         >
-                          Draft Submitted!
+                          Draft Processing!
                         </Typography>
                         <Typography
                           variant="body1"
@@ -2023,7 +2089,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                             mt: -2,
                           }}
                         >
-                          Your draft has been sent.
+                          Your draft has been sent for processing.
                         </Typography>
                       </Stack>
                     </>
@@ -2043,7 +2109,10 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                           mb: 2,
                         }}
                       >
-                        <Iconify icon="mdi:error" sx={{ width: 60, height: 60, color: 'error.main' }} />
+                        <Iconify
+                          icon="mdi:error"
+                          sx={{ width: 60, height: 60, color: 'error.main' }}
+                        />
                       </Box>
                       <Typography
                         variant="h6"
@@ -2140,7 +2209,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                     }}
                   />
                 )}
-                
+
                 {submission?.photos && submission.photos.length > 1 && (
                   <>
                     <IconButton
@@ -2219,5 +2288,5 @@ CampaignFirstDraft.propTypes = {
   fullSubmission: PropTypes.array,
   openLogisticTab: PropTypes.func,
   setCurrentTab: PropTypes.func,
-  onSelectType: PropTypes.func,
+  // onSelectType: PropTypes.func,
 };

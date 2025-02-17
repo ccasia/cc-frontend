@@ -332,6 +332,7 @@ const Submissions = ({ campaign, submissions, creator }) => {
                   submission={finalDraftSubmission}
                   campaign={campaign}
                   creator={creator}
+                  firstDraftSubmission={firstDraftSubmission}
                 />
               </Box>
             )}

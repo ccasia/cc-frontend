@@ -93,7 +93,6 @@ const TABLE_HEAD = [
 ];
 
 const Packages = () => {
-  // const { data, isLoading } = useGetPackages();
   const { data, isLoading } = useGetPackages();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
