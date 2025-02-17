@@ -25,6 +25,9 @@ import {
   DialogActions,
   useMediaQuery,
   CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -38,6 +41,7 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFUpload, RHFTextField } from 'src/components/hook-form';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const LoadingDots = () => {
   const [dots, setDots] = useState('');
@@ -125,7 +129,7 @@ const CampaignFinalDraft = ({
       if (!values.caption || values.caption.trim() === '') {
         errors.caption = {
           type: 'required',
-          message: 'Caption is required',
+          message: 'Caption is required.',
         };
       }
 
@@ -147,9 +151,9 @@ const CampaignFinalDraft = ({
   const caption = watch('caption');
 
   const handleRemoveFile = () => {
+    localStorage.removeItem('preview');
     setValue('draft', '');
     setPreview('');
-    localStorage.removeItem('preview');
   };
 
   // const generateThumbnail = (file) => {
@@ -420,7 +424,7 @@ const CampaignFinalDraft = ({
       // Ensure draftVideo has files
       if (value.draftVideo && value.draftVideo.length > 0) {
         value.draftVideo.forEach((file) => {
-          console.log('Appending file:', file); 
+          console.log('Appending file:', file); // Debug log each file being appended
           formData.append('draftVideo', file);
         });
       } else {
@@ -880,6 +884,7 @@ const CampaignFinalDraft = ({
           </Stack>
         )}
 
+
         {/* <Dialog
           open={openUploadModal}
           fullWidth
@@ -1171,6 +1176,7 @@ const CampaignFinalDraft = ({
           </DialogActions>
         </Dialog> */}
 
+
         <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>
           <DialogContent>
             <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
@@ -1309,16 +1315,19 @@ const CampaignFinalDraft = ({
         <Dialog
           open={display.value}
           onClose={display.onFalse}
-          maxWidth="md"
+          maxWidth={false}
           sx={{
             '& .MuiDialog-paper': {
-              p: 0,
-              maxWidth: { xs: '95vw', sm: '85vw', md: '75vw' },
+              width: { xs: '95vw', sm: '85vw', md: '900px' },
+              height: { xs: '95vh', sm: '90vh' },
+              maxHeight: '90vh',
               margin: { xs: '16px', sm: '32px' },
+              display: 'flex',
+              flexDirection: 'column',
             },
           }}
         >
-          <DialogTitle sx={{ p: 3 }}>
+          <DialogTitle sx={{ p: 3, flexShrink: 0 }}>
             <Stack direction="row" alignItems="center" gap={2}>
               <Typography
                 variant="h5"
@@ -1351,27 +1360,68 @@ const CampaignFinalDraft = ({
               mx: 'auto',
               borderBottom: '1px solid',
               borderColor: 'divider',
+              flexShrink: 0,
             }}
           />
 
-          <DialogContent sx={{ p: 2.5 }}>
-            <Stack spacing={2}>
-              <Box
-                component="video"
-                autoPlay
-                controls
-                sx={{
-                  width: '100%',
-                  maxHeight: '60vh',
-                  borderRadius: 1,
-                  bgcolor: 'background.neutral',
-                }}
-              >
-                <source src={preview || submission?.content} />
-              </Box>
+            
+          
+          <DialogContent 
+            sx={{ 
+              p: 2.5,
+              flexGrow: 1,
+              height: 0,
+              overflowY: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                borderRadius: '4px',
+              },
+            }}
+          >
+            <Stack spacing={3} sx={{ maxWidth: '100%' }}>
+              <Accordion defaultExpanded>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    backgroundColor: (theme) => theme.palette.background.neutral,
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Iconify icon="solar:video-library-bold" width={24} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      Draft Video
+                    </Typography>
+                  </Stack>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Stack spacing={2}>
+                    {submission?.video?.length > 0 && (
+                      <Box
+                        component="video"
+                        controls
+                        sx={{
+                          width: '100%',
+                          maxWidth: '640px',
+                          mx: 'auto',
+                          borderRadius: 1,
+                          display: 'block',
+                        }}
+                      >
+                        <source 
+                          src={submission.video[submission.video.length - 1].url} 
+                          type="video/mp4"
+                        />
+                      </Box>
+                    )}
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
 
-              {/* Caption section below video */}
-              {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
+              {/* Caption Section */}
+              {submission?.caption && (
                 <Box
                   sx={{
                     p: 2,
@@ -1379,23 +1429,10 @@ const CampaignFinalDraft = ({
                     bgcolor: 'background.neutral',
                   }}
                 >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'text.secondary',
-                      display: 'block',
-                      mb: 0.5,
-                    }}
-                  >
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5, fontWeight: 600 }}>
                     Caption
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'text.primary',
-                      lineHeight: 1.6,
-                    }}
-                  >
+                  <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6 }}>
                     {submission?.caption}
                   </Typography>
                 </Box>
@@ -1465,6 +1502,7 @@ const CampaignFinalDraft = ({
                                   }}
                                 />
                               </Box>
+                              
                             ))}
                           </Stack>
                         </Box>

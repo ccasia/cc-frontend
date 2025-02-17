@@ -9,7 +9,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Chip from '@mui/material/Chip';
 import { LoadingButton } from '@mui/lab';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+// import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
   Stack,
@@ -911,7 +911,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                   width={16} 
                   sx={{ mr: 0.5, verticalAlign: 'text-bottom' }}
                 />
-                UGC Video Drafts may also be used as Ads.
+                UGC Draft Videos may also be used as Ads.
               </Typography>
             </Box>
           )}
@@ -1445,60 +1445,6 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                       />
                     </Box>
 
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        fontSize: '0.95rem',
-                        color: '#48484A',
-                        mb: 2,
-                      }}
-                    >
-                      <strong>Caption:</strong> {submission?.caption}
-                    </Typography>
-
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        cursor: 'pointer',
-                        width: { xs: '100%', sm: '300px' },
-                        height: { xs: '200px', sm: '169px' },
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        boxShadow: 3,
-                      }}
-                      onClick={display.onTrue}
-                    >
-                      <Box
-                        component="video"
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: 2,
-                        }}
-                      >
-                        <source src={submission?.content} />
-                      </Box>
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: 'rgba(0, 0, 0, 0.4)',
-                          borderRadius: 2,
-                        }}
-                      >
-                        <VisibilityIcon sx={{ color: 'white', fontSize: 32 }} />
-                      </Box>
-                    </Box>
-                  </Box>
-
-                  <Box mt={2}>
                     {submission.feedback
                       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                       .map((feedback, index) => (
@@ -1536,34 +1482,98 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                                   {line}
                                 </Typography>
                               ))}
-                              {feedback.reasons && feedback.reasons.length > 0 && (
-                                <Box mt={1} sx={{ textAlign: 'left' }}>
-                                  <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                                    {feedback.reasons.map((reason, idx) => (
-                                      <Box
-                                        key={idx}
-                                        sx={{
-                                          border: '1.5px solid #e7e7e7',
-                                          borderBottom: '4px solid #e7e7e7',
-                                          borderRadius: 1,
-                                          p: 0.5,
-                                          display: 'inline-flex',
-                                        }}
-                                      >
-                                        <Chip
-                                          label={reason}
-                                          size="small"
-                                          color="default"
-                                          variant="outlined"
+
+                              {/* Videos that need changes */}
+                              {feedback.videosToUpdate && feedback.videosToUpdate.length > 0 && (
+                                <Box mt={2}>
+                                  <Typography variant="subtitle2" color="warning.darker" sx={{ mb: 1 }}>
+                                    Videos that need changes:
+                                  </Typography>
+                                  <Stack spacing={2}>
+                                    {submission.video
+                                      .filter(video => feedback.videosToUpdate.includes(video.id))
+                                      .map((video, videoIndex) => (
+                                        <Box
+                                          key={video.id}
                                           sx={{
-                                            border: 'none',
-                                            color: '#8e8e93',
-                                            fontSize: '0.75rem',
-                                            padding: '1px 2px',
+                                            p: 2,
+                                            borderRadius: 1,
+                                            bgcolor: 'warning.lighter',
+                                            border: '1px solid',
+                                            borderColor: 'warning.main',
                                           }}
-                                        />
-                                      </Box>
-                                    ))}
+                                        >
+                                          <Stack direction="column" spacing={2}>
+                                            <Stack direction="column" spacing={1}>
+                                              <Box>
+                                                <Typography variant="subtitle2" color="warning.darker">
+                                                  Video {videoIndex + 1}
+                                                </Typography>
+                                                <Typography variant="caption" color="warning.darker" sx={{ opacity: 0.8 }}>
+                                                  Requires changes
+                                                </Typography>
+                                              </Box>
+
+                                              {/* Original Chip Design */}
+                                              {feedback.reasons && feedback.reasons.length > 0 && (
+                                                <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                                  {feedback.reasons.map((reason, idx) => (
+                                                    <Box
+                                                      key={idx}
+                                                      sx={{
+                                                        border: '1.5px solid #e7e7e7',
+                                                        borderBottom: '4px solid #e7e7e7',
+                                                        bgcolor: 'white',
+                                                        borderRadius: 1,
+                                                        p: 0.5,
+                                                        display: 'inline-flex',
+                                                      }}
+                                                    >
+                                                      <Chip
+                                                        label={reason}
+                                                        size="small"
+                                                        color="default"
+                                                        variant="outlined"
+                                                        sx={{
+                                                          border: 'none',
+                                                          color: '#8e8e93',
+                                                          fontSize: '0.75rem',
+                                                          padding: '1px 2px',
+                                                        }}
+                                                      />
+                                                    </Box>
+                                                  ))}
+                                                </Stack>
+                                              )}
+                                            </Stack>
+                                            
+                                            <Box
+                                              sx={{
+                                                position: 'relative',
+                                                width: '100%',
+                                                paddingTop: '56.25%',
+                                                borderRadius: 1,
+                                                overflow: 'hidden',
+                                                bgcolor: 'black',
+                                              }}
+                                            >
+                                              <Box
+                                                component="video"
+                                                src={video.url}
+                                                controls
+                                                sx={{
+                                                  position: 'absolute',
+                                                  top: 0,
+                                                  left: 0,
+                                                  width: '100%',
+                                                  height: '100%',
+                                                  objectFit: 'contain',
+                                                }}
+                                              />
+                                            </Box>
+                                          </Stack>
+                                        </Box>
+                                      ))}
                                   </Stack>
                                 </Box>
                               )}
@@ -1604,13 +1614,13 @@ const handleRemoveDraftVideo = (fileToRemove) => {
             <Dialog
               open={display.value}
               onClose={display.onFalse}
-              maxWidth="md"
+              maxWidth={false}
               sx={{
                 '& .MuiDialog-paper': {
-                  p: 0,
-                  maxWidth: { xs: '95vw', sm: '85vw', md: '75vw' },
+                  width: { xs: '95vw', sm: '85vw', md: '900px' },
+                  height: { xs: '95vh', sm: '90vh' },
+                  maxHeight: '90vh',
                   margin: { xs: '16px', sm: '32px' },
-                  height: '90vh',
                   display: 'flex',
                   flexDirection: 'column',
                 },
@@ -1655,7 +1665,9 @@ const handleRemoveDraftVideo = (fileToRemove) => {
 
               <DialogContent 
                 sx={{ 
-                  p: 2.5, 
+                  p: 2.5,
+                  flexGrow: 1,
+                  height: 0,
                   overflowY: 'auto',
                   '&::-webkit-scrollbar': {
                     width: '8px',
@@ -1666,7 +1678,7 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                   },
                 }}
               >
-                <Stack spacing={3}>
+                <Stack spacing={3} sx={{ maxWidth: '100%' }}>
                   {/* Draft Videos Section */}
                   <Accordion 
                     defaultExpanded 
@@ -1696,20 +1708,33 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                       </Stack>
                     </AccordionSummary>
                     <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
-                      <Stack spacing={2}>
+                      <Stack spacing={2} sx={{ maxWidth: 'md', mx: 'auto' }}>
                         {submission?.video?.length > 0 ? (
                           submission.video.map((videoItem, index) => (
-                            <Box key={videoItem.id || index}>
+                            <Box 
+                              key={videoItem.id || index}
+                              sx={{
+                                position: 'relative',
+                                width: '100%',
+                                maxWidth: '640px',
+                                height: 0,
+                                paddingTop: 'min(360px, 56.25%)',
+                                bgcolor: 'black',
+                                borderRadius: 1,
+                                mx: 'auto',
+                              }}
+                            >
                               <Box
                                 component="video"
                                 autoPlay={false}
                                 controls
                                 sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
                                   width: '100%',
-                                  height: '400px',
+                                  height: '100%',
                                   objectFit: 'contain',
-                                  bgcolor: 'black',
-                                  borderRadius: 1,
                                 }}
                               >
                                 <source src={videoItem.url} />
@@ -1717,19 +1742,33 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                             </Box>
                           ))
                         ) : (
-                          <Box
-                            component="video"
-                            autoPlay={false}
-                            controls
+                          <Box 
                             sx={{
+                              position: 'relative',
                               width: '100%',
-                              height: '400px',
-                              objectFit: 'contain',
+                              maxWidth: '640px',
+                              height: 0,
+                              paddingTop: 'min(360px, 56.25%)',
                               bgcolor: 'black',
                               borderRadius: 1,
+                              mx: 'auto',
                             }}
                           >
-                            <source src={submission?.content} />
+                            <Box
+                              component="video"
+                              autoPlay={false}
+                              controls
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'contain',
+                              }}
+                            >
+                              <source src={submission?.content} />
+                            </Box>
                           </Box>
                         )}
                       </Stack>
@@ -1765,19 +1804,32 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                         </Stack>
                       </AccordionSummary>
                       <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
-                        <Stack spacing={2}>
+                        <Stack spacing={2} sx={{ maxWidth: 'md', mx: 'auto' }}>
                           {submission.rawFootages.map((footage, index) => (
-                            <Box key={footage.id || index}>
+                            <Box 
+                              key={footage.id || index}
+                              sx={{
+                                position: 'relative',
+                                width: '100%',
+                                maxWidth: '640px',
+                                height: 0,
+                                paddingTop: 'min(360px, 56.25%)',
+                                bgcolor: 'black',
+                                borderRadius: 1,
+                                mx: 'auto',
+                              }}
+                            >
                               <Box
                                 component="video"
                                 autoPlay={false}
                                 controls
                                 sx={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
                                   width: '100%',
-                                  height: '400px',
+                                  height: '100%',
                                   objectFit: 'contain',
-                                  bgcolor: 'black',
-                                  borderRadius: 1,
                                 }}
                               >
                                 <source src={footage.url} />
@@ -1818,16 +1870,16 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                         </Stack>
                       </AccordionSummary>
                       <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
-                        <Grid container spacing={2}>
+                        <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
                           {submission.photos.map((photo, index) => (
                             <Grid item xs={12} sm={6} md={4} key={photo.id || index}>
                               <Box
                                 sx={{
                                   position: 'relative',
+                                  paddingTop: '56.25%',
                                   borderRadius: 2,
                                   overflow: 'hidden',
                                   boxShadow: 2,
-                                  height: '169px',
                                   cursor: 'pointer',
                                 }}
                                 onClick={() => handleImageClick(index)}
@@ -1837,6 +1889,9 @@ const handleRemoveDraftVideo = (fileToRemove) => {
                                   src={photo.url}
                                   alt={`Photo ${index + 1}`}
                                   sx={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
                                     width: '100%',
                                     height: '100%',
                                     objectFit: 'cover',
