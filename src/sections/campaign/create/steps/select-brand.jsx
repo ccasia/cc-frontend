@@ -198,7 +198,7 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
         />
       </Stack>
 
-      {client && (client.type === 'agency' || !!client.brand.length) && (
+      {client && (client?.type === 'agency' || !!client?.brand?.length) && (
         <Box mt={2}>
           <Stack spacing={1}>
             <FormLabel
