@@ -1,8 +1,8 @@
 import * as Yup from 'yup';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
+import { Page, pdfjs, Document } from 'react-pdf';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Link from '@mui/material/Link';
@@ -34,6 +34,11 @@ import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 // import error from '../../../public/sounds/error.mp3';
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 // eslint-disable-next-line react/prop-types
 const PdfModal = ({ open, onClose, pdfFile, title }) => {
