@@ -35,6 +35,7 @@ import CreatorForm from '../form/creatorForm';
 
 const Overview = () => {
   const { user } = useAuthContext();
+
   const { data, isLoading } = useGetOverview();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creator, setCreator] = useState(null);
@@ -445,10 +446,7 @@ const Overview = () => {
     </>
   );
 
-  const isFormCompleted = useMemo(
-    () => !res?.creator?.pronounce || !user?.creator?.pronounce,
-    [res, user]
-  );
+  const isFormCompleted = useMemo(() => !user?.creator?.pronounce, [user]);
 
   useEffect(() => {
     setCreator(res?.creator);
