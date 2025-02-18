@@ -80,6 +80,7 @@ const MediaKitCreator = () => {
           ) || 0
         }%`,
         averageLikes: instagram?.user?.average_like || 0,
+        username: instagram?.user?.username,
       };
     }
 
@@ -482,13 +483,9 @@ const MediaKitCreator = () => {
       {/* Bottom View */}
 
       <Typography fontWeight={400} fontFamily="Instrument Serif" fontSize="40px">
-        Top Content
+        Top Content {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`}
       </Typography>
-      {instagram?.user?.username && (
-        <Typography fontWeight={400} fontFamily="Instrument Serif" fontSize="40px">
-          of {instagram?.user?.username}
-        </Typography>
-      )}
+
       <Stack direction="row" alignItems="center" spacing={1} my={2} color="text.secondary">
         <Button
           variant="outlined"
