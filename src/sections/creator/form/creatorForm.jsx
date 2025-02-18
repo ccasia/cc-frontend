@@ -181,7 +181,7 @@ export default function CreatorForm({ mutate, open, onClose }) {
       const res = await axiosInstance.put(endpoints.auth.updateCreator, newData);
       enqueueSnackbar(`Welcome ${res.data.name}!`);
       initialize();
-      mutate();
+      // mutate();
       onClose();
     } catch (error) {
       enqueueSnackbar('Something went wrong', {
