@@ -328,12 +328,14 @@ const CampaignFirstDraft = ({
       }
     };
 
-    socket.on('progress', handleProgress);
-    socket.on('statusQueue', (data) => {
+    const handleStatusQueue = (data) => {
       if (data?.status === 'queue') {
         inQueue.onTrue();
       }
-    });
+    };
+
+    socket.on('progress', handleProgress);
+    socket.on('statusQueue', handleStatusQueue);
 
     socket.emit('checkQueue', { submissionId: submission?.id });
 
@@ -341,8 +343,8 @@ const CampaignFirstDraft = ({
     // eslint-disable-next-line consistent-return
     return () => {
       socket.off('progress', handleProgress);
-      socket.off('statusQueue');
-      socket.off('checkQueue');
+      socket.off('statusQueue', handleStatusQueue);
+      // socket.off('checkQueue');
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
@@ -1210,7 +1212,7 @@ const CampaignFirstDraft = ({
                         mt: -2,
                       }}
                     >
-                      Your draft has been sent.
+                      Your draft has been sent for processing.
                     </Typography>
                   </Stack>
                 </>
