@@ -1,6 +1,6 @@
-import useSWR from 'swr';
 import { m } from 'framer-motion';
-import React, { useMemo, useState, useCallback } from 'react';
+import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
@@ -15,10 +15,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { useSocialMediaData } from 'src/utils/store';
-import { fetcher, endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -36,33 +37,59 @@ const MediaKitCreator = () => {
   const setInstagram = useSocialMediaData((state) => state.setInstagram);
   const tiktok = useSocialMediaData((state) => state.tiktok);
   const instagram = useSocialMediaData((state) => state.instagram);
+  const isLoading = useBoolean();
+  const instaLoading = useBoolean();
 
   const [currentTab, setCurrentTab] = useState('tiktok');
   const [openSetting, setOpenSetting] = useState(false);
 
-  const { data: socialData, isLoading } = useSWR(
-    endpoints.creators.social.tiktok(user.id),
-    fetcher,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      onSuccess: (data) => {
-        setTiktok(data);
-      },
+  const getInstagram = useCallback(async () => {
+    try {
+      instaLoading.onTrue();
+      const res = await axiosInstance.get(endpoints.creators.social.instagram(user?.id));
+      setInstagram(res.data);
+    } catch (error) {
+      enqueueSnackbar('Failed to fetch Instagram data');
+    } finally {
+      instaLoading.onFalse();
     }
-  );
+  }, [setInstagram, user, instaLoading]);
 
-  const { data: instaData, isLoading: instaLoading } = useSWR(
-    endpoints.creators.social.instagram(user.id),
-    fetcher,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      onSuccess: (data) => {
-        setInstagram(data);
-      },
+  const getTiktok = useCallback(async () => {
+    try {
+      isLoading.onTrue();
+      const res = await axiosInstance.get(endpoints.creators.social.instagram(user?.id));
+      setTiktok(res.data);
+    } catch (error) {
+      enqueueSnackbar('Failed to fetch Instagram data');
+    } finally {
+      isLoading.onFalse();
     }
-  );
+  }, [setTiktok, user, isLoading]);
+
+  // const { data: socialData, isLoading } = useSWR(
+  //   endpoints.creators.social.tiktok(user.id),
+  //   fetcher,
+  //   {
+  //     revalidateIfStale: false,
+  //     revalidateOnFocus: false,
+  //     onSuccess: (data) => {
+  //       setTiktok(data);
+  //     },
+  //   }
+  // );
+
+  // const { data: instaData, isLoading: instaLoading } = useSWR(
+  //   endpoints.creators.social.instagram(user.id),
+  //   fetcher,
+  //   {
+  //     revalidateIfStale: false,
+  //     revalidateOnFocus: false,
+  //     onSuccess: (data) => {
+  //       setInstagram(data);
+  //     },
+  //   }
+  // );
 
   const calculateEngagementRate = useCallback((totalLikes, followers) => {
     if (!(totalLikes || followers)) return null;
@@ -103,7 +130,12 @@ const MediaKitCreator = () => {
     setOpenSetting(!openSetting);
   };
 
-  if (isLoading || instaLoading) {
+  useEffect(() => {
+    getTiktok();
+    getInstagram();
+  }, [getTiktok, getInstagram]);
+
+  if (isLoading.value || instaLoading.value) {
     return (
       <Box position="absolute" top="50%" left="50%">
         <CircularProgress
