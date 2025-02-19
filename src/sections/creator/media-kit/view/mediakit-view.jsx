@@ -43,18 +43,28 @@ const MediaKitCreator = () => {
   const [openSetting, setOpenSetting] = useState(false);
 
   const getInstagram = useCallback(async () => {
-    instaLoading.onTrue();
-    const res = await axiosInstance.get(endpoints.creators.social.instagram(user?.id));
-    setInstagram(res.data);
-    instaLoading.onFalse();
+    try {
+      instaLoading.onTrue();
+      const res = await axiosInstance.get(endpoints.creators.social.instagram(user?.id));
+      setInstagram(res.data);
+    } catch (error) {
+      return;
+    } finally {
+      instaLoading.onFalse();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setInstagram]);
 
   const getTiktok = useCallback(async () => {
-    isLoading.onTrue();
-    const res = await axiosInstance.get(endpoints.creators.social.tiktok(user?.id));
-    setTiktok(res.data);
-    isLoading.onFalse();
+    try {
+      isLoading.onTrue();
+      const res = await axiosInstance.get(endpoints.creators.social.tiktok(user?.id));
+      setTiktok(res.data);
+    } catch (error) {
+      return;
+    } finally {
+      isLoading.onFalse();
+    }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setTiktok]);
