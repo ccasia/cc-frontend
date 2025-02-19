@@ -188,16 +188,25 @@ const MediaKitSocialContent = ({ instagram }) => {
         sx={{
           height: 250,
           textAlign: 'center',
-          borderRadius: 1,
           borderStyle: 'dashed',
+          borderColor: (theme) => theme.palette.divider,
           borderWidth: 1.5,
-          bgcolor: (theme) => alpha(theme.palette.info.main, 0.16),
+          bgcolor: (theme) => alpha(theme.palette.warning.main, 0.16),
           width: 1,
         }}
       >
         <Stack spacing={1} alignItems="center">
-          <Typography variant="subtitle1">Your instagram account is not connected.</Typography>
-          <Button variant="contained" size="small">
+          <Typography variant="subtitle2">Your instagram account is not connected.</Typography>
+          <Button
+            variant="outlined"
+            size="medium"
+            sx={{ borderRadius: 0.5 }}
+            startIcon={<Iconify icon="skill-icons:instagram" width={20} />}
+            LinkComponent="a"
+            // Later need to change
+            href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://staging.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
+            target="_blank"
+          >
             Connect Instagram
           </Button>
         </Stack>

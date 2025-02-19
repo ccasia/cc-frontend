@@ -21,6 +21,7 @@ import { useSocialMediaData } from 'src/utils/store';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -185,16 +186,22 @@ const MediaKitSocialContent = ({ tiktok }) => {
         sx={{
           height: 250,
           textAlign: 'center',
-          borderRadius: 1,
           borderStyle: 'dashed',
+          borderColor: (theme) => theme.palette.divider,
           borderWidth: 1.5,
-          bgcolor: (theme) => alpha(theme.palette.info.main, 0.16),
+          bgcolor: (theme) => alpha(theme.palette.warning.main, 0.16),
           width: 1,
         }}
       >
         <Stack spacing={1} alignItems="center">
-          <Typography variant="subtitle1">Your tiktok account is not connected.</Typography>
-          <Button variant="contained" size="small" onClick={connectTiktok}>
+          <Typography variant="subtitle2">Your tiktok account is not connected.</Typography>
+          <Button
+            variant="outlined"
+            size="medium"
+            sx={{ borderRadius: 0.5 }}
+            startIcon={<Iconify icon="logos:tiktok-icon" width={18} />}
+            onClick={connectTiktok}
+          >
             Connect TikTok
           </Button>
         </Stack>
