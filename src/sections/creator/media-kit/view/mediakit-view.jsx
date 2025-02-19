@@ -49,11 +49,14 @@ const MediaKitCreator = () => {
       const res = await axiosInstance.get(endpoints.creators.social.instagram(user?.id));
       setInstagram(res.data);
     } catch (error) {
-      enqueueSnackbar('Failed to fetch Instagram data');
+      enqueueSnackbar('Failed to fetch Instagram data', {
+        variant: 'error',
+      });
     } finally {
       instaLoading.onFalse();
     }
-  }, [setInstagram, user, instaLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setInstagram]);
 
   const getTiktok = useCallback(async () => {
     try {
@@ -61,11 +64,14 @@ const MediaKitCreator = () => {
       const res = await axiosInstance.get(endpoints.creators.social.tiktok(user?.id));
       setTiktok(res.data);
     } catch (error) {
-      enqueueSnackbar('Failed to fetch Instagram data');
+      enqueueSnackbar('Failed to fetch Tiktok data', {
+        variant: 'error',
+      });
     } finally {
       isLoading.onFalse();
     }
-  }, [setTiktok, user, isLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setTiktok]);
 
   // const { data: socialData, isLoading } = useSWR(
   //   endpoints.creators.social.tiktok(user.id),
@@ -131,9 +137,9 @@ const MediaKitCreator = () => {
   };
 
   useEffect(() => {
-    getTiktok();
     getInstagram();
-  }, [getTiktok, getInstagram]);
+    getTiktok();
+  }, [getInstagram, getTiktok]);
 
   if (isLoading.value || instaLoading.value) {
     return (
