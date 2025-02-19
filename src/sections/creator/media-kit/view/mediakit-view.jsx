@@ -58,7 +58,7 @@ const MediaKitCreator = () => {
   const getTiktok = useCallback(async () => {
     try {
       isLoading.onTrue();
-      const res = await axiosInstance.get(endpoints.creators.social.instagram(user?.id));
+      const res = await axiosInstance.get(endpoints.creators.social.tiktok(user?.id));
       setTiktok(res.data);
     } catch (error) {
       enqueueSnackbar('Failed to fetch Instagram data');
