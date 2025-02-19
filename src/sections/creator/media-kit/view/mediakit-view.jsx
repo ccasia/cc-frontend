@@ -1,5 +1,4 @@
 import { m } from 'framer-motion';
-import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
@@ -44,32 +43,19 @@ const MediaKitCreator = () => {
   const [openSetting, setOpenSetting] = useState(false);
 
   const getInstagram = useCallback(async () => {
-    try {
-      instaLoading.onTrue();
-      const res = await axiosInstance.get(endpoints.creators.social.instagram(user?.id));
-      setInstagram(res.data);
-    } catch (error) {
-      enqueueSnackbar('Failed to fetch Instagram data', {
-        variant: 'error',
-      });
-    } finally {
-      instaLoading.onFalse();
-    }
+    instaLoading.onTrue();
+    const res = await axiosInstance.get(endpoints.creators.social.instagram(user?.id));
+    setInstagram(res.data);
+    instaLoading.onFalse();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setInstagram]);
 
   const getTiktok = useCallback(async () => {
-    try {
-      isLoading.onTrue();
-      const res = await axiosInstance.get(endpoints.creators.social.tiktok(user?.id));
-      setTiktok(res.data);
-    } catch (error) {
-      enqueueSnackbar('Failed to fetch Tiktok data', {
-        variant: 'error',
-      });
-    } finally {
-      isLoading.onFalse();
-    }
+    isLoading.onTrue();
+    const res = await axiosInstance.get(endpoints.creators.social.tiktok(user?.id));
+    setTiktok(res.data);
+    isLoading.onFalse();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setTiktok]);
 
