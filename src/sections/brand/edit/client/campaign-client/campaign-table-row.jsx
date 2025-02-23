@@ -62,7 +62,7 @@ const HighlightText = ({ text, search }) => {
             {part}
           </span>
         ) : (
-          part
+          part.toLowerCase()
         )
       )}
     </span>
