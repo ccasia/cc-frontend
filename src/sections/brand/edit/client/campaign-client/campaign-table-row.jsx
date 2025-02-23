@@ -46,7 +46,30 @@ function getRemainingTime(createdDate, months) {
   return remainingDays;
 }
 
-const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) => {
+// eslint-disable-next-line react/prop-types
+const HighlightText = ({ text, search }) => {
+  if (!search) return <span>{text}</span>;
+
+  const regex = new RegExp(`(${search})`, 'gi'); // Case-insensitive match
+  // eslint-disable-next-line react/prop-types
+  const parts = text.split(regex);
+
+  return (
+    <span>
+      {parts.map((part, index) =>
+        regex.test(part) ? (
+          <span key={index} style={{ color: 'brown' }}>
+            {part}
+          </span>
+        ) : (
+          part
+        )
+      )}
+    </span>
+  );
+};
+
+const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow, filter }) => {
   const {
     id,
     campaignId,
@@ -72,7 +95,9 @@ const CampaignTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }
         onClick={() => router.push(paths.dashboard.campaign.adminCampaignDetail(id))}
       >
         <TableCell>
-          <Label>{name || 'None'}</Label>
+          <Label>
+            <HighlightText text={name} search={filter} />
+          </Label>
         </TableCell>
         <TableCell>
           <Label>{campaignId || 'None'}</Label>
@@ -135,4 +160,5 @@ CampaignTableRow.propTypes = {
   onSelectRow: PropTypes.func,
   row: PropTypes.object,
   selected: PropTypes.bool,
+  filter: PropTypes.string,
 };

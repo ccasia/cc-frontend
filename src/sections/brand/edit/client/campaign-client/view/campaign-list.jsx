@@ -83,11 +83,7 @@ const CampaignClientList = ({ campaigns }) => {
 
   return (
     <>
-      {/* <Tabs>
-        <Tab label="SAD" />
-      </Tabs> */}
-
-      <CampaignToolBar />
+      <CampaignToolBar onFilters={handleFilters} filters={filters} />
       <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
         <TableSelectedAction
           dense={table.dense}
@@ -119,13 +115,6 @@ const CampaignClientList = ({ campaigns }) => {
               headLabel={TABLE_HEAD}
               rowCount={dataFiltered.length}
               numSelected={table.selected.length}
-              // onSort={table.onSort}
-              // onSelectAllRows={(checked) =>
-              //   table.onSelectAllRows(
-              //     checked,
-              //     dataFiltered.map((row) => row.id)
-              //   )
-              // }
             />
 
             <TableBody>
@@ -140,8 +129,7 @@ const CampaignClientList = ({ campaigns }) => {
                     row={row}
                     selected={table.selected.includes(row.id)}
                     onSelectRow={() => table.onSelectRow(row.id)}
-                    // onDeleteRow={() => handleDeleteRow(row.id)}
-                    // onEditRow={() => handleEditRow(row.id)}
+                    filter={filters.name}
                   />
                 ))}
 
