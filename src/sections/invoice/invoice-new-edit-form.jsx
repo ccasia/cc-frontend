@@ -299,15 +299,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
             </Stack>
           )}
         </Card>
-
-        {/* <XeroDialoge
-        open={open}
-        onClose={() => {
-          setOpen(false);
-        }}
-        setContact={setContact}
-        setNewContact={setNewContact}
-      /> */}
       </FormProvider>
     </Stack>
   );

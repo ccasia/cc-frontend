@@ -239,7 +239,9 @@ const FirstDraft = ({ campaign, submission, creator }) => {
       request.onFalse();
       reset();
     } catch (error) {
-      enqueueSnackbar('Error submitting', {
+      console.log(error);
+      // console.log(error?.message);
+      enqueueSnackbar(error, {
         variant: 'error',
       });
       approve.onFalse();

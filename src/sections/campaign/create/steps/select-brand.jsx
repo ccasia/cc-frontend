@@ -87,14 +87,13 @@ const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
       campaigns = client?.brand?.flatMap((a) => a.campaign);
     }
 
-    return campaigns?.reduce((acc, sum) => acc + sum.campaignCredits, 0);
-  }, [client]);
+    campaigns = campaigns?.filter(
+      (campaign) =>
+        campaign?.subscriptionId != null && campaign?.subscriptionId === latestPackageItem.id
+    );
 
-  // useEffect(() => {
-  //   if (client && !latestPackageItem) {
-  //     openPackage.onTrue();
-  //   }
-  // }, [latestPackageItem, openPackage, client]);
+    return campaigns?.reduce((acc, sum) => acc + sum.campaignCredits, 0);
+  }, [client, latestPackageItem]);
 
   useEffect(() => {
     if (client && client.inputValue) {
