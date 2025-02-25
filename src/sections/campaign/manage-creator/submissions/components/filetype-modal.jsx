@@ -1,5 +1,5 @@
-import React from 'react';
 import PropTypes from 'prop-types';
+import React, { useEffect } from 'react';
 
 import { grey } from '@mui/material/colors';
 import {
@@ -15,11 +15,20 @@ import {
 } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
+import { useGetSubmissions } from 'src/hooks/use-get-submission';
+
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
+import { enqueueSnackbar } from 'notistack';
 
 const UploadFileTypeModal = ({ submission, campaign, open, handleClose, onSelectType }) => {
   const smUp = useResponsive('up', 'sm');
+  const { socket } = useSocketContext();
+  const { mutate: submissionMutate } = useGetSubmissions(
+    submission?.userId,
+    submission?.campaignId
+  );
 
   // Get current submission status and uploaded files
   const hasVideo = submission?.video?.length > 0;
@@ -59,6 +68,18 @@ const UploadFileTypeModal = ({ submission, campaign, open, handleClose, onSelect
     if (type.type === 'photos' && !campaign.photos) return false;
     return true;
   });
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('updateSubmission', () => {
+        submissionMutate();
+      });
+    }
+
+    return () => {
+      socket?.off('updateSubmission', submissionMutate);
+    };
+  }, [socket, submissionMutate]);
 
   return (
     <Dialog open={open} fullScreen={!smUp} maxWidth="sm" fullWidth>

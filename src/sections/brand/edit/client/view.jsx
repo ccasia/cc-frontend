@@ -243,33 +243,6 @@ const CompanyEditView = ({ id }) => {
             </LoadingButton>
           </Box>
         </FormProvider>
-        {/* {company?.brand?.length > 0 && (
-          <Card sx={{ my: 3, p: 2 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography
-                sx={{
-                  fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                  fontSize: 30,
-                  fontWeight: 'normal',
-                  mb: 2,
-                }}
-              >
-                Brand Information
-              </Typography>
-              <Button
-                variant="outlined"
-                sx={{
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                }}
-                onClick={dialog.onTrue}
-              >
-                Create new brand
-              </Button>
-            </Stack>
-
-            <BrandEditLists dataFiltered={company?.brand} onClose={onClose} />
-          </Card>
-        )} */}
 
         <Card sx={{ borderRadius: 1, mt: 2 }}>
           <Tabs
@@ -281,7 +254,12 @@ const CompanyEditView = ({ id }) => {
             }}
           >
             <Tab value="package" label="Package" />
-            <Tab value="campaign" label="Campaign" />
+            <Tab
+              value="campaign"
+              label="Campaign"
+              iconPosition="end"
+              icon={<Label>{campaigns?.length || 0}</Label>}
+            />
             <Tab value="pic" label="Person In Charge" />
           </Tabs>
 

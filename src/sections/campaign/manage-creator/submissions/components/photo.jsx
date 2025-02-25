@@ -35,12 +35,16 @@ const UploadPhotoModal = ({ submissionId, campaignId, open, onClose }) => {
 
   const { mutate: submissionMutate } = useGetSubmissions(user?.id, campaignId);
 
-  const { handleSubmit, setValue } = methods;
+  const {
+    handleSubmit,
+    setValue,
+    formState: { isSubmitting },
+  } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       const formData = new FormData();
-      const newData = { submissionId }; // No caption needed
+      const newData = { submissionId };
       formData.append('data', JSON.stringify(newData));
 
       if (data.photos && data.photos.length > 0) {
@@ -125,6 +129,7 @@ const UploadPhotoModal = ({ submissionId, campaignId, open, onClose }) => {
           fullWidth
           variant="contained"
           onClick={onSubmit}
+          loading={isSubmitting}
           sx={{
             bgcolor: '#203ff5',
             color: 'white',

@@ -37,24 +37,24 @@ const FormField = ({ label, children, ...others }) => (
   </Stack>
 );
 
-const EditBrand = ({ brand, onClose }) => {
-  const schema = Yup.object().shape({
-    brandName: Yup.string().required('name is required'),
-    brandEmail: Yup.string().required('Email is required'),
-    brandPhone: Yup.string().required('Phone is required'),
-    brandWebsite: Yup.string().required('Website is required'),
-    brandAbout: Yup.string().required('About Description is required'),
-    brandObjectives: Yup.array().of(
-      Yup.object().shape({
-        value: Yup.string().required('Value is required'),
-      })
-    ),
-    brandInstagram: Yup.string().required('Brand Instagram is required'),
-    brandTiktok: Yup.string().required('Brand Tiktok is required'),
-    brandIndustries: Yup.array().min(1, 'Brand Industries is required'),
-    companyId: Yup.string().required('Company is required'),
-  });
+const schema = Yup.object().shape({
+  brandName: Yup.string().required('name is required'),
+  brandEmail: Yup.string().required('Email is required'),
+  brandPhone: Yup.string().required('Phone is required'),
+  brandWebsite: Yup.string().required('Website is required'),
+  brandAbout: Yup.string().required('About Description is required'),
+  brandObjectives: Yup.array().of(
+    Yup.object().shape({
+      value: Yup.string().required('Value is required'),
+    })
+  ),
+  brandInstagram: Yup.string().required('Brand Instagram is required'),
+  brandTiktok: Yup.string().required('Brand Tiktok is required'),
+  brandIndustries: Yup.array().min(1, 'Brand Industries is required'),
+  companyId: Yup.string().required('Company is required'),
+});
 
+const EditBrand = ({ brand, onClose }) => {
   const defaultValues = {
     brandId: brand?.id || '',
     brandName: brand?.name || '',

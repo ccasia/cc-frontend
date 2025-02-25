@@ -187,7 +187,7 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['admin', 'superadmin', 'god']} hasContent>
+              <RoleBasedGuard roles={['admin', 'superadmin', 'god', 'advanced']} hasContent>
                 <CampaignPage />
               </RoleBasedGuard>
             ),
