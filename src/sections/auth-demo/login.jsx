@@ -99,11 +99,21 @@ const Login = () => {
   const router = useRouter();
 
   const handleOpenTerms = () => {
-    setOpenTermsModal(true);
+    const a = document.createElement('a');
+    a.href = `https://cultcreativeasia.com/my/terms-and-conditions`;
+    a.target = '_blank';
+    a.click();
+    document.body.removeChild(a);
+    // setOpenTermsModal(true);
   };
 
   const handleOpenPrivacy = () => {
-    setOpenPrivacyModal(true);
+    const a = document.createElement('a');
+    a.href = `https://cultcreativeasia.com/my/privacy-policy`;
+    a.target = '_blank';
+    a.click();
+    document.body.removeChild(a);
+    // setOpenPrivacyModal(true);
   };
 
   const handleCloseTerms = () => {
