@@ -1026,7 +1026,7 @@ const CampaignFinalDraft = ({
                         fontWeight: 550,
                       }}
                     >
-                      Draft Submitted!
+                      Draft is sent for processing!
                     </Typography>
                     <Typography
                       variant="body1"

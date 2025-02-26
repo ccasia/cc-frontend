@@ -344,7 +344,6 @@ const CampaignFirstDraft = ({
     return () => {
       socket.off('progress', handleProgress);
       socket.off('statusQueue', handleStatusQueue);
-      // socket.off('checkQueue');
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
@@ -467,7 +466,6 @@ const CampaignFirstDraft = ({
                     </Box>
                     <Stack gap={1}>
                       <Typography variant="caption">{progressName && progressName}</Typography>
-                      {/* <LinearProgress variant="determinate" value={progress} /> */}
 
                       <Button variant="contained" size="small" onClick={() => handleCancel()}>
                         Cancel
@@ -1203,7 +1201,7 @@ const CampaignFirstDraft = ({
                         fontWeight: 550,
                       }}
                     >
-                      Draft Submitted!
+                      Draft is sent for processing!
                     </Typography>
                     <Typography
                       variant="body1"
