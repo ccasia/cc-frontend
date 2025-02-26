@@ -101,8 +101,6 @@ const CampaignAgreements = ({ campaign }) => {
     [user]
   );
 
-  console.log('Button:', isDisabled);
-
   if (isLoading) {
     return <div>Loading...</div>; // A loading message while the data is being fetched
   }
@@ -393,29 +391,31 @@ const CampaignAgreements = ({ campaign }) => {
                     <TableCell>
                       {smUp ? (
                         <Stack direction="row" gap={1}>
-                          <Button
-                            onClick={() => handleViewAgreement(item?.agreementUrl)}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              px: 1.5,
-                              py: 2,
-                              border: '1px solid #e7e7e7',
-                              borderBottom: '3px solid #e7e7e7',
-                              borderRadius: 1,
-                              color: '#221f20',
-                              fontSize: '0.85rem',
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              '&:hover': {
-                                bgcolor: 'rgba(32, 63, 245, 0.04)',
+                          {item?.agreementUrl && (
+                            <Button
+                              onClick={() => handleViewAgreement(item?.agreementUrl)}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                px: 1.5,
+                                py: 2,
                                 border: '1px solid #e7e7e7',
                                 borderBottom: '3px solid #e7e7e7',
-                              },
-                            }}
-                          >
-                            View
-                          </Button>
+                                borderRadius: 1,
+                                color: '#221f20',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                '&:hover': {
+                                  bgcolor: 'rgba(32, 63, 245, 0.04)',
+                                  border: '1px solid #e7e7e7',
+                                  borderBottom: '3px solid #e7e7e7',
+                                },
+                              }}
+                            >
+                              View
+                            </Button>
+                          )}
                           <Button
                             onClick={() => handleEditAgreement(item)}
                             disabled={isDisabled}
