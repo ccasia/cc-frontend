@@ -551,7 +551,7 @@ const CampaignFirstDraft = ({
                         >
                           Campaign Details
                         </Box>
-                        page.
+                        {' '}page.
                       </Typography>
 
                       {totalUGCVideos && (
