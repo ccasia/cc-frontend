@@ -1285,36 +1285,38 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                     }}
                                   />
 
-                                  {/* Add indicator for videos that need changes */}
-                                  {submission?.status === 'CHANGES_REQUIRED' &&
-                                    submission?.feedback?.[0]?.videosToUpdate?.includes(
-                                      videoItem.id
-                                    ) && (
-                                      <Box
-                                        sx={{
-                                          position: 'absolute',
-                                          top: 8,
-                                          left: 8,
-                                          bgcolor: 'warning.main',
-                                          color: 'warning.contrastText',
-                                          borderRadius: 1,
-                                          px: 1,
-                                          py: 0.5,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 0.5,
-                                          zIndex: 1,
-                                        }}
-                                      >
-                                        <Iconify icon="solar:pen-bold" width={16} />
-                                        <Typography variant="caption" fontWeight="bold">
-                                          Changes Requested
-                                        </Typography>
-                                      </Box>
-                                    )}
+                                  {/* Changes Requested indicator */}
+                                  {submission?.feedback?.some(feedback => 
+                                    feedback.videosToUpdate?.includes(videoItem.id)
+                                  ) && (
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        left: 8,
+                                        bgcolor: 'warning.main',
+                                        color: 'warning.contrastText',
+                                        borderRadius: 1,
+                                        px: 1,
+                                        py: 0.5,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        zIndex: 1,
+                                      }}
+                                    >
+                                      <Iconify icon="solar:pen-bold" width={16} />
+                                      <Typography variant="caption" fontWeight="bold">
+                                        Changes Requested
+                                      </Typography>
+                                    </Box>
+                                  )}
 
                                   {/* Existing checkbox for video selection */}
-                                  {type === 'request' && (
+                                  {type === 'request' && 
+                                    !submission?.feedback?.some(feedback => 
+                                      feedback.videosToUpdate?.includes(videoItem.id)
+                                    ) && (
                                     <Checkbox
                                       checked={selectedVideosForChange.includes(videoItem.id)}
                                       onChange={() => handleVideoSelection(videoItem.id)}
@@ -1485,7 +1487,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                             ))}
 
                         {/* Schedule Post and Request Changes Section */}
-                        {submission?.status === 'PENDING_REVIEW' && (
+                        {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'CHANGES_REQUIRED') && (
                           <Box
                             component={Paper}
                             sx={{
@@ -1495,12 +1497,12 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                               borderColor: 'divider',
                             }}
                           >
-                            {type === 'approve' && (
+                            {type === 'approve' && submission?.status === 'PENDING_REVIEW' && (
                               <FormProvider methods={draftVideoMethods} onSubmit={onSubmitDraftVideo}>
                                 <Stack gap={1} mb={2}>
                                   <Typography variant="subtitle1" mb={1} mx={1}>
                                     Schedule This Post
-                  </Typography>
+                                  </Typography>
                                   <Stack
                                     direction={{ xs: 'column', sm: 'row' }}
                                     gap={{ xs: 2, sm: 3 }}
@@ -1517,16 +1519,20 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                     />
                                   </Stack>
                                 </Stack>
+
+                                <Stack gap={2}>
                                 <Typography variant="subtitle1" mb={1} mx={1}>
                                   Comments For Creator
                                 </Typography>
-                                <Stack gap={2}>
                                   <RHFTextField
                                     name="feedback"
                                     multiline
                                     minRows={5}
-                                    placeholder="Comment"
+                                    placeholder="Provide feedback for the creator."
+                                    sx={{ mb: 2 }}
                                   />
+                                </Stack>
+
                                   <Stack
                                     alignItems={{ xs: 'stretch', sm: 'center' }}
                                     direction={{ xs: 'column', sm: 'row' }}
@@ -1534,12 +1540,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                     justifyContent="end"
                                   >
                                     <Button
-                                      onClick={() => {
-                                        setType('request');
-                                        setValue('type', 'request');
-                                        setValue('feedback', '');
-                                      }}
-                                      disabled={isDisabled}
+                                    onClick={handleDraftVideoRequestClick}
                                       size="small"
                                       variant="contained"
                                       startIcon={<Iconify icon="solar:close-circle-bold" />}
@@ -1555,9 +1556,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                           bgcolor: '#e7e7e7',
                                           borderColor: '#e7e7e7',
                                         },
-                                        '&:disabled': {
-                                          display: 'none',
-                                        },
                                         textTransform: 'none',
                                         px: 2.5,
                                         py: 1.2,
@@ -1570,7 +1568,6 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                     </Button>
                                     <LoadingButton
                                       onClick={approve.onTrue}
-                                      disabled={isDisabled}
                                       variant="contained"
                                       size="small"
                                       startIcon={<Iconify icon="solar:check-circle-bold" />}
@@ -1587,46 +1584,79 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                           bgcolor: '#2e6c56',
                                           opacity: 0.9,
                                         },
-                                        '&:disabled': {
-                                          display: 'none',
-                                        },
                                         fontSize: '0.875rem',
                                         minWidth: '80px',
                                         height: '45px',
+                                      textTransform: 'none',
                                       }}
                                     >
                                       Approve
                                     </LoadingButton>
                                   </Stack>
-                                </Stack>
-                                {confirmationApproveModal(approve.value, approve.onFalse)}
                               </FormProvider>
                             )}
+
+                            {type === 'approve' && submission?.status === 'CHANGES_REQUIRED' && (
+                                  <Stack
+                                    alignItems={{ xs: 'stretch', sm: 'center' }}
+                                    direction={{ xs: 'column', sm: 'row' }}
+                                    gap={1.5}
+                                    justifyContent="end"
+                                  >
+                                    <Button
+                                  onClick={handleDraftVideoRequestClick}
+                                      size="small"
+                                      variant="contained"
+                                      startIcon={<Iconify icon="solar:close-circle-bold" />}
+                                      sx={{
+                                        bgcolor: 'white',
+                                        border: 1,
+                                        borderRadius: 0.8,
+                                        borderColor: '#e7e7e7',
+                                        borderBottom: 3,
+                                        borderBottomColor: '#e7e7e7',
+                                        color: 'error.main',
+                                        '&:hover': {
+                                          bgcolor: '#e7e7e7',
+                                          borderColor: '#e7e7e7',
+                                        },
+                                        textTransform: 'none',
+                                        px: 2.5,
+                                        py: 1.2,
+                                        fontSize: '0.875rem',
+                                        minWidth: '80px',
+                                        height: '45px',
+                                      }}
+                                    >
+                                      Request a change
+                                    </Button>
+                                  </Stack>
+                            )}
+
                             {type === 'request' && (
-                              <>
+                              <FormProvider methods={draftVideoMethods} onSubmit={onSubmitDraftVideo}>
                                 <Typography variant="h6" mb={1} mx={1}>
                                   Request Changes
                                 </Typography>
-                                <FormProvider methods={draftVideoMethods} onSubmit={onSubmitDraftVideo}>
                                   <Stack gap={2}>
-                                    <RHFMultiSelect
-                                      name="reasons"
-                                      checkbox
-                                      chip
-                                      options={options_changes.map((item) => ({
-                                        value: item,
-                                        label: item,
-                                      }))}
-                                      label="Reasons"
-                                    />
+                                  <RHFMultiSelect
+                                    name="reasons"
+                                    checkbox
+                                    chip
+                                    options={options_changes.map((item) => ({
+                                      value: item,
+                                      label: item,
+                                    }))}
+                                    label="Reasons"
+                                  />
                                     <RHFTextField
-                                      name="feedback"
+                                    name="feedback"
                                       multiline
                                       minRows={5}
-                                      placeholder="Feedback"
+                                    placeholder="Provide feedback for the draft video."
                                     />
 
-                                    {selectedVideosForChange.length === 0 && (
+                                  {selectedVideosForChange.length === 0 && (
                                       <Typography
                                         color="warning.main"
                                         sx={{
@@ -1637,7 +1667,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                         }}
                                       >
                                         <Iconify icon="solar:danger-triangle-bold" />
-                                        Please select at least one video that needs changes.
+                                      Please select at least one video that needs changes.
                                       </Typography>
                                     )}
 
@@ -1647,13 +1677,12 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                       gap={1.5}
                                       alignSelf="end"
                                     >
-                                      <Button
+                                    <Button
                                         onClick={() => {
-                                          setType('approve');
-                                          draftVideoMethods.setValue('type', 'approve');
-                                          draftVideoMethods.setValue('feedback', '');
-                                          draftVideoMethods.setValue('reasons', []);
-                                          setSelectedVideosForChange([]); // Clear selected videos
+                                        setType('approve');
+                                        draftVideoMethods.setValue('type', 'approve');
+                                        draftVideoMethods.setValue('feedback', '');
+                                        draftVideoMethods.setValue('reasons', []);
                                         }}
                                         size="small"
                                         sx={{
@@ -1681,11 +1710,8 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                       <LoadingButton
                                         variant="contained"
                                         size="small"
-                                        onClick={() => {
-                                          draftVideoMethods.setValue('type', 'request'); // Set type before submitting
-                                          request.onTrue();
-                                        }}
-                                        disabled={selectedVideosForChange.length === 0}
+                                      onClick={request.onTrue}
+                                      disabled={selectedVideosForChange.length === 0}
                                         sx={{
                                           bgcolor: '#2e6c56',
                                           color: 'white',
@@ -1704,19 +1730,18 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                           textTransform: 'none',
                                         }}
                                       >
-                                        Submit
-                                      </LoadingButton>
-                                    </Stack>
+                                      Submit
+                                    </LoadingButton>
                                   </Stack>
+                                </Stack>
 
-                                  {confirmationRequestModal(request.value, request.onFalse)}
-                                </FormProvider>
-                              </>
+                                {confirmationRequestModal(request.value, request.onFalse)}
+                              </FormProvider>
                             )}
-                            </Box>
-                          )}
-                        </>
-                      )}
+                          </Box>
+                        )}
+                      </>
+                    )}
 
                     {selectedTab === 'rawFootages' && (
                       <>
@@ -1730,7 +1755,7 @@ const FirstDraft = ({ campaign, submission, creator }) => {
                                     borderRadius: 1,
                                     overflow: 'hidden',
                                     boxShadow: 2,
-                                    height: '16/9',
+                                    aspectRatio: '16/9',
                                     cursor: 'pointer',
                                   }}
                                   onClick={() => handleVideoClick(index)}
