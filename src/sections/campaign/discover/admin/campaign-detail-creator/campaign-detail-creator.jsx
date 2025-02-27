@@ -107,6 +107,12 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     0
   );
 
+  const ugcLeft = useMemo(() => {
+    if (!campaign?.campaignCredits) return null;
+    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
+    return campaign.campaignCredits - totalUGCs;
+  }, [campaign]);
+
   const methods = useForm({
     defaultValues: {
       creator: [],
@@ -221,7 +227,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               fontFamily: (theme) => theme.typography.fontFamily,
             }}
           >
-            Total UGC Credits: {campaign?.campaignCredits}
+            UGC Credits: {ugcLeft} left
           </Label>
         </Stack>
       </DialogTitle>
@@ -577,6 +583,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         credits={campaign?.campaignCredits ?? 0}
         campaignId={campaign.id}
         modalClose={modal.onFalse}
+        creditsLeft={ugcLeft}
       />
       <CampaignAgreementEdit
         dialog={editDialog}
