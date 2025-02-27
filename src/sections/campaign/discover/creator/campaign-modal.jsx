@@ -43,7 +43,7 @@ const ChipStyle = {
   borderColor: '#EBEBEB',
   borderRadius: 1,
   color: '#636366',
-  height: '32px', 
+  height: '32px',
   boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
@@ -120,6 +120,16 @@ const CampaignModal = ({
   );
 
   const { isFormCompleted } = user.creator;
+
+  const totalCredits = campaign?.shortlisted?.reduce(
+    (acc, shortlist) => acc + shortlist.ugcVideos,
+    0
+  );
+
+  const isCreditsFinished = useMemo(
+    () => campaign?.campaignCredits === totalCredits,
+    [campaign, totalCredits]
+  );
 
   const handleImageClick = (event) => {
     // Prevent expansion if clicking on navigation buttons
@@ -658,6 +668,7 @@ const CampaignModal = ({
                   <Button
                     variant="contained"
                     onClick={handlePitch}
+                    disabled={isCreditsFinished}
                     sx={{
                       backgroundColor: '#203ff5',
                       color: 'white',
@@ -676,7 +687,7 @@ const CampaignModal = ({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    Pitch Now
+                    {isCreditsFinished ? 'Not available' : 'Pitch Now'}
                   </Button>
                 )}
                 <Button
@@ -911,22 +922,28 @@ const CampaignModal = ({
                             { label: 'Raw Footage', value: campaign?.rawFootage },
                             { label: 'Photos', value: campaign?.photos },
                             { label: 'Ads', value: campaign?.ads },
-                          ].map((deliverable) => (
-                            deliverable.value && (
-                              <Stack key={deliverable.label} direction="row" spacing={1} alignItems="center">
-                                <Iconify
-                                  icon="octicon:dot-fill-16"
-                                  sx={{
-                                    color: '#000000',
-                                    width: 12,
-                                    height: 12,
-                                    flexShrink: 0,
-                                  }}
-                                />
-                                <Typography variant="body2">{deliverable.label}</Typography>
-                              </Stack>
-                            )
-                          ))}
+                          ].map(
+                            (deliverable) =>
+                              deliverable.value && (
+                                <Stack
+                                  key={deliverable.label}
+                                  direction="row"
+                                  spacing={1}
+                                  alignItems="center"
+                                >
+                                  <Iconify
+                                    icon="octicon:dot-fill-16"
+                                    sx={{
+                                      color: '#000000',
+                                      width: 12,
+                                      height: 12,
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  <Typography variant="body2">{deliverable.label}</Typography>
+                                </Stack>
+                              )
+                          )}
                         </Stack>
                       </Box>
 
@@ -1103,7 +1120,10 @@ const CampaignModal = ({
                 <Stack spacing={2}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {[
-                      { label: 'Gender', data: campaign?.campaignRequirement?.gender?.map(capitalizeFirstLetter) },
+                      {
+                        label: 'Gender',
+                        data: campaign?.campaignRequirement?.gender?.map(capitalizeFirstLetter),
+                      },
                       { label: 'Age', data: campaign?.campaignRequirement?.age },
                       {
                         label: 'Geo Location',
@@ -1112,7 +1132,7 @@ const CampaignModal = ({
                       { label: 'Language', data: campaign?.campaignRequirement?.language },
                       {
                         label: 'Creator Persona',
-                        data: campaign?.campaignRequirement?.creator_persona?.map(value => 
+                        data: campaign?.campaignRequirement?.creator_persona?.map((value) =>
                           value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
                         ),
                       },
@@ -1126,12 +1146,7 @@ const CampaignModal = ({
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {item.data?.map((value, idx) => (
-                            <Chip
-                              key={idx}
-                              label={value}
-                              size="small"
-                              sx={ChipStyle}
-                            />
+                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
                           ))}
                         </Box>
                       </Box>

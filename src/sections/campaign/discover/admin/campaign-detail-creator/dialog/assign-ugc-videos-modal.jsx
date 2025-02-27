@@ -36,7 +36,7 @@ const schema = yup.object().shape({
   ),
 });
 
-const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose }) => {
+const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose, creditsLeft }) => {
   const shortlistedCreators = useShortlistedCreators((state) => state.shortlistedCreators);
   const resetState = useShortlistedCreators((state) => state.reset);
 
@@ -154,7 +154,7 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose 
                 fontFamily: (theme) => theme.typography.fontFamily,
               }}
             >
-              Total UGC Credits: {credits ?? 0}
+              UGC Credits: {creditsLeft ?? 0} left
             </Label>
           </Stack>
         </DialogTitle>
@@ -250,4 +250,5 @@ AssignUGCVideoModal.propTypes = {
   credits: PropTypes.number,
   campaignId: PropTypes.string,
   modalClose: PropTypes.func,
+  creditsLeft: PropTypes.number,
 };
