@@ -173,8 +173,8 @@ const CampaignFirstDraft = ({
 
     const handleProgress = (data) => {
       if (submission?.id !== data.submissionId) return; // Check if submissionId matches
-      inQueue.onFalse();
-      setProgress(Math.ceil(data.progress));
+      // inQueue.onFalse();
+      // setProgress(Math.ceil(data.progress));
 
       setUploadProgress((prev) => {
         const exists = prev.some((item) => item.fileName === data.fileName);
@@ -187,45 +187,45 @@ const CampaignFirstDraft = ({
         return [...prev, data];
       });
 
-      // Executed if processing is done
-      if (data.progress === 100 || data.progress === 0) {
-        setIsProcessing(false);
-        reset();
-        setPreview('');
-        setProgressName('');
-        localStorage.removeItem('preview');
+      // // Executed if processing is done
+      // if (data.progress === 100 || data.progress === 0) {
+      //   setIsProcessing(false);
+      //   reset();
+      //   setPreview('');
+      //   setProgressName('');
+      //   localStorage.removeItem('preview');
 
-        if (data.progress === 100) {
-          mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-        }
-      } else {
-        setIsProcessing(true);
-      }
+      //   if (data.progress === 100) {
+      //     mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+      //   }
+      // } else {
+      //   setIsProcessing(true);
+      // }
     };
 
-    const handleStatusQueue = (data) => {
-      if (data?.status === 'queue') {
-        inQueue.onTrue();
-      }
-    };
+    // const handleStatusQueue = (data) => {
+    //   if (data?.status === 'queue') {
+    //     inQueue.onTrue();
+    //   }
+    // };
 
     socket.on('progress', handleProgress);
-    socket.on('statusQueue', handleStatusQueue);
+    // socket.on('statusQueue', handleStatusQueue);
 
-    socket.emit('checkQueue', { submissionId: submission?.id });
+    // socket.emit('checkQueue', { submissionId: submission?.id });
 
     // Cleanup on component unmount
     // eslint-disable-next-line consistent-return
     return () => {
       socket.off('progress', handleProgress);
-      socket.off('statusQueue', handleStatusQueue);
+      // socket.off('statusQueue', handleStatusQueue);
       // socket.off('checkQueue');
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   const checkProgress = useCallback(() => {
-    if (uploadProgress?.every((x) => x.progress === 100)) {
-      setShowUploadSuccess(true);
+    if (uploadProgress?.length && uploadProgress?.every((x) => x.progress === 100)) {
+      // setShowUploadSuccess(true);
 
       const timer = setTimeout(() => {
         setShowUploadSuccess(false);
@@ -234,6 +234,7 @@ const CampaignFirstDraft = ({
         setPreview('');
         setProgressName('');
         localStorage.removeItem('preview');
+        setUploadProgress([]);
 
         if (socket) {
           mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
@@ -422,7 +423,7 @@ const CampaignFirstDraft = ({
 
             {submission?.status === 'IN_PROGRESS' && (
               <>
-                {isProcessing ? (
+                {uploadProgress.length ? (
                   <Stack spacing={1}>
                     {uploadProgress.length &&
                       uploadProgress.map((currentFile) => (
