@@ -12,6 +12,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CircularProgress from '@mui/material/CircularProgress';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetInvoiceById from 'src/hooks/use-get-invoice';
@@ -20,6 +21,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { banks } from 'src/contants/bank';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -36,8 +38,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const { isLoading, invoice, mutate } = useGetInvoiceById(id);
 
   const { enqueueSnackbar } = useSnackbar();
-
-  // const [contact, setContact] = useState({});
 
   const loadingSend = useBoolean();
 
@@ -156,15 +156,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
     let newContact;
-    // if (
-    //   data.status === 'approved' &&
-    //   !invoice.creator.xeroContactId &&
-    //   Object.keys(contact).length === 0 &&
-    //   !newContact
-    // ) {
-    //   setOpen(true);
-    //   return;
-    // }
 
     if (!invoice.creator.xeroContactId) {
       newContact = true;
@@ -255,6 +246,42 @@ export default function InvoiceNewEditForm({ id, creators }) {
     }
   };
 
+  const deliverablesInfo = (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ color: 'text.disabled', mb: 3 }}>
+        Deliverables Information:
+      </Typography>
+      <TableContainer>
+        <Table size="small">
+          <TableHead>
+            <TableCell
+              sx={{ borderTopLeftRadius: 10, borderBottomLeftRadius: 10, border: 'none' }}
+              align="center"
+            >
+              Type of deliverables
+            </TableCell>
+            <TableCell
+              sx={{ borderTopRightRadius: 10, borderBottomRightRadius: 10, border: 'none' }}
+              align="center"
+            >
+              Quantity
+            </TableCell>
+          </TableHead>
+          <TableBody>
+            {invoice?.deliverables?.map((item) => (
+              <TableRow>
+                <TableCell align="center">
+                  <Label>{item?.type}</Label>
+                </TableCell>
+                <TableCell align="center">{item?.count}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+
   if (loading)
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
@@ -280,6 +307,8 @@ export default function InvoiceNewEditForm({ id, creators }) {
           <InvoiceNewEditStatusDate />
 
           {bankAccount}
+
+          {invoice?.deliverables?.length && deliverablesInfo}
 
           <InvoiceNewEditDetails />
 

@@ -246,7 +246,6 @@ export default function InvoiceListView({ campId, invoices }) {
             mb: { xs: 3, md: 5 },
           }}
         />
-
         <Card>
           <Tabs
             value={filters.status}
