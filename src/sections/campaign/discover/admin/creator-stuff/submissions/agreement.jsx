@@ -333,7 +333,8 @@ const Agreement = ({ campaign, submission, creator, isForClient }) => {
                           opacity: 0.9,
                         },
                         '&:disabled': {
-                          display: 'none',
+                          display: isDisabled ? 'none' : 'inline-flex',
+                          opacity: 0.7,
                         },
                         fontSize: '0.875rem',
                         minWidth: '80px',

@@ -27,6 +27,7 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
+  Link,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -219,31 +220,45 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
     [user]
   );
 
+  const resetForm = () => {
+    setType('approve');
+    reset({
+      feedback: 'Thank you for submitting!',
+      type: '',
+      reasons: [],
+      schedule: {
+        startDate: null,
+        endDate: null,
+      },
+    });
+    setSelectedVideosForChange([]);
+  };
+
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await axiosInstance.patch(endpoints.submission.admin.draft, {
+      const payload = {
         ...data,
         submissionId: submission.id,
         userId: creator?.user?.id,
         videosToUpdate: selectedVideosForChange,
-      });
+        contentType: 'video',
+        type: data.type 
+      };
+
+      const res = await axiosInstance.patch(endpoints.submission.admin.draft, payload);
+      
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
       );
       enqueueSnackbar(res?.data?.message);
       approve.onFalse();
       request.onFalse();
-      reset();
+      resetForm();
     } catch (error) {
-      if (error) {
-        enqueueSnackbar(error, {
-          variant: 'error',
-        });
-      } else {
-        enqueueSnackbar('Error submitting', {
-          variant: 'error',
-        });
-      }
+      console.error('Submission error:', error);
+      enqueueSnackbar(error?.message || 'Failed to submit changes', {
+        variant: 'error',
+      });
       approve.onFalse();
       request.onFalse();
     }
@@ -503,9 +518,6 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
     </Dialog>
   );
 
-  // const handleOpenFeedbackModal = () => setOpenFeedbackModal(true);
-  // const handleCloseFeedbackModal = () => setOpenFeedbackModal(false);
-
   // Sort feedback by date, most recent first
   const sortedFeedback = React.useMemo(() => {
     if (submission?.feedback) {
@@ -572,38 +584,34 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
     }
   };
 
-  const handlePrevVideo = () => {
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    setCurrentVideoIndex((prev) => (prev > 0 ? prev - 1 : submission?.rawFootages?.length - 1));
-  };
-
-  const handleNextVideo = () => {
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    setCurrentVideoIndex((prev) => (prev < submission?.rawFootages?.length - 1 ? prev + 1 : 0));
-  };
-
   const handlePrevDraftVideo = () => {
-    if (!submission?.video || !Array.isArray(submission.video)) {
-      return;
+    if (!selectedVideo) return;
+    
+    let videos = [];
+    if (selectedTab === 'video') {
+      videos = getCurrentVideos();
+    } else if (selectedTab === 'previous') {
+      videos = getPreviousVersions();
     }
-    setCurrentDraftVideoIndex((prev) => (prev > 0 ? prev - 1 : submission.video.length - 1));
+    
+    const currentIndex = videos.findIndex(v => v.id === selectedVideo.id);
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : videos.length - 1;
+    setSelectedVideo(videos[newIndex]);
   };
 
   const handleNextDraftVideo = () => {
-    if (!submission?.video || !Array.isArray(submission.video)) {
-      return;
+    if (!selectedVideo) return;
+    
+    let videos = [];
+    if (selectedTab === 'video') {
+      videos = getCurrentVideos();
+    } else if (selectedTab === 'previous') {
+      videos = getPreviousVersions();
     }
-    setCurrentDraftVideoIndex((prev) => (prev < submission.video.length - 1 ? prev + 1 : 0));
-  };
-
-  const handleVideoClick = (index) => {
-    setCurrentVideoIndex(index);
-    setVideoModalOpen(true);
-  };
-
-  const handleImageClick = (index) => {
-    setCurrentImageIndex(index);
-    setFullImageOpen(true);
+    
+    const currentIndex = videos.findIndex(v => v.id === selectedVideo.id);
+    const newIndex = currentIndex < videos.length - 1 ? currentIndex + 1 : 0;
+    setSelectedVideo(videos[newIndex]);
   };
 
   const handleFullImageClose = () => {
@@ -611,13 +619,15 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
   };
 
   const handlePrevImage = () => {
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : submission?.photos?.length - 1));
+    setCurrentImageIndex((prev) => 
+      prev > 0 ? prev - 1 : firstDraftSubmission.photos.length - 1
+    );
   };
 
   const handleNextImage = () => {
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    setCurrentImageIndex((prev) => (prev < submission?.photos?.length - 1 ? prev + 1 : 0));
+    setCurrentImageIndex((prev) => 
+      prev < firstDraftSubmission.photos.length - 1 ? prev + 1 : 0
+    );
   };
 
   const handleDraftVideoClick = (video, index) => {
@@ -641,20 +651,68 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
         <Box
           sx={{
             mb: 3,
-            p: 2,
-            borderRadius: 2,
+            p: 1.5,
+            px: 3,
             bgcolor: 'warning.lighter',
             border: '1px solid',
             borderColor: 'warning.light',
             display: 'flex',
             alignItems: 'center',
-            gap: 1,
+            gap: 2,
+            boxShadow: '0 2px 8px rgba(255, 171, 0, 0.12)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: 4,
+              height: '100%',
+              bgcolor: 'warning.main',
+            },
           }}
         >
-          <Iconify icon="solar:danger-triangle-bold" color="warning.main" />
-          <Typography color="warning.darker">
-            Changes have been requested for this submission
-          </Typography>
+          <Box
+            sx={{
+              minWidth: 40,
+              height: 40,
+              borderRadius: 1.2,
+              bgcolor: 'warning.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Iconify 
+              icon="solar:danger-triangle-bold" 
+              width={24} 
+              sx={{ 
+                color: 'warning.contrastText',
+              }} 
+            />
+          </Box>
+          <Box>
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                color: 'warning.darker',
+                fontWeight: 600,
+                mb: 0.5,
+              }}
+            >
+              Changes Required
+            </Typography>
+            <Typography 
+              variant="body2"
+              sx={{ 
+                color: 'warning.dark',
+                opacity: 0.8,
+              }}
+            >
+            Changes have been requested for this submission.
+            </Typography>
+          </Box>
         </Box>
       );
     }
@@ -664,47 +722,226 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
         <Box
           sx={{
             mb: 3,
-            p: 2,
-            borderRadius: 2,
+            p: 1.5,
+            px: 3,
             bgcolor: 'success.lighter',
             border: '1px solid',
             borderColor: 'success.light',
             display: 'flex',
             alignItems: 'center',
-            gap: 11,
+            gap: 2,
+            boxShadow: '0 2px 8px rgba(54, 179, 126, 0.12)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: 4,
+              height: '100%',
+              bgcolor: 'success.main',
+            },
           }}
         >
-          <Iconify icon="solar:check-circle-bold" color="success.main" />
-          <Typography color="success.darker">This submission has been approved</Typography>
+          <Box
+            sx={{
+              minWidth: 40,
+              height: 40,
+              borderRadius: 1.2,
+              bgcolor: 'success.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Iconify 
+              icon="solar:check-circle-bold" 
+              width={24} 
+              sx={{ 
+                color: 'success.contrastText',
+              }} 
+            />
+          </Box>
+          <Box>
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                color: 'success.darker',
+                fontWeight: 600,
+                mb: 0.5,
+              }}
+            >
+              Submission Approved
+            </Typography>
+            <Typography 
+              variant="body2"
+              sx={{ 
+                color: 'success.dark',
+                opacity: 0.8,
+              }}
+            >
+              This submission has been reviewed and approved successfully.
+            </Typography>
+          </Box>
         </Box>
       );
     }
-
+  
     return null;
   };
 
   useEffect(() => {
     let initialTab = 'video';
 
-    if (!campaign?.video) {
-      if (campaign?.rawFootage) initialTab = 'rawFootages';
-      else if (campaign?.photos) initialTab = 'photos';
+    if (!submission?.video?.length) {
+      if (submission?.rawFootages?.length) initialTab = 'rawFootages';
+      else if (submission?.photos?.length) initialTab = 'photos';
     }
 
     setSelectedTab(initialTab);
-  }, [campaign]);
+  }, [submission]);
 
-  // Add this function to check if a video needs changes
-  const isVideoMarkedForChanges = (videoId) =>
-    submission?.feedback?.some((feedback) => feedback.videosToUpdate?.includes(videoId));
+  // function to check if a video needs changes in either submission
+  const isVideoMarkedForChanges = (videoId) => {
+    const isMarkedInFinal = submission?.feedback?.some(
+      (feedback) => feedback.videosToUpdate?.includes(videoId)
+    );
+    const isMarkedInFirst = firstDraftSubmission?.feedback?.some(
+      (feedback) => feedback.videosToUpdate?.includes(videoId)
+    );
+    return isMarkedInFinal || isMarkedInFirst;
+  };
 
-  // Add this to get current videos (not marked for changes)
-  const getCurrentVideos = () =>
-    submission?.video?.filter((video) => !isVideoMarkedForChanges(video.id)) || [];
+  // check if raw footage or photo needs changes
+  const isRawFootageMarkedForChanges = (footageId) => {
+    const isMarkedInFinal = submission?.feedback?.some(
+      (feedback) => feedback.rawFootageToUpdate?.includes(footageId)
+    );
+    const isMarkedInFirst = firstDraftSubmission?.feedback?.some(
+      (feedback) => feedback.rawFootageToUpdate?.includes(footageId)
+    );
+    return isMarkedInFinal || isMarkedInFirst;
+  };
 
-  // Add this to get previous versions (marked for changes)
-  const getPreviousVersions = () =>
-    submission?.video?.filter((video) => isVideoMarkedForChanges(video.id)) || [];
+  const isPhotoMarkedForChanges = (photoId) => {
+    const isMarkedInFinal = submission?.feedback?.some(
+      (feedback) => feedback.photosToUpdate?.includes(photoId)
+    );
+    const isMarkedInFirst = firstDraftSubmission?.feedback?.some(
+      (feedback) => feedback.photosToUpdate?.includes(photoId)
+    );
+    return isMarkedInFinal || isMarkedInFirst;
+  };
+
+  // get current videos (not marked for changes in either submission)
+  const getCurrentVideos = () => {
+    const currentSubmissionVideos = submission?.video?.filter(
+      (video) => !isVideoMarkedForChanges(video.id)
+    ) || [];
+    const firstDraftVideos = firstDraftSubmission?.video?.filter(
+      (video) => !isVideoMarkedForChanges(video.id)
+    ) || [];
+    
+    return [...currentSubmissionVideos, ...firstDraftVideos];
+  };
+
+  // get current raw footage and photos (not marked for changes in either submission)
+  const getCurrentRawFootage = () => {
+    const currentSubmissionFootage = submission?.rawFootages?.filter(
+      (footage) => !isRawFootageMarkedForChanges(footage.id)
+    ) || [];
+    const firstDraftFootage = firstDraftSubmission?.rawFootages?.filter(
+      (footage) => !isRawFootageMarkedForChanges(footage.id)
+    ) || [];
+    
+    return [...currentSubmissionFootage, ...firstDraftFootage];
+  };
+
+  const getCurrentPhotos = () => {
+    const currentSubmissionPhotos = submission?.photos?.filter(
+      (photo) => !isPhotoMarkedForChanges(photo.id)
+    ) || [];
+    const firstDraftPhotos = firstDraftSubmission?.photos?.filter(
+      (photo) => !isPhotoMarkedForChanges(photo.id)
+    ) || [];
+    
+    return [...currentSubmissionPhotos, ...firstDraftPhotos];
+  };
+
+  // const getPreviousVersions = () => {
+  //   const finalDraftMarked = submission?.video?.filter(
+  //     (video) => isVideoMarkedForChanges(video.id)
+  //   ) || [];
+  //   const firstDraftMarked = firstDraftSubmission?.video?.filter(
+  //     (video) => isVideoMarkedForChanges(video.id)
+  //   ) || [];
+    
+  //   return [...finalDraftMarked, ...firstDraftMarked];
+  // };
+  
+
+  // raw footage click handler to set the correct state
+  const handleRawFootageClick = (footage, index) => {
+    setSelectedVideo(footage);
+    setCurrentVideoIndex(index);
+    setDraftVideoModalOpen(true);
+    setMediaType('rawFootage');
+  };
+
+  // photo click handler to set the correct state
+  const handlePhotoClick = (photo, index) => {
+    setCurrentImageIndex(index);
+    setSelectedMedia(photo.url);
+    setMediaType('photo');
+    setFullImageOpen(true);
+  };
+
+  // raw footage navigation handlers
+  const handlePrevRawFootage = () => {
+    const rawFootages = getCurrentRawFootage();
+    if (!selectedVideo) return;
+    
+    const currentIndex = rawFootages.findIndex(v => v.id === selectedVideo.id);
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : rawFootages.length - 1;
+    setSelectedVideo(rawFootages[newIndex]);
+  };
+
+  const handleNextRawFootage = () => {
+    const rawFootages = getCurrentRawFootage();
+    if (!selectedVideo) return;
+    
+    const currentIndex = rawFootages.findIndex(v => v.id === selectedVideo.id);
+    const newIndex = currentIndex < rawFootages.length - 1 ? currentIndex + 1 : 0;
+    setSelectedVideo(rawFootages[newIndex]);
+  };
+
+  // photo navigation handlers
+  const handlePrevPhoto = () => {
+    const photos = getCurrentPhotos();
+    setCurrentImageIndex((prev) => 
+      prev > 0 ? prev - 1 : photos.length - 1
+    );
+  };
+
+  const handleNextPhoto = () => {
+    const photos = getCurrentPhotos();
+    setCurrentImageIndex((prev) => 
+      prev < photos.length - 1 ? prev + 1 : 0
+    );
+  };
+
+  // preview modal title
+  const getModalTitle = (tab) => {
+    switch (tab) {
+      case 'rawFootages':
+        return 'Preview Raw Footage';
+      case 'previous':
+        return 'Preview Previous Version';
+      default:
+        return 'Preview Draft Video';
+    }
+  };
 
   return (
     <Box>
@@ -801,14 +1038,14 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                         }}
                       >
                         <Stack alignItems="center">
-                          <Typography variant="subtitle2">Current Draft</Typography>
+                          <Typography variant="subtitle2">Draft Videos</Typography>
                           <Typography variant="caption">
                             {getCurrentVideos().length} videos
                           </Typography>
                         </Stack>
                       </Button>
 
-                      {getPreviousVersions().length > 0 && (
+                      {/* {getPreviousVersions().length > 0 && (
                         <Button
                           onClick={() => setSelectedTab('previous')}
                           startIcon={<Iconify icon="solar:history-bold" />}
@@ -830,7 +1067,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                             </Typography>
                           </Stack>
                         </Button>
-                      )}
+                      )} */}
 
                       {!!firstDraftSubmission?.rawFootages?.length && (
                         <Button
@@ -850,7 +1087,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                           <Stack alignItems="center">
                             <Typography variant="subtitle2">Raw Footages</Typography>
                             <Typography variant="caption">
-                              {firstDraftSubmission?.rawFootages?.length || 0} files
+                              {getCurrentRawFootage().length} files
                             </Typography>
                           </Stack>
                         </Button>
@@ -874,7 +1111,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                           <Stack alignItems="center">
                             <Typography variant="subtitle2">Photos</Typography>
                             <Typography variant="caption">
-                              {firstDraftSubmission?.photos?.length || 0} images
+                              {getCurrentPhotos().length} images
                             </Typography>
                           </Stack>
                         </Button>
@@ -894,10 +1131,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                   >
                     {selectedTab === 'video' && (
                       <>
-                        {submission?.video?.length > 0 ||
-                        submission?.videos?.[0]?.url ||
-                        submission?.content ||
-                        submission?.draftVideo?.[0]?.preview ? (
+                       {getCurrentVideos().length > 0 ? (
                           <Grid container spacing={{ xs: 1, sm: 2 }}>
                             {getCurrentVideos().map((videoItem, index) => (
                               <Grid item xs={12} sm={6} md={4} key={videoItem.id || index}>
@@ -922,7 +1156,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                                     }}
                                   />
 
-                                  {/* Add indicator for videos that need changes */}
+                                  {/* indicator for videos that need changes */}
                                   {submission?.status === 'CHANGES_REQUIRED' &&
                                     submission?.feedback?.[0]?.videosToUpdate?.includes(
                                       videoItem.id
@@ -945,7 +1179,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                                       >
                                         <Iconify icon="solar:pen-bold" width={16} />
                                         <Typography variant="caption" fontWeight="bold">
-                                          Needs Changes
+                                          Changes Requested
                                         </Typography>
                                       </Box>
                                     )}
@@ -1035,7 +1269,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                             </Typography>
                           </Box>
                         )}
-                        {submission.publicFeedback
+                        {submission?.publicFeedback?.length > 0 && submission.publicFeedback
                           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                           .map((feedback, index) => (
                             <Box
@@ -1237,11 +1471,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                                 <Typography variant="h6" mb={1} mx={1}>
                                   Request Changes
                                 </Typography>
-                                <FormProvider
-                                  methods={methods}
-                                  onSubmit={onSubmit}
-                                  disabled={isDisabled}
-                                >
+                                <FormProvider methods={methods} onSubmit={onSubmit}>
                                   <Stack gap={2}>
                                     <RHFMultiSelect
                                       name="reasons"
@@ -1271,7 +1501,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                                         }}
                                       >
                                         <Iconify icon="solar:danger-triangle-bold" />
-                                        Please select at least one video that needs changes
+                                        Please select at least one video that needs changes.
                                       </Typography>
                                     )}
 
@@ -1287,6 +1517,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                                           setValue('type', 'approve');
                                           setValue('feedback', '');
                                           setValue('reasons', []);
+                                          setSelectedVideosForChange([]);
                                         }}
                                         size="small"
                                         sx={{
@@ -1314,10 +1545,11 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                                       <LoadingButton
                                         variant="contained"
                                         size="small"
-                                        onClick={request.onTrue}
-                                        disabled={
-                                          type === 'request' && selectedVideosForChange.length === 0
-                                        }
+                                        onClick={() => {
+                                          setValue('type', 'request');
+                                          request.onTrue();
+                                        }}
+                                        disabled={selectedVideosForChange.length === 0}
                                         sx={{
                                           bgcolor: '#2e6c56',
                                           color: 'white',
@@ -1352,20 +1584,20 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
 
                     {selectedTab === 'rawFootages' && (
                       <>
-                        {firstDraftSubmission?.rawFootages?.length > 0 ? (
+                        {getCurrentRawFootage().length > 0 ? (
                           <Grid container spacing={2}>
-                            {firstDraftSubmission.rawFootages.map((footage, index) => (
+                            {getCurrentRawFootage().map((footage, index) => (
                               <Grid item xs={12} sm={6} md={4} key={footage.id || index}>
                                 <Box
                                   sx={{
                                     position: 'relative',
-                                    borderRadius: 2,
+                                    borderRadius: 1,
                                     overflow: 'hidden',
                                     boxShadow: 2,
-                                    height: '169px',
+                                    aspectRatio: '16/9',
                                     cursor: 'pointer',
                                   }}
-                                  onClick={() => handleVideoClick(index)}
+                                  onClick={() => handleRawFootageClick(footage, index)}
                                 >
                                   <Box
                                     component="video"
@@ -1376,6 +1608,35 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                                       objectFit: 'cover',
                                     }}
                                   />
+
+                                  {/* indicator for raw footage that needs changes */}
+                                  {submission?.status === 'CHANGES_REQUIRED' &&
+                                    submission?.feedback?.[0]?.rawFootageToUpdate?.includes(
+                                      footage.id
+                                    ) && (
+                                      <Box
+                                        sx={{
+                                          position: 'absolute',
+                                          top: 8,
+                                          left: 8,
+                                          bgcolor: 'warning.main',
+                                          color: 'warning.contrastText',
+                                          borderRadius: 1,
+                                          px: 1,
+                                          py: 0.5,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 0.5,
+                                          zIndex: 1,
+                                        }}
+                                      >
+                                        <Iconify icon="solar:pen-bold" width={16} />
+                                        <Typography variant="caption" fontWeight="bold">
+                                          Changes Requested
+                                        </Typography>
+                                      </Box>
+                                    )}
+
                                   <Box
                                     sx={{
                                       position: 'absolute',
@@ -1383,18 +1644,18 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                                       left: 0,
                                       right: 0,
                                       bottom: 0,
+                                      bgcolor: 'rgba(0, 0, 0, 0.3)',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      bgcolor: 'rgba(0, 0, 0, 0.3)',
                                     }}
                                   >
                                     <Iconify
                                       icon="mdi:play"
                                       sx={{
+                                        color: 'white',
                                         width: 40,
                                         height: 40,
-                                        color: 'white',
                                         opacity: 0.9,
                                       }}
                                     />
@@ -1404,27 +1665,100 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                             ))}
                           </Grid>
                         ) : (
-                          <Typography>No raw footage uploaded yet.</Typography>
+                          <Typography variant="subtitle2" color="text.secondary" textAlign="center">
+                            No raw footage uploaded yet.
+                          </Typography>
+                        )}
+
+                        {/* Raw Footage Google Drive link */}
+                        {(firstDraftSubmission?.rawFootagesDriveLink) && (
+                          <Box
+                            sx={{
+                              mt: 3,
+                              display: 'flex',
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              borderRadius: 1,
+                              bgcolor: 'background.neutral',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: 64,
+                                minHeight: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: '#e8ecfc',
+                                borderRight: '1px solid',
+                                borderColor: 'divider',
+                              }}
+                            >
+                              <Iconify 
+                                icon="logos:google-drive" 
+                                sx={{ 
+                                  width: 28, 
+                                  height: 28,
+                                  color: '#1340ff',
+                                }} 
+                              />
+                            </Box>
+
+                            <Box sx={{ p: 2, flex: 1 }}>
+                              <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                Additional Raw Footage
+                              </Typography>
+                              <Link
+                                href={firstDraftSubmission?.rawFootagesDriveLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  color: '#1340ff',
+                                  textDecoration: 'none',
+                                  '&:hover': {
+                                    color: '#1340ff',
+                                    textDecoration: 'underline',
+                                    opacity: 0.8,
+                                  },
+                                  wordBreak: 'break-all',
+                                }}
+                              >
+                                <Iconify 
+                                  icon="eva:external-link-fill" 
+                                  sx={{ 
+                                    mr: 0.5, 
+                                    width: 16, 
+                                    height: 16,
+                                    color: '#1340ff',
+                                  }} 
+                                />
+                                {firstDraftSubmission?.rawFootagesDriveLink}
+                              </Link>
+                            </Box>
+                          </Box>
                         )}
                       </>
                     )}
 
                     {selectedTab === 'photos' && (
                       <>
-                        {firstDraftSubmission?.photos?.length > 0 ? (
+                        {getCurrentPhotos().length > 0 ? (
                           <Grid container spacing={2}>
-                            {firstDraftSubmission.photos.map((photo, index) => (
+                            {getCurrentPhotos().map((photo, index) => (
                               <Grid item xs={12} sm={6} md={4} key={photo.id || index}>
                                 <Box
                                   sx={{
                                     position: 'relative',
-                                    borderRadius: 2,
+                                    borderRadius: 1,
                                     overflow: 'hidden',
                                     boxShadow: 2,
-                                    height: '169px',
+                                    aspectRatio: '1/1',
                                     cursor: 'pointer',
                                   }}
-                                  onClick={() => handleImageClick(index)}
+                                  onClick={() => handlePhotoClick(photo, index)}
                                 >
                                   <Box
                                     component="img"
@@ -1436,15 +1770,116 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                                       objectFit: 'cover',
                                     }}
                                   />
+
+                                  {/* indicator for photos that need changes */}
+                                  {submission?.status === 'CHANGES_REQUIRED' &&
+                                    submission?.feedback?.[0]?.photosToUpdate?.includes(
+                                      photo.id
+                                    ) && (
+                                      <Box
+                                        sx={{
+                                          position: 'absolute',
+                                          top: 8,
+                                          left: 8,
+                                          bgcolor: 'warning.main',
+                                          color: 'warning.contrastText',
+                                          borderRadius: 1,
+                                          px: 1,
+                                          py: 0.5,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 0.5,
+                                          zIndex: 1,
+                                        }}
+                                      >
+                                        <Iconify icon="solar:pen-bold" width={16} />
+                                        <Typography variant="caption" fontWeight="bold">
+                                          Changes Requested
+                                        </Typography>
+                                      </Box>
+                                    )}
                                 </Box>
                               </Grid>
                             ))}
                           </Grid>
                         ) : (
-                          <Typography>No photos uploaded yet.</Typography>
+                          <Typography variant="subtitle2" color="text.secondary" textAlign="center">
+                            No photos uploaded yet.
+                          </Typography>
                         )}
-                      </>
-                    )}
+
+                    {/* Photos Google Drive link */}
+                    {(firstDraftSubmission?.photosDriveLink) && (
+                              <Box
+                                sx={{
+                                  mt: 2,
+                                  display: 'flex',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  borderRadius: 1,
+                                  bgcolor: 'background.neutral',
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    width: 64,
+                                    minHeight: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: '#e8ecfc',
+                                    borderRight: '1px solid',
+                                    borderColor: 'divider',
+                                  }}
+                                >
+                                  <Iconify 
+                                    icon="logos:google-drive" 
+                                    sx={{ 
+                                      width: 28, 
+                                      height: 28,
+                                      color: '#1340ff',
+                                    }} 
+                                  />
+                                </Box>
+
+                                <Box sx={{ p: 2, flex: 1 }}>
+                                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                    Additional Photos
+                                  </Typography>
+                                  <Link
+                                    href={firstDraftSubmission?.photosDriveLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    sx={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      color: '#1340ff',
+                                      textDecoration: 'none',
+                                      '&:hover': {
+                                        color: '#1340ff',
+                                        textDecoration: 'underline',
+                                        opacity: 0.8,
+                                      },
+                                      wordBreak: 'break-all',
+                                    }}
+                                  >
+                                    <Iconify 
+                                      icon="eva:external-link-fill" 
+                                      sx={{ 
+                                        mr: 0.5, 
+                                        width: 16, 
+                                        height: 16,
+                                        color: '#1340ff',
+                                      }} 
+                                    />
+                                    {firstDraftSubmission?.photosDriveLink}
+                                  </Link>
+                                </Box>
+                              </Box>
+                            )}
+                            </>
+                          )}
 
                     {selectedTab === 'previous' && (
                       <>
@@ -1609,11 +2044,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                 {submission?.rawFootages?.length > 1 && (
                   <>
                     <IconButton
-                      onClick={() =>
-                        setCurrentVideoIndex((prev) =>
-                          prev > 0 ? prev - 1 : submission.rawFootages.length - 1
-                        )
-                      }
+                      onClick={handlePrevRawFootage}
                       sx={{
                         position: 'absolute',
                         left: -20,
@@ -1627,11 +2058,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                       <Iconify icon="eva:arrow-ios-back-fill" />
                     </IconButton>
                     <IconButton
-                      onClick={() =>
-                        setCurrentVideoIndex((prev) =>
-                          prev < submission.rawFootages.length - 1 ? prev + 1 : 0
-                        )
-                      }
+                      onClick={handleNextRawFootage}
                       sx={{
                         position: 'absolute',
                         right: -20,
@@ -1776,16 +2203,17 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
       {/* Photo Modal */}
       <Dialog
         open={fullImageOpen}
-        onClose={handleFullImageClose}
+        onClose={() => setFullImageOpen(false)}
         maxWidth={false}
         PaperProps={{
           sx: {
             maxWidth: { xs: '90vw', md: '50vw' },
             maxHeight: { xs: '90vh', md: '120vh' },
             m: 'auto',
-            borderRadius: 2,
+            borderRadius: 0,
             overflow: 'hidden',
-            bgcolor: 'background.paper',
+            bgcolor: 'transparent',
+            boxShadow: 'none',
           },
         }}
       >
@@ -1801,7 +2229,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
           }}
         >
           <IconButton
-            onClick={handleFullImageClose}
+            onClick={() => setFullImageOpen(false)}
             sx={{
               position: 'fixed',
               right: 16,
@@ -1814,10 +2242,10 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
           >
             <Iconify icon="eva:close-fill" />
           </IconButton>
-          {submission?.photos?.[currentImageIndex] && (
+          {getCurrentPhotos()[currentImageIndex] && (
             <Box
               component="img"
-              src={submission.photos[currentImageIndex].url}
+              src={getCurrentPhotos()[currentImageIndex].url}
               alt={`Full size photo ${currentImageIndex + 1}`}
               sx={{
                 maxWidth: '100%',
@@ -1826,10 +2254,10 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
               }}
             />
           )}
-          {submission?.photos && submission.photos.length > 1 && (
+          {getCurrentPhotos().length > 1 && (
             <>
               <IconButton
-                onClick={handlePrevImage}
+                onClick={handlePrevPhoto}
                 sx={{
                   position: 'fixed',
                   left: 16,
@@ -1843,7 +2271,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                 <Iconify icon="eva:arrow-ios-back-fill" />
               </IconButton>
               <IconButton
-                onClick={handleNextImage}
+                onClick={handleNextPhoto}
                 sx={{
                   position: 'fixed',
                   right: 16,
@@ -1897,7 +2325,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                 m: 0,
               }}
             >
-              {selectedTab === 'previous' ? 'Preview Previous Version' : 'Preview Draft Video'}
+              {getModalTitle(selectedTab)}
             </Typography>
             <IconButton
               onClick={() => setDraftVideoModalOpen(false)}
@@ -1926,7 +2354,7 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                 >
                   <Box
                     component="video"
-                    src={selectedVideo?.url || submission?.video?.[currentDraftVideoIndex]?.url}
+                    src={selectedVideo?.url}
                     controls
                     autoPlay
                     onLoadedMetadata={handleDraftVideoMetadata}
@@ -1938,6 +2366,40 @@ const FinalDraft = ({ campaign, submission, creator, firstDraftSubmission }) => 
                     }}
                   />
                 </Box>
+
+                {/* Navigation Arrows */}
+                {selectedTab === 'rawFootages' && getCurrentRawFootage().length > 1 && (
+                  <>
+                    <IconButton
+                      onClick={handlePrevRawFootage}
+                      sx={{
+                        position: 'absolute',
+                        left: -20,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        bgcolor: 'background.paper',
+                        boxShadow: 2,
+                        '&:hover': { bgcolor: 'background.paper', opacity: 0.9 },
+                      }}
+                    >
+                      <Iconify icon="eva:arrow-ios-back-fill" />
+                    </IconButton>
+                    <IconButton
+                      onClick={handleNextRawFootage}
+                      sx={{
+                        position: 'absolute',
+                        right: -20,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        bgcolor: 'background.paper',
+                        boxShadow: 2,
+                        '&:hover': { bgcolor: 'background.paper', opacity: 0.9 },
+                      }}
+                    >
+                      <Iconify icon="eva:arrow-ios-forward-fill" />
+                    </IconButton>
+                  </>
+                )}
               </Box>
             </Grid>
 
