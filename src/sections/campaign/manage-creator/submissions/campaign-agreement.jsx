@@ -310,8 +310,42 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
           {submission?.status === 'PENDING_REVIEW' && (
             <Stack justifyContent="center" alignItems="center" spacing={2}>
-              <Image src="/assets/pending.svg" sx={{ width: 250 }} />
-              <Typography variant="subtitle2">Your agreement is in review.</Typography>
+              <Box
+                sx={{
+                  width: 100,
+                  height: 100,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  bgcolor: '#f4b84a',
+                  fontSize: '50px',
+                  mb: -2,
+                }}
+              >
+                ⏳
+              </Box>
+              <Stack spacing={1} alignItems="center">
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                    fontWeight: 550,
+                  }}
+                >
+                  In Review
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#636366',
+                    mt: -1,
+                  }}
+                >
+                  Your agreement is being reviewed.
+                </Typography>
+              </Stack>
             </Stack>
           )}
 
@@ -438,8 +472,42 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
 
           {submission?.status === 'APPROVED' && (
             <Stack justifyContent="center" alignItems="center" spacing={2}>
-              <Image src="/assets/approve.svg" sx={{ width: 250 }} />
-              <Typography variant="subtitle2">Your agreement has been approved!</Typography>
+              <Box
+                sx={{
+                  width: 100,
+                  height: 100,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  bgcolor: '#5abc6f',
+                  fontSize: '50px',
+                  mb: -2,
+                }}
+              >
+                ✅
+              </Box>
+              <Stack spacing={1} alignItems="center">
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                    fontWeight: 550,
+                  }}
+                >
+                  Agreement Approved!
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#636366',
+                    mt: -1,
+                  }}
+                >
+                  Your agreement has been approved.
+                </Typography>
+              </Stack>
               <Button
                 onClick={display.onTrue}
                 variant="contained"

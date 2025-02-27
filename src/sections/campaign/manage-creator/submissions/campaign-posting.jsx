@@ -290,27 +290,63 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
           />
 
           <Stack gap={2}>
-            <Box>
-              <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                Let&apos;s wrap up this campaign by submitting your posting link on your socials! 🥳
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#221f20', mb: 2, ml: -1, fontWeight: 600 }}>
-                {' '}
-                <Box
-                  component="span"
-                  sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
-                  onClick={dialog.onTrue}
-                >
-                  Show Guide
-                </Box>
-              </Typography>
-            </Box>
+            {submission?.status !== 'PENDING_REVIEW' && submission?.status !== 'APPROVED' && (
+              <Box>
+                <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
+                  Let&apos;s wrap up this campaign by submitting your posting link on your socials! 🥳
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#221f20', mb: 2, ml: -1, fontWeight: 600 }}>
+                  {' '}
+                  <Box
+                    component="span"
+                    sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={dialog.onTrue}
+                  >
+                    Show Guide
+                  </Box>
+                </Typography>
+              </Box>
+            )}
           </Stack>
 
           {submission?.status === 'PENDING_REVIEW' && (
             <Stack justifyContent="center" alignItems="center" spacing={2}>
-              <Image src="/assets/pending.svg" sx={{ width: 250 }} />
-              <Typography variant="subtitle2">Your Submission is in review.</Typography>
+              <Box
+                sx={{
+                  width: 100,
+                  height: 100,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  bgcolor: '#f4b84a',
+                  fontSize: '50px',
+                  mb: -2,
+                }}
+              >
+                ⏳
+              </Box>
+              <Stack spacing={1} alignItems="center">
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                    fontWeight: 550,
+                  }}
+                >
+                  In Review
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#636366',
+                    mt: -1,
+                  }}
+                >
+                  Your posting link is being reviewed.
+                </Typography>
+              </Stack>
             </Stack>
           )}
 
@@ -322,7 +358,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   borderBottom: '1px solid',
                   borderColor: 'divider',
                   mb: 2,
-                  mt: 8,
+                  mt: 24,
                   mx: -1.5,
                 }}
               />
@@ -352,8 +388,42 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
           {submission?.status === 'APPROVED' && (
             <Stack justifyContent="center" alignItems="center" spacing={2}>
-              <Image src="/assets/approve.svg" sx={{ width: 250, mt: 6 }} />
-              <Typography variant="subtitle2">Your Posting has been approved.</Typography>
+              <Box
+                sx={{
+                  width: 100,
+                  height: 100,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  bgcolor: '#e0fe52',
+                  fontSize: '50px',
+                  mb: -2,
+                }}
+              >
+                🥳
+              </Box>
+              <Stack spacing={1} alignItems="center">
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                    fontWeight: 550,
+                  }}
+                >
+                  Completed!
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#636366',
+                    mt: -1,
+                  }}
+                >
+                  Your posting has been approved.
+                </Typography>
+              </Stack>
               <Button
                 variant="contained"
                 onClick={() => router.push(paths.dashboard.finance.invoiceDetail(invoiceId))}

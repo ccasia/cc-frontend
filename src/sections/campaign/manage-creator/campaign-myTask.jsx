@@ -351,12 +351,18 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                   mr: { xs: 0, md: 0 },
                   mt: { xs: 0, md: -2 },
                   maxWidth: '100%',
-                  overflow: 'hidden',
+                  overflow: 'visible',
+                  height: 'fit-content',
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}
               >
                 <Box
                   sx={{
                     p: { xs: 2, md: 3 },
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column'
                   }}
                 >
                   {selectedStage === 'AGREEMENT_FORM' && (
