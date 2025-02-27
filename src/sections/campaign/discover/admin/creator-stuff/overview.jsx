@@ -5,15 +5,6 @@ import { PieChart } from '@mui/x-charts';
 import { Box, Card, Grid, Stack, Typography } from '@mui/material';
 
 const OverView = ({ campaign }) => {
-  // const generateRandomNumbers = (count) => {
-  //   const randomNumbers = [];
-  //   // eslint-disable-next-line no-plusplus
-  //   for (let i = 0; i < count; i++) {
-  //     randomNumbers.push(Math.floor(Math.random() * 100)); // generates a random number between 0 and 99
-  //   }
-  //   return randomNumbers;
-  // };
-
   const data = [{ label: 'Group A', value: 100 }];
   return (
     <Grid container spacing={2}>

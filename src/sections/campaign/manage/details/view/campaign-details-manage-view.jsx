@@ -136,6 +136,18 @@ const CampaignDetailManageView = ({ id }) => {
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+
+  const getPackage = (company, campaignId) => {
+    const subscriptions = company?.subscriptions;
+    if (!subscriptions) return null;
+
+    const subscription = subscriptions?.find(
+      (x) => x.status === 'ACTIVE' && x.id === campaign?.subscriptionId
+    );
+
+    return subscription;
+  };
+
   const handleChangeStatus = async (status) => {
     if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate).isBefore(dayjs, 'date')) {
       enqueueSnackbar('You cannot publish a campaign that is already end.', {
@@ -364,12 +376,18 @@ const CampaignDetailManageView = ({ id }) => {
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
           {campaign?.company &&
             Object.keys(campaign?.company)
-              .filter((e) => !['id', 'createdAt', 'updatedAt', 'objectives', 'logo'].includes(e))
-              .map(
-                (e) =>
+              .filter((e) => !['id', 'createdAt', 'updatedAt', 'logo', 'pic'].includes(e))
+              .map((e) =>
+                Array.isArray(campaign?.company[e]) ? (
+                  <ListItemText
+                    primary="Package"
+                    secondary={getPackage(campaign?.company)?.subscriptionId ?? 'Not linked'}
+                  />
+                ) : (
                   campaign?.company[e] && (
                     <ListItemText primary={formatText(e)} secondary={campaign?.company[e]} />
                   )
+                )
               )}
         </Box>
       </Box>
@@ -565,13 +583,14 @@ const CampaignDetailManageView = ({ id }) => {
                   { label: 'Raw Footage', value: campaign?.rawFootage },
                   { label: 'Photos', value: campaign?.photos },
                   { label: 'Ads', value: campaign?.ads },
-                ].map((deliverable) => (
-                  deliverable.value && (
-                    <Label key={deliverable.label} color="secondary">
-                      {deliverable.label}
-                    </Label>
-                  )
-                ))}
+                ].map(
+                  (deliverable) =>
+                    deliverable.value && (
+                      <Label key={deliverable.label} color="secondary">
+                        {deliverable.label}
+                      </Label>
+                    )
+                )}
               </Stack>
             }
           />
@@ -931,6 +950,7 @@ const CampaignDetailManageView = ({ id }) => {
             <Grid item xs={12} md={8}>
               <Stack spacing={2}>
                 {renderCampaignInformation}
+
                 {campaign?.brand ? renderBrand : renderCompany}
                 {campaign?.campaignBrief?.campaign_do &&
                   campaign?.campaignBrief?.campaign_dont &&
