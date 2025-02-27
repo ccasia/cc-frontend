@@ -29,15 +29,12 @@ const CampaignDetailItem = ({ campaign }) => {
 
   return (
     <Stack overflow="auto" gap={2}>
-      {/* {renderGallery} */}
-
       <Stack gap={2}>
         <Stack direction="row" spacing={2.5} sx={{ mt: 2 }}>
           {[
             { value: 'tasks', label: 'Activity' },
             { value: 'info', label: 'Campaign Details' },
             { value: 'logistics', label: 'Logistics' },
-            // { value: 'admin', label: 'Campaign Admin' }, // Remove admin tab
           ].map((tab) => (
             <Button
               key={tab.value}

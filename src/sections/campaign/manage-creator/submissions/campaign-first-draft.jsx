@@ -30,6 +30,8 @@ import {
   LinearProgress,
   Tabs,
   Tab,
+  ListItem,
+  List,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -53,6 +55,9 @@ import { FirstDraftFileTypeModal } from './components/filetype-modal';
 //     <Iconify icon={icon} />
 //   </Avatar>
 // );
+
+const truncateText = (text, maxLength) =>
+  text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';
@@ -98,12 +103,10 @@ const CampaignFirstDraft = ({
   const [progressName, setProgressName] = useState('');
   const display = useBoolean();
   const { user, dispatch } = useAuthContext();
-  const [openUploadModal, setOpenUploadModal] = useState(false);
-  // const navigate = useNavigate();
-  const [uploadProgress, setUploadProgress] = useState(0);
+
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
-  // const [thumbnailUrl, setThumbnail] = useState(null);
+
   const inQueue = useBoolean();
   const savedCaption = localStorage.getItem('caption');
   const [uploadTypeModalOpen, setUploadTypeModalOpen] = useState(false);
@@ -112,9 +115,10 @@ const CampaignFirstDraft = ({
   const [draftVideoModalOpen, setDraftVideoModalOpen] = useState(false);
   const [rawFootageModalOpen, setRawFootageModalOpen] = useState(false);
   const [photosModalOpen, setPhotosModalOpen] = useState(false);
-  const [currentFile, setCurrentFile] = useState(null);
+  // const [currentFile, setCurrentFile] = useState(null);
   const [showUploadSuccess, setShowUploadSuccess] = useState(false);
-  const [feedbackTab, setFeedbackTab] = useState('videos');
+
+  const [uploadProgress, setUploadProgress] = useState([]);
 
   const methods = useForm({
     defaultValues: {
@@ -149,252 +153,19 @@ const CampaignFirstDraft = ({
     watch,
   } = methods;
 
-  const caption = watch('caption');
-
-  const handleRemoveFile = () => {
-    localStorage.removeItem('preview');
-    setValue('draft', '');
-    setPreview('');
-  };
-
   const logistics = useMemo(
     () => campaign?.logistic?.filter((item) => item?.userId === user?.id),
     [campaign, user]
   );
 
-  const generateThumbnail = useCallback(
-    (file) =>
-      new Promise((resolve, reject) => {
-        const video = document.createElement('video');
-        video.src = URL.createObjectURL(file);
-
-        video.load();
-
-        // video.play();
-
-        video.addEventListener('loadeddata', () => {
-          video.currentTime = 1; // Capture thumbnail at 1 second
-        });
-
-        // After seeking to 1 second, capture the frame
-        video.addEventListener('seeked', () => {
-          if (video.readyState >= 2) {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Revoke object URL to free up memory
-            URL.revokeObjectURL(video.src);
-
-            resolve(canvas.toDataURL());
-          } else {
-            reject(new Error('Failed to capture thumbnail: video not ready'));
-          }
-        });
-
-        video.addEventListener('error', () => {
-          reject(new Error('Failed to load video'));
-        });
-      }),
-    []
-  );
-
-  // Handle dropping the draft video
-  const handleDraftVideoDrop = useCallback(
-    (acceptedFiles) => {
-      const newFiles = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-      );
-
-      // Show upload progress for each file
-      newFiles.forEach((file) => {
-        setCurrentFile(file);
-        setUploadProgress(0);
-
-        // Simulate upload progress
-        const interval = setInterval(() => {
-          setUploadProgress((prev) => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              return 100;
-            }
-            return prev + 10;
-          });
-        }, 200);
-      });
-
-      // Append new files to the existing draftVideo array
-      setValue('draftVideo', [...methods.getValues('draftVideo'), ...newFiles], {
-        shouldValidate: true,
-      });
-    },
-    [setValue, methods]
-  );
-
-  // Handle removing the draft video
-  const handleRemoveDraftVideo = (fileToRemove) => {
-    const updatedFiles = methods.getValues('draftVideo').filter((file) => file !== fileToRemove);
-
-    setValue('draftVideo', updatedFiles, { shouldValidate: true });
-  };
-
-  const handleDropPhoto = useCallback(
-    (acceptedFiles) => {
-      const newFiles = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-      );
-
-      // Show upload progress for each file
-      newFiles.forEach((file) => {
-        setCurrentFile(file);
-        setUploadProgress(0);
-
-        // Simulate upload progress
-        const interval = setInterval(() => {
-          setUploadProgress((prev) => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              return 100;
-            }
-            return prev + 10;
-          });
-        }, 200);
-      });
-
-      // Append new files to the existing photos array
-      setValue('photos', [...methods.getValues('photos'), ...newFiles], {
-        shouldValidate: true,
-      });
-    },
-    [setValue, methods]
-  );
-
-  const handleRemovePhoto = (fileToRemove) => {
-    const updatedFiles = methods.getValues('photos').filter((file) => file !== fileToRemove);
-
-    setValue('photos', updatedFiles, { shouldValidate: true });
-  };
-
-  // handler for rawFootage
-  const handleRawFootageDrop = useCallback(
-    (acceptedFiles) => {
-      const newFiles = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-      );
-
-      // Show upload progress for each file
-      newFiles.forEach((file) => {
-        setCurrentFile(file);
-        setUploadProgress(0);
-
-        // Simulate upload progress
-        const interval = setInterval(() => {
-          setUploadProgress((prev) => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              return 100;
-            }
-            return prev + 10;
-          });
-        }, 200);
-      });
-
-      // Append new files to the existing rawFootage array
-      setValue('rawFootage', [...methods.getValues('rawFootage'), ...newFiles], {
-        shouldValidate: true,
-      });
-    },
-    [setValue, methods]
-  );
-
-  const handleRemoveRawFootage = (fileToRemove) => {
-    const updatedFiles = methods.getValues('rawFootage').filter((file) => file !== fileToRemove);
-
-    setValue('rawFootage', updatedFiles, { shouldValidate: true });
-  };
-
-  const onSubmit = handleSubmit(async (value) => {
-    setOpenUploadModal(false);
-    setShowSubmitDialog(true);
-    setSubmitStatus('submitting');
-
-    const formData = new FormData();
-    const newData = { caption: value.caption, submissionId: submission.id };
-    formData.append('data', JSON.stringify(newData));
-    //  formData.append('draftVideo', value.draft);
-
-    if (value.draftVideo && value.draftVideo.length > 0) {
-      value.draftVideo.forEach((file) => {
-        formData.append('draftVideo', file);
-      });
-    }
-    // Append each raw footage file to the form data
-    if (value.rawFootage && value.rawFootage.length > 0) {
-      value.rawFootage.forEach((file, index) => {
-        formData.append(`rawFootage`, file);
-      });
-    }
-
-    // Append each photo file to the form data
-    if (value.photos && value.photos.length > 0) {
-      value.photos.forEach((file) => {
-        formData.append('photos', file);
-      });
-    }
-
-    console.log('FormData:', {
-      caption: value.caption,
-      submissionId: submission.id,
-      draftVideo: value.draftVideo ? value.draftVideo.map((file) => file.name) : 'No draft video',
-      rawFootage: value.rawFootage ? value.rawFootage.map((file) => file.name) : 'No raw footage',
-      photos: value.photos ? value.photos.map((file) => file.name) : 'No photos',
-    });
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      const res = await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      enqueueSnackbar(res.data.message);
-      mutate(endpoints.kanban.root);
-      mutate(endpoints.campaign.creator.getCampaign(campaign.id));
-      setSubmitStatus('success');
-      if (savedCaption) localStorage.removeItem('caption');
-    } catch (error) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      if (error?.message === 'Forbidden') {
-        if (caption) {
-          localStorage.setItem('caption', caption);
-        }
-        dispatch({
-          type: 'LOGOUT',
-        });
-        enqueueSnackbar('Your session is expired. Please re-login', {
-          variant: 'error',
-        });
-        return;
-      }
-      enqueueSnackbar('Failed to submit draft', {
-        variant: 'error',
-      });
-      setSubmitStatus('error');
-    }
-  });
-
   const previousSubmission = useMemo(
     () => fullSubmission?.find((item) => item?.id === dependency?.dependentSubmissionId),
     [fullSubmission, dependency]
+  );
+
+  const totalUGCVideos = useMemo(
+    () => campaign.shortlisted?.find((x) => x.userId === submission.userId)?.ugcVideos || null,
+    [campaign, submission]
   );
 
   useEffect(() => {
@@ -405,6 +176,18 @@ const CampaignFirstDraft = ({
       inQueue.onFalse();
       setProgress(Math.ceil(data.progress));
 
+      setUploadProgress((prev) => {
+        const exists = prev.some((item) => item.fileName === data.fileName);
+
+        if (exists) {
+          return prev.map((item) =>
+            item.fileName === data.fileName ? { ...item, ...data } : item
+          );
+        }
+        return [...prev, data];
+      });
+
+      // Executed if processing is done
       if (data.progress === 100 || data.progress === 0) {
         setIsProcessing(false);
         reset();
@@ -441,7 +224,7 @@ const CampaignFirstDraft = ({
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   const checkProgress = useCallback(() => {
-    if (progress === 100) {
+    if (uploadProgress?.every((x) => x.progress === 100)) {
       setShowUploadSuccess(true);
 
       const timer = setTimeout(() => {
@@ -462,34 +245,11 @@ const CampaignFirstDraft = ({
       };
     }
     return null;
-  }, [progress, reset, campaign?.id, user?.id, socket]);
+  }, [uploadProgress, reset, campaign?.id, user?.id, socket]);
 
   useEffect(() => {
     checkProgress();
   }, [checkProgress]);
-
-  // useEffect(() => {
-  //   if (progress === 100) {
-  //     setShowUploadSuccess(true);
-
-  //     const timer = setTimeout(() => {
-  //       setShowUploadSuccess(false);
-  //       setIsProcessing(false);
-  //       reset(); // Ensure reset is stable (use useCallback if necessary)
-  //       setPreview('');
-  //       setProgressName('');
-  //       localStorage.removeItem('preview');
-
-  //       if (socket) {
-  //         mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-  //       }
-  //     }, 2000);
-
-  //     return () => {
-  //       clearTimeout(timer);
-  //     };
-  //   }
-  // }, [progress, reset, campaign?.id, user?.id, socket]);
 
   // const handleCancel = () => {
   //   if (isProcessing) {
@@ -600,43 +360,43 @@ const CampaignFirstDraft = ({
         {logistics?.every((logistic) => logistic?.status === 'Product_has_been_received') ? (
           <Box>
             {submission?.status === 'PENDING_REVIEW' && (
-          <Stack justifyContent="center" alignItems="center" spacing={2}>
-          <Box
-            sx={{
-              width: 100,
-              height: 100,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              bgcolor: '#f4b84a',
-              fontSize: '50px',
-              mb: -2,
-            }}
-          >
-            ⏳
-          </Box>
-          <Stack spacing={1} alignItems="center">
-            <Typography
-              variant="h6"
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                fontWeight: 550,
-              }}
-            >
-              In Review
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                color: '#636366',
-                mt: -1,
-              }}
-            >
-              Your first draft is being reviewed.
-            </Typography>
-          </Stack>
+              <Stack justifyContent="center" alignItems="center" spacing={2}>
+                <Box
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '50%',
+                    bgcolor: '#f4b84a',
+                    fontSize: '50px',
+                    mb: -2,
+                  }}
+                >
+                  ⏳
+                </Box>
+                <Stack spacing={1} alignItems="center">
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontFamily: 'Instrument Serif, serif',
+                      fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                      fontWeight: 550,
+                    }}
+                  >
+                    In Review
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: '#636366',
+                      mt: -1,
+                    }}
+                  >
+                    Your first draft is being reviewed.
+                  </Typography>
+                </Stack>
                 <Button
                   onClick={display.onTrue}
                   variant="contained"
@@ -659,114 +419,121 @@ const CampaignFirstDraft = ({
                 </Button>
               </Stack>
             )}
+
             {submission?.status === 'IN_PROGRESS' && (
               <>
-                {isProcessing || showUploadSuccess ? (
-                  <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                    {(progress > 0 || showUploadSuccess) && (
-                      <Stack spacing={2}>
-                        <Stack direction="row" spacing={2} alignItems="center">
-                          {currentFile?.type?.startsWith('video') ? (
-                            <Box
-                              sx={{
-                                width: 120,
-                                height: 68,
-                                borderRadius: 1,
-                                overflow: 'hidden',
-                                position: 'relative',
-                                bgcolor: 'background.paper',
-                                boxShadow: (theme) => theme.customShadows.z8,
-                              }}
-                            >
-                              {currentFile.preview ? (
-                                <Box
-                                  component="img"
-                                  src={currentFile.preview}
-                                  sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                  }}
-                                />
-                              ) : (
+                {isProcessing ? (
+                  <Stack spacing={1}>
+                    {uploadProgress.length &&
+                      uploadProgress.map((currentFile) => (
+                        <Box
+                          sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}
+                          key={currentFile.fileName}
+                        >
+                          <Stack spacing={2}>
+                            <Stack direction="row" spacing={2} alignItems="center">
+                              {currentFile?.type?.startsWith('video') ? (
                                 <Box
                                   sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: 'background.neutral',
+                                    width: 120,
+                                    height: 68,
+                                    borderRadius: 1,
+                                    overflow: 'hidden',
+                                    position: 'relative',
+                                    bgcolor: 'background.paper',
+                                    boxShadow: (theme) => theme.customShadows.z8,
                                   }}
                                 >
-                                  <Iconify
-                                    icon="solar:video-library-bold"
-                                    width={24}
-                                    sx={{ color: 'text.secondary' }}
-                                  />
-                                </Box>
-                              )}
-                            </Box>
-                          ) : (
-                            <Box
-                              component="img"
-                              src="/assets/icons/files/ic_img.svg"
-                              sx={{ width: 40, height: 40 }}
-                            />
-                          )}
-
-                          <Stack spacing={1} flexGrow={1}>
-                            <Typography variant="subtitle2" noWrap>
-                              {currentFile?.name || 'Uploading file...'}
-                            </Typography>
-                            <Stack spacing={1}>
-                              <LinearProgress
-                                variant="determinate"
-                                value={progress}
-                                sx={{
-                                  height: 6,
-                                  borderRadius: 1,
-                                  bgcolor: 'background.paper',
-                                  '& .MuiLinearProgress-bar': {
-                                    borderRadius: 1,
-                                    bgcolor: progress === 100 ? 'success.main' : 'primary.main',
-                                  },
-                                }}
-                              />
-                              <Stack
-                                direction="row"
-                                justifyContent="space-between"
-                                alignItems="center"
-                              >
-                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  {progress === 100 ? (
+                                  {currentFile.preview ? (
                                     <Box
-                                      component="span"
-                                      sx={{ color: 'success.main', fontWeight: 600 }}
-                                    >
-                                      Upload Complete
-                                    </Box>
+                                      component="img"
+                                      src={currentFile.preview}
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                      }}
+                                    />
                                   ) : (
-                                    `${progressName || 'Uploading'}... ${progress}%`
+                                    <Box
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        bgcolor: 'background.neutral',
+                                      }}
+                                    >
+                                      <Iconify
+                                        icon="solar:video-library-bold"
+                                        width={24}
+                                        sx={{ color: 'text.secondary' }}
+                                      />
+                                    </Box>
                                   )}
+                                </Box>
+                              ) : (
+                                <Box
+                                  component="img"
+                                  src="/assets/icons/files/ic_img.svg"
+                                  sx={{ width: 40, height: 40 }}
+                                />
+                              )}
+
+                              <Stack spacing={1} flexGrow={1}>
+                                <Typography variant="subtitle2" noWrap>
+                                  {truncateText(currentFile?.fileName, 50) || 'Uploading file...'}
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                  {formatFileSize(currentFile?.size || 0)}
-                                </Typography>
+                                <Stack spacing={1}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={currentFile?.progress || 0}
+                                    sx={{
+                                      height: 6,
+                                      borderRadius: 1,
+                                      bgcolor: 'background.paper',
+                                      '& .MuiLinearProgress-bar': {
+                                        borderRadius: 1,
+                                        bgcolor: progress === 100 ? 'success.main' : 'primary.main',
+                                      },
+                                    }}
+                                  />
+                                  <Stack
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                  >
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                      {currentFile?.progress === 100 ? (
+                                        <Box
+                                          component="span"
+                                          sx={{ color: 'success.main', fontWeight: 600 }}
+                                        >
+                                          Upload Complete
+                                        </Box>
+                                      ) : (
+                                        `${currentFile?.name || 'Uploading'}... ${currentFile?.progress || 0}%`
+                                      )}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                      {formatFileSize(currentFile?.fileSize || 0)}
+                                    </Typography>
+                                  </Stack>
+                                </Stack>
                               </Stack>
                             </Stack>
                           </Stack>
-                        </Stack>
-                      </Stack>
-                    )}
-                  </Box>
+                        </Box>
+                      ))}
+                  </Stack>
                 ) : (
                   <Stack gap={2}>
                     <Box>
                       <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
                         It&apos;s time to submit your first draft for this campaign!
                       </Typography>
-                      <Typography variant="body1" sx={{ color: '#221f20', mb: 44, ml: -1 }}>
+                      <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
                         Do ensure to read through the brief, and the do&apos;s and dont&apos;s for
                         the creatives over at the{' '}
                         <Box
@@ -782,9 +549,23 @@ const CampaignFirstDraft = ({
                           }}
                         >
                           Campaign Details
-                        </Box>{' '}
+                        </Box>
                         page.
                       </Typography>
+
+                      {totalUGCVideos && (
+                        <ListItemText
+                          primary="Notes:"
+                          secondary={`1. 🎥 Upload ${totalUGCVideos} UGC Videos`}
+                          sx={{ color: '#221f20', mb: 30, ml: -1 }}
+                          primaryTypographyProps={{
+                            variant: 'subtitle1',
+                          }}
+                          secondaryTypographyProps={{
+                            variant: 'subtitle2',
+                          }}
+                        />
+                      )}
 
                       <Box
                         sx={{
@@ -822,7 +603,7 @@ const CampaignFirstDraft = ({
                 )}
               </>
             )}
-            
+
             {submission?.status === 'CHANGES_REQUIRED' && (
               <Stack justifyContent="center" alignItems="center" spacing={2}>
                 <Box
@@ -883,6 +664,7 @@ const CampaignFirstDraft = ({
                 </Button>
               </Stack>
             )}
+
             {submission?.status === 'APPROVED' && (
               <Stack justifyContent="center" alignItems="center" spacing={2}>
                 <Box
@@ -1282,6 +1064,7 @@ const CampaignFirstDraft = ({
               campaign={campaign}
               open={draftVideoModalOpen}
               onClose={() => setDraftVideoModalOpen(false)}
+              totalUGCVideos={totalUGCVideos}
             />
 
             <UploadRawFootageModal
@@ -1535,13 +1318,6 @@ const CampaignFirstDraft = ({
             <Button size="small" variant="outlined" onClick={openLogisticTab}>
               Check Logistic
             </Button>
-
-            {/* <Typography variant="subtitle2">
-              Your item has been shipped and pending delivery confirmation.
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              You can start submit your first draft submission after you receive the item.
-            </Typography> */}
           </Stack>
         )}
       </Box>
@@ -1559,5 +1335,4 @@ CampaignFirstDraft.propTypes = {
   fullSubmission: PropTypes.array,
   openLogisticTab: PropTypes.func,
   setCurrentTab: PropTypes.func,
-  // onSelectType: PropTypes.func,
 };
