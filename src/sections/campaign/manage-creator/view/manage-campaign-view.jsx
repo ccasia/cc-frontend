@@ -72,26 +72,6 @@ const ManageCampaignView = () => {
         ) || [],
       completed:
         filteredCampaigns?.filter((campaign) => campaign?.shortlisted?.isCampaignDone) || [],
-
-      // active:
-      //   filteredCampaigns?.filter(
-      //     (campaign) =>
-      //       campaign?.shortlisted?.some(
-      //         (item) => item.userId === user?.id && !item.isCampaignDone
-      //       ) && campaign.status !== 'COMPLETED'
-      //   )?.length || 0,
-      // pending:
-      //   filteredCampaigns?.filter((campaign) =>
-      //     campaign?.pitch?.some(
-      //       (item) =>
-      //         item?.userId === user?.id &&
-      //         (item?.status === 'undecided' || item?.status === 'rejected')
-      //     )
-      //   )?.length || 0,
-      // completed:
-      //   filteredCampaigns?.filter((campaign) =>
-      //     campaign?.shortlisted?.some((item) => item.userId === user?.id && item.isCampaignDone)
-      //   )?.length || 0,
     };
   }, [campaigns, sortBy]);
 

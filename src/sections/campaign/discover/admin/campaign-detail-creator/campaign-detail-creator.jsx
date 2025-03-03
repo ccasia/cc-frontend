@@ -1,4 +1,5 @@
 import { mutate } from 'swr';
+import { create } from 'zustand';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -24,6 +25,7 @@ import {
   DialogActions,
   InputAdornment,
   CircularProgress,
+  Autocomplete,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -35,6 +37,7 @@ import { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import { shortlistCreator, useGetAllCreators } from 'src/api/creator';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { RHFAutocomplete } from 'src/components/hook-form';
@@ -43,6 +46,8 @@ import FormProvider from 'src/components/hook-form/form-provider';
 
 import UserCard from './user-card';
 import CampaignAgreementEdit from '../campaign-agreement-edit';
+import AssignUGCVideoModal from './dialog/assign-ugc-videos-modal';
+import { useShortlistedCreators } from './hooks/shortlisted-creator';
 
 const LISTBOX_PADDING = 8;
 const OuterElementContext = React.createContext({});
@@ -79,7 +84,6 @@ const ListboxComponent = React.forwardRef((props, ref) => {
 const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const [query, setQuery] = useState('');
   const { data, isLoading } = useGetAllCreators();
-  // const { data: creators, isLoading: creatorLoading } = useSWR('/api/creators', fetcher);
 
   const { user } = useAuthContext();
 
@@ -94,6 +98,20 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
   const [selectedAgreement, setSelectedAgreement] = useState(null);
+  // const [selectedCreators, setSelectedCreators] = useState(null);
+  const ugcVidesoModal = useBoolean();
+  const { addCreators, shortlistedCreators: creators } = useShortlistedCreators();
+
+  const totalUsedCredits = campaign?.shortlisted?.reduce(
+    (acc, creator) => acc + (creator?.ugcVideos ?? 0),
+    0
+  );
+
+  const ugcLeft = useMemo(() => {
+    if (!campaign?.campaignCredits) return null;
+    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
+    return campaign.campaignCredits - totalUGCs;
+  }, [campaign]);
 
   const methods = useForm({
     defaultValues: {
@@ -181,194 +199,6 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     editDialog.onTrue();
   };
 
-  // const renderShortlistFormModal = (
-  //   <Dialog
-  //     open={modal.value}
-  //     onClose={selectedCreator.length ? confirmModal.onTrue : modal.onFalse}
-  //     maxWidth="xs"
-  //     fullWidth
-  //     PaperProps={{
-  //       sx: {
-  //         borderRadius: 0.5,
-  //       },
-  //     }}
-  //   >
-  //     <DialogTitle
-  //       sx={{
-  //         fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-  //         '&.MuiTypography-root': {
-  //           fontSize: 25,
-  //         },
-  //       }}
-  //     >
-  //       Shortlist Creators
-  //     </DialogTitle>
-  //     {creatorLoading ? (
-  //       <Box
-  //         sx={{
-  //           textAlign: 'center',
-  //           py: 2,
-  //         }}
-  //       >
-  //         <CircularProgress
-  //           thickness={7}
-  //           size={25}
-  //           sx={{
-  //             color: (theme) => theme.palette.common.black,
-  //             strokeLinecap: 'round',
-  //           }}
-  //         />
-  //       </Box>
-  //     ) : (
-  //       <FormProvider methods={methods} onSubmit={onSubmit}>
-  //         <Box
-  //           sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mt: -1, mb: 2 }}
-  //         />
-  //         <DialogContent>
-  //           <Box py={1}>
-  //             <Box sx={{ mb: 2, fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem' }}>
-  //               Who would you like to shortlist?
-  //             </Box>
-  //             {!isLoading && (
-  //               <RHFAutocomplete
-  //                 name="creator"
-  //                 label="Select Creator to shortlist"
-  //                 multiple
-  //                 disableCloseOnSelect
-  // options={data?.filter(
-  //   (item) => item.status === 'active' && item?.creator?.isFormCompleted
-  // )}
-  //                 filterOptions={(option, state) => {
-  //                   const options = option.filter(
-  //                     (item) => !shortlistedCreatorsId.includes(item.id)
-  //                   );
-  //                   if (state?.inputValue) {
-  //                     return options?.filter(
-  //                       (item) =>
-  //                         item?.email?.toLowerCase()?.includes(state.inputValue.toLowerCase()) ||
-  //                         item?.name?.toLowerCase()?.includes(state.inputValue.toLowerCase())
-  //                     );
-  //                   }
-  //                   return options;
-  //                 }}
-  //                 getOptionLabel={(option) => option?.name}
-  //                 isOptionEqualToValue={(option, value) => option.id === value.id}
-  //                 renderOption={(props, option, { selected }) => {
-  //                   // eslint-disable-next-line react/prop-types
-  //                   const { key, ...optionProps } = props;
-  //                   return (
-  //                     <Box key={key} component="div" {...optionProps}>
-  //                       <Checkbox style={{ marginRight: 8 }} checked={selected} />
-  //                       <Avatar
-  //                         alt="dawd"
-  //                         src={option?.photoURL}
-  //                         variant="rounded"
-  //                         sx={{
-  //                           width: 30,
-  //                           height: 30,
-  //                           flexShrink: 0,
-  //                           mr: 1.5,
-  //                           borderRadius: 2,
-  //                         }}
-  //                       />
-  //                       <ListItemText primary={option?.name} secondary={option?.email} />
-  //                     </Box>
-  //                   );
-  //                 }}
-  //                 renderTags={(value, getTagProps) =>
-  //                   value.map((option, index) => {
-  //                     const { key, ...tagProps } = getTagProps({ index });
-  //                     return (
-  //                       <Chip
-  //                         variant="outlined"
-  //                         avatar={
-  //                           <Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>
-  //                         }
-  //                         sx={{
-  //                           border: 1,
-  //                           borderColor: '#EBEBEB',
-  //                           boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-  //                           py: 2,
-  //                         }}
-  //                         label={option?.name}
-  //                         key={key}
-  //                         {...tagProps}
-  //                       />
-  //                     );
-  //                   })
-  //                 }
-  //               />
-  //             )}
-  //           </Box>
-
-  //           {loading.value && (
-  //             <ClimbingBoxLoader
-  //               color={settings.themeMode === 'light' ? 'black' : 'white'}
-  //               size={18}
-  //               cssOverride={{
-  //                 marginInline: 'auto',
-  //               }}
-  //             />
-  //           )}
-  //         </DialogContent>
-
-  //         <DialogActions>
-  //           <Button
-  //             onClick={() => {
-  //               modal.onFalse();
-  //               reset();
-  //             }}
-  //             sx={{
-  //               bgcolor: '#ffffff',
-  //               border: '1px solid #e7e7e7',
-  //               borderBottom: '3px solid #e7e7e7',
-  //               height: 44,
-  //               color: '#203ff5',
-  //               fontSize: '0.875rem',
-  //               fontWeight: 600,
-  //               px: 3,
-  //               '&:hover': {
-  //                 bgcolor: alpha('#636366', 0.08),
-  //                 opacity: 0.9,
-  //               },
-  //             }}
-  //           >
-  //             Cancel
-  //           </Button>
-
-  //           <LoadingButton
-  //             type="submit"
-  //             disabled={isDisabled || !selectedCreator.length || isSubmitting}
-  //             loading={loading.value}
-  //             sx={{
-  //               bgcolor: '#203ff5',
-  //               border: '1px solid #203ff5',
-  //               borderBottom: '3px solid #1933cc',
-  //               height: 44,
-  //               color: '#ffffff',
-  //               fontSize: '0.875rem',
-  //               fontWeight: 600,
-  //               px: 3,
-  //               '&:hover': {
-  //                 bgcolor: '#1933cc',
-  //                 opacity: 0.9,
-  //               },
-  //               '&:disabled': {
-  //                 bgcolor: '#e7e7e7',
-  //                 color: '#999999',
-  //                 border: '1px solid #e7e7e7',
-  //                 borderBottom: '3px solid #d1d1d1',
-  //               },
-  //             }}
-  //           >
-  //             Shortlist {selectedCreator.length > 0 && selectedCreator.length} Creators
-  //           </LoadingButton>
-  //         </DialogActions>
-  //       </FormProvider>
-  //     )}
-  //   </Dialog>
-  // );
-
   const renderShortlistFormModal = (
     <Dialog
       open={modal.value}
@@ -389,7 +219,17 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
           },
         }}
       >
-        Shortlist Creators
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          Shortlist Creators
+          <Label
+            // color="success"
+            sx={{
+              fontFamily: (theme) => theme.typography.fontFamily,
+            }}
+          >
+            UGC Credits: {ugcLeft} left
+          </Label>
+        </Stack>
       </DialogTitle>
       {isLoading ? (
         <Box
@@ -408,7 +248,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
           />
         </Box>
       ) : (
-        <FormProvider methods={methods} onSubmit={onSubmit}>
+        <>
           <Box
             sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mt: -1, mb: 2 }}
           />
@@ -418,7 +258,79 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                 Who would you like to shortlist?
               </Box>
 
-              <RHFAutocomplete
+              <Autocomplete
+                value={creators}
+                onChange={(e, val) => {
+                  addCreators(val);
+                }}
+                ListboxComponent={ListboxComponent}
+                disableListWrap
+                multiple
+                disableCloseOnSelect
+                options={data?.filter(
+                  (item) => item.status === 'active' && item?.creator?.isFormCompleted
+                )}
+                filterOptions={(option, state) => {
+                  const options = option.filter((item) => !shortlistedCreatorsId.includes(item.id));
+                  if (state?.inputValue) {
+                    return options?.filter(
+                      (item) =>
+                        item?.email?.toLowerCase()?.includes(state.inputValue.toLowerCase()) ||
+                        item?.name?.toLowerCase()?.includes(state.inputValue.toLowerCase())
+                    );
+                  }
+                  return options;
+                }}
+                getOptionLabel={(option) => option?.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option, { selected }) => {
+                  // eslint-disable-next-line react/prop-types
+                  const { key, ...optionProps } = props;
+                  return (
+                    <Box key={key} component="div" {...optionProps}>
+                      <Checkbox style={{ marginRight: 8 }} checked={selected} />
+                      <Avatar
+                        alt="dawd"
+                        src={option?.photoURL}
+                        variant="rounded"
+                        sx={{
+                          width: 30,
+                          height: 30,
+                          flexShrink: 0,
+                          mr: 1.5,
+                          borderRadius: 2,
+                        }}
+                      />
+                      <ListItemText primary={option?.name} secondary={option?.email} />
+                    </Box>
+                  );
+                }}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => {
+                    const { key, ...tagProps } = getTagProps({ index });
+                    return (
+                      <Chip
+                        variant="outlined"
+                        avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
+                        sx={{
+                          border: 1,
+                          borderColor: '#EBEBEB',
+                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                          py: 2,
+                        }}
+                        label={option?.name}
+                        key={key}
+                        {...tagProps}
+                      />
+                    );
+                  })
+                }
+                renderInput={(params) => (
+                  <TextField label="Select Creator to shortlist" {...params} />
+                )}
+              />
+
+              {/* <RHFAutocomplete
                 name="creator"
                 label="Select Creator to shortlist"
                 ListboxComponent={ListboxComponent}
@@ -484,7 +396,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                     );
                   })
                 }
-              />
+              /> */}
             </Box>
 
             {loading.value && (
@@ -523,9 +435,13 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
             </Button>
 
             <LoadingButton
-              type="submit"
-              disabled={isDisabled || !selectedCreator.length || isSubmitting}
+              // type="submit"
+              // disabled={isDisabled || !selectedCreator.length || isSubmitting || !creators.length}
+              disabled={isSubmitting || !creators.length}
               loading={loading.value}
+              onClick={() => {
+                ugcVidesoModal.onTrue();
+              }}
               sx={{
                 bgcolor: '#203ff5',
                 border: '1px solid #203ff5',
@@ -547,10 +463,11 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                 },
               }}
             >
-              Shortlist {selectedCreator.length > 0 && selectedCreator.length} Creators
+              Continue
+              {/* Shortlist {selectedCreator.length > 0 && selectedCreator.length} Creators */}
             </LoadingButton>
           </DialogActions>
-        </FormProvider>
+        </>
       )}
     </Dialog>
   );
@@ -598,7 +515,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
           ) : (
             <Button
               onClick={modal.onTrue}
-              disabled={isDisabled}
+              disabled={isDisabled || totalUsedCredits === campaign?.campaignCredits}
               sx={{
                 bgcolor: '#ffffff',
                 border: '1px solid #e7e7e7',
@@ -659,7 +576,16 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         )}
       </Stack>
       {renderShortlistFormModal}
-      {/* {renderConfirmationModal} */}
+
+      <AssignUGCVideoModal
+        dialog={ugcVidesoModal.value}
+        onClose={ugcVidesoModal.onFalse}
+        credits={campaign?.campaignCredits ?? 0}
+        campaignId={campaign.id}
+        modalClose={modal.onFalse}
+        creditsLeft={ugcLeft}
+      />
+
       <CampaignAgreementEdit
         dialog={editDialog}
         agreement={selectedAgreement}

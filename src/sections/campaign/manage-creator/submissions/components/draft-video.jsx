@@ -22,7 +22,16 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
-const UploadDraftVideoModal = ({ submissionId, campaign, open, onClose }) => {
+const UploadDraftVideoModal = ({
+  submissionId,
+  campaign,
+  open,
+  onClose,
+  previousSubmission,
+  totalUGCVideos,
+  submission,
+  deliverablesData,
+}) => {
   const methods = useForm({
     defaultValues: {
       draftVideo: [],
@@ -30,11 +39,41 @@ const UploadDraftVideoModal = ({ submissionId, campaign, open, onClose }) => {
     },
   });
 
+  const { deliverableMutate } = deliverablesData;
+
   const { handleSubmit } = methods;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const videosToUpdateCount =
+    totalUGCVideos ||
+    submission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
+    previousSubmission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length;
+
+  const validateFileCount = (files) => {
+    if (previousSubmission?.status === 'CHANGES_REQUIRED') {
+      if (files.length !== videosToUpdateCount) {
+        enqueueSnackbar(
+          `Please upload exactly ${videosToUpdateCount} video${videosToUpdateCount > 1 ? 's' : ''}.`,
+          { variant: 'error' }
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
   const onSubmit = handleSubmit(async (data) => {
+    if (!validateFileCount(data.draftVideo)) {
+      return;
+    }
+
+    if (totalUGCVideos && data.draftVideo.length !== totalUGCVideos) {
+      enqueueSnackbar(`You need to upload ${totalUGCVideos} UGC Videos`, {
+        variant: 'error',
+      });
+      return;
+    }
     try {
       setIsSubmitting(true);
       const formData = new FormData();
@@ -57,6 +96,7 @@ const UploadDraftVideoModal = ({ submissionId, campaign, open, onClose }) => {
       enqueueSnackbar('Draft videos are processing');
       onClose();
       mutate(endpoints.kanban.root);
+      deliverableMutate();
       mutate(endpoints.campaign.creator.getCampaign(campaign?.id));
     } catch (error) {
       console.error('Upload error:', error);
@@ -122,6 +162,14 @@ const UploadDraftVideoModal = ({ submissionId, campaign, open, onClose }) => {
             </Typography>
           </Box>
         )}
+
+        {previousSubmission?.status === 'CHANGES_REQUIRED' && (
+          <Typography variant="body2" sx={{ color: 'warning.main', mb: 2 }}>
+            Please upload exactly {videosToUpdateCount} video{videosToUpdateCount > 1 ? 's' : ''} as
+            requested by the admin.
+          </Typography>
+        )}
+
         <FormProvider methods={methods}>
           <Stack spacing={3}>
             <Box>
@@ -131,9 +179,21 @@ const UploadDraftVideoModal = ({ submissionId, campaign, open, onClose }) => {
                   *
                 </Box>
               </Typography>
-              <RHFUpload name="draftVideo" type="video" multiple accept={{ 'video/*': [] }} />
+              <RHFUpload
+                name="draftVideo"
+                type="video"
+                multiple
+                accept={{ 'video/*': [] }}
+                maxFiles={videosToUpdateCount}
+              />
             </Box>
-            <RHFTextField name="caption" label="Caption" multiline rows={4} />
+            <RHFTextField
+              name="caption"
+              label="Caption"
+              multiline
+              rows={3}
+              sx={{ bgcolor: 'white', borderRadius: 1 }}
+            />
           </Stack>
         </FormProvider>
       </DialogContent>
@@ -173,4 +233,8 @@ UploadDraftVideoModal.propTypes = {
   campaign: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
+  previousSubmission: PropTypes.object,
+  totalUGCVideos: PropTypes.number,
+  submission: PropTypes.object,
+  deliverablesData: PropTypes.object,
 };

@@ -50,8 +50,6 @@ export default function Upload({
 
   const hasError = isDragReject || !!error;
 
-  console.log(other);
-
   const renderPlaceholder = (
     <Box
       component="div"

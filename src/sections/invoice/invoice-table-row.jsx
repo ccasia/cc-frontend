@@ -89,7 +89,6 @@ export default function InvoiceTableRow({
             }}
           />
         </TableCell>
-
         <TableCell>
           <ListItemText
             primary={fDate(dueDate)}
@@ -102,11 +101,8 @@ export default function InvoiceTableRow({
             }}
           />
         </TableCell>
-
         <TableCell>{`RM${amount}`}</TableCell>
-
         {/* <TableCell align="center">{sent}</TableCell> */}
-
         <TableCell>
           <Label
             variant="soft"

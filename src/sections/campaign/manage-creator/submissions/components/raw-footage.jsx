@@ -22,13 +22,24 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import FormProvider, { RHFUpload } from 'src/components/hook-form';
+import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
-const UploadRawFootageModal = ({ open, onClose, submissionId, campaign }) => {
+const UploadRawFootageModal = ({
+  open,
+  onClose,
+  submissionId,
+  campaign,
+  previewSubmission,
+  deliverablesData,
+}) => {
   const { user } = useAuthContext();
+
+  const { deliverables, deliverableMutate } = deliverablesData;
+
   const methods = useForm({
     defaultValues: {
       rawFootage: [],
+      rawFootagesDriveLink: '',
     },
   });
 
@@ -36,10 +47,38 @@ const UploadRawFootageModal = ({ open, onClose, submissionId, campaign }) => {
 
   const { handleSubmit, setValue } = methods;
 
+  // const rawFootageToUpdateCount = previewSubmission?.feedback?.reduce(
+  //   (count, f) => count + (f.rawFootageToUpdate?.length || 0),
+  //   0
+  // );
+
+  const rawFootageToUpdateCount = deliverables?.rawFootages?.filter(
+    (x) => x.status === 'REVISION_REQUESTED'
+  );
+
+  const validateFileCount = (files) => {
+    if (previewSubmission?.status === 'CHANGES_REQUIRED') {
+      if (files.length !== rawFootageToUpdateCount) {
+        enqueueSnackbar(
+          `Please upload exactly ${rawFootageToUpdateCount} raw footage file${rawFootageToUpdateCount > 1 ? 's' : ''}.`,
+          { variant: 'error' }
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
   const onSubmit = handleSubmit(async (data) => {
+    if (!validateFileCount(data.rawFootage)) {
+      return;
+    }
     try {
       const formData = new FormData();
-      const newData = { submissionId }; // No caption needed
+      const newData = {
+        submissionId,
+        rawFootagesDriveLink: data.rawFootagesDriveLink,
+      };
       formData.append('data', JSON.stringify(newData));
 
       if (data.rawFootage && data.rawFootage.length > 0) {
@@ -57,6 +96,7 @@ const UploadRawFootageModal = ({ open, onClose, submissionId, campaign }) => {
       enqueueSnackbar('Raw footage uploaded successfully');
       onClose();
       submissionMutate();
+      deliverableMutate();
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
     } catch (error) {
@@ -99,23 +139,48 @@ const UploadRawFootageModal = ({ open, onClose, submissionId, campaign }) => {
       </DialogTitle>
 
       <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
+        {previewSubmission?.status === 'CHANGES_REQUIRED' && (
+          <Typography variant="body2" sx={{ color: 'warning.main', mb: 2 }}>
+            Please upload exactly {rawFootageToUpdateCount} raw footage file
+            {rawFootageToUpdateCount > 1 ? 's' : ''} as requested by the admin.
+          </Typography>
+        )}
         <FormProvider methods={methods}>
-          <Box>
-            <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
-              Upload Raw Footage{' '}
-              <Box component="span" sx={{ color: 'error.main' }}>
-                *
-              </Box>
-            </Typography>
-            <RHFUpload
-              name="rawFootage"
-              type="video"
-              multiple
-              onUploadSuccess={(files) => {
-                setValue('rawFootage', files);
-              }}
-            />
-          </Box>
+          <Stack spacing={3}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+                Upload Raw Footage{' '}
+                <Box component="span" sx={{ color: 'error.main' }}>
+                  *
+                </Box>
+              </Typography>
+              <RHFUpload
+                name="rawFootage"
+                type="video"
+                multiple
+                maxFiles={rawFootageToUpdateCount}
+                onUploadSuccess={(files) => {
+                  setValue('rawFootage', files);
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#636366', mb: 1 }}>
+                <Iconify
+                  icon="logos:google-drive"
+                  width={16}
+                  sx={{ mr: 0.5, verticalAlign: 'text-bottom' }}
+                />
+                Google Drive Link (Optional)
+              </Typography>
+              <RHFTextField
+                name="rawFootagesDriveLink"
+                placeholder="Paste your Google Drive link here"
+                sx={{ bgcolor: 'white', borderRadius: 1 }}
+              />
+            </Box>
+          </Stack>
         </FormProvider>
       </DialogContent>
 
@@ -152,4 +217,6 @@ UploadRawFootageModal.propTypes = {
   campaign: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
+  previewSubmission: PropTypes.object,
+  deliverablesData: PropTypes.object,
 };
