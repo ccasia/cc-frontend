@@ -210,8 +210,6 @@ const CampaignFirstDraft = ({
 
   const checkProgress = useCallback(() => {
     if (uploadProgress?.length && uploadProgress?.every((x) => x.progress === 100)) {
-      // setShowUploadSuccess(true);
-
       const timer = setTimeout(() => {
         setIsProcessing(false);
         reset();
@@ -234,15 +232,6 @@ const CampaignFirstDraft = ({
   useEffect(() => {
     checkProgress();
   }, [checkProgress]);
-
-  // const handleCancel = () => {
-  //   if (isProcessing) {
-  //     socket?.emit('cancel-processing', { submissionId: submission.id });
-  //     setIsProcessing(false);
-  //     setProgress(0);
-  //     localStorage.removeItem('preview');
-  //   }
-  // };
 
   const handleCloseSubmitDialog = () => {
     setShowSubmitDialog(false);
@@ -605,6 +594,7 @@ const CampaignFirstDraft = ({
                 >
                   ✏️
                 </Box>
+
                 <Stack spacing={1} alignItems="center">
                   <Typography
                     variant="h6"

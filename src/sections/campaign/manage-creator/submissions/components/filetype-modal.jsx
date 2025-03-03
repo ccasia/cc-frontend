@@ -274,17 +274,17 @@ const FinalDraftFileTypeModal = ({
 
   // Check if the required files have been uploaded in the current submission
   const hasUploadedRequiredVideos = deliverablesToUpdate.videosToUpdate.length
-    ? deliverables?.videos?.length === deliverablesToUpdate.videosToUpdate.length
+    ? deliverablesToUpdate.videosToUpdate.length === 0
     : false;
 
   const hasUploadedRequiredRawFootage =
     deliverablesToUpdate.rawFootageToUpdate.length > 0
-      ? deliverables?.rawFootages?.length === deliverablesToUpdate.rawFootageToUpdate.length
+      ? deliverablesToUpdate.rawFootageToUpdate.length === 0
       : false;
 
   const hasUploadedRequiredPhotos =
     deliverablesToUpdate.photosToUpdate.length > 0
-      ? deliverables?.photos?.length === deliverablesToUpdate.photosToUpdate.length
+      ? deliverablesToUpdate.photosToUpdate.length === 0
       : false;
 
   const fileTypes = [

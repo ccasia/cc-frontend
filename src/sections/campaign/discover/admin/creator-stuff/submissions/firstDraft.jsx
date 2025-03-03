@@ -336,14 +336,14 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     try {
       const payload = {
         submissionId: submission.id,
-        userId: creator?.user?.id,
-        rawFootageToUpdate: selectedRawFootagesForChange,
-        footageFeedback: data.footageFeedback,
-        rawFootageContent: data.footageFeedback,
-        type: 'request',
+        // userId: creator?.user?.id,
+        rawFootages: selectedRawFootagesForChange,
+        // footageFeedback: data.footageFeedback,
+        // rawFootageContent: data.footageFeedback,
+        // type: 'request',
       };
 
-      const res = await axiosInstance.patch(endpoints.submission.admin.draft, payload);
+      const res = await axiosInstance.patch(`/api/submission/manageRawFootages`, payload);
 
       mutate(
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
@@ -1438,7 +1438,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   >
                     {selectedTab === 'video' && (
                       <>
-                        {deliverables?.videos?.length > 0 ? (
+                        {deliverables?.videos?.length ? (
                           <Grid container spacing={{ xs: 1, sm: 2 }}>
                             {deliverables.videos.map((videoItem, index) => (
                               <Grid item xs={12} sm={6} md={4} key={videoItem.id || index}>
@@ -2101,8 +2101,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                         )}
 
                         {/* Raw Footage Request Section */}
-                        {(submission?.status === 'PENDING_REVIEW' ||
-                          submission?.status === 'CHANGES_REQUIRED') &&
+                        {submission?.status === 'PENDING_REVIEW' &&
                           !areAllRawFootagesMarkedForChanges() && (
                             <Box
                               component={Paper}
@@ -2127,6 +2126,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                       justifyContent="end"
                                     >
                                       <Button
+                                        fullWidth
                                         onClick={() => {
                                           setRawFootageType('request');
                                           setValue('type', 'request');
@@ -2165,6 +2165,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                   </Stack>
                                 </FormProvider>
                               )}
+
                               {rawFootageType === 'request' && (
                                 <>
                                   <Typography variant="h6" mb={1} mx={1}>

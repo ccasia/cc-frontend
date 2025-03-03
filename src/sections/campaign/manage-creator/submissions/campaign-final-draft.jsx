@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable prefer-promise-reject-errors */
 /* eslint-disable jsx-a11y/media-has-caption */
 import dayjs from 'dayjs';
@@ -31,6 +32,7 @@ import {
   Tabs,
   Tab,
   Grid,
+  LinearProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -47,6 +49,9 @@ import UploadPhotoModal from './components/photo';
 import UploadDraftVideoModal from './components/draft-video';
 import UploadRawFootageModal from './components/raw-footage';
 import { FinalDraftFileTypeModal } from './components/filetype-modal';
+
+const truncateText = (text, maxLength) =>
+  text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 
 const LoadingDots = () => {
   const [dots, setDots] = useState('');
@@ -100,6 +105,8 @@ const CampaignFinalDraft = ({
   const [photosModalOpen, setPhotosModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const { deliverables } = deliverablesData;
 
   const { user } = useAuthContext();
 
@@ -144,47 +151,160 @@ const CampaignFinalDraft = ({
     [fullSubmission, dependency]
   );
 
+  const feedbacks = useMemo(() => {
+    const photoFeedback =
+      submission.feedback.filter((a) => a?.photoContent) ||
+      previousSubmission.feedback.filter((a) => a?.photoContent);
+    const rawFootagesFeedback =
+      submission.feedback.filter((a) => a?.rawFootageContent) ||
+      previousSubmission.feedback.filter((a) => a?.rawFootageContent);
+    const videoFeedback =
+      submission.feedback.filter((a) => a?.content) ||
+      previousSubmission.feedback.filter((a) => a?.content);
+
+    return [...photoFeedback, ...rawFootagesFeedback, ...videoFeedback].map((item) => ({
+      adminName: item?.admin?.name,
+      role: item?.admin?.role,
+      content: item?.content || item?.photoContent || item?.rawFootageContent,
+      type: item?.content
+        ? 'video'
+        : item?.photoContent
+          ? 'photo'
+          : item?.rawFootageContent
+            ? 'rawFootage'
+            : null,
+      changes:
+        (item?.videosToUpdate?.length && item?.videosToUpdate) ||
+        (item?.photosToUpdate?.length && item?.photosToUpdate) ||
+        (item?.rawFootageToUpdate?.length && item?.rawFootageToUpdate) ||
+        null,
+      reasons: item?.reasons?.length ? item?.reasons : null,
+      createdAt: item?.createdAt,
+    }));
+  }, [submission, previousSubmission]);
+
+  console.log(previousSubmission);
+
+  // useEffect(() => {
+  //   if (!socket) {
+  //     return undefined;
+  //   }
+
+  //   const handleProgress = (data) => {
+  //     if (submission?.id !== data.submissionId) return;
+  //     inQueue.onFalse();
+  //     setProgress(data.progress);
+
+  //     if (data.progress === 100 || data.progress === 0) {
+  //       setIsProcessing(false);
+  //       reset();
+
+  //       setProgressName('');
+  //       localStorage.removeItem('preview');
+
+  //       if (data.progress === 100) {
+  //         mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+  //       }
+  //     } else {
+  //       setIsProcessing(true);
+  //     }
+  //   };
+
+  //   const handleStatusQueue = (data) => {
+  //     if (data?.status === 'queue') {
+  //       inQueue.onTrue();
+  //     }
+  //   };
+
+  //   socket.on('progress', handleProgress);
+  //   socket.on('statusQueue', handleStatusQueue);
+
+  //   socket.emit('checkQueue', { submissionId: submission?.id });
+
+  //   return () => {
+  //     socket.off('progress', handleProgress);
+  //     socket.off('statusQueue');
+  //   };
+  // }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
+
   useEffect(() => {
-    if (!socket) {
-      return undefined;
-    }
+    if (!socket) return; // Early return if socket is not available
 
     const handleProgress = (data) => {
-      if (submission?.id !== data.submissionId) return;
-      inQueue.onFalse();
-      setProgress(data.progress);
+      if (submission?.id !== data.submissionId) return; // Check if submissionId matches
+      // inQueue.onFalse();
+      // setProgress(Math.ceil(data.progress));
 
-      if (data.progress === 100 || data.progress === 0) {
-        setIsProcessing(false);
-        reset();
+      setUploadProgress((prev) => {
+        const exists = prev.some((item) => item.fileName === data.fileName);
 
-        setProgressName('');
-        localStorage.removeItem('preview');
-
-        if (data.progress === 100) {
-          mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+        if (exists) {
+          return prev.map((item) =>
+            item.fileName === data.fileName ? { ...item, ...data } : item
+          );
         }
-      } else {
-        setIsProcessing(true);
-      }
+        return [...prev, data];
+      });
+
+      // // Executed if processing is done
+      // if (data.progress === 100 || data.progress === 0) {
+      //   setIsProcessing(false);
+      //   reset();
+      //   setPreview('');
+      //   setProgressName('');
+      //   localStorage.removeItem('preview');
+
+      //   if (data.progress === 100) {
+      //     mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+      //   }
+      // } else {
+      //   setIsProcessing(true);
+      // }
     };
 
-    const handleStatusQueue = (data) => {
-      if (data?.status === 'queue') {
-        inQueue.onTrue();
-      }
-    };
+    // const handleStatusQueue = (data) => {
+    //   if (data?.status === 'queue') {
+    //     inQueue.onTrue();
+    //   }
+    // };
 
     socket.on('progress', handleProgress);
-    socket.on('statusQueue', handleStatusQueue);
+    // socket.on('statusQueue', handleStatusQueue);
 
-    socket.emit('checkQueue', { submissionId: submission?.id });
+    // socket.emit('checkQueue', { submissionId: submission?.id });
 
+    // Cleanup on component unmount
+    // eslint-disable-next-line consistent-return
     return () => {
       socket.off('progress', handleProgress);
-      socket.off('statusQueue');
+      // socket.off('statusQueue', handleStatusQueue);
+      // socket.off('checkQueue');
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
+
+  const checkProgress = useCallback(() => {
+    if (uploadProgress?.length && uploadProgress?.every((x) => x.progress === 100)) {
+      const timer = setTimeout(() => {
+        setIsProcessing(false);
+        reset();
+        localStorage.removeItem('preview');
+        setUploadProgress([]);
+
+        if (socket) {
+          mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
+        }
+      }, 2000);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+    return null;
+  }, [uploadProgress, reset, campaign?.id, user?.id, socket]);
+
+  useEffect(() => {
+    checkProgress();
+  }, [checkProgress]);
 
   const handleUploadTypeSelect = (type) => {
     if (submission?.status === 'PENDING_REVIEW') {
@@ -318,53 +438,110 @@ const CampaignFinalDraft = ({
 
         {submission?.status === 'IN_PROGRESS' && (
           <>
-            {inQueue.value && <Typography>In Queue</Typography>}
-            {isProcessing ? (
-              <Stack justifyContent="center" alignItems="center" gap={1}>
-                <Box
-                  sx={{
-                    position: 'relative',
-                    display: 'inline-flex',
-                  }}
-                >
-                  <CircularProgress
-                    variant="determinate"
-                    thickness={5}
-                    value={progress}
-                    size={200}
-                    sx={{
-                      ' .MuiCircularProgress-circle': {
-                        stroke:
-                          theme.palette.mode === 'dark'
-                            ? theme.palette.common.white
-                            : theme.palette.common.black,
-                        strokeLinecap: 'round',
-                      },
-                    }}
-                  />
-                  <Box
-                    sx={{
-                      top: 0,
-                      left: 0,
-                      bottom: 0,
-                      right: 0,
-                      position: 'absolute',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography variant="h3" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
-                      {`${Math.round(progress)}%`}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Stack gap={1}>
-                  <Typography variant="caption">{progressName && progressName}</Typography>
-                  <Button variant="contained" size="small" onClick={() => handleCancel()}>
-                    Cancel
-                  </Button>
-                </Stack>
+            {uploadProgress.length ? (
+              <Stack spacing={1}>
+                {uploadProgress.length &&
+                  uploadProgress.map((currentFile) => (
+                    <Box
+                      sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}
+                      key={currentFile.fileName}
+                    >
+                      <Stack spacing={2}>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          {currentFile?.type?.startsWith('video') ? (
+                            <Box
+                              sx={{
+                                width: 120,
+                                height: 68,
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                position: 'relative',
+                                bgcolor: 'background.paper',
+                                boxShadow: theme.customShadows.z8,
+                              }}
+                            >
+                              {currentFile.preview ? (
+                                <Box
+                                  component="img"
+                                  src={currentFile.preview}
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'background.neutral',
+                                  }}
+                                >
+                                  <Iconify
+                                    icon="solar:video-library-bold"
+                                    width={24}
+                                    sx={{ color: 'text.secondary' }}
+                                  />
+                                </Box>
+                              )}
+                            </Box>
+                          ) : (
+                            <Box
+                              component="img"
+                              src="/assets/icons/files/ic_img.svg"
+                              sx={{ width: 40, height: 40 }}
+                            />
+                          )}
+
+                          <Stack spacing={1} flexGrow={1}>
+                            <Typography variant="subtitle2" noWrap>
+                              {truncateText(currentFile?.fileName, 50) || 'Uploading file...'}
+                            </Typography>
+                            <Stack spacing={1}>
+                              <LinearProgress
+                                variant="determinate"
+                                value={currentFile?.progress || 0}
+                                sx={{
+                                  height: 6,
+                                  borderRadius: 1,
+                                  bgcolor: 'background.paper',
+                                  '& .MuiLinearProgress-bar': {
+                                    borderRadius: 1,
+                                    bgcolor: progress === 100 ? 'success.main' : 'primary.main',
+                                  },
+                                }}
+                              />
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                              >
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {currentFile?.progress === 100 ? (
+                                    <Box
+                                      component="span"
+                                      sx={{ color: 'success.main', fontWeight: 600 }}
+                                    >
+                                      Upload Complete
+                                    </Box>
+                                  ) : (
+                                    `${currentFile?.name || 'Uploading'}... ${currentFile?.progress || 0}%`
+                                  )}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {formatFileSize(currentFile?.fileSize || 0)}
+                                </Typography>
+                              </Stack>
+                            </Stack>
+                          </Stack>
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  ))}
               </Stack>
             ) : (
               <Stack gap={2}>
@@ -410,7 +587,7 @@ const CampaignFinalDraft = ({
 
                   {previousSubmission?.status === 'CHANGES_REQUIRED' && (
                     <Box sx={{ mt: 3 }}>
-                      <Box
+                      {/* <Box
                         sx={{
                           border: 1,
                           borderColor: 'divider',
@@ -831,151 +1008,247 @@ const CampaignFinalDraft = ({
                             </Stack>
                           </Box>
                         </Box>
-                      </Box>
-                    </Box>
-                  )}
-                </Box>
-              </Stack>
-            )}
-          </>
-        )}
-
-        {submission?.status === 'CHANGES_REQUIRED' && (
-          <Stack spacing={2}>
-            <Box>
-              {submission.feedback
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                .map((feedback, index) => (
-                  <Box
-                    key={index}
-                    mb={2}
-                    p={2}
-                    border={1}
-                    borderColor="grey.300"
-                    borderRadius={1}
-                    display="flex"
-                    alignItems="flex-start"
-                  >
-                    <Avatar
-                      src={feedback.admin?.photoURL || '/default-avatar.png'}
-                      alt={feedback.admin?.name || 'User'}
-                      sx={{ mr: 2 }}
-                    />
-                    <Box
-                      flexGrow={1}
-                      sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
-                    >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <Box>
-                          <Typography
-                            variant="subtitle1"
-                            sx={{ fontWeight: 'bold', marginBottom: '2px' }}
+                      </Box> */}
+                      {feedbacks
+                        ?.filter((a) =>
+                          a.changes?.some(
+                            (id) =>
+                              (deliverables?.photos.map((x) => x.id)?.includes(id) &&
+                                deliverables?.photos?.find((x) => x.id === id).status ===
+                                  'REVISION_REQUESTED') ||
+                              (deliverables?.videos.map((x) => x.id)?.includes(id) &&
+                                deliverables?.videos?.find((x) => x.id === id).status ===
+                                  'REVISION_REQUESTED') ||
+                              (deliverables?.rawFootages.map((x) => x.id)?.includes(id) &&
+                                deliverables?.rawFootages?.find((x) => x.id === id).status ===
+                                  'REVISION_REQUESTED')
+                          )
+                        )
+                        ?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                        .map((feedback, index) => (
+                          <Box
+                            key={index}
+                            mb={2}
+                            p={2}
+                            border={1}
+                            borderColor="grey.300"
+                            borderRadius={1}
+                            display="flex"
+                            alignItems="flex-start"
                           >
-                            {feedback.admin?.name || 'Unknown User'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {feedback.admin?.role || 'No Role'}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          label="REJECTED"
-                          sx={{
-                            color: '#ff3b30',
-                            bgcolor: '#fff',
-                            border: '1px solid #ff3b30',
-                            borderBottom: '3px solid #ff3b30',
-                            borderRadius: 0.6,
-                            px: 1,
-                            '& .MuiChip-label': {
-                              px: 1,
-                              fontWeight: 650,
-                            },
-                            '&:hover': {
-                              bgcolor: '#fff',
-                            },
-                          }}
-                        />
-                      </Box>
-                      <Box sx={{ textAlign: 'left', mt: 1 }}>
-                        {feedback.content.split('\n').map((line, i) => (
-                          <Typography key={i} variant="body2">
-                            {line}
-                          </Typography>
-                        ))}
-
-                        {feedback.videosToUpdate && feedback.videosToUpdate.length > 0 && (
-                          <Box mt={2}>
-                            <Typography variant="subtitle2" color="warning.darker" sx={{ mb: 1 }}>
-                              Videos that need changes:
-                            </Typography>
-                            <Stack spacing={2}>
-                              {submission.video
-                                .filter((video) => feedback.videosToUpdate.includes(video.id))
-                                .map((video, videoIndex) => (
-                                  <Box
-                                    key={video.id}
-                                    sx={{
-                                      p: 2,
-                                      borderRadius: 1,
-                                      bgcolor: 'warning.lighter',
-                                      border: '1px solid',
-                                      borderColor: 'warning.main',
-                                    }}
+                            <Avatar
+                              src="/default-avatar.png"
+                              alt={feedback?.adminName || 'User'}
+                              sx={{ mr: 2 }}
+                            />
+                            <Box
+                              flexGrow={1}
+                              sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+                            >
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                }}
+                              >
+                                <Box>
+                                  <Typography
+                                    variant="subtitle1"
+                                    sx={{ fontWeight: 'bold', marginBottom: '2px' }}
                                   >
-                                    <Stack direction="column" spacing={2}>
-                                      <Stack direction="column" spacing={1}>
-                                        <Box>
-                                          <Typography variant="subtitle2" color="warning.darker">
-                                            Video {videoIndex + 1}
-                                          </Typography>
-                                          <Typography
-                                            variant="caption"
-                                            color="warning.darker"
-                                            sx={{ opacity: 0.8 }}
-                                          >
-                                            Requires changes
-                                          </Typography>
-                                        </Box>
+                                    {feedback.adminName || 'Unknown User'}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {feedback.role || 'No Role'}
+                                  </Typography>
+                                </Box>
+                                <Chip
+                                  label="REVISION REQUESTED"
+                                  sx={{
+                                    color: '#ff3b30',
+                                    bgcolor: '#fff',
+                                    border: '1px solid #ff3b30',
+                                    borderBottom: '3px solid #ff3b30',
+                                    borderRadius: 0.6,
+                                    px: 1,
+                                    '& .MuiChip-label': {
+                                      px: 1,
+                                      fontWeight: 650,
+                                    },
+                                    '&:hover': {
+                                      bgcolor: '#fff',
+                                    },
+                                  }}
+                                />
+                              </Box>
+                              <Box sx={{ textAlign: 'left', mt: 1 }}>
+                                {feedback?.content?.split('\n').map((line, i) => (
+                                  <Typography key={i} variant="body2">
+                                    {line}
+                                  </Typography>
+                                ))}
 
-                                        {feedback.reasons && feedback.reasons.length > 0 && (
-                                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                                            {feedback.reasons.map((reason, idx) => (
+                                {feedback?.type === 'video' && feedback.changes && (
+                                  <Box mt={2}>
+                                    <Typography
+                                      variant="subtitle2"
+                                      color="warning.darker"
+                                      sx={{ mb: 1 }}
+                                    >
+                                      Videos that need changes:
+                                    </Typography>
+                                    <Stack spacing={2}>
+                                      {deliverables.videos
+                                        .filter(
+                                          (video) =>
+                                            video?.status === 'REVISION_REQUESTED' &&
+                                            feedback.changes.includes(video.id)
+                                        )
+                                        .map((video, videoIndex) => (
+                                          <Box
+                                            key={video.id}
+                                            sx={{
+                                              p: 2,
+                                              borderRadius: 1,
+                                              bgcolor: 'warning.lighter',
+                                              border: '1px solid',
+                                              borderColor: 'warning.main',
+                                            }}
+                                          >
+                                            <Stack direction="column" spacing={2}>
+                                              <Stack direction="column" spacing={1}>
+                                                <Box>
+                                                  <Typography
+                                                    variant="subtitle2"
+                                                    color="warning.darker"
+                                                  >
+                                                    Video {videoIndex + 1}
+                                                  </Typography>
+                                                  <Typography
+                                                    variant="caption"
+                                                    color="warning.darker"
+                                                    sx={{ opacity: 0.8 }}
+                                                  >
+                                                    Requires changes
+                                                  </Typography>
+                                                </Box>
+
+                                                {feedback.reasons &&
+                                                  feedback.reasons.length > 0 && (
+                                                    <Stack
+                                                      direction="row"
+                                                      spacing={0.5}
+                                                      flexWrap="wrap"
+                                                    >
+                                                      {feedback.reasons.map((reason, idx) => (
+                                                        <Box
+                                                          key={idx}
+                                                          sx={{
+                                                            border: '1.5px solid #e7e7e7',
+                                                            borderBottom: '4px solid #e7e7e7',
+                                                            bgcolor: 'white',
+                                                            borderRadius: 1,
+                                                            p: 0.5,
+                                                            display: 'inline-flex',
+                                                          }}
+                                                        >
+                                                          <Chip
+                                                            label={reason}
+                                                            size="small"
+                                                            color="default"
+                                                            variant="outlined"
+                                                            sx={{
+                                                              border: 'none',
+                                                              color: '#8e8e93',
+                                                              fontSize: '0.75rem',
+                                                              padding: '1px 2px',
+                                                            }}
+                                                          />
+                                                        </Box>
+                                                      ))}
+                                                    </Stack>
+                                                  )}
+                                              </Stack>
+
                                               <Box
-                                                key={idx}
                                                 sx={{
-                                                  border: '1.5px solid #e7e7e7',
-                                                  borderBottom: '4px solid #e7e7e7',
-                                                  bgcolor: 'white',
+                                                  position: 'relative',
+                                                  width: '100%',
+                                                  paddingTop: '56.25%',
                                                   borderRadius: 1,
-                                                  p: 0.5,
-                                                  display: 'inline-flex',
+                                                  overflow: 'hidden',
+                                                  bgcolor: 'black',
                                                 }}
                                               >
-                                                <Chip
-                                                  label={reason}
-                                                  size="small"
-                                                  color="default"
-                                                  variant="outlined"
+                                                <Box
+                                                  component="video"
+                                                  src={video.url}
+                                                  controls
                                                   sx={{
-                                                    border: 'none',
-                                                    color: '#8e8e93',
-                                                    fontSize: '0.75rem',
-                                                    padding: '1px 2px',
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'contain',
                                                   }}
                                                 />
                                               </Box>
-                                            ))}
-                                          </Stack>
-                                        )}
-                                      </Stack>
+                                            </Stack>
+                                          </Box>
+                                        ))}
+                                    </Stack>
+                                  </Box>
+                                )}
 
-                                      <Box
+                                {feedback?.type === 'photo' && feedback.changes && (
+                                  <Box mt={2}>
+                                    <Typography
+                                      variant="subtitle2"
+                                      color="warning.darker"
+                                      sx={{ mb: 1 }}
+                                    >
+                                      Photos that need changes:
+                                    </Typography>
+                                    <Stack spacing={2}>
+                                      {deliverables.photos
+                                        .filter(
+                                          (photo) =>
+                                            photo?.status === 'REVISION_REQUESTED' &&
+                                            feedback.changes.includes(photo.id)
+                                        )
+                                        .map((photo, photoIndex) => (
+                                          <Box
+                                            key={photo.id}
+                                            sx={{
+                                              p: 2,
+                                              borderRadius: 1,
+                                              bgcolor: 'warning.lighter',
+                                              border: '1px solid',
+                                              borderColor: 'warning.main',
+                                            }}
+                                          >
+                                            <Stack direction="column" spacing={2}>
+                                              <Stack direction="column" spacing={1}>
+                                                <Box>
+                                                  <Typography
+                                                    variant="subtitle2"
+                                                    color="warning.darker"
+                                                  >
+                                                    Photo {photoIndex + 1}
+                                                  </Typography>
+                                                  <Typography
+                                                    variant="caption"
+                                                    color="warning.darker"
+                                                    sx={{ opacity: 0.8 }}
+                                                  >
+                                                    Requires changes
+                                                  </Typography>
+                                                </Box>
+                                              </Stack>
+                                              <Image src={photo.url} />
+                                              {/* <Box
                                         sx={{
                                           position: 'relative',
                                           width: '100%',
@@ -985,64 +1258,649 @@ const CampaignFinalDraft = ({
                                           bgcolor: 'black',
                                         }}
                                       >
-                                        <Box
-                                          component="video"
-                                          src={video.url}
-                                          controls
-                                          sx={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'contain',
-                                          }}
-                                        />
-                                      </Box>
+                                        <Image src={photo.url} />
+                                      </Box> */}
+                                            </Stack>
+                                          </Box>
+                                        ))}
                                     </Stack>
                                   </Box>
-                                ))}
-                            </Stack>
+                                )}
+
+                                {feedback?.type === 'rawFootage' && feedback.changes && (
+                                  <Box mt={2}>
+                                    <Typography
+                                      variant="subtitle2"
+                                      color="warning.darker"
+                                      sx={{ mb: 1 }}
+                                    >
+                                      Videos that need changes:
+                                    </Typography>
+                                    <Stack spacing={2}>
+                                      {deliverables.rawFootages
+                                        .filter(
+                                          (video) =>
+                                            video?.status === 'REVISION_REQUESTED' &&
+                                            feedback.changes.includes(video.id)
+                                        )
+                                        .map((video, videoIndex) => (
+                                          <Box
+                                            key={video.id}
+                                            sx={{
+                                              p: 2,
+                                              borderRadius: 1,
+                                              bgcolor: 'warning.lighter',
+                                              border: '1px solid',
+                                              borderColor: 'warning.main',
+                                            }}
+                                          >
+                                            <Stack direction="column" spacing={2}>
+                                              <Stack direction="column" spacing={1}>
+                                                <Box>
+                                                  <Typography
+                                                    variant="subtitle2"
+                                                    color="warning.darker"
+                                                  >
+                                                    Video {videoIndex + 1}
+                                                  </Typography>
+                                                  <Typography
+                                                    variant="caption"
+                                                    color="warning.darker"
+                                                    sx={{ opacity: 0.8 }}
+                                                  >
+                                                    Requires changes
+                                                  </Typography>
+                                                </Box>
+
+                                                {feedback.reasons &&
+                                                  feedback.reasons.length > 0 && (
+                                                    <Stack
+                                                      direction="row"
+                                                      spacing={0.5}
+                                                      flexWrap="wrap"
+                                                    >
+                                                      {feedback.reasons.map((reason, idx) => (
+                                                        <Box
+                                                          key={idx}
+                                                          sx={{
+                                                            border: '1.5px solid #e7e7e7',
+                                                            borderBottom: '4px solid #e7e7e7',
+                                                            bgcolor: 'white',
+                                                            borderRadius: 1,
+                                                            p: 0.5,
+                                                            display: 'inline-flex',
+                                                          }}
+                                                        >
+                                                          <Chip
+                                                            label={reason}
+                                                            size="small"
+                                                            color="default"
+                                                            variant="outlined"
+                                                            sx={{
+                                                              border: 'none',
+                                                              color: '#8e8e93',
+                                                              fontSize: '0.75rem',
+                                                              padding: '1px 2px',
+                                                            }}
+                                                          />
+                                                        </Box>
+                                                      ))}
+                                                    </Stack>
+                                                  )}
+                                              </Stack>
+
+                                              <Box
+                                                sx={{
+                                                  position: 'relative',
+                                                  width: '100%',
+                                                  paddingTop: '56.25%',
+                                                  borderRadius: 1,
+                                                  overflow: 'hidden',
+                                                  bgcolor: 'black',
+                                                }}
+                                              >
+                                                <Box
+                                                  component="video"
+                                                  src={video.url}
+                                                  controls
+                                                  sx={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'contain',
+                                                  }}
+                                                />
+                                              </Box>
+                                            </Stack>
+                                          </Box>
+                                        ))}
+                                    </Stack>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Box>
                           </Box>
-                        )}
-                      </Box>
+                        ))}
                     </Box>
+                  )}
+                </Box>
+              </Stack>
+            )}
+          </>
+        )}
+
+        {submission?.status === 'CHANGES_REQUIRED' && (
+          <>
+            {uploadProgress.length ? (
+              <Stack spacing={1}>
+                {uploadProgress.length &&
+                  uploadProgress.map((currentFile) => (
+                    <Box
+                      sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}
+                      key={currentFile.fileName}
+                    >
+                      <Stack spacing={2}>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          {currentFile?.type?.startsWith('video') ? (
+                            <Box
+                              sx={{
+                                width: 120,
+                                height: 68,
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                position: 'relative',
+                                bgcolor: 'background.paper',
+                                boxShadow: theme.customShadows.z8,
+                              }}
+                            >
+                              {currentFile.preview ? (
+                                <Box
+                                  component="img"
+                                  src={currentFile.preview}
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'background.neutral',
+                                  }}
+                                >
+                                  <Iconify
+                                    icon="solar:video-library-bold"
+                                    width={24}
+                                    sx={{ color: 'text.secondary' }}
+                                  />
+                                </Box>
+                              )}
+                            </Box>
+                          ) : (
+                            <Box
+                              component="img"
+                              src="/assets/icons/files/ic_img.svg"
+                              sx={{ width: 40, height: 40 }}
+                            />
+                          )}
+
+                          <Stack spacing={1} flexGrow={1}>
+                            <Typography variant="subtitle2" noWrap>
+                              {truncateText(currentFile?.fileName, 50) || 'Uploading file...'}
+                            </Typography>
+                            <Stack spacing={1}>
+                              <LinearProgress
+                                variant="determinate"
+                                value={currentFile?.progress || 0}
+                                sx={{
+                                  height: 6,
+                                  borderRadius: 1,
+                                  bgcolor: 'background.paper',
+                                  '& .MuiLinearProgress-bar': {
+                                    borderRadius: 1,
+                                    bgcolor: progress === 100 ? 'success.main' : 'primary.main',
+                                  },
+                                }}
+                              />
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                              >
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {currentFile?.progress === 100 ? (
+                                    <Box
+                                      component="span"
+                                      sx={{ color: 'success.main', fontWeight: 600 }}
+                                    >
+                                      Upload Complete
+                                    </Box>
+                                  ) : (
+                                    `${currentFile?.name || 'Uploading'}... ${currentFile?.progress || 0}%`
+                                  )}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {formatFileSize(currentFile?.fileSize || 0)}
+                                </Typography>
+                              </Stack>
+                            </Stack>
+                          </Stack>
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  ))}
+              </Stack>
+            ) : (
+              <Stack spacing={2}>
+                <Box>
+                  {feedbacks
+                    ?.filter((a) =>
+                      a.changes?.some(
+                        (id) =>
+                          (deliverables?.photos.map((x) => x.id)?.includes(id) &&
+                            deliverables?.photos?.find((x) => x.id === id).status ===
+                              'REVISION_REQUESTED') ||
+                          (deliverables?.videos.map((x) => x.id)?.includes(id) &&
+                            deliverables?.videos?.find((x) => x.id === id).status ===
+                              'REVISION_REQUESTED') ||
+                          (deliverables?.rawFootages.map((x) => x.id)?.includes(id) &&
+                            deliverables?.rawFootages?.find((x) => x.id === id).status ===
+                              'REVISION_REQUESTED')
+                      )
+                    )
+                    ?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .map((feedback, index) => (
+                      <Box
+                        key={index}
+                        mb={2}
+                        p={2}
+                        border={1}
+                        borderColor="grey.300"
+                        borderRadius={1}
+                        display="flex"
+                        alignItems="flex-start"
+                      >
+                        <Avatar
+                          src="/default-avatar.png"
+                          alt={feedback?.adminName || 'User'}
+                          sx={{ mr: 2 }}
+                        />
+                        <Box
+                          flexGrow={1}
+                          sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                variant="subtitle1"
+                                sx={{ fontWeight: 'bold', marginBottom: '2px' }}
+                              >
+                                {feedback.adminName || 'Unknown User'}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {feedback.role || 'No Role'}
+                              </Typography>
+                            </Box>
+                            <Chip
+                              label="REVISION REQUESTED"
+                              sx={{
+                                color: '#ff3b30',
+                                bgcolor: '#fff',
+                                border: '1px solid #ff3b30',
+                                borderBottom: '3px solid #ff3b30',
+                                borderRadius: 0.6,
+                                px: 1,
+                                '& .MuiChip-label': {
+                                  px: 1,
+                                  fontWeight: 650,
+                                },
+                                '&:hover': {
+                                  bgcolor: '#fff',
+                                },
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ textAlign: 'left', mt: 1 }}>
+                            {feedback?.content?.split('\n').map((line, i) => (
+                              <Typography key={i} variant="body2">
+                                {line}
+                              </Typography>
+                            ))}
+
+                            {feedback?.type === 'video' && feedback.changes && (
+                              <Box mt={2}>
+                                <Typography
+                                  variant="subtitle2"
+                                  color="warning.darker"
+                                  sx={{ mb: 1 }}
+                                >
+                                  Videos that need changes:
+                                </Typography>
+                                <Stack spacing={2}>
+                                  {deliverables.videos
+                                    .filter(
+                                      (video) =>
+                                        video?.status === 'REVISION_REQUESTED' &&
+                                        feedback.changes.includes(video.id)
+                                    )
+                                    .map((video, videoIndex) => (
+                                      <Box
+                                        key={video.id}
+                                        sx={{
+                                          p: 2,
+                                          borderRadius: 1,
+                                          bgcolor: 'warning.lighter',
+                                          border: '1px solid',
+                                          borderColor: 'warning.main',
+                                        }}
+                                      >
+                                        <Stack direction="column" spacing={2}>
+                                          <Stack direction="column" spacing={1}>
+                                            <Box>
+                                              <Typography
+                                                variant="subtitle2"
+                                                color="warning.darker"
+                                              >
+                                                Video {videoIndex + 1}
+                                              </Typography>
+                                              <Typography
+                                                variant="caption"
+                                                color="warning.darker"
+                                                sx={{ opacity: 0.8 }}
+                                              >
+                                                Requires changes
+                                              </Typography>
+                                            </Box>
+
+                                            {feedback.reasons && feedback.reasons.length > 0 && (
+                                              <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                                {feedback.reasons.map((reason, idx) => (
+                                                  <Box
+                                                    key={idx}
+                                                    sx={{
+                                                      border: '1.5px solid #e7e7e7',
+                                                      borderBottom: '4px solid #e7e7e7',
+                                                      bgcolor: 'white',
+                                                      borderRadius: 1,
+                                                      p: 0.5,
+                                                      display: 'inline-flex',
+                                                    }}
+                                                  >
+                                                    <Chip
+                                                      label={reason}
+                                                      size="small"
+                                                      color="default"
+                                                      variant="outlined"
+                                                      sx={{
+                                                        border: 'none',
+                                                        color: '#8e8e93',
+                                                        fontSize: '0.75rem',
+                                                        padding: '1px 2px',
+                                                      }}
+                                                    />
+                                                  </Box>
+                                                ))}
+                                              </Stack>
+                                            )}
+                                          </Stack>
+
+                                          <Box
+                                            sx={{
+                                              position: 'relative',
+                                              width: '100%',
+                                              paddingTop: '56.25%',
+                                              borderRadius: 1,
+                                              overflow: 'hidden',
+                                              bgcolor: 'black',
+                                            }}
+                                          >
+                                            <Box
+                                              component="video"
+                                              src={video.url}
+                                              controls
+                                              sx={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'contain',
+                                              }}
+                                            />
+                                          </Box>
+                                        </Stack>
+                                      </Box>
+                                    ))}
+                                </Stack>
+                              </Box>
+                            )}
+
+                            {feedback?.type === 'photo' && feedback.changes && (
+                              <Box mt={2}>
+                                <Typography
+                                  variant="subtitle2"
+                                  color="warning.darker"
+                                  sx={{ mb: 1 }}
+                                >
+                                  Photos that need changes:
+                                </Typography>
+                                <Stack spacing={2}>
+                                  {deliverables.photos
+                                    .filter(
+                                      (photo) =>
+                                        photo?.status === 'REVISION_REQUESTED' &&
+                                        feedback.changes.includes(photo.id)
+                                    )
+                                    .map((photo, photoIndex) => (
+                                      <Box
+                                        key={photo.id}
+                                        sx={{
+                                          p: 2,
+                                          borderRadius: 1,
+                                          bgcolor: 'warning.lighter',
+                                          border: '1px solid',
+                                          borderColor: 'warning.main',
+                                        }}
+                                      >
+                                        <Stack direction="column" spacing={2}>
+                                          <Stack direction="column" spacing={1}>
+                                            <Box>
+                                              <Typography
+                                                variant="subtitle2"
+                                                color="warning.darker"
+                                              >
+                                                Photo {photoIndex + 1}
+                                              </Typography>
+                                              <Typography
+                                                variant="caption"
+                                                color="warning.darker"
+                                                sx={{ opacity: 0.8 }}
+                                              >
+                                                Requires changes
+                                              </Typography>
+                                            </Box>
+                                          </Stack>
+                                          <Image src={photo.url} />
+                                          {/* <Box
+                                        sx={{
+                                          position: 'relative',
+                                          width: '100%',
+                                          paddingTop: '56.25%',
+                                          borderRadius: 1,
+                                          overflow: 'hidden',
+                                          bgcolor: 'black',
+                                        }}
+                                      >
+                                        <Image src={photo.url} />
+                                      </Box> */}
+                                        </Stack>
+                                      </Box>
+                                    ))}
+                                </Stack>
+                              </Box>
+                            )}
+
+                            {feedback?.type === 'rawFootage' && feedback.changes && (
+                              <Box mt={2}>
+                                <Typography
+                                  variant="subtitle2"
+                                  color="warning.darker"
+                                  sx={{ mb: 1 }}
+                                >
+                                  Videos that need changes:
+                                </Typography>
+                                <Stack spacing={2}>
+                                  {deliverables.rawFootages
+                                    .filter(
+                                      (video) =>
+                                        video?.status === 'REVISION_REQUESTED' &&
+                                        feedback.changes.includes(video.id)
+                                    )
+                                    .map((video, videoIndex) => (
+                                      <Box
+                                        key={video.id}
+                                        sx={{
+                                          p: 2,
+                                          borderRadius: 1,
+                                          bgcolor: 'warning.lighter',
+                                          border: '1px solid',
+                                          borderColor: 'warning.main',
+                                        }}
+                                      >
+                                        <Stack direction="column" spacing={2}>
+                                          <Stack direction="column" spacing={1}>
+                                            <Box>
+                                              <Typography
+                                                variant="subtitle2"
+                                                color="warning.darker"
+                                              >
+                                                Video {videoIndex + 1}
+                                              </Typography>
+                                              <Typography
+                                                variant="caption"
+                                                color="warning.darker"
+                                                sx={{ opacity: 0.8 }}
+                                              >
+                                                Requires changes
+                                              </Typography>
+                                            </Box>
+
+                                            {feedback.reasons && feedback.reasons.length > 0 && (
+                                              <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                                {feedback.reasons.map((reason, idx) => (
+                                                  <Box
+                                                    key={idx}
+                                                    sx={{
+                                                      border: '1.5px solid #e7e7e7',
+                                                      borderBottom: '4px solid #e7e7e7',
+                                                      bgcolor: 'white',
+                                                      borderRadius: 1,
+                                                      p: 0.5,
+                                                      display: 'inline-flex',
+                                                    }}
+                                                  >
+                                                    <Chip
+                                                      label={reason}
+                                                      size="small"
+                                                      color="default"
+                                                      variant="outlined"
+                                                      sx={{
+                                                        border: 'none',
+                                                        color: '#8e8e93',
+                                                        fontSize: '0.75rem',
+                                                        padding: '1px 2px',
+                                                      }}
+                                                    />
+                                                  </Box>
+                                                ))}
+                                              </Stack>
+                                            )}
+                                          </Stack>
+
+                                          <Box
+                                            sx={{
+                                              position: 'relative',
+                                              width: '100%',
+                                              paddingTop: '56.25%',
+                                              borderRadius: 1,
+                                              overflow: 'hidden',
+                                              bgcolor: 'black',
+                                            }}
+                                          >
+                                            <Box
+                                              component="video"
+                                              src={video.url}
+                                              controls
+                                              sx={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'contain',
+                                              }}
+                                            />
+                                          </Box>
+                                        </Stack>
+                                      </Box>
+                                    ))}
+                                </Stack>
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    ))}
+
+                  <Box
+                    sx={{
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      mb: 2,
+                      mx: -1.5,
+                    }}
+                  />
+
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleUploadClick}
+                      startIcon={<Iconify icon="material-symbols:add" width={24} />}
+                      sx={{
+                        bgcolor: '#203ff5',
+                        color: 'white',
+                        borderBottom: 3.5,
+                        borderBottomColor: '#112286',
+                        borderRadius: 1.5,
+                        px: 2.5,
+                        py: 1.2,
+                        '&:hover': {
+                          bgcolor: '#203ff5',
+                          opacity: 0.9,
+                        },
+                      }}
+                    >
+                      Re-Upload
+                    </Button>
                   </Box>
-                ))}
-
-              <Box
-                sx={{
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  mb: 2,
-                  mx: -1.5,
-                }}
-              />
-
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                  variant="contained"
-                  onClick={handleUploadClick}
-                  startIcon={<Iconify icon="material-symbols:add" width={24} />}
-                  sx={{
-                    bgcolor: '#203ff5',
-                    color: 'white',
-                    borderBottom: 3.5,
-                    borderBottomColor: '#112286',
-                    borderRadius: 1.5,
-                    px: 2.5,
-                    py: 1.2,
-                    '&:hover': {
-                      bgcolor: '#203ff5',
-                      opacity: 0.9,
-                    },
-                  }}
-                >
-                  Re-Upload
-                </Button>
-              </Box>
-            </Box>
-          </Stack>
+                </Box>
+              </Stack>
+            )}
+          </>
         )}
 
         {submission?.status === 'APPROVED' && (
