@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Card, Stack, Typography, CircularProgress } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
+import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 
 import { endpoints } from 'src/utils/axios';
 
@@ -51,6 +52,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
   const [selectedStage, setSelectedStage] = useState('AGREEMENT_FORM');
+  const { data, isLoading, mutate: deliverableMutate } = useGetDeliverables(user?.id, campaign.id);
 
   // Initialize viewedStages from localStorage if available
   const [viewedStages, setViewedStages] = useState(() => {
@@ -165,7 +167,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
     );
   };
 
-  if (submissionLoading) {
+  if (submissionLoading || isLoading) {
     return (
       <Box
         sx={{
@@ -379,6 +381,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                   getDependency={getDependency}
                   openLogisticTab={openLogisticTab}
                   setCurrentTab={setCurrentTab}
+                  deliverablesData={{ deliverables: data, deliverableMutate }}
                 />
               )}
               {selectedStage === 'FINAL_DRAFT' && (
@@ -389,6 +392,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
                   fullSubmission={submissions}
                   getDependency={getDependency}
                   setCurrentTab={setCurrentTab}
+                  deliverablesData={{ deliverables: data, deliverableMutate }}
                 />
               )}
               {selectedStage === 'POSTING' && (

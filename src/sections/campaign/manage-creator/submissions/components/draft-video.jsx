@@ -27,8 +27,10 @@ const UploadDraftVideoModal = ({
   campaign,
   open,
   onClose,
-  previewSubmission,
+  previousSubmission,
   totalUGCVideos,
+  submission,
+  deliverablesData,
 }) => {
   const methods = useForm({
     defaultValues: {
@@ -37,16 +39,19 @@ const UploadDraftVideoModal = ({
     },
   });
 
+  const { deliverableMutate } = deliverablesData;
+
   const { handleSubmit } = methods;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const videosToUpdateCount =
     totalUGCVideos ||
-    previewSubmission?.feedback?.reduce((count, f) => count + (f.videosToUpdate?.length || 0), 0);
+    submission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
+    previousSubmission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length;
 
   const validateFileCount = (files) => {
-    if (previewSubmission?.status === 'CHANGES_REQUIRED') {
+    if (previousSubmission?.status === 'CHANGES_REQUIRED') {
       if (files.length !== videosToUpdateCount) {
         enqueueSnackbar(
           `Please upload exactly ${videosToUpdateCount} video${videosToUpdateCount > 1 ? 's' : ''}.`,
@@ -91,6 +96,7 @@ const UploadDraftVideoModal = ({
       enqueueSnackbar('Draft videos are processing');
       onClose();
       mutate(endpoints.kanban.root);
+      deliverableMutate();
       mutate(endpoints.campaign.creator.getCampaign(campaign?.id));
     } catch (error) {
       console.error('Upload error:', error);
@@ -156,12 +162,14 @@ const UploadDraftVideoModal = ({
             </Typography>
           </Box>
         )}
-        {previewSubmission?.status === 'CHANGES_REQUIRED' && (
+
+        {previousSubmission?.status === 'CHANGES_REQUIRED' && (
           <Typography variant="body2" sx={{ color: 'warning.main', mb: 2 }}>
             Please upload exactly {videosToUpdateCount} video{videosToUpdateCount > 1 ? 's' : ''} as
             requested by the admin.
           </Typography>
         )}
+
         <FormProvider methods={methods}>
           <Stack spacing={3}>
             <Box>
@@ -225,6 +233,8 @@ UploadDraftVideoModal.propTypes = {
   campaign: PropTypes.object,
   open: PropTypes.bool,
   onClose: PropTypes.func,
-  previewSubmission: PropTypes.object,
+  previousSubmission: PropTypes.object,
   totalUGCVideos: PropTypes.number,
+  submission: PropTypes.object,
+  deliverablesData: PropTypes.object,
 };

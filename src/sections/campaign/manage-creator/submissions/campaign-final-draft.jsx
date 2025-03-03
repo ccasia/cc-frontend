@@ -42,8 +42,6 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
-// import FormProvider from 'src/components/hook-form/form-provider';
-// import { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
 import UploadPhotoModal from './components/photo';
 import UploadDraftVideoModal from './components/draft-video';
@@ -82,13 +80,11 @@ const CampaignFinalDraft = ({
   getDependency,
   fullSubmission,
   setCurrentTab,
+  deliverablesData,
 }) => {
-  const [preview, setPreview] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressName, setProgressName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [openUploadModal, setOpenUploadModal] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const dependency = getDependency(submission?.id);
@@ -97,17 +93,15 @@ const CampaignFinalDraft = ({
   const display = useBoolean();
   const inQueue = useBoolean();
   const savedCaption = localStorage.getItem('caption');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackTab, setFeedbackTab] = useState('videos');
   const [uploadTypeModalOpen, setUploadTypeModalOpen] = useState(false);
   const [draftVideoModalOpen, setDraftVideoModalOpen] = useState(false);
   const [rawFootageModalOpen, setRawFootageModalOpen] = useState(false);
   const [photosModalOpen, setPhotosModalOpen] = useState(false);
-  const [currentFile, setCurrentFile] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
-  const { user, dispatch } = useAuthContext();
+  const { user } = useAuthContext();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -134,170 +128,7 @@ const CampaignFinalDraft = ({
     },
   });
 
-  const {
-    handleSubmit,
-    setValue,
-    reset,
-    formState: { isDirty },
-    watch,
-  } = methods;
-
-  const caption = watch('caption');
-
-  const handleRemoveFile = () => {
-    localStorage.removeItem('preview');
-    setValue('draft', '');
-    setPreview('');
-  };
-
-  const handleDraftVideoDrop = useCallback(
-    (acceptedFiles) => {
-      const currentFiles = Array.isArray(watch('draftVideo')) ? watch('draftVideo') : [];
-      setValue('draftVideo', [...currentFiles, ...acceptedFiles], { shouldValidate: true });
-    },
-    [watch, setValue]
-  );
-
-  const handleRemoveDraftVideo = useCallback(
-    (fileToRemove) => {
-      const updatedFiles = watch('draftVideo').filter((file) => file !== fileToRemove);
-      setValue('draftVideo', updatedFiles, { shouldValidate: true });
-    },
-    [watch, setValue]
-  );
-
-  const generateThumbnail = useCallback(
-    (file) =>
-      new Promise((resolve, reject) => {
-        const video = document.createElement('video');
-        video.src = URL.createObjectURL(file);
-
-        video.load();
-
-        video.addEventListener('loadeddata', () => {
-          video.currentTime = 1;
-        });
-
-        video.addEventListener('seeked', () => {
-          if (video.readyState >= 2) {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            URL.revokeObjectURL(video.src);
-            resolve(canvas.toDataURL());
-          } else {
-            reject(new Error('Failed to capture thumbnail: video not ready'));
-          }
-        });
-
-        video.addEventListener('error', () => {
-          reject(new Error('Failed to load video'));
-        });
-      }),
-    []
-  );
-
-  const handleDrop = useCallback(
-    async (acceptedFiles) => {
-      const file = acceptedFiles[0];
-
-      const newFile = Object.assign(file, {
-        preview: URL.createObjectURL(file),
-      });
-
-      try {
-        const thumbnail = await generateThumbnail(newFile);
-        newFile.thumbnail = thumbnail;
-      } catch (error) {
-        console.error('Error generating thumbnail:', error);
-      }
-
-      setPreview(newFile.preview);
-      localStorage.setItem('preview', newFile.preview);
-      setUploadProgress(0);
-
-      if (file) {
-        setValue('draft', newFile, { shouldValidate: true });
-
-        const interval = setInterval(() => {
-          setUploadProgress((prev) => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              enqueueSnackbar('Upload complete!', { variant: 'success' });
-              return 100;
-            }
-            return prev + 10;
-          });
-        }, 200);
-      }
-    },
-    [setValue, generateThumbnail]
-  );
-
-  const onSubmit = handleSubmit(async (value) => {
-    console.log('Form values on submit:', value);
-
-    setOpenUploadModal(false);
-    setShowSubmitDialog(true);
-    setSubmitStatus('submitting');
-
-    const formData = new FormData();
-    const newData = {
-      caption: value.caption,
-      submissionId: submission.id,
-    };
-
-    formData.append('data', JSON.stringify(newData));
-
-    if (value.draftVideo && value.draftVideo.length > 0) {
-      value.draftVideo.forEach((file) => {
-        console.log('Appending file:', file);
-        formData.append('draftVideo', file);
-      });
-    } else {
-      console.warn('No draft video found in value.draftVideo');
-    }
-
-    console.log('New Data:', newData);
-    console.log('FormData Content:', {
-      caption: value.caption,
-      submissionId: submission.id,
-      draftVideo: value.draftVideo,
-    });
-
-    try {
-      const res = await axiosInstance.post(endpoints.submission.creator.draftSubmission, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      enqueueSnackbar(res.data.message || 'Final draft videos uploaded successfully');
-      mutate(endpoints.kanban.root);
-      mutate(endpoints.campaign.creator.getCampaign(submission.id));
-      setSubmitStatus('success');
-      inQueue.onTrue();
-
-      if (savedCaption) localStorage.removeItem('caption');
-    } catch (error) {
-      if (error?.message === 'Forbidden') {
-        if (value.caption) {
-          localStorage.setItem('caption', value.caption);
-        }
-        dispatch({ type: 'LOGOUT' });
-        enqueueSnackbar('Your session has expired. Please re-login', { variant: 'error' });
-        return;
-      }
-
-      enqueueSnackbar('Failed to submit draft', { variant: 'error' });
-      console.error('Upload error:', error);
-      setSubmitStatus('error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  });
+  const { reset } = methods;
 
   const handleCancel = () => {
     if (isProcessing) {
@@ -308,7 +139,7 @@ const CampaignFinalDraft = ({
     }
   };
 
-  const previewSubmission = useMemo(
+  const previousSubmission = useMemo(
     () => fullSubmission?.find((item) => item?.id === dependency?.dependentSubmissionId),
     [fullSubmission, dependency]
   );
@@ -326,7 +157,7 @@ const CampaignFinalDraft = ({
       if (data.progress === 100 || data.progress === 0) {
         setIsProcessing(false);
         reset();
-        setPreview('');
+
         setProgressName('');
         localStorage.removeItem('preview');
 
@@ -391,7 +222,7 @@ const CampaignFinalDraft = ({
   };
 
   return (
-    previewSubmission?.status === 'CHANGES_REQUIRED' && (
+    previousSubmission?.status === 'CHANGES_REQUIRED' && (
       <Box p={1.5} sx={{ pb: 0 }}>
         <Box
           sx={{
@@ -462,7 +293,6 @@ const CampaignFinalDraft = ({
             </Stack>
             <Button
               onClick={() => {
-                setPreview(submission?.content);
                 display.onTrue();
               }}
               variant="contained"
@@ -578,7 +408,7 @@ const CampaignFinalDraft = ({
                     </Button>
                   </Box>
 
-                  {previewSubmission?.status === 'CHANGES_REQUIRED' && (
+                  {previousSubmission?.status === 'CHANGES_REQUIRED' && (
                     <Box sx={{ mt: 3 }}>
                       <Box
                         sx={{
@@ -597,22 +427,31 @@ const CampaignFinalDraft = ({
                           }}
                         >
                           <Avatar
-                            src={previewSubmission.feedback[0]?.admin?.photoURL || '/default-avatar.png'}
-                            alt={previewSubmission.feedback[0]?.admin?.name || 'User'}
+                            src={
+                              previousSubmission.feedback[0]?.admin?.photoURL ||
+                              '/default-avatar.png'
+                            }
+                            alt={previousSubmission.feedback[0]?.admin?.name || 'User'}
                             sx={{ mr: 2 }}
                           />
                           <Box sx={{ flexGrow: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                              }}
+                            >
                               <Box>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                                  {previewSubmission.feedback[0]?.admin?.name || 'Unknown User'}
+                                  {previousSubmission.feedback[0]?.admin?.name || 'Unknown User'}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                  {previewSubmission.feedback[0]?.admin?.role || 'No Role'}
+                                  {previousSubmission.feedback[0]?.admin?.role || 'No Role'}
                                 </Typography>
                               </Box>
                               <Chip
-                                label="REJECTED"
+                                label="REVISION REQUIRED"
                                 sx={{
                                   color: '#ff3b30',
                                   bgcolor: '#fff',
@@ -628,36 +467,37 @@ const CampaignFinalDraft = ({
                               />
                             </Box>
 
-                            {feedbackTab === 'videos' && previewSubmission.feedback[0]?.reasons?.length > 0 && (
-                              <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ mt: 2 }}>
-                                {previewSubmission.feedback[0].reasons.map((reason, idx) => (
-                                  <Box
-                                    key={idx}
-                                    sx={{
-                                      border: '1.5px solid #e7e7e7',
-                                      borderBottom: '4px solid #e7e7e7',
-                                      bgcolor: 'white',
-                                      borderRadius: 1,
-                                      p: 0.5,
-                                      display: 'inline-flex',
-                                    }}
-                                  >
-                                    <Chip
-                                      label={reason}
-                                      size="small"
-                                      color="default"
-                                      variant="outlined"
+                            {feedbackTab === 'videos' &&
+                              previousSubmission.feedback[0]?.reasons?.length > 0 && (
+                                <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ mt: 2 }}>
+                                  {previousSubmission.feedback[0].reasons.map((reason, idx) => (
+                                    <Box
+                                      key={idx}
                                       sx={{
-                                        border: 'none',
-                                        color: '#8e8e93',
-                                        fontSize: '0.75rem',
-                                        padding: '1px 2px',
+                                        border: '1.5px solid #e7e7e7',
+                                        borderBottom: '4px solid #e7e7e7',
+                                        bgcolor: 'white',
+                                        borderRadius: 1,
+                                        p: 0.5,
+                                        display: 'inline-flex',
                                       }}
-                                    />
-                                  </Box>
-                                ))}
-                              </Stack>
-                            )}
+                                    >
+                                      <Chip
+                                        label={reason}
+                                        size="small"
+                                        color="default"
+                                        variant="outlined"
+                                        sx={{
+                                          border: 'none',
+                                          color: '#8e8e93',
+                                          fontSize: '0.75rem',
+                                          padding: '1px 2px',
+                                        }}
+                                      />
+                                    </Box>
+                                  ))}
+                                </Stack>
+                              )}
                           </Box>
                         </Box>
 
@@ -672,7 +512,9 @@ const CampaignFinalDraft = ({
                               borderRadius: 2,
                             }}
                           >
-                            {previewSubmission.feedback.some(f => f.videosToUpdate?.length > 0) && (
+                            {previousSubmission.video.some(
+                              (f) => f.status === 'REVISION_REQUESTED'
+                            ) && (
                               <Button
                                 onClick={() => setFeedbackTab('videos')}
                                 startIcon={<Iconify icon="solar:video-frame-bold" />}
@@ -680,41 +522,62 @@ const CampaignFinalDraft = ({
                                   flex: 1,
                                   py: 2,
                                   color: feedbackTab === 'videos' ? '#1844fc' : 'text.secondary',
-                                  bgcolor: feedbackTab === 'videos' ? '#e6ebff' : 'background.paper',
-                                  '&:hover': { bgcolor: feedbackTab === 'videos' ? '#e6ebff' : 'action.hover' },
+                                  bgcolor:
+                                    feedbackTab === 'videos' ? '#e6ebff' : 'background.paper',
+                                  '&:hover': {
+                                    bgcolor: feedbackTab === 'videos' ? '#e6ebff' : 'action.hover',
+                                  },
                                 }}
                               >
                                 <Stack alignItems="center">
                                   <Typography variant="subtitle2">Draft Videos</Typography>
                                   <Typography variant="caption">
-                                    {previewSubmission.feedback.reduce((count, f) => count + (f.videosToUpdate?.length || 0), 0)} videos
+                                    {
+                                      previousSubmission.video.filter(
+                                        (x) => x.status === 'REVISION_REQUESTED'
+                                      )?.length
+                                    }{' '}
+                                    videos
                                   </Typography>
                                 </Stack>
                               </Button>
                             )}
 
-                            {previewSubmission.feedback.some(f => f.rawFootageToUpdate?.length > 0) && (
+                            {previousSubmission.feedback.some(
+                              (f) => f.rawFootageToUpdate?.length > 0
+                            ) && (
                               <Button
                                 onClick={() => setFeedbackTab('rawFootage')}
                                 startIcon={<Iconify icon="solar:gallery-wide-bold" />}
                                 sx={{
                                   flex: 1,
                                   py: 2,
-                                  color: feedbackTab === 'rawFootage' ? '#1844fc' : 'text.secondary',
-                                  bgcolor: feedbackTab === 'rawFootage' ? '#e6ebff' : 'background.paper',
-                                  '&:hover': { bgcolor: feedbackTab === 'rawFootage' ? '#e6ebff' : 'action.hover' },
+                                  color:
+                                    feedbackTab === 'rawFootage' ? '#1844fc' : 'text.secondary',
+                                  bgcolor:
+                                    feedbackTab === 'rawFootage' ? '#e6ebff' : 'background.paper',
+                                  '&:hover': {
+                                    bgcolor:
+                                      feedbackTab === 'rawFootage' ? '#e6ebff' : 'action.hover',
+                                  },
                                 }}
                               >
                                 <Stack alignItems="center">
                                   <Typography variant="subtitle2">Raw Footage</Typography>
                                   <Typography variant="caption">
-                                    {previewSubmission.feedback.reduce((count, f) => count + (f.rawFootageToUpdate?.length || 0), 0)} files
+                                    {previousSubmission.feedback.reduce(
+                                      (count, f) => count + (f.rawFootageToUpdate?.length || 0),
+                                      0
+                                    )}{' '}
+                                    files
                                   </Typography>
                                 </Stack>
                               </Button>
                             )}
 
-                            {previewSubmission.feedback.some(f => f.photosToUpdate?.length > 0) && (
+                            {previousSubmission.photos.some(
+                              (f) => f.status === 'REVISION_REQUESTED'
+                            ) && (
                               <Button
                                 onClick={() => setFeedbackTab('photos')}
                                 startIcon={<Iconify icon="solar:camera-bold" />}
@@ -722,14 +585,22 @@ const CampaignFinalDraft = ({
                                   flex: 1,
                                   py: 2,
                                   color: feedbackTab === 'photos' ? '#1844fc' : 'text.secondary',
-                                  bgcolor: feedbackTab === 'photos' ? '#e6ebff' : 'background.paper',
-                                  '&:hover': { bgcolor: feedbackTab === 'photos' ? '#e6ebff' : 'action.hover' },
+                                  bgcolor:
+                                    feedbackTab === 'photos' ? '#e6ebff' : 'background.paper',
+                                  '&:hover': {
+                                    bgcolor: feedbackTab === 'photos' ? '#e6ebff' : 'action.hover',
+                                  },
                                 }}
                               >
                                 <Stack alignItems="center">
                                   <Typography variant="subtitle2">Photos</Typography>
                                   <Typography variant="caption">
-                                    {previewSubmission.feedback.reduce((count, f) => count + (f.photosToUpdate?.length || 0), 0)} images
+                                    {
+                                      previousSubmission.photos.filter(
+                                        (x) => x.status === 'REVISION_REQUESTED'
+                                      )?.length
+                                    }{' '}
+                                    images
                                   </Typography>
                                 </Stack>
                               </Button>
@@ -737,8 +608,8 @@ const CampaignFinalDraft = ({
                           </Stack>
 
                           <Box>
-                            {previewSubmission.feedback.map((feedback, index) => {
-                              const relevantContent = 
+                            {previousSubmission.feedback.map((feedback, index) => {
+                              const relevantContent =
                                 (feedbackTab === 'videos' && feedback.content) ||
                                 (feedbackTab === 'rawFootage' && feedback.rawFootageContent) ||
                                 (feedbackTab === 'photos' && feedback.photoContent);
@@ -757,10 +628,18 @@ const CampaignFinalDraft = ({
                                     borderColor: 'warning.light',
                                   }}
                                 >
-                                  <Typography variant="subtitle2" color="warning.darker" sx={{ mb: 1 }}>
+                                  <Typography
+                                    variant="subtitle2"
+                                    color="warning.darker"
+                                    sx={{ mb: 1 }}
+                                  >
                                     Feedback:
                                   </Typography>
-                                  <Typography variant="body2" color="warning.darker" sx={{ opacity: 0.9 }}>
+                                  <Typography
+                                    variant="body2"
+                                    color="warning.darker"
+                                    sx={{ opacity: 0.9 }}
+                                  >
                                     {feedbackTab === 'videos' && feedback.content}
                                     {feedbackTab === 'rawFootage' && feedback.rawFootageContent}
                                     {feedbackTab === 'photos' && feedback.photoContent}
@@ -770,13 +649,9 @@ const CampaignFinalDraft = ({
                             })}
 
                             <Stack spacing={3}>
-                              {feedbackTab === 'videos' && (
-                                previewSubmission.video
-                                  .filter(video => 
-                                    previewSubmission.feedback.some(f => 
-                                      f.videosToUpdate?.includes(video.id)
-                                    )
-                                  )
+                              {feedbackTab === 'videos' &&
+                                previousSubmission.video
+                                  .filter((video) => video.status === 'REVISION_REQUESTED')
                                   .map((video, index) => (
                                     <Paper
                                       key={video.id}
@@ -786,17 +661,20 @@ const CampaignFinalDraft = ({
                                         borderRadius: 2,
                                         bgcolor: 'background.neutral',
                                         border: '1px solid',
-                                        borderColor: 'divider'
+                                        borderColor: 'divider',
                                       }}
                                     >
                                       <Stack spacing={2}>
                                         <Stack direction="row" alignItems="center" spacing={1}>
-                                          <Iconify icon="solar:video-frame-bold" sx={{ color: 'text.secondary' }} />
+                                          <Iconify
+                                            icon="solar:video-frame-bold"
+                                            sx={{ color: 'text.secondary' }}
+                                          />
                                           <Typography variant="subtitle2">
                                             Draft Video {index + 1}
                                           </Typography>
                                         </Stack>
-                                        
+
                                         <Box
                                           sx={{
                                             position: 'relative',
@@ -806,7 +684,7 @@ const CampaignFinalDraft = ({
                                             overflow: 'hidden',
                                             bgcolor: 'black',
                                             border: '1px solid',
-                                            borderColor: 'divider'
+                                            borderColor: 'divider',
                                           }}
                                         >
                                           <Box
@@ -818,7 +696,7 @@ const CampaignFinalDraft = ({
                                               left: 0,
                                               width: '100%',
                                               height: '100%',
-                                              objectFit: 'contain'
+                                              objectFit: 'contain',
                                             }}
                                           >
                                             <source src={video.url} type="video/mp4" />
@@ -826,13 +704,11 @@ const CampaignFinalDraft = ({
                                         </Box>
                                       </Stack>
                                     </Paper>
-                                  ))
-                              )}
-
-                              {feedbackTab === 'rawFootage' && (
-                                previewSubmission.rawFootages
-                                  .filter(footage => 
-                                    previewSubmission.feedback.some(f => 
+                                  ))}
+                              {feedbackTab === 'rawFootage' &&
+                                previousSubmission.rawFootages
+                                  .filter((footage) =>
+                                    previousSubmission.feedback.some((f) =>
                                       f.rawFootageToUpdate?.includes(footage.id)
                                     )
                                   )
@@ -845,17 +721,20 @@ const CampaignFinalDraft = ({
                                         borderRadius: 2,
                                         bgcolor: 'background.neutral',
                                         border: '1px solid',
-                                        borderColor: 'divider'
+                                        borderColor: 'divider',
                                       }}
                                     >
                                       <Stack spacing={2}>
                                         <Stack direction="row" alignItems="center" spacing={1}>
-                                          <Iconify icon="solar:gallery-wide-bold" sx={{ color: 'text.secondary' }} />
+                                          <Iconify
+                                            icon="solar:gallery-wide-bold"
+                                            sx={{ color: 'text.secondary' }}
+                                          />
                                           <Typography variant="subtitle2">
                                             Raw Footage {index + 1}
                                           </Typography>
                                         </Stack>
-                                        
+
                                         <Box
                                           sx={{
                                             position: 'relative',
@@ -865,7 +744,7 @@ const CampaignFinalDraft = ({
                                             overflow: 'hidden',
                                             bgcolor: 'black',
                                             border: '1px solid',
-                                            borderColor: 'divider'
+                                            borderColor: 'divider',
                                           }}
                                         >
                                           <Box
@@ -877,7 +756,7 @@ const CampaignFinalDraft = ({
                                               left: 0,
                                               width: '100%',
                                               height: '100%',
-                                              objectFit: 'contain'
+                                              objectFit: 'contain',
                                             }}
                                           >
                                             <source src={footage.url} type="video/mp4" />
@@ -885,17 +764,17 @@ const CampaignFinalDraft = ({
                                         </Box>
                                       </Stack>
                                     </Paper>
-                                  ))
-                              )}
-
+                                  ))}
                               {feedbackTab === 'photos' && (
-                                <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                                  {previewSubmission.photos
-                                    .filter(photo => 
-                                      previewSubmission.feedback.some(f => 
-                                        f.photosToUpdate?.includes(photo.id)
-                                      )
-                                    )
+                                <Box
+                                  sx={{
+                                    display: 'grid',
+                                    gap: 3,
+                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                                  }}
+                                >
+                                  {previousSubmission.photos
+                                    .filter((photo) => photo.status === 'REVISION_REQUESTED')
                                     .map((photo, index) => (
                                       <Paper
                                         key={photo.id}
@@ -905,26 +784,29 @@ const CampaignFinalDraft = ({
                                           borderRadius: 2,
                                           bgcolor: 'background.neutral',
                                           border: '1px solid',
-                                          borderColor: 'divider'
+                                          borderColor: 'divider',
                                         }}
                                       >
                                         <Stack spacing={2}>
                                           <Stack direction="row" alignItems="center" spacing={1}>
-                                            <Iconify icon="solar:camera-bold" sx={{ color: 'text.secondary' }} />
+                                            <Iconify
+                                              icon="solar:camera-bold"
+                                              sx={{ color: 'text.secondary' }}
+                                            />
                                             <Typography variant="subtitle2">
                                               Photo {index + 1}
                                             </Typography>
                                           </Stack>
-                                          
+
                                           <Box
                                             sx={{
                                               position: 'relative',
-                                              paddingTop: '100%', 
+                                              paddingTop: '100%',
                                               borderRadius: 2,
                                               overflow: 'hidden',
                                               bgcolor: 'background.paper',
                                               border: '1px solid',
-                                              borderColor: 'divider'
+                                              borderColor: 'divider',
                                             }}
                                           >
                                             <Box
@@ -937,7 +819,7 @@ const CampaignFinalDraft = ({
                                                 left: 0,
                                                 width: '100%',
                                                 height: '100%',
-                                                objectFit: 'cover'
+                                                objectFit: 'cover',
                                               }}
                                             />
                                           </Box>
@@ -983,7 +865,13 @@ const CampaignFinalDraft = ({
                       flexGrow={1}
                       sx={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
                         <Box>
                           <Typography
                             variant="subtitle1"
@@ -1197,7 +1085,6 @@ const CampaignFinalDraft = ({
             </Stack>
             <Button
               onClick={() => {
-                setPreview(submission?.content);
                 display.onTrue();
               }}
               variant="contained"
@@ -1676,11 +1563,12 @@ const CampaignFinalDraft = ({
 
         <FinalDraftFileTypeModal
           submission={submission}
-          previewSubmission={previewSubmission}
+          previousSubmission={previousSubmission}
           open={uploadTypeModalOpen}
           handleClose={() => setUploadTypeModalOpen(false)}
           onSelectType={handleUploadTypeSelect}
           campaign={campaign}
+          deliverablesData={deliverablesData}
         />
 
         <UploadPhotoModal
@@ -1688,7 +1576,9 @@ const CampaignFinalDraft = ({
           campaignId={campaign?.id}
           open={photosModalOpen}
           onClose={() => setPhotosModalOpen(false)}
-          previewSubmission={previewSubmission}
+          previousSubmission={previousSubmission}
+          submission={submission}
+          deliverablesData={deliverablesData}
         />
 
         <UploadDraftVideoModal
@@ -1696,7 +1586,9 @@ const CampaignFinalDraft = ({
           campaign={campaign}
           open={draftVideoModalOpen}
           onClose={() => setDraftVideoModalOpen(false)}
-          previewSubmission={previewSubmission}
+          previousSubmission={previousSubmission}
+          submission={submission}
+          deliverablesData={deliverablesData}
         />
 
         <UploadRawFootageModal
@@ -1704,7 +1596,9 @@ const CampaignFinalDraft = ({
           onClose={() => setRawFootageModalOpen(false)}
           submissionId={submission?.id}
           campaign={campaign}
-          previewSubmission={previewSubmission}
+          previousSubmission={previousSubmission}
+          submission={submission}
+          deliverablesData={deliverablesData}
         />
 
         <Dialog
@@ -1758,4 +1652,5 @@ CampaignFinalDraft.propTypes = {
   getDependency: PropTypes.func,
   fullSubmission: PropTypes.array,
   setCurrentTab: PropTypes.func,
+  deliverablesData: PropTypes.object,
 };

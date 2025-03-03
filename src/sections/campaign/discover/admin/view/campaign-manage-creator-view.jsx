@@ -23,6 +23,7 @@ import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
+import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetInvoiceByCreatorAndCampaign from 'src/hooks/use-get-invoice-creator-camp';
 
@@ -64,6 +65,11 @@ const BoxStyle = {
 const CampaignManageCreatorView = ({ id, campaignId }) => {
   const { data, isLoading } = useGetCreatorById(id);
   const { mainRef } = useMainContext();
+  const {
+    data: deliverables,
+    isLoading: isDeliverableLoading,
+    mutate: deliverableMutate,
+  } = useGetDeliverables(id, campaignId);
 
   const query = useSearchParams();
 
@@ -223,16 +229,6 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     </Box>
   );
 
-  // const shortlistedCreators = useMemo(
-  //   () =>
-  //     !campaignLoading && campaign?.shortlisted
-  //       ? campaign.shortlisted.map((item, index) => ({ index, userId: item?.userId }))
-  //       : [],
-  //   [campaign, campaignLoading]
-  // );
-
-  // const currentIndex = shortlistedCreators.find((a) => a?.userId === id)?.index;
-
   useEffect(() => {
     if (socket) {
       socket.on('newSubmission', () => {
@@ -254,7 +250,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
     });
   }, [mainRef]);
 
-  if (isLoading || submissionLoading || campaignLoading) {
+  if (isLoading || submissionLoading || campaignLoading || isDeliverableLoading) {
     <Box
       sx={{
         position: 'relative',
@@ -752,6 +748,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             submissions={submissions}
             creator={data}
             invoice={invoice}
+            deliverables={{ deliverables, deliverableMutate }}
           />
         )}
         {currentTab === 'logistics' && <LogisticView campaign={campaign} creator={data} />}

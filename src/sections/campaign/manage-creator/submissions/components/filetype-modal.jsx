@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import { grey } from '@mui/material/colors';
 import {
@@ -242,75 +242,99 @@ const FirstDraftFileTypeModal = ({ submission, campaign, open, handleClose, onSe
   );
 };
 
-const FinalDraftFileTypeModal = ({ submission, previewSubmission, campaign, open, handleClose, onSelectType }) => {
+const FinalDraftFileTypeModal = ({
+  submission,
+  previousSubmission,
+  open,
+  handleClose,
+  onSelectType,
+  deliverablesData,
+}) => {
   const smUp = useResponsive('up', 'sm');
+
+  const { deliverables } = deliverablesData;
+
   const { socket } = useSocketContext();
+
   const { mutate: submissionMutate } = useGetSubmissions(
     submission?.userId,
     submission?.campaignId
   );
 
-  // Get feedback requirements from the preview submission
-  const allFeedback = previewSubmission?.feedback || [];
-  const videosToUpdate = allFeedback.reduce((acc, f) => [...acc, ...(f.videosToUpdate || [])], []);
-  const rawFootageToUpdate = allFeedback.reduce((acc, f) => [...acc, ...(f.rawFootageToUpdate || [])], []);
-  const photosToUpdate = allFeedback.reduce((acc, f) => [...acc, ...(f.photosToUpdate || [])], []);
+  const deliverablesToUpdate = useMemo(() => {
+    const videosToUpdate = deliverables?.videos.filter((x) => x.status === 'REVISION_REQUESTED');
+
+    const rawFootageToUpdate = deliverables?.rawFootages.filter(
+      (x) => x.status === 'REVISION_REQUESTED'
+    );
+    const photosToUpdate = deliverables?.photos.filter((x) => x.status === 'REVISION_REQUESTED');
+
+    return { videosToUpdate, rawFootageToUpdate, photosToUpdate };
+  }, [deliverables]);
 
   // Check if the required files have been uploaded in the current submission
-  const hasUploadedRequiredVideos = videosToUpdate.length > 0 
-    ? submission?.video?.length > 0 
+  const hasUploadedRequiredVideos = deliverablesToUpdate.videosToUpdate.length
+    ? deliverables?.videos?.length === deliverablesToUpdate.videosToUpdate.length
     : false;
-  const hasUploadedRequiredRawFootage = rawFootageToUpdate.length > 0 
-    ? submission?.rawFootages?.length > 0 
-    : false;
-  const hasUploadedRequiredPhotos = photosToUpdate.length > 0 
-    ? submission?.photos?.length > 0 
-    : false;
+
+  const hasUploadedRequiredRawFootage =
+    deliverablesToUpdate.rawFootageToUpdate.length > 0
+      ? deliverables?.rawFootages?.length === deliverablesToUpdate.rawFootageToUpdate.length
+      : false;
+
+  const hasUploadedRequiredPhotos =
+    deliverablesToUpdate.photosToUpdate.length > 0
+      ? deliverables?.photos?.length === deliverablesToUpdate.photosToUpdate.length
+      : false;
 
   const fileTypes = [
     {
       type: 'video',
       icon: 'solar:video-library-bold',
       title: 'Draft Video',
-      description: videosToUpdate.length > 0 
-        ? `Re-upload ${videosToUpdate.length} draft video(s)`
-        : 'Upload your main draft video for the campaign',
-      needsUpdate: videosToUpdate.length > 0,
+      description:
+        deliverablesToUpdate.videosToUpdate.length > 0
+          ? `Re-upload ${deliverablesToUpdate.videosToUpdate.length} draft video(s)`
+          : 'Upload your main draft video for the campaign',
+      needsUpdate: deliverablesToUpdate.videosToUpdate.length > 0,
       isUploaded: hasUploadedRequiredVideos,
       disabled: hasUploadedRequiredVideos || submission?.status === 'PENDING_REVIEW',
-      count: videosToUpdate.length,
+      count: deliverablesToUpdate.videosToUpdate.length,
     },
     {
       type: 'rawFootage',
       icon: 'solar:camera-bold',
       title: 'Raw Footage',
-      description: rawFootageToUpdate.length > 0
-        ? `Re-upload ${rawFootageToUpdate.length} raw footage file(s)`
-        : 'Upload raw, unedited footage from your shoot',
-      needsUpdate: rawFootageToUpdate.length > 0,
+      description:
+        deliverablesToUpdate.rawFootageToUpdate.length > 0
+          ? `Re-upload ${deliverablesToUpdate.rawFootageToUpdate.length} raw footage file(s)`
+          : 'Upload raw, unedited footage from your shoot',
+      needsUpdate: deliverablesToUpdate.rawFootageToUpdate.length > 0,
       isUploaded: hasUploadedRequiredRawFootage,
       disabled: hasUploadedRequiredRawFootage || submission?.status === 'PENDING_REVIEW',
-      count: rawFootageToUpdate.length,
+      count: deliverablesToUpdate.rawFootageToUpdate.length,
     },
     {
       type: 'photos',
       icon: 'solar:gallery-wide-bold',
       title: 'Photos',
-      description: photosToUpdate.length > 0
-        ? `Re-upload ${photosToUpdate.length} photo(s)`
-        : 'Upload photos from your campaign shoot',
-      needsUpdate: photosToUpdate.length > 0,
+      description:
+        deliverablesToUpdate.photosToUpdate.length > 0
+          ? `Re-upload ${deliverablesToUpdate.photosToUpdate.length} photo(s)`
+          : 'Upload photos from your campaign shoot',
+      needsUpdate: deliverablesToUpdate.photosToUpdate.length > 0,
       isUploaded: hasUploadedRequiredPhotos,
       disabled: hasUploadedRequiredPhotos || submission?.status === 'PENDING_REVIEW',
-      count: photosToUpdate.length,
+      count: deliverablesToUpdate.photosToUpdate.length,
     },
   ];
 
   // Only show file types that need updates
   const filteredFileTypes = fileTypes.filter((type) => {
-    if (type.type === 'video' && videosToUpdate.length > 0) return true;
-    if (type.type === 'rawFootage' && rawFootageToUpdate.length > 0) return true;
-    if (type.type === 'photos' && photosToUpdate.length > 0) return true;
+    if (type.type === 'video' && deliverablesToUpdate.videosToUpdate.length > 0) return true;
+    if (type.type === 'rawFootage' && deliverablesToUpdate.rawFootageToUpdate.length > 0)
+      return true;
+    if (type.type === 'photos' && deliverablesToUpdate.photosToUpdate.length > 0) return true;
     return false;
   });
 
@@ -497,9 +521,9 @@ FirstDraftFileTypeModal.propTypes = {
 
 FinalDraftFileTypeModal.propTypes = {
   submission: PropTypes.object,
-  previewSubmission: PropTypes.object,
-  campaign: PropTypes.object,
+  previousSubmission: PropTypes.object,
   onSelectType: PropTypes.func,
   open: PropTypes.bool,
   handleClose: PropTypes.func,
+  deliverablesData: PropTypes.object,
 };
