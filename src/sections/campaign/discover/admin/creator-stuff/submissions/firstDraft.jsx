@@ -1438,7 +1438,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   >
                     {selectedTab === 'video' && (
                       <>
-                        {deliverables?.videos?.length && (
+                        {!!deliverables?.videos?.length && (
                           <Grid container spacing={{ xs: 1, sm: 2 }}>
                             {deliverables.videos.map((videoItem, index) => (
                               <Grid item xs={12} sm={6} md={4} key={videoItem.id || index}>
@@ -1562,7 +1562,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                           </Grid>
                         )}
 
-                        {submission?.content && (
+                        {!!submission?.content && (
                           <Box
                             sx={{
                               position: 'relative',
@@ -1586,7 +1586,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                           </Box>
                         )}
 
-                        {(!submission?.content || !deliverables?.videos?.length) && (
+                        {!submission?.content && !deliverables?.videos?.length && (
                           <Typography>No draft video uploaded yet.</Typography>
                         )}
 
