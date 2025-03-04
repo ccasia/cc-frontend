@@ -1943,7 +1943,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                     }}
                                   />
                                   {/* Add indicator for footages that need changes */}
-                                  {submission?.status === 'CHANGES_REQUIRED' &&
+                                  {/* {submission?.status === 'CHANGES_REQUIRED' &&
                                     submission?.feedback?.some((feedback) =>
                                       feedback.rawFootageToUpdate?.includes(footage.id)
                                     ) && (
@@ -1968,7 +1968,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                           Changes Requested
                                         </Typography>
                                       </Box>
-                                    )}
+                                    )} */}
                                   {/* Checkbox for raw footage selection */}
                                   {rawFootageType === 'request' &&
                                     !(

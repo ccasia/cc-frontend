@@ -183,8 +183,6 @@ const CampaignFinalDraft = ({
     }));
   }, [submission, previousSubmission]);
 
-  console.log(previousSubmission);
-
   // useEffect(() => {
   //   if (!socket) {
   //     return undefined;
@@ -245,33 +243,9 @@ const CampaignFinalDraft = ({
         }
         return [...prev, data];
       });
-
-      // // Executed if processing is done
-      // if (data.progress === 100 || data.progress === 0) {
-      //   setIsProcessing(false);
-      //   reset();
-      //   setPreview('');
-      //   setProgressName('');
-      //   localStorage.removeItem('preview');
-
-      //   if (data.progress === 100) {
-      //     mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-      //   }
-      // } else {
-      //   setIsProcessing(true);
-      // }
     };
 
-    // const handleStatusQueue = (data) => {
-    //   if (data?.status === 'queue') {
-    //     inQueue.onTrue();
-    //   }
-    // };
-
     socket.on('progress', handleProgress);
-    // socket.on('statusQueue', handleStatusQueue);
-
-    // socket.emit('checkQueue', { submissionId: submission?.id });
 
     // Cleanup on component unmount
     // eslint-disable-next-line consistent-return
