@@ -3857,7 +3857,8 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
               submission?.status === 'IN_PROGRESS') &&
               (deliverables?.videos?.length ||
                 deliverables?.photos?.length ||
-                deliverables?.rawFootages?.length) && (
+                deliverables?.rawFootages?.length ||
+                submission?.content) && (
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
                     {/* Status Banner */}
