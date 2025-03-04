@@ -1438,7 +1438,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   >
                     {selectedTab === 'video' && (
                       <>
-                        {deliverables?.videos?.length ? (
+                        {deliverables?.videos?.length && (
                           <Grid container spacing={{ xs: 1, sm: 2 }}>
                             {deliverables.videos.map((videoItem, index) => (
                               <Grid item xs={12} sm={6} md={4} key={videoItem.id || index}>
@@ -1560,7 +1560,33 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                               </Grid>
                             ))}
                           </Grid>
-                        ) : (
+                        )}
+
+                        {submission?.content && (
+                          <Box
+                            sx={{
+                              position: 'relative',
+                              borderRadius: 1,
+                              overflow: 'hidden',
+                              boxShadow: 2,
+                              aspectRatio: '16/9',
+                              cursor: 'pointer',
+                              mb: 3,
+                            }}
+                          >
+                            <Box
+                              component="video"
+                              src={submission?.content}
+                              sx={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                              }}
+                            />
+                          </Box>
+                        )}
+
+                        {(!submission?.content || !deliverables?.videos?.length) && (
                           <Typography>No draft video uploaded yet.</Typography>
                         )}
 
@@ -1942,33 +1968,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                       objectFit: 'cover',
                                     }}
                                   />
-                                  {/* Add indicator for footages that need changes */}
-                                  {/* {submission?.status === 'CHANGES_REQUIRED' &&
-                                    submission?.feedback?.some((feedback) =>
-                                      feedback.rawFootageToUpdate?.includes(footage.id)
-                                    ) && (
-                                      <Box
-                                        sx={{
-                                          position: 'absolute',
-                                          top: 8,
-                                          left: 8,
-                                          bgcolor: 'warning.main',
-                                          color: 'warning.contrastText',
-                                          borderRadius: 1,
-                                          px: 1,
-                                          py: 0.5,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 0.5,
-                                          zIndex: 1,
-                                        }}
-                                      >
-                                        <Iconify icon="solar:pen-bold" width={16} />
-                                        <Typography variant="caption" fontWeight="bold">
-                                          Changes Requested
-                                        </Typography>
-                                      </Box>
-                                    )} */}
+
                                   {/* Checkbox for raw footage selection */}
                                   {rawFootageType === 'request' &&
                                     !(
