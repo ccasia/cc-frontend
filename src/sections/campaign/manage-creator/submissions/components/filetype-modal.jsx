@@ -252,7 +252,7 @@ const FinalDraftFileTypeModal = ({
 }) => {
   const smUp = useResponsive('up', 'sm');
 
-  const { deliverables } = deliverablesData;
+  const { deliverables, deliverableMutate } = deliverablesData;
 
   const { socket } = useSocketContext();
 
@@ -342,13 +342,14 @@ const FinalDraftFileTypeModal = ({
     if (socket) {
       socket.on('updateSubmission', () => {
         submissionMutate();
+        deliverableMutate();
       });
     }
 
     return () => {
       socket?.off('updateSubmission', submissionMutate);
     };
-  }, [socket, submissionMutate]);
+  }, [socket, submissionMutate, deliverableMutate]);
 
   return (
     <Dialog open={open} fullScreen={!smUp} maxWidth="sm" fullWidth>
