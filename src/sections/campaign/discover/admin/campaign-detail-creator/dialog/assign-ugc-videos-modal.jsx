@@ -57,38 +57,10 @@ const AssignUGCVideoModal = ({ dialog, onClose, credits, campaignId, modalClose,
     formState: { isValid },
   } = methods;
 
-  // const creators = watch('shortlistedCreators');
-
   const { fields } = useFieldArray({
     control,
     name: 'shortlistedCreators',
   });
-
-  // const handleInputChange = (val, name) => {
-  //   const value = Number(val) || 0;
-  //   setValue(name, value);
-
-  //   const totalCredits = creators.reduce((acc, sum) => acc + sum.credits, 0);
-
-  //   if (totalCredits > credits) {
-  //     let runningSum = 0;
-
-  //     // eslint-disable-next-line no-plusplus
-  //     for (let i = 0; i < creators.length; i++) {
-  //       runningSum += creators[i].credits || 0;
-
-  //       if (runningSum > credits) {
-  //         setError(name, {
-  //           type: 'manual',
-  //           message: `Credits exceeded`,
-  //         });
-  //         return;
-  //       }
-  //     }
-  //   } else {
-  //     clearErrors(name);
-  //   }
-  // };
 
   const onSubmit = handleSubmit(async ({ shortlistedCreators: data }) => {
     const totalCredits = data.reduce((acc, sum) => acc + sum.credits, 0);
