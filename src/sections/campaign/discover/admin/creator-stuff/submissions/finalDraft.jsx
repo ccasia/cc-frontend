@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 // /* eslint-disable react/prop-types */
 // /* eslint-disable jsx-a11y/media-has-caption */
 // import dayjs from 'dayjs';
@@ -2729,6 +2730,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
     resolution: '',
     duration: 0,
   });
+
   const [draftVideoModalOpen, setDraftVideoModalOpen] = useState(false);
   const [currentDraftVideoIndex, setCurrentDraftVideoIndex] = useState(0);
   const [draftVideoDetails, setDraftVideoDetails] = useState({
@@ -2790,9 +2792,8 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
   });
 
   const {
-    handleSubmit,
     setValue,
-    reset,
+
     watch,
     formState: { isSubmitting },
   } = draftVideoMethods;
@@ -3259,7 +3260,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
   };
 
   const handleDraftVideoClick = (index) => {
-    setCurrentDraftVideoIndex(index);
+    if (index) {
+      setCurrentDraftVideoIndex(index);
+    }
     setDraftVideoModalOpen(true);
   };
 
@@ -3889,7 +3892,11 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                           <Stack alignItems="center">
                             <Typography variant="subtitle2">Draft Videos</Typography>
                             <Typography variant="caption">
-                              {deliverables?.videos?.length || 0} videos
+                              {submission?.content
+                                ? '1 video'
+                                : deliverables?.videos?.length
+                                  ? `${deliverables.videos.length} videos`
+                                  : '0 video'}
                             </Typography>
                           </Stack>
                         </Button>
@@ -3956,7 +3963,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                     >
                       {selectedTab === 'video' && (
                         <>
-                          {deliverables?.videos?.length > 0 ? (
+                          {!!deliverables?.videos?.length && (
                             <Grid container spacing={{ xs: 1, sm: 2 }}>
                               {deliverables.videos.map((videoItem, index) => (
                                 <Grid item xs={12} sm={6} md={4} key={videoItem.id || index}>
@@ -4030,7 +4037,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
 
                                     {/* Existing checkbox for video selection */}
                                     {type === 'request' &&
-                                      videoItem.status !== 'REVISION_REQUESTED' && (
+                                      !submission?.feedback?.some((feedback) =>
+                                        feedback.videosToUpdate?.includes(videoItem.id)
+                                      ) && (
                                         <Checkbox
                                           checked={selectedVideosForChange.includes(videoItem.id)}
                                           onChange={() => handleVideoSelection(videoItem.id)}
@@ -4049,7 +4058,6 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                       )}
 
                                     <Box
-                                      onClick={() => handleDraftVideoClick(index)}
                                       sx={{
                                         position: 'absolute',
                                         top: 0,
@@ -4061,6 +4069,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                       }}
+                                      onClick={() => handleDraftVideoClick(index)}
                                     >
                                       <Iconify
                                         icon="mdi:play"
@@ -4076,7 +4085,34 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                 </Grid>
                               ))}
                             </Grid>
-                          ) : (
+                          )}
+
+                          {!!submission?.content && (
+                            <Box
+                              sx={{
+                                position: 'relative',
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                boxShadow: 2,
+                                aspectRatio: '16/9',
+                                cursor: 'pointer',
+                                mb: 3,
+                              }}
+                              onClick={() => handleDraftVideoClick()}
+                            >
+                              <Box
+                                component="video"
+                                src={submission?.content}
+                                sx={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                }}
+                              />
+                            </Box>
+                          )}
+
+                          {!submission?.content && !deliverables?.videos?.length && (
                             <Typography>No draft video uploaded yet.</Typography>
                           )}
 
@@ -5356,7 +5392,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 >
                   <Box
                     component="video"
-                    src={submission?.video?.[currentDraftVideoIndex]?.url}
+                    src={submission?.content || deliverables?.videos?.[currentDraftVideoIndex]?.url}
                     controls
                     autoPlay
                     onLoadedMetadata={handleDraftVideoMetadata}
@@ -5370,12 +5406,12 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 </Box>
 
                 {/* Navigation Arrows */}
-                {submission?.video?.length > 1 && (
+                {!!deliverables?.videos?.length && (
                   <>
                     <IconButton
                       onClick={() =>
                         setCurrentDraftVideoIndex((prev) =>
-                          prev > 0 ? prev - 1 : submission.video.length - 1
+                          prev > 0 ? prev - 1 : deliverables.videos.length - 1
                         )
                       }
                       sx={{
@@ -5393,7 +5429,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                     <IconButton
                       onClick={() =>
                         setCurrentDraftVideoIndex((prev) =>
-                          prev < submission.video.length - 1 ? prev + 1 : 0
+                          prev < deliverables.videos.length - 1 ? prev + 1 : 0
                         )
                       }
                       sx={{
@@ -5438,7 +5474,8 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                       fontFamily: 'monospace',
                     }}
                   >
-                    {submission?.video?.[currentDraftVideoIndex]?.url?.split('/').pop() ||
+                    {submission?.content?.split('/').pop() ||
+                      submission?.video?.[currentDraftVideoIndex]?.url?.split('/').pop() ||
                       'Untitled Video'}
                   </Typography>
                 </Box>
@@ -5467,7 +5504,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                     </Typography>
                     <Chip
                       label={
-                        submission?.video?.[currentDraftVideoIndex]?.url
+                        (submission?.content || deliverables?.videos?.[currentDraftVideoIndex]?.url)
                           ?.split('.')
                           ?.pop()
                           ?.toUpperCase()
@@ -5516,7 +5553,11 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   fullWidth
                   variant="contained"
                   startIcon={<Iconify icon="eva:download-fill" />}
-                  onClick={() => handleDownload(submission?.video?.[currentDraftVideoIndex]?.url)}
+                  onClick={() =>
+                    handleDownload(
+                      submission?.content || deliverables?.videos?.[currentDraftVideoIndex]?.url
+                    )
+                  }
                   sx={{
                     mt: 1,
                     bgcolor: '#2e6c56',
