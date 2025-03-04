@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable react/prop-types */
 /* eslint-disable jsx-a11y/media-has-caption */
 import dayjs from 'dayjs';
@@ -1374,10 +1375,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                         <Stack alignItems="center">
                           <Typography variant="subtitle2">Draft Videos</Typography>
                           <Typography variant="caption">
-                            {submission?.content && '1 video'}
-                            {!submission?.content && deliverables?.videos?.length
-                              ? `${deliverables?.videos?.length} videos`
-                              : '0 video'}
+                            {submission?.content
+                              ? '1 video'
+                              : deliverables?.videos?.length
+                                ? `${deliverables.videos.length} videos`
+                                : '0 video'}
                           </Typography>
                         </Stack>
                       </Button>
@@ -2791,7 +2793,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                       fontFamily: 'monospace',
                     }}
                   >
-                    {submission?.content?.url?.split('/').pop() ||
+                    {submission?.content?.split('/').pop() ||
                       submission?.video?.[currentDraftVideoIndex]?.url?.split('/').pop() ||
                       'Untitled Video'}
                   </Typography>
@@ -2821,7 +2823,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                     </Typography>
                     <Chip
                       label={
-                        (submission?.content || submission?.video?.[currentDraftVideoIndex]?.url)
+                        (submission?.content || deliverables?.videos?.[currentDraftVideoIndex]?.url)
                           ?.split('.')
                           ?.pop()
                           ?.toUpperCase()
@@ -2870,7 +2872,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   fullWidth
                   variant="contained"
                   startIcon={<Iconify icon="eva:download-fill" />}
-                  onClick={() => handleDownload(submission?.video?.[currentDraftVideoIndex]?.url)}
+                  onClick={() =>
+                    handleDownload(
+                      submission?.content || deliverables?.videos?.[currentDraftVideoIndex]?.url
+                    )
+                  }
                   sx={{
                     mt: 1,
                     bgcolor: '#2e6c56',
