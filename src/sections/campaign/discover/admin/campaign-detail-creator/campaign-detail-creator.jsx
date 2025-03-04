@@ -577,7 +577,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
 
               <LoadingButton
                 type="submit"
-                disabled={isDisabled || !selectedCreator.length || isSubmitting || !creators.length}
+                disabled={isDisabled || !selectedCreator.length || isSubmitting}
                 loading={loading.value}
                 sx={{
                   bgcolor: '#203ff5',
