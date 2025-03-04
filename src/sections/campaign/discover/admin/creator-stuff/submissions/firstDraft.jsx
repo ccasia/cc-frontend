@@ -1369,15 +1369,15 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                             bgcolor: selectedTab === 'video' ? '#e6ebff' : 'action.hover',
                           },
                         }}
+                        c
                       >
                         <Stack alignItems="center">
                           <Typography variant="subtitle2">Draft Videos</Typography>
                           <Typography variant="caption">
                             {submission?.content && '1 video'}
                             {!submission?.content && deliverables?.videos?.length
-                              ? deliverables?.videos?.length
-                              : 0}{' '}
-                            videos
+                              ? `${deliverables?.videos?.length} videos`
+                              : '0 video'}
                           </Typography>
                         </Stack>
                       </Button>
