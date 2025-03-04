@@ -1373,7 +1373,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                         <Stack alignItems="center">
                           <Typography variant="subtitle2">Draft Videos</Typography>
                           <Typography variant="caption">
-                            {deliverables?.videos?.length || 0} videos
+                            {submission?.content && '1 video'}
+                            {!submission?.content && deliverables?.videos?.length
+                              ? deliverables?.videos?.length
+                              : 0}{' '}
+                            videos
                           </Typography>
                         </Stack>
                       </Button>
