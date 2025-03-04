@@ -759,7 +759,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   };
 
   const handleDraftVideoClick = (index) => {
-    setCurrentDraftVideoIndex(index);
+    if (index) {
+      setCurrentDraftVideoIndex(index);
+    }
     setDraftVideoModalOpen(true);
   };
 
@@ -1533,7 +1535,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                     )}
 
                                   <Box
-                                    onClick={() => handleDraftVideoClick(index)}
                                     sx={{
                                       position: 'absolute',
                                       top: 0,
@@ -1545,6 +1546,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                       alignItems: 'center',
                                       justifyContent: 'center',
                                     }}
+                                    onClick={() => handleDraftVideoClick(index)}
                                   >
                                     <Iconify
                                       icon="mdi:play"
@@ -1573,6 +1575,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                               cursor: 'pointer',
                               mb: 3,
                             }}
+                            onClick={() => handleDraftVideoClick()}
                           >
                             <Box
                               component="video"
@@ -2702,7 +2705,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 >
                   <Box
                     component="video"
-                    src={submission?.video?.[currentDraftVideoIndex]?.url}
+                    src={submission?.content || deliverables?.videos?.[currentDraftVideoIndex]?.url}
                     controls
                     autoPlay
                     onLoadedMetadata={handleDraftVideoMetadata}
@@ -2716,12 +2719,12 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 </Box>
 
                 {/* Navigation Arrows */}
-                {submission?.video?.length > 1 && (
+                {!!deliverables?.videos?.length && (
                   <>
                     <IconButton
                       onClick={() =>
                         setCurrentDraftVideoIndex((prev) =>
-                          prev > 0 ? prev - 1 : submission.video.length - 1
+                          prev > 0 ? prev - 1 : deliverables.videos.length - 1
                         )
                       }
                       sx={{
@@ -2739,7 +2742,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                     <IconButton
                       onClick={() =>
                         setCurrentDraftVideoIndex((prev) =>
-                          prev < submission.video.length - 1 ? prev + 1 : 0
+                          prev < deliverables.videos.length - 1 ? prev + 1 : 0
                         )
                       }
                       sx={{
@@ -2784,7 +2787,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                       fontFamily: 'monospace',
                     }}
                   >
-                    {submission?.video?.[currentDraftVideoIndex]?.url?.split('/').pop() ||
+                    {submission?.content?.url?.split('/').pop() ||
+                      submission?.video?.[currentDraftVideoIndex]?.url?.split('/').pop() ||
                       'Untitled Video'}
                   </Typography>
                 </Box>
@@ -2813,7 +2817,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                     </Typography>
                     <Chip
                       label={
-                        submission?.video?.[currentDraftVideoIndex]?.url
+                        (submission?.content || submission?.video?.[currentDraftVideoIndex]?.url)
                           ?.split('.')
                           ?.pop()
                           ?.toUpperCase()
