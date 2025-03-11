@@ -105,6 +105,8 @@ const CampaignFirstDraft = ({
 
   const [uploadProgress, setUploadProgress] = useState([]);
 
+  const { deliverables } = deliverablesData;
+
   const methods = useForm({
     defaultValues: {
       // draft: '',
@@ -171,40 +173,13 @@ const CampaignFirstDraft = ({
         }
         return [...prev, data];
       });
-
-      // // Executed if processing is done
-      // if (data.progress === 100 || data.progress === 0) {
-      //   setIsProcessing(false);
-      //   reset();
-      //   setPreview('');
-      //   setProgressName('');
-      //   localStorage.removeItem('preview');
-
-      //   if (data.progress === 100) {
-      //     mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-      //   }
-      // } else {
-      //   setIsProcessing(true);
-      // }
     };
 
-    // const handleStatusQueue = (data) => {
-    //   if (data?.status === 'queue') {
-    //     inQueue.onTrue();
-    //   }
-    // };
-
     socket.on('progress', handleProgress);
-    // socket.on('statusQueue', handleStatusQueue);
 
-    // socket.emit('checkQueue', { submissionId: submission?.id });
-
-    // Cleanup on component unmount
     // eslint-disable-next-line consistent-return
     return () => {
       socket.off('progress', handleProgress);
-      // socket.off('statusQueue', handleStatusQueue);
-      // socket.off('checkQueue');
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
@@ -798,8 +773,8 @@ const CampaignFirstDraft = ({
                     </AccordionSummary>
                     <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
                       <Stack spacing={2} sx={{ maxWidth: 'md', mx: 'auto' }}>
-                        {submission?.video?.length > 0 ? (
-                          submission.video.map((videoItem, index) => (
+                        {campaign?.campaignCredits && deliverables?.videos?.length > 0 ? (
+                          deliverables.videos.map((videoItem, index) => (
                             <Box
                               key={videoItem.id || index}
                               sx={{

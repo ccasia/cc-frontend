@@ -35,7 +35,7 @@ const UploadDraftVideoModal = ({
   const methods = useForm({
     defaultValues: {
       draftVideo: [],
-      caption: '',
+      caption: previousSubmission?.caption || '',
     },
   });
 
@@ -48,7 +48,8 @@ const UploadDraftVideoModal = ({
   const videosToUpdateCount =
     totalUGCVideos ||
     submission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
-    previousSubmission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length;
+    previousSubmission?.video.filter((x) => x.status === 'REVISION_REQUESTED')?.length ||
+    1;
 
   const validateFileCount = (files) => {
     if (previousSubmission?.status === 'CHANGES_REQUIRED') {

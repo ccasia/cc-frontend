@@ -20,7 +20,6 @@ import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
-import { enqueueSnackbar } from 'notistack';
 
 const FirstDraftFileTypeModal = ({ submission, campaign, open, handleClose, onSelectType }) => {
   const smUp = useResponsive('up', 'sm');
@@ -249,6 +248,7 @@ const FinalDraftFileTypeModal = ({
   handleClose,
   onSelectType,
   deliverablesData,
+  campaign,
 }) => {
   const smUp = useResponsive('up', 'sm');
 
@@ -296,10 +296,19 @@ const FinalDraftFileTypeModal = ({
         deliverablesToUpdate.videosToUpdate.length > 0
           ? `Re-upload ${deliverablesToUpdate.videosToUpdate.length} draft video(s)`
           : 'Upload your main draft video for the campaign',
-      needsUpdate: deliverablesToUpdate.videosToUpdate.length > 0,
-      isUploaded: hasUploadedRequiredVideos,
-      disabled: hasUploadedRequiredVideos || submission?.status === 'PENDING_REVIEW',
-      count: deliverablesToUpdate.videosToUpdate.length,
+      ...(!campaign?.campaignCredits
+        ? {
+            needsUpdate: previousSubmission?.feedback?.length,
+            isUploaded: submission?.status === 'PENDING_REVIEW',
+            disabled: submission?.status === 'PENDING_REVIEW',
+            count: 1,
+          }
+        : {
+            needsUpdate: deliverablesToUpdate.videosToUpdate.length > 0,
+            isUploaded: hasUploadedRequiredVideos,
+            disabled: hasUploadedRequiredVideos || submission?.status === 'PENDING_REVIEW',
+            count: deliverablesToUpdate.videosToUpdate.length,
+          }),
     },
     {
       type: 'rawFootage',
@@ -331,10 +340,15 @@ const FinalDraftFileTypeModal = ({
 
   // Only show file types that need updates
   const filteredFileTypes = fileTypes.filter((type) => {
-    if (type.type === 'video' && deliverablesToUpdate.videosToUpdate.length > 0) return true;
+    if (
+      type.type === 'video' &&
+      (deliverablesToUpdate.videosToUpdate.length > 0 || previousSubmission?.feedback?.length)
+    )
+      return true;
     if (type.type === 'rawFootage' && deliverablesToUpdate.rawFootageToUpdate.length > 0)
       return true;
     if (type.type === 'photos' && deliverablesToUpdate.photosToUpdate.length > 0) return true;
+
     return false;
   });
 
@@ -527,4 +541,5 @@ FinalDraftFileTypeModal.propTypes = {
   open: PropTypes.bool,
   handleClose: PropTypes.func,
   deliverablesData: PropTypes.object,
+  campaign: PropTypes.object,
 };
