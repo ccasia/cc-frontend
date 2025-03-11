@@ -206,29 +206,66 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     setSubmitStatus('');
   };
 
+  // const handleDownload = async (url) => {
+  //   try {
+  //     const response = await fetch(url);
+  //     // const contentType = response.headers.get('content-type');
+  //     const blob = await response.blob();
+  //     const filename = `${campaign?.id}-${campaign?.name}.pdf?v=${dayjs().toISOString()}.pdf`;
+
+  //     // For browsers that support the download attribute
+  //     if ('download' in document.createElement('a')) {
+  //       const link = document.createElement('a');
+  //       link.href = window.URL.createObjectURL(blob);
+  //       link.download = filename;
+  //       link.style.display = 'none';
+  //       document.body.appendChild(link);
+  //       link.click();
+  //       document.body.removeChild(link);
+  //       window.URL.revokeObjectURL(link.href);
+  //     }
+  //     // For IE10+
+  //     else if (navigator.msSaveBlob) {
+  //       navigator.msSaveBlob(blob, filename);
+  //     }
+  //     // Fallback - open in new window
+  //     else {
+  //       const newWindow = window.open(url, '_blank');
+  //       if (!newWindow) {
+  //         enqueueSnackbar('Please allow popups for this website to download the file.', {
+  //           variant: 'warning',
+  //         });
+  //       }
+  //     }
+  //   } catch (error) {
+  //     enqueueSnackbar('Download failed. Please try again.', { variant: 'error' });
+  //   }
+  // };
+
   const handleDownload = async (url) => {
     try {
       const response = await fetch(url);
-      // const contentType = response.headers.get('content-type');
       const blob = await response.blob();
-      const filename = `${campaign?.id}-${campaign?.name}.pdf?v=${dayjs().toISOString()}.pdf`;
+      const filename = `${campaign?.id}-${campaign?.name}-${dayjs().toISOString()}.pdf`;
 
-      // For browsers that support the download attribute
       if ('download' in document.createElement('a')) {
         const link = document.createElement('a');
-        link.href = window.URL.createObjectURL(blob);
+        const blobUrl = window.URL.createObjectURL(blob);
+        link.href = blobUrl;
         link.download = filename;
         link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        window.URL.revokeObjectURL(link.href);
+
+        // Delay revocation to ensure Safari processes the download
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000);
       }
       // For IE10+
       else if (navigator.msSaveBlob) {
         navigator.msSaveBlob(blob, filename);
       }
-      // Fallback - open in new window
+      // Fallback - open in a new window
       else {
         const newWindow = window.open(url, '_blank');
         if (!newWindow) {
