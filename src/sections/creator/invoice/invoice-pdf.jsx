@@ -82,6 +82,7 @@ const useStyles = () =>
         tableRow: {
           display: 'flex',
           flexDirection: 'row',
+          justifyContent: "space-between",
           gap: 10,
         },
         tableBody: {
@@ -230,38 +231,47 @@ const InvoicePDF = ({ data }) => {
                       <Text style={styles.tableItem}>Campaign</Text>
                       <Text style={styles.tableItem}>Deliverables</Text>
                       <Text style={styles.tableItem}>Quantity</Text>
-                      <Text style={styles.tableItem}>Amount (MYR)</Text>
+                      {/* <Text style={styles.tableItem}>Amount (MYR)</Text> */}
                     </View>
                   </View>
                   <View style={styles.tableBody}>
                     <View style={styles.tableRow}>
                       <Text style={styles.tableItem}>1</Text>
                       <Text style={styles.tableItem}>{data.campaign.name}</Text>
-                      <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
-                        {data?.deliverables?.length ? (
-                          data?.deliverables?.map((item, index) => (
-                            <Text key={index} style={{ marginBottom: 5 }}>
-                              {item.type}
-                            </Text>
-                          ))
-                        ) : (
-                          <Text style={styles.tableItem}>None</Text>
-                        )}
-                      </View>
 
-                      <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
-                        {data?.deliverables?.length ? (
-                          data?.deliverables?.map((item, index) => (
-                            <Text key={index} style={{ marginBottom: 5 }}>
-                              {item.count}
-                            </Text>
-                          ))
-                        ) : (
-                          <Text style={styles.tableItem}>None</Text>
-                        )}
-                      </View>
+                      {data?.campaign?.campaignCredits ? (
+                        <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
+                          {data?.deliverables?.length ? (
+                            data?.deliverables?.map((item, index) => (
+                              <Text key={index} style={{ marginBottom: 5 }}>
+                                {item.type}
+                              </Text>
+                            ))
+                          ) : (
+                            <Text style={styles.tableItem}>None</Text>
+                          )}
+                        </View>
+                      ) : (
+                        <Text style={styles.tableItem}>Video</Text>
+                      )}
+
+                      {data?.campaign?.campaignCredits ? (
+                        <View style={{ display: 'flex', flexDirection: 'column', width: '20%' }}>
+                          {data?.deliverables?.length ? (
+                            data?.deliverables?.map((item, index) => (
+                              <Text key={index} style={{ marginBottom: 5 }}>
+                                {item.count}
+                              </Text>
+                            ))
+                          ) : (
+                            <Text style={styles.tableItem}>None</Text>
+                          )}
+                        </View>
+                      ) : (
+                        <Text style={styles.tableItem}>1</Text>
+                      )}
                       {/* <Text style={styles.tableItem}>{data.campaign.description}</Text> */}
-                      <Text style={styles.tableItem}>RM {data.amount}</Text>
+                      {/* <Text style={styles.tableItem}>RM {data.amount}</Text> */}
                     </View>
                   </View>
                 </View>

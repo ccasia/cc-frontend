@@ -209,7 +209,6 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const handleDownload = async (url) => {
     try {
       const response = await fetch(url);
-      // const contentType = response.headers.get('content-type');
       const blob = await response.blob();
       const filename = `${campaign?.id}-${campaign?.name}.pdf?v=${dayjs().toISOString()}.pdf`;
 

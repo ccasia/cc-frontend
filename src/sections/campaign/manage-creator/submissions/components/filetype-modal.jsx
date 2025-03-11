@@ -169,6 +169,7 @@ const FirstDraftFileTypeModal = ({ submission, campaign, open, handleClose, onSe
                   <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
                 </Box>
               )}
+
               {type.disabled && submission?.status === 'PENDING_REVIEW' && (
                 <Box
                   sx={{
@@ -189,6 +190,7 @@ const FirstDraftFileTypeModal = ({ submission, campaign, open, handleClose, onSe
                   <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
                 </Box>
               )}
+
               <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <Avatar
                   sx={{
@@ -342,7 +344,8 @@ const FinalDraftFileTypeModal = ({
   const filteredFileTypes = fileTypes.filter((type) => {
     if (
       type.type === 'video' &&
-      (deliverablesToUpdate.videosToUpdate.length > 0 || previousSubmission?.feedback?.length)
+      (deliverablesToUpdate.videosToUpdate.length ||
+        (!campaign?.campaignCredits && previousSubmission?.feedback?.length))
     )
       return true;
     if (type.type === 'rawFootage' && deliverablesToUpdate.rawFootageToUpdate.length > 0)
@@ -488,7 +491,6 @@ const FinalDraftFileTypeModal = ({
                 >
                   <Iconify icon={type.icon} />
                 </Avatar>
-
                 <ListItemText
                   sx={{
                     flex: 1,
