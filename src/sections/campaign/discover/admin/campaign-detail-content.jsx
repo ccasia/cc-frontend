@@ -748,6 +748,7 @@ const CampaignDetailContent = ({ campaign }) => {
                 { label: 'Raw Footage', value: campaign?.rawFootage },
                 { label: 'Photos', value: campaign?.photos },
                 { label: 'Ads', value: campaign?.ads },
+                { label: 'Cross Posting', value: campaign?.crossPosting },
               ].map(
                 (deliverable) =>
                   deliverable.value && (

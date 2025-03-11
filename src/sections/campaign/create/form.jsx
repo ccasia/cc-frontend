@@ -235,7 +235,7 @@ function CreateCampaignForm({ onClose, mutate }) {
     campaignType: Yup.string().required('Campaign type is required.'),
     deliverables: Yup.array()
       .min(1, 'At least one deliverable is required')
-      .test('has-ugc-videos', 'UGC Videos is required', (value) => value?.includes('UGC_VIDEOS'))
+      // .test('has-ugc-videos', 'UGC Videos is required', (value) => value?.includes('UGC_VIDEOS'))
       .required('Deliverables are required'),
     rawFootage: Yup.boolean(),
     photos: Yup.boolean(),
@@ -433,6 +433,8 @@ function CreateCampaignForm({ onClose, mutate }) {
       audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
       rawFootage: data.deliverables.includes('RAW_FOOTAGES'), // Convert based on deliverables
       photos: data.deliverables.includes('PHOTOS'),
+      ads: data.deliverables.includes('ADS'),
+      crossPosting: data.deliverables.includes('CROSS_POSTING'),
     };
 
     console.log('Adjusted Data before sending:', adjustedData); // Debug log
