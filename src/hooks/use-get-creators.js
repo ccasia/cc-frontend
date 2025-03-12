@@ -70,7 +70,7 @@ export const useSWRGetCreatorByID = (id) => {
   );
 
   return {
-    creator: data,
+    data,
     isLoading,
     isError: error,
   };

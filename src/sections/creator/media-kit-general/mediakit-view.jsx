@@ -26,7 +26,6 @@ import { formatNumber } from '../media-kit/view-instagram';
 
 // eslint-disable-next-line react/prop-types
 const MediaKit = ({ id, noBigScreen }) => {
-  // const settings = useSettingsContext();
   const theme = useTheme();
   const { creator, isLoading, isError } = useSWRGetCreatorByID(id);
 
