@@ -115,9 +115,9 @@ const MediaKitCreator = () => {
 
     if (currentTab === 'tiktok') {
       return {
-        followers: tiktok?.user?.data?.user?.follower_count || 0,
-        engagement_rate: tiktok?.user?.data?.user?.follower_count || 0,
-        averageLikes: tiktok?.user?.data?.user?.likes_count || 0,
+        followers: tiktok?.creator?.tiktokUser?.follower_count || 0,
+        engagement_rate: tiktok?.creator?.tiktokUser?.follower_count || 0,
+        averageLikes: tiktok?.creator?.tiktokUser?.likes_count || 0,
       };
     }
 
