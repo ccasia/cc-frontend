@@ -101,15 +101,15 @@ const MediaKitCreator = () => {
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
-        followers: instagram?.user?.followers_count || 0,
+        followers: instagram?.instagramUser?.followers_count || 0,
         engagement_rate: `${
           calculateEngagementRate(
             instagram?.contents?.reduce((sum, acc) => sum + parseInt(acc.like_count, 10), 0),
-            instagram?.user?.followers_count
+            instagram?.instagramUser?.followers_count
           ) || 0
         }%`,
-        averageLikes: instagram?.user?.average_like || 0,
-        username: instagram?.user?.username,
+        averageLikes: instagram?.instagramUser?.average_like || 0,
+        username: instagram?.instagramUser?.username,
       };
     }
 

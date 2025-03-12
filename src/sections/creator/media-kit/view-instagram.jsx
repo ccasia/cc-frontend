@@ -215,8 +215,8 @@ const MediaKitSocialContent = ({ instagram }) => {
 
   return (
     <Box>
-      {instagramData?.contents?.length ? (
-        <TopContentGrid topContents={instagramData?.contents} />
+      {instagramData?.instagramVideo?.length ? (
+        <TopContentGrid topContents={instagramData?.instagramVideo} />
       ) : (
         <Typography variant="subtitle1" color="text.secondary" textAlign="center">
           No top content data available
