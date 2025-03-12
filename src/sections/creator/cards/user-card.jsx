@@ -1,24 +1,23 @@
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
+import { Tab, Tabs } from '@mui/material';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
+import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
-import { alpha, useTheme } from '@mui/material/styles';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { formatText } from 'src/utils/format-test';
 
-import { _socials } from 'src/_mock';
 import { AvatarShape } from 'src/assets/illustrations';
-
 import Iconify from 'src/components/iconify';
+import { _socials } from 'src/_mock';
 
 // ----------------------------------------------------------------------
 
@@ -36,18 +35,60 @@ const formatNumber = (num) => {
   return num.toString();
 };
 
+const calculateEngagementRate = (totalLikes, followers) => {
+  if (!(totalLikes || followers)) return null;
+  return ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2);
+};
+
 export default function UserCard({ user }) {
   const theme = useTheme();
+  const [currentTab, setCurrentTab] = useState('instagram');
+
+  const handleChange = (event, newValue) => {
+    event.stopPropagation();
+    setCurrentTab(newValue);
+  };
 
   const { name, role, avatarUrl } = user;
 
   const router = useRouter();
 
-  console.log(user)
+  const socialMediaAnalytics = useMemo(() => {
+    if (currentTab === 'instagram') {
+      return {
+        followers: user?.creator?.instagramUser?.followers_count || 0,
+        engagement_rate: `${
+          calculateEngagementRate(
+            user?.creator?.instagramUser?.instagramVideo?.reduce(
+              (sum, acc) => sum + parseInt(acc.like_count, 10),
+              0
+            ),
+            user?.creator?.instagramUser?.followers_count
+          ) || 0
+        }%`,
+        averageLikes: user?.creator?.instagramUser?.average_like || 0,
+        username: user?.creator?.instagramUser?.username,
+      };
+    }
+
+    if (currentTab === 'tiktok') {
+      return {
+        followers: user?.creator?.tiktokUser?.follower_count || 0,
+        engagement_rate: user?.creator?.tiktokUser?.follower_count || 0,
+        averageLikes: user?.creator?.tiktokUser?.likes_count || 0,
+      };
+    }
+
+    return {
+      followers: 0,
+      engagement_rate: 0,
+      averageLikes: 0,
+    };
+  }, [currentTab, user]);
 
   return (
     <Box
-      component="div"
+      // component="div"
       onClick={() => router.push(paths.dashboard.creator.mediaKit(user?.creator?.id))}
     >
       <Card
@@ -113,7 +154,17 @@ export default function UserCard({ user }) {
           secondaryTypographyProps={{ component: 'span', mt: 0.5 }}
         />
 
-        <Stack direction="row" alignItems="center" justifyContent="center" sx={{ mb: 2.5 }}>
+        <Box width={1}>
+          <Tabs value={currentTab} onChange={handleChange} variant="fullWidth">
+            <Tab
+              value="instagram"
+              icon={<Iconify icon="ant-design:instagram-filled" width={20} />}
+            />
+            <Tab value="tiktok" icon={<Iconify icon="ant-design:tik-tok-filled" width={20} />} />
+          </Tabs>
+        </Box>
+
+        {/* <Stack direction="row" alignItems="center" justifyContent="center" sx={{ mb: 2.5 }}>
           {_socials.map((social) => (
             <IconButton
               key={social.name}
@@ -127,7 +178,7 @@ export default function UserCard({ user }) {
               <Iconify icon={social.icon} />
             </IconButton>
           ))}
-        </Stack>
+        </Stack> */}
 
         <Divider sx={{ borderStyle: 'dashed' }} />
 
@@ -140,32 +191,29 @@ export default function UserCard({ user }) {
             <Typography variant="caption" component="div" sx={{ mb: 0.5, color: 'text.secondary' }}>
               Followers
             </Typography>
-            {user.creator.socialMediaData?.instagram?.data.followers
-              ? formatNumber(user.creator.socialMediaData?.instagram?.data.followers)
-              : 'N/A'}
-            {/* {fShortenNumber(totalFollowers)} */}
+            {socialMediaAnalytics.followers || 'N/A'}
           </div>
 
           <div>
             <Typography variant="caption" component="div" sx={{ mb: 0.5, color: 'text.secondary' }}>
               Engagement Rates
             </Typography>
-            {user.creator.socialMediaData?.instagram?.data.engagement_rate
+            {socialMediaAnalytics.engagement_rate || 'N/A'}
+            {/* {user.creator.socialMediaData?.instagram?.data.engagement_rate
               ? `${Number(user.creator.socialMediaData?.instagram?.data.engagement_rate).toFixed(2)} %`
-              : 'N/A'}
-            {/* {fShortenNumber(totalFollowing)} */}
+              : 'N/A'} */}
           </div>
 
           <div>
             <Typography variant="caption" component="div" sx={{ mb: 0.5, color: 'text.secondary' }}>
               Average Likes
             </Typography>
-            {user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
+            {socialMediaAnalytics.averageLikes || 'N/A'}
+            {/* {user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
               ? formatNumber(
-                user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
-              )
-              : 'N/A'}
-            {/* {fShortenNumber(totalPosts)} */}
+                  user.creator.socialMediaData?.instagram?.data.user_performance.avg_likes_per_post
+                )
+              : 'N/A'} */}
           </div>
         </Box>
       </Card>
