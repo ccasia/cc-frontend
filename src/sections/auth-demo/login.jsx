@@ -32,6 +32,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
+import axiosInstance from 'src/utils/axios';
 
 // import error from '../../../public/sounds/error.mp3';
 
@@ -159,6 +160,10 @@ const Login = () => {
     }
   });
 
+  const googleAuth = async () => {
+    window.open(`${process.env.VITE_BASE_URL}/api/auth/google`, '_self');
+  };
+
   const renderForm = (
     <Stack spacing={2.5}>
       <RHFTextField
@@ -221,6 +226,16 @@ const Login = () => {
       >
         Login
       </LoadingButton>
+
+      <LoadingButton
+        fullWidth
+        size="large"
+        variant="contained"
+        loading={isSubmitting}
+        onClick={googleAuth}
+      >
+        Continue with google
+      </LoadingButton>
     </Stack>
   );
 
@@ -270,7 +285,6 @@ const Login = () => {
         >
           <Typography
             variant="h3"
-            // fontWeight="bold"
             sx={{
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontWeight: 400,

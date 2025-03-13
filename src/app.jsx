@@ -20,7 +20,7 @@ import { UnreadMessageCountProvider } from './context/UnreadMessageCountContext'
 import SocketProvider from './socket/context/socket';
 import PoppupProvider from './components/popup/popup-provider';
 import 'core-js/stable';
-import reactGA from 'react-ga4';
+import CreatorOnBoardingForm from './components/CreatorOnBoardingForm';
 
 // ----------------------------------------------------------------------
 // Test
@@ -58,6 +58,7 @@ export default function App() {
                 <MotionLazy>
                   <SocketProvider>
                     <UnreadMessageCountProvider>
+                      <CreatorOnBoardingForm />
                       <SettingsDrawer />
                       <ProgressBar />
                       <Router />

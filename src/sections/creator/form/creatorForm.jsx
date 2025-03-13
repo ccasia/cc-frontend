@@ -91,7 +91,7 @@ const stepSchemas = [
   }),
 ];
 
-export default function CreatorForm({ mutate, open, onClose }) {
+export default function CreatorForm({ open, onClose }) {
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
@@ -424,7 +424,6 @@ export default function CreatorForm({ mutate, open, onClose }) {
 }
 
 CreatorForm.propTypes = {
-  mutate: PropTypes.func,
   open: PropTypes.bool,
   onClose: PropTypes.func,
 };
