@@ -161,7 +161,7 @@ const Login = () => {
   });
 
   const googleAuth = async () => {
-    window.open(`${process.env.VITE_BASE_URL}/api/auth/google`, '_self');
+    window.open(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, '_self');
   };
 
   const renderForm = (
