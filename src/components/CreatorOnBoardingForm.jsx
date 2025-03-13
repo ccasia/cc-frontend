@@ -9,7 +9,7 @@ const CreatorOnBoardingForm = () => {
 
   const isFormCompleted = useMemo(() => !user?.creator?.isOnBoardingFormCompleted, [user]);
 
-  return <CreatorForm open={isFormCompleted} />;
+  return user && <CreatorForm open={isFormCompleted} />;
 };
 
 export default CreatorOnBoardingForm;
