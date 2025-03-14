@@ -19,6 +19,7 @@ import {
   useMediaQuery,
   DialogActions,
   InputAdornment,
+  Divider,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -227,10 +228,15 @@ const Login = () => {
         Login
       </LoadingButton>
 
+      <Divider textAlign="center" sx={{ color: 'text.secondary', fontSize: 14 }}>
+        More login options
+      </Divider>
+
       <LoadingButton
         fullWidth
+        startIcon={<Iconify icon="flat-color-icons:google" width={20} />}
         size="large"
-        variant="contained"
+        variant="outlined"
         loading={isSubmitting}
         onClick={googleAuth}
       >
