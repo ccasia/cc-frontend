@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
 import { yupResolver } from '@hookform/resolvers/yup';
+import TagManager from "react-gtm-module";
+
 
 import Link from '@mui/material/Link';
 import { LoadingButton } from '@mui/lab';
@@ -144,20 +146,68 @@ const Login = () => {
     formState: { isSubmitting, isDirty },
   } = methods;
 
+  const getDeviceType = () => {
+    const userAgent = navigator.userAgent;
+    if (/mobile/i.test(userAgent)) return "mobile";
+    if (/tablet/i.test(userAgent)) return "tablet";
+    return "desktop";
+  };
+
+  console.log("login data", login)
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await login(data.email, data.password, { admin: false });
+      // await login(data.email, data.password, { admin: false });
+      const res = await login(data.email, data.password, { admin: false }); // Assuming this returns a response with `user`
+ 
       // if (res?.user?.role === 'creator') {
       //   router.push(paths.dashboard.overview.root);
       // }
-      enqueueSnackbar('Successfully login');
-    } catch (err) {
-      // play();
-      enqueueSnackbar(err.message, {
-        variant: 'error',
-      });
-    }
-  });
+
+      // Check if user is a creator
+      const isCreator = !!res?.user?.creator;
+
+      // Store user_type in localStorage
+      //  localStorage.setItem("user_type", isCreator ? "creator" : "admin");
+
+
+        // Push login success event to GTM
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: "login_success",
+          user_device: getDeviceType(),
+          user_email: data.email,
+          user_type: isCreator ? "creator" : "admin", 
+        });
+
+        // If user is a creator, track them as active
+        if (isCreator) {
+          window.dataLayer.push({
+            event: "creator_active",
+            user_email: data.email,
+            timestamp: new Date().toISOString(),
+            last_login: new Date().toISOString(), 
+          });
+        }
+        enqueueSnackbar('Successfully login');
+      } catch (err) {
+        // play();
+        // Push failure event to GTM
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: "login_failed",
+          error_message: err.message,
+        });
+        // TagManager.dataLayer({
+        //   dataLayer: {
+        //     event: "login_failed",
+        //     error_message: err.message,
+        //   },
+        // });
+        enqueueSnackbar(err.message, {
+          variant: 'error',
+        });
+      }
+    });
 
   const renderForm = (
     <Stack spacing={2.5}>
