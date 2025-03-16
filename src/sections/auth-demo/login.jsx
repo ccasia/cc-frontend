@@ -12,6 +12,7 @@ import {
   Stack,
   Dialog,
   Button,
+  Divider,
   Typography,
   IconButton,
   DialogTitle,
@@ -19,7 +20,6 @@ import {
   useMediaQuery,
   DialogActions,
   InputAdornment,
-  Divider,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -33,7 +33,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
-import axiosInstance from 'src/utils/axios';
 
 // import error from '../../../public/sounds/error.mp3';
 
@@ -41,6 +40,17 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url
 ).toString();
+
+const socialLogins = [
+  {
+    platform: 'google',
+    icon: 'mingcute:google-fill',
+  },
+  {
+    platform: 'facebook',
+    icon: 'ic:baseline-facebook',
+  },
+];
 
 // eslint-disable-next-line react/prop-types
 const PdfModal = ({ open, onClose, pdfFile, title }) => {
@@ -58,12 +68,7 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
 
       <DialogContent>
         <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
-          <Document
-            file={pdfFile}
-            onLoadSuccess={onDocumentLoadSuccess}
-            // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
-            // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
-          >
+          <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
             {Array.from(new Array(numPages), (el, index) => (
               <div key={index} style={{ marginBottom: '0px' }}>
                 <Page
@@ -73,7 +78,6 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
                   renderAnnotationLayer={false}
                   renderTextLayer={false}
                   style={{ overflow: 'scroll' }}
-                  // style={{ margin: 0, padding: 0, position: 'relative' }}
                 />
               </div>
             ))}
@@ -232,16 +236,33 @@ const Login = () => {
         More login options
       </Divider>
 
-      <LoadingButton
-        fullWidth
-        startIcon={<Iconify icon="flat-color-icons:google" width={20} />}
-        size="large"
-        variant="outlined"
-        loading={isSubmitting}
-        onClick={googleAuth}
-      >
-        Continue with google
-      </LoadingButton>
+      <Stack direction="row" justifyContent="center" spacing={2}>
+        {socialLogins.map((item) => {
+          const handleAuth = item.platform === 'google' ? googleAuth : null;
+
+          return (
+            <LoadingButton
+              fullWidth
+              size="large"
+              variant="outlined"
+              loading={isSubmitting}
+              onClick={handleAuth}
+              sx={{
+                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                bgcolor: '#1340FF',
+                color: 'whitesmoke',
+                width: 80,
+                py: 1,
+                '&:hover': {
+                  bgcolor: '#1340FF',
+                },
+              }}
+            >
+              <Iconify icon={item.icon} width={25} />
+            </LoadingButton>
+          );
+        })}
+      </Stack>
     </Stack>
   );
 
