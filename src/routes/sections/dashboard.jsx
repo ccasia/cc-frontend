@@ -250,7 +250,7 @@ export const dashboardRoutes = [
           {
             path: 'discover',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin']}>
                 <BrandDiscover />
               </RoleBasedGuard>
             ),
@@ -258,7 +258,7 @@ export const dashboardRoutes = [
           {
             path: 'create',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin']}>
                 <BrandCreate />
               </RoleBasedGuard>
             ),
@@ -266,7 +266,7 @@ export const dashboardRoutes = [
           {
             path: 'manage',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin']}>
                 <BrandManage />
               </RoleBasedGuard>
             ),
@@ -274,7 +274,7 @@ export const dashboardRoutes = [
           {
             path: 'edit/:id',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin']}>
                 <CompanyEdit />
               </RoleBasedGuard>
             ),
