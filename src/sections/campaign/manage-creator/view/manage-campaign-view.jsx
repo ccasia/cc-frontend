@@ -422,7 +422,8 @@ const ManageCampaignView = () => {
         variant="h2"
         sx={{
           mb: 2,
-          fontFamily: 'Instrument Serif, serif',
+          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          fontWeight: 'normal',
         }}
       >
         My Campaigns ⏰
