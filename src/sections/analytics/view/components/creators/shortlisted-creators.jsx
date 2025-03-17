@@ -34,7 +34,7 @@ export default function ShortlistedCreators({ creators } ) {
                     marginRight: "8px",
                   }}
                 />
-                <Typography variant="body2">{item.label}</Typography>
+                <Typography variant="body2">{item.label}: {item.value}</Typography>
               </Box>
             ))}
           </Box>
