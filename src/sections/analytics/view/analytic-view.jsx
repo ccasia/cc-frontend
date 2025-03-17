@@ -13,33 +13,34 @@ import TotalPitches from './components/creators/total-pitches';
 
 export default function AnalyticsView() {
   const [creators, setCreators] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchCreators = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axiosInstance.get(endpoints.creators.getCreators);
-        setCreators(res.data);
+        const [creatorsRes, usersRes] = await Promise.all([
+          axiosInstance.get(endpoints.creators.getCreators),
+          axiosInstance.get(endpoints.users.allusers),
+        ]);
+
+        setCreators(creatorsRes.data);
+        setUsers(usersRes.data);
       } catch (err) {
-        setError('Failed to load creators data');
+        setError("Failed to load data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCreators();
+    fetchData();
   }, []);
 
   // Show loading indicator while data is being fetched
   if (loading) return <CircularProgress />;
 
-  // // Show error message if data fetch failed
-  // if (error) return <Typography color="error">{error}</Typography>;
-
-
-  //console.log(" creators data", creators)
-
+  console.log("All usr", users)
   return (
     <>
       <Helmet>
@@ -63,7 +64,7 @@ export default function AnalyticsView() {
 
           {/* Total Pitches */}
           <Grid item xs={12} md={6}>
-            <TotalPitches creators={creators}/>
+            <TotalPitches users={users} />
           </Grid>
 
           {/* Campaign Participation */}

@@ -44,16 +44,12 @@ export default function ShortlistedCreators({ creators } ) {
             series={[
               {
                 data,
-                arcLabel: () => "", // Hides the labels
-                // outerRadius: 80,
-                // innerRadius: 40,
-                //  paddingAngle: 5,
               },
             ]}
             width={250}
             height={200}
             slotProps={{
-              legend: { hidden: true }, // Hides the default legend
+              legend: { hidden: true },
             }}
           />
         </Box>

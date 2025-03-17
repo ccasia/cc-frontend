@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, Typography, CircularProgress } from '@mui/material';
+import { Card, CardContent,  Typography, CircularProgress, Box, Stack } from '@mui/material';
 import { LineChart, PieChart, BarChart } from '@mui/x-charts';
 import axiosInstance, {endpoints} from 'src/utils/axios';
 import dayjs from 'dayjs';
@@ -43,6 +43,29 @@ export default function TotalCreators() {
     Other: 0,
   };
 
+  const customColors = {
+    Male: '#1340ff',  
+    Female: '#bc5090', 
+    Other: '#ff6361',  
+  };
+
+  creators.forEach((data) => {
+    const gender = data.creator?.pronounce?.toLowerCase();
+    if (gender?.includes('he/him')) genderStats.Male += 1;
+    else if (gender?.includes('she/her')) genderStats.Female += 1;
+    else genderStats.Other += 1;
+  });
+
+    // Prepare Pie Chart Data
+    const pieData = Object.entries(genderStats)
+    .map(([label, value]) => ({
+      id: label,
+      value,
+      label,
+      color: customColors[label], 
+    }))
+    .filter((item) => item.value > 0);
+
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -64,8 +87,6 @@ export default function TotalCreators() {
  
 
 
-
- console.log("creators", creators)
   
 
  creators.forEach((data) => {
@@ -83,7 +104,7 @@ export default function TotalCreators() {
   
     // Ensure 'pronounce' exists and is in a known format
     const gender = data.creator.pronounce?.toLowerCase();
-    console.log("Gender", gender)
+    //  console.log("Gender", gender)
     if (gender?.includes('he/him')) genderStats.Male += 1;
     else if (gender?.includes('she/her')) genderStats.Female += 1;
     else genderStats.Other += 1;
@@ -96,11 +117,12 @@ export default function TotalCreators() {
     <Card>
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          Total Creators on Platform
+          Total Creators on Platform: {creators.length}
         </Typography>
 
         {/* Line Graph - Filter by Age Range */}
         <LineChart
+          mb={8}
           width={400}
           height={200}
           series={[{ data: Object.values(ageGroups), label: 'Creators by Age' }]}
@@ -108,31 +130,48 @@ export default function TotalCreators() {
         />
         
 
-        {/* <BarChart
-        width={400}
-        height={200}
-        series={[{
-            data: ageData.map(item => item.value), // Value for each age group
-            label: 'Creators by Age',
-        }]}
-        xAxis={[{
-            scaleType: 'point',
-            data: ageData.map(item => item.label), // Labels for each age group
-        }]}
-        /> */}
+        <Typography mt={4} variant="h8" gutterBottom>
+          By Gender
+        </Typography>
+    
+        {/* Gender Distribution Pie Chart with Legends on Left */}
+        <Box  display="flex" alignItems="center">
+          
+          {/* Legend Section */}
+          <Stack spacing={1} sx={{ minWidth: 140, mr: 2 }}>
+            {pieData.map((item) => (
+              <Box key={item.id} display="flex" alignItems="center">
+                <Box
+                  sx={{
+                    width: 16,
+                    height: 16,
+                    backgroundColor: item.color,
+                    borderRadius: '50%',
+                    mr: 1,
+                  }}
+                />
+                <Typography variant="body2">
+                  {item.label}: {item.value}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
 
-        {/* Pie Chart - Gender Distribution */}
-        <PieChart
-          series={[
+          {/* Pie Chart */}
+          <PieChart
+           series={[
             {
-              data: Object.entries(genderStats)
-                .map(([label, value], index) => ({ id: index + 1, value, label }))
-                .filter((item) => item.value > 0),
+              data: pieData,
             },
           ]}
-          width={300}
-          height={200}
-        />
+            width={300}
+            height={200}
+            slotProps={{
+              legend: { hidden: true }, 
+            }}
+          />
+        </Box>
+
       </CardContent>
     </Card>
   );
