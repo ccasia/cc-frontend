@@ -15,6 +15,7 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -33,6 +34,7 @@ const UploadRawFootageModal = ({
   deliverablesData,
 }) => {
   const { user } = useAuthContext();
+  const loading = useBoolean();
 
   const { deliverables, deliverableMutate } = deliverablesData;
 
@@ -74,6 +76,7 @@ const UploadRawFootageModal = ({
       return;
     }
     try {
+      loading.onTrue();
       const formData = new FormData();
       const newData = {
         submissionId,
@@ -101,6 +104,8 @@ const UploadRawFootageModal = ({
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
     } catch (error) {
       enqueueSnackbar('Failed to upload raw footage', { variant: 'error' });
+    } finally {
+      loading.onFalse();
     }
   });
 
@@ -189,6 +194,7 @@ const UploadRawFootageModal = ({
           fullWidth
           variant="contained"
           onClick={onSubmit}
+          loading={loading.value}
           sx={{
             bgcolor: '#203ff5',
             color: 'white',
