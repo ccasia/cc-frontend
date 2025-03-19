@@ -340,7 +340,7 @@ const CampaignDetailManageView = ({ id }) => {
                       secondary={
                         typeof campaign?.brand[e] === 'object' ? (
                           <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                            {campaign?.brand[e].map((val, index2) => (
+                            {campaign?.brand[e]?.map((val, index2) => (
                               <Label key={index2}>{val}</Label>
                             ))}
                           </Stack>
