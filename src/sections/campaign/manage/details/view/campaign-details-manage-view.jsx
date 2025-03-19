@@ -319,7 +319,7 @@ const CampaignDetailManageView = ({ id }) => {
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
           {campaign?.brand &&
             Object.keys(campaign?.brand)
-              .filter(
+              ?.filter(
                 (e) =>
                   ![
                     'id',
@@ -329,9 +329,9 @@ const CampaignDetailManageView = ({ id }) => {
                     'objectives',
                     'logo',
                     'service_name',
-                  ].includes(e)
+                  ]?.includes(e)
               )
-              .map(
+              ?.map(
                 (e, index) =>
                   campaign?.brand[e] && (
                     <ListItemText
