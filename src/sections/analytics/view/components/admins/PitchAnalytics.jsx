@@ -44,7 +44,7 @@ export default function ApprovePitch() {
     fetchPitches();
   }, []);
 
-  console.log("pitches", pitches)
+  // console.log("pitches", pitches)
 
   //   if (loading) return <Typography>Loading...</Typography>;
   //   if (error) return <Typography>Error: {error}</Typography>;
@@ -68,7 +68,12 @@ export default function ApprovePitch() {
 
         {/* Display table only if there are valid pitches */}
         {validPitches.length > 0 ? (
-          <TableContainer>
+          <TableContainer
+          component="div"
+          sx={{
+            maxHeight: 350,
+            overflowY: 'auto',
+          }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -145,7 +150,7 @@ export default function ApprovePitch() {
             No data to show
           </Typography>
           <Typography variant="subtitle2" color="#636366">
-            Turn Around data can be visible for new Pitch's
+            Turn Around data can be visible for new Pitch&apos;s
           </Typography>
         </Box>
         )}

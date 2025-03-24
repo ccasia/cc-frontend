@@ -22,67 +22,63 @@ import {
 dayjs.extend(duration);
 
 export default function SendAgreementsAnalytics() {
-  const [submissions, setSubmissions] = useState([]); // Ensure it's initialized as an empty array
+  const [creatorAgreements, setCreatorAgreements] = useState([]); // Ensure it's initialized as an empty array
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  //    const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchSubmissions() {
-      try {
-        const response = await axiosInstance.get(endpoints.submission.all);
-        setSubmissions(response.data.submissions || []); // Ensure submissions is an array
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to fetch submissions");
-      } finally {
-        setLoading(false);
-      }
-    }
+    async function fetchCreatorAgreements() {
+        try {
+            const response = await axiosInstance.get(endpoints.campaign.allcreatorAgreement);
+            // console.log(response.data);
+            setCreatorAgreements(response.data); 
+          } catch (error) {
+            console.error('Error fetching creator agreements:', error);
+            // setError(error.message || 'An error occurred');
+          }
+        }
 
-    fetchSubmissions();
+    fetchCreatorAgreements();
   }, []);
 
-  // Filter only submissions with type "AGREEMENT_FORM"
-  const agreementSubmissions = submissions.filter(submission => submission.type === "AGREEMENT_FORM" && submission.status === "APPROVED");
+  console.log("creators", creatorAgreements)
+  
+  // Filter only creator agreements with a completedAt value
+  const completedCreatorAgreements = (creatorAgreements || []).filter(agreement => agreement.completedAt);
 
-  console.log("Agreement", agreementSubmissions)
-  // Check if there are any completed submissions for "Completed Date" column to show
-  //    const showCompletedDateColumn = agreementSubmissions.some(submission => submission.completedAt);
+  console.log("Completed Creator Agreements", completedCreatorAgreements)
 
   return (
     <Card sx={{ mb: 2 }}>
       <CardContent>
-        <Typography variant="h3" gutterBottom style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }} >
+        <Typography variant="h3" gutterBottom style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}>
           Sending Agreements
         </Typography>
 
-        {/* <Typography variant="h8" m={2} gutterBottom>
-          Only completed submissions of type "AGREEMENT_FORM" will be displayed here.
-        </Typography> */}
-
-        {/* Loading and Error Handling */}
-        {loading && <CircularProgress />}
-        {error && <Typography color="error">{error}</Typography>}
-
-        {/* Display table only if there are agreement submissions */}
-        {agreementSubmissions.length > 0 ? (
-          <TableContainer>
+        {/* Display table only if there are completed creator agreements */}
+        {completedCreatorAgreements.length > 0 ? (
+          <TableContainer
+          component="div"
+          sx={{
+            maxHeight: 350,
+            overflowY: 'auto',
+          }}>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>Creator</TableCell>
-                  <TableCell>Status</TableCell>
                   <TableCell>Turnaround Time</TableCell>
                   <TableCell>Approved By</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {agreementSubmissions.map((submission) => {
-                  // Convert submission date to formatted string using dayjs
-                  const submissionDate = dayjs(submission.createdAt);
-                  const completedDate = submission.completedAt ? dayjs(submission.completedAt) : null;
+                {completedCreatorAgreements.map((agreement) => {
+                  // Convert agreement date to formatted string using dayjs
+                  const createdAt = dayjs(agreement.createdAt);
+                  const completedAt = dayjs(agreement.completedAt);
 
                   // Calculate the turnaround time using dayjs duration
-                  const turnaroundTimeInSeconds = submission.turnaroundTime;
+                  const turnaroundTimeInSeconds = agreement.turnaroundTime;
                   let formattedTurnaroundTime = "";
 
                   if (turnaroundTimeInSeconds) {
@@ -95,23 +91,10 @@ export default function SendAgreementsAnalytics() {
                   }
 
                   return (
-                    <TableRow key={submission.id}>
-                      <TableCell>{submission.user?.name}</TableCell>
-                      <TableCell>
-                        {submission.status === "APPROVED" ? (
-                          <>
-                            <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-                            Approved
-                          </>
-                        ) : (
-                          <>
-                            <HourglassEmptyIcon color="warning" sx={{ mr: 1 }} />
-                            Pending Approval
-                          </>
-                        )}
-                      </TableCell>
+                    <TableRow key={agreement.id}>
+                      <TableCell>{agreement.user?.name}</TableCell>
                       <TableCell>{formattedTurnaroundTime}</TableCell>
-                      <TableCell>{submission.approvedByAdmin.name}</TableCell>
+                      <TableCell>{agreement.approvedByAdmin?.name}</TableCell>
                     </TableRow>
                   );
                 })}
@@ -119,7 +102,7 @@ export default function SendAgreementsAnalytics() {
             </Table>
           </TableContainer>
         ) : (
-            <Box
+          <Box
             display="flex"
             flexDirection="column"
             alignItems="center"
@@ -147,16 +130,9 @@ export default function SendAgreementsAnalytics() {
               No data to show
             </Typography>
             <Typography variant="subtitle2" color="#636366">
-              Turn Around data can be visible for newer submissions
+              Turnaround data can be visible for newer submissions
             </Typography>
           </Box>
-        )}
-
-        {/* If there are no agreement submissions, show this message */}
-        {agreementSubmissions.length === 0 && !loading && (
-          <Typography variant="body2" color="textSecondary">
-            Turnaround time can only be calculated for completed submissions of type "AGREEMENT_FORM".
-          </Typography>
         )}
       </CardContent>
     </Card>

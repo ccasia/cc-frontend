@@ -8,17 +8,16 @@ import TotalCreators from './components/creators/totalcreators';
 import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';
 import TotalPitches from './components/creators/total-pitches';
-import ApprovePitch from './components/admins/PitchAnalytics.jsx';
-import SendAgreementsAnalytics from "./components/admins/SendAgreementsAnalytics.jsx";
-import ApproveAgreementsAnalytics from "./components/admins/ApproveAgreementsAnalytics.jsx";
-import ApproveDraftsAnalytics from "./components/admins/DraftsAnalytics";
+import ApprovePitch from './components/admins/PitchAnalytics';
+import SendAgreementsAnalytics from './components/admins/SendAgreementsAnalytics';
+import ApproveAgreementsAnalytics from './components/admins/ApproveAgreementsAnalytics';
+import ApproveDraftsAnalytics from './components/admins/DraftsAnalytics';
 
 
 
 export default function AnalyticsView() {
   const [creators, setCreators] = useState([]);
   const [users, setUsers] = useState([]);
-  const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -28,15 +27,13 @@ export default function AnalyticsView() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [creatorsRes, usersRes, adminsRes] = await Promise.all([
+        const [creatorsRes, usersRes] = await Promise.all([
           axiosInstance.get(endpoints.creators.getCreators),
           axiosInstance.get(endpoints.users.allusers),
-          axiosInstance.get(endpoints.users.admins),
         ]);
 
         setCreators(creatorsRes.data);
         setUsers(usersRes.data);
-        setAdmins(adminsRes.data)
       } catch (err) {
         setError("Failed to load data");
       } finally {
@@ -47,8 +44,6 @@ export default function AnalyticsView() {
     fetchData();
   }, []);
 
-  console.log("users", users)
-  console.log("admins", admins);
 
   // Show loading indicator while data is being fetched
   if (loading) return <CircularProgress />;
@@ -96,7 +91,6 @@ export default function AnalyticsView() {
 
           {activeTab === 1 && (
             <>
-              <Typography variant="h6">Admin Analytics Coming Soon...</Typography>
               <ApprovePitch/>
               <SendAgreementsAnalytics/>
               <ApproveAgreementsAnalytics/>

@@ -1,18 +1,28 @@
-// components/admins/SendAgreementsAnalytics.jsx
-
 import React, { useState, useEffect } from "react";
 import axiosInstance, { endpoints } from "src/utils/axios";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
-import { Card, Table, TableRow, TableHead, TableBody, TableCell, CardContent, TableContainer, Typography, CircularProgress } from "@mui/material";
+import { 
+  Card, 
+  Table, 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell, 
+  CardContent, 
+  TableContainer, 
+  Typography, 
+  CircularProgress, 
+  Box } 
+from "@mui/material";
 
-// Extend dayjs to use duration plugin
+
 dayjs.extend(duration);
 
 export default function ApproveAgreementsAnalytics() {
-  const [submissions, setSubmissions] = useState([]); // Ensure it's initialized as an empty array
+  const [submissions, setSubmissions] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -20,7 +30,7 @@ export default function ApproveAgreementsAnalytics() {
     async function fetchSubmissions() {
       try {
         const response = await axiosInstance.get(endpoints.submission.all);
-        setSubmissions(response.data.submissions || []); // Ensure submissions is an array
+        setSubmissions(response.data.submissions || []); 
       } catch (err) {
         setError(err.response?.data?.message || "Failed to fetch submissions");
       } finally {
@@ -49,13 +59,15 @@ export default function ApproveAgreementsAnalytics() {
           Only completed submissions of type "AGREEMENT_FORM" will be displayed here.
         </Typography> */}
 
-        {/* Loading and Error Handling */}
-        {loading && <CircularProgress />}
-        {error && <Typography color="error">{error}</Typography>}
 
         {/* Display table only if there are agreement submissions */}
         {agreementSubmissions.length > 0 ? (
-          <TableContainer>
+          <TableContainer
+          component="div"
+          sx={{
+            maxHeight: 350,
+            overflowY: 'auto',
+          }}>
             <Table>
               <TableHead>
                 <TableRow>
