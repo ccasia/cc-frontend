@@ -10,8 +10,8 @@ import CampaignParticipation from './components/creators/campaign-participants';
 import TotalPitches from './components/creators/total-pitches';
 import ApprovePitch from './components/admins/PitchAnalytics.jsx';
 import SendAgreementsAnalytics from "./components/admins/SendAgreementsAnalytics.jsx";
-// import ApproveAgreementsAnalytics from "./components/admins/ApproveAgreementsAnalytics";
-//  import ApproveDraftsAnalytics from "./components/admins/DraftsAnalytics";
+import ApproveAgreementsAnalytics from "./components/admins/ApproveAgreementsAnalytics.jsx";
+import ApproveDraftsAnalytics from "./components/admins/DraftsAnalytics";
 
 
 
@@ -99,6 +99,8 @@ export default function AnalyticsView() {
               <Typography variant="h6">Admin Analytics Coming Soon...</Typography>
               <ApprovePitch/>
               <SendAgreementsAnalytics/>
+              <ApproveAgreementsAnalytics/>
+              <ApproveDraftsAnalytics/>
             </>
           
           )}
