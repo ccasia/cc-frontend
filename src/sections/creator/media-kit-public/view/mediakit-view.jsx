@@ -39,6 +39,8 @@ const MediaKit = ({ id, noBigScreen }) => {
   const smDown = useResponsive('down', 'sm');
   const { data, isLoading, isError } = useSWRGetCreatorByID(id);
 
+  console.log(data);
+
   const [currentTab, setCurrentTab] = useState('instagram');
 
   const socialMediaAnalytics = useMemo(() => {
@@ -629,7 +631,7 @@ const MediaKit = ({ id, noBigScreen }) => {
         </Button>
       </Stack>
 
-      <MediaKitSocial currentTab={currentTab} data={data} isLoading={isLoading} />
+      <MediaKitSocial currentTab={currentTab} data={data} />
     </Container>
   );
 };
