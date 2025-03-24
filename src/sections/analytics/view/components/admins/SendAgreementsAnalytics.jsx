@@ -1,12 +1,22 @@
-// components/admins/SendAgreementsAnalytics.jsx
-
 import React, { useState, useEffect } from "react";
 import axiosInstance, { endpoints } from "src/utils/axios";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
-import { Card, Table, TableRow, TableHead, TableBody, TableCell, CardContent, TableContainer, Typography, CircularProgress } from "@mui/material";
+import { 
+    Card, 
+    Table, 
+    TableRow, 
+    TableHead, 
+    TableBody, 
+    TableCell, 
+    CardContent, 
+    TableContainer, 
+    Typography, 
+    CircularProgress,
+    Box
+ } from "@mui/material";
 
 // Extend dayjs to use duration plugin
 dayjs.extend(duration);
@@ -41,13 +51,13 @@ export default function SendAgreementsAnalytics() {
   return (
     <Card sx={{ mb: 2 }}>
       <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Agreement Form Submission
+        <Typography variant="h3" gutterBottom style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }} >
+          Sending Agreements
         </Typography>
 
-        <Typography variant="h8" m={2} gutterBottom>
+        {/* <Typography variant="h8" m={2} gutterBottom>
           Only completed submissions of type "AGREEMENT_FORM" will be displayed here.
-        </Typography>
+        </Typography> */}
 
         {/* Loading and Error Handling */}
         {loading && <CircularProgress />}
@@ -109,7 +119,37 @@ export default function SendAgreementsAnalytics() {
             </Table>
           </TableContainer>
         ) : (
-          <Typography>No completed `&quot;`AGREEMENT_FORM `&quot;` submissions found.</Typography>
+            <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            height="100%"
+            textAlign="center"
+            mt={5}
+          >
+            <Box
+              style={{
+                width: '80px',
+                height: '80px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '40px',
+                backgroundColor: '#f5f5f5',
+                borderRadius: '50%',
+                marginBottom: '16px',
+              }}
+            >
+              😿
+            </Box>
+            <Typography variant="h3" style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}>
+              No data to show
+            </Typography>
+            <Typography variant="subtitle2" color="#636366">
+              Turn Around data can be visible for newer submissions
+            </Typography>
+          </Box>
         )}
 
         {/* If there are no agreement submissions, show this message */}
