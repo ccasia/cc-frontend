@@ -1,3 +1,5 @@
+import PropTypes from "prop-types";
+
 import { Card, CardContent, Typography, Box } from '@mui/material';
 import { PieChart } from '@mui/x-charts';
 
@@ -58,3 +60,11 @@ export default function ShortlistedCreators({ creators } ) {
 
   );
 }
+
+ShortlistedCreators.propTypes = {
+  creators: PropTypes.arrayOf(
+    PropTypes.shape({
+      shortlisted: PropTypes.array.isRequired, 
+    })
+  ).isRequired, 
+};

@@ -1,5 +1,6 @@
-import { Card, CardContent, Typography, Box } from '@mui/material';
-import { BarChart } from '@mui/x-charts';
+import PropTypes from "prop-types";
+
+import {  Box,  Card, Typography, CardContent  } from '@mui/material';
 
 export default function TotalPitches({ users }) {
 
@@ -95,3 +96,17 @@ export default function TotalPitches({ users }) {
 
   );
 }
+
+
+TotalPitches.propTypes = {
+  users: PropTypes.arrayOf(
+    PropTypes.shape({
+      role: PropTypes.string.isRequired,
+      pitch: PropTypes.arrayOf(
+        PropTypes.shape({
+          type: PropTypes.string,
+        })
+      ),
+    })
+  ).isRequired,
+};

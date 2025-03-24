@@ -1,3 +1,7 @@
+/* eslint-disable react/prop-types */
+
+import PropTypes from "prop-types";
+
 import { Card, CardContent, Typography, Box, Grid } from "@mui/material";
 import { PieChart } from "@mui/x-charts";
 
@@ -16,14 +20,14 @@ export default function CampaignParticipation({ creators }) {
   creators.forEach((creator) => {
     const numCampaigns = creator.shortlisted?.length || 0;
 
-    if (numCampaigns === 0) campaignCounts["0"]++;
-    else if (numCampaigns === 1) campaignCounts["1"]++;
-    else if (numCampaigns === 2) campaignCounts["2"]++;
-    else if (numCampaigns >= 3 && numCampaigns <= 4) campaignCounts["3-4"]++;
-    else if (numCampaigns >= 5 && numCampaigns <= 9) campaignCounts["5+"]++;
-    else if (numCampaigns >= 10 && numCampaigns <= 49) campaignCounts["10+"]++;
-    else if (numCampaigns >= 50 && numCampaigns <= 99) campaignCounts["50+"]++;
-    else campaignCounts["100+"]++;
+    if (numCampaigns === 0) campaignCounts["0"] += 1;
+    else if (numCampaigns === 1) campaignCounts["1"] += 1;
+    else if (numCampaigns === 2) campaignCounts["2"] += 1;
+    else if (numCampaigns >= 3 && numCampaigns <= 4) campaignCounts["3-4"] += 1;
+    else if (numCampaigns >= 5 && numCampaigns <= 9) campaignCounts["5+"] += 1;
+    else if (numCampaigns >= 10 && numCampaigns <= 49) campaignCounts["10+"] += 1;
+    else if (numCampaigns >= 50 && numCampaigns <= 99) campaignCounts["50+"] += 1;
+    else campaignCounts["100+"] += 1;
   });
 
   const dataForChart = Object.entries(campaignCounts)
@@ -77,3 +81,11 @@ export default function CampaignParticipation({ creators }) {
     </Card>
   );
 }
+
+// ShortlistedCreators.propTypes = {
+//   creators: PropTypes.arrayOf(
+//     PropTypes.shape({
+//       shortlisted: PropTypes.array.isRequired, // Ensures 'shortlisted' is an array
+//     })
+//   ).isRequired, // Ensures 'creators' is an array and required
+// };
