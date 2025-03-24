@@ -7,7 +7,18 @@ import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
-import {  Card, Table, TableRow,  TableHead,  TableBody, TableCell,    CardContent,  TableContainer, Typography,  } from "@mui/material";
+import {  
+  Card, 
+  Table, 
+  TableRow,  
+  TableHead,  
+  TableBody, 
+  TableCell,    
+  CardContent,  
+  TableContainer, 
+  Typography,
+  Box,
+  } from "@mui/material";
 
 
 
@@ -44,13 +55,13 @@ export default function ApprovePitch() {
   return (
     <Card sx={{ mb: 2 }}>
       <CardContent>
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h3" gutterBottom style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}>
           Pitch Approval
         </Typography>
 
-        <Typography variant="h8" m={2} gutterBottom>
+        {/* <Typography variant="h8" m={2} gutterBottom>
           Only pitches that have been approved or rejected will be displayed here
-        </Typography>
+        </Typography> */}
 
         {loading && <Typography>Loading...</Typography>}
         {error && <Typography>Error: {error}</Typography>}
@@ -106,7 +117,37 @@ export default function ApprovePitch() {
             </Table>
           </TableContainer>
         ) : (
-          <Typography>No completed pitches found.</Typography>
+          <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          height="100%"
+          textAlign="center"
+          mt={5}
+        >
+          <Box
+            style={{
+              width: '80px',
+              height: '80px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '40px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '50%',
+              marginBottom: '16px',
+            }}
+          >
+            😿
+          </Box>
+          <Typography variant="h3" style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}>
+            No data to show
+          </Typography>
+          <Typography variant="subtitle2" color="#636366">
+            Turn Around data can be visible for new Pitch's
+          </Typography>
+        </Box>
         )}
 
         {/* If there are no valid pitches, show this message */}
