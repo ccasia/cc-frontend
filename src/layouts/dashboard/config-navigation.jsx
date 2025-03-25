@@ -70,7 +70,6 @@ export function useNavData() {
 
   const { socket } = useSocketContext();
   const unreadMessageCount = useUnreadMessageCount();
-  //  const [unreadMessageCount, setUnreadMessageCount] = useState(null);
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
@@ -97,6 +96,15 @@ export function useNavData() {
             title: 'Overview',
             path: paths.dashboard.root,
             icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            title: 'Analytics',
+            path: paths.dashboard.analytics,
+            icon: <Iconify icon="icon-park-outline:chart-histogram" width={25} />,
           },
         ],
       },
