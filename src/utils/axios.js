@@ -182,6 +182,7 @@ export const endpoints = {
       createSingleTimelineType: `/api/campaign/createSingleTimelineType`,
     },
     pitch: {
+      all: '/api/campaign/pitches',
       draft: '/api/campaign/draftPitch',
       root: '/api/campaign/pitch',
       approve: '/api/campaign/approvepitch',
@@ -229,6 +230,7 @@ export const endpoints = {
       },
     },
     creatorAgreement: (id) => `/api/campaign/creatorAgreements/${id}`,
+    allcreatorAgreement: '/api/campaign/getCreatorAgreements',
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
     sendAgreement: `/api/campaign/sendAgreement`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
@@ -237,6 +239,7 @@ export const endpoints = {
   },
   submission: {
     root: '/api/submission/',
+    all: '/api/submission/getAllsubmission',
     creator: {
       agreement: '/api/submission/submitAgreement',
       draftSubmission: '/api/submission/draftSubmission',

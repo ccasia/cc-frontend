@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
