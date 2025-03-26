@@ -20,13 +20,13 @@ export default function AuthModernLayout({ children, image }) {
 
   const backgroundImage = useMemo(() => {
     if (route.includes('register')) {
-      return '/background/register.jpg';
+      return '/background/signup.jpeg';
     }
     if (route.includes('forgot-password')) {
-      return '/background/forgotPass.jpg';
+      return '/background/resetpassword.jpeg';
     }
     if (route.includes('login')) {
-      return '/background/login.jpg';
+      return '/background/signin.jpeg';
     }
 
     return '/background/newPass.jpg';
@@ -37,9 +37,11 @@ export default function AuthModernLayout({ children, image }) {
       sx={{
         width: 1,
         mx: 'auto',
-        maxWidth: 480,
+        maxWidth: { xs: '90%', md: 480 },
         pb: 2,
         px: { xs: 2, md: 6 },
+        position: 'relative',
+        zIndex: 1,
       }}
     >
       <Box
@@ -87,13 +89,38 @@ export default function AuthModernLayout({ children, image }) {
   return (
     <Box
       sx={{
-        background: `url(${backgroundImage}) no-repeat fixed center`,
-        backgroundSize: 'cover',
+        position: 'relative',
         height: '100vh',
         width: 1,
         overflow: 'auto',
+        '&::before': {
+          content: '""',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `
+            linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+            url(${backgroundImage}) no-repeat fixed center
+          `,
+          backgroundSize: 'cover',
+          zIndex: -1,
+        },
       }}
     >
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `url('/background/grain.png') repeat`,
+          backgroundSize: 'cover',
+          zIndex: 0,
+        }}
+      />
       {renderContent}
     </Box>
   );
