@@ -14,11 +14,12 @@ import { useSettingsContext } from 'src/components/settings';
 import Iconify from 'src/components/iconify';
 import { LoadingScreen } from 'src/components/loading-screen';
 import Image from 'src/components/image';
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
-import { useBoolean } from 'src/hooks/use-boolean';
+
 
 import CampaignModalMobile from './campaign-modal-mobile';
 import CreatorForm from './creator-form';
@@ -53,34 +54,36 @@ const calculateMatchPercentage = (user, campaign) => {
 
     // Age check
     if (requirements?.age?.length) {
-      totalCriteria++;
+      totalCriteria += 1;
       const creatorAge = dayjs().diff(dayjs(creator.birthDate), 'year');
       const isAgeInRange = requirements.age.some((range) => {
         const [min, max] = range.split('-').map(Number);
         return creatorAge >= min && creatorAge <= max;
       });
-      if (isAgeInRange) matches++;
+      if (isAgeInRange) matches += 1;
     }
 
     // Gender check
     if (requirements?.gender?.length) {
-      totalCriteria++;
-      const creatorGender =
-        creator.pronounce === 'he/him'
-          ? 'male'
-          : creator.pronounce === 'she/her'
-            ? 'female'
-            : 'nonbinary';
-      if (requirements.gender.includes(creatorGender)) matches++;
+      totalCriteria += 1;
+      let creatorGender = 'nonbinary';
+      
+      if (creator.pronounce === 'he/him') {
+        creatorGender = 'male';
+      } else if (creator.pronounce === 'she/her') {
+        creatorGender = 'female';
+      }
+      
+      if (requirements.gender.includes(creatorGender)) matches += 1;
     }
 
     // Language check
     if (requirements?.language?.length && creator.languages?.length) {
-      totalCriteria++;
+      totalCriteria += 1;
       const hasLanguageMatch = creator.languages.some((lang) =>
         requirements.language.map((l) => l.toLowerCase()).includes(lang.toLowerCase())
       );
-      if (hasLanguageMatch) matches++;
+      if (hasLanguageMatch) matches += 1;
     }
 
     return totalCriteria > 0 ? (matches / totalCriteria) * 100 : 0;

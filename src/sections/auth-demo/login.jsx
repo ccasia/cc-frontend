@@ -4,8 +4,6 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { Page, pdfjs, Document } from 'react-pdf';
 import { yupResolver } from '@hookform/resolvers/yup';
-import TagManager from "react-gtm-module";
-
 
 import Link from '@mui/material/Link';
 import { LoadingButton } from '@mui/lab';
@@ -14,7 +12,6 @@ import {
   Stack,
   Dialog,
   Button,
-  Divider,
   Typography,
   IconButton,
   DialogTitle,
@@ -43,17 +40,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-const socialLogins = [
-  {
-    platform: 'google',
-    icon: 'mingcute:google-fill',
-  },
-  {
-    platform: 'facebook',
-    icon: 'ic:baseline-facebook',
-  },
-];
-
 // eslint-disable-next-line react/prop-types
 const PdfModal = ({ open, onClose, pdfFile, title }) => {
   const [numPages, setNumPages] = useState(null);
@@ -70,7 +56,12 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
 
       <DialogContent>
         <Box sx={{ flexGrow: 1, mt: 1, borderRadius: 2, overflow: 'scroll' }}>
-          <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
+          <Document
+            file={pdfFile}
+            onLoadSuccess={onDocumentLoadSuccess}
+            // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+            // options={{ cMapUrl: 'cmaps/', cMapPacked: true }}
+          >
             {Array.from(new Array(numPages), (el, index) => (
               <div key={index} style={{ marginBottom: '0px' }}>
                 <Page
@@ -80,6 +71,7 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
                   renderAnnotationLayer={false}
                   renderTextLayer={false}
                   style={{ overflow: 'scroll' }}
+                  // style={{ margin: 0, padding: 0, position: 'relative' }}
                 />
               </div>
             ))}
@@ -94,6 +86,17 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
     </Dialog>
   );
 };
+
+const socialLogins = [
+  {
+    platform: 'google',
+    icon: 'mingcute:google-fill',
+  },
+  {
+    platform: 'facebook',
+    icon: 'ic:baseline-facebook',
+  },
+];
 
 const Login = () => {
   const password = useBoolean();
@@ -158,23 +161,42 @@ const Login = () => {
     if (/tablet/i.test(userAgent)) return "tablet";
     return "desktop";
   };
-
-  console.log("login data", login)
+  
   const onSubmit = handleSubmit(async (data) => {
     try {
-      // await login(data.email, data.password, { admin: false });
-      const res = await login(data.email, data.password, { admin: false }); // Assuming this returns a response with `user`
- 
-      // if (res?.user?.role === 'creator') {
-      //   router.push(paths.dashboard.overview.root);
-      // }
+      const res = await login(data.email, data.password, { admin: false });
+      
+      // Check if user is a creator
+      const isCreator = !!res?.user?.creator;
+      
+      // Push login success event to GTM
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "login_success",
+        user_device: getDeviceType(),
+        user_email: data.email,
+        user_type: isCreator ? "creator" : "admin", 
+      });
 
+      // If user is a creator, track them as active
+      if (isCreator) {
+        window.dataLayer.push({
+          event: "creator_active",
+          user_email: data.email,
+          timestamp: new Date().toISOString(),
+          last_login: new Date().toISOString(), 
+        });
+      }
+      
       enqueueSnackbar('Logged in. Welcome back!');
     } catch (err) {
-      // // play();
-      // enqueueSnackbar(err.message, {
-      // variant: 'error',
-      // });
+      // Push failure event to GTM
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "login_failed",
+        error_message: err.message,
+      });
+      
       // error message for user that has not registered yet
       if (err.message === 'User not registered.') {
         methods.setError('email', {
@@ -191,57 +213,9 @@ const Login = () => {
     }
   });
 
-
-      // Check if user is a creator
-      const isCreator = !!res?.user?.creator;
-
-      // Store user_type in localStorage
-      //  localStorage.setItem("user_type", isCreator ? "creator" : "admin");
-
-
-        // Push login success event to GTM
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({
-          event: "login_success",
-          user_device: getDeviceType(),
-          user_email: data.email,
-          user_type: isCreator ? "creator" : "admin", 
-        });
-
-        // If user is a creator, track them as active
-        if (isCreator) {
-          window.dataLayer.push({
-            event: "creator_active",
-            user_email: data.email,
-            timestamp: new Date().toISOString(),
-            last_login: new Date().toISOString(), 
-          });
-        }
-        enqueueSnackbar('Successfully login');
-      } catch (err) {
-        // play();
-        // Push failure event to GTM
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({
-          event: "login_failed",
-          error_message: err.message,
-        });
-        // TagManager.dataLayer({
-        //   dataLayer: {
-        //     event: "login_failed",
-        //     error_message: err.message,
-        //   },
-        // });
-        enqueueSnackbar(err.message, {
-          variant: 'error',
-        });
-      }
-    });
-
   const googleAuth = async () => {
     window.open(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, '_self');
   };
-
 
   const renderForm = (
     <Stack spacing={2.5}>
@@ -363,9 +337,12 @@ const Login = () => {
         Login
       </LoadingButton>
 
-      <Divider textAlign="center" sx={{ color: 'text.secondary', fontSize: 14 }}>
-        More login options
-      </Divider>
+      <Box sx={{ color: 'text.secondary', fontSize: 14, position: 'relative', textAlign: 'center' }}>
+        <Box sx={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', height: '1px', bgcolor: 'divider' }} />
+        <Box component="span" sx={{ position: 'relative', bgcolor: '#F4F4F4', px: 2 }}>
+          More login options
+        </Box>
+      </Box>
 
       <Stack direction="row" justifyContent="center" spacing={2}>
         {socialLogins.map((item) => {
@@ -373,6 +350,7 @@ const Login = () => {
 
           return (
             <LoadingButton
+              key={item.platform}
               fullWidth
               size="large"
               variant="outlined"
