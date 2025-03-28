@@ -160,6 +160,7 @@ const MediaKitCreator = () => {
       <Stack direction="row" alignItems="start" justifyContent="space-between">
         <Avatar
           sx={{
+            mt: 2,
             width: 100,
             height: 100,
           }}
@@ -230,7 +231,7 @@ const MediaKitCreator = () => {
               bgcolor: 'white',
             }}
           >
-            {interest.name.toUpperCase()}
+            {interest.name}
           </Label>
         ))}
       </Stack>

@@ -65,7 +65,7 @@ export default function Editor({
           formats={formats}
           onChangeSelection={handleSelectionChange}
           onChange={(e) => console.log(e)}
-          placeholder="Pitch your text here !"
+          placeholder="Type your pitch here..."
           {...other}
         />
       </StyledEditor>

@@ -5,6 +5,7 @@ import { formatIncompletePhoneNumber } from 'libphonenumber-js';
 
 import { Stack, MenuItem, FormLabel, TextField, ListItemText } from '@mui/material';
 
+import { primaryFont } from 'src/theme/typography';
 import { countries } from 'src/assets/data';
 
 import { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
@@ -28,18 +29,22 @@ const ThirdStep = ({ item }) => {
     <>
       <ListItemText
         sx={{
-          mt: 2,
+          mt: 4,
           textAlign: 'center',
         }}
         primary={item.title}
         secondary={item.description}
         primaryTypographyProps={{
-          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-          variant: 'h3',
+          fontFamily: '"Instrument Serif", serif',
+          fontSize: '40px',
           fontWeight: 400,
+          color: '#231F20',
         }}
         secondaryTypographyProps={{
-          variant: 'subtitle2',
+          fontFamily: "InterDisplay",
+          fontSize: '16px',
+          fontWeight: 400,
+          color: '#636366',
         }}
       />
 
@@ -52,10 +57,10 @@ const ThirdStep = ({ item }) => {
         }}
       >
         <Stack spacing={1}>
-          <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+          <FormLabel required sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}>
             Employment Status
           </FormLabel>
-          <RHFSelect name="employment" label="Select Status" multiple={false}>
+          <RHFSelect name="employment" multiple={false}>
             <MenuItem value="fulltime">I have a full-time job</MenuItem>
             <MenuItem value="freelance">I&apos;m a freelancer</MenuItem>
             <MenuItem value="part_time">I only work part-time</MenuItem>
@@ -67,7 +72,7 @@ const ThirdStep = ({ item }) => {
         </Stack>
 
         <Stack spacing={1}>
-          <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+          <FormLabel required sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}>
             Phone Number
           </FormLabel>
 
@@ -108,7 +113,7 @@ const ThirdStep = ({ item }) => {
           <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
             Pronouns
           </FormLabel>
-          <RHFSelect name="pronounce" label="Pronouns" multiple={false}>
+          <RHFSelect name="pronounce" multiple={false}>
             <MenuItem value="he/him">He/Him</MenuItem>
             <MenuItem value="she/her">She/Her</MenuItem>
             <MenuItem value="they/them">They/Them</MenuItem>
@@ -121,7 +126,7 @@ const ThirdStep = ({ item }) => {
           <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
             Birth Date
           </FormLabel>
-          <RHFDatePicker name="birthDate" label="Birth Date" />
+          <RHFDatePicker name="birthDate" />
         </Stack>
       </Stack>
     </>

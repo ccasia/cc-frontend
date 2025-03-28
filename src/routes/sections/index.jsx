@@ -5,6 +5,7 @@ import { PATH_AFTER_LOGIN } from 'src/config-global';
 import Verify from 'src/sections/creator/verify';
 import VerfiyXero from 'src/sections/finance/verfiyXero';
 import VerifyConfirmation from 'src/sections/creator/verifyConfirmation';
+import CreatorFormView from 'src/sections/creator/form/creatorForm';
 
 import { mainRoutes } from './main';
 import { authRoutes } from './auth';
@@ -34,6 +35,7 @@ export default function Router() {
 
     ...publicRoutes,
 
+    { path: '/auth/creator-form-view', element: <CreatorFormView /> },
     { path: '/auth/verify', element: <Verify /> },
     { path: '/auth/verify/:token', element: <VerifyConfirmation /> },
     { path: '/dashboard/invoice/xeroVerfiy', element: <VerfiyXero /> },

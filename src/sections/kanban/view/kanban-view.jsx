@@ -4,6 +4,11 @@ import { Droppable, DragDropContext } from '@hello-pangea/dnd';
 import Stack from '@mui/material/Stack';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
+import { useTheme } from '@mui/material/styles';
+import { useSettingsContext } from 'src/components/settings';
 
 import { moveTask, moveColumn, useGetBoard } from 'src/api/kanban';
 
@@ -11,13 +16,15 @@ import Scrollbar from 'src/components/scrollbar';
 
 import KanbanColumn from '../kanban-column';
 import KanbanColumnAdd from '../kanban-column-add';
-import { KanbanColumnSkeleton } from '../kanban-skeleton';
+// import { KanbanColumnSkeleton } from '../kanban-skeleton';
 
 // ----------------------------------------------------------------------
 
 export default function KanbanView() {
   const { board, boardLoading } = useGetBoard();
 
+  const theme = useTheme();
+  const settings = useSettingsContext();
   const status = board?.columns?.map((column) => column?.name);
 
   const onDragEnd = useCallback(
@@ -108,41 +115,49 @@ export default function KanbanView() {
     [board?.columns]
   );
 
-  const renderSkeleton = (
-    <Stack direction="row" alignItems="flex-start" spacing={3}>
-      {[...Array(4)].map((_, index) => (
-        <KanbanColumnSkeleton key={index} index={index} />
-      ))}
-    </Stack>
-  );
+  if (boardLoading) {
+    return (
+      <Box
+        sx={{
+          position: 'relative',
+          top: 200,
+          textAlign: 'center',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Container
-      maxWidth={false}
+      maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
-        height: 1,
+        px: { xs: 2, sm: 3, md: 4 },
       }}
     >
       <Typography
         variant="h2"
         sx={{
-          mb: 0.2,
-          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          mb: 2,
+          mt: { lg: 2, xs: 2, sm: 2 },
+          fontFamily: theme.typography.fontSecondaryFamily,
           fontWeight: 'normal',
+          pl: 2,
         }}
       >
         My Tasks ✏️
       </Typography>
 
-      {boardLoading && renderSkeleton}
-
       {!!board?.columns.length && (
-        <DragDropContext
-          onDragEnd={onDragEnd}
-          onDragStart={() => {
-            console.log('start');
-          }}
-        >
+        <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="board" type="COLUMN" direction="horizontal">
             {(provided) => (
               <Scrollbar
@@ -157,29 +172,45 @@ export default function KanbanView() {
                 <Stack
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  spacing={3}
                   direction="row"
-                  alignItems="flex-start"
+                  divider={
+                    <Divider orientation="vertical" flexItem 
+                      sx={{ 
+                        height: 'auto',
+                        minHeight: {
+                          xs: '80vh',
+                          md: '65vh'
+                        }
+                      }} 
+                    />
+                  }
                   sx={{
-                    p: 0.25,
-                    height: 1,
+                    p: 0,
+                    height: '100%',
+                    minHeight: '65vh',
                   }}
                 >
                   {board.columns.map((item, index) => (
-                    <KanbanColumn
-                      index={index}
+                    <Box 
                       key={item?.id}
-                      column={board.columns[item.position]}
-                      tasks={item?.task.filter(
-                        (a) => a?.name !== 'Final Draft' && a?.submission?.status !== 'NOT_STARTED'
-                      )}
-                      status={status}
-                    />
+                      sx={{ 
+                        width: `${100 / board.columns.length}%`,
+                        pl: index === 0 ? 0 : 2,
+                        pr: 2,
+                      }}
+                    >
+                      <KanbanColumn
+                        index={index}
+                        column={board.columns[item.position]}
+                        tasks={item?.task.filter(
+                          (a) => a?.name !== 'Final Draft' && a?.submission?.status !== 'NOT_STARTED'
+                        )}
+                        status={status}
+                      />
+                    </Box>
                   ))}
 
                   {provided.placeholder}
-
-                  {/* <KanbanColumnAdd /> */}
                 </Stack>
               </Scrollbar>
             )}
@@ -187,7 +218,6 @@ export default function KanbanView() {
         </DragDropContext>
       )}
       {!!board?.columns.length < 1 && <KanbanColumnAdd />}
-      {/* </Box> */}
     </Container>
   );
 }

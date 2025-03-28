@@ -8,7 +8,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-export default function ChatMessageItem({ message }) {
+export default function ChatMessageItem({ message, isGrouped = false }) {
   const { user } = useAuthContext();
 
   const isMe = user?.id === message.senderId;
@@ -26,16 +26,11 @@ export default function ChatMessageItem({ message }) {
         ...(!isMe && {
           mb: 1,
           mr: 'auto',
+          ml: '44px',
         }),
       }}
     >
-      {!isMe && (
-        <>
-          {sender?.name}
-          {isAdmin && ` (Admin)`}
-          {isSprAdmin && ` (Superadmin)`}
-        </>
-      )}
+      {!isMe && !isAdmin && !isSprAdmin && !isGrouped && sender?.name}
     </Typography>
   );
 
@@ -63,13 +58,13 @@ export default function ChatMessageItem({ message }) {
   const renderBody = (
     <Stack
       sx={{
-        p: 1,
+        p: 1.5,
         minWidth: 48,
         maxWidth: 320,
         borderRadius: 1,
         typography: 'body2',
         fontWeight: 300,
-        fontSize: 13,
+        fontSize: 14,
         bgcolor: 'background.neutral',
         ...(isMe && {
           color: 'white',
@@ -77,10 +72,10 @@ export default function ChatMessageItem({ message }) {
           borderTopRightRadius: 0,
         }),
         ...(!isMe && {
-          color: '#FFFFFF',
-          bgcolor: '#1340FF',
+          color: '#231F20',
+          bgcolor: '#F5F5F5',
           mr: 'auto',
-          borderTopLeftRadius: 0,
+          borderTopLeftRadius: isGrouped ? 1 : 0,
         }),
       }}
     >
@@ -94,13 +89,16 @@ export default function ChatMessageItem({ message }) {
     </Stack>
   );
 
-  return (
-    <Stack direction="row" justifyContent={isMe ? 'flex-end' : 'unset'} sx={{ mb: 2 }}>
-      {!isMe && (
-        <Avatar alt={sender?.name} src={sender?.photoURL} sx={{ width: 32, height: 32, mr: 2 }} />
-      )}
-      <Stack alignItems="start">
-        {renderInfo}
+  if (isGrouped && !isMe) {
+    return (
+      <Stack 
+        direction="row" 
+        justifyContent="unset" 
+        sx={{ 
+          mb: 0.5,
+          ml: '44px',
+        }}
+      >
         <Stack
           direction="row"
           alignItems="center"
@@ -115,7 +113,58 @@ export default function ChatMessageItem({ message }) {
         >
           {renderBody}
         </Stack>
-        {/* {renderTimestamp} */}
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack sx={{ mb: isGrouped ? 0.5 : 1.5 }}>
+      {!isMe && !isGrouped && !isAdmin && !isSprAdmin && (
+        <Typography
+          noWrap
+          variant="body2"
+          sx={{
+            color: 'text.disabled',
+            mb: 1,
+            mr: 'auto',
+            ml: '44px',
+          }}
+        >
+          {sender?.name}
+        </Typography>
+      )}
+      <Stack 
+        direction="row" 
+        justifyContent={isMe ? 'flex-end' : 'unset'} 
+        alignItems="flex-start"
+      >
+        {!isMe && (
+          <Avatar 
+            alt={sender?.name} 
+            src={sender?.photoURL} 
+            sx={{ 
+              width: 32, 
+              height: 32, 
+              mr: 1,
+              mt: 0,
+            }} 
+          />
+        )}
+        
+        <Stack
+          direction="row"
+          alignItems="center"
+          sx={{
+            position: 'relative',
+            '&:hover': {
+              '& .message-actions': {
+                opacity: 1,
+              },
+            },
+          }}
+        >
+          {renderBody}
+        </Stack>
       </Stack>
     </Stack>
   );
@@ -132,4 +181,5 @@ ChatMessageItem.propTypes = {
       role: PropTypes.string,
     }),
   }).isRequired,
+  isGrouped: PropTypes.bool,
 };
