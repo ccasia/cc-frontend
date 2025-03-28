@@ -185,7 +185,6 @@ export default function CreatorForm({ mutate, open, onClose, onSubmit: registerU
     try {
       console.log('CreatorForm data being submitted:', data);
       
-      // Pass raw data to the parent handler
       if (registerUser) {
         await registerUser(data);
       } else {

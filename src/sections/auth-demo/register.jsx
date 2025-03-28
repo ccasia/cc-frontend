@@ -288,7 +288,7 @@ const Register = () => {
           }
         };
         
-        console.log('Sending registration payload with token from creatorForm');
+        // console.log('Sending registration payload with token from creatorForm');
         const user = await register(registerPayload);
         setEmail(user);
         
