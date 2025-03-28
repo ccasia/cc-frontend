@@ -288,9 +288,13 @@ const Register = () => {
           }
         };
         
-        console.log('Sending registration payload:', JSON.stringify(registerPayload, null, 2));
+        // console.log('Sending registration payload with token from creatorForm');
         const user = await register(registerPayload);
         setEmail(user);
+        
+        // if (user) {
+        //   localStorage.setItem('pendingCreatorData', JSON.stringify(registerPayload.creatorData));
+        // }
         
         router.push(paths.auth.verify);
       }
@@ -301,17 +305,10 @@ const Register = () => {
         enqueueSnackbar('reCAPTCHA verification failed. Please try again.', {
           variant: 'error',
         });
-      } else if (err.message.includes('recaptcha')) {
-        enqueueSnackbar('reCAPTCHA verification error. Please try again.', {
-          variant: 'error',
-        });
       } else if (err.message === 'Email already exists') {
         methods.setError('email', {
           type: 'manual',
           message: 'Email already registered. Please try again.'
-        });
-        enqueueSnackbar('Email already registered. Please use a different email.', {
-          variant: 'error',
         });
       } else if (err.message === 'Invalid name format') {
         methods.setError('name', {
@@ -324,8 +321,9 @@ const Register = () => {
           message: 'Password does not meet requirements. Please try again.'
         });
       } else {
-        enqueueSnackbar(`Registration failed: ${err.message}`, {
-          variant: 'error',
+        methods.setError('password', {
+          type: 'manual',
+          message: 'An error occurred. Please try again.'
         });
       }
       setOpenCreatorForm(false);
