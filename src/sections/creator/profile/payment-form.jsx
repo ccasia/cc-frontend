@@ -6,7 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Paper, TextField, Typography, createFilterOptions } from '@mui/material';
+import { Box, Paper, TextField, Typography, createFilterOptions, Stack } from '@mui/material';
 
 import { banks } from 'src/contants/bank';
 import { updatePaymentForm } from 'src/api/paymentForm';
@@ -73,90 +73,176 @@ const PaymentFormProfile = ({ user }) => {
   }, [bankName, paymentForm, setValue]);
 
   return (
-    <Box component={Paper} p={2}>
-      <Typography variant="h6" mb={2}>
-        Payment Form
-      </Typography>
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Box
-          display="grid"
-          gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
-          gap={2}
-        >
-          {/* <RHFAutocomplete
-            label="Choose a bank"
-            name="bankName"
-            options={banks.map((bank) => bank.bank)}
-            getOptionLabel={(option) => option}
-          /> */}
-          <RHFAutocomplete
-            selectOnFocus
-            clearOnBlur
-            label="Bank Account Name"
-            name="bankName"
-            options={banks.map((item) => item.bank)}
-            getOptionLabel={(option) => option}
-            filterOptions={(options, params) => {
-              const { inputValue } = params;
-              const filtered = filter(options, params);
+        <Stack spacing={3} sx={{ maxWidth: { xs: '100%', sm: 500 } }}>
+          <Box>
+            <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: 1 }}>
+              Bank <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+            </Typography>
+            <RHFAutocomplete
+              selectOnFocus
+              clearOnBlur
+              name="bankName"
+              options={banks.map((item) => item.bank)}
+              getOptionLabel={(option) => option}
+              filterOptions={(options, params) => {
+                const { inputValue } = params;
+                const filtered = filter(options, params);
+                const isExisting = options.some(
+                  (option) => option.toLowerCase() === inputValue.toLowerCase()
+                );
+                if (inputValue !== '' && !isExisting) {
+                  filtered.push(`Add ${inputValue}`);
+                }
+                return filtered;
+              }}
+              sx={{
+                width: '100%',
+                '& .MuiInputBase-root': {
+                  bgcolor: 'white',
+                  borderRadius: 1,
+                  height: { xs: 40, sm: 48 },
+                },
+                '& .MuiInputLabel-root': {
+                  display: 'none',
+                },
+                '& .MuiInputBase-input::placeholder': {
+                  color: '#B0B0B0',
+                  fontSize: { xs: '14px', sm: '16px' },
+                  opacity: 1,
+                },
+              }}
+            />
+          </Box>
 
-              // Suggest the creation of a new value
-              const isExisting = options.some(
-                (option) => option.toLowerCase() === inputValue.toLowerCase()
-              );
+          <Box>
+            <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: 1 }}>
+              Bank Account No. <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+            </Typography>
+            <Controller
+              name="bankNumber"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  placeholder="Bank Account Number"
+                  error={!!error}
+                  InputLabelProps={{ shrink: false }}
+                  FormHelperTextProps={{ sx: { display: 'none' } }}
+                  sx={{
+                    width: '100%',
+                    '& .MuiInputBase-root': {
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      height: { xs: 40, sm: 48 },
+                    },
+                    '& .MuiInputLabel-root': {
+                      display: 'none',
+                    },
+                    '& .MuiInputBase-input::placeholder': {
+                      color: '#B0B0B0',
+                      fontSize: { xs: '14px', sm: '16px' },
+                      opacity: 1,
+                    },
+                  }}
+                />
+              )}
+            />
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: '#F04438',
+                mt: 1.5,
+                ml: 0.5,
+                display: 'block',
+                fontSize: '12px',
+              }}
+            >
+              {methods.formState.errors.bankNumber?.message}
+            </Typography>
+          </Box>
 
-              if (inputValue !== '' && !isExisting) {
-                filtered.push(`Add ${inputValue}`);
-              }
+          <Box>
+            <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: 1 }}>
+              Bank Account Name <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+            </Typography>
+            <RHFTextField
+              name="bankAccName"
+              placeholder="Bank Account Name"
+              InputLabelProps={{ shrink: false }}
+              FormHelperTextProps={{ sx: { display: 'none' } }}
+              sx={{
+                width: '100%',
+                '& .MuiInputBase-root': {
+                  bgcolor: 'white',
+                  borderRadius: 1,
+                  height: { xs: 40, sm: 48 },
+                },
+                '& .MuiInputLabel-root': {
+                  display: 'none',
+                },
+                '& .MuiInputBase-input::placeholder': {
+                  color: '#B0B0B0',
+                  fontSize: { xs: '14px', sm: '16px' },
+                  opacity: 1,
+                },
+              }}
+            />
+          </Box>
 
-              return filtered;
-            }}
-            sx={{
-              '& .MuiInputBase-root': {
-                background: '#FFFFFF',
-                border: '1px solid #EBEBEB',
-                borderRadius: '8px',
-              },
-              '& .MuiOutlinedInput-root .MuiAutocomplete-input': {
-                padding: '5px 4px 5px 4px',
-              },
-              '& .MuiLoadingButton-root.Mui-disabled': {
-                backgroundColor: '#B0BEC5',
-                color: '#FFFFFF',
-                opacity: 1,
-                cursor: 'not-allowed',
-              },
-            }}
-          />
+          <Box>
+            <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: 1 }}>
+              IC / Passport No. <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+            </Typography>
+            <RHFTextField
+              name="icPassportNumber"
+              placeholder="IC / Passport Number"
+              InputLabelProps={{ shrink: false }}
+              FormHelperTextProps={{ sx: { display: 'none' } }}
+              sx={{
+                width: '100%',
+                '& .MuiInputBase-root': {
+                  bgcolor: 'white',
+                  borderRadius: 1,
+                  height: { xs: 40, sm: 48 },
+                },
+                '& .MuiInputLabel-root': {
+                  display: 'none',
+                },
+                '& .MuiInputBase-input::placeholder': {
+                  color: '#B0B0B0',
+                  fontSize: { xs: '14px', sm: '16px' },
+                  opacity: 1,
+                },
+              }}
+            />
+          </Box>
 
-          <Controller
-            name="bankNumber"
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                type="number"
-                label="Bank Account Number"
-                error={!!error}
-                helperText={!!error && error?.message}
-              />
-            )}
-          />
-          <RHFTextField name="bankAccName" label="Bank Account Name" />
-          <RHFTextField name="icPassportNumber" label="IC / Passport Number" />
-        </Box>
-        <Box sx={{ textAlign: 'end', mt: 2 }}>
-          <LoadingButton
-            size="small"
-            variant="outlined"
-            type="submit"
-            disabled={!isDirty}
-            loading={isSubmitting}
-          >
-            Save changes
-          </LoadingButton>
-        </Box>
+          <Box>
+            <LoadingButton
+              type="submit"
+              variant="contained"
+              loading={isSubmitting}
+              // disabled={!isDirty}
+              sx={{
+                background: isDirty
+                  ? '#1340FF'
+                  : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+                pointerEvents: !isDirty && 'none',
+                fontSize: '16px',
+                fontWeight: 600,
+                borderRadius: '10px',
+                borderBottom: isDirty ? '3px solid #0c2aa6' : '3px solid #91a2e5',
+                transition: 'none',
+                width: { xs: '100%', sm: '90px' },
+                height: '44px',
+              }}
+            >
+              Update
+            </LoadingButton>
+          </Box>
+        </Stack>
       </FormProvider>
-    </Box>
   );
 };
 

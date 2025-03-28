@@ -94,6 +94,9 @@ const InvoiceDetail = lazy(() => import('src/pages/dashboard/creator/invoice-det
 // import the packages pages
 const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 
+// Mobile View
+const MobileModalView = lazy(() => import('src/sections/campaign/discover/creator/mobile-modal-view'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -123,6 +126,14 @@ export const dashboardRoutes = [
         children: [
           { element: <ProfilePage />, index: true },
           { path: 'profile', element: <ProfilePage /> },
+          { path: 'profile/general', element: <ProfilePage /> },
+          { path: 'profile/security', element: <ProfilePage /> },
+          { path: 'profile/api', element: <ProfilePage /> },
+          { path: 'profile/account', element: <ProfilePage /> },
+          { path: 'profile/socials', element: <ProfilePage /> },
+          { path: 'profile/payment', element: <ProfilePage /> },
+          { path: 'profile/billing', element: <ProfilePage /> },
+          { path: 'profile/notifications', element: <ProfilePage /> },
         ],
       },
       // For admin/superadmin
@@ -441,6 +452,14 @@ export const dashboardRoutes = [
                 ),
               },
             ],
+          },
+          {
+            path: 'VUquQR/HJUboKDBwJi71KQ==/discover/:id',
+            element: (
+              <RoleBasedGuard hasContent roles={['creator']}>
+                <MobileModalView />
+              </RoleBasedGuard>
+            ),
           },
         ],
       },

@@ -1,215 +1,100 @@
 import PropTypes from 'prop-types';
-import { useCallback } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 
-import { alpha } from '@mui/material';
-import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
+import { Box, Stack, Typography, Divider } from '@mui/material';
 
-import { useBoolean } from 'src/hooks/use-boolean';
-
-import {
-  createTask,
-  updateTask,
-  deleteTask,
-  clearColumn,
-  updateColumn,
-  deleteColumn,
-} from 'src/api/kanban';
-
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import { useSnackbar } from 'src/components/snackbar';
 
-import KanbanTaskAdd from './kanban-task-add';
-import KanbanTaskItem from './kanban-task-item';
-import KanbanColumnToolBar from './kanban-column-tool-bar';
+import TaskItem from './pc/task-item';
 
-// ----------------------------------------------------------------------
+const COLORS = {
+  0: '#8A5AFE',
+  1: '#1340FF',
+  2: '#E3B100',
+  3: '#1ABF66',
+};
 
-export default function KanbanColumn({ column, tasks, index, status }) {
-  const { enqueueSnackbar } = useSnackbar();
+const columnDictionary = {
+  'To Do': 'TO-DO',
+  'In Progress': 'IN-PROGRESS',
+  'In Review': 'IN-REVIEW',
+  'Done': 'COMPLETED',
+};
 
-  const openAddTask = useBoolean();
-
-  const handleUpdateColumn = useCallback(
-    async (columnName) => {
-      try {
-        if (column.name !== columnName) {
-          updateColumn(column.id, columnName);
-
-          enqueueSnackbar('Update success!', {
-            anchorOrigin: { vertical: 'top', horizontal: 'center' },
-          });
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    [column?.id, column?.name, enqueueSnackbar]
-  );
-
-  const handleClearColumn = useCallback(async () => {
-    try {
-      clearColumn(column.id);
-    } catch (error) {
-      console.error(error);
-    }
-  }, [column?.id]);
-
-  const handleDeleteColumn = useCallback(async () => {
-    try {
-      deleteColumn(column.id);
-
-      enqueueSnackbar('Delete success!', {
-        anchorOrigin: { vertical: 'top', horizontal: 'center' },
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  }, [column?.id, enqueueSnackbar]);
-
-  const handleAddTask = useCallback(
-    async (taskData) => {
-      try {
-        createTask(column?.id, taskData);
-
-        openAddTask.onFalse();
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    [column?.id, openAddTask]
-  );
-
-  const handleUpdateTask = useCallback(async (taskData) => {
-    try {
-      updateTask(taskData);
-    } catch (error) {
-      console.error(error);
-    }
-  }, []);
-
-  const handleDeleteTask = useCallback(
-    async (taskId) => {
-      try {
-        deleteTask(column.id, taskId);
-
-        enqueueSnackbar('Delete success!', {
-          anchorOrigin: { vertical: 'top', horizontal: 'center' },
-        });
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    [column?.id, enqueueSnackbar]
-  );
-
-  const renderAddTask = (
-    <Stack
-      spacing={2}
-      sx={{
-        pb: 3,
-      }}
-    >
-      {openAddTask.value && (
-        <KanbanTaskAdd
-          status={column.name}
-          onAddTask={handleAddTask}
-          onCloseAddTask={openAddTask.onFalse}
-        />
-      )}
-
-      <Button
-        fullWidth
-        size="large"
-        color="inherit"
-        startIcon={
-          <Iconify
-            icon={openAddTask.value ? 'solar:close-circle-broken' : 'mingcute:add-line'}
-            width={18}
-            sx={{ mr: -0.5 }}
-          />
-        }
-        onClick={openAddTask.onToggle}
-        sx={{ fontSize: 14 }}
-      >
-        {openAddTask.value ? 'Close' : 'Add Task'}
-      </Button>
-    </Stack>
-  );
-
+export default function KanbanColumn({ column, index, tasks }) {
   return (
-    <Draggable key={column?.id} draggableId={column?.id} index={index}>
-      {(provided, snapshot) => (
-        <Paper
-          ref={provided.innerRef}
+    <Draggable draggableId={column.id} index={index}>
+      {(provided) => (
+        <Box
           {...provided.draggableProps}
+          ref={provided.innerRef}
           sx={{
-            px: 2,
-            borderRadius: 2,
-            bgcolor: 'background.neutral',
-            ...(snapshot.isDragging && {
-              bgcolor: (theme) => alpha(theme.palette.grey[500], 0.2),
-            }),
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            p: 2,
+            pt: 0,
           }}
         >
-          {/* <Stack> */}
-          <KanbanColumnToolBar
-            columnName={column?.name}
-            onUpdateColumn={handleUpdateColumn}
-            onClearColumn={handleClearColumn}
-            onDeleteColumn={handleDeleteColumn}
-            taskLength={tasks.length}
-            provided={provided}
-          />
-
-          {/* <Box sx={{ overflow: 'auto', height: '65vh', scrollbarWidth: 'none' }}> */}
-          <Droppable droppableId={column?.id} type="TASK">
-            {(dropProvided, dropSnapshot) => (
-              <Stack
-                ref={dropProvided.innerRef}
-                {...dropProvided.droppableProps}
-                spacing={2}
+          <Stack direction="row" alignItems="center" justifyContent="space-between" {...provided.dragHandleProps} mb={2}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Label
                 sx={{
-                  py: 3,
-                  minWidth: 280,
-                  ...(dropSnapshot.isDraggingOver && {
-                    bgcolor: (theme) => alpha(theme.palette.grey[400], 0.2),
-                    borderRadius: 2,
-                  }),
+                  width: 'auto',
+                  height: '32px',
+                  border: 1,
+                  borderRadius: 0.8,
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  p: 1,
+                  color: COLORS[index % 4],
+                  bgcolor: 'white',
+                  boxShadow: `0px 2px 0 ${COLORS[index % 4]}`,
                 }}
               >
-                {column?.task
-                  .filter((item) => item?.submission?.status !== 'NOT_STARTED')
-                  .map((item, taskIndex) => (
-                    <KanbanTaskItem
-                      key={item?.id}
-                      index={taskIndex}
-                      column={column}
-                      task={item}
-                      onUpdateTask={handleUpdateTask}
-                      onDeleteTask={() => handleDeleteTask(item?.id)}
-                      status={status}
-                    />
-                  ))}
+                {columnDictionary[column.name] || column.name.toUpperCase()}
+              </Label>
+              <Typography variant="caption" color="#8E8E93" fontWeight={500} fontSize="16px" pl={1}>
+                {tasks.length}
+              </Typography>
+            </Stack>
+            <Iconify icon="tabler:dots" width={24} color="#636366" />
+          </Stack>
 
+          <Droppable droppableId={column.id} type="task">
+            {(dropProvided) => (
+              <Box
+                ref={dropProvided.innerRef}
+                {...dropProvided.droppableProps}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  overflowY: 'auto',
+                  pb: 3,
+                }}
+              >
+                {tasks.map((task, taskIndex) => (
+                  <TaskItem 
+                    key={task.id} 
+                    task={task} 
+                    index={taskIndex} 
+                    columnIndex={index}
+                  />
+                ))}
                 {dropProvided.placeholder}
-              </Stack>
+              </Box>
             )}
           </Droppable>
-          {/* </Box> */}
-
-          {/* {renderAddTask} */}
-          {/* </Stack> */}
-        </Paper>
+        </Box>
       )}
     </Draggable>
   );
 }
 
 KanbanColumn.propTypes = {
-  status: PropTypes.array,
   column: PropTypes.object,
   index: PropTypes.number,
   tasks: PropTypes.array,

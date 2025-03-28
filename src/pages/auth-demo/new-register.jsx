@@ -8,7 +8,7 @@ export default function ModernLoginPage() {
   return (
     <>
       <Helmet>
-        <title> Auth Classic: Register</title>
+        <title> Cult Creative: Register</title>
       </Helmet>
 
       <Register />

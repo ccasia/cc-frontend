@@ -80,27 +80,39 @@ const ManageCampaignDetailView = ({ id }) => {
           spacing={2}
           width="100%"
         >
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            alignItems={{ xs: 'flex-start', sm: 'center' }} 
+            spacing={2}
+            width={{ xs: '100%', sm: 'auto' }}
+          >
             {data?.campaignBrief?.images?.[0] && (
-              <img
-                src={data?.campaignBrief?.images[0]}
-                alt={data?.name}
-                style={{
-                  width: '100%',
-                  maxWidth: 80,
-                  height: 'auto',
-                  borderRadius: '12px',
-                  border: '1px solid #e0e0e0',
-                  objectFit: 'cover',
+              <Box
+                sx={{
+                  width: { xs: '100%', sm: 80 },
+                  height: { xs: 200, sm: 'auto' },
                 }}
-              />
+              >
+                <img
+                  src={data?.campaignBrief?.images[0]}
+                  alt={data?.name}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '12px',
+                    border: '1px solid #e0e0e0',
+                    objectFit: 'cover',
+                  }}
+                />
+              </Box>
             )}
             <Typography
               variant="h5"
               sx={{
                 fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.5rem', sm: '2rem', md: '2.4rem' },
+                fontSize: { xs: '2rem', sm: '2rem', md: '2.4rem' },
                 fontWeight: 550,
+                textAlign: { xs: 'left', sm: 'left' },
               }}
             >
               {data?.name || 'Campaign Detail'}

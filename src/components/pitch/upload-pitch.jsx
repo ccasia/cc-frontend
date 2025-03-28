@@ -51,6 +51,12 @@ const UploadPitch = ({
 
   const data = handleProgress();
 
+  const formatDuration = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   const renderPlaceholder = (
     <Box
       {...getRootProps()}
@@ -58,6 +64,7 @@ const UploadPitch = ({
         display: 'flex',
         border: 1,
         borderColor: grey[300],
+        bgcolor: '#ffffff',
         justifyContent: 'center',
         alignItems: 'center',
         cursor: 'pointer',
@@ -65,7 +72,8 @@ const UploadPitch = ({
           opacity: 0.4,
         },
         minHeight: 250,
-        borderRadius: 2,
+        width: '100%',
+        borderRadius: 1.25,
         ...(isDragActive && {
           opacity: 0.3,
         }),
@@ -96,6 +104,7 @@ const UploadPitch = ({
           secondaryTypographyProps={{
             textAlign: 'center',
             variant: 'body1',
+            fontSize: '0.8rem',
           }}
         />
       </Stack>
@@ -149,25 +158,25 @@ const UploadPitch = ({
   const renderPreview = (
     <Box
       sx={{
+        mt: -2,
         display: 'flex',
-        flexDirection: { xs: 'column', sm: 'row' },
+        flexDirection: 'column',
         border: 1,
-        gap: 2,
         borderColor: grey[300],
         justifyContent: 'center',
-        alignItems: { xs: 'flex-start', sm: 'center' },
+        alignItems: 'center',
         minHeight: 250,
-        borderRadius: 2,
+        borderRadius: 1.25,
         p: 2,
+        bgcolor: '#ffffff',
       }}
     >
       {source && (
         <Box
           sx={{
-            height: 300,
-            width: 250,
-            flexGrow: 1,
-            alignSelf: 'center',
+            width: '100%',
+            aspectRatio: '16/9',
+            mb: 2,
           }}
         >
           <Box
@@ -175,11 +184,12 @@ const UploadPitch = ({
             autoPlay
             controls
             sx={{
-              width: 1,
-              height: 1,
+              width: '100%',
+              height: '100%',
               border: 1,
-              borderRadius: 2,
+              borderRadius: 1.25,
               borderColor: grey[300],
+              objectFit: 'cover',
             }}
             onLoadedMetadata={handleLoadedMetadata}
           >
@@ -189,30 +199,44 @@ const UploadPitch = ({
       )}
 
       {!data?.progress ? (
-        <Stack spacing={1} flexGrow={1}>
-          <Typography variant="subtitle2" color="text.secondary">
+        <Stack spacing={1} width="100%" sx={{ml: 1.5}}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{mb: -1}}>
             Attached:
           </Typography>
           <Typography fontWeight="bold">{sourceName}</Typography>
           <ListItemText
-            primary={`Duration: ${duration}s`}
+            primary={`Duration: ${formatDuration(duration)}`}
             secondary={`Size: ${fData(size)}`}
             primaryTypographyProps={{
               variant: 'caption',
               color: 'text.secondary',
+              fontWeight: 550,
             }}
             secondaryTypographyProps={{
               variant: 'caption',
               color: 'text.secondary',
+              fontWeight: 550,
             }}
           />
           <LoadingButton
             variant="outlined"
-            size="small"
+            size="medium"
             onClick={remove}
             loading={removeVideo.value}
+            sx={{
+              alignSelf: 'flex-start',
+              bgcolor: '#ffffff',
+              borderColor: '#E7E7E7',
+              borderWidth: '1px',
+              borderBottom: '3px solid #E7E7E7',
+              '&:hover': {
+                borderColor: '#E7E7E7',
+                borderBottom: '3px solid #E7E7E7',
+                bgcolor: '#ffffff',
+              }
+            }}
           >
-            Change / Remove
+            Change
           </LoadingButton>
         </Stack>
       ) : (

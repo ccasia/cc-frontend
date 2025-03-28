@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 
 import { LoadingButton } from '@mui/lab';
-import { Stack, Button, Typography } from '@mui/material';
+import { Stack, Button, Typography, Box } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -12,6 +12,8 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
+
+import { typography } from 'src/theme/typography';
 
 // ----------------------------------------------------------------------
 
@@ -141,64 +143,219 @@ export default function AccountSocialLinks() {
   };
 
   return (
-    <Stack spacing={2} border={1} p={2} borderRadius={2} borderColor="#EBEBEB" px={2}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" width={1}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Image src="/instagram/insta.webp" width={30} />
-          <Typography variant="subtitle1">Instagram</Typography>
-        </Stack>
-        {user?.creator?.isFacebookConnected ? (
-          <LoadingButton
-            variant="outlined"
-            // onClick={disconnectFacebook}
-            onClick={disconnectInstagram}
-            color="error"
-            sx={{ borderRadius: 2 }}
-            loading={facebookLoading.value}
+    <Stack spacing={3}>
+      <Stack spacing={4} sx={{ maxWidth: { xs: '100%', sm: 500 } }}>
+        {/* Instagram Connection */}
+        <Box>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontSize: '13px',
+              mb: 0.75,
+              color: '#636366',
+              fontWeight: typography.fontWeightMedium,
+              letterSpacing: '0.01em'
+            }}
           >
-            Disconnect
-          </LoadingButton>
-        ) : (
-          <Button
-            LinkComponent="a"
-            // Later need to change
-            href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://staging.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
-            target="_blank"
-            variant="outlined"
-            // onClick={connectFacebook}
-            startIcon={<Iconify icon="material-symbols:add-rounded" />}
-            sx={{ borderRadius: 2 }}
+            Instagram Account
+          </Typography>
+          
+          <Stack 
+            direction="row" 
+            alignItems="center" 
+            sx={{
+              bgcolor: 'white',
+              borderRadius: '6px',
+              border: '1px solid #E7E7E7',
+              transition: 'all 0.2s ease-in-out',
+              overflow: 'hidden',
+              '&:hover': {
+                borderColor: '#D0D0D0',
+              },
+            }}
           >
-            Add account
-          </Button>
-        )}
-      </Stack>
+            <Stack 
+              direction="row" 
+              alignItems="center" 
+              spacing={1.5}
+              sx={{ 
+                flex: 1,
+                px: 1.5,
+                py: 1.25,
+                minHeight: 42
+              }}
+            >
+              <Iconify 
+                icon="mdi:instagram" 
+                width={24}
+                height={24}
+                sx={{
+                  color: user?.creator?.isFacebookConnected ? '#231F20' : '#B0B0B0',
+                }}
+              />
+              <Typography 
+                variant="body2"
+                sx={{ 
+                  color: user?.creator?.isFacebookConnected ? '#231F20' : '#B0B0B0',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                }}
+              >
+                {user?.creator?.isFacebookConnected ? 'Connected' : 'Not connected'}
+              </Typography>
+            </Stack>
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between" width={1}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Image src="/tiktok/Tiktok_Login.png" width={30} />
-          <Typography variant="subtitle1">TikTok</Typography>
-        </Stack>
-        {user?.creator?.isTiktokConnected ? (
-          <LoadingButton
-            variant="outlined"
-            onClick={disconnectTiktok}
-            color="error"
-            sx={{ borderRadius: 2 }}
-            loading={tikTokLoading.value}
+            {user?.creator?.isFacebookConnected ? (
+              <LoadingButton
+                variant="text"
+                onClick={disconnectInstagram}
+                loading={facebookLoading.value}
+                sx={{
+                  height: '100%',
+                  px: 2,
+                  py: 1.25,
+                  color: '#FF3500',
+                  borderLeft: '1px solid #E7E7E7',
+                  borderRadius: 0,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  '&:hover': {
+                    bgcolor: '#FFF5F5',
+                  },
+                }}
+              >
+                Disconnect
+              </LoadingButton>
+            ) : (
+              <Button
+                LinkComponent="a"
+                href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://staging.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
+                target="_blank"
+                startIcon={<Iconify icon="material-symbols:add-rounded" width={18} height={18} />}
+                sx={{
+                  height: '100%',
+                  px: 2,
+                  py: 1.25,
+                  bgcolor: '#1340FF',
+                  color: '#FFFFFF',
+                  borderRadius: 0,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
+                }}
+              >
+                Connect
+              </Button>
+            )}
+          </Stack>
+        </Box>
+
+        {/* TikTok Connection */}
+        <Box>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontSize: '13px',
+              mb: 0.75,
+              color: '#636366',
+              fontWeight: typography.fontWeightMedium,
+              letterSpacing: '0.01em'
+            }}
           >
-            Disconnect
-          </LoadingButton>
-        ) : (
-          <Button
-            variant="outlined"
-            onClick={connectTiktok}
-            startIcon={<Iconify icon="material-symbols:add-rounded" />}
-            sx={{ borderRadius: 2 }}
+            TikTok Account
+          </Typography>
+          
+          <Stack 
+            direction="row" 
+            alignItems="center" 
+            sx={{
+              bgcolor: 'white',
+              borderRadius: '6px',
+              border: '1px solid #E7E7E7',
+              transition: 'all 0.2s ease-in-out',
+              overflow: 'hidden',
+              '&:hover': {
+                borderColor: '#D0D0D0',
+              },
+            }}
           >
-            Add account
-          </Button>
-        )}
+            <Stack 
+              direction="row" 
+              alignItems="center" 
+              spacing={1.5}
+              sx={{ 
+                flex: 1,
+                px: 1.5,
+                py: 1.25,
+                minHeight: 42
+              }}
+            >
+              <Iconify 
+                icon="ic:baseline-tiktok" 
+                width={24}
+                height={24}
+                sx={{
+                  color: user?.creator?.isTiktokConnected ? '#231F20' : '#B0B0B0',
+                }}
+              />
+              <Typography 
+                variant="body2"
+                sx={{ 
+                  color: user?.creator?.isTiktokConnected ? '#231F20' : '#B0B0B0',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                }}
+              >
+                {user?.creator?.isTiktokConnected ? 'Connected' : 'Not connected'}
+              </Typography>
+            </Stack>
+
+            {user?.creator?.isTiktokConnected ? (
+              <LoadingButton
+                variant="text"
+                onClick={disconnectTiktok}
+                loading={tikTokLoading.value}
+                sx={{
+                  height: '100%',
+                  px: 2,
+                  py: 1.25,
+                  color: '#FF3500',
+                  borderLeft: '1px solid #E7E7E7',
+                  borderRadius: 0,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  '&:hover': {
+                    bgcolor: '#FFF5F5',
+                  },
+                }}
+              >
+                Disconnect
+              </LoadingButton>
+            ) : (
+              <Button
+                onClick={connectTiktok}
+                startIcon={<Iconify icon="material-symbols:add-rounded" width={18} height={18} />}
+                sx={{
+                  height: '100%',
+                  px: 2,
+                  py: 1.25,
+                  bgcolor: '#1340FF',
+                  color: '#FFFFFF',
+                  borderRadius: 0,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
+                }}
+              >
+                Connect
+              </Button>
+            )}
+          </Stack>
+        </Box>
       </Stack>
     </Stack>
   );
