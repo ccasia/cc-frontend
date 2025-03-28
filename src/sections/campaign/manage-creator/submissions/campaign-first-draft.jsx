@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import Chip from '@mui/material/Chip';
 import Accordion from '@mui/material/Accordion';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -17,10 +16,8 @@ import {
   Box,
   Grid,
   Stack,
-  Paper,
   Button,
   Dialog,
-  Avatar,
   Typography,
   IconButton,
   DialogTitle,
@@ -28,15 +25,11 @@ import {
   DialogContent,
   DialogActions,
   LinearProgress,
-  Tabs,
-  Tab,
-  ListItem,
-  List,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -48,13 +41,6 @@ import UploadPhotoModal from './components/photo';
 import UploadDraftVideoModal from './components/draft-video';
 import UploadRawFootageModal from './components/raw-footage';
 import { FirstDraftFileTypeModal } from './components/filetype-modal';
-
-// eslint-disable-next-line react/prop-types
-// const AvatarIcon = ({ icon, ...props }) => (
-//   <Avatar {...props}>
-//     <Iconify icon={icon} />
-//   </Avatar>
-// );
 
 const truncateText = (text, maxLength) =>
   text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
@@ -92,6 +78,7 @@ const CampaignFirstDraft = ({
   fullSubmission,
   openLogisticTab,
   setCurrentTab,
+  deliverablesData,
 }) => {
   // eslint-disable-next-line no-unused-vars
   const [preview, setPreview] = useState('');
@@ -100,7 +87,7 @@ const CampaignFirstDraft = ({
   const dependency = getDependency(submission?.id);
   const { socket } = useSocketContext();
   const [progress, setProgress] = useState(0);
-  const [progressName, setProgressName] = useState('');
+
   const display = useBoolean();
   const { user, dispatch } = useAuthContext();
 
@@ -115,10 +102,10 @@ const CampaignFirstDraft = ({
   const [draftVideoModalOpen, setDraftVideoModalOpen] = useState(false);
   const [rawFootageModalOpen, setRawFootageModalOpen] = useState(false);
   const [photosModalOpen, setPhotosModalOpen] = useState(false);
-  // const [currentFile, setCurrentFile] = useState(null);
-  const [showUploadSuccess, setShowUploadSuccess] = useState(false);
 
   const [uploadProgress, setUploadProgress] = useState([]);
+
+  const { deliverables } = deliverablesData;
 
   const methods = useForm({
     defaultValues: {
@@ -186,53 +173,22 @@ const CampaignFirstDraft = ({
         }
         return [...prev, data];
       });
-
-      // // Executed if processing is done
-      // if (data.progress === 100 || data.progress === 0) {
-      //   setIsProcessing(false);
-      //   reset();
-      //   setPreview('');
-      //   setProgressName('');
-      //   localStorage.removeItem('preview');
-
-      //   if (data.progress === 100) {
-      //     mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
-      //   }
-      // } else {
-      //   setIsProcessing(true);
-      // }
     };
 
-    // const handleStatusQueue = (data) => {
-    //   if (data?.status === 'queue') {
-    //     inQueue.onTrue();
-    //   }
-    // };
-
     socket.on('progress', handleProgress);
-    // socket.on('statusQueue', handleStatusQueue);
 
-    // socket.emit('checkQueue', { submissionId: submission?.id });
-
-    // Cleanup on component unmount
     // eslint-disable-next-line consistent-return
     return () => {
       socket.off('progress', handleProgress);
-      // socket.off('statusQueue', handleStatusQueue);
-      // socket.off('checkQueue');
     };
   }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   const checkProgress = useCallback(() => {
     if (uploadProgress?.length && uploadProgress?.every((x) => x.progress === 100)) {
-      // setShowUploadSuccess(true);
-
       const timer = setTimeout(() => {
-        setShowUploadSuccess(false);
         setIsProcessing(false);
         reset();
         setPreview('');
-        setProgressName('');
         localStorage.removeItem('preview');
         setUploadProgress([]);
 
@@ -251,15 +207,6 @@ const CampaignFirstDraft = ({
   useEffect(() => {
     checkProgress();
   }, [checkProgress]);
-
-  // const handleCancel = () => {
-  //   if (isProcessing) {
-  //     socket?.emit('cancel-processing', { submissionId: submission.id });
-  //     setIsProcessing(false);
-  //     setProgress(0);
-  //     localStorage.removeItem('preview');
-  //   }
-  // };
 
   const handleCloseSubmitDialog = () => {
     setShowSubmitDialog(false);
@@ -622,6 +569,7 @@ const CampaignFirstDraft = ({
                 >
                   ✏️
                 </Box>
+
                 <Stack spacing={1} alignItems="center">
                   <Typography
                     variant="h6"
@@ -825,8 +773,8 @@ const CampaignFirstDraft = ({
                     </AccordionSummary>
                     <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
                       <Stack spacing={2} sx={{ maxWidth: 'md', mx: 'auto' }}>
-                        {submission?.video?.length > 0 ? (
-                          submission.video.map((videoItem, index) => (
+                        {campaign?.campaignCredits && deliverables?.videos?.length > 0 ? (
+                          deliverables.videos.map((videoItem, index) => (
                             <Box
                               key={videoItem.id || index}
                               sx={{
@@ -1051,6 +999,7 @@ const CampaignFirstDraft = ({
               handleClose={() => setUploadTypeModalOpen(false)}
               onSelectType={handleUploadTypeSelect}
               campaign={campaign}
+              deliverablesData={deliverablesData}
             />
 
             <UploadPhotoModal
@@ -1058,6 +1007,7 @@ const CampaignFirstDraft = ({
               campaignId={campaign?.id}
               open={photosModalOpen}
               onClose={() => setPhotosModalOpen(false)}
+              deliverablesData={deliverablesData}
             />
 
             <UploadDraftVideoModal
@@ -1066,6 +1016,7 @@ const CampaignFirstDraft = ({
               open={draftVideoModalOpen}
               onClose={() => setDraftVideoModalOpen(false)}
               totalUGCVideos={totalUGCVideos}
+              deliverablesData={deliverablesData}
             />
 
             <UploadRawFootageModal
@@ -1073,6 +1024,7 @@ const CampaignFirstDraft = ({
               onClose={() => setRawFootageModalOpen(false)}
               submissionId={submission?.id}
               campaign={campaign}
+              deliverablesData={deliverablesData}
             />
 
             <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>
@@ -1336,4 +1288,5 @@ CampaignFirstDraft.propTypes = {
   fullSubmission: PropTypes.array,
   openLogisticTab: PropTypes.func,
   setCurrentTab: PropTypes.func,
+  deliverablesData: PropTypes.object,
 };

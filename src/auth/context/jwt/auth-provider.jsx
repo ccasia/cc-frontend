@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types';
 import { useLocation } from 'react-router';
-import { useMemo, useEffect, useReducer, useCallback } from 'react';
+import { useMemo, useState, useEffect, useReducer, useCallback } from 'react';
 
 import axios, { endpoints } from 'src/utils/axios';
+
+import CreatorForm from 'src/sections/creator/form/creatorForm';
 
 import { setSession } from './utils';
 import { AuthContext } from './auth-context';
@@ -57,57 +59,10 @@ const reducer = (state, action) => {
 
 // ----------------------------------------------------------------------
 
-// const STORAGE_KEY = 'accessToken';
-
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const location = useLocation();
-
-  // const { data: userData, error: err } = useGetMe();
-
-  // const initialize = useCallback(async () => {
-  //   console.log('TEsting');
-  //   // try {
-  //   //   const userData = await axios.get(endpoints.auth.me);
-
-  //   //   console.log(userData);
-
-  //   //   console.log('TEsting');
-
-  //   //   // if (err?.sessionExpired) {
-  //   //   //   dispatch({
-  //   //   //     type: 'LOGOUT',
-  //   //   //   });
-  //   //   // }
-
-  //   //   // if (userData?.user) {
-  //   //   //   const { user } = userData;
-  //   //   //   dispatch({
-  //   //   //     type: 'INITIAL',
-  //   //   //     payload: {
-  //   //   //       user: {
-  //   //   //         ...user,
-  //   //   //       },
-  //   //   //     },
-  //   //   //   });
-  //   //   // } else {
-  //   //   //   dispatch({
-  //   //   //     type: 'INITIAL',
-  //   //   //     payload: {
-  //   //   //       user: null,
-  //   //   //     },
-  //   //   //   });
-  //   //   // }
-  //   // } catch (error) {
-  //   //   console.log(error);
-  //   //   dispatch({
-  //   //     type: 'INITIAL',
-  //   //     payload: {
-  //   //       user: null,
-  //   //     },
-  //   //   });
-  //   // }
-  // }, []);
 
   const initialize = useCallback(async () => {
     try {
@@ -127,10 +82,6 @@ export function AuthProvider({ children }) {
       }
     }
   }, []);
-
-  // useEffect(() => {
-  //   initialize();
-  // }, [initialize]);
 
   useEffect(() => {
     initialize();

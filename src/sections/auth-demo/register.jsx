@@ -19,6 +19,7 @@ import {
   Dialog,
   Button,
   Popper,
+  Divider,
   TextField,
   Typography,
   IconButton,
@@ -96,6 +97,17 @@ const PdfModal = ({ open, onClose, pdfFile, title }) => {
     </Dialog>
   );
 };
+
+const socialLogins = [
+  {
+    platform: 'google',
+    icon: 'mingcute:google-fill',
+  },
+  {
+    platform: 'facebook',
+    icon: 'ic:baseline-facebook',
+  },
+];
 
 const Register = () => {
   const password = useBoolean();
@@ -677,6 +689,36 @@ const Register = () => {
       >
         Join Now
       </LoadingButton>
+
+      <Divider textAlign="center" sx={{ color: 'text.secondary', fontSize: 14 }}>
+        More login options
+      </Divider>
+
+      <Stack direction="row" justifyContent="center" spacing={2}>
+        {socialLogins.map((item) => (
+          // const handleAuth = item.platform === 'google' ? googleAuth : null;
+
+          <LoadingButton
+            fullWidth
+            size="large"
+            variant="outlined"
+            loading={isSubmitting}
+            // onClick={handleAuth}
+            sx={{
+              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+              bgcolor: '#1340FF',
+              color: 'whitesmoke',
+              width: 80,
+              py: 1,
+              '&:hover': {
+                bgcolor: '#1340FF',
+              },
+            }}
+          >
+            <Iconify icon={item.icon} width={25} />
+          </LoadingButton>
+        ))}
+      </Stack>
     </Stack>
   );
 

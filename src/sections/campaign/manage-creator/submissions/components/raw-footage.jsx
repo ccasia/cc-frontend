@@ -15,6 +15,7 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -24,8 +25,19 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
-const UploadRawFootageModal = ({ open, onClose, submissionId, campaign, previewSubmission }) => {
+const UploadRawFootageModal = ({
+  open,
+  onClose,
+  submissionId,
+  campaign,
+  previewSubmission,
+  deliverablesData,
+}) => {
   const { user } = useAuthContext();
+  const loading = useBoolean();
+
+  const { deliverables, deliverableMutate } = deliverablesData;
+
   const methods = useForm({
     defaultValues: {
       rawFootage: [],
@@ -37,9 +49,13 @@ const UploadRawFootageModal = ({ open, onClose, submissionId, campaign, previewS
 
   const { handleSubmit, setValue } = methods;
 
-  const rawFootageToUpdateCount = previewSubmission?.feedback?.reduce(
-    (count, f) => count + (f.rawFootageToUpdate?.length || 0),
-    0
+  // const rawFootageToUpdateCount = previewSubmission?.feedback?.reduce(
+  //   (count, f) => count + (f.rawFootageToUpdate?.length || 0),
+  //   0
+  // );
+
+  const rawFootageToUpdateCount = deliverables?.rawFootages?.filter(
+    (x) => x.status === 'REVISION_REQUESTED'
   );
 
   const validateFileCount = (files) => {
@@ -60,10 +76,11 @@ const UploadRawFootageModal = ({ open, onClose, submissionId, campaign, previewS
       return;
     }
     try {
+      loading.onTrue();
       const formData = new FormData();
-      const newData = { 
+      const newData = {
         submissionId,
-        rawFootagesDriveLink: data.rawFootagesDriveLink 
+        rawFootagesDriveLink: data.rawFootagesDriveLink,
       };
       formData.append('data', JSON.stringify(newData));
 
@@ -82,10 +99,13 @@ const UploadRawFootageModal = ({ open, onClose, submissionId, campaign, previewS
       enqueueSnackbar('Raw footage uploaded successfully');
       onClose();
       submissionMutate();
+      deliverableMutate();
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaign.id));
     } catch (error) {
       enqueueSnackbar('Failed to upload raw footage', { variant: 'error' });
+    } finally {
+      loading.onFalse();
     }
   });
 
@@ -126,7 +146,8 @@ const UploadRawFootageModal = ({ open, onClose, submissionId, campaign, previewS
       <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
         {previewSubmission?.status === 'CHANGES_REQUIRED' && (
           <Typography variant="body2" sx={{ color: 'warning.main', mb: 2 }}>
-            Please upload exactly {rawFootageToUpdateCount} raw footage file{rawFootageToUpdateCount > 1 ? 's' : ''} as requested by the admin.
+            Please upload exactly {rawFootageToUpdateCount} raw footage file
+            {rawFootageToUpdateCount > 1 ? 's' : ''} as requested by the admin.
           </Typography>
         )}
         <FormProvider methods={methods}>
@@ -173,6 +194,7 @@ const UploadRawFootageModal = ({ open, onClose, submissionId, campaign, previewS
           fullWidth
           variant="contained"
           onClick={onSubmit}
+          loading={loading.value}
           sx={{
             bgcolor: '#203ff5',
             color: 'white',
@@ -202,4 +224,5 @@ UploadRawFootageModal.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   previewSubmission: PropTypes.object,
+  deliverablesData: PropTypes.object,
 };

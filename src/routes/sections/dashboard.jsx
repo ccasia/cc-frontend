@@ -9,6 +9,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 import { ChatView } from 'src/sections/chat/view';
 import { CalendarView } from 'src/sections/calendar/view';
 
+
 // ----------------------------------------------------------------------
 
 const IndexPage = lazy(() => import('src/pages/dashboard/one'));
@@ -22,6 +23,9 @@ const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
 
 // APP
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
+
+// Analytics
+const AnalyticsView = lazy(() => import('src/sections/analytics/view/analytic-view'))
 
 // Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
@@ -261,7 +265,7 @@ export const dashboardRoutes = [
           {
             path: 'discover',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                 <BrandDiscover />
               </RoleBasedGuard>
             ),
@@ -269,7 +273,7 @@ export const dashboardRoutes = [
           {
             path: 'create',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                 <BrandCreate />
               </RoleBasedGuard>
             ),
@@ -277,7 +281,7 @@ export const dashboardRoutes = [
           {
             path: 'manage',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                 <BrandManage />
               </RoleBasedGuard>
             ),
@@ -285,7 +289,7 @@ export const dashboardRoutes = [
           {
             path: 'edit/:id',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                 <CompanyEdit />
               </RoleBasedGuard>
             ),
@@ -462,6 +466,14 @@ export const dashboardRoutes = [
       {
         path: 'calendar',
         element: <CalendarView />,
+      },
+      {
+        path: 'analytics',
+        element:(
+          <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+            <AnalyticsView />
+          </RoleBasedGuard>
+        )
       },
       {
         path: 'chat',

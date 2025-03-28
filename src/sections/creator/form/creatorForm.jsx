@@ -593,7 +593,6 @@ export default function CreatorForm({ mutate, open, onClose, onSubmit: registerU
 }
 
 CreatorForm.propTypes = {
-  mutate: PropTypes.func,
   open: PropTypes.bool,
   onClose: PropTypes.func,
   onSubmit: PropTypes.func,

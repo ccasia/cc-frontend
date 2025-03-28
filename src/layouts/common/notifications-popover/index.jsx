@@ -287,7 +287,7 @@ export default function NotificationsPopover() {
               fontFamily: (theme) => theme.typography.fontPrimaryFamily,
             }}
           >
-            Woohoo! You have a clean inbox
+            Woohoo! You have a clean inbox 
           </Typography>
           <Typography
             variant="body2"
@@ -338,6 +338,7 @@ export default function NotificationsPopover() {
   return (
     <>
       <IconButton
+        id="notificationBtn"
         sx={{
           boxSizing: 'border-box',
           display: 'flex',
@@ -364,7 +365,16 @@ export default function NotificationsPopover() {
         whileHover="hover"
         variants={varHover(1.05)}
         color={drawer.value ? 'primary' : 'default'}
-        onClick={drawer.onTrue}
+        // onClick={drawer.onTrue}
+        onClick={() => {
+          drawer.onTrue(); // Original function
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({
+            event: "notification_button_click",
+            buttonName: "Notification Bell",
+            buttonId: "notificationBtn",
+          });
+        }}
       >
         <Badge
           badgeContent={!isLoading && (totalUnRead < 20 ? totalUnRead : `20+`)}

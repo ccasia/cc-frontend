@@ -25,7 +25,14 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFUpload, RHFTextField } from 'src/components/hook-form';
 
-const UploadPhotoModal = ({ submissionId, campaignId, open, onClose, previewSubmission }) => {
+const UploadPhotoModal = ({
+  submissionId,
+  campaignId,
+  open,
+  onClose,
+  previousSubmission,
+  deliverablesData,
+}) => {
   const { user } = useAuthContext();
   const methods = useForm({
     defaultValues: {
@@ -33,6 +40,8 @@ const UploadPhotoModal = ({ submissionId, campaignId, open, onClose, previewSubm
       photosDriveLink: '',
     },
   });
+
+  const { deliverables, deliverableMutate } = deliverablesData;
 
   const { mutate: submissionMutate } = useGetSubmissions(user?.id, campaignId);
 
@@ -42,17 +51,21 @@ const UploadPhotoModal = ({ submissionId, campaignId, open, onClose, previewSubm
     formState: { isSubmitting },
   } = methods;
 
-  const photosToUpdateCount = previewSubmission?.feedback?.reduce(
-    (count, f) => count + (f.photosToUpdate?.length || 0),
-    0
-  );
+  // const photosToUpdateCount = previousSubmission?.feedback?.reduce(
+  //   (count, f) => count + (f.photosToUpdate?.length || 0),
+  //   0
+  // );
+
+  const photosToUpdateCount = deliverables?.photos.filter(
+    (a) => a.status === 'REVISION_REQUESTED'
+  )?.length;
 
   const validateFileCount = (files) => {
-    if (previewSubmission?.status === 'CHANGES_REQUIRED') {
-    if (files.length !== photosToUpdateCount) {
-      enqueueSnackbar(
-        `Please upload exactly ${photosToUpdateCount} photo${photosToUpdateCount > 1 ? 's' : ''}.`,
-        { variant: 'error' }
+    if (previousSubmission?.status === 'CHANGES_REQUIRED') {
+      if (files.length !== photosToUpdateCount) {
+        enqueueSnackbar(
+          `Please upload exactly ${photosToUpdateCount} photo${photosToUpdateCount > 1 ? 's' : ''}.`,
+          { variant: 'error' }
         );
         return false;
       }
@@ -66,10 +79,12 @@ const UploadPhotoModal = ({ submissionId, campaignId, open, onClose, previewSubm
     }
     try {
       const formData = new FormData();
-      const newData = { 
+
+      const newData = {
         submissionId,
-        photosDriveLink: data.photosDriveLink 
+        photosDriveLink: data.photosDriveLink,
       };
+
       formData.append('data', JSON.stringify(newData));
 
       if (data.photos && data.photos.length > 0) {
@@ -87,6 +102,7 @@ const UploadPhotoModal = ({ submissionId, campaignId, open, onClose, previewSubm
       enqueueSnackbar('Photos uploaded successfully!');
       onClose();
       submissionMutate();
+      deliverableMutate();
       mutate(endpoints.kanban.root);
       mutate(endpoints.campaign.creator.getCampaign(campaignId));
     } catch (error) {
@@ -129,9 +145,10 @@ const UploadPhotoModal = ({ submissionId, campaignId, open, onClose, previewSubm
       </DialogTitle>
 
       <DialogContent sx={{ bgcolor: '#f4f4f4', pt: 3 }}>
-        {previewSubmission?.status === 'CHANGES_REQUIRED' && (
+        {previousSubmission?.status === 'CHANGES_REQUIRED' && (
           <Typography variant="body2" sx={{ color: 'warning.main', mb: 2 }}>
-            Please upload exactly {photosToUpdateCount} photo{photosToUpdateCount > 1 ? 's' : ''} as requested by the admin.
+            Please upload exactly {photosToUpdateCount} photo{photosToUpdateCount > 1 ? 's' : ''} as
+            requested by the admin.
           </Typography>
         )}
         <FormProvider methods={methods}>
@@ -207,5 +224,6 @@ UploadPhotoModal.propTypes = {
   campaignId: PropTypes.string,
   open: PropTypes.bool,
   onClose: PropTypes.func,
-  previewSubmission: PropTypes.object,
+  previousSubmission: PropTypes.object,
+  deliverablesData: PropTypes.object,
 };

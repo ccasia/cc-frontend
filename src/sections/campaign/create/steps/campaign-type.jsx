@@ -9,12 +9,12 @@ import { RHFSelect, RHFMultiSelect } from 'src/components/hook-form';
 // UGC = UGC without posting link
 
 const DELIVERABLE_OPTIONS = [
-  { value: 'UGC_VIDEOS', label: 'UGC Videos', disabled: true },
+  // { value: 'UGC_VIDEOS', label: 'UGC Videos', disabled: true },
   { value: 'PHOTOS', label: 'Photos' },
   { value: 'RAW_FOOTAGES', label: 'Raw Footages' },
   { value: 'ADS', label: 'Ads' },
+  { value: 'CROSS_POSTING', label: 'Cross Posting' },
 ];
-
 
 const CampaignType = () => {
   const { watch, setValue } = useFormContext();
@@ -51,14 +51,12 @@ const CampaignType = () => {
     } else {
       setValue('deliverables', newValue);
     }
-    
+
     // Set the boolean flags based on selected deliverables
     setValue('rawFootage', newValue.includes('RAW_FOOTAGES'));
     setValue('photos', newValue.includes('PHOTOS'));
     setValue('ads', newValue.includes('ADS'));
   };
-
-
 
   return (
     <Box sx={{ mb: 2, py: 2 }}>
@@ -69,16 +67,14 @@ const CampaignType = () => {
       >
         <MenuItem value="normal">UGC ( With Posting )</MenuItem>
         <MenuItem value="ugc">UGC ( No Posting )</MenuItem>
-        {/* <MenuItem value="seeded" disabled>
-          Seeded
-        </MenuItem> */}
       </RHFSelect>
 
       <RHFMultiSelect
+        fullWidth
         name="deliverables"
         label="Deliverables"
         options={DELIVERABLE_OPTIONS}
-        helperText="Select the types of deliverables required for this campaign. UGC Videos is required for all campaigns."
+        helperText="Select the types of deliverables required for this campaign. UGC Videos is selected by default."
         onChange={handleDeliverablesChange}
         checkbox
         chip

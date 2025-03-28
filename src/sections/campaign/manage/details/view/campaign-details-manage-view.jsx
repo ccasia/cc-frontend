@@ -298,6 +298,8 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
+  console.log(campaign?.brand);
+
   const renderBrand = (
     <>
       <Box component={Card} p={2}>
@@ -319,7 +321,7 @@ const CampaignDetailManageView = ({ id }) => {
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
           {campaign?.brand &&
             Object.keys(campaign?.brand)
-              .filter(
+              ?.filter(
                 (e) =>
                   ![
                     'id',
@@ -329,20 +331,22 @@ const CampaignDetailManageView = ({ id }) => {
                     'objectives',
                     'logo',
                     'service_name',
-                  ].includes(e)
+                  ]?.includes(e)
               )
-              .map(
+              ?.map(
                 (e, index) =>
                   campaign?.brand[e] && (
                     <ListItemText
                       key={index}
-                      primary={formatText(e)}
+                      primary={e === 'company' ? 'Parent Company' : formatText(e)}
                       secondary={
                         typeof campaign?.brand[e] === 'object' ? (
                           <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                            {campaign?.brand[e].map((val, index2) => (
-                              <Label key={index2}>{val}</Label>
-                            ))}
+                            {e === 'industries'
+                              ? campaign?.brand[e]?.map((val, index2) => (
+                                  <Label key={index2}>{val}</Label>
+                                ))
+                              : campaign?.brand[e]?.name}
                           </Stack>
                         ) : (
                           campaign?.brand[e]

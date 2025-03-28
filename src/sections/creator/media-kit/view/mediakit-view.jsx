@@ -101,23 +101,26 @@ const MediaKitCreator = () => {
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
-        followers: instagram?.user?.followers_count || 0,
+        followers: instagram?.instagramUser?.followers_count || 0,
         engagement_rate: `${
           calculateEngagementRate(
-            instagram?.contents?.reduce((sum, acc) => sum + parseInt(acc.like_count, 10), 0),
-            instagram?.user?.followers_count
+            instagram?.instagramUser?.instagramVideo?.reduce(
+              (sum, acc) => sum + parseInt(acc.like_count, 10),
+              0
+            ),
+            instagram?.instagramUser?.followers_count
           ) || 0
         }%`,
-        averageLikes: instagram?.user?.average_like || 0,
-        username: instagram?.user?.username,
+        averageLikes: instagram?.instagramUser?.average_like || 0,
+        username: instagram?.instagramUser?.username,
       };
     }
 
     if (currentTab === 'tiktok') {
       return {
-        followers: tiktok?.user?.data?.user?.follower_count || 0,
-        engagement_rate: tiktok?.user?.data?.user?.follower_count || 0,
-        averageLikes: tiktok?.user?.data?.user?.likes_count || 0,
+        followers: tiktok?.creator?.tiktokUser?.follower_count || 0,
+        engagement_rate: tiktok?.creator?.tiktokUser?.follower_count || 0,
+        averageLikes: tiktok?.creator?.tiktokUser?.likes_count || 0,
       };
     }
 
