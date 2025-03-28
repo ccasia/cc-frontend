@@ -76,9 +76,6 @@ const formatFileSize = (bytes) => {
   return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
 
-const truncateText = (text, maxLength) =>
-  text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
-
 const CampaignFinalDraft = ({
   campaign,
   timeline,
