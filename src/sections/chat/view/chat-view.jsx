@@ -107,27 +107,28 @@ export default function ChatView() {
                   sx={{ width: 80, height: 80, marginBottom: 2 }}
                 />
                 <Typography
-                  variant="h4"
+                  fontSize="36px"
                   gutterBottom
                   sx={{
                     fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                    letterSpacing: 2,
+                    letterSpacing: 0,
+                    marginBottom: -0.25,
                   }}
                 >
-                  No New messages!
+                  No messages to show
                 </Typography>
               </>
             )}
           </Box>
           <Typography
-            variant="body2"
-            color="textSecondary"
+            fontSize="16px"
+            color="#636366"
             sx={{
               fontFamily: (theme) => theme.typography.fontPrimaryFamily,
-              letterSpacing: 1,
+              letterSpacing: 0,
             }}
           >
-            Select a chat to view here
+            Woohoo! You have a clean inbox (for now)
           </Typography>
         </Box>
       );
@@ -176,7 +177,14 @@ export default function ChatView() {
   const renderNav = <ChatNav contacts={[]} selectedConversationId={selectedConversationId} />;
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
+    <Container 
+      maxWidth={settings.themeStretch ? false : 'xl'} 
+      sx={{ 
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
       {!smDown && (
         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', mb: { md: 4 } }}>
           <Typography
@@ -185,6 +193,9 @@ export default function ChatView() {
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontWeight: 'normal',
               px: !smDown && 2,
+              mt: 2,
+              mb: -2,
+              ml: -1.5,
             }}
           >
             Chats 💬
@@ -234,17 +245,34 @@ export default function ChatView() {
       )}
 
       {!smDown && (
-        <Stack direction="row" sx={{ height: '72vh' }} gap={2}>
-          <Box sx={{ border: 1, borderRadius: 2, borderColor: '#EBEBEB', p: 2 }}>{renderNav}</Box>
+        <Stack 
+          direction="row" 
+          sx={{ 
+            flex: 1,
+            minHeight: 0
+          }} 
+          gap={2}
+        >
+          <Box sx={{ 
+            border: 1, 
+            borderRadius: 2, 
+            borderColor: '#EBEBEB', 
+            p: 2, 
+            overflowY: 'hidden',
+            minWidth: 400,
+            flexShrink: 0
+          }}>
+            {renderNav}
+          </Box>
 
           <Stack
             sx={{
               width: 1,
-              height: 1,
-              overflow: 'hidden',
+              height: '100%',
               border: 1,
               borderRadius: 2,
               borderColor: '#EBEBEB',
+              flexGrow: 1
             }}
           >
             <Stack
@@ -252,7 +280,6 @@ export default function ChatView() {
               sx={{
                 width: 1,
                 height: 1,
-                overflow: 'hidden',
                 borderTop: (theme) => `solid 1px ${theme.palette.divider}`,
                 alignItems: 'center',
                 justifyContent: 'center',

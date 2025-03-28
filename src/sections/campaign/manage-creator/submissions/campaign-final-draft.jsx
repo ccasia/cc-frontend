@@ -31,6 +31,7 @@ import {
   Tabs,
   Tab,
   Grid,
+  LinearProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -75,6 +76,9 @@ const formatFileSize = (bytes) => {
   return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
 
+const truncateText = (text, maxLength) =>
+  text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+
 const CampaignFinalDraft = ({
   campaign,
   timeline,
@@ -88,7 +92,7 @@ const CampaignFinalDraft = ({
   const [progressName, setProgressName] = useState('');
   const [loading, setLoading] = useState(false);
   const [openUploadModal, setOpenUploadModal] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState([]);
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const dependency = getDependency(submission?.id);
@@ -106,6 +110,7 @@ const CampaignFinalDraft = ({
   const [currentFile, setCurrentFile] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [showUploadSuccess, setShowUploadSuccess] = useState(false);
 
   const { user, dispatch } = useAuthContext();
 
@@ -320,40 +325,74 @@ const CampaignFinalDraft = ({
 
     const handleProgress = (data) => {
       if (submission?.id !== data.submissionId) return;
-      inQueue.onFalse();
-      setProgress(data.progress);
 
-      if (data.progress === 100 || data.progress === 0) {
+      setUploadProgress((prev) => {
+        const exists = prev.some((item) => item.fileName === data.fileName);
+
+        if (exists) {
+          return prev.map((item) =>
+            item.fileName === data.fileName ? { ...item, ...data } : item
+          );
+        }
+        return [...prev, data];
+      });
+    };
+
+    socket.on('progress', handleProgress);
+
+    return () => {
+      socket.off('progress', handleProgress);
+      // socket.off('statusQueue', handleStatusQueue);
+      // socket.off('checkQueue');
+    };
+  }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
+
+
+  const checkProgress = useCallback(() => {
+    if (uploadProgress?.length && uploadProgress?.every((x) => x.progress === 100)) {
+      setShowUploadSuccess(true);
+
+      const timer = setTimeout(() => {
+        setShowUploadSuccess(false);
         setIsProcessing(false);
         reset();
         setPreview('');
         setProgressName('');
         localStorage.removeItem('preview');
+        setUploadProgress([]);
 
-        if (data.progress === 100) {
+        if (socket) {
           mutate(`${endpoints.submission.root}?creatorId=${user?.id}&campaignId=${campaign?.id}`);
         }
-      } else {
-        setIsProcessing(true);
-      }
-    };
+      }, 2000);
 
-    const handleStatusQueue = (data) => {
-      if (data?.status === 'queue') {
-        inQueue.onTrue();
-      }
-    };
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+    return null;
+  }, [uploadProgress, reset, campaign?.id, user?.id, socket]);
 
-    socket.on('progress', handleProgress);
-    socket.on('statusQueue', handleStatusQueue);
+  useEffect(() => {
+    checkProgress();
+  }, [checkProgress]);
 
-    socket.emit('checkQueue', { submissionId: submission?.id });
+    // const handleStatusQueue = (data) => {
+    //   if (data?.status === 'queue') {
+    //     inQueue.onTrue();
+    //   }
+    // };
 
-    return () => {
-      socket.off('progress', handleProgress);
-      socket.off('statusQueue');
-    };
-  }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
+    // socket.on('progress', handleProgress);
+    // socket.on('statusQueue', handleStatusQueue);
+
+    // socket.emit('checkQueue', { submissionId: submission?.id });
+
+  //   return () => {
+  //     socket.off('progress', handleProgress);
+  //     socket.off('statusQueue');
+  //   };
+  // }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
   const handleUploadTypeSelect = (type) => {
     if (submission?.status === 'PENDING_REVIEW') {
@@ -488,53 +527,111 @@ const CampaignFinalDraft = ({
 
         {submission?.status === 'IN_PROGRESS' && (
           <>
-            {inQueue.value && <Typography>In Queue</Typography>}
-            {isProcessing ? (
-              <Stack justifyContent="center" alignItems="center" gap={1}>
-                <Box
-                  sx={{
-                    position: 'relative',
-                    display: 'inline-flex',
-                  }}
-                >
-                  <CircularProgress
-                    variant="determinate"
-                    thickness={5}
-                    value={progress}
-                    size={200}
-                    sx={{
-                      ' .MuiCircularProgress-circle': {
-                        stroke:
-                          theme.palette.mode === 'dark'
-                            ? theme.palette.common.white
-                            : theme.palette.common.black,
-                        strokeLinecap: 'round',
-                      },
-                    }}
-                  />
-                  <Box
-                    sx={{
-                      top: 0,
-                      left: 0,
-                      bottom: 0,
-                      right: 0,
-                      position: 'absolute',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography variant="h3" sx={{ fontWeight: 'bolder', fontSize: 11 }}>
-                      {`${Math.round(progress)}%`}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Stack gap={1}>
-                  <Typography variant="caption">{progressName && progressName}</Typography>
-                  <Button variant="contained" size="small" onClick={() => handleCancel()}>
-                    Cancel
-                  </Button>
-                </Stack>
+            {/* {inQueue.value && <Typography>In Queue</Typography>} */}
+            {uploadProgress.length ? (
+              <Stack spacing={1}>
+                {uploadProgress.length &&
+                  uploadProgress.map((progressFile) => (
+                    <Box
+                      sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}
+                      key={progressFile.fileName}
+                    >
+                      <Stack spacing={2}>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          {progressFile?.type?.startsWith('video') ? (
+                            <Box
+                              sx={{
+                                width: 120,
+                                height: 68,
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                position: 'relative',
+                                bgcolor: 'background.paper',
+                                boxShadow: theme.customShadows.z8,
+                              }}
+                            >
+                              {progressFile.preview ? (
+                                <Box
+                                  component="img"
+                                  src={progressFile.preview}
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'background.neutral',
+                                  }}
+                                >
+                                  <Iconify
+                                    icon="solar:video-library-bold"
+                                    width={24}
+                                    sx={{ color: 'text.secondary' }}
+                                  />
+                                </Box>
+                              )}
+                            </Box>
+                          ) : (
+                            <Box
+                              component="img"
+                              src="/assets/icons/files/ic_img.svg"
+                              sx={{ width: 40, height: 40 }}
+                            />
+                          )}
+
+                          <Stack spacing={1} flexGrow={1}>
+                            <Typography variant="subtitle2" noWrap>
+                              {truncateText(progressFile?.fileName, 50) || 'Uploading file...'}
+                            </Typography>
+                            <Stack spacing={1}>
+                              <LinearProgress
+                                variant="determinate"
+                                value={progressFile?.progress || 0}
+                                sx={{
+                                  height: 6,
+                                  borderRadius: 1,
+                                  bgcolor: 'background.paper',
+                                  '& .MuiLinearProgress-bar': {
+                                    borderRadius: 1,
+                                    bgcolor: progress === 100 ? 'success.main' : 'primary.main',
+                                  },
+                                }}
+                              />
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                              >
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {progressFile?.progress === 100 ? (
+                                    <Box
+                                      component="span"
+                                      sx={{ color: 'success.main', fontWeight: 600 }}
+                                    >
+                                      Upload Complete
+                                    </Box>
+                                  ) : (
+                                    `${progressFile?.name || 'Uploading'}... ${progressFile?.progress || 0}%`
+                                  )}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {formatFileSize(progressFile?.fileSize || 0)}
+                                </Typography>
+                              </Stack>
+                            </Stack>
+                          </Stack>
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  ))}
               </Stack>
             ) : (
               <Stack gap={2}>

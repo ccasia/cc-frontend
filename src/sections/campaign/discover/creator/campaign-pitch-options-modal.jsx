@@ -43,15 +43,54 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
 
   return (
     <>
-      <Dialog open={open} fullScreen={smUp} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h4">How would you like to pitch yourself? 👀</Typography>
-            <IconButton onClick={handleClose}>
-              <Iconify icon="hugeicons:cancel-01" width={20} />
-            </IconButton>
-          </Stack>
+      <Dialog 
+        open={open && !text.value && !video.value}
+        fullScreen={smUp} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: '#F4F4F4',
+            position: 'relative',
+            minHeight: 'auto',
+            width: 'auto',
+          },
+        }}
+      >
+        <IconButton 
+          onClick={handleClose}
+          sx={{ 
+            position: 'absolute',
+            right: 8,
+            top: 4,
+            zIndex: 1,
+            width: 64,
+            height: 64,
+            color: '#636366',
+          }}
+        >
+          <Iconify icon="hugeicons:cancel-01" width={20} />
+        </IconButton>
+
+        <DialogTitle sx={{ pt: 8, pb: 0 }}>
+          <Box sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mb: 3 }} />
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: 'Instrument Serif', 
+              fontWeight: 440, 
+              fontSize: { 
+                xs: '1.5rem', 
+                sm: '1.75rem',
+                md: '2rem',
+              }, 
+              mb: 2
+            }}
+          >
+            How would you like to pitch yourself? 👀
+          </Typography>
         </DialogTitle>
+
         <DialogContent>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -63,16 +102,19 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
           >
             <Box
               sx={{
-                border: 1,
-                p: 2,
-                borderRadius: 2,
-                borderColor: grey[100],
+                border: 0.8,
+                p: 3,
+                bgcolor: 'common.white',
+                borderRadius: 1,
+                borderColor: '#EBEBEB',
                 transition: 'all .2s ease',
                 width: { xs: '100%', sm: 'auto' },
+                height: '180px',
+                display: 'flex',
+                flexDirection: 'column',
                 '&:hover': {
                   borderColor: grey[700],
                   cursor: 'pointer',
-                  transform: 'scale(1.05)',
                 },
               }}
               component="div"
@@ -81,13 +123,18 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
                 text.onTrue();
               }}
             >
-              <AvatarIcon icon="solar:document-bold" />
+              {/* <AvatarIcon icon="solar:document-bold" /> */}
+              <Box
+                component="img"
+                src="/assets/icons/components/ic_letterpitch.svg"
+                sx={{ width: 48, height: 48 }}
+              />
               <ListItemText
                 sx={{
                   mt: 2,
                 }}
                 primary="Letter Pitch"
-                secondary="Write a short letter on how you’d be fit for the campaign!"
+                secondary="Write a short letter on how you'd be fit for the campaign!"
                 primaryTypographyProps={{
                   variant: 'body1',
                   fontWeight: 'bold',
@@ -101,16 +148,19 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
             </Box>
             <Box
               sx={{
-                border: 1,
-                p: 2,
-                borderRadius: 2,
-                borderColor: grey[100],
+                border: 0.8,
+                p: 3,
+                bgcolor: 'common.white',
+                borderRadius: 1,
+                borderColor: '#EBEBEB',
                 transition: 'all .2s ease',
                 width: { xs: '100%', sm: 'auto' },
+                height: '180px',
+                display: 'flex',
+                flexDirection: 'column',
                 '&:hover': {
                   borderColor: grey[700],
                   cursor: 'pointer',
-                  transform: 'scale(1.05)',
                 },
               }}
               onClick={() => {
@@ -118,13 +168,18 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
                 video.onTrue();
               }}
             >
-              <AvatarIcon icon="akar-icons:video" />
+              {/* <AvatarIcon icon="akar-icons:video" /> */}
+              <Box
+                component="img"
+                src="/assets/icons/components/ic_videopitch.svg"
+                sx={{ width: 48, height: 48 }}
+              />
               <ListItemText
                 sx={{
                   mt: 2,
                 }}
                 primary="Video Pitch"
-                secondary="Record a short video message on how you’d fit for the campaign!"
+                secondary="Record a short video message on how you'd fit for the campaign!"
                 primaryTypographyProps={{
                   variant: 'body1',
                   fontWeight: 'bold',
@@ -139,8 +194,20 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
           </Stack>
         </DialogContent>
       </Dialog>
-      <CampaignPitchTextModal open={text.value} handleClose={text.onFalse} campaign={campaign} />
-      <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} />
+      
+      <CampaignPitchTextModal 
+        open={text.value} 
+        handleClose={text.onFalse} 
+        campaign={campaign} 
+        onBack={() => {
+          text.onFalse();
+        }}
+      />
+      <CampaignPitchVideoModal 
+        open={video.value} 
+        handleClose={video.onFalse} 
+        campaign={campaign} 
+      />
     </>
   );
 };

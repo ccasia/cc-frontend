@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Bookmark, BookmarkBorder } from '@mui/icons-material';
 import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -14,6 +15,9 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
+
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
 
 import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
@@ -24,14 +28,18 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
   const [upload, setUpload] = useState([]);
   const [, setLoading] = useState(false);
   const dialog = useBoolean();
+  const campaignInfo = useBoolean();
 
   const { socket } = useSocketContext();
 
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [bookMark, setBookMark] = useState(
     campaign?.bookMarkCampaign?.some((item) => item.userId === user?.id) || false
   );
+
+  const router = useRouter();
 
   useEffect(() => {
     const handlePitchLoading = (data) => {
@@ -105,10 +113,12 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
     }
   };
 
-  const campaignInfo = useBoolean();
-
   const handleCardClick = () => {
-    campaignInfo.onTrue();
+    if (isMobile) {
+      router.push(paths.dashboard.campaign.creator.discover(campaign.id));
+    } else {
+      campaignInfo.onTrue();
+    }
   };
 
   const renderImage = (
@@ -303,16 +313,18 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
 
       <CreatorForm dialog={dialog} user={user} />
 
-      <CampaignModal
-        dialog={dialog}
-        open={campaignInfo.value}
-        handleClose={campaignInfo.onFalse}
-        campaign={campaign}
-        bookMark={bookMark}
-        onSaveCampaign={saveCampaign}
-        onUnsaveCampaign={unSaveCampaign}
-        onOpenCreatorForm={onOpenCreatorForm}
-      />
+      {!isMobile && (
+        <CampaignModal
+          dialog={dialog}
+          open={campaignInfo.value}
+          handleClose={campaignInfo.onFalse}
+          campaign={campaign}
+          bookMark={bookMark}
+          onSaveCampaign={saveCampaign}
+          onUnsaveCampaign={unSaveCampaign}
+          onOpenCreatorForm={onOpenCreatorForm}
+        />
+      )}
     </>
   );
 }

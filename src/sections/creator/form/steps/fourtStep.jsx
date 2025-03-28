@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { Chip, Stack, FormLabel, ListItemText } from '@mui/material';
+import { primaryFont } from 'src/theme/typography';
 
 import { langList } from 'src/contants/language';
 import { interestsLists } from 'src/contants/interestLists';
@@ -31,18 +32,22 @@ const FourthStep = ({ item }) => (
   <>
     <ListItemText
       sx={{
-        mt: 2,
+        mt: 4,
         textAlign: 'center',
       }}
       primary={item.title}
       secondary={item.description}
       primaryTypographyProps={{
-        fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-        variant: 'h3',
+        fontFamily: '"Instrument Serif", serif',
+        fontSize: '40px',
         fontWeight: 400,
+        color: '#231F20',
       }}
       secondaryTypographyProps={{
-        variant: 'subtitle2',
+        fontFamily: "InterDisplay",
+        fontSize: '16px',
+        fontWeight: 400,
+        color: '#636366',
       }}
     />
 
@@ -55,7 +60,7 @@ const FourthStep = ({ item }) => (
       }}
     >
       <Stack spacing={1}>
-        <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+        <FormLabel required sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}>
           Languages
         </FormLabel>
         <RHFAutocomplete
@@ -87,7 +92,7 @@ const FourthStep = ({ item }) => (
       </Stack>
 
       <Stack spacing={1}>
-        <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+        <FormLabel required sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}>
           Your interests
         </FormLabel>
         <RHFAutocomplete

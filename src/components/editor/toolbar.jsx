@@ -79,7 +79,7 @@ export default function Toolbar({ id, simple, quillRef, savedRange, ...other }) 
           orientation="vertical"
           flexItem
           sx={{
-            mr: 2,
+            mr: 0.5,
           }}
         />
 
@@ -94,7 +94,7 @@ export default function Toolbar({ id, simple, quillRef, savedRange, ...other }) 
           orientation="vertical"
           flexItem
           sx={{
-            mr: 2,
+            mr: 0.5,
           }}
         />
 
@@ -105,22 +105,22 @@ export default function Toolbar({ id, simple, quillRef, savedRange, ...other }) 
           </div>
         )}
 
-        <div className="ql-formats">
+        {/* <div className="ql-formats">
           <button type="button" className="ql-list" value="ordered" />
           <button type="button" className="ql-list" value="bullet" />
           {!simple && <button type="button" className="ql-indent" value="-1" />}
           {!simple && <button type="button" className="ql-indent" value="+1" />}
-        </div>
+        </div> */}
 
-        <Divider
+        {/* <Divider
           orientation="vertical"
           flexItem
           sx={{
             mr: 2,
           }}
-        />
+        /> */}
 
-        {!simple && (
+        {/* {!simple && (
           <div className="ql-formats">
             <button type="button" className="ql-script" value="super" />
             <button type="button" className="ql-script" value="sub" />
@@ -132,46 +132,46 @@ export default function Toolbar({ id, simple, quillRef, savedRange, ...other }) 
             <button type="button" className="ql-code-block" />
             <button type="button" className="ql-blockquote" />
           </div>
-        )}
+        )} */}
 
         <div className="ql-formats">
           <button type="button" className="ql-direction" value="rtl" />
           <select className="ql-align" />
         </div>
 
-        <Divider
+        {/* <Divider
           orientation="vertical"
           flexItem
           sx={{
             mr: 2,
           }}
-        />
-        <div className="ql-formats">
+        /> */}
+        {/* <div className="ql-formats">
           <button type="button" className="ql-link" />
           <button type="button" className="ql-image" />
           <button type="button" className="ql-video" />
-        </div>
-
+        </div> */}
+{/* 
         <Divider
           orientation="vertical"
           flexItem
           sx={{
             mr: 2,
           }}
-        />
+        /> */}
 
-        <div className="ql-formats">
+        {/* <div className="ql-formats">
           {!simple && <button type="button" className="ql-formula" />}
           <button type="button" className="ql-clean" />
-        </div>
+        </div> */}
 
-        <Divider
+        {/* <Divider
           orientation="vertical"
           flexItem
           sx={{
             mr: 2,
           }}
-        />
+        /> */}
       </div>
 
       {/* <Popover

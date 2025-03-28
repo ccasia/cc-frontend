@@ -125,8 +125,8 @@ const Login = () => {
   };
 
   const LoginSchema = Yup.object().shape({
-    email: Yup.string().required('Email is required').email('Email must be a valid email address'),
-    password: Yup.string().required('Password is required'),
+    email: Yup.string().required('Email is required.').email('Invalid email entered. Please try again.'),
+    password: Yup.string().required('Password is required.'),
   });
 
   const defaultValues = {
@@ -150,48 +150,116 @@ const Login = () => {
       // if (res?.user?.role === 'creator') {
       //   router.push(paths.dashboard.overview.root);
       // }
-      enqueueSnackbar('Successfully login');
+      enqueueSnackbar('Logged in. Welcome back!');
     } catch (err) {
-      // play();
-      enqueueSnackbar(err.message, {
-        variant: 'error',
-      });
+      // // play();
+      // enqueueSnackbar(err.message, {
+      // variant: 'error',
+      // });
+      // error message for user that has not registered yet
+      if (err.message === 'User not registered.') {
+        methods.setError('email', {
+          type: 'manual',
+          message: 'User not registered.'
+        });
+      } else {
+        // error message for incorrect password
+        methods.setError('password', {
+          type: 'manual',
+          message: 'Incorrect password entered. Please try again.'
+        });
+      }
     }
   });
 
   const renderForm = (
     <Stack spacing={2.5}>
-      <RHFTextField
-        name="email"
-        label="Email address"
-        sx={{
-          '&.MuiTextField-root': {
-            bgcolor: 'white',
-            borderRadius: 1,
-          },
-        }}
-      />
+      <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: -2 }}>
+        Email <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+      </Typography>
+      <Box>
+        <RHFTextField
+          name="email"
+          placeholder="Email"
+          InputLabelProps={{ shrink: false }}
+          FormHelperTextProps={{ sx: { display: 'none' } }}
+          sx={{
+            '&.MuiTextField-root': {
+              bgcolor: 'white',
+              borderRadius: 1,
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: '#B0B0B0',
+                fontSize: '16px',
+                opacity: 1,
+              },
+            },
+          }}
+        />
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            color: '#F04438',
+            mt: 0.5,
+            ml: 0.5,
+            display: 'block',
+            fontSize: '12px',
+          }}
+        >
+          {methods.formState.errors.email?.message}
+        </Typography>
+      </Box>
 
-      <RHFTextField
-        name="password"
-        label="Password"
-        type={password.value ? 'text' : 'password'}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton onClick={password.onToggle} edge="end">
-                <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-        sx={{
-          '&.MuiTextField-root': {
-            bgcolor: 'white',
-            borderRadius: 1,
-          },
-        }}
-      />
+      <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: -2 }}>
+        Password <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+      </Typography>
+      <Box>
+        <RHFTextField
+          name="password"
+          placeholder="Password"
+          type={password.value ? 'text' : 'password'}
+          InputLabelProps={{ shrink: false }}
+          FormHelperTextProps={{ sx: { display: 'none' } }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={password.onToggle}>
+                  <Box component="img" src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' 
+                    : 'ic_closed_passwordeye.svg'}`} sx={{ width: 24, height: 24 }} />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            '&.MuiTextField-root': {
+              bgcolor: 'white',
+              borderRadius: 1,
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: '#B0B0B0',
+                fontSize: '16px',
+                opacity: 1,
+              },
+            },
+          }}
+        />  
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            color: '#F04438',
+            mt: 0.5,
+            ml: 0.5,
+            display: 'block',
+            fontSize: '12px',
+          }}
+        >
+          {methods.formState.errors.password?.message}
+        </Typography>
+      </Box>
 
       <Link
         component={RouterLink}
@@ -199,7 +267,7 @@ const Login = () => {
         variant="body2"
         color="#636366"
         underline="always"
-        sx={{ alignSelf: 'flex-start' }}
+        sx={{ alignSelf: 'flex-start', fontWeight: 500, fontSize: '14px', mb: -0.5, mt: -1, ml: 0.1 }}
       >
         Forgot your password?
       </Link>
@@ -211,13 +279,15 @@ const Login = () => {
             ? '#1340FF'
             : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
           pointerEvents: !isDirty && 'none',
-          fontSize: '18px',
+          fontSize: '17px',
+          borderRadius: '12px',
+          borderBottom: isDirty ? '3px solid #0c2aa6' : '3px solid #91a2e5',
+          transition: 'none',
         }}
         size="large"
         type="submit"
         variant="contained"
         loading={isSubmitting}
-        // disabled={!isDirty}
       >
         Login
       </LoadingButton>
@@ -231,30 +301,48 @@ const Login = () => {
         mt: 2.5,
         textAlign: 'center',
         typography: 'caption',
-        color: 'text.secondary',
+        color: '#8E8E93',
+        fontSize: '13px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '4px',
       }}
     >
-      {'By signing up, I agree to '}
+      By signing up, I agree to
       <Link
         component="button"
         underline="always"
         color="text.primary"
         onClick={handleOpenTerms}
         type="button"
+        sx={{ 
+          verticalAlign: 'baseline',
+          fontSize: '13px',
+          lineHeight: 1,
+          p: 0,
+          color: '#231F20',
+        }}
       >
         Terms of Service
       </Link>
-      {' and '}
+      and
       <Link
         component="button"
         underline="always"
         color="text.primary"
         onClick={handleOpenPrivacy}
         type="button"
+        sx={{ 
+          verticalAlign: 'baseline',
+          fontSize: '13px',
+          lineHeight: 1,
+          p: 0,
+          color: '#231F20',
+        }}
       >
-        Privacy Policy
+        Privacy Policy.
       </Link>
-      .
     </Typography>
   );
 
@@ -266,14 +354,16 @@ const Login = () => {
             p: 3,
             bgcolor: '#F4F4F4',
             borderRadius: 2,
+            width: { xs: '100%', sm: 394 },  
+            maxWidth: { xs: '100%', sm: 394 },
+            mx: 'auto',
           }}
         >
           <Typography
-            variant="h3"
-            // fontWeight="bold"
             sx={{
               fontFamily: (theme) => theme.typography.fontSecondaryFamily,
               fontWeight: 400,
+              fontSize: '40px',
             }}
           >
             Login 👾

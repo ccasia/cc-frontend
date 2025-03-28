@@ -64,8 +64,8 @@ export default function NavVertical({ openNav, onCloseNav }) {
       component="div"
       sx={{
         position: 'relative',
-        width: 50,
-        height: 50,
+        width: 40,
+        height: 40,
         borderRadius: 1,
       }}
     >
@@ -115,10 +115,10 @@ export default function NavVertical({ openNav, onCloseNav }) {
       >
         {logo}
         <Stack flexGrow={1}>
-          <Typography variant="body1" fontWeight={800}>
+          <Typography fontSize="14px" fontWeight={800}>
             CULT CREATIVE
           </Typography>
-          <Typography variant="body2" color="text.secondary" fontWeight={600}>
+          <Typography fontSize="12px" color="#636366" fontWeight={500}>
             {`${user?.role.slice(0, 1).toUpperCase()}${user?.role.slice(1)}`}
           </Typography>
         </Stack>
@@ -129,8 +129,8 @@ export default function NavVertical({ openNav, onCloseNav }) {
             borderBottom: '4px solid',
             borderColor: '#e7e7e7',
             bgcolor: 'white',
-            width: '46px',
-            height: '38px',
+            width: '40px',
+            height: '32px',
           }}
           onClick={() => {
             onCloseNav();
@@ -143,7 +143,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
           <img
             src="/assets/icons/navbar/ic_nav_collapse.svg"
             alt="CollapseButton"
-            style={{ width: '20px', color: 'black' }}
+            style={{ width: '16px', height: '16px', color: 'black' }}
           />
         </IconButton>
       </Stack>

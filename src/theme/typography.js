@@ -24,7 +24,7 @@ export function responsiveFontSizes({ sm, md, lg }) {
   };
 }
 
-export const primaryFont = 'Inter, sans-serif';
+export const primaryFont = 'InterDisplay';
 // export const primaryFont = 'Aileron, sans-serif';
 // export const secondaryFont = 'Barlow, sans-serif';
 export const secondaryFont = 'Instrument Serif';

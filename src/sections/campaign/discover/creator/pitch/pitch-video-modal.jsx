@@ -33,7 +33,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import UploadPitch from 'src/components/pitch/upload-pitch';
-import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
+// import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
@@ -230,7 +230,7 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
             pb: 1,
           }}
         >
-          Confirm to remove ?
+          Confirm to remove?
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'flex-end' }}>
@@ -273,41 +273,62 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
 
   return (
     <>
-      <Dialog open={open} fullWidth maxWidth="md" fullScreen={smUp}>
+      <Dialog 
+        open={open} 
+        fullWidth 
+        maxWidth={false}
+        PaperProps={{ 
+          sx: { 
+            width: '750px',
+            bgcolor: '#F4F4F4'
+          } 
+        }}
+        fullScreen={smUp}
+      >
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <DialogTitle>
-            <Stack direction="row" alignItems="center" gap={2}>
-              <AvatarIcon icon="akar-icons:video" />
-              <ListItemText
-                primary="Video Pitch"
-                secondary="Record a short video message on how you’d fit for the campaign!"
-                primaryTypographyProps={{
-                  variant: 'h5',
-                  fontWeight: 'bold',
-                }}
-                secondaryTypographyProps={{
-                  variant: 'body1',
-                  color: 'text.secondary',
-                  lineHeight: 1.2,
-                }}
-              />
-
-              <IconButton
-                onClick={() => {
-                  handleClose();
+            <Stack direction="column" spacing={2}>
+              <Button
+                startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
+                onClick={handleClose}
+                sx={{
+                  color: '#636366',
+                  alignSelf: 'flex-start',
+                  fontWeight: 500,
+                  fontSize: '0.9rem',
+                  mb: -1,
+                  ml: -1,
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    color: 'text.primary',
+                  },
                 }}
               >
-                <Iconify icon="hugeicons:cancel-01" width={20} />
-              </IconButton>
+                Back
+              </Button>
+              <Divider sx={{ bgcolor: '#D3D3D3' }} />
+              <Stack direction="row" alignItems="center" gap={2}>
+                <ListItemText
+                  primary="Video Pitch"
+                  secondary="Upload your pitching video!"
+                  primaryTypographyProps={{
+                    variant: 'h5',
+                    fontFamily: 'Instrument Serif',
+                    fontSize: '2rem',
+                    fontWeight: 550,
+                  }}
+                  secondaryTypographyProps={{
+                    variant: 'body1',
+                    // color: 'text.secondary',
+                    lineHeight: 1.2,
+                    color: '#636366',
+                    mb: 1,
+                  }}
+                />
+              </Stack>
+              <Divider sx={{ bgcolor: '#D3D3D3' }} />
             </Stack>
           </DialogTitle>
-
-          <Divider
-            sx={{
-              width: '95%',
-              mx: 'auto',
-            }}
-          />
 
           <Box p={2}>
             <UploadPitch
@@ -323,47 +344,59 @@ const CampaignPitchVideoModal = ({ open, handleClose, campaign }) => {
             />
           </Box>
 
-          <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'flex-end' }}>
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <DialogActions sx={{ px: 3, pb: 3 }}>
+            <Stack spacing={2} width="100%">
+              <LoadingButton
+                fullWidth
+                variant="contained"
+                type="submit"
+                loading={loading}
+                disabled={progress.some((elem) => elem.campaignId === campaign.id) || !a}
+                sx={{
+                  mb: -1,
+                  backgroundColor: '#3a3a3c',
+                  color: 'white', 
+                  borderBottom: '3px solid',
+                  borderBottomColor: (progress.some((elem) => elem.campaignId === campaign.id) || !a) 
+                    ? 'rgba(0, 0, 0, 0.12)' 
+                    : '#202021',
+                  '&:hover': {
+                    backgroundColor: '#202021',
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: '#b0b0b1',
+                    color: '#FFFFFF',
+                    borderBottom: '4px solid',
+                    borderBottomColor: '#9e9e9f',
+                  },
+                  fontSize: '1rem',
+                  padding: '12px 24px',
+                  height: '48px',
+                }}
+              >
+                Send Pitch
+              </LoadingButton>
+
               <Button
+                fullWidth
                 variant="outlined"
                 onClick={() => {
                   handleClose();
                   handleRemove();
                 }}
                 sx={{
-                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                  padding: { xs: '6px 12px', sm: '8px 16px' },
-                  height: { xs: '32px', sm: '36px' },
+                  fontSize: '1rem',
+                  padding: '12px 24px',
+                  height: '48px',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '4px solid',
+                  borderBottomColor: '#e7e7e7',
+                  backgroundColor: '#FFFFFF',
                 }}
               >
                 Cancel
               </Button>
-              <LoadingButton
-                autoFocus
-                variant="contained"
-                type="submit"
-                loading={loading}
-                disabled={progress.some((elem) => elem.campaignId === campaign.id) || !a}
-                sx={{
-                  backgroundColor: '#203ff5',
-                  color: 'white',
-                  borderBottom: '3px solid',
-                  borderBottomColor:
-                    progress.some((elem) => elem.campaignId === campaign.id) || !a
-                      ? 'rgba(0, 0, 0, 0.12)'
-                      : '#1429a0',
-                  '&:hover': {
-                    backgroundColor: '#4259f7',
-                  },
-                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                  padding: { xs: '6px 12px', sm: '8px 16px' },
-                  height: { xs: '32px', sm: '36px' },
-                }}
-              >
-                Send Pitch
-              </LoadingButton>
-            </Box>
+            </Stack>
           </DialogActions>
         </FormProvider>
       </Dialog>
