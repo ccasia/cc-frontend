@@ -8,7 +8,6 @@ import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
-//  import Typography from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -50,12 +49,9 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
     }
   };
 
-  console.log("logs", logs);
   const handleViewLogs = async () => {
     if (admin?.userId) {
-      console.log("Fetching logs for adminId:", admin.userId); 
       const adminLogs = await fetchAdminLogs(admin.userId);
-      console.log("Fetched logs:", adminLogs); 
       setLogs(adminLogs);
       setOpenLogs(true);
     } else {
@@ -118,13 +114,17 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
         </TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
-          
-              <Tooltip title="View Logs" placement="top" arrow>
-            <IconButton color="info" onClick={handleViewLogs}>
-            <Iconify icon="material-symbols:note-rounded" />
+
+          <Tooltip title="View Logs" placement="top" arrow>
+            <IconButton
+              color="info"
+              onClick={handleViewLogs}
+              disabled={user?.role === 'admin'}
+            >
+              <Iconify icon="material-symbols:note-rounded" />
             </IconButton>
           </Tooltip>
-         
+
           <Tooltip title="Quick Edit" placement="top" arrow>
             <IconButton
               color={quickEdit.value ? 'inherit' : 'default'}
@@ -170,10 +170,11 @@ export default function UserTableRow({ row, selected, onEditRow, onSelectRow, on
           </Button>
         }
       />
-        <AdminLogsModal
+      <AdminLogsModal
         open={openLogs}
         logs={logs}
-        onClose={() => setOpenLogs(false)} // Close the modal when the button is clicked
+        adminName={name}
+        onClose={() => setOpenLogs(false)}
       />
     </>
   );
