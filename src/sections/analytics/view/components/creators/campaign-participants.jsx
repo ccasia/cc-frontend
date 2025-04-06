@@ -41,7 +41,9 @@ export default function CampaignParticipation({ creators }) {
   return (
     <Card>
       <CardContent>
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h3" gutterBottom 
+        style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}
+        >
           Campaign Participation Overview
         </Typography>
 
@@ -67,7 +69,7 @@ export default function CampaignParticipation({ creators }) {
               }}
             >
               <Typography textAlign="start" variant="subtitle1" fontWeight="bold">
-                Campaigns: ( {label} )
+               In {label} Campaigns
               </Typography>
               <Typography  textAlign= "center" variant="h4" color="primary">
                 {count}

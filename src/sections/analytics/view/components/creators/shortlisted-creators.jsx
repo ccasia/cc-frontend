@@ -18,7 +18,9 @@ export default function ShortlistedCreators({ creators } ) {
   return (
     <Card>
       <CardContent>
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h3" gutterBottom 
+        style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}
+        >
           Shortlisted Creators
         </Typography>
 

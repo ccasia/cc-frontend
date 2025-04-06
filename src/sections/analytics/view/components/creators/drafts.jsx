@@ -42,7 +42,6 @@ export default function CreatorSendDrafts() {
     fetchSubmissions();
   }, []);
 
-  // console.log("All submissions", submissions);
 
   // Filter submissions of type "AGREEMENT_FORM" that have both submissionDate & completedAt
   const validSubmissions = submissions.filter(
@@ -52,7 +51,7 @@ export default function CreatorSendDrafts() {
     submission.nextsubmission
   );
 
-  console.log("All Draft submissions", validSubmissions);
+  //  console.log("All Draft submissions", validSubmissions);
   return (
     <Card sx={{ mb: 2 }}>
       <CardContent>

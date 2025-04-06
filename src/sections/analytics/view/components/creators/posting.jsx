@@ -42,8 +42,6 @@ export default function CreatorSendPosting() {
         fetchSubmissions();
     }, []);
 
-    console.log("All submissions", submissions);
-
     // Filter submissions of type "AGREEMENT_FORM" that have both submissionDate & completedAt
     const validSubmissions = submissions.filter(
         (submission) =>
@@ -51,8 +49,6 @@ export default function CreatorSendPosting() {
             submission.submissionDate &&
             submission.nextsubmission
     );
-
-    console.log("posting submissions", validSubmissions);
 
     return (
         <Card sx={{ mb: 2 }}>
