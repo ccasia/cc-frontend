@@ -84,7 +84,7 @@ export default function AccountGeneral() {
     state: user?.creator?.state || '',
     about: user?.creator?.mediaKit?.about || '',
     pronounce: user?.creator?.pronounce || '',
-    interests: user?.creator?.interests?.map(interest => interest.name) || [],
+    interests: user?.creator?.interests?.map((interest) => interest.name) || [],
     bodyMeasurement: user?.paymentForm?.bodyMeasurement || '',
     allergies: user?.paymentForm?.allergies?.map((allergy) => ({ name: allergy })) || [
       { name: '' },
@@ -92,7 +92,7 @@ export default function AccountGeneral() {
   };
 
   const methods = useForm({
-    resolver: yupResolver(UpdateUserSchema),
+    // resolver: yupResolver(UpdateUserSchema),
     defaultValues,
   });
 
@@ -120,13 +120,15 @@ export default function AccountGeneral() {
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
 
+    console.log(data);
+
     const newObj = {
       ...data,
       id: user?.id,
-      interests: Array.isArray(data.interests) 
-        ? data.interests.map(interest => ({ name: interest }))
+      interests: Array.isArray(data.interests)
+        ? data.interests.map((interest) => ({ name: interest }))
         : [],
-      pronounce: data.pronounce || ''
+      pronounce: data.pronounce || '',
     };
 
     formData.append('image', data?.photoURL);
@@ -175,31 +177,32 @@ export default function AccountGeneral() {
       ...currentValues,
       id: user?.id,
       removePhoto: true,
-      interests: Array.isArray(currentValues.interests) 
-        ? currentValues.interests.map(interest => ({ name: interest }))
+      interests: Array.isArray(currentValues.interests)
+        ? currentValues.interests.map((interest) => ({ name: interest }))
         : [],
-      pronounce: currentValues.pronounce || ''
+      pronounce: currentValues.pronounce || '',
     };
 
     formData.append('data', JSON.stringify(newObj));
-    
-    axiosInstance.patch(endpoints.auth.updateProfileCreator, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-    .then((res) => {
-      setValue('photoURL', null);
-      setImage(null);
-      setPreviewImage(null);
-      handleCloseModal();
-      enqueueSnackbar(res?.data.message);
-    })
-    .catch((error) => {
-      enqueueSnackbar(error?.response?.data?.message || 'Error removing photo', {
-        variant: 'error',
+
+    axiosInstance
+      .patch(endpoints.auth.updateProfileCreator, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      .then((res) => {
+        setValue('photoURL', null);
+        setImage(null);
+        setPreviewImage(null);
+        handleCloseModal();
+        enqueueSnackbar(res?.data.message);
+      })
+      .catch((error) => {
+        enqueueSnackbar(error?.response?.data?.message || 'Error removing photo', {
+          variant: 'error',
+        });
       });
-    });
   };
 
   const handleOpenImage = () => setOpenImageDialog(true);
@@ -254,17 +257,22 @@ export default function AccountGeneral() {
               </Box>
 
               <Stack spacing={1}>
-                <Typography variant="subtitle1" 
-                sx={{ color: '#636366', fontSize: '0.75rem', fontWeight: typography.fontWeightMedium }}>Display Photo 
-                <span style={{ color: '#FF3500', fontSize: '0.75rem'}}> *</span></Typography>
-                <Stack
-                  direction="row"
-                  spacing={1}
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    color: '#636366',
+                    fontSize: '0.75rem',
+                    fontWeight: typography.fontWeightMedium,
+                  }}
                 >
+                  Display Photo
+                  <span style={{ color: '#FF3500', fontSize: '0.75rem' }}> *</span>
+                </Typography>
+                <Stack direction="row" spacing={1}>
                   <Button
                     component="label"
                     variant="contained"
-                    sx={{ 
+                    sx={{
                       width: '78px',
                       height: '38px',
                       bgcolor: '#FFFFFF',
@@ -291,9 +299,9 @@ export default function AccountGeneral() {
                       accept="image/*"
                     />
                   </Button>
-                  
+
                   <Button
-                    sx={{ 
+                    sx={{
                       width: '78px',
                       height: '38px',
                       bgcolor: '#FFFFFF',
@@ -328,14 +336,20 @@ export default function AccountGeneral() {
               <Stack spacing={3}>
                 {/* Name field */}
                 <Box>
-                  <Typography variant="body2" color="#636366" fontWeight={typography.fontWeightMedium} 
-                    sx={{ 
-                      fontSize: { xs: '12px', sm: '13px' }, 
-                      mb: 1, 
-                      color: '#636366' 
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
                     }}
                   >
-                    Display Name <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                    Display Name{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
                   </Typography>
                   <RHFTextField
                     name="name"
@@ -366,11 +380,14 @@ export default function AccountGeneral() {
 
                 {/* Pronouns field */}
                 <Box>
-                  <Typography variant="body2" color="#636366" fontWeight={typography.fontWeightMedium} 
-                    sx={{ 
-                      fontSize: { xs: '12px', sm: '13px' }, 
-                      mb: 1, 
-                      color: '#636366' 
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
                     }}
                   >
                     Pronouns
@@ -403,21 +420,27 @@ export default function AccountGeneral() {
 
                 {/* Interests field */}
                 <Box>
-                  <Typography variant="body2" color="#636366" fontWeight={typography.fontWeightMedium} 
-                    sx={{ 
-                      fontSize: { xs: '12px', sm: '13px' }, 
-                      mb: 1, 
-                      color: '#636366' 
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
                     }}
                   >
-                    Interests <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                    Interests{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
                   </Typography>
                   <RHFMultiSelect
                     name="interests"
                     placeholder="Select interests"
                     options={interestsLists.map((interest) => ({
                       value: interest,
-                      label: interest
+                      label: interest,
                     }))}
                     checkbox
                     chip
@@ -450,11 +473,14 @@ export default function AccountGeneral() {
 
                 {/* Bio field */}
                 <Box>
-                  <Typography variant="body2" color="#636366" fontWeight={typography.fontWeightMedium} 
-                    sx={{ 
-                      fontSize: { xs: '12px', sm: '13px' }, 
-                      mb: 1, 
-                      color: '#636366' 
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
                     }}
                   >
                     Bio
@@ -494,14 +520,15 @@ export default function AccountGeneral() {
                   variant="contained"
                   loading={isSubmitting}
                   sx={{
-                    background: isDirty || image
-                      ? '#1340FF'
-                      : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
-                    pointerEvents: (!isDirty && !image) && 'none',
+                    background:
+                      isDirty || image
+                        ? '#1340FF'
+                        : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+                    pointerEvents: !isDirty && !image && 'none',
                     fontSize: '16px',
                     fontWeight: 600,
                     borderRadius: '10px',
-                    borderBottom: (isDirty || image) ? '3px solid #0c2aa6' : '3px solid #91a2e5',
+                    borderBottom: isDirty || image ? '3px solid #0c2aa6' : '3px solid #91a2e5',
                     transition: 'none',
                     width: { xs: '100%', sm: '90px' },
                     height: '44px',
@@ -538,7 +565,7 @@ export default function AccountGeneral() {
       >
         <Button
           onClick={handleCloseImage}
-          sx={{ 
+          sx={{
             position: 'fixed',
             top: 20,
             right: 20,
