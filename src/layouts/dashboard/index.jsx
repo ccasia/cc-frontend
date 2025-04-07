@@ -60,6 +60,7 @@ export default function DashboardLayout({ children }) {
   const schema = yup.object().shape({
     stepsToReproduce: yup.string().required('Steps to reproduce is required'),
     attachment: yup.mixed().required('Please provide attachment of the bugs'),
+    campaignName: yup.string(),
   });
 
   const methods = useForm({
@@ -67,6 +68,7 @@ export default function DashboardLayout({ children }) {
     defaultValues: {
       stepsToReproduce: '',
       attachment: null,
+      campaignName: '',
     },
   });
 
@@ -215,6 +217,10 @@ export default function DashboardLayout({ children }) {
                 multiline
                 rows={4}
               />
+            </FormField>
+
+            <FormField label="Campaign name">
+              <RHFTextField name="campaignName" placeholder="Campaign name" />
             </FormField>
 
             <FormField label="Attachment" required={false}>
