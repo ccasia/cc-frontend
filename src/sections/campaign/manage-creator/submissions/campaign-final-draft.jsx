@@ -242,22 +242,22 @@ const CampaignFinalDraft = ({
       setUploadProgress((prev) => {
         const exists = prev.some((item) => item.fileName === data.fileName);
 
-    // const handleStatusQueue = (data) => {
-    //   if (data?.status === 'queue') {
-    //     inQueue.onTrue();
-    //   }
-    // };
+        // const handleStatusQueue = (data) => {
+        //   if (data?.status === 'queue') {
+        //     inQueue.onTrue();
+        //   }
+        // };
 
-    // socket.on('progress', handleProgress);
-    // socket.on('statusQueue', handleStatusQueue);
+        // socket.on('progress', handleProgress);
+        // socket.on('statusQueue', handleStatusQueue);
 
-    // socket.emit('checkQueue', { submissionId: submission?.id });
+        // socket.emit('checkQueue', { submissionId: submission?.id });
 
-  //   return () => {
-  //     socket.off('progress', handleProgress);
-  //     socket.off('statusQueue');
-  //   };
-  // }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
+        //   return () => {
+        //     socket.off('progress', handleProgress);
+        //     socket.off('statusQueue');
+        //   };
+        // }, [socket, submission?.id, reset, campaign?.id, user?.id, inQueue]);
 
         if (exists) {
           return prev.map((item) =>
@@ -1881,7 +1881,7 @@ const CampaignFinalDraft = ({
                         fontWeight: 550,
                       }}
                     >
-                      Draft Processing!
+                      Draft is sent for processing!
                     </Typography>
                     <Typography
                       variant="body1"

@@ -16,7 +16,6 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 
 const FirstDraft = ({ campaign, submission, user }) => {
   const [type, setType] = useState('approve');
-  // const { user } = useAuthContext();
 
   const campaignTasks = user?.user?.campaignTasks.filter(
     (task) => task?.campaignId === campaign.id
@@ -77,19 +76,6 @@ const FirstDraft = ({ campaign, submission, user }) => {
       {submission ? (
         <>
           {submission?.campaignTask.status === 'CHANGES_REQUIRED' ? (
-            // <Box>
-            //   <video
-            //     autoPlay
-            //     width="100%"
-            //     height="100%"
-            //     controls
-            //     style={{
-            //       borderRadius: 10,
-            //     }}
-            //   >
-            //     <source src={submission?.firstDraft?.draftURL} />
-            //   </video>
-            // </Box>
             <Box
               component="video"
               autoPlay
