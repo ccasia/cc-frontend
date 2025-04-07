@@ -198,7 +198,7 @@ const Overview = () => {
                       }}
                     />
                     <Typography variant="subtitle2" color="text.secondary">
-                      Last update: Awaiting client approval.
+                      Last update: {item.lastUpdate || 'N/A'}
                     </Typography>
                   </Card>
                 ))}
