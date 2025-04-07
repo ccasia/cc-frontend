@@ -159,7 +159,9 @@ const Register = () => {
 
   const RegisterSchema = Yup.object().shape({
     name: Yup.string().required('Name is required.'),
-    email: Yup.string().required('Email is required').email('Invalid email entered. Please try again.'),
+    email: Yup.string()
+      .required('Email is required')
+      .email('Invalid email entered. Please try again.'),
     password: Yup.string()
       .required('Password is required.')
       .min(8, 'Password must be at least 8 characters long.')
@@ -231,17 +233,17 @@ const Register = () => {
       if (err.message === 'Email already exists') {
         methods.setError('email', {
           type: 'manual',
-          message: 'Email already registered. Please try again.'
+          message: 'Email already registered. Please try again.',
         });
       } else if (err.message === 'Invalid name format') {
         methods.setError('name', {
           type: 'manual',
-          message: 'Invalid name format. Please try again.'
+          message: 'Invalid name format. Please try again.',
         });
       } else if (err.message === 'Password requirements not met') {
         methods.setError('password', {
           type: 'manual',
-          message: 'Password does not meet requirements. Please try again.'
+          message: 'Password does not meet requirements. Please try again.',
         });
       } else if (err.message === 'Passwords do not match') {
         // methods.setError('confirmPassword', {
@@ -251,7 +253,7 @@ const Register = () => {
       } else {
         methods.setError('password', {
           type: 'manual',
-          message: 'An error occurred. Please try again.'
+          message: 'An error occurred. Please try again.',
         });
       }
     }
@@ -261,13 +263,13 @@ const Register = () => {
     try {
       if (formData) {
         console.log('Creator data from form:', creatorData);
-        
+
         // Get reCAPTCHA token from creatorData
         if (!creatorData.recaptcha) {
           enqueueSnackbar('reCAPTCHA verification is required', { variant: 'error' });
           return;
         }
-        
+
         // registration payload
         const registerPayload = {
           name: formData.name,
@@ -285,47 +287,45 @@ const Register = () => {
             employment: creatorData.employment || 'fulltime',
             birthDate: creatorData.birthDate || null,
             Nationality: creatorData.Nationality || '',
-          }
+          },
         };
-        
-        console.log('Sending registration payload:', JSON.stringify(registerPayload, null, 2));
+
+        // console.log('Sending registration payload with token from creatorForm');
         const user = await register(registerPayload);
         setEmail(user);
-        
+
+        // if (user) {
+        //   localStorage.setItem('pendingCreatorData', JSON.stringify(registerPayload.creatorData));
+        // }
+
         router.push(paths.auth.verify);
       }
     } catch (err) {
       console.error('Registration error:', err);
-      
+
       if (err.message === 'Token is missing.') {
         enqueueSnackbar('reCAPTCHA verification failed. Please try again.', {
-          variant: 'error',
-        });
-      } else if (err.message.includes('recaptcha')) {
-        enqueueSnackbar('reCAPTCHA verification error. Please try again.', {
           variant: 'error',
         });
       } else if (err.message === 'Email already exists') {
         methods.setError('email', {
           type: 'manual',
-          message: 'Email already registered. Please try again.'
-        });
-        enqueueSnackbar('Email already registered. Please use a different email.', {
-          variant: 'error',
+          message: 'Email already registered. Please try again.',
         });
       } else if (err.message === 'Invalid name format') {
         methods.setError('name', {
           type: 'manual',
-          message: 'Invalid name format. Please try again.'
+          message: 'Invalid name format. Please try again.',
         });
       } else if (err.message === 'Password requirements not met') {
         methods.setError('password', {
           type: 'manual',
-          message: 'Password does not meet requirements. Please try again.'
+          message: 'Password does not meet requirements. Please try again.',
         });
       } else {
-        enqueueSnackbar(`Registration failed: ${err.message}`, {
-          variant: 'error',
+        methods.setError('password', {
+          type: 'manual',
+          message: 'An error occurred. Please try again.',
         });
       }
       setOpenCreatorForm(false);
@@ -336,7 +336,10 @@ const Register = () => {
     { label: 'At least 8 characters', test: curPassword.length >= 8 },
     { label: 'At least 1 number (0 - 9)', test: /[0-9]/.test(curPassword) },
     { label: 'At least 1 special character (! - $)', test: /[@$!%*?&#]/.test(curPassword) },
-    { label: 'At least 1 upper case and 1 lower case letter', test: /[A-Z]/.test(curPassword) && /[a-z]/.test(curPassword) },
+    {
+      label: 'At least 1 upper case and 1 lower case letter',
+      test: /[A-Z]/.test(curPassword) && /[a-z]/.test(curPassword),
+    },
   ];
 
   const renderPasswordValidations = (
@@ -346,11 +349,12 @@ const Register = () => {
           'At least 8 characters': curPassword.length > 0,
           'At least 1 number (0 - 9)': /[0-9]/.test(curPassword),
           'At least 1 special character (! - $)': /[@$!%*?&#]/.test(curPassword),
-          'At least 1 upper case and 1 lower case letter': /[A-Z]/.test(curPassword) || /[a-z]/.test(curPassword),
+          'At least 1 upper case and 1 lower case letter':
+            /[A-Z]/.test(curPassword) || /[a-z]/.test(curPassword),
         };
 
         const textColor = '#636366';
-        let dotColor = '#919191'; 
+        let dotColor = '#919191';
         // let textColor = '#636366';
 
         if (rule.test) {
@@ -405,114 +409,21 @@ const Register = () => {
 
   const renderForm = (
     <Stack spacing={2.5}>
-      <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: -2, textAlign: 'left' }}>
-        Name <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+      <Typography
+        variant="body2"
+        color="#636366"
+        fontWeight={500}
+        sx={{ fontSize: '13px', mb: -2, textAlign: 'left' }}
+      >
+        Name{' '}
+        <Box component="span" sx={{ color: 'error.main' }}>
+          *
+        </Box>
       </Typography>
       <Box>
-      <RHFTextField 
-      name="name" 
-      placeholder="Name"    
-      InputLabelProps={{ shrink: false }}
-      FormHelperTextProps={{ sx: { display: 'none' } }}
-      sx={{
-        '&.MuiTextField-root': {
-          bgcolor: 'white',
-          borderRadius: 1,
-          '& .MuiInputLabel-root': {
-            display: 'none',
-          },
-          '& .MuiInputBase-input::placeholder': {
-            color: '#B0B0B0',
-            fontSize: '16px',
-            opacity: 1,
-          },
-        },
-          }} />
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            color: '#F04438',
-            mt: 0.5,
-            ml: 0.5,
-            display: 'block',
-            fontSize: '12px',
-            textAlign: 'left',
-          }}
-        >
-          {methods.formState.errors.name?.message}
-        </Typography>
-      </Box>
-
-      <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: -2, textAlign: 'left' }}>
-        Email <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-      </Typography>
-      <Box>
-      <RHFTextField 
-      name="email" 
-      placeholder="Email"    
-      InputLabelProps={{ shrink: false }}
-      FormHelperTextProps={{ sx: { display: 'none' } }}  
-      sx={{
-        '&.MuiTextField-root': {
-          bgcolor: 'white',
-          borderRadius: 1,
-          '& .MuiInputLabel-root': {
-            display: 'none',
-          },
-          '& .MuiInputBase-input::placeholder': {
-            color: '#B0B0B0',
-            fontSize: '16px',
-            opacity: 1,
-          },
-        },
-          }} />
-      <Typography 
-          variant="caption" 
-          sx={{ 
-            color: '#F04438',
-            mt: 0.5,
-            ml: 0.5,
-            display: 'block',
-            fontSize: '12px',
-            textAlign: 'left',
-          }}
-        >
-          {methods.formState.errors.email?.message}
-        </Typography>
-      </Box>
-
-      {/* Password field */}
-      <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: -2, textAlign: 'left' }}>
-        Password <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-      </Typography>
-      <Box>
-      <Controller
-        name="password"
-        control={control}
-        render={({ field, fieldState: { error } }) => (
-          // <TextField
-          // onClick={(e) => {
-          //   setAnchorEl(e.currentTarget);
-          // }}
-          // aria-describedby={id}
-          // {...field}
-          // placeholder="Password"
-          // type={password.value ? 'text' : 'password'}
-          // InputProps={{
-          //   endAdornment: (
-          //     <InputAdornment position="end">
-          //       <IconButton onClick={password.onToggle} edge="end">
-          //         <Box component="img" src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' 
-          //         : 'ic_closed_passwordeye.svg'}`} sx={{ width: 24, height: 24 }} />
-          //       </IconButton>
-          //     </InputAdornment>
-          //   ),
-          // }}
-          
-          // error={!!error}
-          <RHFTextField 
-          name="password" 
-          placeholder="Password"    
+        <RHFTextField
+          name="name"
+          placeholder="Name"
           InputLabelProps={{ shrink: false }}
           FormHelperTextProps={{ sx: { display: 'none' } }}
           sx={{
@@ -528,34 +439,158 @@ const Register = () => {
                 opacity: 1,
               },
             },
-              }} 
-          {...field}
-          type={password.value ? 'text' : 'password'}
-            onFocus={() => setIsPasswordFocused(true)}
-            onBlur={(e) => {
-              field.onBlur(e);
-              if (!field.value) {
-                setIsPasswordFocused(false);
-              }
-            }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end" sx={{ mr: 1 }}>
-                <IconButton onClick={password.onToggle} edge="end">
-                  <Box component="img" src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' 
-                  : 'ic_closed_passwordeye.svg'}`} sx={{ width: 24, height: 24 }} />
-                </IconButton>
-              </InputAdornment>
-            ),
           }}
-          error={!!error}
-          />
-        )}
-      />
+        />
+        <Typography
+          variant="caption"
+          sx={{
+            color: '#F04438',
+            mt: 0.5,
+            ml: 0.5,
+            display: 'block',
+            fontSize: '12px',
+            textAlign: 'left',
+          }}
+        >
+          {methods.formState.errors.name?.message}
+        </Typography>
+      </Box>
 
-      <Typography   
-          variant="caption" 
-          sx={{ 
+      <Typography
+        variant="body2"
+        color="#636366"
+        fontWeight={500}
+        sx={{ fontSize: '13px', mb: -2, textAlign: 'left' }}
+      >
+        Email{' '}
+        <Box component="span" sx={{ color: 'error.main' }}>
+          *
+        </Box>
+      </Typography>
+      <Box>
+        <RHFTextField
+          name="email"
+          placeholder="Email"
+          InputLabelProps={{ shrink: false }}
+          FormHelperTextProps={{ sx: { display: 'none' } }}
+          sx={{
+            '&.MuiTextField-root': {
+              bgcolor: 'white',
+              borderRadius: 1,
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: '#B0B0B0',
+                fontSize: '16px',
+                opacity: 1,
+              },
+            },
+          }}
+        />
+        <Typography
+          variant="caption"
+          sx={{
+            color: '#F04438',
+            mt: 0.5,
+            ml: 0.5,
+            display: 'block',
+            fontSize: '12px',
+            textAlign: 'left',
+          }}
+        >
+          {methods.formState.errors.email?.message}
+        </Typography>
+      </Box>
+
+      {/* Password field */}
+      <Typography
+        variant="body2"
+        color="#636366"
+        fontWeight={500}
+        sx={{ fontSize: '13px', mb: -2, textAlign: 'left' }}
+      >
+        Password{' '}
+        <Box component="span" sx={{ color: 'error.main' }}>
+          *
+        </Box>
+      </Typography>
+      <Box>
+        <Controller
+          name="password"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            // <TextField
+            // onClick={(e) => {
+            //   setAnchorEl(e.currentTarget);
+            // }}
+            // aria-describedby={id}
+            // {...field}
+            // placeholder="Password"
+            // type={password.value ? 'text' : 'password'}
+            // InputProps={{
+            //   endAdornment: (
+            //     <InputAdornment position="end">
+            //       <IconButton onClick={password.onToggle} edge="end">
+            //         <Box component="img" src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg'
+            //         : 'ic_closed_passwordeye.svg'}`} sx={{ width: 24, height: 24 }} />
+            //       </IconButton>
+            //     </InputAdornment>
+            //   ),
+            // }}
+
+            // error={!!error}
+            <RHFTextField
+              name="password"
+              placeholder="Password"
+              InputLabelProps={{ shrink: false }}
+              FormHelperTextProps={{ sx: { display: 'none' } }}
+              sx={{
+                '&.MuiTextField-root': {
+                  bgcolor: 'white',
+                  borderRadius: 1,
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: '#B0B0B0',
+                    fontSize: '16px',
+                    opacity: 1,
+                  },
+                },
+              }}
+              {...field}
+              type={password.value ? 'text' : 'password'}
+              onFocus={() => setIsPasswordFocused(true)}
+              onBlur={(e) => {
+                field.onBlur(e);
+                if (!field.value) {
+                  setIsPasswordFocused(false);
+                }
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end" sx={{ mr: 1 }}>
+                    <IconButton onClick={password.onToggle} edge="end">
+                      <Box
+                        component="img"
+                        src={`/assets/icons/components/${
+                          password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'
+                        }`}
+                        sx={{ width: 24, height: 24 }}
+                      />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              error={!!error}
+            />
+          )}
+        />
+
+        <Typography
+          variant="caption"
+          sx={{
             color: '#F04438',
             mt: 0.5,
             ml: 0.5,
@@ -566,7 +601,7 @@ const Register = () => {
           {methods.formState.errors.password?.message}
         </Typography>
 
-      {/* <Popper
+        {/* <Popper
         id={id}
         open={open}
         anchorEl={anchorEl}
@@ -613,7 +648,7 @@ const Register = () => {
         )}
       </Popper> */}
 
-      {/* <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: -2, textAlign: 'left' }}>
+        {/* <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: -2, textAlign: 'left' }}>
         Confirm Password <Box component="span" sx={{ color: 'error.main' }}>*</Box>
       </Typography>
       <Box>
@@ -655,11 +690,7 @@ const Register = () => {
         </Typography>
       </Box> */}
 
-      {isPasswordFocused && (
-        <Box sx={{ mt: 1, ml: 0.5 }}>
-          {renderPasswordValidations}
-        </Box>
-      )}
+        {isPasswordFocused && <Box sx={{ mt: 1, ml: 0.5 }}>{renderPasswordValidations}</Box>}
       </Box>
 
       {/* <Box>
@@ -679,8 +710,8 @@ const Register = () => {
         loading={isSubmitting}
         sx={{
           background: isValid
-          ? '#1340FF'
-          : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+            ? '#1340FF'
+            : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
           pointerEvents: !isValid && 'none',
           fontSize: '17px',
           fontWeight: 600,
@@ -716,6 +747,7 @@ const Register = () => {
                 bgcolor: '#1340FF',
               },
             }}
+            disabled={item.platform === 'facebook'}
           >
             <Iconify icon={item.icon} width={25} />
           </LoadingButton>
@@ -746,7 +778,7 @@ const Register = () => {
         color="text.primary"
         onClick={handleOpenTerms}
         type="button"
-        sx={{ 
+        sx={{
           verticalAlign: 'baseline',
           fontSize: '13px',
           lineHeight: 1,
@@ -763,7 +795,7 @@ const Register = () => {
         color="text.primary"
         onClick={handleOpenPrivacy}
         type="button"
-        sx={{ 
+        sx={{
           verticalAlign: 'baseline',
           fontSize: '13px',
           lineHeight: 1,
@@ -792,7 +824,7 @@ const Register = () => {
             p: 3,
             bgcolor: '#F4F4F4',
             borderRadius: 2,
-            width: { xs: '100%', sm: 470 },  
+            width: { xs: '100%', sm: 470 },
             maxWidth: { xs: '100%', sm: 470 },
             mx: 'auto',
           }}
@@ -823,8 +855,8 @@ const Register = () => {
         </Box>
       </FormProvider>
 
-      <CreatorForm 
-        open={openCreatorForm} 
+      <CreatorForm
+        open={openCreatorForm}
         onClose={() => setOpenCreatorForm(false)}
         onSubmit={handleRegister}
       />

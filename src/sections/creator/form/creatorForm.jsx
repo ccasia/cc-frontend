@@ -185,14 +185,6 @@ export default function CreatorForm({ mutate, open, onClose, onSubmit: registerU
     try {
       console.log('CreatorForm data being submitted:', data);
       
-      // Verify recaptcha token exists
-      if (!data.recaptcha) {
-        enqueueSnackbar('Please complete the reCAPTCHA verification', { variant: 'error' });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Pass raw data to the parent handler
       if (registerUser) {
         await registerUser(data);
       } else {
@@ -511,21 +503,7 @@ export default function CreatorForm({ mutate, open, onClose, onSubmit: registerU
                   <ReCAPTCHA
                     sitekey={RECAPTCHA_SITEKEY}
                     onChange={(token) => {
-                      console.log('reCAPTCHA token received:', token ? 'valid token' : 'no token');
-                      setValue('recaptcha', token, { shouldValidate: true });
-                    }}
-                    onExpired={() => {
-                      console.log('reCAPTCHA token expired');
-                      setValue('recaptcha', '', { shouldValidate: true });
-                      enqueueSnackbar('reCAPTCHA verification expired. Please verify again.', {
-                        variant: 'warning',
-                      });
-                    }}
-                    onErrored={(err) => {
-                      console.error('reCAPTCHA error:', err);
-                      enqueueSnackbar('Error with reCAPTCHA verification. Please try again.', {
-                        variant: 'error',
-                      });
+                      setValue('recaptcha', token);
                     }}
                   />
                 </Box>

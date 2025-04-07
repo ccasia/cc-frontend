@@ -22,7 +22,6 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -107,7 +106,6 @@ const Login = () => {
   // });
 
   const { login } = useAuthContext();
-  const router = useRouter();
 
   const handleOpenTerms = () => {
     const a = document.createElement('a');
@@ -156,10 +154,10 @@ const Login = () => {
   } = methods;
 
   const getDeviceType = () => {
-    const userAgent = navigator.userAgent;
-    if (/mobile/i.test(userAgent)) return "mobile";
-    if (/tablet/i.test(userAgent)) return "tablet";
-    return "desktop";
+    const { userAgent } = navigator;
+    if (/mobile/i.test(userAgent)) return 'mobile';
+    if (/tablet/i.test(userAgent)) return 'tablet';
+    return 'desktop';
   };
   
   const onSubmit = handleSubmit(async (data) => {
@@ -365,7 +363,9 @@ const Login = () => {
                 '&:hover': {
                   bgcolor: '#1340FF',
                 },
+                position: 'relative',
               }}
+              disabled={item.platform === 'facebook'}
             >
               <Iconify icon={item.icon} width={25} />
             </LoadingButton>
