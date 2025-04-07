@@ -46,7 +46,7 @@ const TaskItem = ({ task }) => {
       <Stack direction="row" spacing={0.5} alignItems="center" color="text.secondary" py={2}>
         <Iconify icon="stash:user-avatar" width={16} />
         <Typography variant="caption" fontWeight={600}>
-          {task.submission.campaign.company.name || task.submission.campaign.brand.name}
+          {task.submission.campaign.company?.name || task.submission.campaign.brand?.name}
         </Typography>
       </Stack>
       <Divider />

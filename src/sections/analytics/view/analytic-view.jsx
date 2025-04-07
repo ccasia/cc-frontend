@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import axiosInstance, {endpoints} from 'src/utils/axios';
-import { Tab, Tabs, Typography, Grid, Container, CircularProgress, Box } from '@mui/material';
-import { useAuthContext } from 'src/auth/hooks';
 
+import { Tab, Box, Tabs, Grid, Container, Typography, CircularProgress } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import ApprovePitch from './components/admins/PitchAnalytics';
+import TotalPitches from './components/creators/total-pitches';
 import TotalCreators from './components/creators/totalcreators';
+import ApproveDraftsAnalytics from './components/admins/DraftsAnalytics';
 import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';
-import TotalPitches from './components/creators/total-pitches';
-import ApprovePitch from './components/admins/PitchAnalytics';
 import SendAgreementsAnalytics from './components/admins/SendAgreementsAnalytics';
 import ApproveAgreementsAnalytics from './components/admins/ApproveAgreementsAnalytics';
 import ApproveDraftsAnalytics from './components/admins/DraftsAnalytics';
@@ -26,8 +28,6 @@ export default function AnalyticsView() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
 
-  
- 
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -39,7 +39,7 @@ export default function AnalyticsView() {
         setCreators(creatorsRes.data);
         setUsers(usersRes.data);
       } catch (err) {
-        setError("Failed to load data");
+        setError('Failed to load data');
       } finally {
         setLoading(false);
       }
@@ -47,7 +47,6 @@ export default function AnalyticsView() {
 
     fetchData();
   }, []);
-
 
   // Show loading indicator while data is being fetched
   if (loading) return <CircularProgress />;
@@ -112,7 +111,6 @@ export default function AnalyticsView() {
               <ApproveDraftsAnalytics/>
               <PostingAnalytics/>
             </>
-          
           )}
         </Box>
       </Container>

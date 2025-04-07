@@ -121,10 +121,10 @@ export const StyledEditorToolbar = styled('div')(({ theme }) => {
       flexWrap: 'wrap',
       '& .ql-formats': {
         '&:not(:last-of-type)': {
-          marginRight: theme.spacing(2),
+          marginRight: theme.spacing(1),
         },
         display: 'flex',
-        gap: '2px',
+        gap: '1px',
       },
 
       // Button

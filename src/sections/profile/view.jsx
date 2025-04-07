@@ -5,9 +5,10 @@ import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
 import { Toaster } from 'react-hot-toast';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -22,6 +23,7 @@ import {
   Container,
   Typography,
   InputAdornment,
+  Button,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -58,8 +60,31 @@ const Profile = () => {
   const settings = useSettingsContext();
   const theme = useTheme();
   const { user } = useAuthContext();
-  const [currentTab, setCurrentTab] = useState('general');
+  const location = useLocation();
+  const navigate = useNavigate();
   const [image, setImage] = useState(null);
+
+  // Determine current tab based on URL path
+  const getTabFromPath = useCallback(() => {
+    const path = location.pathname;
+    
+    if (path.includes('/security')) return 'security';
+    if (path.includes('/api')) return 'api';
+    if (path.includes('/socials')) return 'Social Links';
+    if (path.includes('/payment')) return 'paymentForm';
+    if (path.includes('/billing')) return 'Billing';
+    if (path.includes('/notifications')) return 'Notifications';
+    
+    // Default to general/account tab
+    return ['admin', 'superadmin'].includes(user?.role) ? 'general' : 'general';
+  }, [location.pathname, user?.role]);
+
+  const [currentTab, setCurrentTab] = useState(getTabFromPath());
+  
+  // Update current tab when URL changes
+  useEffect(() => {
+    setCurrentTab(getTabFromPath());
+  }, [location.pathname, getTabFromPath]);
 
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -92,9 +117,46 @@ const Profile = () => {
     [setValue]
   );
 
-  const handleChangeTab = useCallback((event, newValue) => {
-    setCurrentTab(newValue);
-  }, []);
+  // const handleChangeTab = useCallback((tab) => {
+  //   if (['admin', 'superadmin'].includes(user?.role)) {
+  //     switch (tab) {
+  //       case 'general':
+  //         navigate(paths.dashboard.user.profileTabs.general);
+  //         break;
+  //       case 'security':
+  //         navigate(paths.dashboard.user.profileTabs.security);
+  //         break;
+  //       case 'api':
+  //         navigate(paths.dashboard.user.profileTabs.api);
+  //         break;
+  //       default:
+  //         navigate(paths.dashboard.user.profileTabs.general);
+  //     }
+  //   } else {
+  //     switch (tab) {
+  //       case 'general':
+  //         navigate(paths.dashboard.user.profileTabs.account);
+  //         break;
+  //       case 'security':
+  //         navigate(paths.dashboard.user.profileTabs.security);
+  //         break;
+  //       case 'Social Links':
+  //         navigate(paths.dashboard.user.profileTabs.socials);
+  //         break;
+  //       case 'paymentForm':
+  //         navigate(paths.dashboard.user.profileTabs.payment);
+  //         break;
+  //       case 'Billing':
+  //         navigate(paths.dashboard.user.profileTabs.billing);
+  //         break;
+  //       case 'Notifications':
+  //         navigate(paths.dashboard.user.profileTabs.notifications);
+  //         break;
+  //       default:
+  //         navigate(paths.dashboard.user.profileTabs.account);
+  //     }
+  //   }
+  // }, [navigate, user?.role]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -224,69 +286,370 @@ const Profile = () => {
 
   // Tabs
   const Admintabs = (
-    <Tabs
-      value={currentTab}
-      onChange={handleChangeTab}
+    <Stack
+      direction="row"
+      spacing={0.5}
       sx={{
+        position: 'relative',
+        width: '100%',
         mb: { xs: 3, md: 5 },
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '1px',
+          bgcolor: 'divider',
+        },
       }}
     >
-      <Tab
-        label="General"
-        value="general"
-        icon={<Iconify icon="solar:user-id-bold" width={24} />}
-      />
-      <Tab
-        label="Security"
-        value="security"
-        icon={<Iconify icon="ic:round-vpn-key" width={24} />}
-      />
+      <Button
+        component={Link}
+        to={paths.dashboard.user.profileTabs.general}
+        disableRipple
+        size="large"
+        sx={{
+          px: 0.5,
+          py: 0.5,
+          pb: 0.5,
+          minWidth: 'fit-content',
+          color: currentTab === 'general' ? '#221f20' : '#8e8e93',
+          position: 'relative',
+          fontSize: '1.05rem',
+          fontWeight: 650,
+          '&:focus': {
+            outline: 'none',
+            bgcolor: 'transparent',
+          },
+          '&:active': {
+            bgcolor: 'transparent',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: -0.5,
+            left: 0,
+            right: 0,
+            height: '2px',
+            width: currentTab === 'general' ? '100%' : '0%',
+            bgcolor: '#1340ff',
+            transform: 'scaleX(1)',
+            transformOrigin: 'left',
+          },
+          '&:hover': {
+            bgcolor: 'transparent',
+            '&::after': {
+              width: '100%',
+              opacity: currentTab === 'general' ? 1 : 0.5,
+            },
+          },
+        }}
+        startIcon={<Iconify icon="solar:user-id-bold" width={20} />}
+      >
+        General
+      </Button>
+      
+      <Button
+        component={Link}
+        to={paths.dashboard.user.profileTabs.security}
+        disableRipple
+        size="large"
+        sx={{
+          px: 0.5,
+          py: 0.5,
+          pb: 0.5,
+          ml: 2,
+          minWidth: 'fit-content',
+          color: currentTab === 'security' ? '#221f20' : '#8e8e93',
+          position: 'relative',
+          fontSize: '1.05rem',
+          fontWeight: 650,
+          '&:focus': {
+            outline: 'none',
+            bgcolor: 'transparent',
+          },
+          '&:active': {
+            bgcolor: 'transparent',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: -0.5,
+            left: 0,
+            right: 0,
+            height: '2px',
+            width: currentTab === 'security' ? '100%' : '0%',
+            bgcolor: '#1340ff',
+            transform: 'scaleX(1)',
+            transformOrigin: 'left',
+          },
+          '&:hover': {
+            bgcolor: 'transparent',
+            '&::after': {
+              width: '100%',
+              opacity: currentTab === 'security' ? 1 : 0.5,
+            },
+          },
+        }}
+        startIcon={<Iconify icon="ic:round-vpn-key" width={20} />}
+      >
+        Security
+      </Button>
+      
       {user?.admin?.role?.name === 'Finance' && (
-        <Tab label="API" value="api" icon={<Iconify icon="material-symbols:api" width={24} />} />
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.api}
+          disableRipple
+          size="large"
+          sx={{
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            ml: 2,
+            minWidth: 'fit-content',
+            color: currentTab === 'api' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'api' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'api' ? 1 : 0.5,
+              },
+            },
+          }}
+          startIcon={<Iconify icon="material-symbols:api" width={20} />}
+        >
+          API
+        </Button>
       )}
-    </Tabs>
+    </Stack>
   );
 
   const CreatorTabs = (
-    <Tabs
-      value={currentTab}
-      onChange={handleChangeTab}
+    <Stack
+      direction="row"
+      spacing={0.5}
       sx={{
+        position: 'relative',
+        width: '100%',
         mb: { xs: 3, md: 5 },
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '1px',
+          bgcolor: 'divider',
+        },
       }}
     >
-      <Tab
-        label="General"
-        value="general"
-        icon={<Iconify icon="solar:user-id-bold" width={24} />}
-      />
-
-      <Tab
-        label="Socials"
-        value="Social Links"
-        icon={<Iconify icon="solar:share-bold" width={24} />}
-      />
-      <Tab
-        label="Security"
-        value="security"
-        icon={<Iconify icon="ic:round-vpn-key" width={24} />}
-      />
-      <Tab
-        label="Payment Form"
-        value="paymentForm"
-        icon={<Iconify icon="ic:baseline-payment" width={24} />}
-      />
-      {/* <Tab
-        value="Billing"
-        label="Billing"
-        icon={<Iconify icon="solar:bill-list-bold" width={24} />}
-      /> */}
-      {/* <Tab
-        value="Notifications"
-        label="Notifications"
-        icon={<Iconify icon="solar:bell-bing-bold" width={24} />}
-      /> */}
-    </Tabs>
+      <Button
+        component={Link}
+        to={paths.dashboard.user.profileTabs.account}
+        disableRipple
+        size="large"
+        sx={{
+          px: 0.5,
+          py: 0.5,
+          pb: 0.5,
+          minWidth: 'fit-content',
+          color: currentTab === 'general' ? '#221f20' : '#8e8e93',
+          position: 'relative',
+          fontSize: '1.05rem',
+          fontWeight: 650,
+          '&:focus': {
+            outline: 'none',
+            bgcolor: 'transparent',
+          },
+          '&:active': {
+            bgcolor: 'transparent',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: -0.5,
+            left: 0,
+            right: 0,
+            height: '2px',
+            width: currentTab === 'general' ? '100%' : '0%',
+            bgcolor: '#1340ff',
+            transform: 'scaleX(1)',
+            transformOrigin: 'left',
+          },
+          '&:hover': {
+            bgcolor: 'transparent',
+            '&::after': {
+              width: '100%',
+              opacity: currentTab === 'general' ? 1 : 0.5,
+            },
+          },
+        }}
+      >
+        Account
+      </Button>
+      
+      <Button
+        component={Link}
+        to={paths.dashboard.user.profileTabs.security}
+        disableRipple
+        size="large"
+        sx={{
+          px: 0.5,
+          py: 0.5,
+          pb: 0.5,
+          ml: 2,
+          minWidth: 'fit-content',
+          color: currentTab === 'security' ? '#221f20' : '#8e8e93',
+          position: 'relative',
+          fontSize: '1.05rem',
+          fontWeight: 650,
+          '&:focus': {
+            outline: 'none',
+            bgcolor: 'transparent',
+          },
+          '&:active': {
+            bgcolor: 'transparent',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: -0.5,
+            left: 0,
+            right: 0,
+            height: '2px',
+            width: currentTab === 'security' ? '100%' : '0%',
+            bgcolor: '#1340ff',
+            transform: 'scaleX(1)',
+            transformOrigin: 'left',
+          },
+          '&:hover': {
+            bgcolor: 'transparent',
+            '&::after': {
+              width: '100%',
+              opacity: currentTab === 'security' ? 1 : 0.5,
+            },
+          },
+        }}
+      >
+        Security
+      </Button>
+      
+      <Button
+        component={Link}
+        to={paths.dashboard.user.profileTabs.socials}
+        disableRipple
+        size="large"
+        sx={{
+          px: 0.5,
+          py: 0.5,
+          pb: 0.5,
+          ml: 2,
+          minWidth: 'fit-content',
+          color: currentTab === 'Social Links' ? '#221f20' : '#8e8e93',
+          position: 'relative',
+          fontSize: '1.05rem',
+          fontWeight: 650,
+          '&:focus': {
+            outline: 'none',
+            bgcolor: 'transparent',
+          },
+          '&:active': {
+            bgcolor: 'transparent',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: -0.5,
+            left: 0,
+            right: 0,
+            height: '2px',
+            width: currentTab === 'Social Links' ? '100%' : '0%',
+            bgcolor: '#1340ff',
+            transform: 'scaleX(1)',
+            transformOrigin: 'left',
+          },
+          '&:hover': {
+            bgcolor: 'transparent',
+            '&::after': {
+              width: '100%',
+              opacity: currentTab === 'Social Links' ? 1 : 0.5,
+            },
+          },
+        }}
+      >
+        Socials
+      </Button>
+      
+      <Button
+        component={Link}
+        to={paths.dashboard.user.profileTabs.payment}
+        disableRipple
+        size="large"
+        sx={{
+          px: 0.5,
+          py: 0.5,
+          pb: 0.5,
+          ml: 2,
+          minWidth: 'fit-content',
+          color: currentTab === 'paymentForm' ? '#221f20' : '#8e8e93',
+          position: 'relative',
+          fontSize: '1.05rem',
+          fontWeight: 650,
+          '&:focus': {
+            outline: 'none',
+            bgcolor: 'transparent',
+          },
+          '&:active': {
+            bgcolor: 'transparent',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: -0.5,
+            left: 0,
+            right: 0,
+            height: '2px',
+            width: currentTab === 'paymentForm' ? '100%' : '0%',
+            bgcolor: '#1340ff',
+            transform: 'scaleX(1)',
+            transformOrigin: 'left',
+          },
+          '&:hover': {
+            bgcolor: 'transparent',
+            '&::after': {
+              width: '100%',
+              opacity: currentTab === 'paymentForm' ? 1 : 0.5,
+            },
+          },
+        }}
+      >
+        Payment
+      </Button>
+    </Stack>
   );
 
   // Contents
@@ -323,21 +686,18 @@ const Profile = () => {
   );
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <CustomBreadcrumbs
-        heading="Profile"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.root },
-          {
-            name: 'User',
-            href: paths.dashboard.user,
-          },
-          { name: 'Profile' },
-        ]}
+    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
+      <Typography
+        variant="h2"
         sx={{
-          mb: { xs: 3, md: 5 },
+          mb: 0.2,
+          mt: { lg: 2, xs: 2, sm: 2 },
+          fontFamily: theme.typography.fontSecondaryFamily,
+          fontWeight: 'normal',
         }}
-      />
+      >
+        Settings ⚙️
+      </Typography>
 
       {['admin', 'superadmin'].includes(user?.role) ? Admintabs : CreatorTabs}
       {['admin', 'superadmin'].includes(user?.role) ? adminContents : creatorContents}
