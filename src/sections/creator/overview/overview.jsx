@@ -33,14 +33,6 @@ const Overview = () => {
 
   const { data, isLoading } = useGetOverview();
 
-  // const [creator, setCreator] = useState(null);
-
-  // const {
-  //   data: res,
-  //   isLoading: checingCreator,
-  //   mutate,
-  // } = useSWR(endpoints.auth.checkCreator, fetcher);
-
   const renderOverview = (
     <Grid container spacing={2}>
       <Grid item xs={12} md={6}>
@@ -469,7 +461,7 @@ const Overview = () => {
         primary={`Welcome to the Cult, ${user?.name?.split(' ')[0]} 👋`}
         secondary="Keep up the good work! Here’s what is relevant to you right now."
         primaryTypographyProps={{
-          mt: { lg:2, xs: 2, sm: 0 },
+          mt: { lg: 2, xs: 2, sm: 0 },
           variant: 'h2',
           fontWeight: 400,
           fontFamily: (theme) => theme.typography.fontSecondaryFamily,
