@@ -111,7 +111,7 @@ export default function CreatorSendAgreement() {
                         )}
                       </TableCell>
                       <TableCell>{turnaroundTime}</TableCell>
-                      <TableCell>{submission.admin?.user?.name || "Not approved yet"}</TableCell>
+                      <TableCell>{submission.user?.name || "Null"}</TableCell>
                     </TableRow>
                   );
                 })}

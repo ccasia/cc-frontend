@@ -13,7 +13,6 @@ import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';
 import SendAgreementsAnalytics from './components/admins/SendAgreementsAnalytics';
 import ApproveAgreementsAnalytics from './components/admins/ApproveAgreementsAnalytics';
-import ApproveDraftsAnalytics from './components/admins/DraftsAnalytics';
 import CreatorSendAgreement from './components/creators/agreements';
 import CreatorSendDrafts from './components/creators/drafts';
 import CreatorSendPosting from './components/creators/posting';
