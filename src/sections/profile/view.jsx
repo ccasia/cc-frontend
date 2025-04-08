@@ -67,20 +67,20 @@ const Profile = () => {
   // Determine current tab based on URL path
   const getTabFromPath = useCallback(() => {
     const path = location.pathname;
-    
+
     if (path.includes('/security')) return 'security';
     if (path.includes('/api')) return 'api';
     if (path.includes('/socials')) return 'Social Links';
     if (path.includes('/payment')) return 'paymentForm';
     if (path.includes('/billing')) return 'Billing';
     if (path.includes('/notifications')) return 'Notifications';
-    
+
     // Default to general/account tab
     return ['admin', 'superadmin'].includes(user?.role) ? 'general' : 'general';
   }, [location.pathname, user?.role]);
 
   const [currentTab, setCurrentTab] = useState(getTabFromPath());
-  
+
   // Update current tab when URL changes
   useEffect(() => {
     setCurrentTab(getTabFromPath());
@@ -349,7 +349,7 @@ const Profile = () => {
       >
         General
       </Button>
-      
+
       <Button
         component={Link}
         to={paths.dashboard.user.profileTabs.security}
@@ -396,7 +396,7 @@ const Profile = () => {
       >
         Security
       </Button>
-      
+
       {user?.admin?.role?.name === 'Finance' && (
         <Button
           component={Link}
@@ -511,7 +511,7 @@ const Profile = () => {
       >
         Account
       </Button>
-      
+
       <Button
         component={Link}
         to={paths.dashboard.user.profileTabs.security}
@@ -557,7 +557,7 @@ const Profile = () => {
       >
         Security
       </Button>
-      
+
       <Button
         component={Link}
         to={paths.dashboard.user.profileTabs.socials}
@@ -603,7 +603,7 @@ const Profile = () => {
       >
         Socials
       </Button>
-      
+
       <Button
         component={Link}
         to={paths.dashboard.user.profileTabs.payment}
