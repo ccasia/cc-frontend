@@ -7,10 +7,12 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import Accordion from '@mui/material/Accordion';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
+
+// import Accordion from '@mui/material/Accordion';
+// import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+// import AccordionSummary from '@mui/material/AccordionSummary';
+// import AccordionDetails from '@mui/material/AccordionDetails';
+import { grey } from '@mui/material/colors';
 // import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Box,
@@ -25,6 +27,14 @@ import {
   DialogContent,
   DialogActions,
   LinearProgress,
+  Avatar,
+  Tabs,
+  Tab,
+  alpha,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -106,6 +116,11 @@ const CampaignFirstDraft = ({
   const [uploadProgress, setUploadProgress] = useState([]);
 
   const { deliverables } = deliverablesData;
+
+  const [tabIndex, setTabIndex] = useState(0);
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+  const [selectedRawFootageIndex, setSelectedRawFootageIndex] = useState(0);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   const methods = useForm({
     defaultValues: {
@@ -271,6 +286,57 @@ const CampaignFirstDraft = ({
 
   const handleNextImage = () => {
     setCurrentImageIndex((prevIndex) => (prevIndex + 1) % submission.photos.length);
+  };
+
+  const getButtonSecondaryText = (status, isUploaded, defaultText) => {
+    if (status === 'PENDING_REVIEW') {
+      return 'Submission under review';
+    }
+    if (isUploaded) {
+      return 'Already uploaded';
+    }
+    return defaultText;
+  };
+
+  // Helper function to get the index for the caption tab
+  const getTabIndex = (tab) => {
+    let index = 0;
+    if (tab === 'caption') {
+      index = 0; // Start with base index
+      if (true) index += 1; // For draft videos (always present)
+      if (submission?.rawFootages?.length > 0) index += 1;
+      if (submission?.photos?.length > 0) index += 1;
+    }
+    return index;
+  };
+
+  // Helper function to get tab options for dropdown
+  const getTabOptions = () => {
+    const options = [
+      { value: 0, label: 'Draft Videos', icon: 'solar:video-library-bold' }
+    ];
+    
+    if (submission?.rawFootages?.length > 0) {
+      options.push({ value: 1, label: 'Raw Footage', icon: 'solar:camera-bold' });
+    }
+    
+    if (submission?.photos?.length > 0) {
+      options.push({ 
+        value: submission?.rawFootages?.length > 0 ? 2 : 1, 
+        label: 'Photos', 
+        icon: 'solar:gallery-wide-bold' 
+      });
+    }
+    
+    if (submission?.caption) {
+      options.push({ 
+        value: getTabIndex('caption'), 
+        label: 'Caption', 
+        icon: 'solar:document-text-bold' 
+      });
+    }
+    
+    return options;
   };
 
   return (
@@ -501,11 +567,11 @@ const CampaignFirstDraft = ({
                         page.
                       </Typography>
 
-                      {totalUGCVideos && (
+                      {/* {totalUGCVideos && (
                         <ListItemText
                           primary="Notes:"
                           secondary={`1. 🎥 Upload ${totalUGCVideos} UGC Videos`}
-                          sx={{ color: '#221f20', mb: 30, ml: -1 }}
+                          sx={{ color: '#221f20', mb: 2, ml: -1 }}
                           primaryTypographyProps={{
                             variant: 'subtitle1',
                           }}
@@ -513,39 +579,375 @@ const CampaignFirstDraft = ({
                             variant: 'subtitle2',
                           }}
                         />
+                      )} */}
+
+                      {/* Deliverables incomplete message */}
+                      {(!submission?.video?.length || 
+                        (campaign.rawFootage && !submission?.rawFootages?.length) || 
+                        (campaign.photos && !submission?.photos?.length)) && (
+                        <Box sx={{ mt: 4, mb: 3, ml: -1 }}>
+                          <Typography 
+                            variant="subtitle1" 
+                            sx={{ 
+                              color: '#231F20', 
+                              fontWeight: 600,
+                              mb: 0.5
+                            }}
+                          >
+                            Deliverables Incomplete
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#636366' }}>
+                            1. Please complete all deliverables to ensure your submission goes through.
+                            {totalUGCVideos && (
+                              <>
+                                <br />
+                                2. You are required to upload <span style={{ color: '#231F20', fontWeight: 600 }}>{totalUGCVideos} UGC {totalUGCVideos === 1 ? 'Video' : 'Videos'}</span>.
+                              </>
+                            )}
+                          </Typography>
+                        </Box>
                       )}
 
-                      <Box
-                        sx={{
-                          borderBottom: '1px solid',
-                          borderColor: 'divider',
-                          mb: 2,
-                          mx: -1.5,
-                        }}
-                      />
 
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button
-                          variant="contained"
-                          onClick={handleUploadClick}
-                          startIcon={<Iconify icon="material-symbols:add" width={24} />}
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        justifyContent="space-between"
+                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                        gap={2}
+                        pb={3}
+                        mt={1}
+                      >
+                        {/* Draft Video Button */}
+                        <Box
                           sx={{
-                            bgcolor: '#203ff5',
-                            color: 'white',
-                            borderBottom: 3.5,
-                            borderBottomColor: '#112286',
-                            borderRadius: 1.5,
-                            px: 2.5,
-                            py: 1.2,
+                            position: 'relative',
+                            border: 1,
+                            p: 2,
+                            borderRadius: 2,
+                            borderColor: submission?.video?.length > 0 ? '#5abc6f' : grey[100],
+                            transition: 'all .2s ease',
+                            width: { xs: '100%', sm: '32%' },
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            opacity: submission?.video?.length > 0 || submission?.status === 'PENDING_REVIEW' ? 0.5 : 1,
+                            cursor: submission?.video?.length > 0 || submission?.status === 'PENDING_REVIEW' ? 'not-allowed' : 'pointer',
                             '&:hover': {
-                              bgcolor: '#203ff5',
-                              opacity: 0.9,
+                              borderColor: submission?.video?.length > 0 || submission?.status === 'PENDING_REVIEW' ? grey[700] : grey[700],
+                              transform: submission?.video?.length > 0 || submission?.status === 'PENDING_REVIEW' ? 'none' : 'scale(1.02)',
                             },
                           }}
+                          onClick={() => {
+                            if (!submission?.video?.length && submission?.status !== 'PENDING_REVIEW') {
+                              setDraftVideoModalOpen(true);
+                            }
+                          }}
                         >
-                          Upload
-                        </Button>
-                      </Box>
+                          {submission?.video?.length > 0 && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: -10,
+                                right: -10,
+                                bgcolor: '#5abc6f',
+                                borderRadius: '50%',
+                                width: 28,
+                                height: 28,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                zIndex: 1,
+                              }}
+                            >
+                              <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
+                            </Box>
+                          )}
+
+                          {submission?.status === 'PENDING_REVIEW' && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: -10,
+                                right: -10,
+                                bgcolor: grey[500],
+                                borderRadius: '50%',
+                                width: 28,
+                                height: 28,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                zIndex: 1,
+                              }}
+                            >
+                              <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
+                            </Box>
+                          )}
+
+                          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <Avatar
+                              sx={{
+                                bgcolor: submission?.video?.length > 0 ? '#5abc6f' : '#203ff5',
+                                mb: 2,
+                              }}
+                            >
+                              <Iconify icon="solar:video-library-bold" />
+                            </Avatar>
+
+                            <ListItemText
+                              sx={{
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                              }}
+                              primary="Draft Video"
+                              secondary={
+                                getButtonSecondaryText(submission?.status, submission?.video?.length > 0, 'Upload your main draft video for the campaign')
+                              }
+                              primaryTypographyProps={{
+                                variant: 'body1',
+                                fontWeight: 'bold',
+                                gutterBottom: true,
+                                sx: { mb: 1 },
+                              }}
+                              secondaryTypographyProps={{
+                                color: 'text.secondary',
+                                lineHeight: 1.2,
+                                sx: {
+                                  minHeight: '2.4em',
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                },
+                              }}
+                            />
+                          </Box>
+                        </Box>
+
+                        {/* Raw Footage Button */}
+                        {campaign.rawFootage && (
+                          <Box
+                            sx={{
+                              position: 'relative',
+                              border: 1,
+                              p: 2,
+                              borderRadius: 2,
+                              borderColor: submission?.rawFootages?.length > 0 ? '#5abc6f' : grey[100],
+                              transition: 'all .2s ease',
+                              width: { xs: '100%', sm: '32%' },
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              opacity: submission?.rawFootages?.length > 0 || submission?.status === 'PENDING_REVIEW' ? 0.5 : 1,
+                              cursor: submission?.rawFootages?.length > 0 || submission?.status === 'PENDING_REVIEW' ? 'not-allowed' : 'pointer',
+                              '&:hover': {
+                                borderColor: submission?.rawFootages?.length > 0 || submission?.status === 'PENDING_REVIEW' ? grey[700] : grey[700],
+                                transform: submission?.rawFootages?.length > 0 || submission?.status === 'PENDING_REVIEW' ? 'none' : 'scale(1.02)',
+                              },
+                            }}
+                            onClick={() => {
+                              if (!submission?.rawFootages?.length && submission?.status !== 'PENDING_REVIEW') {
+                                setRawFootageModalOpen(true);
+                              }
+                            }}
+                          >
+                            {submission?.rawFootages?.length > 0 && (
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  top: -10,
+                                  right: -10,
+                                  bgcolor: '#5abc6f',
+                                  borderRadius: '50%',
+                                  width: 28,
+                                  height: 28,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                  zIndex: 1,
+                                }}
+                              >
+                                <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
+                              </Box>
+                            )}
+
+                            {submission?.status === 'PENDING_REVIEW' && (
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  top: -10,
+                                  right: -10,
+                                  bgcolor: grey[500],
+                                  borderRadius: '50%',
+                                  width: 28,
+                                  height: 28,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                  zIndex: 1,
+                                }}
+                              >
+                                <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
+                              </Box>
+                            )}
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                              <Avatar
+                                sx={{
+                                  bgcolor: submission?.rawFootages?.length > 0 ? '#5abc6f' : '#203ff5',
+                                  mb: 2,
+                                }}
+                              >
+                                <Iconify icon="solar:camera-bold" />
+                              </Avatar>
+
+                              <ListItemText
+                                sx={{
+                                  flex: 1,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                }}
+                                primary="Raw Footage"
+                                secondary={
+                                  getButtonSecondaryText(submission?.status, submission?.rawFootages?.length > 0, 'Upload raw, unedited footage from your shoot')
+                                }
+                                primaryTypographyProps={{
+                                  variant: 'body1',
+                                  fontWeight: 'bold',
+                                  gutterBottom: true,
+                                  sx: { mb: 1 },
+                                }}
+                                secondaryTypographyProps={{
+                                  color: 'text.secondary',
+                                  lineHeight: 1.2,
+                                  sx: {
+                                    minHeight: '2.4em',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                  },
+                                }}
+                              />
+                            </Box>
+                          </Box>
+                        )}
+
+                        {/* Photos Button */}
+                        {campaign.photos && (
+                          <Box
+                            sx={{
+                              position: 'relative',
+                              border: 1,
+                              p: 2,
+                              borderRadius: 2,
+                              borderColor: submission?.photos?.length > 0 ? '#5abc6f' : grey[100],
+                              transition: 'all .2s ease',
+                              width: { xs: '100%', sm: '32%' },
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              opacity: submission?.photos?.length > 0 || submission?.status === 'PENDING_REVIEW' ? 0.5 : 1,
+                              cursor: submission?.photos?.length > 0 || submission?.status === 'PENDING_REVIEW' ? 'not-allowed' : 'pointer',
+                              '&:hover': {
+                                borderColor: submission?.photos?.length > 0 || submission?.status === 'PENDING_REVIEW' ? grey[700] : grey[700],
+                                transform: submission?.photos?.length > 0 || submission?.status === 'PENDING_REVIEW' ? 'none' : 'scale(1.02)',
+                              },
+                            }}
+                            onClick={() => {
+                              if (!submission?.photos?.length && submission?.status !== 'PENDING_REVIEW') {
+                                setPhotosModalOpen(true);
+                              }
+                            }}
+                          >
+                            {submission?.photos?.length > 0 && (
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  top: -10,
+                                  right: -10,
+                                  bgcolor: '#5abc6f',
+                                  borderRadius: '50%',
+                                  width: 28,
+                                  height: 28,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                  zIndex: 1,
+                                }}
+                              >
+                                <Iconify icon="eva:checkmark-fill" sx={{ color: 'white', width: 20 }} />
+                              </Box>
+                            )}
+
+                            {submission?.status === 'PENDING_REVIEW' && (
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  top: -10,
+                                  right: -10,
+                                  bgcolor: grey[500],
+                                  borderRadius: '50%',
+                                  width: 28,
+                                  height: 28,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                  zIndex: 1,
+                                }}
+                              >
+                                <Iconify icon="eva:lock-fill" sx={{ color: 'white', width: 20 }} />
+                              </Box>
+                            )}
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                              <Avatar
+                                sx={{
+                                  bgcolor: submission?.photos?.length > 0 ? '#5abc6f' : '#203ff5',
+                                  mb: 2,
+                                }}
+                              >
+                                <Iconify icon="solar:gallery-wide-bold" />
+                              </Avatar>
+
+                              <ListItemText
+                                sx={{
+                                  flex: 1,
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                }}
+                                primary="Photos"
+                                secondary={
+                                  getButtonSecondaryText(submission?.status, submission?.photos?.length > 0, 'Upload photos from your campaign shoot')
+                                }
+                                primaryTypographyProps={{
+                                  variant: 'body1',
+                                  fontWeight: 'bold',
+                                  gutterBottom: true,
+                                  sx: { mb: 1 },
+                                }}
+                                secondaryTypographyProps={{
+                                  color: 'text.secondary',
+                                  lineHeight: 1.2,
+                                  sx: {
+                                    minHeight: '2.4em',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                  },
+                                }}
+                              />
+                            </Box>
+                          </Box>
+                        )}
+                      </Stack>
                     </Box>
                   </Stack>
                 )}
@@ -696,7 +1098,7 @@ const CampaignFirstDraft = ({
                     variant="h5"
                     sx={{
                       fontFamily: 'Instrument Serif, serif',
-                      fontSize: { xs: '2rem', sm: '2.4rem' },
+                      fontSize: { xs: '1.5rem', sm: '2rem', md: '2.4rem' },
                       fontWeight: 550,
                       m: 0,
                     }}
@@ -729,7 +1131,7 @@ const CampaignFirstDraft = ({
 
               <DialogContent
                 sx={{
-                  p: 2.5,
+                  p: { xs: 1.5, sm: 2.5 },
                   flexGrow: 1,
                   height: 0,
                   overflowY: 'auto',
@@ -742,254 +1144,426 @@ const CampaignFirstDraft = ({
                   },
                 }}
               >
-                <Stack spacing={3} sx={{ maxWidth: '100%' }}>
-                  {/* Draft Videos Section */}
-                  <Accordion
-                    defaultExpanded
-                    sx={{
-                      boxShadow: 'none',
-                      '&:before': { display: 'none' },
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: '8px !important',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <AccordionSummary
-                      expandIcon={<ExpandMoreIcon />}
+                {/* Mobile Dropdown */}
+                <Box sx={{ display: { xs: 'block', sm: 'none' }, mb: 2 }}>
+                  <FormControl fullWidth variant="outlined" size="small" sx={{mt: 1}}>
+                    <InputLabel id="mobile-tab-select-label">Select Content</InputLabel>
+                    <Select
+                      labelId="mobile-tab-select-label"
+                      id="mobile-tab-select"
+                      value={tabIndex}
+                      onChange={(e) => setTabIndex(e.target.value)}
+                      label="Select Content"
                       sx={{
-                        backgroundColor: (theme) => theme.palette.background.neutral,
-                        '&.Mui-expanded': {
-                          minHeight: 48,
+                        '& .MuiSelect-select': {
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
                         },
                       }}
                     >
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Iconify icon="solar:video-library-bold" width={24} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                          Draft Videos
-                        </Typography>
-                      </Stack>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
-                      <Stack spacing={2} sx={{ maxWidth: 'md', mx: 'auto' }}>
-                        {campaign?.campaignCredits && deliverables?.videos?.length > 0 ? (
-                          deliverables.videos.map((videoItem, index) => (
-                            <Box
-                              key={videoItem.id || index}
-                              sx={{
-                                position: 'relative',
-                                width: '100%',
-                                maxWidth: '640px',
-                                height: 0,
-                                paddingTop: 'min(360px, 56.25%)',
-                                bgcolor: 'black',
-                                borderRadius: 1,
-                                mx: 'auto',
-                              }}
-                            >
-                              <Box
-                                component="video"
-                                autoPlay={false}
-                                controls
-                                sx={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'contain',
-                                }}
-                              >
-                                <source src={videoItem.url} />
-                              </Box>
-                            </Box>
-                          ))
-                        ) : (
-                          <Box
-                            sx={{
-                              position: 'relative',
-                              width: '100%',
-                              maxWidth: '640px',
-                              height: 0,
-                              paddingTop: 'min(360px, 56.25%)',
-                              bgcolor: 'black',
-                              borderRadius: 1,
-                              mx: 'auto',
-                            }}
-                          >
-                            <Box
-                              component="video"
-                              autoPlay={false}
-                              controls
-                              sx={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'contain',
-                              }}
-                            >
-                              <source src={submission?.content} />
-                            </Box>
+                      {getTabOptions().map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Iconify icon={option.icon} width={20} />
+                            <Typography>{option.label}</Typography>
                           </Box>
-                        )}
-                      </Stack>
-                    </AccordionDetails>
-                  </Accordion>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
 
-                  {/* Raw Footages Section */}
-                  {submission?.rawFootages?.length > 0 && (
-                    <Accordion
+                {/* Desktop Layout */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  height: { xs: 'auto', sm: '100%' },
+                  flexDirection: { xs: 'column', sm: 'row' } 
+                }}>
+                  {/* Left Side Tabs */}
+                  <Box
+                    sx={{
+                      display: { xs: 'none', sm: 'block' },
+                      width: '200px',
+                      minWidth: '200px',
+                      borderRight: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Tabs
+                      orientation="vertical"
+                      value={tabIndex}
+                      onChange={(_, newValue) => setTabIndex(newValue)}
                       sx={{
-                        boxShadow: 'none',
-                        '&:before': { display: 'none' },
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: '8px !important',
-                        overflow: 'hidden',
+                        '& .MuiTabs-indicator': {
+                          left: 0,
+                          right: 'auto',
+                          width: 3,
+                          borderRadius: 0,
+                          backgroundColor: '#1340FF',
+                        },
+                        '& .MuiTab-root': {
+                          alignItems: 'center',
+                          justifyContent: 'flex-start',
+                          textAlign: 'left',
+                          py: 2,
+                          px: 2,
+                          minHeight: 'auto',
+                          fontWeight: 600,
+                          transition: 'all 0.2s ease-in-out',
+                          borderTopLeftRadius: 1,
+                          borderBottomLeftRadius: 1,
+                          width: '100%',
+                          '&.Mui-selected': {
+                            backgroundColor: alpha('#1340FF', 0.08),
+                            color: '#1340FF',
+                          },
+                        },
                       }}
                     >
-                      <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.neutral,
-                          '&.Mui-expanded': {
-                            minHeight: 48,
-                          },
+                      <Tab
+                        label="Draft Videos"
+                        icon={<Iconify icon="solar:video-library-bold" width={20} />}
+                        iconPosition="start"
+                        sx={{ 
+                          opacity: 1,
+                          color: tabIndex === 0 ? '#1340FF' : 'text.secondary',
+                          '&.Mui-selected': { color: '#1340FF' },
                         }}
-                      >
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Iconify icon="solar:camera-bold" width={24} />
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                            Raw Footages
-                          </Typography>
-                        </Stack>
-                      </AccordionSummary>
-                      <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
-                        <Stack spacing={2} sx={{ maxWidth: 'md', mx: 'auto' }}>
-                          {submission.rawFootages.map((footage, index) => (
-                            <Box
-                              key={footage.id || index}
-                              sx={{
-                                position: 'relative',
-                                width: '100%',
-                                maxWidth: '640px',
-                                height: 0,
-                                paddingTop: 'min(360px, 56.25%)',
-                                bgcolor: 'black',
-                                borderRadius: 1,
-                                mx: 'auto',
-                              }}
-                            >
-                              <Box
-                                component="video"
-                                autoPlay={false}
-                                controls
-                                sx={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'contain',
-                                }}
-                              >
-                                <source src={footage.url} />
-                              </Box>
-                            </Box>
-                          ))}
-                        </Stack>
-                      </AccordionDetails>
-                    </Accordion>
-                  )}
+                      />
+                      
+                      {submission?.rawFootages?.length > 0 && (
+                        <Tab
+                          label="Raw Footage"
+                          icon={<Iconify icon="solar:camera-bold" width={20} />}
+                          iconPosition="start"
+                          sx={{ 
+                            opacity: 1,
+                            color: tabIndex === 1 ? '#1340FF' : 'text.secondary',
+                            '&.Mui-selected': { color: '#1340FF' },
+                          }}
+                        />
+                      )}
+                      
+                      {submission?.photos?.length > 0 && (
+                        <Tab
+                          label="Photos"
+                          icon={<Iconify icon="solar:gallery-wide-bold" width={20} />}
+                          iconPosition="start"
+                          sx={{ 
+                            opacity: 1,
+                            color: tabIndex === (submission?.rawFootages?.length > 0 ? 2 : 1) ? '#1340FF' : 'text.secondary',
+                            '&.Mui-selected': { color: '#1340FF' },
+                          }}
+                        />
+                      )}
+                      
+                      {submission?.caption && (
+                        <Tab
+                          label="Caption"
+                          icon={<Iconify icon="solar:document-text-bold" width={20} />}
+                          iconPosition="start"
+                          sx={{ 
+                            opacity: 1,
+                            color: tabIndex === getTabIndex('caption') ? '#1340FF' : 'text.secondary',
+                            '&.Mui-selected': { color: '#1340FF' },
+                          }}
+                        />
+                      )}
+                    </Tabs>
+                  </Box>
 
-                  {/* Photos Section */}
-                  {submission?.photos?.length > 0 && (
-                    <Accordion
-                      sx={{
-                        boxShadow: 'none',
-                        '&:before': { display: 'none' },
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: '8px !important',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        sx={{
-                          backgroundColor: (theme) => theme.palette.background.neutral,
-                          '&.Mui-expanded': {
-                            minHeight: 48,
-                          },
-                        }}
-                      >
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Iconify icon="solar:gallery-wide-bold" width={24} />
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                            Photos
-                          </Typography>
-                        </Stack>
-                      </AccordionSummary>
-                      <AccordionDetails sx={{ p: 2, bgcolor: 'background.paper' }}>
-                        <Grid container spacing={2} sx={{ maxWidth: '100%' }}>
-                          {submission.photos.map((photo, index) => (
-                            <Grid item xs={12} sm={6} md={4} key={photo.id || index}>
+                  {/* Right Side Content */}
+                  <Box sx={{ 
+                    flexGrow: 1, 
+                    pl: { xs: 0, sm: 3 }, 
+                    overflow: 'auto',
+                    width: '100%'
+                  }}>
+                    {/* Draft Videos Content */}
+                    {tabIndex === 0 && (
+                      <Box sx={{ width: '100%' }}>
+                        {/* Large preview area */}
+                        <Box sx={{ mb: 3 }}>
+                          {(campaign?.campaignCredits && deliverables?.videos?.length > 0
+                            ? deliverables.videos
+                            : [{ url: submission?.content }]
+                          ).map((videoItem, index) => (
+                            index === selectedVideoIndex && (
                               <Box
+                                key={`large-${videoItem.id || index}`}
                                 sx={{
                                   position: 'relative',
-                                  paddingTop: '56.25%',
+                                  width: '100%',
+                                  height: 0,
+                                  paddingTop: { xs: '75%', sm: 'min(450px, 56.25%)' },
+                                  bgcolor: 'black',
                                   borderRadius: 2,
+                                  mb: 2,
                                   overflow: 'hidden',
-                                  boxShadow: 2,
-                                  cursor: 'pointer',
                                 }}
-                                onClick={() => handleImageClick(index)}
                               >
                                 <Box
-                                  component="img"
-                                  src={photo.url}
-                                  alt={`Photo ${index + 1}`}
+                                  component="video"
+                                  autoPlay={false}
+                                  controls
                                   sx={{
                                     position: 'absolute',
                                     top: 0,
                                     left: 0,
                                     width: '100%',
                                     height: '100%',
+                                    objectFit: 'contain',
+                                  }}
+                                >
+                                  <source src={videoItem.url} />
+                                </Box>
+                              </Box>
+                            )
+                          ))}
+                        </Box>
+
+                        {/* Thumbnails */}
+                        {(campaign?.campaignCredits && deliverables?.videos?.length > 0
+                          ? deliverables.videos
+                          : [{ url: submission?.content }]
+                        ).length > 1 && (
+                          <Box sx={{ 
+                            display: 'flex', 
+                            flexWrap: 'wrap', 
+                            gap: 1.5,
+                            justifyContent: { xs: 'center', sm: 'flex-start' }
+                          }}>
+                            {(campaign?.campaignCredits && deliverables?.videos?.length > 0
+                              ? deliverables.videos
+                              : [{ url: submission?.content }]
+                            ).map((videoItem, index) => (
+                              <Box
+                                key={`thumb-${videoItem.id || index}`}
+                                onClick={() => setSelectedVideoIndex(index)}
+                                sx={{
+                                  position: 'relative',
+                                  width: { xs: '100px', sm: '120px' },
+                                  height: { xs: '56px', sm: '68px' },
+                                  bgcolor: 'black',
+                                  borderRadius: 1,
+                                  overflow: 'hidden',
+                                  cursor: 'pointer',
+                                  border: selectedVideoIndex === index ? '2px solid' : 'none',
+                                  borderColor: 'primary.main',
+                                }}
+                              >
+                                <Box
+                                  component="video"
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
                                     objectFit: 'cover',
+                                  }}
+                                >
+                                  <source src={videoItem.url} />
+                                </Box>
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    color: 'white',
+                                    opacity: 0.8,
+                                  }}
+                                >
+                                  <Iconify icon="material-symbols:play-circle" width={28} />
+                                </Box>
+                              </Box>
+                            ))}
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Raw Footage Content */}
+                    {tabIndex === 1 && submission?.rawFootages?.length > 0 && (
+                      <Box sx={{ width: '100%' }}>
+                        {/* Large preview area */}
+                        <Box sx={{ mb: 3 }}>
+                          {submission.rawFootages.map((footage, index) => (
+                            index === selectedRawFootageIndex && (
+                              <Box
+                                key={`large-footage-${footage.id || index}`}
+                                sx={{
+                                  position: 'relative',
+                                  width: '100%',
+                                  height: 0,
+                                  paddingTop: { xs: '75%', sm: 'min(450px, 56.25%)' },
+                                  bgcolor: 'black',
+                                  borderRadius: 2,
+                                  mb: 2,
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <Box
+                                  component="video"
+                                  autoPlay={false}
+                                  controls
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain',
+                                  }}
+                                >
+                                  <source src={footage.url} />
+                                </Box>
+                              </Box>
+                            )
+                          ))}
+                        </Box>
+
+                        {/* Thumbnails */}
+                        {submission.rawFootages.length > 1 && (
+                          <Box sx={{ 
+                            display: 'flex', 
+                            flexWrap: 'wrap', 
+                            gap: 1.5,
+                            justifyContent: { xs: 'center', sm: 'flex-start' }
+                          }}>
+                            {submission.rawFootages.map((footage, index) => (
+                              <Box
+                                key={`thumb-footage-${footage.id || index}`}
+                                onClick={() => setSelectedRawFootageIndex(index)}
+                                sx={{
+                                  position: 'relative',
+                                  width: { xs: '100px', sm: '120px' },
+                                  height: { xs: '56px', sm: '68px' },
+                                  bgcolor: 'black',
+                                  borderRadius: 1,
+                                  overflow: 'hidden',
+                                  cursor: 'pointer',
+                                  border: selectedRawFootageIndex === index ? '2px solid' : 'none',
+                                  borderColor: 'primary.main',
+                                }}
+                              >
+                                <Box
+                                  component="video"
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                  }}
+                                >
+                                  <source src={footage.url} />
+                                </Box>
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    color: 'white',
+                                    opacity: 0.8,
+                                  }}
+                                >
+                                  <Iconify icon="material-symbols:play-circle" width={28} />
+                                </Box>
+                              </Box>
+                            ))}
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Photos Content */}
+                    {tabIndex === (submission?.rawFootages?.length > 0 ? 2 : 1) && submission?.photos?.length > 0 && (
+                      <Box sx={{ width: '100%' }}>
+                        {/* Large preview area */}
+                        <Box sx={{ mb: 3 }}>
+                          {submission.photos.map((photo, index) => (
+                            index === selectedPhotoIndex && (
+                              <Box
+                                key={`large-photo-${photo.id || index}`}
+                                sx={{
+                                  width: '100%',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  mb: 2,
+                                }}
+                              >
+                                <Box
+                                  component="img"
+                                  src={photo.url}
+                                  alt={`Photo ${index + 1}`}
+                                  sx={{
+                                    maxWidth: '100%',
+                                    maxHeight: { xs: '300px', sm: '450px' },
+                                    borderRadius: 2,
+                                    objectFit: 'contain',
                                   }}
                                 />
                               </Box>
-                            </Grid>
+                            )
                           ))}
-                        </Grid>
-                      </AccordionDetails>
-                    </Accordion>
-                  )}
+                        </Box>
 
-                  {/* Caption Section */}
-                  {submission?.caption && (
-                    <Box
-                      sx={{
-                        p: 2,
-                        borderRadius: 1,
-                        bgcolor: 'background.neutral',
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'text.secondary', display: 'block', mb: 0.5, fontWeight: 600 }}
+                        {/* Thumbnails */}
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexWrap: 'wrap', 
+                          gap: 1.5,
+                          justifyContent: { xs: 'center', sm: 'flex-start' }
+                        }}>
+                          {submission.photos.map((photo, index) => (
+                            <Box
+                              key={`thumb-photo-${photo.id || index}`}
+                              onClick={() => setSelectedPhotoIndex(index)}
+                              sx={{
+                                width: { xs: '80px', sm: '100px' },
+                                height: { xs: '80px', sm: '100px' },
+                                borderRadius: 1.5,
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                border: selectedPhotoIndex === index ? '2px solid' : 'none',
+                                borderColor: 'primary.main',
+                              }}
+                            >
+                              <Box
+                                component="img"
+                                src={photo.url}
+                                alt={`Thumbnail ${index + 1}`}
+                                sx={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                }}
+                              />
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Caption Content */}
+                    {tabIndex === getTabIndex('caption') && submission?.caption && (
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          bgcolor: 'background.neutral',
+                          width: '100%',
+                        }}
                       >
-                        Caption
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.6 }}>
-                        {submission?.caption}
-                      </Typography>
-                    </Box>
-                  )}
-                </Stack>
+                        <Typography
+                          variant="body1"
+                          sx={{ color: 'text.primary', lineHeight: 1.8 }}
+                        >
+                          {submission?.caption}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
               </DialogContent>
             </Dialog>
 
