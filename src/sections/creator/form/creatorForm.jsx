@@ -172,8 +172,6 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
     formState: { isValid, errors },
   } = methods;
 
-  console.log(errors);
-
   const nationality = watch('Nationality');
   const languages = watch('languages');
   const pronounce = watch('pronounce');

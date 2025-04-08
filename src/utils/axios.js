@@ -108,6 +108,7 @@ export const endpoints = {
       tiktok: (id) => `/api/social/tiktok/${id}`,
       instagram: (id) => `/api/social/instagram/overview/${id}`,
     },
+    updatePreference: (id) => `/api/creator/updatePreference/${id}`,
   },
   users: {
     newAdmin: '/api/user/admins',

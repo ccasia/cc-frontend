@@ -9,7 +9,6 @@ import { LoadingScreen } from 'src/components/loading-screen';
 import { ChatView } from 'src/sections/chat/view';
 import { CalendarView } from 'src/sections/calendar/view';
 
-
 // ----------------------------------------------------------------------
 
 const IndexPage = lazy(() => import('src/pages/dashboard/one'));
@@ -25,7 +24,7 @@ const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
 
 // Analytics
-const AnalyticsView = lazy(() => import('src/sections/analytics/view/analytic-view'))
+const AnalyticsView = lazy(() => import('src/sections/analytics/view/analytic-view'));
 
 // Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
@@ -95,7 +94,9 @@ const InvoiceDetail = lazy(() => import('src/pages/dashboard/creator/invoice-det
 const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 
 // Mobile View
-const MobileModalView = lazy(() => import('src/sections/campaign/discover/creator/mobile-modal-view'));
+const MobileModalView = lazy(
+  () => import('src/sections/campaign/discover/creator/mobile-modal-view')
+);
 
 // ----------------------------------------------------------------------
 
@@ -126,14 +127,7 @@ export const dashboardRoutes = [
         children: [
           { element: <ProfilePage />, index: true },
           { path: 'profile', element: <ProfilePage /> },
-          { path: 'profile/general', element: <ProfilePage /> },
-          { path: 'profile/security', element: <ProfilePage /> },
-          { path: 'profile/api', element: <ProfilePage /> },
-          { path: 'profile/account', element: <ProfilePage /> },
-          { path: 'profile/socials', element: <ProfilePage /> },
-          { path: 'profile/payment', element: <ProfilePage /> },
-          { path: 'profile/billing', element: <ProfilePage /> },
-          { path: 'profile/notifications', element: <ProfilePage /> },
+          { path: 'profile/:section', element: <ProfilePage /> },
         ],
       },
       // For admin/superadmin
@@ -469,11 +463,11 @@ export const dashboardRoutes = [
       },
       {
         path: 'analytics',
-        element:(
+        element: (
           <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
             <AnalyticsView />
           </RoleBasedGuard>
-        )
+        ),
       },
       {
         path: 'chat',
