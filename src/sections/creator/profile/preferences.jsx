@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
+import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
@@ -8,14 +9,14 @@ import { Box, Chip, Stack, FormLabel } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
+import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
 import { langList } from 'src/contants/language';
 import { primaryFont } from 'src/theme/typography';
 import { interestsLists } from 'src/contants/interestLists';
 
 import FormProvider, { RHFAutocomplete } from 'src/components/hook-form';
-import axiosInstance, { endpoints } from 'src/utils/axios';
-import { enqueueSnackbar } from 'notistack';
 
 const schema = Yup.object({
   interests: Yup.array().min(3, 'Choose at least three option'),
