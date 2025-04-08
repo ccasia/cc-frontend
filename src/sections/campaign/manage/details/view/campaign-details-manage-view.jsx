@@ -136,6 +136,18 @@ const CampaignDetailManageView = ({ id }) => {
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+
+  const getPackage = (company, campaignId) => {
+    const subscriptions = company?.subscriptions;
+    if (!subscriptions) return null;
+
+    const subscription = subscriptions?.find(
+      (x) => x.status === 'ACTIVE' && x.id === campaign?.subscriptionId
+    );
+
+    return subscription;
+  };
+
   const handleChangeStatus = async (status) => {
     if (status === 'active' && dayjs(campaign?.campaignBrief?.endDate).isBefore(dayjs, 'date')) {
       enqueueSnackbar('You cannot publish a campaign that is already end.', {
@@ -286,6 +298,8 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
+  console.log(campaign?.brand);
+
   const renderBrand = (
     <>
       <Box component={Card} p={2}>
@@ -307,7 +321,7 @@ const CampaignDetailManageView = ({ id }) => {
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
           {campaign?.brand &&
             Object.keys(campaign?.brand)
-              .filter(
+              ?.filter(
                 (e) =>
                   ![
                     'id',
@@ -317,20 +331,22 @@ const CampaignDetailManageView = ({ id }) => {
                     'objectives',
                     'logo',
                     'service_name',
-                  ].includes(e)
+                  ]?.includes(e)
               )
-              .map(
+              ?.map(
                 (e, index) =>
                   campaign?.brand[e] && (
                     <ListItemText
                       key={index}
-                      primary={formatText(e)}
+                      primary={e === 'company' ? 'Parent Company' : formatText(e)}
                       secondary={
                         typeof campaign?.brand[e] === 'object' ? (
                           <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                            {campaign?.brand[e].map((val, index2) => (
-                              <Label key={index2}>{val}</Label>
-                            ))}
+                            {e === 'industries'
+                              ? campaign?.brand[e]?.map((val, index2) => (
+                                  <Label key={index2}>{val}</Label>
+                                ))
+                              : campaign?.brand[e]?.name}
                           </Stack>
                         ) : (
                           campaign?.brand[e]
@@ -364,12 +380,18 @@ const CampaignDetailManageView = ({ id }) => {
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2} mt={2}>
           {campaign?.company &&
             Object.keys(campaign?.company)
-              .filter((e) => !['id', 'createdAt', 'updatedAt', 'objectives', 'logo'].includes(e))
-              .map(
-                (e) =>
+              .filter((e) => !['id', 'createdAt', 'updatedAt', 'logo', 'pic'].includes(e))
+              .map((e) =>
+                Array.isArray(campaign?.company[e]) ? (
+                  <ListItemText
+                    primary="Package"
+                    secondary={getPackage(campaign?.company)?.subscriptionId ?? 'Not linked'}
+                  />
+                ) : (
                   campaign?.company[e] && (
                     <ListItemText primary={formatText(e)} secondary={campaign?.company[e]} />
                   )
+                )
               )}
         </Box>
       </Box>
@@ -463,7 +485,7 @@ const CampaignDetailManageView = ({ id }) => {
               <Stack spacing={1} direction="row" flexWrap="wrap">
                 {campaign?.campaignRequirement?.gender?.map((e, index) => (
                   <Label key={index} color="secondary">
-                    {formatText(e)}
+                    {e}
                   </Label>
                 )) || null}
               </Stack>
@@ -517,10 +539,6 @@ const CampaignDetailManageView = ({ id }) => {
               </Stack>
             }
           />
-          {/* <ListItemText
-            primary="User Persona"
-            secondary={formatText(campaign?.campaignRequirement?.user_persona)}
-          /> */}
           <ListItemText
             primary="User Persona"
             secondary={
@@ -557,6 +575,26 @@ const CampaignDetailManageView = ({ id }) => {
                     {formatText(e)}
                   </Label>
                 )) || null}
+              </Stack>
+            }
+          />
+          <ListItemText
+            primary="Deliverables"
+            secondary={
+              <Stack spacing={1} direction="row" flexWrap="wrap">
+                {[
+                  { label: 'UGC Videos', value: true },
+                  { label: 'Raw Footage', value: campaign?.rawFootage },
+                  { label: 'Photos', value: campaign?.photos },
+                  { label: 'Ads', value: campaign?.ads },
+                ].map(
+                  (deliverable) =>
+                    deliverable.value && (
+                      <Label key={deliverable.label} color="secondary">
+                        {deliverable.label}
+                      </Label>
+                    )
+                )}
               </Stack>
             }
           />
@@ -835,52 +873,6 @@ const CampaignDetailManageView = ({ id }) => {
     </>
   );
 
-  // const isCampaignHasSpreadSheet = useMemo(() => campaign?.spreadSheetURL, [campaign]);
-
-  // const copyDialogContainer = (
-  //   <Dialog
-  //     open={copyDialog.value}
-  //     maxWidth="md"
-  //     fullWidth
-  //     sx={{
-  //       '& .MuiDialog-paper': {
-  //         p: 2,
-  //       },
-  //     }}
-  //   >
-  //     <Box
-  //       sx={{
-  //         p: 1,
-  //         bgcolor: theme.palette.background.paper,
-  //         border: 1,
-  //         borderRadius: 1,
-  //         borderColor: '#EBEBEB',
-  //       }}
-  //     >
-  //       <Stack direction="row" alignItems="center">
-  //         <Typography sx={{ flexGrow: 1, color: 'text.secondary' }} variant="subtitle2">
-  //           {url || 'No url found.'}
-  //         </Typography>
-  //         {!copy.value ? (
-  //           <IconButton onClick={copyURL}>
-  //             <Iconify icon="solar:copy-line-duotone" />
-  //           </IconButton>
-  //         ) : (
-  //           <IconButton disabled>
-  //             <Iconify icon="charm:tick" color="success.main" />
-  //           </IconButton>
-  //         )}
-  //       </Stack>
-  //     </Box>
-
-  //     <DialogActions>
-  //       <Button onClick={copyDialog.onFalse} size="small" variant="outlined" sx={{ mx: 'auto' }}>
-  //         Done
-  //       </Button>
-  //     </DialogActions>
-  //   </Dialog>
-  // );
-
   return (
     <Container maxWidth="lg">
       <CustomBreadcrumbs
@@ -962,6 +954,7 @@ const CampaignDetailManageView = ({ id }) => {
             <Grid item xs={12} md={8}>
               <Stack spacing={2}>
                 {renderCampaignInformation}
+
                 {campaign?.brand ? renderBrand : renderCompany}
                 {campaign?.campaignBrief?.campaign_do &&
                   campaign?.campaignBrief?.campaign_dont &&

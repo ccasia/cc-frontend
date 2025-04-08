@@ -37,7 +37,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-const Agreement = ({ campaign, submission, creator }) => {
+const Agreement = ({ campaign, submission, creator, isForClient }) => {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const [numPages, setNumPages] = useState(null);
   const loading = useBoolean();
@@ -174,7 +174,7 @@ const Agreement = ({ campaign, submission, creator }) => {
         <Grid item xs={12}>
           {submission?.status === 'IN_PROGRESS' && <EmptyContent title="No submission" />}
           {(submission?.status === 'PENDING_REVIEW' || submission?.status === 'APPROVED') && (
-            <Box component={Paper} p={1.5}>
+            <Box component={!isForClient && Paper} p={1.5}>
               <>
                 <Stack direction="row" spacing={3} sx={{ mb: 3, mt: -2 }}>
                   <Stack spacing={0.5}>
@@ -333,7 +333,8 @@ const Agreement = ({ campaign, submission, creator }) => {
                           opacity: 0.9,
                         },
                         '&:disabled': {
-                          display: 'none',
+                          display: isDisabled ? 'none' : 'inline-flex',
+                          opacity: 0.7,
                         },
                         fontSize: '0.875rem',
                         minWidth: '80px',
@@ -363,4 +364,5 @@ Agreement.propTypes = {
   campaign: PropTypes.object,
   submission: PropTypes.object,
   creator: PropTypes.object,
+  isForClient: PropTypes.bool,
 };

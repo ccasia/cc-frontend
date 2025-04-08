@@ -11,19 +11,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import CampaignItem from './campaign-item';
 
 const ActiveCampaignView = ({ searchQuery, campaigns }) => {
-  // const { campaigns: data, isLoading } = useGetCampaigns('creator');
-  // const { user } = useAuthContext();
   const { socket } = useSocketContext();
-
-  // const filteredCampaigns = useMemo(
-  //   () =>
-  //     campaigns?.filter(
-  //       (campaign) =>
-  //         campaign?.shortlisted?.some((item) => item.userId === user.id && !item.isCampaignDone) &&
-  //         campaign.status !== 'COMPLETED'
-  //     ),
-  //   [campaigns, user]
-  // );
 
   const filteredData = useMemo(
     () =>

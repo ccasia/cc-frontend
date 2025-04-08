@@ -2,13 +2,11 @@ import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
-import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import Iconify from 'src/components/iconify';
-import CustomPopover, { usePopover } from 'src/components/custom-popover';
+import { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
@@ -86,7 +84,7 @@ export default function BrandsToolBar({
             fullWidth
             value={filters.name}
             onChange={handleFilterName}
-            placeholder="Search..."
+            placeholder="Search by client name"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -96,13 +94,13 @@ export default function BrandsToolBar({
             }}
           />
 
-          <IconButton onClick={popover.onOpen}>
+          {/* <IconButton onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
+          </IconButton> */}
         </Stack>
       </Stack>
 
-      <CustomPopover
+      {/* <CustomPopover
         open={popover.open}
         onClose={popover.onClose}
         arrow="right-top"
@@ -134,7 +132,7 @@ export default function BrandsToolBar({
           <Iconify icon="solar:export-bold" />
           Export
         </MenuItem>
-      </CustomPopover>
+      </CustomPopover> */}
     </>
   );
 }

@@ -52,7 +52,7 @@ const TABLE_HEAD = [
 
 const InvoiceLists = ({ invoices }) => {
   const [filters, setFilters] = useState(defaultFilters);
-  // const [tableData, setTableData] = useState(invoices);
+
   const editDialog = useBoolean();
   const [selectedId, setSelectedId] = useState('');
   const [selectedData, setSelectedData] = useState();

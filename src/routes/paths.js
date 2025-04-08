@@ -25,6 +25,7 @@ export const paths = {
     root: ROOTS.DASHBOARD,
     admins: `${ROOTS.DASHBOARD}/admins`, // /dashboard/admins
     kanban: `${ROOTS.DASHBOARD}/kanban`,
+    analytics: `${ROOTS.DASHBOARD}/analytics`,
     company: {
       root: `${ROOTS.DASHBOARD}/company`,
       manage: `${ROOTS.DASHBOARD}/company/manage`,
@@ -53,6 +54,7 @@ export const paths = {
       creator: {
         manage: `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage`,
         detail: (id) => `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/manage/detail/${id}`,
+        discover: (id) => `${ROOTS.DASHBOARD}/campaign/VUquQR/HJUboKDBwJi71KQ==/discover/${id}`,
       },
       manageCreator: (campaignId, creatorId, params) => {
         const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
@@ -66,6 +68,19 @@ export const paths = {
     user: {
       root: `${ROOTS.DASHBOARD}/user`,
       profile: `${ROOTS.DASHBOARD}/user/profile`,
+      profileTabs: {
+        // Admin profile tabs
+        general: `${ROOTS.DASHBOARD}/user/profile/general`,
+        security: `${ROOTS.DASHBOARD}/user/profile/security`,
+        api: `${ROOTS.DASHBOARD}/user/profile/api`,
+        // Creator profile tabs
+        account: `${ROOTS.DASHBOARD}/user/profile/account`,
+        socials: `${ROOTS.DASHBOARD}/user/profile/socials`,
+        payment: `${ROOTS.DASHBOARD}/user/profile/payment`,
+        billing: `${ROOTS.DASHBOARD}/user/profile/billing`,
+        notifications: `${ROOTS.DASHBOARD}/user/profile/notifications`,
+        preference: `${ROOTS.DASHBOARD}/user/profile/preference`,
+      },
       myTasks: `${ROOTS.DASHBOARD}/tasks`,
     },
     creator: {
@@ -100,6 +115,9 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/roles`,
       manage: (id) => `${ROOTS.DASHBOARD}/roles/manage/${id}`,
     },
+    packages: {
+      root: `${ROOTS.DASHBOARD}/packages`,
+    },
     template: {
       root: `${ROOTS.DASHBOARD}/template`,
     },
@@ -110,6 +128,10 @@ export const paths = {
   public: {
     creator: {
       mediaKit: (id) => `${ROOTS.PUBLIC}/media-kits/creator/${id}`,
+    },
+    manageCreator: (campaignId, creatorId, params) => {
+      const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+      return `${ROOTS.PUBLIC}/campaign/discover/detail/${campaignId}/creator/${creatorId}${queryString}`;
     },
   },
 };

@@ -35,7 +35,7 @@ const OtherAttachments = () => {
       <RHFUpload
         name="otherAttachments"
         multiple
-        type="otherAttachment"
+        type="doc"
         onDrop={handleDropMultiFile}
         onRemove={(inputFile) =>
           setValue(

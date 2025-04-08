@@ -34,8 +34,10 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
 
+import PackageCreateDialog from 'src/sections/packages/package-dialog';
+import CreateCompany from 'src/sections/brand/create/brandForms/FirstForms/create-company';
+
 import CreateBrand from './brandDialog';
-import CreateCompany from './companyDialog';
 import SelectBrand from './steps/select-brand';
 import CampaignType from './steps/campaign-type';
 import SelectTimeline from './steps/select-timeline';
@@ -47,15 +49,16 @@ import CampaignAdminManager from './steps/admin-manager';
 import OtherAttachments from './steps/other-attachments';
 import TimelineTypeModal from './steps/timeline-type-modal';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
+// new URL(
+//   `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`,
+//   import.meta.url
+// ).toString();
 
 const steps = [
   { title: 'Select Client or Agency', logo: '👾', color: '#D8FF01' },
   { title: 'General Campaign Information', logo: '💬', color: '#8A5AFE' },
-  { title: 'Target Audience', logo: '👥', color: '#FFF0E5' },
+  { title: 'Creator Persona', logo: '👥', color: '#FFF0E5' },
   { title: 'Upload campaign photos', logo: '📸', color: '#FF3500' },
   { title: 'Campaign Type', logo: '⎏', color: '#D8FF01' },
   { title: 'Campaign Timeline', logo: '🗓️', color: '#D8FF01' },
@@ -66,12 +69,13 @@ const steps = [
 
 const PDFEditor = lazy(() => import('./pdf-editor'));
 
-function CreateCampaignForm({ onClose }) {
+function CreateCampaignForm({ onClose, mutate }) {
   const { user } = useAuthContext();
   const openCompany = useBoolean();
   const openBrand = useBoolean();
   const modal = useBoolean();
   const confirmation = useBoolean();
+  const openPackage = useBoolean();
 
   const [status, setStatus] = useState('');
   const [activeStep, setActiveStep] = useState(0);
@@ -109,7 +113,7 @@ function CreateCampaignForm({ onClose }) {
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
-    productName: Yup.string().required('Product or Service name is required.'),
+    // productName: Yup.string().required('Product or Service name is required.'),
     audienceAge: Yup.array().min(1, 'At least one option').required('Audience age is required'),
     audienceGender: Yup.array()
       .min(1, 'At least one option')
@@ -124,7 +128,7 @@ function CreateCampaignForm({ onClose }) {
     audienceCreatorPersona: Yup.array()
       .min(1, 'At least one option')
       .required('Audience creator persona is required'),
-    audienceUserPersona: Yup.string().required('Audience influencer persona is required'),
+    audienceUserPersona: Yup.string(),
     campaignDo: Yup.array()
       .min(1, 'At least one option')
       .of(
@@ -145,18 +149,18 @@ function CreateCampaignForm({ onClose }) {
     adminManager: Yup.array()
       .min(1, 'At least One Admin is required')
       .required('Admin Manager is required'),
+    campaignCredits: Yup.number()
+      .min(1, 'Minimum need to be 1')
+      .required('Campaign credits is required'),
   });
 
   const campaignInformationSchema = Yup.object().shape({
-    // campaignIndustries: Yup.array()
-    //   .min(1, 'At least one industry is required')
-    //   .required('Campaign Industry is required.'),
     campaignIndustries: Yup.string().required('Campaign industry is required.'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
     campaignTitle: Yup.string().required('Campaign title is required'),
     campaignObjectives: Yup.string().required('Campaign objectives is required'),
     brandTone: Yup.string().required('Brand tone is required'),
-    productName: Yup.string().required('Product or Service name is required.'),
+    productName: Yup.string(),
   });
 
   const campaignRequirementSchema = Yup.object().shape({
@@ -174,7 +178,9 @@ function CreateCampaignForm({ onClose }) {
     audienceCreatorPersona: Yup.array()
       .min(1, 'At least one option')
       .required('Audience creator persona is required'),
-    audienceUserPersona: Yup.string().required('Audience influencer persona is required'),
+    audienceUserPersona: Yup.string(),
+    socialMediaPlatform: Yup.array().min(1, 'At least one option'),
+    videoAngle: Yup.array().min(1, 'At least one option'),
     campaignDo: Yup.array()
       .min(1, 'At least one option')
       .of(
@@ -209,14 +215,16 @@ function CreateCampaignForm({ onClose }) {
 
   const clientSchema = Yup.object().shape({
     client: Yup.object().required('Client is required.'),
-    hasBrand: Yup.bool(),
     campaignBrand: Yup.object()
       .nullable()
-      .when('hasBrand', {
-        is: true,
+      .when('client', {
+        is: (val) => val?.type === 'agency',
         then: (s) => s.required('Brand is required.'),
         otherwise: (s) => s,
       }),
+    campaignCredits: Yup.number()
+      .min(1, 'Minimum need to be 1')
+      .required('Campaign credits is required'),
   });
 
   const agreementSchema = Yup.object().shape({
@@ -225,6 +233,13 @@ function CreateCampaignForm({ onClose }) {
 
   const campaignTypeSchema = Yup.object().shape({
     campaignType: Yup.string().required('Campaign type is required.'),
+    deliverables: Yup.array()
+      .min(1, 'At least one deliverable is required')
+      // .test('has-ugc-videos', 'UGC Videos is required', (value) => value?.includes('UGC_VIDEOS'))
+      .required('Deliverables are required'),
+    rawFootage: Yup.boolean(),
+    photos: Yup.boolean(),
+    ads: Yup.boolean(),
   });
 
   const getSchemaForStep = (step) => {
@@ -282,29 +297,23 @@ function CreateCampaignForm({ onClose }) {
     campaignImages: [],
     adminManager: [],
     agreementFrom: null,
-    timeline: [
-      // {
-      //   timeline_type: {},
-      //   id: '',
-      //   duration: undefined,
-      //   for: 'creator',
-      //   startDate: '',
-      //   endDate: '',
-      //   isSubmissionNeeded: false,
-      // },
-    ],
+    timeline: [],
     campaignTasksAdmin: [],
     campaignTasksCreator: [{ id: '', name: '', dependency: '', dueDate: null, status: '' }],
     otherAttachments: [],
     referencesLinks: [],
     campaignType: '',
+    deliverables: ['UGC_VIDEOS'],
+    rawFootage: false,
+    photos: false,
+    campaignCredits: null,
   };
 
   const methods = useForm({
     resolver: yupResolver(getSchemaForStep(activeStep)),
     defaultValues,
-    reValidateMode: 'onChange',
     mode: 'onChange',
+    // reValidateMode: 'onChange',
   });
 
   const {
@@ -315,7 +324,7 @@ function CreateCampaignForm({ onClose }) {
     setValue,
     watch,
     trigger,
-    formState: { errors, isValid },
+    formState: { isValid, errors },
   } = methods;
 
   const values = watch();
@@ -418,11 +427,21 @@ function CreateCampaignForm({ onClose }) {
 
   const onSubmit = handleSubmit(async (data, stage) => {
     const formData = new FormData();
-
+    // console.log('form data', formData);
     const adjustedData = {
       ...data,
       audienceLocation: data.audienceLocation.filter((item) => item !== 'Others'),
+      rawFootage: data.deliverables.includes('RAW_FOOTAGES'), // Convert based on deliverables
+      photos: data.deliverables.includes('PHOTOS'),
+      ads: data.deliverables.includes('ADS'),
+      crossPosting: data.deliverables.includes('CROSS_POSTING'),
     };
+
+    console.log('Adjusted Data before sending:', adjustedData); // Debug log
+
+    // Append data correctly to FormData
+    formData.append('rawFootage', adjustedData.rawFootage ? 'true' : 'false');
+    formData.append('photos', adjustedData.photos ? 'true' : 'false');
 
     delete adjustedData?.othersAudienceLocation;
 
@@ -452,14 +471,21 @@ function CreateCampaignForm({ onClose }) {
         variant: 'success',
       });
       reset();
+      mutate();
       setStatus('');
       confirmation.onFalse();
       setActiveStep(0);
       localStorage.setItem('activeStep', 0);
     } catch (error) {
-      enqueueSnackbar('Error creating campaign. Contact our admin', {
-        variant: 'error',
-      });
+      if (error) {
+        enqueueSnackbar(error, {
+          variant: 'error',
+        });
+      } else {
+        enqueueSnackbar('Error creating campaign. Contact our admin', {
+          variant: 'error',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -469,7 +495,13 @@ function CreateCampaignForm({ onClose }) {
     (step) => {
       switch (step) {
         case 0:
-          return <SelectBrand openCompany={openCompany} openBrand={openBrand} />;
+          return (
+            <SelectBrand
+              openCompany={openCompany}
+              openBrand={openBrand}
+              openPackage={openPackage}
+            />
+          );
         case 1:
           return <GeneralCampaign />;
         case 2:
@@ -490,22 +522,14 @@ function CreateCampaignForm({ onClose }) {
           return <SelectBrand />;
       }
     },
-    [pdfModal, openCompany, openBrand]
+    [pdfModal, openCompany, openBrand, openPackage]
   );
 
   const startDate = getValues('campaignStartDate');
   const campaignStartDate = watch('campaignStartDate');
 
   return (
-    <Box
-    // sx={{
-    //   boxShadow: (theme) => theme.customShadows.z20,
-    //   borderRadius: '20px',
-    //   mt: 3,
-    //   bgcolor: 'background.paper',
-    //   p: { xs: 1, md: 3 },
-    // }}
-    >
+    <Box>
       <FormProvider methods={methods} onSubmit={onSubmit}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <IconButton
@@ -616,12 +640,9 @@ function CreateCampaignForm({ onClose }) {
                 variant="contained"
                 sx={{
                   boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                  // bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'whitesmoke' : 'black'),
-                  // '#3A3A3C',
-                  // color: (theme) => (theme.palette.mode === 'dark' ? 'black' : 'whitesmoke'),
                   py: 1,
                 }}
-                disabled={!isValid}
+                disabled={!isValid || errors?.campaignCredit}
                 onClick={handleNext}
               >
                 Next
@@ -630,7 +651,7 @@ function CreateCampaignForm({ onClose }) {
           </Stack>
         </Stack>
 
-        <Box sx={{ height: '85vh', overflow: 'auto', mt: 1 }}>
+        <Box sx={{ height: '85vh', overflow: 'auto', mt: 1, scrollbarWidth: 'thin' }}>
           <Box
             sx={{
               display: 'flex',
@@ -665,118 +686,6 @@ function CreateCampaignForm({ onClose }) {
             </Box>
           </Box>
         </Box>
-
-        {/* <Stepper
-          sx={{
-            pt: 2,
-            m: 1,
-          }}
-          activeStep={activeStep}
-          orientation="vertical"
-        >
-          {steps.map((label, index) => {
-            const stepProps = {};
-            const labelProps = {};
-            if (isStepOptional(index)) {
-              labelProps.optional = <Typography variant="caption">Optional</Typography>;
-            }
-            return (
-              <Step key={label} {...stepProps}>
-                <StepLabel {...labelProps}>{label}</StepLabel>
-                <StepContent>
-                  {getStepContent(activeStep)}
-                  {activeStep !== steps.length - 1 && (
-                    <Stack mt={2} direction="row" gap={2}>
-                      <Button
-                        disabled={activeStep === 0}
-                        onClick={handleBack}
-                        variant="outlined"
-                        size="small"
-                      >
-                        Back
-                      </Button>
-
-                      <Button variant="contained" size="small" onClick={handleNext}>
-                        Next
-                      </Button>
-                    </Stack>
-                  )}
-                </StepContent>
-              </Step>
-            );
-          })}
-        </Stepper> */}
-
-        {/* <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Paper
-            sx={{
-              p: 0.5,
-              my: 0.5,
-              mx: 1,
-              width: '100%',
-            }}
-          >
-            <Box sx={{ my: 1 }}>
-              {activeStep === steps.length - 1 && (
-                <Box sx={{ display: 'flex', m: 2, direction: { xs: 'column', md: 'row' } }}>
-                  <Button
-                    color="inherit"
-                    disabled={activeStep === 0}
-                    onClick={handleBack}
-                    sx={{ mr: 1 }}
-                  >
-                    Back
-                  </Button>
-                  <Box sx={{ flexGrow: 1 }} />
-                  {activeStep === steps.length - 1 ? (
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                      <LoadingButton
-                        variant="outlined"
-                        onClick={() => onSubmit('DRAFT')}
-                        startIcon={<Iconify icon="hugeicons:license-draft" width={16} />}
-                        loading={isLoading}
-                      >
-                        Draft
-                      </LoadingButton>
-                      {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
-                        <LoadingButton
-                          variant="contained"
-                          color="primary"
-                          onClick={() => onSubmit('ACTIVE')}
-                          startIcon={<Iconify icon="material-symbols:publish" width={16} />}
-                          loading={isLoading}
-                        >
-                          Publish now
-                        </LoadingButton>
-                      ) : (
-                        <LoadingButton
-                          variant="contained"
-                          color="primary"
-                          onClick={() => onSubmit('SCHEDULED')}
-                          startIcon={<Iconify icon="material-symbols:publish" width={16} />}
-                          loading={isLoading}
-                        >
-                          Schedule on {dayjs(startDate).format('ddd LL')}
-                        </LoadingButton>
-                      )}
-                    </Stack>
-                  ) : (
-                    <Button variant="contained" onClick={handleNext}>
-                      Next
-                    </Button>
-                  )}
-                </Box>
-              )}
-            </Box>
-          </Paper>
-        </Box> */}
 
         <Dialog
           open={confirmation.value}
@@ -871,15 +780,29 @@ function CreateCampaignForm({ onClose }) {
       />
 
       <CreateCompany
-        open={openCompany.value}
-        onClose={() => {
-          if (getValues('client')?.inputValue) {
-            setValue('client', null);
-          }
-          openCompany.onFalse();
-        }}
-        companyName={getValues('client')?.inputValue}
-        setCompany={(e) => setValue('client', e)}
+        setOpenCreate={() => openCompany.onFalse()}
+        openCreate={openCompany.value}
+        set={setValue}
+        isForCampaign
+      />
+
+      {/* // <CreateCompany
+      //   open={openCompany.value}
+      //   onClose={() => {
+      //     if (getValues('client')?.inputValue) {
+      //       setValue('client', null);
+      //     }
+      //     openCompany.onFalse();
+      //   }}
+      //   companyName={getValues('client')?.inputValue}
+      //   setCompany={(e) => setValue('client', e)}
+      // /> */}
+
+      <PackageCreateDialog
+        open={openPackage.value}
+        onClose={openPackage.onFalse}
+        setValue={setValue}
+        clientId={getValues('client')?.id}
       />
 
       <TimelineTypeModal open={modal.value} onClose={modal.onFalse} />
@@ -897,4 +820,5 @@ export default CreateCampaignForm;
 
 CreateCampaignForm.propTypes = {
   onClose: PropTypes.func,
+  mutate: PropTypes.func,
 };

@@ -8,7 +8,7 @@ export default function ModernForgetPasswordPage() {
   return (
     <>
       <Helmet>
-        <title> Auth Classic: Forget Password</title>
+        <title>Password Reset</title>
       </Helmet>
 
       <ForgetPassword />

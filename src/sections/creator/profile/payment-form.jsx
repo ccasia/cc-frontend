@@ -6,9 +6,12 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Paper, TextField, Typography, createFilterOptions } from '@mui/material';
+import { Box, Stack, TextField, Typography, createFilterOptions } from '@mui/material';
+
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import { banks } from 'src/contants/bank';
+import { newBanks } from 'src/contants/banksv2';
 import { updatePaymentForm } from 'src/api/paymentForm';
 
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -16,6 +19,7 @@ import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 const schema = yup.object().shape({
   bankName: yup.string().required('Bank name is required'),
+  countryOfBank: yup.string().required('Country of bank is required'),
   bankNumber: yup
     .string()
     .min(0, 'Bank account number cannot be negative')
@@ -28,6 +32,7 @@ const filter = createFilterOptions();
 
 const PaymentFormProfile = ({ user }) => {
   const paymentForm = user?.paymentForm;
+  const mdDown = useResponsive('down', 'lg');
 
   const methods = useForm({
     resolver: yupResolver(schema),
@@ -36,6 +41,7 @@ const PaymentFormProfile = ({ user }) => {
       bankNumber: paymentForm?.bankAccountNumber || '',
       bankAccName: paymentForm?.bankAccountName || '',
       icPassportNumber: paymentForm?.icNumber || '',
+      countryOfBank: paymentForm?.countryOfBank || '',
     },
     mode: 'onChange',
     reValidateMode: 'onChange',
@@ -49,6 +55,7 @@ const PaymentFormProfile = ({ user }) => {
   } = methods;
 
   const bankName = watch('bankName');
+  const countryOfBank = watch('countryOfBank');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -73,90 +80,274 @@ const PaymentFormProfile = ({ user }) => {
   }, [bankName, paymentForm, setValue]);
 
   return (
-    <Box component={Paper} p={2}>
-      <Typography variant="h6" mb={2}>
-        Payment Form
-      </Typography>
-      <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Box
-          display="grid"
-          gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
-          gap={2}
-        >
-          {/* <RHFAutocomplete
-            label="Choose a bank"
-            name="bankName"
-            options={banks.map((bank) => bank.bank)}
-            getOptionLabel={(option) => option}
-          /> */}
+    <FormProvider methods={methods} onSubmit={onSubmit}>
+      <Box
+        sx={{
+          // maxWidth: { xs: '100%', sm: 500 },
+          bgcolor: '#F4F4F4',
+          p: 2,
+          borderRadius: 2,
+          display: 'grid',
+          gridTemplateColumns: { md: 'repeat(2,1fr)' },
+          gap: 1,
+        }}
+        width={mdDown ? 1 : 752}
+      >
+        <Box>
+          <Typography
+            variant="body2"
+            color="#636366"
+            fontWeight={500}
+            sx={{ fontSize: '13px', mb: 1 }}
+          >
+            Country of Bank{' '}
+            <Box component="span" sx={{ color: 'error.main' }}>
+              *
+            </Box>
+          </Typography>
           <RHFAutocomplete
             selectOnFocus
             clearOnBlur
-            label="Bank Account Name"
-            name="bankName"
-            options={banks.map((item) => item.bank)}
+            name="countryOfBank"
+            placeholder="Country of bank"
+            options={newBanks.map((item) => item.country)}
             getOptionLabel={(option) => option}
             filterOptions={(options, params) => {
               const { inputValue } = params;
               const filtered = filter(options, params);
-
-              // Suggest the creation of a new value
               const isExisting = options.some(
                 (option) => option.toLowerCase() === inputValue.toLowerCase()
               );
-
               if (inputValue !== '' && !isExisting) {
                 filtered.push(`Add ${inputValue}`);
               }
-
               return filtered;
             }}
             sx={{
+              width: '100%',
               '& .MuiInputBase-root': {
-                background: '#FFFFFF',
-                border: '1px solid #EBEBEB',
-                borderRadius: '8px',
+                bgcolor: 'white',
+                borderRadius: 1,
+                height: { xs: 40, sm: 48 },
               },
-              '& .MuiOutlinedInput-root .MuiAutocomplete-input': {
-                padding: '5px 4px 5px 4px',
+              '& .MuiInputLabel-root': {
+                display: 'none',
               },
-              '& .MuiLoadingButton-root.Mui-disabled': {
-                backgroundColor: '#B0BEC5',
-                color: '#FFFFFF',
+              '& .MuiInputBase-input::placeholder': {
+                color: '#B0B0B0',
+                fontSize: { xs: '14px', sm: '16px' },
                 opacity: 1,
-                cursor: 'not-allowed',
               },
             }}
           />
+        </Box>
 
+        <Box>
+          <Typography
+            variant="body2"
+            color="#636366"
+            fontWeight={500}
+            sx={{ fontSize: '13px', mb: 1 }}
+          >
+            Bank Name{' '}
+            <Box component="span" sx={{ color: 'error.main' }}>
+              *
+            </Box>
+          </Typography>
+          <RHFAutocomplete
+            selectOnFocus
+            clearOnBlur
+            name="bankName"
+            // options={banks.map((item) => item.bank)}
+            options={newBanks.find((item) => item.country === countryOfBank)?.banks || []}
+            getOptionLabel={(option) => option}
+            filterOptions={(options, params) => {
+              const { inputValue } = params;
+              const filtered = filter(options, params);
+              const isExisting = options.some(
+                (option) => option.toLowerCase() === inputValue.toLowerCase()
+              );
+              if (inputValue !== '' && !isExisting) {
+                filtered.push(`Add ${inputValue}`);
+              }
+              return filtered;
+            }}
+            sx={{
+              width: '100%',
+              '& .MuiInputBase-root': {
+                bgcolor: 'white',
+                borderRadius: 1,
+                height: { xs: 40, sm: 48 },
+              },
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: '#B0B0B0',
+                fontSize: { xs: '14px', sm: '16px' },
+                opacity: 1,
+              },
+            }}
+          />
+        </Box>
+
+        <Box>
+          <Typography
+            variant="body2"
+            color="#636366"
+            fontWeight={500}
+            sx={{ fontSize: '13px', mb: 1 }}
+          >
+            Account Holder Name{' '}
+            <Box component="span" sx={{ color: 'error.main' }}>
+              *
+            </Box>
+          </Typography>
+          <RHFTextField
+            name="bankAccName"
+            placeholder="Bank Account Name"
+            InputLabelProps={{ shrink: false }}
+            FormHelperTextProps={{ sx: { display: 'none' } }}
+            sx={{
+              width: '100%',
+              '& .MuiInputBase-root': {
+                bgcolor: 'white',
+                borderRadius: 1,
+                height: { xs: 40, sm: 48 },
+              },
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: '#B0B0B0',
+                fontSize: { xs: '14px', sm: '16px' },
+                opacity: 1,
+              },
+            }}
+          />
+        </Box>
+
+        <Box>
+          <Typography
+            variant="body2"
+            color="#636366"
+            fontWeight={500}
+            sx={{ fontSize: '13px', mb: 1 }}
+          >
+            Account Number{' '}
+            <Box component="span" sx={{ color: 'error.main' }}>
+              *
+            </Box>
+          </Typography>
           <Controller
             name="bankNumber"
             render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
                 type="number"
-                label="Bank Account Number"
+                placeholder="Bank Account Number"
                 error={!!error}
-                helperText={!!error && error?.message}
+                InputLabelProps={{ shrink: false }}
+                FormHelperTextProps={{ sx: { display: 'none' } }}
+                sx={{
+                  width: '100%',
+                  '& .MuiInputBase-root': {
+                    bgcolor: 'white',
+                    borderRadius: 1,
+                    height: { xs: 40, sm: 48 },
+                  },
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: '#B0B0B0',
+                    fontSize: { xs: '14px', sm: '16px' },
+                    opacity: 1,
+                  },
+                }}
               />
             )}
           />
-          <RHFTextField name="bankAccName" label="Bank Account Name" />
-          <RHFTextField name="icPassportNumber" label="IC / Passport Number" />
-        </Box>
-        <Box sx={{ textAlign: 'end', mt: 2 }}>
-          <LoadingButton
-            size="small"
-            variant="outlined"
-            type="submit"
-            disabled={!isDirty}
-            loading={isSubmitting}
+          <Typography
+            variant="caption"
+            sx={{
+              color: '#F04438',
+              mt: 1.5,
+              ml: 0.5,
+              display: 'block',
+              fontSize: '12px',
+            }}
           >
-            Save changes
-          </LoadingButton>
+            {methods.formState.errors.bankNumber?.message}
+          </Typography>
         </Box>
-      </FormProvider>
-    </Box>
+
+        <Box gridColumn={{ md: 'span 2' }}>
+          <Typography
+            variant="body2"
+            color="#636366"
+            fontWeight={500}
+            sx={{ fontSize: '13px', mb: 1 }}
+          >
+            IC / Passport No.{' '}
+            <Box component="span" sx={{ color: 'error.main' }}>
+              *
+            </Box>
+          </Typography>
+          <RHFTextField
+            name="icPassportNumber"
+            placeholder="IC / Passport Number"
+            InputLabelProps={{ shrink: false }}
+            FormHelperTextProps={{ sx: { display: 'none' } }}
+            sx={{
+              width: '100%',
+              '& .MuiInputBase-root': {
+                bgcolor: 'white',
+                borderRadius: 1,
+                height: { xs: 40, sm: 48 },
+              },
+              '& .MuiInputLabel-root': {
+                display: 'none',
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: '#B0B0B0',
+                fontSize: { xs: '14px', sm: '16px' },
+                opacity: 1,
+              },
+            }}
+          />
+        </Box>
+
+        <Stack
+          spacing={3}
+          alignItems={{ xs: 'center', sm: 'flex-end' }}
+          sx={{ mt: 3 }}
+          gridColumn={{ md: 'span 2' }}
+        >
+          <LoadingButton
+            type="submit"
+            variant="contained"
+            loading={isSubmitting}
+            // disabled={!isDirty}
+            sx={{
+              background: isDirty
+                ? '#1340FF'
+                : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+              pointerEvents: !isDirty && 'none',
+              fontSize: '16px',
+              fontWeight: 600,
+              borderRadius: '10px',
+              borderBottom: isDirty ? '3px solid #0c2aa6' : '3px solid #91a2e5',
+              transition: 'none',
+              width: { xs: '100%', sm: '90px' },
+              height: '44px',
+            }}
+          >
+            Update
+          </LoadingButton>
+        </Stack>
+      </Box>
+    </FormProvider>
   );
 };
 

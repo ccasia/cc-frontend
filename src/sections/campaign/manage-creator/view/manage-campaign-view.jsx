@@ -1,5 +1,6 @@
 import { orderBy } from 'lodash';
 import React, { useMemo, useState, useEffect } from 'react';
+import { useTheme } from '@mui/material/styles';
 
 import {
   Box,
@@ -46,6 +47,7 @@ const ManageCampaignView = () => {
 
   // const { campaigns } = useGetCampaigns('creator');
   const settings = useSettingsContext();
+  const theme = useTheme();
 
   // Calculate counts for each tab
   const filteredData = useMemo(() => {
@@ -72,26 +74,6 @@ const ManageCampaignView = () => {
         ) || [],
       completed:
         filteredCampaigns?.filter((campaign) => campaign?.shortlisted?.isCampaignDone) || [],
-
-      // active:
-      //   filteredCampaigns?.filter(
-      //     (campaign) =>
-      //       campaign?.shortlisted?.some(
-      //         (item) => item.userId === user?.id && !item.isCampaignDone
-      //       ) && campaign.status !== 'COMPLETED'
-      //   )?.length || 0,
-      // pending:
-      //   filteredCampaigns?.filter((campaign) =>
-      //     campaign?.pitch?.some(
-      //       (item) =>
-      //         item?.userId === user?.id &&
-      //         (item?.status === 'undecided' || item?.status === 'rejected')
-      //     )
-      //   )?.length || 0,
-      // completed:
-      //   filteredCampaigns?.filter((campaign) =>
-      //     campaign?.shortlisted?.some((item) => item.userId === user?.id && item.isCampaignDone)
-      //   )?.length || 0,
     };
   }, [campaigns, sortBy]);
 
@@ -103,124 +85,8 @@ const ManageCampaignView = () => {
 
   const renderTabs = (
     <>
-      {/* Mobile Search and Sort Stack */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={2}
-        alignItems={{ xs: 'stretch', sm: 'center' }}
-        sx={{
-          width: '100%',
-          mb: { xs: 3, sm: 0 },
-          display: { xs: 'flex', md: 'none' },
-          mt: -2,
-        }}
-      >
-        {/* Search Box - Full width on mobile */}
-        <Box
-          sx={{
-            width: '100%',
-            border: '1px solid',
-            borderBottom: '3.5px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            bgcolor: 'background.paper',
-          }}
-        >
-          <InputBase
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search"
-            startAdornment={
-              <Iconify
-                icon="eva:search-fill"
-                sx={{ width: 20, height: 20, mr: 1, color: 'text.disabled', ml: 1 }}
-              />
-            }
-            sx={{
-              width: '100%',
-              color: 'text.primary',
-              '& input': {
-                py: 1,
-                px: 1,
-              },
-            }}
-          />
-        </Box>
-
-        {/* Sort Box - Full width on mobile */}
-        <Box
-          sx={{
-            width: '100%',
-            border: '1px solid',
-            borderBottom: '3.5px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            bgcolor: 'background.paper',
-          }}
-        >
-          <Select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            displayEmpty
-            input={<InputBase />}
-            renderValue={(selected) => <strong>{selected || 'Sort by'}</strong>}
-            sx={{
-              width: '100%',
-              '& .MuiSelect-select': {
-                py: 1,
-                px: 1.5,
-                pr: 4,
-                display: 'flex',
-                alignItems: 'center',
-              },
-              '& .MuiSelect-icon': {
-                color: '#1340ff',
-              },
-            }}
-            IconComponent={(props) => (
-              <Iconify
-                icon="eva:chevron-down-fill"
-                {...props}
-                sx={{ mr: 0.2, width: 32, height: 32 }}
-              />
-            )}
-          >
-            <MenuItem value="Most matched">
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
-                Most matched
-                {sortBy === 'Most matched' && (
-                  <Iconify
-                    icon="eva:checkmark-fill"
-                    sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
-                  />
-                )}
-              </Stack>
-            </MenuItem>
-            <MenuItem value="Most recent">
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
-                Most recent
-                {sortBy === 'Most recent' && (
-                  <Iconify
-                    icon="eva:checkmark-fill"
-                    sx={{ ml: 'auto', width: 20, height: 20, color: '#1340ff' }}
-                  />
-                )}
-              </Stack>
-            </MenuItem>
-          </Select>
-        </Box>
-      </Stack>
-
       {/* Existing Tabs and Desktop Search/Sort */}
-      <Stack
-        direction="row"
-        spacing={0.5}
-        sx={
-          {
-            /* existing styles */
-          }
-        }
-      >
+      <Stack direction="row" spacing={0.5}>
         <Stack direction="row" spacing={2.5}>
           {tabs.map((tab) => (
             <Button
@@ -428,6 +294,123 @@ const ManageCampaignView = () => {
       </Stack>
 
       <Divider sx={{ width: '100%', bgcolor: '#ebebeb', my: 1, mt: -0.15 }} />
+
+      {/* sort options */}
+      <Box
+        sx={{
+          display: { xs: currentTab === 'completed' ? 'none' : 'block', md: 'none' },
+          mt: 2,
+          mb: 2,
+        }}
+      >
+        <Select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          displayEmpty
+          fullWidth
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                bgcolor: 'white',
+                border: '0.5px solid #E7E7E7',
+                borderBottom: '3px solid #E7E7E7',
+                mt: 1,
+              },
+            },
+          }}
+          sx={{
+            border: '0.5px solid #E7E7E7',
+            borderBottom: '3px solid #E7E7E7',
+            borderRadius: 1.25,
+            bgcolor: 'background.paper',
+            height: '48px',
+            width: '160px',
+            '& .MuiSelect-select': {
+              py: 1.5,
+              px: 2,
+              display: 'flex',
+              alignItems: 'center',
+            },
+            '& .MuiSelect-icon': {
+              right: 10,
+              color: '#000000',
+            },
+            '&.Mui-focused': {
+              outline: 'none',
+            },
+            '&:active': {
+              bgcolor: '#f2f2f2',
+              transition: 'background-color 0.2s ease',
+            },
+          }}
+          renderValue={(selected) => (
+            <Typography
+              variant="body1"
+              sx={{
+                fontWeight: 600,
+                fontSize: '1rem',
+              }}
+            >
+              {selected || 'Sort by'}
+            </Typography>
+          )}
+        >
+          <MenuItem
+            value="Most matched"
+            sx={{
+              mx: 0.2,
+              my: 0.5,
+              borderRadius: 0.5,
+              '&.Mui-selected': {
+                bgcolor: '#F5F5F5 !important',
+                '&:hover': {
+                  bgcolor: '#F5F5F5',
+                },
+              },
+              '&:hover': {
+                bgcolor: '#F5F5F5',
+              },
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
+              Most matched
+              {sortBy === 'Most matched' && (
+                <Iconify
+                  icon="eva:checkmark-fill"
+                  sx={{ ml: 'auto', width: 20, height: 20, color: '#000000' }}
+                />
+              )}
+            </Stack>
+          </MenuItem>
+          <MenuItem
+            value="Most recent"
+            sx={{
+              mx: 0.2,
+              my: 0.5,
+              borderRadius: 0.5,
+              '&.Mui-selected': {
+                bgcolor: '#F5F5F5 !important',
+                '&:hover': {
+                  bgcolor: '#F5F5F5',
+                },
+              },
+              '&:hover': {
+                bgcolor: '#F5F5F5',
+              },
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
+              Most recent
+              {sortBy === 'Most recent' && (
+                <Iconify
+                  icon="eva:checkmark-fill"
+                  sx={{ ml: 'auto', width: 20, height: 20, color: '#000000' }}
+                />
+              )}
+            </Stack>
+          </MenuItem>
+        </Select>
+      </Box>
     </>
   );
 
@@ -442,7 +425,9 @@ const ManageCampaignView = () => {
         variant="h2"
         sx={{
           mb: 2,
-          fontFamily: 'Instrument Serif, serif',
+          mt: { lg: 2, xs: 2, sm: 2 },
+          fontFamily: theme.typography.fontSecondaryFamily,
+          fontWeight: 'normal',
         }}
       >
         My Campaigns ⏰
@@ -460,7 +445,7 @@ const ManageCampaignView = () => {
             thickness={7}
             size={25}
             sx={{
-              color: (theme) => theme.palette.common.black,
+              color: theme.palette.common.black,
               strokeLinecap: 'round',
             }}
           />

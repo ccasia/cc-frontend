@@ -89,22 +89,22 @@ const NavItem = forwardRef(
           </Box>
         )}
 
-      {msgcounter && (
-        <Label
-          sx={{
-            color: 'white',
-            backgroundColor: '#de5243',
-            borderRadius: '12px',
-            padding: '2px 6px',
-            height: '24px',
-            width: '32px',
-            fontWeight: 550,
-            fontSize: '13px',
-          }}
-        >
-          {msgcounter}
-        </Label>
-      )}
+        {msgcounter && (
+          <Label
+            sx={{
+              color: 'white',
+              backgroundColor: '#de5243',
+              borderRadius: '12px',
+              padding: '2px 6px',
+              height: '24px',
+              width: '32px',
+              fontWeight: 550,
+              fontSize: '13px',
+            }}
+          >
+            {msgcounter}
+          </Label>
+        )}
 
         {hasChild && (
           <Iconify
@@ -124,7 +124,7 @@ const NavItem = forwardRef(
       return null;
     }
 
-    if (title === 'Clients' && user?.admin?.mode !== 'god') return null;
+    // if (title === 'Clients' && user?.admin?.mode !== 'god') return null;
 
     if (hasChild) {
       return renderContent;
@@ -208,7 +208,7 @@ const StyledNavItem = styled(ListItemButton, {
   const baseStyles = {
     item: {
       marginBottom: 4,
-      borderRadius: 8,
+      borderRadius: 12,
       color: theme.palette.text.secondary,
       padding: theme.spacing(0.5, 1, 0.5, 1.5),
     },
@@ -216,7 +216,7 @@ const StyledNavItem = styled(ListItemButton, {
       width: 24,
       height: 24,
       flexShrink: 0,
-      marginRight: theme.spacing(2),
+      marginRight: theme.spacing(1),
       ...(active && {
         color:
           theme.palette.mode === 'light' ? 'rgba(19, 64, 255, 1)' : theme.palette.primary.light,
@@ -291,7 +291,7 @@ const StyledNavItem = styled(ListItemButton, {
         //   borderRadius: 10,
         // },
         '&:hover': {
-          backgroundColor: alpha('#203ff5', 0.20),
+          backgroundColor: alpha('#203ff5', 0.2),
         },
       }),
       ...(opened && {

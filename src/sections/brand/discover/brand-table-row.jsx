@@ -1,5 +1,6 @@
-import React from 'react';
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 
 import {
   Avatar,
@@ -8,6 +9,7 @@ import {
   Checkbox,
   TableRow,
   TableCell,
+  Typography,
   ListItemText,
 } from '@mui/material';
 
@@ -18,17 +20,92 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 
+const dictionary = {
+  active: 'Active',
+  inactive: 'Inactive',
+  expired: 'Expired',
+};
+
+const findLatestPackage = (packages) => {
+  if (packages.length === 0) {
+    return null; // Return null if the array is empty
+  }
+
+  const latestPackage = packages.reduce((latest, current) => {
+    const latestDate = new Date(latest.createdAt);
+    const currentDate = new Date(current.createdAt);
+
+    return currentDate > latestDate ? current : latest;
+  });
+
+  return latestPackage;
+};
+
+function getRemainingTime(createdDate, months) {
+  const created = new Date(createdDate);
+  const expiryDate = new Date(created);
+  expiryDate.setMonth(expiryDate.getMonth() + months);
+
+  const today = new Date();
+  const diffTime = expiryDate - today;
+
+  const remainingDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  return remainingDays;
+}
+
 const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) => {
-  const { logo, name, email, phone, website, campaign, brand, id } = row;
+  const { logo, name, campaign, brand, id, subscriptions } = row;
 
   const confirm = useBoolean();
 
   const router = useRouter();
 
-  const popover = usePopover();
+  const packageItem = subscriptions ? findLatestPackage(subscriptions) : null;
+
+  const validity = useMemo(() => {
+    if (packageItem) {
+      if (dayjs().isAfter(dayjs(packageItem?.expiredAt), 'date')) {
+        const overdue = dayjs().diff(dayjs(packageItem?.expiredAt), 'days');
+        return `${overdue} days overdue`;
+      }
+      const remainingdays = dayjs(packageItem?.expiredAt).diff(dayjs(), 'days');
+      return `${remainingdays} days left`;
+    }
+    return null;
+  }, [packageItem]);
+
+  const renderPackageContents = packageItem ? (
+    <>
+      <TableCell>
+        <Label color={packageItem?.status === 'active' ? 'error' : 'success'}>
+          {packageItem?.status}
+        </Label>
+      </TableCell>
+      <TableCell>
+        <Label color={validity?.includes('overdue') ? 'error' : 'default'}>{validity}</Label>
+      </TableCell>
+    </>
+  ) : (
+    <>
+      <TableCell>
+        <Label>
+          <Typography variant="caption" fontWeight={800}>
+            No package is linked
+          </Typography>
+        </Label>
+      </TableCell>
+      <TableCell>
+        <Label>
+          <Typography variant="caption" fontWeight={800}>
+            No package is linked
+          </Typography>
+        </Label>
+      </TableCell>
+    </>
+  );
 
   return (
     <>
@@ -50,12 +127,6 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
           />
         </TableCell>
 
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{email || 'null'}</TableCell> */}
-
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{phone || 'null'}</TableCell> */}
-
-        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{website || 'null'}</TableCell> */}
-
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label>{brand?.length || '0'}</Label>
         </TableCell>
@@ -63,6 +134,8 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           <Label>{campaign?.length || '0'}</Label>
         </TableCell>
+
+        {renderPackageContents}
 
         <TableCell sx={{ px: 1, whiteSpace: 'nowrap' }}>
           <Tooltip title="Edit" placement="top" arrow>

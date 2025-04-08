@@ -1,21 +1,99 @@
+import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { memo, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
+import React, { memo, useMemo, useEffect } from 'react';
 
-import { Box, Stack, Avatar, FormLabel, ListItemText, createFilterOptions } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Avatar,
+  Button,
+  Tooltip,
+  FormLabel,
+  TextField,
+  Typography,
+  ListItemText,
+  createFilterOptions,
+} from '@mui/material';
 
 import useGetCompany from 'src/hooks/use-get-company';
 
-import { RHFCheckbox, RHFAutocomplete } from 'src/components/hook-form';
+import Iconify from 'src/components/iconify';
+import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 const filter = createFilterOptions();
 
-const SelectBrand = ({ openBrand, openCompany }) => {
+const findLatestPackage = (packages) => {
+  if (packages.length === 0) {
+    return null; // Return null if the array is empty
+  }
+
+  const latestPackage = packages.reduce((latest, current) => {
+    const latestDate = new Date(latest.createdAt);
+    const currentDate = new Date(current.createdAt);
+
+    return currentDate > latestDate ? current : latest;
+  });
+
+  return latestPackage;
+};
+
+const getRemainingTime = (invoiceDate) => {
+  const remainingDays = dayjs(invoiceDate).diff(dayjs(), 'days');
+
+  return remainingDays;
+};
+
+const SelectBrand = ({ openBrand, openCompany, openPackage }) => {
   const { data, isLoading } = useGetCompany();
-  const { getValues } = useFormContext();
+
+  const {
+    getValues,
+    setError,
+    clearErrors,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext();
+
   const client = getValues('client');
   const brand = getValues('campaignBrand');
-  const hasBrand = getValues('hasBrand');
+  const campaignCredits = watch('campaignCredits');
+
+  const latestPackageItem = useMemo(() => {
+    if (client?.id && client?.subscriptions.length) {
+      let packageItem = findLatestPackage(client?.subscriptions);
+      packageItem = {
+        ...packageItem,
+        totalCredits:
+          packageItem.totalCredits ||
+          packageItem.package.credits ||
+          packageItem.customPackage.customCredits,
+        availableCredits:
+          (packageItem.totalCredits ||
+            packageItem.package.credits ||
+            packageItem.customPackage.customCredits) - packageItem.creditsUsed,
+      };
+      return packageItem;
+    }
+    return null;
+  }, [client]);
+
+  const availabilityCredits = useMemo(() => {
+    let campaigns;
+    if ((client?.type && client?.type === 'directClient') || !client?.brand?.length) {
+      campaigns = client?.campaign;
+    } else {
+      campaigns = client?.brand?.flatMap((a) => a.campaign);
+    }
+
+    campaigns = campaigns?.filter(
+      (campaign) =>
+        campaign?.subscriptionId != null && campaign?.subscriptionId === latestPackageItem.id
+    );
+
+    return campaigns?.reduce((acc, sum) => acc + sum.campaignCredits, 0);
+  }, [client, latestPackageItem]);
 
   useEffect(() => {
     if (client && client.inputValue) {
@@ -28,6 +106,27 @@ const SelectBrand = ({ openBrand, openCompany }) => {
       openBrand.onTrue();
     }
   }, [brand, openBrand]);
+
+  useEffect(() => {
+    if (
+      (latestPackageItem &&
+        campaignCredits > latestPackageItem.totalCredits - availabilityCredits) ||
+      !latestPackageItem
+    ) {
+      setError('campaignCredit', {
+        type: 'onChange',
+        message: 'Cannot exceeds available credits',
+      });
+    } else {
+      clearErrors('campaignCredit');
+    }
+  }, [campaignCredits, setError, clearErrors, latestPackageItem, availabilityCredits]);
+
+  useEffect(() => {
+    if (client && client?.type === 'directClient') {
+      setValue('campaignBrand', null, { shouldValidate: true });
+    }
+  }, [client, setValue]);
 
   return (
     <Box
@@ -45,25 +144,22 @@ const SelectBrand = ({ openBrand, openCompany }) => {
         >
           Select client or agency
         </FormLabel>
+
         <RHFAutocomplete
           name="client"
           placeholder="Select or Create Client"
           options={data || []}
           loading={isLoading}
-          // freeSolo
           getOptionLabel={(option) => {
-            // Add "xxx" option created dynamically
             if (option.inputValue) {
               return option.inputValue;
             }
-            // Regular option
             return option.name;
           }}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           selectOnFocus
           clearOnBlur
           renderOption={(props, option) => {
-            //   eslint-disable-next-line react/prop-types
             const { ...optionProps } = props;
 
             return (
@@ -85,7 +181,6 @@ const SelectBrand = ({ openBrand, openCompany }) => {
 
             const filtered = filter(options, params);
 
-            // Suggest the creation of a new value
             const isExisting = options.some(
               (option) => option.name.toLowerCase() === inputValue.toLowerCase()
             );
@@ -102,9 +197,7 @@ const SelectBrand = ({ openBrand, openCompany }) => {
         />
       </Stack>
 
-      {client && <RHFCheckbox name="hasBrand" size="small" label="Is it an agency?" />}
-
-      {client && hasBrand && (
+      {client && (client?.type === 'agency' || !!client?.brand?.length) && (
         <Box mt={2}>
           <Stack spacing={1}>
             <FormLabel
@@ -121,7 +214,6 @@ const SelectBrand = ({ openBrand, openCompany }) => {
               placeholder="Select or Create Brand"
               options={client?.brand || []}
               loading={isLoading}
-              // freeSolo
               getOptionLabel={(option) => {
                 // Add "xxx" option created dynamically
                 if (option.inputValue) {
@@ -174,6 +266,129 @@ const SelectBrand = ({ openBrand, openCompany }) => {
           </Stack>
         </Box>
       )}
+
+      {client &&
+        (!latestPackageItem ? (
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Typography variant="subtitle1" color="text.secondary">
+              Package not found
+            </Typography>
+            <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
+              Link a package
+            </Button>
+          </Box>
+        ) : (
+          <>
+            {dayjs(latestPackageItem?.expiredAt).isBefore(dayjs(), 'date') ? (
+              <Stack mt={2} alignItems="center" spacing={1}>
+                <Avatar
+                  sx={{ bgcolor: (theme) => theme.palette.warning.light, width: 60, height: 60 }}
+                >
+                  <Iconify icon="pajamas:expire" width={26} />
+                </Avatar>
+                <Typography variant="subtitle2">
+                  Package with ID {latestPackageItem?.subscriptionId} is expired
+                </Typography>
+                <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
+                  Renew package
+                </Button>
+              </Stack>
+            ) : (
+              <Stack
+                direction={{ sm: 'column', md: 'row' }}
+                justifyContent="space-between"
+                gap={2}
+                mt={3}
+              >
+                <Stack
+                  spacing={2}
+                  minWidth={1 / 2}
+                  sx={{
+                    position: 'relative',
+                    border: 1,
+                    p: 2,
+                    borderRadius: 1,
+                    borderColor: (theme) => theme.palette.divider,
+                    ':before': {
+                      content: "'Package Information'",
+                      position: 'absolute',
+                      top: -18,
+                      fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                      letterSpacing: 0.7,
+                      fontWeight: 600,
+                      fontSize: 20,
+                      bgcolor: 'white',
+                    },
+                  }}
+                >
+                  <Stack>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <FormLabel
+                        sx={{
+                          fontWeight: 600,
+                          color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                        }}
+                      >
+                        Available Credits
+                      </FormLabel>
+                      <Tooltip title="Available Credits = Total Credits - Allocation Credits">
+                        <Iconify
+                          icon="material-symbols:info-outline-rounded"
+                          width="24"
+                          color="text.secondary"
+                          sx={{
+                            cursor: 'pointer',
+                          }}
+                        />
+                      </Tooltip>
+                    </Stack>
+                    <TextField
+                      value={`${latestPackageItem.totalCredits - availabilityCredits} UGC Credits`}
+                      InputProps={{
+                        disabled: true,
+                      }}
+                    />
+                  </Stack>
+
+                  <Stack>
+                    <FormLabel
+                      sx={{
+                        fontWeight: 600,
+                        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                      }}
+                    >
+                      Validity
+                    </FormLabel>
+                    <TextField
+                      value={`${getRemainingTime(latestPackageItem?.expiredAt)} days left`}
+                      InputProps={{
+                        disabled: true,
+                      }}
+                    />
+                  </Stack>
+                </Stack>
+                <Stack spacing={1} minWidth={1 / 2}>
+                  <FormLabel
+                    required
+                    sx={{
+                      fontWeight: 600,
+                      color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+                    }}
+                  >
+                    Campaign Credits
+                  </FormLabel>
+                  <RHFTextField
+                    name="campaignCredits"
+                    type="number"
+                    placeholder="UGC Credits"
+                    error={errors?.campaignCredit || errors?.campaignCredits}
+                    helperText={errors?.campaignCredit?.message}
+                  />
+                </Stack>
+              </Stack>
+            )}
+          </>
+        ))}
     </Box>
   );
 };
@@ -183,4 +398,5 @@ export default memo(SelectBrand);
 SelectBrand.propTypes = {
   openCompany: PropTypes.object,
   openBrand: PropTypes.object,
+  openPackage: PropTypes.object,
 };

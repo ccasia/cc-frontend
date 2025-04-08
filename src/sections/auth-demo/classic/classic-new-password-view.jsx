@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
 import { enqueueSnackbar } from 'notistack';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -29,7 +29,7 @@ export default function ClassicNewPasswordView() {
   const params = useSearchParams();
   const token = params.get('token');
   const router = useRouter();
-  // const [isExpired, setIsExpired] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const checkToken = useCallback(async () => {
     if (token) {
@@ -93,11 +93,10 @@ export default function ClassicNewPasswordView() {
   const curPassword = watch('password');
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data);
     try {
       const res = await axiosInstance.patch(endpoints.users.changePassword, { ...data, token });
       enqueueSnackbar(res?.data?.message);
-      router.push(paths.auth.jwt.login);
+      setIsSuccess(true);
     } catch (error) {
       if (error?.message.includes('expired')) {
         enqueueSnackbar('Link Expired', {
@@ -143,7 +142,9 @@ export default function ClassicNewPasswordView() {
   const renderForm = (
     <Stack spacing={3} alignItems="center">
       <Stack width={1}>
-        <FormLabel required>Password</FormLabel>
+        <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: 0.5 }}>
+          Password <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+        </Typography>
         <Controller
           name="password"
           control={methods.control}
@@ -152,7 +153,7 @@ export default function ClassicNewPasswordView() {
               {...field}
               sx={{
                 '& .MuiInputBase-root': {
-                  backgroundColor: '#FFF', // Replace with your desired color
+                  backgroundColor: '#FFF',
                 },
               }}
               placeholder="Password"
@@ -160,8 +161,12 @@ export default function ClassicNewPasswordView() {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={password.onToggle} edge="end">
-                      <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                    <IconButton onClick={password.onToggle}>
+                      <Box 
+                        component="img" 
+                        src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'}`} 
+                        sx={{ width: 24, height: 24 }} 
+                      />
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -175,21 +180,27 @@ export default function ClassicNewPasswordView() {
       </Stack>
 
       <Stack width={1}>
-        <FormLabel required>Confirm Password</FormLabel>
+        <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: 0.5 }}>
+          Confirm Password <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+        </Typography>
         <RHFTextField
           name="confirmPassword"
           placeholder="Confirm New Password"
           type={password.value ? 'text' : 'password'}
           sx={{
             '& .MuiInputBase-root': {
-              backgroundColor: '#FFF', // Replace with your desired color
+              backgroundColor: '#FFF', 
             },
           }}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={password.onToggle} edge="end">
-                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                <IconButton onClick={password.onToggle}>
+                  <Box 
+                    component="img" 
+                    src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'}`} 
+                    sx={{ width: 24, height: 24 }} 
+                  />
                 </IconButton>
               </InputAdornment>
             ),
@@ -210,69 +221,109 @@ export default function ClassicNewPasswordView() {
               'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
           }),
           pointerEvents: (!isDirty || !isValid) && 'none',
+          fontSize: '17px',
+          borderRadius: '12px',
+          borderBottom: isDirty && isValid ? '3px solid #0c2aa6' : '3px solid #91a2e5',
+          transition: 'none',
         }}
         size="large"
         type="submit"
         variant="contained"
         loading={isSubmitting}
       >
-        Submit
+        Change Password
       </LoadingButton>
     </Stack>
   );
 
-  const renderHead = (
-    <>
-      <SentIcon sx={{ height: 96 }} />
+  const renderSuccess = (
+    <Stack spacing={3} alignItems="flex-start">
+      <Typography
+        sx={{
+          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+          fontWeight: 500,
+          fontSize: '40px',
+        }}
+      >
+        Reset password success ✅
+      </Typography>
 
-      <Stack spacing={1} sx={{ mt: 3, mb: 5 }}>
-        <Typography variant="h3">Request sent successfully!</Typography>
+      <Typography variant="body2" sx={{ color: '#636366', fontSize: '16px', mt: -2 }}>
+        Your password has been successfully updated!
+        <br />
+        You can now proceed to login.
+      </Typography>
 
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          We&apos;ve sent a 6-digit confirmation email to your email.
-          <br />
-          Please enter the code in below box to verify your email.
-        </Typography>
-      </Stack>
-    </>
+      <LoadingButton
+        fullWidth
+        onClick={() => router.push(paths.auth.jwt.login)}
+        sx={{
+          background: '#1340FF',
+          boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+          fontSize: '17px',
+          borderRadius: '12px',
+          borderBottom: '2px solid #0c2aa6',
+          transition: 'none',
+        }}
+        size="large"
+        variant="contained"
+      >
+        Continue to Login
+      </LoadingButton>
+    </Stack>
   );
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Box
-        sx={{
-          p: 3,
-          bgcolor: '#F4F4F4',
-          borderRadius: 2,
-        }}
-      >
-        <ListItemText
-          primary=" Set a new password 🔓"
-          secondary="Choose a new password for your account."
-          primaryTypographyProps={{
-            variant: 'h3',
-            fontWeight: 'bold',
-            fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-          }}
-          secondaryTypographyProps={{
-            variant: 'body2',
-            fontSize: 13,
-            color: 'text.secondary',
-            lineHeight: 1.2,
-          }}
-          sx={{
-            mb: 3,
-          }}
-        />
-
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        width: '100%',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+      }}
+    >
+      <FormProvider methods={methods} onSubmit={onSubmit}>
         <Box
           sx={{
-            mt: 3,
+            p: 4,
+            bgcolor: '#F4F4F4',
+            borderRadius: 2,
+            width: { xs: 320, sm: 470 },
+            height: isSuccess ? 'auto' : 'auto',
+            minHeight: isSuccess ? 'auto' : '520px',
+            maxWidth: '470px',
           }}
         >
-          {renderForm}
+          {!isSuccess ? (
+            <>
+              <Stack spacing={1} sx={{ mb: 2, mt: -1 }}>
+                <Typography
+                  sx={{
+                    fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                    fontWeight: 500,
+                    fontSize: '40px',
+                  }}
+                >
+                  Set a new password 🔓
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#636366', fontSize: '16px', mt: -1}}>
+                  Choose a new password for your account.
+                </Typography>
+              </Stack>
+
+              <Box sx={{ mt: 3 }}>
+                {renderForm}
+              </Box>
+            </>
+          ) : (
+            renderSuccess
+          )}
         </Box>
-      </Box>
-    </FormProvider>
+      </FormProvider>
+    </Box>
   );
 }

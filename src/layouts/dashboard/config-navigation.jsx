@@ -20,7 +20,15 @@ import SvgColor from 'src/components/svg-color';
 // add finance user here as well
 
 const icon = (name) => (
-  <SvgColor src={`/assets/icons/navbar/${name}.svg`} sx={{ width: 24, height: 24 }} />
+  <SvgColor 
+    src={`/assets/icons/navbar/${name}.svg`} 
+    sx={{ 
+      width: name === 'ic_overview' ? 20 : 24,
+      height: name === 'ic_overview' ? 20 : 24,
+      position: name === 'ic_overview' ? 'relative' : 'static',
+      top: name === 'ic_overview' ? '2px' : 0,
+    }} 
+  />
   // OR
   // <Iconify icon="fluent:mail-24-filled" />
   // https://icon-sets.iconify.design/solar/
@@ -57,6 +65,7 @@ const ICONS = {
   mycampaigns: icon('ic_mycampaigns'),
   mytasks: icon('ic_mytasks'),
   mediakit: icon('ic_mediakit'),
+  settings: icon('ic_settings'),
   // calendar: icon('lets-icons:calendar-duotone'),
 };
 
@@ -70,7 +79,6 @@ export function useNavData() {
 
   const { socket } = useSocketContext();
   const unreadMessageCount = useUnreadMessageCount();
-  //  const [unreadMessageCount, setUnreadMessageCount] = useState(null);
 
   useEffect(() => {
     socket?.on('messageCount', (data) => {
@@ -97,6 +105,16 @@ export function useNavData() {
             title: 'Overview',
             path: paths.dashboard.root,
             icon: <Iconify icon="icon-park-outline:grid-four" width={25} />,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            roles: ['superadmin'],
+            title: 'Analytics',
+            path: paths.dashboard.analytics,
+            icon: <Iconify icon="icon-park-outline:chart-histogram" width={25} />,
           },
         ],
       },
@@ -202,6 +220,12 @@ export function useNavData() {
             path: paths.dashboard.roles.root,
             icon: <Iconify icon="oui:app-users-roles" width={25} />,
           },
+          {
+            roles: ['superadmin'],
+            title: 'Packages',
+            path: paths.dashboard.packages.root,
+            icon: <Iconify icon="carbon:package" width={25} />,
+          },
           // {
           //   title: 'Template',
           //   path: paths.dashboard.template.root,
@@ -238,7 +262,7 @@ export function useNavData() {
         items: [
           {
             title: (
-              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px'}}>
                 Discover
               </span>
             ),
@@ -394,6 +418,19 @@ export function useNavData() {
             ),
             path: paths.dashboard.calendar.root,
             icon: ICONS.calendar,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Settings
+              </span>
+            ),
+            path: paths.dashboard.user.profile,
+            icon: ICONS.settings,
           },
         ],
       },

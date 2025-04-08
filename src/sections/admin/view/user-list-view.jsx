@@ -465,6 +465,27 @@ export default function UserListView() {
     setTableData(admins && admins.filter((admin) => admin?.id !== user?.id));
   }, [admins, user]);
 
+  if(adminLoading){
+    return (
+      <Box
+      sx={{
+        position: 'relative',
+        top: 200,
+        textAlign: 'center',
+      }}
+    >
+      <CircularProgress
+        thickness={7}
+        size={25}
+        sx={{
+          color: (theme) => theme.palette.common.black,
+          strokeLinecap: 'round',
+        }}
+      />
+    </Box>
+)
+  }
+
   return (
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -513,7 +534,8 @@ export default function UserListView() {
             />
           </Box>
         )}
-        {!adminLoading && tableData?.length && (
+
+        
           <Card>
             <Tabs
               value={filters.status}
@@ -551,8 +573,8 @@ export default function UserListView() {
                         'suspended',
                         'spam',
                       ].includes(tab.value)
-                        ? tableData.filter((item) => item.status === tab.value).length
-                        : tableData.length}
+                        ? tableData?.filter((item) => item.status === tab.value).length
+                        : tableData?.length}
                     </Label>
                   }
                 />
@@ -581,7 +603,7 @@ export default function UserListView() {
               <TableSelectedAction
                 dense={table.dense}
                 numSelected={table.selected.length}
-                rowCount={dataFiltered.length}
+                rowCount={dataFiltered?.length}
                 onSelectAllRows={(checked) =>
                   table.onSelectAllRows(
                     checked,
@@ -603,7 +625,7 @@ export default function UserListView() {
                     order={table.order}
                     orderBy={table.orderBy}
                     headLabel={TABLE_HEAD}
-                    rowCount={dataFiltered.length}
+                    rowCount={dataFiltered?.length}
                     numSelected={table.selected.length}
                     onSort={table.onSort}
                     onSelectAllRows={(checked) =>
@@ -633,7 +655,7 @@ export default function UserListView() {
 
                     <TableEmptyRows
                       height={denseHeight}
-                      emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
+                      emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered?.length)}
                     />
 
                     <TableNoData notFound={notFound} />
@@ -643,7 +665,7 @@ export default function UserListView() {
             </TableContainer>
 
             <TablePaginationCustom
-              count={dataFiltered.length}
+              count={dataFiltered?.length}
               page={table.page}
               rowsPerPage={table.rowsPerPage}
               onPageChange={table.onChangePage}
@@ -653,7 +675,7 @@ export default function UserListView() {
               onChangeDense={table.onChangeDense}
             />
           </Card>
-        )}
+        
       </Container>
 
       <ConfirmDialog

@@ -14,7 +14,7 @@ import FirstDraft from './firstDraft';
 import FinalDraft from './finalDraft';
 import Posting from './posting/posting';
 
-const Submissions = ({ campaign, submissions, creator }) => {
+const Submissions = ({ campaign, submissions, creator, deliverables }) => {
   const [currentTab, setCurrentTab] = useState('agreement');
 
   const agreementSubmission = useMemo(
@@ -332,6 +332,8 @@ const Submissions = ({ campaign, submissions, creator }) => {
                   submission={finalDraftSubmission}
                   campaign={campaign}
                   creator={creator}
+                  firstDraftSubmission={firstDraftSubmission}
+                  deliverablesData={deliverables}
                 />
               </Box>
             )}
@@ -405,6 +407,7 @@ const Submissions = ({ campaign, submissions, creator }) => {
                   submission={firstDraftSubmission}
                   campaign={campaign}
                   creator={creator}
+                  deliverablesData={deliverables}
                 />
               </Box>
             )}
@@ -490,4 +493,5 @@ Submissions.propTypes = {
   campaign: PropTypes.object,
   submissions: PropTypes.array,
   creator: PropTypes.object,
+  deliverables: PropTypes.object,
 };

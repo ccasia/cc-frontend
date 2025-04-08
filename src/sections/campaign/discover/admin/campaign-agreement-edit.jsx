@@ -38,6 +38,15 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
 
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
+    // ugcVideos: yup
+    //   .number()
+    //   .required('Number of UGC videos is required')
+    //   .min(1, 'Minumum is 1')
+    //   .when([], (ugcVideos, scheme) =>
+    //     campaign?.campaignCredits
+    //       ? scheme.max(campaign.campaignCredits, `Maximum is ${campaign.campaignCredits}`)
+    //       : scheme
+    //   ),
     default: yup.boolean(),
   });
 
@@ -45,6 +54,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
     resolver: yupResolver(schema),
     defaultValues: {
       paymentAmount: parseInt(agreement?.amount, 10) || '',
+      // ugcVideos: null,
       default: false,
     },
     reValidateMode: 'onChange',
@@ -198,11 +208,33 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         </DialogTitle>
 
         <DialogContent>
-          <Stack spacing={1} sx={{ mt: 2 }}>
-            <RHFTextField
-              name="paymentAmount"
+          <Stack sx={{ mt: 2 }} spacing={2}>
+            <Stack spacing={1}>
+              <RHFTextField
+                name="paymentAmount"
+                type="number"
+                label="Payment Amount"
+                InputLabelProps={{ shrink: true }}
+                disabled={isDefault}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                  },
+                }}
+              />
+              <RHFCheckbox
+                name="default"
+                label="Default"
+                sx={{
+                  color: '#636366',
+                  ml: -1,
+                }}
+              />
+            </Stack>
+            {/* <RHFTextField
+              name="ugcVideos"
               type="number"
-              label="Payment Amount"
+              label="UGC Videos"
               InputLabelProps={{ shrink: true }}
               disabled={isDefault}
               sx={{
@@ -210,15 +242,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
                   borderRadius: 1,
                 },
               }}
-            />
-            <RHFCheckbox
-              name="default"
-              label="Default"
-              sx={{
-                color: '#636366',
-                ml: -1,
-              }}
-            />
+            /> */}
           </Stack>
         </DialogContent>
 

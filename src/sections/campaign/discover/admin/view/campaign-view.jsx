@@ -1,3 +1,4 @@
+import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -16,10 +17,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-// import { Box, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
-
-import { debounce } from 'lodash';
-
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
@@ -36,11 +33,6 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import CreateCampaignForm from 'src/sections/campaign/create/form';
 
 import CampaignLists from '../campaign-list';
-
-// const defaultFilters = {
-//   status: '',
-//   brands: [],
-// };
 
 const CampaignView = () => {
   const settings = useSettingsContext();
@@ -93,7 +85,7 @@ const CampaignView = () => {
     return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
-  const { data, size, setSize, isValidating, isLoading } = useSWRInfinite(getKey, fetcher);
+  const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher);
 
   const smDown = useResponsive('down', 'sm');
 
@@ -477,7 +469,7 @@ const CampaignView = () => {
         scroll="paper"
         open={create.value}
       >
-        <CreateCampaignForm onClose={create.onFalse} />
+        <CreateCampaignForm onClose={create.onFalse} mutate={mutate} />
       </Dialog>
     </Container>
   );

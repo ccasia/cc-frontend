@@ -41,6 +41,7 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
+import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
@@ -67,6 +68,9 @@ const CampaignDetailView = ({ id }) => {
   const copyDialog = useBoolean();
   const copy = useBoolean();
   const pdfModal = useBoolean();
+  const [publicUrl, setPublicUrl] = useState(null);
+  const [password, setPassword] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
   const { user } = useAuthContext();
   const [openDialog, setOpenDialog] = useState(false);
   const [pages, setPages] = useState(0);
@@ -75,6 +79,8 @@ const CampaignDetailView = ({ id }) => {
   const linking = useBoolean();
 
   const open = Boolean(anchorEl);
+
+  console.log('campaignid', campaign);
 
   useEffect(() => {
     if (!campaignLoading && campaign) {
@@ -156,7 +162,6 @@ const CampaignDetailView = ({ id }) => {
           width: '100%',
           overflowX: 'auto',
           '&::-webkit-scrollbar': { display: 'none' },
-          scrollbarWidth: 'none',
           '&::after': {
             content: '""',
             position: 'absolute',
@@ -174,6 +179,7 @@ const CampaignDetailView = ({ id }) => {
           sx={{
             width: { xs: '100%', sm: 'auto' },
             overflowX: 'auto',
+            scrollbarWidth: 'none',
           }}
         >
           {[
@@ -264,6 +270,32 @@ const CampaignDetailView = ({ id }) => {
       }
     });
   }, [open]);
+
+  const generatePublicUrl = async () => {
+    try {
+      loading.onTrue();
+      const response = await axiosInstance.post('/api/public/generate', {
+        campaignId: campaign?.id,
+        expiryInMinutes: 120,
+      });
+
+      if (response?.data?.url && response?.data?.password) {
+        setPublicUrl(response.data.url);
+        setPassword(response.data.password);
+        setOpenModal(true);
+      } else {
+        enqueueSnackbar('Failed to generate public URL', { variant: 'error' });
+      }
+    } catch (error) {
+      enqueueSnackbar('An error occurred while generating the public URL.', { variant: 'error' });
+    } finally {
+      loading.onFalse();
+    }
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
 
   const generateSpreadSheet = useCallback(async () => {
     try {
@@ -450,18 +482,6 @@ const CampaignDetailView = ({ id }) => {
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
-
-  // useEffect(() => {
-  //   if (!campaignLoading && campaign) {
-  //     console.log("Campaign Object:", campaign);
-  //   }
-  // }, [campaignLoading, campaign]);
-
-  // console.log("User:", user);
-
-  // useEffect(() => {
-  //   console.log('Is Disabled:', isDisabled);
-  // }, [isDisabled]);
 
   return (
     <Container
@@ -665,6 +685,38 @@ const CampaignDetailView = ({ id }) => {
                   Google Spreadsheet
                 </Button>
               )}
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={
+                  <img
+                    src="/assets/icons/overview/generateIcon.svg"
+                    alt="generate icon"
+                    style={{ width: 16, height: 16 }}
+                  />
+                }
+                onClick={generatePublicUrl}
+                sx={{
+                  height: 32,
+                  borderRadius: 1,
+                  color: '#221f20',
+                  border: '1px solid #e7e7e7',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  px: 1.5,
+                  width: '100%',
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    border: '1px solid #e7e7e7',
+                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                  },
+                  boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
+                }}
+                // disabled={loading}
+              >
+                Generate URL
+              </Button>
             </Stack>
           </Stack>
         </Stack>
@@ -683,6 +735,13 @@ const CampaignDetailView = ({ id }) => {
         onClose={pdfModal.onFalse}
         user={user}
         campaignId={campaign?.id}
+      />
+
+      <PublicUrlModal
+        open={openModal}
+        onClose={handleCloseModal}
+        publicUrl={publicUrl}
+        password={password}
       />
 
       <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>

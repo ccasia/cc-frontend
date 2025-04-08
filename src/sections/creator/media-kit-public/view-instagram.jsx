@@ -3,12 +3,27 @@ import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { keyframes } from '@emotion/react';
 
-import { Box, Grid, Stack, useTheme, CardMedia, Typography, useMediaQuery } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Stack,
+  alpha,
+  Button,
+  useTheme,
+  CardMedia,
+  Typography,
+  useMediaQuery,
+} from '@mui/material';
 
+import { useSocialMediaData } from 'src/utils/store';
+
+import { useAuthContext } from 'src/auth/hooks';
+
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
-const formatNumber = (num) => {
+export const formatNumber = (num) => {
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -30,7 +45,7 @@ const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topFiveContents = topContents.slice(0, 5);
+  const topFiveContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 5);
 
   return (
     <Grid
@@ -53,16 +68,23 @@ const TopContentGrid = ({ topContents }) => {
         <Grid
           item
           xs={12}
-          md={4}
-          sm={6}
+          sm={4}
           key={index}
           component={m.div}
           variants={{
             hidden: { opacity: 0, y: 50 },
             show: { opacity: 1, y: 0 },
           }}
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = content?.permalink;
+            a.target = '_blank';
+            a.click();
+            document.body.removeChild(a);
+          }}
         >
           <Box
+            component="div"
             sx={{
               position: 'relative',
               height: 600,
@@ -82,7 +104,7 @@ const TopContentGrid = ({ topContents }) => {
                 height: 1,
                 transition: 'all .2s linear',
                 objectFit: 'cover',
-                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.image_url}) lightgray 50% / cover no-repeat`,
+                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.media_url}) lightgray 50% / cover no-repeat`,
               }}
             />
 
@@ -110,48 +132,23 @@ const TopContentGrid = ({ topContents }) => {
                   mb: 1,
                 }}
               >
-                {`${content?.description?.slice(0, 50)}...`}
+                {`${content?.caption?.slice(0, 50)}...`}
               </Typography>
 
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="material-symbols:favorite-outline" width={20} />
-                  <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
+                  <Typography variant="subtitle2">{formatNumber(content?.like_count)}</Typography>
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="iconamoon:comment" width={20} />
-                  <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
+                  <Typography variant="subtitle2">
+                    {formatNumber(content?.comments_count)}
+                  </Typography>
                 </Stack>
               </Stack>
             </Box>
-
-            {/* Link  */}
-            {/* <Box
-              sx={{
-                position: 'absolute',
-                top: 10,
-                right: 10,
-                borderRadius: '0 0 24px 24px',
-              }}
-            >
-              <IconButton
-                sx={{
-                  color: 'black',
-                  bgcolor: 'white',
-                }}
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = content?.content_url;
-                  link.target = '_blank';
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                }}
-              >
-                <Iconify icon="akar-icons:link-out" />
-              </IconButton>
-            </Box> */}
           </Box>
         </Grid>
       ))}
@@ -167,17 +164,30 @@ TopContentGrid.propTypes = {
   ).isRequired,
 };
 
-const MediaKitSocialContent = ({ tiktok }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+const MediaKitSocialContent = ({ instagramVideos }) => {
+  if (!instagramVideos?.length)
+    return (
+      <Label
+        color="info"
+        sx={{
+          height: 250,
+          textAlign: 'center',
+          borderStyle: 'dashed',
+          borderColor: (theme) => theme.palette.divider,
+          borderWidth: 1.5,
+          bgcolor: (theme) => alpha(theme.palette.warning.main, 0.16),
+          width: 1,
+        }}
+      >
+        <Stack spacing={1} alignItems="center">
+          <Typography variant="subtitle2">Instagram account is not connected.</Typography>
+        </Stack>
+      </Label>
+    );
 
   return (
     <Box>
-      {tiktok?.data.top_contents ? (
-        <TopContentGrid topContents={tiktok.data.top_contents} />
-      ) : (
-        <Typography>No top content data available</Typography>
-      )}
+      <TopContentGrid topContents={instagramVideos} />
     </Box>
   );
 };
@@ -185,5 +195,5 @@ const MediaKitSocialContent = ({ tiktok }) => {
 export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
-  tiktok: PropTypes.object,
+  instagramVideos: PropTypes.array,
 };

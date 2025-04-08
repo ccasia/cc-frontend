@@ -93,35 +93,61 @@ export default function CalendarView() {
 
           <Stack direction="row" alignItems="center" spacing={1}>
             <Button
-              size="small"
               onClick={onDateToday}
               sx={{
-                boxShadow: `0px 1px 1px 1px ${theme.palette.grey[400]}`,
+                width: 80,
+                height: 44,
+                fontSize: 16,
+                fontWeight: 600,
+                color: '#231F20',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                borderBottom: '3px solid #E7E7E7',
+                '&:hover': {
+                  backgroundColor: '#f2f2f2',
+                  borderBottom: '3px solid #e7e7e7',
+                },
               }}
             >
               Today
             </Button>
             <Button
-              size="small"
               onClick={onDatePrev}
               sx={{
-                boxShadow: `0px 1px 1px 1px ${theme.palette.grey[400]}`,
-                padding: '4px 8px',
-                minWidth: '30px',
+                minWidth: 44,
+                width: 44,
+                height: 44,
+                padding: 0,
+                color: '#231F20',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                borderBottom: '3px solid #E7E7E7',
+                '&:hover': {
+                  backgroundColor: '#f2f2f2',
+                  borderBottom: '3px solid #e7e7e7',
+                },
               }}
             >
-              <Iconify icon="eva:arrow-ios-back-fill" />
+              <img src="/assets/icons/components/ic_chevron_left.svg" alt="Previous" />
             </Button>
             <Button
-              size="small"
               onClick={onDateNext}
               sx={{
-                boxShadow: `0px 1px 1px 1px ${theme.palette.grey[400]}`,
-                padding: '4px 8px',
-                minWidth: '30px',
+                minWidth: 44,
+                width: 44,
+                height: 44,
+                padding: 0,
+                color: '#231F20',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E7E7E7',
+                borderBottom: '3px solid #E7E7E7',
+                '&:hover': {
+                  backgroundColor: '#f2f2f2',
+                  borderBottom: '3px solid #e7e7e7',
+                },
               }}
             >
-              <Iconify icon="eva:arrow-ios-forward-fill" />
+              <img src="/assets/icons/components/ic_chevron_right.svg" alt="Next" />
             </Button>
           </Stack>
         </Stack>

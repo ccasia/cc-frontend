@@ -1,23 +1,28 @@
 import { useForm } from 'react-hook-form';
 
-import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
 import { LoadingButton } from '@mui/lab';
-import { InputAdornment } from '@mui/material';
+import { Stack, Button, Typography, Box } from '@mui/material';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
+import { useBoolean } from 'src/hooks/use-boolean';
+
+import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
+
+import { typography } from 'src/theme/typography';
 
 // ----------------------------------------------------------------------
 
 export default function AccountSocialLinks() {
   const { enqueueSnackbar } = useSnackbar();
-  const { user } = useAuthContext();
+  const { user, initialize } = useAuthContext();
+
+  const tikTokLoading = useBoolean();
+  const facebookLoading = useBoolean();
 
   const methods = useForm({
     defaultValues: {
@@ -26,57 +31,332 @@ export default function AccountSocialLinks() {
     },
   });
 
-  const {
-    handleSubmit,
-    formState: { isDirty, isSubmitting },
-  } = methods;
+  const { handleSubmit } = methods;
 
-  const onSubmit = handleSubmit(async (data) => {
+  // const onSubmit = handleSubmit(async (data) => {
+  //   try {
+  //     const res = await axiosInstance.patch(endpoints.creators.updateSocialMediaUsername, data);
+  //     enqueueSnackbar(res?.data?.message);
+  //   } catch (error) {
+  //     enqueueSnackbar(error?.message, {
+  //       variant: 'error',
+  //     });
+  //   }
+  // });
+
+  // useEffect(() => {
+  //   // Check if the Facebook SDK has loaded
+  //   if (window.FB) {
+  //     initFacebookSDK();
+  //     window.FB.getLoginStatus((response) => {
+  //       if (response.status === 'connected') {
+  //         console.log('User is already logged in.');
+  //       }
+  //     });
+  //   }
+  // }, []);
+
+  const handleLogin = () => {
+    window.FB.login(
+      (response) => {
+        if (response.authResponse) {
+          console.log('Facebook login successful:', response);
+        } else {
+          console.log('Facebook login failed');
+        }
+      },
+      { scope: 'public_profile,email' }
+    );
+  };
+
+  const connectTiktok = async () => {
     try {
-      const res = await axiosInstance.patch(endpoints.creators.updateSocialMediaUsername, data);
+      const { data: url } = await axiosInstance.get('/api/social/oauth/tiktok');
+      enqueueSnackbar('Redirecting...');
+      window.location.href = url;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const disconnectTiktok = async () => {
+    try {
+      tikTokLoading.onTrue();
+      const res = await axiosInstance.post(`/api/social/tiktok/disconnect`, {
+        userId: user.id,
+      });
+
+      initialize();
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error disconnecting tiktok account', {
+        variant: 'error',
+      });
+      console.log(error);
+    } finally {
+      tikTokLoading.onFalse();
+    }
+  };
+
+  const disconnectFacebook = async () => {
+    try {
+      facebookLoading.onTrue();
+      const res = await axiosInstance.post(`/api/social/facebook/disconnect`, {
+        userId: user.id,
+      });
+
+      initialize();
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      enqueueSnackbar('Error disconnecting tiktok account', {
+        variant: 'error',
+      });
+      console.log(error);
+    } finally {
+      facebookLoading.onFalse();
+    }
+  };
+
+  const connectFacebook = async () => {
+    try {
+      // const { data: url } = await axiosInstance.get('/api/social/auth/facebook');
+      const { data: url } = await axiosInstance.get(
+        'https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=529931609539167&redirect_uri=https://staging.cultcreativeasia.com/api/social/auth/facebook/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights'
+      );
+      enqueueSnackbar('Redirecting...');
+      window.location.href = url;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const disconnectInstagram = async () => {
+    try {
+      const res = await axiosInstance.delete(`/api/social/instagram/permissions/${user.id}`);
+      initialize();
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar(error?.message, {
         variant: 'error',
       });
     }
-  });
+  };
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Stack component={Card} spacing={3} sx={{ p: 3 }} alignItems="flex-end">
-        <RHFTextField
-          name="instagram"
-          label="Instagram"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="mdi:instagram" width={20} />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <RHFTextField
-          name="tiktok"
-          label="Tiktok"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="ic:baseline-tiktok" width={20} />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <LoadingButton
-          type="submit"
-          variant="outlined"
-          disabled={!isDirty}
-          size="small"
-          loading={isSubmitting}
-        >
-          Save changes
-        </LoadingButton>
+    <Stack spacing={3}>
+      <Stack spacing={4} sx={{ maxWidth: { xs: '100%', sm: 500 } }}>
+        {/* Instagram Connection */}
+        <Box>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontSize: '13px',
+              mb: 0.75,
+              color: '#636366',
+              fontWeight: typography.fontWeightMedium,
+              letterSpacing: '0.01em'
+            }}
+          >
+            Instagram Account
+          </Typography>
+          
+          <Stack 
+            direction="row" 
+            alignItems="center" 
+            sx={{
+              bgcolor: 'white',
+              borderRadius: '6px',
+              border: '1px solid #E7E7E7',
+              transition: 'all 0.2s ease-in-out',
+              overflow: 'hidden',
+              '&:hover': {
+                borderColor: '#D0D0D0',
+              },
+            }}
+          >
+            <Stack 
+              direction="row" 
+              alignItems="center" 
+              spacing={1.5}
+              sx={{ 
+                flex: 1,
+                px: 1.5,
+                py: 1.25,
+                minHeight: 42
+              }}
+            >
+              <Iconify 
+                icon="mdi:instagram" 
+                width={24}
+                height={24}
+                sx={{
+                  color: user?.creator?.isFacebookConnected ? '#231F20' : '#B0B0B0',
+                }}
+              />
+              <Typography 
+                variant="body2"
+                sx={{ 
+                  color: user?.creator?.isFacebookConnected ? '#231F20' : '#B0B0B0',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                }}
+              >
+                {user?.creator?.isFacebookConnected ? 'Connected' : 'Not connected'}
+              </Typography>
+            </Stack>
+
+            {user?.creator?.isFacebookConnected ? (
+              <LoadingButton
+                variant="text"
+                onClick={disconnectInstagram}
+                loading={facebookLoading.value}
+                sx={{
+                  height: '100%',
+                  px: 2,
+                  py: 1.25,
+                  color: '#FF3500',
+                  borderLeft: '1px solid #E7E7E7',
+                  borderRadius: 0,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  '&:hover': {
+                    bgcolor: '#FFF5F5',
+                  },
+                }}
+              >
+                Disconnect
+              </LoadingButton>
+            ) : (
+              <Button
+                LinkComponent="a"
+                href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://staging.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
+                target="_blank"
+                startIcon={<Iconify icon="material-symbols:add-rounded" width={18} height={18} />}
+                sx={{
+                  height: '100%',
+                  px: 2,
+                  py: 1.25,
+                  bgcolor: '#1340FF',
+                  color: '#FFFFFF',
+                  borderRadius: 0,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
+                }}
+              >
+                Connect
+              </Button>
+            )}
+          </Stack>
+        </Box>
+
+        {/* TikTok Connection */}
+        <Box>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontSize: '13px',
+              mb: 0.75,
+              color: '#636366',
+              fontWeight: typography.fontWeightMedium,
+              letterSpacing: '0.01em'
+            }}
+          >
+            TikTok Account
+          </Typography>
+          
+          <Stack 
+            direction="row" 
+            alignItems="center" 
+            sx={{
+              bgcolor: 'white',
+              borderRadius: '6px',
+              border: '1px solid #E7E7E7',
+              transition: 'all 0.2s ease-in-out',
+              overflow: 'hidden',
+              '&:hover': {
+                borderColor: '#D0D0D0',
+              },
+            }}
+          >
+            <Stack 
+              direction="row" 
+              alignItems="center" 
+              spacing={1.5}
+              sx={{ 
+                flex: 1,
+                px: 1.5,
+                py: 1.25,
+                minHeight: 42
+              }}
+            >
+              <Iconify 
+                icon="ic:baseline-tiktok" 
+                width={24}
+                height={24}
+                sx={{
+                  color: user?.creator?.isTiktokConnected ? '#231F20' : '#B0B0B0',
+                }}
+              />
+              <Typography 
+                variant="body2"
+                sx={{ 
+                  color: user?.creator?.isTiktokConnected ? '#231F20' : '#B0B0B0',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                }}
+              >
+                {user?.creator?.isTiktokConnected ? 'Connected' : 'Not connected'}
+              </Typography>
+            </Stack>
+
+            {user?.creator?.isTiktokConnected ? (
+              <LoadingButton
+                variant="text"
+                onClick={disconnectTiktok}
+                loading={tikTokLoading.value}
+                sx={{
+                  height: '100%',
+                  px: 2,
+                  py: 1.25,
+                  color: '#FF3500',
+                  borderLeft: '1px solid #E7E7E7',
+                  borderRadius: 0,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  '&:hover': {
+                    bgcolor: '#FFF5F5',
+                  },
+                }}
+              >
+                Disconnect
+              </LoadingButton>
+            ) : (
+              <Button
+                onClick={connectTiktok}
+                startIcon={<Iconify icon="material-symbols:add-rounded" width={18} height={18} />}
+                sx={{
+                  height: '100%',
+                  px: 2,
+                  py: 1.25,
+                  bgcolor: '#1340FF',
+                  color: '#FFFFFF',
+                  borderRadius: 0,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  '&:hover': {
+                    bgcolor: '#0030e0',
+                  },
+                }}
+              >
+                Connect
+              </Button>
+            )}
+          </Stack>
+        </Box>
       </Stack>
-    </FormProvider>
+    </Stack>
   );
 }

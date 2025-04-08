@@ -18,7 +18,6 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
 
   const inputRef = useRef(null); // Reference to the input field
 
- 
   const handleSendMessage = useCallback(() => {
     const trimmedMessage = message.trim(); // Remove unnecessary spaces
     if (trimmedMessage !== '') {
@@ -63,7 +62,6 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
         maxHeight: 100,
       }}
     >
-
       <IconButton onClick={toggleEmojiPicker} sx={{ alignSelf: 'center' }}>
         <Iconify icon="eva:smiling-face-fill" />
       </IconButton>
@@ -97,7 +95,7 @@ export default function ChatMessageInput({ disabled, onSendMessage }) {
           overflow: 'auto',
         }}
       />
-      <Button  color="secondary" onClick={handleSendMessage} sx={{ alignSelf: 'center' }}>
+      <Button color="secondary" onClick={handleSendMessage} sx={{ alignSelf: 'center' }}>
         Send
       </Button>
     </Stack>

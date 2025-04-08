@@ -1,6 +1,7 @@
 /* eslint-disable */
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 
 import {
   Box,
@@ -38,7 +39,7 @@ import { mutate } from 'swr';
 
 // ----------------------------------------------------------------------
 
-const NAV_WIDTH = 320;
+const NAV_WIDTH = 400;
 
 const NAV_COLLAPSE_WIDTH = 96;
 
@@ -51,7 +52,8 @@ export default function ChatNav({}) {
   const [latestMessages, setLatestMessages] = useState({});
   const [sortedThread, setSortedThreads] = useState([]);
   const { threads, threadrefetch } = useGetAllThreads();
-  const [selectedThreadId, setSelectedThreadId] = useState(null);
+  const { id } = useParams();
+  const [selectedThreadId, setSelectedThreadId] = useState(id || null);
   const [contacts, setContacts] = useState([]);
   const [selected, setSelected] = useState('all');
   const [selectedContact, setSelectedContact] = useState();
@@ -62,8 +64,13 @@ export default function ChatNav({}) {
     setSelected(value);
   };
 
-  const handleClick = () => {
-    onSelectThread(threads.id);
+  const handleClick = (threadId) => {
+    setSelectedThreadId(threadId);
+    const threadPath = paths.dashboard.chat.thread(threadId);
+    router.push(threadPath);
+    if (!mdUp) {
+      onCloseMobile();
+    }
   };
 
   const {
@@ -179,7 +186,7 @@ export default function ChatNav({}) {
                 key={thread.id}
                 collapse={collapseDesktop}
                 thread={thread}
-                selected={thread.id === selectedThreadId}
+                selected={thread.id === id}
                 onCloseMobile={onCloseMobile}
                 onClick={() => handleClick(thread.id)}
                 // onArchive={() => handleArchive(thread.id)}
@@ -265,49 +272,55 @@ export default function ChatNav({}) {
             setSelected(val);
           }}
           sx={{
-            borderRadius: 2,
-            m: 1,
+            borderRadius: 1,
+            minHeight: 36,
+            width: '100%',
+            mx: 'auto',
             '&.MuiTabs-root': {
               bgcolor: '#F4F4F4',
-              p: 1,
+              p: 0.5,
             },
             '& .MuiTabs-indicator': {
               position: 'absolute',
               bgcolor: '#FFF',
               border: 1,
               height: 1,
-              borderRadius: 1.5,
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              borderRadius: 1,
+              boxShadow: '0px -2px 0px 0px #E7E7E7 inset',
               borderColor: '#E7E7E7',
             },
           }}
         >
           <Tab
             value={'all'}
-            label="All"
+            label={`All (${countUnarchivedChats() || 0})`}
             sx={{
               '&.Mui-selected': {
-                borderRadius: 2,
+                borderRadius: 1,
                 fontWeight: 600,
                 zIndex: 100,
               },
               '&:not(:last-of-type)': {
                 mr: 0,
               },
+              minHeight: 36,
+              py: 0.5,
             }}
           />
           <Tab
             value={'archived'}
-            label="Archived"
+            label={`Archived (${countArchivedChats() || 0})`}
             sx={{
               '&.Mui-selected': {
-                borderRadius: 2,
+                borderRadius: 1,
                 fontWeight: 600,
                 zIndex: 100,
               },
               '&:not(:last-of-type)': {
                 mr: 0,
               },
+              minHeight: 36,
+              py: 0.5,
             }}
           />
         </Tabs>
@@ -375,16 +388,33 @@ export default function ChatNav({}) {
 
   return (
     <>
-      {!mdUp && renderToggleBtn}
+      {/* {!mdUp && renderToggleBtn} */}
 
-      {mdUp ? (
+      <Stack
+        sx={{
+          height: 800,
+          width: NAV_WIDTH,
+          position: 'relative',
+          overflow: 'hidden',
+          flexShrink: 0,
+          transition: theme.transitions.create(['width'], {
+            duration: theme.transitions.duration.shorter,
+          }),
+          ...(collapseDesktop && {
+            width: NAV_COLLAPSE_WIDTH,
+          }),
+        }}
+      >
+        {renderContent}
+      </Stack>
+
+      {/* {!mdUp ? (
         <Stack
           sx={{
             height: 1,
             flexShrink: 0,
             width: NAV_WIDTH,
             px: 0.5,
-            // borderRight: `solid 1px ${theme.palette.divider}`,
             transition: theme.transitions.create(['width'], {
               duration: theme.transitions.duration.shorter,
             }),
@@ -408,7 +438,7 @@ export default function ChatNav({}) {
         >
           {renderContent}
         </Drawer>
-      )}
+      )} */}
     </>
   );
 }

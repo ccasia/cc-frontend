@@ -5,7 +5,7 @@ export function fData(inputValue) {
 
   if (inputValue === 0) return '0 Bytes';
 
-  const units = ['bytes', 'Kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb', 'Zb', 'Yb'];
+  const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
   const decimal = 2;
 

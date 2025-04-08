@@ -9,21 +9,10 @@ export const SocketContext = createContext();
 const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState();
   const [online, setOnline] = useState();
-  const [onlineUsers, setOnlineUsers] = useState(null);
+  // const [onlineUsers, setOnlineUsers] = useState(null);
   const { user } = useAuthContext();
 
   useEffect(() => {
-    // I used this for my connection - Zawad
-    //  const socketConnection = io({transports:['polling'],reconnect:true,path:'/api/socket.io'});
-
-    // const socketConnection = io('https://cultcreative.famin.cloud', {
-    //   path: '/socket.io/',
-    //   transports: ['websocket', 'polling'],
-    //   reconnection: true,
-    //   reconnectionAttempts: 5,
-    //   reconnectionDelay: 1000,
-    // });
-
     const socketConnection = io({
       transports: ['websocket', 'polling'],
       reconnection: true,

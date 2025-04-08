@@ -33,7 +33,6 @@ export default function CreatorView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       <Typography variant="h4">Dashboard</Typography>
-
       <Box
         sx={{
           mt: 5,
@@ -44,6 +43,7 @@ export default function CreatorView() {
           border: (theme) => `dashed 1px ${theme.palette.divider}`,
         }}
       />
+
       {dialogOpen && (
         <CreatorForm open={dialogOpen} onClose={() => setDialogOpen(false)} creator={creator} />
       )}

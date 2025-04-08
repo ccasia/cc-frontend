@@ -104,6 +104,11 @@ export const endpoints = {
     updateSocialMediaUsername: '/api/creator/updateSocialMediaUsername',
     getMyCampaigns: (userId) => `/api/campaign/getMyCampaigns/${userId}`,
     getPartnerships: (id) => `/api/creator/getPartnerships/${id}`,
+    social: {
+      tiktok: (id) => `/api/social/tiktok/${id}`,
+      instagram: (id) => `/api/social/instagram/overview/${id}`,
+    },
+    updatePreference: (id) => `/api/creator/updatePreference/${id}`,
   },
   users: {
     newAdmin: '/api/user/admins',
@@ -113,6 +118,7 @@ export const endpoints = {
     getAdmins: '/api/user/getAdmins',
     allusers: '/api/users',
     changePassword: '/api/user/changePassword',
+    getAdminlogs: (id) => `/api/user/admin-logs/${id}`,
   },
   mail: {
     list: '/api/mail/list',
@@ -148,6 +154,7 @@ export const endpoints = {
     editBrand: '/api/company/editBrand',
     getOptions: '/api/company/getOptions',
     getBrandsByClientId: (id) => `/api/company/getBrands/${id}`,
+    linkPackage: (id) => `/api/company/linkPackage/${id}`,
   },
   event: {
     list: '/api/event/',
@@ -156,6 +163,7 @@ export const endpoints = {
     update: '/api/event/updateEvent',
   },
   campaign: {
+    total: '/api/campaign/total',
     createCampaign: '/api/campaign/createCampaign',
     spreadsheet: '/api/campaign/spreadsheet',
     updateDefaultTimeline: '/api/campaign/updateDefaultTimeline',
@@ -176,6 +184,7 @@ export const endpoints = {
       createSingleTimelineType: `/api/campaign/createSingleTimelineType`,
     },
     pitch: {
+      all: '/api/campaign/pitches',
       draft: '/api/campaign/draftPitch',
       root: '/api/campaign/pitch',
       approve: '/api/campaign/approvepitch',
@@ -223,6 +232,7 @@ export const endpoints = {
       },
     },
     creatorAgreement: (id) => `/api/campaign/creatorAgreements/${id}`,
+    allcreatorAgreement: '/api/campaign/getCreatorAgreements',
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
     sendAgreement: `/api/campaign/sendAgreement`,
     agreementTemplate: (id) => `/api/campaign/template/${id}`,
@@ -231,6 +241,7 @@ export const endpoints = {
   },
   submission: {
     root: '/api/submission/',
+    all: '/api/submission/getAllsubmission',
     creator: {
       agreement: '/api/submission/submitAgreement',
       draftSubmission: '/api/submission/draftSubmission',
@@ -252,6 +263,14 @@ export const endpoints = {
     root: '/api/role',
     get: (id) => `/api/role/${id}`,
     update: (id) => `/api/role/${id}`,
+  },
+  package: {
+    create: '/api/package/',
+    root: '/api/package/',
+    seed: '/api/packages/seedPackages',
+    get: (id) => `/api/packages/${id}`,
+    update: (id) => `/api/packages/${id}`,
+    history: `/api/packages/history/`,
   },
   invoice: {
     getAll: '/api/invoice/',
@@ -278,5 +297,12 @@ export const endpoints = {
   },
   bug: {
     create: '/api/bug',
+  },
+  public: {
+    generatelink: '/api/public/generate',
+    regeneratepass: '/api/public/regenerate',
+    validate: '/api/public/validate',
+    getDetails: (id) => `/api/public/details/${id}`,
+    clientFeedback: '/api/public/client-feedback',
   },
 };

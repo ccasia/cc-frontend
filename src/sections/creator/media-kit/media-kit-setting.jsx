@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -43,19 +44,8 @@ const FormField = ({ label, children }) => (
 );
 
 const MediaKitSetting = ({ open, handleClose, user }) => {
-  // const style = {
-  //   position: 'absolute',
-  //   top: '50%',
-  //   left: '50%',
-  //   transform: 'translate(-50%, -50%)',
-  //   minWidth: 300,
-  //   bgcolor: 'background.paper',
-  //   boxShadow: 24,
-  //   p: 2,
-  //   borderRadius: 2,
-  // };
-
   const success = useBoolean();
+  const smDown = useResponsive('down', 'sm');
 
   const schema = Yup.object().shape({
     profilePhoto: Yup.mixed().required(),
@@ -95,11 +85,6 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
       const formData = new FormData();
       formData.append('profilePhoto', data.profilePhoto);
       formData.append('data', JSON.stringify({ ...data, creatorId: user?.creator?.id }));
-
-      // await axiosInstance.patch(endpoints.creators.updateMediaKit, {
-      //   ...data,
-      //   creatorId: user?.creator?.id,
-      // });
 
       await axiosInstance.patch(endpoints.creators.updateMediaKit, formData, {
         headers: {
@@ -154,7 +139,13 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 1 } }}
+      >
         <Box
           sx={{
             p: 2,
@@ -289,6 +280,7 @@ const MediaKitSetting = ({ open, handleClose, user }) => {
               </Button> */}
               <LoadingButton
                 variant="contained"
+                fullWidth={smDown}
                 sx={{
                   mt: 2,
                   bgcolor: '#1340FF',

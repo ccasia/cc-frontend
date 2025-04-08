@@ -20,6 +20,7 @@ import {
   Typography,
   DialogContent,
   DialogActions,
+  TextField,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -28,6 +29,8 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
+import Label from 'src/components/label';
+import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -35,6 +38,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPitch, setCurrentPitch] = useState(pitch);
   const { user } = useAuthContext();
+  const [totalUGCVideos, setTotalUGCVideos] = useState(null);
+  const { mutate } = useGetCampaignById(campaign.id);
 
   useEffect(() => {
     setCurrentPitch(pitch);
@@ -44,6 +49,12 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
     [user]
   );
+
+  const ugcLeft = useMemo(() => {
+    if (!campaign?.campaignCredits) return null;
+    const totalUGCs = campaign?.shortlisted?.reduce((acc, sum) => acc + (sum?.ugcVideos ?? 0), 0);
+    return campaign?.campaignCredits - totalUGCs;
+  }, [campaign]);
 
   // Calculate match percentage
   // const matchPercentage = useMemo(() => {
@@ -124,6 +135,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       const response = await axiosInstance.patch(endpoints.campaign.pitch.changeStatus, {
         pitchId: pitch.id,
         status: 'approved',
+        totalUGCVideos,
       });
 
       const updatedPitch = { ...pitch, status: 'approved' };
@@ -133,6 +145,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         onUpdate(updatedPitch);
       }
 
+      mutate();
       enqueueSnackbar(response?.data?.message || 'Pitch approved successfully');
       setConfirmDialog({ open: false, type: null });
     } catch (error) {
@@ -500,6 +513,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                               thickness={7}
                               sx={{ color: 'grey.300' }}
                             />
+
                             <CircularProgress
                               variant="determinate"
                               value={Math.min(pitch?.matchingPercentage, 100)}
@@ -586,9 +600,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Grid>
               </Grid>
             </Box>
-
             <Divider />
-
             {/* Pitch Content Section */}
             <Box>
               {currentPitch?.type === 'video' &&
@@ -704,6 +716,11 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialog.open} onClose={handleCloseConfirmDialog} maxWidth="xs" fullWidth>
         <DialogContent>
+          {campaign?.campaignCredits && (
+            <Box mt={2} textAlign="end">
+              <Label color="info">{ugcLeft} Credits left</Label>
+            </Box>
+          )}
           <Stack spacing={3} alignItems="center" sx={{ py: 4 }}>
             <Box
               sx={{
@@ -744,8 +761,28 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   : 'Are you sure you want to decline this pitch?'}
               </Typography>
             </Stack>
+            {confirmDialog.type === 'approve' && (
+              <Box mt={2} width={1}>
+                <TextField
+                  value={totalUGCVideos}
+                  size="small"
+                  placeholder="UGC Videos"
+                  type="number"
+                  fullWidth
+                  onKeyDown={(e) => {
+                    if (e.key === '0' && totalUGCVideos.length === 0) e.preventDefault();
+                  }}
+                  onChange={(e) => {
+                    setTotalUGCVideos(e.currentTarget.value);
+                  }}
+                  error={totalUGCVideos > ugcLeft}
+                  helperText={totalUGCVideos > ugcLeft && `Maximum of ${ugcLeft} UGC Videos`}
+                />
+              </Box>
+            )}
           </Stack>
         </DialogContent>
+
         <DialogActions sx={{ pb: 3, px: 3 }}>
           <Button
             onClick={handleCloseConfirmDialog}
@@ -772,7 +809,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           </Button>
           <Button
             onClick={confirmDialog.type === 'approve' ? handleApprove : handleDecline}
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting ||
+              (confirmDialog.type === 'approve' && (!totalUGCVideos || totalUGCVideos > ugcLeft))
+            }
             sx={{
               bgcolor: confirmDialog.type === 'approve' ? '#2e6c56' : '#ffffff',
               color: confirmDialog.type === 'approve' ? '#fff' : '#ff3b30',

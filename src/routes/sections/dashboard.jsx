@@ -23,6 +23,9 @@ const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
 // APP
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
 
+// Analytics
+const AnalyticsView = lazy(() => import('src/sections/analytics/view/analytic-view'));
+
 // Campaign
 const ManageCampaign = lazy(() => import('src/pages/dashboard/campaign/manageCampaign'));
 const CreateCampaign = lazy(() => import('src/pages/dashboard/campaign/createCampaign'));
@@ -87,6 +90,14 @@ const Overview = lazy(() => import('src/pages/dashboard/creator/overview'));
 
 const InvoiceDetail = lazy(() => import('src/pages/dashboard/creator/invoice-details'));
 
+// import the packages pages
+const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
+
+// Mobile View
+const MobileModalView = lazy(
+  () => import('src/sections/campaign/discover/creator/mobile-modal-view')
+);
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -116,6 +127,7 @@ export const dashboardRoutes = [
         children: [
           { element: <ProfilePage />, index: true },
           { path: 'profile', element: <ProfilePage /> },
+          { path: 'profile/:section', element: <ProfilePage /> },
         ],
       },
       // For admin/superadmin
@@ -247,7 +259,7 @@ export const dashboardRoutes = [
           {
             path: 'discover',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                 <BrandDiscover />
               </RoleBasedGuard>
             ),
@@ -255,7 +267,7 @@ export const dashboardRoutes = [
           {
             path: 'create',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                 <BrandCreate />
               </RoleBasedGuard>
             ),
@@ -263,7 +275,7 @@ export const dashboardRoutes = [
           {
             path: 'manage',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                 <BrandManage />
               </RoleBasedGuard>
             ),
@@ -271,7 +283,7 @@ export const dashboardRoutes = [
           {
             path: 'edit/:id',
             element: (
-              <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+              <RoleBasedGuard hasContent roles={['superadmin', 'admin']}>
                 <CompanyEdit />
               </RoleBasedGuard>
             ),
@@ -435,11 +447,27 @@ export const dashboardRoutes = [
               },
             ],
           },
+          {
+            path: 'VUquQR/HJUboKDBwJi71KQ==/discover/:id',
+            element: (
+              <RoleBasedGuard hasContent roles={['creator']}>
+                <MobileModalView />
+              </RoleBasedGuard>
+            ),
+          },
         ],
       },
       {
         path: 'calendar',
         element: <CalendarView />,
+      },
+      {
+        path: 'analytics',
+        element: (
+          <RoleBasedGuard hasContent roles={['superadmin', 'god']}>
+            <AnalyticsView />
+          </RoleBasedGuard>
+        ),
       },
       {
         path: 'chat',
@@ -496,6 +524,10 @@ export const dashboardRoutes = [
             element: <ManageRole />,
           },
         ],
+      },
+      {
+        path: 'packages',
+        element: <Packages />,
       },
       {
         path: 'template',

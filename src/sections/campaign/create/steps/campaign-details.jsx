@@ -23,10 +23,10 @@ const videoAngle = [
 ];
 
 // eslint-disable-next-line react/prop-types
-const FormField = ({ label, children }) => (
+const FormField = ({ label, children, required = true }) => (
   <Stack spacing={1}>
     <FormLabel
-      required
+      required={required}
       sx={{
         fontWeight: 600,
         color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
@@ -97,7 +97,7 @@ const CampaignDetails = () => {
         }}
       >
         <Stack spacing={2}>
-          <FormField label="Audience Gender">
+          <FormField label="Gender">
             <RHFMultiSelect
               name="audienceGender"
               placeholder="Select Gender"
@@ -112,10 +112,10 @@ const CampaignDetails = () => {
             />
           </FormField>
 
-          <FormField label="Audience City/Area">
+          <FormField label="City/Area">
             <RHFMultiSelect
               name="audienceLocation"
-              placeholder="Select city "
+              placeholder="Select city"
               checkbox
               chip
               options={[
@@ -137,10 +137,10 @@ const CampaignDetails = () => {
             />
           )}
 
-          <FormField label="Audience Creator Persona">
+          <FormField label="Interests">
             <RHFMultiSelect
               name="audienceCreatorPersona"
-              placeholder="Select audience creator persona"
+              placeholder="Select creator persona"
               checkbox
               chip
               options={interestsLists.map((item) => ({
@@ -149,7 +149,7 @@ const CampaignDetails = () => {
               }))}
             />
           </FormField>
-          <FormField label="Audience Age">
+          <FormField label="Age">
             <RHFMultiSelect
               name="audienceAge"
               checkbox
@@ -163,7 +163,7 @@ const CampaignDetails = () => {
               placeholder="Select Age"
             />
           </FormField>
-          <FormField label="Audience Language">
+          <FormField label="Language">
             <RHFAutocomplete
               multiple
               disableCloseOnSelect
@@ -195,7 +195,7 @@ const CampaignDetails = () => {
         </Stack>
 
         <Stack spacing={3}>
-          <FormField label="User Persona">
+          <FormField label="Creator Persona" required={false}>
             <RHFTextField
               name="audienceUserPersona"
               placeholder=" let us know who you want your campaign to reach!"

@@ -1,14 +1,10 @@
 import dayjs from 'dayjs';
-import ExcelJS from 'exceljs';
 import PropTypes from 'prop-types';
-import { saveAs } from 'file-saver';
-import { Icon } from '@iconify/react';
 
-import Tooltip from '@mui/material/Tooltip';
 import {
-  Box,
   Table,
   Button,
+  Box,
   Dialog,
   TableRow,
   TableHead,
@@ -17,7 +13,13 @@ import {
   DialogTitle,
   DialogActions,
   TableContainer,
+  IconButton,
 } from '@mui/material';
+import Tooltip from '@mui/material/Tooltip';
+
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import { Icon } from '@iconify/react';
 
 export const AdminLogsModal = ({ open, logs, onClose, adminName }) => {
   console.log('admin lofgs', adminName);

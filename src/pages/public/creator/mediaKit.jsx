@@ -15,7 +15,7 @@ export default function Page() {
         <title>Media Kit</title>
       </Helmet>
 
-      <MediaKitCreator creatorId={id}/>
+      <MediaKitCreator creatorId={id} />
     </>
   );
 }

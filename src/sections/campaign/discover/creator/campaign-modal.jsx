@@ -35,18 +35,32 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
-import CampaignPitchOptionsModal from './campaign-pitch-options-modal'; // Import an appropriate icon
+import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 const ChipStyle = {
-  bgcolor: '#e4e4e4',
+  bgcolor: '#FFF',
+  border: 1,
+  borderColor: '#EBEBEB',
+  borderRadius: 1,
   color: '#636366',
-  borderRadius: 16,
+  height: '32px',
+  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
   '& .MuiChip-label': {
     fontWeight: 700,
     px: 1.5,
-    py: 0.5,
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: '-3px',
   },
-  '&:hover': { bgcolor: '#e4e4e4' },
+  '&:hover': { bgcolor: '#FFF' },
+};
+
+const capitalizeFirstLetter = (string) => {
+  if (!string) return '';
+  if (string.toLowerCase() === 'f&b') return 'F&B';
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 };
 
 const CampaignModal = ({
@@ -106,6 +120,16 @@ const CampaignModal = ({
   );
 
   const { isFormCompleted } = user.creator;
+
+  const totalCredits = campaign?.shortlisted?.reduce(
+    (acc, shortlist) => acc + shortlist.ugcVideos,
+    0
+  );
+
+  const isCreditsFinished = useMemo(
+    () => campaign?.campaignCredits === totalCredits,
+    [campaign, totalCredits]
+  );
 
   const handleImageClick = (event) => {
     // Prevent expansion if clicking on navigation buttons
@@ -333,9 +357,9 @@ const CampaignModal = ({
               sx={{
                 backgroundColor: theme.palette.common.white,
                 color: '#48484a',
-                fontWeight: 'bold',
+                fontWeight: 600,
                 fontSize: '0.875rem',
-                borderRadius: '10px',
+                borderRadius: '6px',
                 height: '35px',
                 border: '1px solid #ebebeb',
                 borderBottom: '3px solid #ebebeb',
@@ -424,52 +448,6 @@ const CampaignModal = ({
 
         {/* Campaign info */}
         <Box sx={{ px: 3, pb: 3, mt: 4 }}>
-          {/* <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            justifyContent="space-between"
-            alignItems={{ xs: 'flex-start', sm: 'center' }}
-            spacing={2}
-            sx={{ mb: 2 }}
-          >
-            <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
-              <Typography
-                data-campaign-name
-                variant="h5"
-                sx={{
-                  fontWeight: '550',
-                  fontSize: { xs: '2rem', sm: '2.4rem' },
-                  mb: 1,
-                  mt: 0.5,
-                  fontFamily: 'Instrument Serif, serif',
-                }}
-              >
-                {campaign?.name}
-              </Typography>
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontSize: { xs: '0.8rem', sm: '1rem' },
-                  mt: -2,
-                  mb: -1.5,
-                  color: '#636366',
-                  fontWeight: 480,
-                }}
-              >
-                {campaign?.company?.name}
-              </Typography>
-            </Stack>
-            <Stack
-              direction={{ xs: 'row', sm: 'row' }}
-              spacing={1}
-              width={{ xs: '100%', sm: 'auto' }}
-              justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
-              sx={{ mt: { xs: 1.5, sm: 0 } }}
-            >
-              {!isFormCompleted ? (
-                <Button
-                  variant="contained"
-                  onClick={dialog.onTrue}
-          > */}
           <Grid container rowGap={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
             <Grid item xs={12} sm={6}>
               <Stack spacing={0.5} width={{ xs: '100%', sm: 'auto' }}>
@@ -508,29 +486,97 @@ const CampaignModal = ({
                 sx={{ mt: { xs: 1.5, sm: 0 } }}
               >
                 {!isFormCompleted || !user?.paymentForm?.bankAccountName ? (
-                  <Button
-                    variant="contained"
-                    onClick={dialog.onTrue}
-                    sx={{
-                      backgroundColor: '#273eec',
-                      color: 'white',
-                      borderBottom: '5px solid #152382 !important',
-                      border: 'none',
-                      '&:hover': {
-                        backgroundColor: '#f57c00',
-                        borderBottom: '5px solid #b26a00 !important',
-                      },
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      padding: { xs: '4px 12px', sm: '6px 18px' },
-                      minWidth: '100px',
-                      height: '42px',
-                      boxShadow: 'none',
-                      textTransform: 'none',
-                      fontWeight: 650,
-                    }}
-                  >
-                    Complete Profile
-                  </Button>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Box
+                      component="div"
+                      sx={{
+                        position: 'relative',
+                        display: 'inline-flex',
+                        '&:hover .tooltip-content': {
+                          opacity: 1,
+                          visibility: 'visible',
+                        },
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src="/assets/icons/components/ic_fillpaymenterror.svg"
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          cursor: 'pointer',
+                        }}
+                        onClick={dialog.onTrue}
+                      />
+                      <Box
+                        className="tooltip-content"
+                        sx={{
+                          opacity: 0,
+                          visibility: 'hidden',
+                          position: 'absolute',
+                          top: '-75px',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          backgroundColor: '#FCFCFC',
+                          color: '#231F20',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          textAlign: 'center',
+                          zIndex: 10,
+                          boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
+                          width: '180px',
+                          transition: 'opacity 0.2s ease, visibility 0.2s ease',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Typography variant="caption" sx={{ display: 'block', mb: 1, textAlign: 'left'}}>
+                          Please complete your payment details to access this feature.
+                        </Typography>
+                        <Button
+                          size="small"
+                          onClick={() => {
+                            router.push(paths.dashboard.user.profileTabs.payment);
+                          }}
+                          sx={{
+                            color: '#1340FF',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            minWidth: 'auto',
+                            textTransform: 'none',
+                            display: 'flex',
+                            justifyContent: 'flex-start',
+                            '&:hover': {
+                              backgroundColor: 'rgba(19, 64, 255, 0.08)',
+                            },
+                          }}
+                        >
+                          Complete Payment Details
+                        </Button>
+                      </Box>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      disabled
+                      sx={{
+                        backgroundColor: '#f5f5f5',
+                        color: '#a1a1a1',
+                        borderBottom: '4px solid #d1d1d1 !important',
+                        border: 'none',
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                        padding: { xs: '4px 12px', sm: '6px 18px' },
+                        minWidth: '100px',
+                        height: '42px',
+                        boxShadow: 'none',
+                        textTransform: 'none',
+                        fontWeight: 650,
+                        opacity: 0.7,
+                      }}
+                    >
+                      Pitch Now
+                    </Button>
+                  </Stack>
                 ) : hasPitched ? (
                   existingPitch.status === 'approved' ? (
                     <Button
@@ -644,6 +690,7 @@ const CampaignModal = ({
                   <Button
                     variant="contained"
                     onClick={handlePitch}
+                    disabled={isCreditsFinished}
                     sx={{
                       backgroundColor: '#203ff5',
                       color: 'white',
@@ -662,7 +709,7 @@ const CampaignModal = ({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    Pitch Now
+                    {isCreditsFinished ? 'Not available' : 'Pitch Now'}
                   </Button>
                 )}
                 <Button
@@ -670,28 +717,31 @@ const CampaignModal = ({
                   onClick={handleBookmarkClick}
                   sx={{
                     minWidth: 0,
-                    padding: '6px 12px',
+                    padding: '6px',
                     border: '1px solid',
                     borderColor: 'grey.300',
                     borderBottom: '4px solid #e7e7e7',
                     borderRadius: 1,
-                    '& .MuiSvgIcon-root': {
-                      fontSize: '1.5rem',
-                    },
-                    width: '42px',
-                    height: '42px',
+                    width: '44px',
+                    height: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   <Iconify
                     icon={bookMark ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
-                    width={28}
-                    height={28}
+                    width={18}
+                    height={18}
+                    sx={{
+                      fontSize: 'inherit',
+                      transform: 'scale(1.5)',
+                    }}
                   />
                 </Button>
               </Stack>
             </Grid>
           </Grid>
-          {/* </Stack> */}
 
           {/* Add Divider here */}
           <Divider sx={{ my: 2, mb: 3, mt: 4 }} />
@@ -769,12 +819,12 @@ const CampaignModal = ({
                           }}
                         >
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="mdi:emoticon-happy"
+                            <Box
+                              component="img"
+                              src="/assets/icons/components/ic_bluesmiley.svg"
                               sx={{
-                                color: '#203ff5',
                                 width: 20,
-                                height: 20,
+                                height: 20
                               }}
                             />
                             <Typography
@@ -816,8 +866,9 @@ const CampaignModal = ({
                           }}
                         >
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="mdi:target-arrow"
+                            <Box
+                              component="img"
+                              src="/assets/icons/components/ic_objectives.svg"
                               sx={{
                                 color: '#835cf5',
                                 width: 20,
@@ -859,6 +910,69 @@ const CampaignModal = ({
                         </Stack>
                       </Box>
 
+                      {/* Campaign Deliverables */}
+                      <Box sx={{ mb: 3 }}>
+                        <Box
+                          sx={{
+                            border: '1.5px solid #203ff5',
+                            borderBottom: '4px solid #203ff5',
+                            borderRadius: 1,
+                            p: 1,
+                            mb: 1,
+                            width: 'fit-content',
+                          }}
+                        >
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Iconify
+                              icon="mdi:cube-outline"
+                              sx={{
+                                color: '#203ff5',
+                                width: 20,
+                                height: 20,
+                              }}
+                            />
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#203ff5',
+                                fontWeight: 600,
+                              }}
+                            >
+                              CAMPAIGN DELIVERABLES
+                            </Typography>
+                          </Stack>
+                        </Box>
+                        <Stack spacing={1} sx={{ pl: 0.5 }}>
+                          {[
+                            { label: 'UGC Videos', value: true },
+                            { label: 'Raw Footage', value: campaign?.rawFootage },
+                            { label: 'Photos', value: campaign?.photos },
+                            { label: 'Ads', value: campaign?.ads },
+                          ].map(
+                            (deliverable) =>
+                              deliverable.value && (
+                                <Stack
+                                  key={deliverable.label}
+                                  direction="row"
+                                  spacing={1}
+                                  alignItems="center"
+                                >
+                                  <Iconify
+                                    icon="octicon:dot-fill-16"
+                                    sx={{
+                                      color: '#000000',
+                                      width: 12,
+                                      height: 12,
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  <Typography variant="body2">{deliverable.label}</Typography>
+                                </Stack>
+                              )
+                          )}
+                        </Stack>
+                      </Box>
+
                       {/* Campaign Do's */}
                       <Box sx={{ mb: 3 }}>
                         <Box
@@ -872,8 +986,9 @@ const CampaignModal = ({
                           }}
                         >
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="material-symbols:check-box-outline"
+                            <Box
+                              component="img"
+                              src="/assets/icons/components/ic_dos.svg"
                               sx={{
                                 color: '#2e6c56',
                                 width: 20,
@@ -932,8 +1047,9 @@ const CampaignModal = ({
                           }}
                         >
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="material-symbols:disabled-by-default-outline"
+                            <Box
+                              component="img"
+                              src="/assets/icons/components/ic_donts.svg"
                               sx={{
                                 color: '#eb4a26',
                                 width: 20,
@@ -1032,7 +1148,10 @@ const CampaignModal = ({
                 <Stack spacing={2}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {[
-                      { label: 'Gender', data: campaign?.campaignRequirement?.gender },
+                      {
+                        label: 'Gender',
+                        data: campaign?.campaignRequirement?.gender?.map(capitalizeFirstLetter),
+                      },
                       { label: 'Age', data: campaign?.campaignRequirement?.age },
                       {
                         label: 'Geo Location',
@@ -1041,7 +1160,9 @@ const CampaignModal = ({
                       { label: 'Language', data: campaign?.campaignRequirement?.language },
                       {
                         label: 'Creator Persona',
-                        data: campaign?.campaignRequirement?.creator_persona,
+                        data: campaign?.campaignRequirement?.creator_persona?.map((value) =>
+                          value.toLowerCase() === 'f&b' ? 'F&B' : capitalizeFirstLetter(value)
+                        ),
                       },
                     ].map((item, index) => (
                       <Box key={index}>
@@ -1053,16 +1174,7 @@ const CampaignModal = ({
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {item.data?.map((value, idx) => (
-                            <Chip
-                              key={idx}
-                              label={
-                                item.label === 'Creator Persona'
-                                  ? value.charAt(0).toUpperCase() + value.slice(1)
-                                  : value
-                              }
-                              size="small"
-                              sx={ChipStyle}
-                            />
+                            <Chip key={idx} label={value} size="small" sx={ChipStyle} />
                           ))}
                         </Box>
                       </Box>

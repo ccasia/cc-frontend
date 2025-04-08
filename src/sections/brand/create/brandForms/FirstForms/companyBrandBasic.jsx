@@ -1,9 +1,9 @@
 import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm, useFieldArray } from 'react-hook-form';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 import Box from '@mui/material/Box';
@@ -15,15 +15,14 @@ import Button from '@mui/material/Button';
 import Stepper from '@mui/material/Stepper';
 import { alpha } from '@mui/material/styles';
 import StepLabel from '@mui/material/StepLabel';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {
   Stack,
-  Tooltip,
-  IconButton,
+  Avatar,
   ListItemText,
   InputAdornment,
   LinearProgress,
+  CircularProgress,
 } from '@mui/material';
 
 import useGetCompany from 'src/hooks/use-get-company';
@@ -38,32 +37,27 @@ import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook
 
 import CreateCompany from './create-company';
 
-const steps = ['Select or Create Company', 'Fill in Brand Information'];
+const steps = ['Select Company', 'Fill in Brand Information'];
 
 dayjs.extend(localizedFormat);
 
 function CompanyBrandBasic() {
   const [activeStep, setActiveStep] = useState(0);
   const { data: companies, isLoading } = useGetCompany();
-  const [openCreate, setOpenCreate] = useState();
+  const [openCreate, setOpenCreate] = useState(false);
   const [loading, setLoading] = useState(false);
   const smUp = useResponsive('up', 'sm');
 
   // If existing company is selected
   const schemaTwo = Yup.object().shape({
-    brandName: Yup.string().required('name is required'),
-    brandEmail: Yup.string().required('Email is required'),
-    brandPhone: Yup.string().required('Phone is required'),
-    brandWebsite: Yup.string().required('Website is required'),
-    brandAbout: Yup.string().required('About Description is required'),
-    brandObjectives: Yup.array().of(
-      Yup.object().shape({
-        value: Yup.string().required('Value is required'),
-      })
-    ),
-    brandInstagram: Yup.string().required('Brand Instagram is required'),
-    brandTiktok: Yup.string().required('Brand Tiktok is required'),
-    brandIndustries: Yup.array().min(1, 'Brand Industries is required'),
+    brandName: Yup.string().required('Brand name is required'),
+    brandEmail: Yup.string().required('Brand email is required'),
+    // brandPhone: Yup.string().required('Phone is required'),
+    // brandWebsite: Yup.string().required('Website is required'),
+    // brandAbout: Yup.string().required('About Description is required'),
+    // brandInstagram: Yup.string().required('Brand Instagram is required'),
+    // brandTiktok: Yup.string().required('Brand Tiktok is required'),
+    // brandIndustries: Yup.array().min(1, 'Brand Industries is required'),
     companyId: Yup.object().required('Company is required'),
   });
 
@@ -73,11 +67,6 @@ function CompanyBrandBasic() {
     brandWebsite: '',
     brandAbout: '',
     companyId: { name: '', value: '' },
-    brandObjectives: [
-      {
-        value: '',
-      },
-    ],
     brandInstagram: '',
     brandTiktok: '',
     brandIndustries: [],
@@ -88,19 +77,14 @@ function CompanyBrandBasic() {
     defaultValues: defaultValuesOne,
   });
 
-  const {
-    handleSubmit,
-    setValue,
-    reset,
-    control,
-    register,
-    formState: { errors },
-  } = methods;
+  const { handleSubmit, setValue, reset, watch } = methods;
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'brandObjectives',
-  });
+  const company = watch('companyId');
+
+  // const { fields, append, remove } = useFieldArray({
+  //   control,
+  //   name: 'brandObjectives',
+  // });
 
   const onSubmit = handleSubmit(async (data) => {
     const { companyId } = data;
@@ -133,21 +117,23 @@ function CompanyBrandBasic() {
   function companyInfo() {
     const selectCompany = (
       <Stack gap={2}>
-        <Button
-          variant="outlined"
-          color="primary"
+        {/* <Button
+          variant="contained"
+          // color="primary"
           size="small"
           onClick={() => {
             setOpenCreate(true);
           }}
           sx={{
-            width: 200,
             p: 1,
             ml: 'auto',
+            borderRadius: 0.6,
           }}
+          startIcon={<Iconify icon="mdi:company" width={20} />}
+          fullWidth={!smUp}
         >
           Create a new company
-        </Button>
+        </Button> */}
 
         <RHFAutocomplete
           key="companyId"
@@ -156,25 +142,18 @@ function CompanyBrandBasic() {
           freeSolo
           options={
             companies?.length > 0
-              ? companies.map((item) => ({ name: item?.name, value: item?.id, logo: item?.logo }))
+              ? companies
+                  ?.filter((a) => a.type === 'agency')
+                  .map((item) => ({ name: item?.name, value: item?.id, logo: item?.logo }))
               : []
           }
           getOptionLabel={(option) => option?.name || ''}
           renderOption={(props, option) => (
             <li {...props}>
               <Stack direction="row" alignItems="center" gap={2}>
-                <img
-                  loading="lazy"
-                  width="35"
-                  height="35"
-                  src={option?.logo || ''}
-                  srcSet={option?.logo || ''}
-                  alt={option?.name}
-                  style={{
-                    borderRadius: 50,
-                  }}
-                />
-                <Typography>{option?.name}</Typography>
+                <Avatar src={option?.logo}>{option?.name[0]}</Avatar>
+
+                <Typography variant="subtitle2">{option?.name}</Typography>
               </Stack>
             </li>
           )}
@@ -298,7 +277,7 @@ function CompanyBrandBasic() {
           </Stack>
         </Stack>
 
-        <Stack mt={5}>
+        {/* <Stack mt={5}>
           <Typography variant="h5">Objectives</Typography>
 
           <Stack
@@ -339,7 +318,7 @@ function CompanyBrandBasic() {
               Add Objective
             </Button>
           </Stack>
-        </Stack>
+        </Stack> */}
       </>
     );
   }
@@ -361,6 +340,27 @@ function CompanyBrandBasic() {
       <LinearProgress variant="determinate" value={((active + 1) / steps.length) * 100} />
     </Stack>
   );
+
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: (theme) => theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -385,9 +385,19 @@ function CompanyBrandBasic() {
           {steps.map((label, index) => {
             const stepProps = {};
             const labelProps = {};
-            // labelProps.error = stepError.includes(index) && true;
             return (
-              <Step key={label} {...stepProps}>
+              <Step
+                key={label}
+                {...stepProps}
+                sx={{
+                  '& .MuiStepIcon-root.Mui-completed': {
+                    color: 'black',
+                  },
+                  '& .MuiStepIcon-root.Mui-active': {
+                    color: 'black',
+                  },
+                }}
+              >
                 <StepLabel {...labelProps}>{label}</StepLabel>
               </Step>
             );
@@ -422,9 +432,6 @@ function CompanyBrandBasic() {
             >
               Reset
             </Button>
-            {/* <Button onClick={finalSubmit} color="inherit">
-              Submit
-            </Button> */}
           </Box>
         </>
       ) : (
@@ -441,8 +448,6 @@ function CompanyBrandBasic() {
               p: 0.5,
               my: 0.5,
               mx: 1,
-              // bgcolor: (theme) => alpha(theme.palette.grey[500], 0.12),
-
               width: '80%',
             }}
           >
@@ -460,16 +465,22 @@ function CompanyBrandBasic() {
               onClick={handleBack}
               sx={{ mr: 1 }}
               size="small"
+              variant="outlined"
             >
               Back
             </Button>
             <Box sx={{ flexGrow: 1 }} />
             {activeStep === steps.length - 1 ? (
-              <LoadingButton loading={loading} variant="contained" onClick={onSubmit}>
+              <LoadingButton loading={loading} variant="contained" onClick={onSubmit} size="small">
                 Submit
               </LoadingButton>
             ) : (
-              <Button variant="contained" onClick={handleNext} size="small">
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                size="small"
+                disabled={!company?.value}
+              >
                 Next
               </Button>
             )}

@@ -17,6 +17,7 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { countries } from 'src/assets/data';
+import { primaryFont } from 'src/theme/typography';
 
 import Iconify from 'src/components/iconify';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
@@ -66,18 +67,22 @@ const SecondStep = ({ item }) => {
     <Box>
       <ListItemText
         sx={{
-          mt: 2,
+          mt: 4,
           textAlign: 'center',
         }}
         primary={item.title}
         secondary={item.description}
         primaryTypographyProps={{
-          fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-          variant: 'h3',
+          fontFamily: '"Instrument Serif", serif',
+          fontSize: '40px',
           fontWeight: 400,
+          color: '#231F20',
         }}
         secondaryTypographyProps={{
-          variant: 'subtitle2',
+          fontFamily: 'InterDisplay',
+          fontSize: '16px',
+          fontWeight: 400,
+          color: '#636366',
         }}
       />
 
@@ -86,17 +91,20 @@ const SecondStep = ({ item }) => {
         sx={{
           width: { sm: 400 },
           mx: 'auto',
-          my: 10,
+          my: 7,
         }}
       >
         <Stack spacing={1}>
-          <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
-            What is your nationality?
+          <FormLabel
+            required
+            sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
+          >
+            What is your country of residence?
           </FormLabel>
           <RHFAutocomplete
             name="Nationality"
             type="country"
-            placeholder="Select Nationality"
+            placeholder="Select Country"
             fullWidth
             options={countries.map((option) => option.label)}
             getOptionLabel={(option) => option}
@@ -104,7 +112,10 @@ const SecondStep = ({ item }) => {
         </Stack>
 
         <Stack spacing={1}>
-          <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
+          <FormLabel
+            required
+            sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
+          >
             Which city are you from?
           </FormLabel>
           <RHFTextField

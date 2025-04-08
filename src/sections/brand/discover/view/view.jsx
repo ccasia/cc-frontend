@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
 import { Box } from '@mui/material';
 import Container from '@mui/material/Container';
@@ -33,13 +33,9 @@ function DiscoverBrand() {
 
   const [search, setSearch] = useState('');
 
-  const handleSearch = useCallback((event) => {
-    setSearch(event.target.value);
-  }, []);
-
-  const filteredData =
-    !isLoading &&
-    companies.filter((company) => company.name.toLowerCase().indexOf(search.toLowerCase()) !== -1);
+  const filteredData = !isLoading
+    ? companies.filter((company) => company.name.toLowerCase().includes(search.toLowerCase()))
+    : [];
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>

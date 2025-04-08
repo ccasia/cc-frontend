@@ -19,6 +19,9 @@ import { archiveUserThread, unarchiveUserThread, useGetAllThreads } from 'src/ap
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import ThreadInfoModal from './threadinfoModal';
 import ChatArchiveModal from './chatArchiveModal';
+import { useResponsive } from 'src/hooks/use-responsive';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 //  import { toast } from 'react-toastify';
 
 // ----------------------------------------------------------------------
@@ -40,6 +43,8 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
   const [autoHideDuration, setAutoHideDuration] = useState(3000);
   const [openArchiveModal, setOpenArchiveModal] = useState(false);
   const { threads } = useGetAllThreads();
+  const smDown = useResponsive('down', 'sm');
+  const router = useRouter();
 
   useEffect(() => {
     if (threads) {
@@ -227,7 +232,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          px: 2,
+          px: !smDown && 2,
           py: 2,
         }}
       >
@@ -236,6 +241,11 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
           {thread ? (
             <>
               {/* Display group chat title or single chat other user name */}
+              {smDown && (
+                <IconButton onClick={() => router.push(paths.dashboard.chat.root)}>
+                  <Iconify icon="iconamoon:arrow-left-2-light" width={20} />
+                </IconButton>
+              )}
               {thread.isGroup ? (
                 <>
                   <Avatar
@@ -243,7 +253,7 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
                     src={thread.photoURL}
                     sx={{ width: 32, height: 32, mr: 1 }}
                   />
-                  <Typography variant="h6">{thread.title}</Typography>
+                  <Typography variant="subtitle2">{thread.title}</Typography>
                 </>
               ) : (
                 <>
@@ -346,19 +356,35 @@ export default function ChatHeaderCompose({ currentUserId, threadId }) {
         )} */}
         {/* Flex End: Icon buttons */}
         <Box paddingLeft={1} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button
-            sx={{
-              border: 1,
-              borderRadius: 1,
-              borderColor: '#E7E7E7',
-              px: 2,
-              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-            }}
-            startIcon={<Iconify icon="tabler:archive" style={{ color: 'black' }} />}
-            onClick={handleOpenArchiveModal}
-          >
-            {archivedChats.includes(threadId) ? 'Unarchive' : 'Archive'}
-          </Button>
+          {!smDown ? (
+            <Button
+              sx={{
+                border: 1,
+                borderRadius: 1,
+                borderColor: '#E7E7E7',
+                px: 2,
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              }}
+              startIcon={<Iconify icon="tabler:archive" style={{ color: 'black' }} />}
+              onClick={handleOpenArchiveModal}
+            >
+              {archivedChats.includes(threadId) ? 'Unarchive' : 'Archive'}
+            </Button>
+          ) : (
+            <IconButton
+              sx={{
+                border: 1,
+                borderRadius: 1,
+                borderColor: '#E7E7E7',
+                height: 38,
+                width: 38,
+                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+              }}
+              onClick={handleOpenInfoModal}
+            >
+              <Iconify icon="tabler:archive" style={{ color: 'black' }} />
+            </IconButton>
+          )}
           <IconButton
             sx={{
               border: 1,

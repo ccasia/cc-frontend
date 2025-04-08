@@ -3,15 +3,14 @@ import React, { useCallback } from 'react';
 import { Controller } from 'react-hook-form';
 import { formatIncompletePhoneNumber } from 'libphonenumber-js';
 
-import { Box, Stack, Button, TextField, Typography, IconButton } from '@mui/material';
+import { Box, Stack, MenuItem, TextField } from '@mui/material';
 
 // import { Box, Stack, Button, TextField, Typography } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
-import { RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
+import { RHFSelect, RHFTextField, RHFUploadAvatar } from 'src/components/hook-form';
 
 const CompanyEditForm = ({ company, fieldsArray, methods }) => {
-  const { fields, append, control, remove } = fieldsArray;
+  const { control } = fieldsArray;
 
   const { setValue } = methods;
 
@@ -49,6 +48,7 @@ const CompanyEditForm = ({ company, fieldsArray, methods }) => {
           gap: 4,
         }}
       >
+        <RHFTextField disabled name="companyId" label="Company ID" />
         <RHFTextField name="companyName" label="Company name" />
         <RHFTextField name="companyEmail" label="Company email" />
         <Controller
@@ -72,35 +72,12 @@ const CompanyEditForm = ({ company, fieldsArray, methods }) => {
         <RHFTextField name="companyWebsite" label="Company webiste" />
         <RHFTextField name="companyAbout" label="Company about" />
         <RHFTextField name="companyRegistrationNumber" label="Company registration number" />
+        <RHFSelect name="type" label="Client type">
+          <MenuItem disabled>Select an option</MenuItem>
+          <MenuItem value="agency">Agency</MenuItem>
+          <MenuItem value="directClient">Direct Client</MenuItem>
+        </RHFSelect>
       </Box>
-
-      <Typography variant="h5">Objectives</Typography>
-
-      <Stack spacing={2}>
-        {fields.map((elem, index) => (
-          <Stack key={elem.id} direction="row" alignItems="center" spacing={1}>
-            <RHFTextField
-              name={`companyObjectives[${index}].value`}
-              label={`Objective ${index + 1}`}
-            />
-            <IconButton color="error" onClick={() => remove(index)}>
-              <Iconify icon="ic:outline-delete" />
-            </IconButton>
-          </Stack>
-        ))}
-
-        <Button
-          fullWidth
-          variant="contained"
-          // onClick={() => permissionLength < 5 && setPermissionLength((prev) => prev + 1)}
-          onClick={() => append({ value: '' })}
-          sx={{
-            my: 2,
-          }}
-        >
-          +
-        </Button>
-      </Stack>
     </Stack>
   );
 };

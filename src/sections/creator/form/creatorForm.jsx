@@ -4,47 +4,49 @@ import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
 import Dialog from '@mui/material/Dialog';
-import { Stack, Avatar, Button, IconButton, InputAdornment, LinearProgress } from '@mui/material';
+import { Stack, Avatar, Button, InputAdornment } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { RECAPTCHA_SITEKEY } from 'src/config-global';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
-import LastStep from './steps/lastStep';
-import FirstStep from './steps/firstStep';
+// import LastStep from './steps/lastStep';
+// import FirstStep from './steps/firstStep';
 import ThirdStep from './steps/thirdStep';
 import FourthStep from './steps/fourtStep';
 import SecondStep from './steps/secondStep';
 
 // const steps = ['Fill in your details', 'Provide your social media information'];
 const steps = [
+  // {
+  //   title: 'Welcome to the Cult, Cipta! 👋',
+  //   description: 'Before we get started, let's get to know more about you.',
+  // },
   {
-    title: 'Welcome to the Cult, Cipta! 👋',
-    description: 'Before we get started, let’s get to know more about you.',
-  },
-  {
-    title: 'Tell us where you’re from 🌏',
-    description: 'We’ll use this to make tailored recommendations.',
+    title: "Tell us where you're from 🌏",
+    description: "We'll use this to connect you with brands in your area.",
   },
   {
     title: 'Fill up your personal details ✏️',
-    description: 'We’ll use this to make tailored recommendations.',
+    description: 'This will help us set up your profile!',
   },
   {
-    title: 'Fill up some extra details 😉',
-    description: 'We’ll use this to make tailored recommendations.',
+    title: 'Now add some extra details 😉',
+    description: "We'll use this to make tailored recommendations.",
   },
   // {
   //   title: 'Lastly, what are your socials 🤳',
@@ -69,39 +71,54 @@ export const interestsList = [
   'Entertainment',
 ];
 
-const stepSchemas = [
-  null,
-  Yup.object({
-    location: Yup.string().required('City/Area is required'),
-    Nationality: Yup.string().required('Nationality is required'),
-  }),
-  Yup.object({
-    phone: Yup.string().required('Phone number is required'),
-    pronounce: Yup.string().required('Pronouns are required'),
-    employment: Yup.string().required('Employment status is required'),
-    birthDate: Yup.mixed().nullable().required('Please enter your birth date'),
-  }),
-  Yup.object({
-    interests: Yup.array().min(3, 'Choose at least three option'),
-    languages: Yup.array().min(1, 'Choose at least one option'),
-  }),
-  Yup.object({
-    instagram: Yup.string(),
-    tiktok: Yup.string(),
-  }),
-];
+// const stepSchemas = [
+//   // null,
+//   Yup.object({
+//     location: Yup.string().required('City/Area is required'),
+//     Nationality: Yup.string().required('Nationality is required'),
+//   }),
+//   Yup.object({
+//     phone: Yup.string().required('Phone number is required'),
+//     pronounce: Yup.string().required('Pronouns are required'),
+//     employment: Yup.string().required('Employment status is required'),
+//     birthDate: Yup.mixed().nullable().required('Please enter your birth date'),
+//   }),
+//   Yup.object({
+//     interests: Yup.array().min(3, 'Choose at least three option'),
+//     languages: Yup.array().min(1, 'Choose at least one option'),
+//     recaptcha: Yup.string().required('Please complete the reCAPTCHA'),
+//     // }),
+//     // Yup.object({
+//     //   instagram: Yup.string(),
+//     //   tiktok: Yup.string(),
+//   }),
+// ];
 
-export default function CreatorForm({ mutate, open, onClose }) {
+const stepSchemas = Yup.object({
+  location: Yup.string().required('City/Area is required'),
+  Nationality: Yup.string().required('Nationality is required'),
+  phone: Yup.string().required('Phone number is required'),
+  pronounce: Yup.string().required('Pronouns are required'),
+  employment: Yup.string().required('Employment status is required'),
+  birthDate: Yup.mixed().nullable().required('Please enter your birth date'),
+  interests: Yup.array().min(3, 'Choose at least three option'),
+  languages: Yup.array().min(1, 'Choose at least one option'),
+  recaptcha: Yup.string().required('Please complete the reCAPTCHA'),
+});
+
+export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
   const [activeStep, setActiveStep] = useState(0);
   const [newCreator, setNewCreator] = useState({});
   const [ratingInterst, setRatingInterst] = useState([]);
   const [ratingIndustries, setRatingIndustries] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState({});
 
   const { logout, initialize } = useAuthContext();
   const smDown = useResponsive('down', 'sm');
 
-  const resolver = yupResolver(stepSchemas[activeStep > 0 && activeStep]);
+  // const resolver = yupResolver(stepSchemas[activeStep] || null);
+  const resolver = yupResolver(stepSchemas || null);
 
   const logo = (
     <Avatar
@@ -152,7 +169,7 @@ export default function CreatorForm({ mutate, open, onClose }) {
     watch,
     getValues,
     setValue,
-    formState: { isValid },
+    formState: { isValid, errors },
   } = methods;
 
   const nationality = watch('Nationality');
@@ -161,6 +178,10 @@ export default function CreatorForm({ mutate, open, onClose }) {
   const otherPronounce = watch('otherPronounce');
 
   const handleNext = () => {
+    setCompletedSteps((prev) => ({
+      ...prev,
+      [activeStep]: true,
+    }));
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
@@ -170,21 +191,32 @@ export default function CreatorForm({ mutate, open, onClose }) {
 
   const onSubmit = handleSubmit(async (data) => {
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     try {
-      const newData = {
-        ...data,
-        pronounce: otherPronounce || pronounce,
-      };
+      console.log('CreatorForm data being submitted:', data);
 
-      const res = await axiosInstance.put(endpoints.auth.updateCreator, newData);
-      enqueueSnackbar(`Welcome ${res.data.name}!`);
-      initialize();
-      mutate();
+      if (registerUser) {
+        await registerUser(data);
+      } else {
+        try {
+          const res = await axiosInstance.put(endpoints.auth.updateCreator, {
+            ...data,
+            pronounce: data.otherPronounce || data.pronounce,
+          });
+          enqueueSnackbar(`Welcome ${res.data.name}!`);
+          initialize();
+        } catch (error) {
+          console.error('Error saving creator data:', error);
+          enqueueSnackbar('Error saving your profile data. Please try again.', {
+            variant: 'error',
+          });
+        }
+      }
+
       onClose();
     } catch (error) {
-      enqueueSnackbar('Something went wrong', {
+      console.error('Form submission error:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Something went wrong', {
         variant: 'error',
       });
     } finally {
@@ -257,20 +289,25 @@ export default function CreatorForm({ mutate, open, onClose }) {
   const renderForm = useCallback(
     (info) => {
       switch (activeStep) {
-        case 1:
+        case 0:
           return <SecondStep item={info} />;
-        case 2:
+        case 1:
           return <ThirdStep item={info} />;
-        case 3:
+        case 2:
           return <FourthStep item={info} />;
-        case 4:
-          return <LastStep item={info} />;
         default:
-          return <FirstStep item={info} onNext={handleNext} />;
+          return <SecondStep item={info} />;
       }
     },
     [activeStep]
   );
+
+  const isNextButtonEnabled = useMemo(() => {
+    if (completedSteps[activeStep]) {
+      return true;
+    }
+    return isValid;
+  }, [activeStep, completedSteps, isValid]);
 
   return (
     <Dialog
@@ -296,21 +333,112 @@ export default function CreatorForm({ mutate, open, onClose }) {
           position: 'absolute',
           top: 55,
           left: '50%',
-          bgcolor: 'wheat',
           transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: 500,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
-        <LinearProgress
-          variant="determinate"
-          value={Math.floor(((activeStep + 1) / steps.length) * 100)}
-          sx={{
-            width: 150,
-            bgcolor: '#E7E7E7',
-            '& .MuiLinearProgress-bar': {
-              backgroundColor: '#1340FF', // Custom color
-            },
-          }}
-        />
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="center"
+          spacing={1}
+          sx={{ width: '100%' }}
+        >
+          {/* Location Step */}
+          <Box
+            onClick={() => activeStep > 0 && setActiveStep(0)}
+            sx={{
+              width: 120,
+              py: 1,
+              textAlign: 'center',
+              borderRadius: 1.5,
+              fontWeight: activeStep === 0 || (completedSteps[0] && activeStep > 0) ? 600 : 400,
+              bgcolor:
+                activeStep === 0 || (completedSteps[0] && activeStep > 0) ? '#1340FF' : '#fff',
+              color: activeStep === 0 || (completedSteps[0] && activeStep > 0) ? '#fff' : '#636366',
+              border: '1px solid',
+              borderColor: activeStep >= 0 ? '#1340FF' : '#636366',
+              // cursor: activeStep > 0 ? 'pointer' : 'default',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                opacity: activeStep > 0 ? 0.85 : 1,
+              },
+            }}
+          >
+            Location
+          </Box>
+
+          {/* Connector Line */}
+          <Box
+            sx={{
+              height: 2,
+              flexGrow: 1,
+              maxWidth: 40,
+              bgcolor: activeStep >= 1 ? '#1340FF' : '#636366',
+            }}
+          />
+
+          {/* Personal Step */}
+          <Box
+            component="div"
+            onClick={() => setActiveStep(1)}
+            sx={{
+              width: 120,
+              py: 1,
+              textAlign: 'center',
+              borderRadius: 1.5,
+              fontWeight: activeStep === 1 || (completedSteps[1] && activeStep > 1) ? 600 : 400,
+              bgcolor:
+                activeStep === 1 || (completedSteps[1] && activeStep > 1) ? '#1340FF' : '#fff',
+              color: activeStep === 1 || (completedSteps[1] && activeStep > 1) ? '#fff' : '#636366',
+              border: '1px solid',
+              borderColor: activeStep >= 1 ? '#1340FF' : '#636366',
+              // cursor: activeStep > 1 ? 'pointer' : 'default',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                opacity: activeStep > 1 ? 0.85 : 1,
+              },
+            }}
+          >
+            Personal
+          </Box>
+
+          {/* Connector Line */}
+          <Box
+            sx={{
+              height: 2,
+              flexGrow: 1,
+              maxWidth: 40,
+              bgcolor: activeStep >= 2 ? '#1340FF' : '#636366',
+            }}
+          />
+
+          {/* Additional Step */}
+          <Box
+            onClick={() => setActiveStep(2)}
+            sx={{
+              width: 120,
+              py: 1,
+              textAlign: 'center',
+              borderRadius: 1.5,
+              fontWeight: activeStep === 2 || (completedSteps[2] && activeStep > 2) ? 600 : 400,
+              bgcolor:
+                activeStep === 2 || (completedSteps[2] && activeStep > 2) ? '#1340FF' : '#fff',
+              color: activeStep === 2 || (completedSteps[2] && activeStep > 2) ? '#fff' : '#636366',
+              border: '1px solid',
+              borderColor: activeStep >= 2 ? '#1340FF' : '#636366',
+              cursor: 'pointer',
+            }}
+          >
+            Additional
+          </Box>
+        </Stack>
       </Box>
 
       <Stack
@@ -322,7 +450,7 @@ export default function CreatorForm({ mutate, open, onClose }) {
           scrollbarWidth: 'none',
         }}
       >
-        <FormProvider methods={methods}>
+        <FormProvider methods={methods} onSubmit={onSubmit}>
           <Box>{renderForm(steps[activeStep])}</Box>
 
           <Box
@@ -339,51 +467,110 @@ export default function CreatorForm({ mutate, open, onClose }) {
               }),
             }}
           >
-            {activeStep > 0 && activeStep < steps.length - 1 && (
-              <Button
-                onClick={handleNext}
-                disabled={!isValid}
-                fullWidth={smDown}
-                sx={{
-                  bgcolor: '#1340FF',
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                  color: '#FFF',
-                  px: 6,
-                  py: 1,
-                  '&:hover': {
+            {activeStep < steps.length - 1 && (
+              <Stack direction="row" spacing={2} justifyContent="center">
+                {activeStep > 0 && (
+                  <Button
+                    onClick={handleBack}
+                    fullWidth={smDown}
+                    sx={{
+                      bgcolor: '#fff',
+                      border: '1px solid #1340FF',
+                      color: '#1340FF',
+                      px: 6,
+                      py: 1,
+                      '&:hover': {
+                        bgcolor: 'rgba(19, 64, 255, 0.04)',
+                      },
+                    }}
+                  >
+                    Back
+                  </Button>
+                )}
+                <Button
+                  onClick={handleNext}
+                  // disabled={!isNextButtonEnabled}
+                  fullWidth={smDown}
+                  sx={{
                     bgcolor: '#1340FF',
-                  },
-                }}
-              >
-                Next
-              </Button>
+                    borderBottom: '3px solid #10248c',
+                    color: '#FFF',
+                    px: 6,
+                    py: 1,
+                    '&:hover': {
+                      bgcolor: '#2c55ff',
+                      borderBottom: '3px solid #10248c',
+                    },
+                  }}
+                >
+                  Next
+                </Button>
+              </Stack>
             )}
 
             {activeStep === steps.length - 1 && (
-              <LoadingButton
-                fullWidth={smDown}
-                sx={{
-                  bgcolor: '#1340FF',
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                  color: '#FFF',
-                  px: 6,
-                  py: 1,
-                  '&:hover': {
-                    bgcolor: '#1340FF',
-                  },
-                }}
-                variant="contained"
-                onClick={onSubmit}
-                loading={isSubmitting}
-              >
-                Get Started
-              </LoadingButton>
+              <>
+                <Box
+                  sx={{
+                    mb: 5,
+                    mt: -2,
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    width: { sm: 400 },
+                    mx: 'auto',
+                  }}
+                >
+                  <ReCAPTCHA
+                    sitekey={RECAPTCHA_SITEKEY}
+                    onChange={(token) => {
+                      setValue('recaptcha', token);
+                    }}
+                  />
+                </Box>
+                <Stack direction="row" spacing={2} justifyContent="center">
+                  <Button
+                    onClick={handleBack}
+                    fullWidth={smDown}
+                    sx={{
+                      bgcolor: '#fff',
+                      border: '1px solid #1340FF',
+                      color: '#1340FF',
+                      px: 6,
+                      py: 1,
+                      '&:hover': {
+                        bgcolor: 'rgba(19, 64, 255, 0.04)',
+                      },
+                    }}
+                  >
+                    Back
+                  </Button>
+                  <LoadingButton
+                    fullWidth={smDown}
+                    sx={{
+                      bgcolor: '#1340FF',
+                      boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                      color: '#FFF',
+                      px: 6,
+                      py: 1,
+                      '&:hover': {
+                        bgcolor: '#1340FF',
+                      },
+                    }}
+                    variant="contained"
+                    type="submit"
+                    loading={isSubmitting}
+                    disabled={!watch('recaptcha')}
+                  >
+                    Get Started
+                  </LoadingButton>
+                </Stack>
+              </>
             )}
           </Box>
         </FormProvider>
       </Stack>
 
-      <Box
+      {/* <Box
         sx={{
           ...(smDown
             ? {
@@ -418,13 +605,13 @@ export default function CreatorForm({ mutate, open, onClose }) {
             Logout
           </Button>
         )}
-      </Box>
+      </Box> */}
     </Dialog>
   );
 }
 
 CreatorForm.propTypes = {
-  mutate: PropTypes.func,
   open: PropTypes.bool,
   onClose: PropTypes.func,
+  onSubmit: PropTypes.func,
 };

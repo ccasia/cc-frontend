@@ -37,11 +37,13 @@ export default function AuthModernLayout({ children, image }) {
       sx={{
         width: 1,
         mx: 'auto',
-        maxWidth: { xs: '90%', md: 480 },
-        pb: 2,
-        px: { xs: 2, md: 6 },
+        maxWidth: 480,
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        pt: { xs: 12, md: 16 },
         position: 'relative',
-        zIndex: 1,
       }}
     >
       <Box
@@ -50,9 +52,10 @@ export default function AuthModernLayout({ children, image }) {
         sx={{
           width: 50,
           height: 50,
-          mt: { xs: 2, md: 8 },
-          mb: { xs: 10, md: 8 },
-          mx: 'auto',
+          position: 'absolute',
+          top: { xs: 16, md: 32 },
+          left: '50%',
+          transform: 'translateX(-50%)',
         }}
       />
       <Card
@@ -64,6 +67,42 @@ export default function AuthModernLayout({ children, image }) {
       >
         {children}
       </Card>
+
+      {/* artwork credit for login page */}
+      {/* {route.includes('login') && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 80,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#FFFFFF',
+            fontSize: '14px',
+            textAlign: 'center',
+            fontWeight: 500,
+          }}
+        >
+          Artwork by @_zoe.art
+        </Box>
+      )} */}
+
+      {/* artwork credit for register page */}
+      {/* {route.includes('register') && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 12,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#FFFFFF',
+            fontSize: '14px',
+            textAlign: 'center',
+            fontWeight: 500,
+          }}
+        >
+          Artwork by @benlewisgiles
+        </Box>
+      )} */}
     </Stack>
   );
 
@@ -93,6 +132,7 @@ export default function AuthModernLayout({ children, image }) {
         height: '100vh',
         width: 1,
         overflow: 'auto',
+        // position: 'relative',
         '&::before': {
           content: '""',
           position: 'fixed',

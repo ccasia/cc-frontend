@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -24,6 +24,8 @@ import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+
+import Iconify from 'src/components/iconify';
 
 import PitchModal from './pitch-modal';
 
@@ -69,6 +71,21 @@ const cardStyle = {
   },
 };
 
+const findLatestPackage = (packages) => {
+  if (packages.length === 0) {
+    return null; // Return null if the array is empty
+  }
+
+  const latestPackage = packages.reduce((latest, current) => {
+    const latestDate = new Date(latest.createdAt);
+    const currentDate = new Date(current.createdAt);
+
+    return currentDate > latestDate ? current : latest;
+  });
+
+  return latestPackage;
+};
+
 const CampaignOverview = ({ campaign, onUpdate }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
@@ -78,6 +95,27 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
   const [openPitchModal, setOpenPitchModal] = useState(false);
   const dialog = useBoolean();
   const [localCampaign, setLocalCampaign] = useState(campaign);
+  const client = campaign?.company || campaign?.brand?.company;
+
+  const latestPackageItem = useMemo(() => {
+    if (client && client?.subscriptions?.length) {
+      let packageItem = findLatestPackage(client?.subscriptions);
+      packageItem = {
+        ...packageItem,
+        totalCredits:
+          packageItem.totalCredits ||
+          packageItem.package.credits ||
+          packageItem.customPackage.customCredits,
+        availableCredits:
+          (packageItem.totalCredits ||
+            packageItem.package.credits ||
+            packageItem.customPackage.customCredits) - packageItem.creditsUsed,
+      };
+      return packageItem;
+    }
+
+    return null;
+  }, [client]);
 
   useEffect(() => {
     setLocalCampaign(campaign);
@@ -516,6 +554,61 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Box>
         </Zoom>
       </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Zoom in>
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify icon="noto:letter-c" width={20} />
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Credits Tracking
+                </Typography>
+              </Stack>
+            </Box>
+
+            <Stack spacing={[1]}>
+              {campaign?.campaignCredits && latestPackageItem ? (
+                <Stack spacing={1} color="text.secondary">
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2">Campaign Credits</Typography>
+                    <Typography variant="subtitle2">
+                      {campaign?.campaignCredits || 0} UGC Credits
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2">Credits Utilized</Typography>
+                    <Typography variant="subtitle2">
+                      {campaign?.creditsUtilized || 0} UGC Credits
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2">Credits Pending</Typography>
+                    <Typography variant="subtitle2">
+                      {campaign?.creditsPending ?? 0} UGC Credits
+                    </Typography>
+                  </Stack>
+                </Stack>
+              ) : (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}
+                >
+                  Not connected to any package
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+        </Zoom>
+      </Grid>
+
       <Dialog open={dialog.value} onClose={dialog.onFalse}>
         <DialogTitle>Decline Pitch</DialogTitle>
         <DialogContent>
@@ -530,6 +623,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
       <PitchModal
         pitch={selectedPitch}
         open={openPitchModal}
