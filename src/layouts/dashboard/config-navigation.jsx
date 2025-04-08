@@ -111,6 +111,7 @@ export function useNavData() {
       {
         items: [
           {
+            roles: ['superadmin'],
             title: 'Analytics',
             path: paths.dashboard.analytics,
             icon: <Iconify icon="icon-park-outline:chart-histogram" width={25} />,

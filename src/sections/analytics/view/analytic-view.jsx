@@ -13,6 +13,12 @@ import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';
 import SendAgreementsAnalytics from './components/admins/SendAgreementsAnalytics';
 import ApproveAgreementsAnalytics from './components/admins/ApproveAgreementsAnalytics';
+import CreatorSendAgreement from './components/creators/agreements';
+import CreatorSendDrafts from './components/creators/drafts';
+import CreatorSendPosting from './components/creators/posting';
+import PostingAnalytics from './components/admins/PostingAnalytics';
+
+
 
 export default function AnalyticsView() {
   const [creators, setCreators] = useState([]);
@@ -62,7 +68,8 @@ export default function AnalyticsView() {
         {/* Tab Content */}
         <Box sx={{ mt: 3 }}>
           {activeTab === 0 && (
-            <Grid container spacing={3}>
+            <>
+             <Grid container spacing={3}>
               {/* Total Creators Analytics */}
               <Grid item xs={12} md={6}>
                 <TotalCreators creators={creators} />
@@ -79,18 +86,29 @@ export default function AnalyticsView() {
               </Grid>
 
               {/* Campaign Participation */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={6} mb={2}>
                 <CampaignParticipation creators={creators} />
               </Grid>
             </Grid>
+
+            <CreatorSendAgreement/>
+
+            <CreatorSendDrafts/>
+
+            <CreatorSendPosting/>
+
+            
+            </>
+           
           )}
 
           {activeTab === 1 && (
             <>
-              <ApprovePitch />
-              <SendAgreementsAnalytics />
-              <ApproveAgreementsAnalytics />
-              <ApproveDraftsAnalytics />
+              <ApprovePitch/>
+              <SendAgreementsAnalytics/>
+              <ApproveAgreementsAnalytics/>
+              <ApproveDraftsAnalytics/>
+              <PostingAnalytics/>
             </>
           )}
         </Box>

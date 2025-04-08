@@ -49,14 +49,13 @@ export default function DraftAnalytics() {
     fetchSubmissions();
   }, []);
 
-  console.log("draft", submissions)
+  console.log("All submissions", submissions);
+
   // Filter only submissions with type "First Draft"
   const fistDraftSubmissions = submissions.filter(submission => submission.type === "FIRST_DRAFT" && submission.turnaroundTime > 0);
 
   // Filter only submissions with type "Final Draft"
   const finalDraftSubmissions = submissions.filter(submission => submission.type === "FINAL_DRAFT" && submission.status === "APPROVED");
-
-  console.log("Agreement", fistDraftSubmissions)
 
   return (
     <>
@@ -107,45 +106,15 @@ export default function DraftAnalytics() {
                     return (
                       <TableRow key={submission.id}>
                         <TableCell>{submission.user?.name}</TableCell>
-                        {/* <TableCell>
-                         {submission.status === "APPROVED" ? (
-                          <>
-                            <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-                            Approved
-                          </>
-                        ) : submission.status === "REJECTED" ? (
-                          <>
-                            <CancelIcon color="error" sx={{ mr: 1 }} />
-                            Rejected
-                          </>
-                        ) : submission.status === "ON_HOLD" ? (
-                          <>
-                            <PauseCircleOutlineIcon color="info" sx={{ mr: 1 }} />
-                            On Hold
-                          </>
-                        ) : submission.status === "OVERDUE" ? (
-                          <>
-                            <AlarmOnIcon color="error" sx={{ mr: 1 }} />
-                            Overdue
-                          </>
-                        ) : submission.status === "CHANGES_REQUIRED" ? (
-                          <>
-                            <EditIcon color="warning" sx={{ mr: 1 }} />
-                            Changes Required
-                          </>
-                        ) : (
-                          <>
-                            <HourglassEmptyIcon color="warning" sx={{ mr: 1 }} />
-                            Pending Approval
-                          </>
-                        )}
-                      </TableCell> */}
                         <TableCell>
                           {(() => {
                             const { label, icon } = getStatusContent(submission.status);
                             return (
                               <>
-                                {icon} {label}
+                               <Box display="flex" alignItems="center">
+                               {icon} {label}
+                               </Box>
+                               
                               </>
                             );
                           })()}
@@ -191,13 +160,6 @@ export default function DraftAnalytics() {
               </Typography>
             </Box>
           )}
-
-          {/* If there are no agreement submissions, show this message */}
-          {/* {fistDraftSubmissions.length === 0 && !loading && (
-          // <Typography variant="body2" color="textSecondary">
-          //   Turnaround time can only be calculated for completed submissions of type "AGREEMENT_FORM".
-          // </Typography>
-        )} */}
         </CardContent>
       </Card>
 
