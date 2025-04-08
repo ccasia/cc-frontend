@@ -120,8 +120,6 @@ export default function AccountGeneral() {
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
 
-    console.log(data);
-
     const newObj = {
       ...data,
       id: user?.id,
