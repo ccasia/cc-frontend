@@ -77,9 +77,11 @@ export const AdminLogsModal = ({ open, logs, onClose, adminName }) => {
         </DialogTitle>
         
         <Tooltip title="Download Logs" placement="top" arrow>
-        <IconButton onClick={handleDownloadExcel} color="primary">
-          <Icon icon="mdi:microsoft-excel" width={24} />
-        </IconButton>
+        <Button onClick={handleDownloadExcel} color="primary" >
+         
+          <Icon icon="mdi:microsoft-excel" width={24} style={{ marginRight: 4 }} />
+          Export Logs
+        </Button>
         </Tooltip>
        
       </Box>
