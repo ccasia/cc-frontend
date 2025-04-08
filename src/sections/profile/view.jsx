@@ -8,7 +8,7 @@ import { Toaster } from 'react-hot-toast';
 import React, { useState, useCallback, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -50,6 +50,7 @@ import { Billing } from '../creator/profile/billing';
 import AccountSocialLinks from '../creator/profile/social';
 import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
+import Preference from '../creator/profile/preferences';
 
 // import x from '../creator/profile/notification';
 
@@ -63,6 +64,7 @@ const Profile = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [image, setImage] = useState(null);
+  const { section } = useParams();
 
   // Determine current tab based on URL path
   const getTabFromPath = useCallback(() => {
@@ -74,12 +76,13 @@ const Profile = () => {
     if (path.includes('/payment')) return 'paymentForm';
     if (path.includes('/billing')) return 'Billing';
     if (path.includes('/notifications')) return 'Notifications';
+    if (path.includes('/preference')) return 'preference';
 
     // Default to general/account tab
     return ['admin', 'superadmin'].includes(user?.role) ? 'general' : 'general';
   }, [location.pathname, user?.role]);
 
-  const [currentTab, setCurrentTab] = useState(getTabFromPath());
+  const [currentTab, setCurrentTab] = useState(section);
 
   // Update current tab when URL changes
   useEffect(() => {
@@ -514,6 +517,52 @@ const Profile = () => {
 
       <Button
         component={Link}
+        to={paths.dashboard.user.profileTabs.preference}
+        disableRipple
+        size="large"
+        sx={{
+          px: 0.5,
+          py: 0.5,
+          pb: 0.5,
+          ml: 2,
+          minWidth: 'fit-content',
+          color: currentTab === 'preference' ? '#221f20' : '#8e8e93',
+          position: 'relative',
+          fontSize: '1.05rem',
+          fontWeight: 650,
+          '&:focus': {
+            outline: 'none',
+            bgcolor: 'transparent',
+          },
+          '&:active': {
+            bgcolor: 'transparent',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            bottom: -0.5,
+            left: 0,
+            right: 0,
+            height: '2px',
+            width: currentTab === 'preference' ? '100%' : '0%',
+            bgcolor: '#1340ff',
+            transform: 'scaleX(1)',
+            transformOrigin: 'left',
+          },
+          '&:hover': {
+            bgcolor: 'transparent',
+            '&::after': {
+              width: '100%',
+              opacity: currentTab === 'preference' ? 1 : 0.5,
+            },
+          },
+        }}
+      >
+        Preferences
+      </Button>
+
+      <Button
+        component={Link}
         to={paths.dashboard.user.profileTabs.security}
         disableRipple
         size="large"
@@ -676,6 +725,8 @@ const Profile = () => {
       {currentTab === 'paymentForm' && <PaymentFormProfile user={user} />}
 
       {currentTab === 'general' && <CreatorProfile />}
+
+      {currentTab === 'preference' && <Preference />}
 
       {currentTab === 'Billing' && <Billing />}
 

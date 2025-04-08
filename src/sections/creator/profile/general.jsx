@@ -95,7 +95,6 @@ export default function AccountGeneral() {
     setValue,
     handleSubmit,
     watch,
-    control,
     formState: { isSubmitting, isDirty },
   } = methods;
 
@@ -327,7 +326,6 @@ export default function AccountGeneral() {
                 </Stack>
               </Stack>
             </Stack>
-
             {/* Form Fields Section */}
             <Box
               spacing={2}
@@ -512,7 +510,7 @@ export default function AccountGeneral() {
                       name="phoneNumber"
                       placeholder="Phone Number"
                       InputLabelProps={{ shrink: false }}
-                      // type="number"
+                      type="number"
                       sx={{
                         width: '100%',
                         // maxWidth: { xs: '100%', sm: 500 },
