@@ -86,10 +86,7 @@ const ManageCampaignView = () => {
   const renderTabs = (
     <>
       {/* Existing Tabs and Desktop Search/Sort */}
-      <Stack
-        direction="row"
-        spacing={0.5}
-      >
+      <Stack direction="row" spacing={0.5}>
         <Stack direction="row" spacing={2.5}>
           {tabs.map((tab) => (
             <Button
@@ -318,8 +315,8 @@ const ManageCampaignView = () => {
                 border: '0.5px solid #E7E7E7',
                 borderBottom: '3px solid #E7E7E7',
                 mt: 1,
-              }
-            }
+              },
+            },
           }}
           sx={{
             border: '0.5px solid #E7E7E7',
@@ -344,12 +341,12 @@ const ManageCampaignView = () => {
             '&:active': {
               bgcolor: '#f2f2f2',
               transition: 'background-color 0.2s ease',
-            }
+            },
           }}
           renderValue={(selected) => (
-            <Typography 
-              variant="body1" 
-              sx={{ 
+            <Typography
+              variant="body1"
+              sx={{
                 fontWeight: 600,
                 fontSize: '1rem',
               }}
@@ -358,20 +355,23 @@ const ManageCampaignView = () => {
             </Typography>
           )}
         >
-          <MenuItem value="Most matched" sx={{ 
-            mx: 0.2,
-            my: 0.5,
-            borderRadius: 0.5,
-            '&.Mui-selected': {
-              bgcolor: '#F5F5F5 !important',
+          <MenuItem
+            value="Most matched"
+            sx={{
+              mx: 0.2,
+              my: 0.5,
+              borderRadius: 0.5,
+              '&.Mui-selected': {
+                bgcolor: '#F5F5F5 !important',
+                '&:hover': {
+                  bgcolor: '#F5F5F5',
+                },
+              },
               '&:hover': {
-                bgcolor: '#F5F5F5'
-              }
-            },
-            '&:hover': {
-              bgcolor: '#F5F5F5'
-            }
-          }}>
+                bgcolor: '#F5F5F5',
+              },
+            }}
+          >
             <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
               Most matched
               {sortBy === 'Most matched' && (
@@ -382,20 +382,23 @@ const ManageCampaignView = () => {
               )}
             </Stack>
           </MenuItem>
-          <MenuItem value="Most recent" sx={{ 
-            mx: 0.2,
-            my: 0.5,
-            borderRadius: 0.5,
-            '&.Mui-selected': {
-              bgcolor: '#F5F5F5 !important',
+          <MenuItem
+            value="Most recent"
+            sx={{
+              mx: 0.2,
+              my: 0.5,
+              borderRadius: 0.5,
+              '&.Mui-selected': {
+                bgcolor: '#F5F5F5 !important',
+                '&:hover': {
+                  bgcolor: '#F5F5F5',
+                },
+              },
               '&:hover': {
-                bgcolor: '#F5F5F5'
-              }
-            },
-            '&:hover': {
-              bgcolor: '#F5F5F5'
-            }
-          }}>
+                bgcolor: '#F5F5F5',
+              },
+            }}
+          >
             <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
               Most recent
               {sortBy === 'Most recent' && (

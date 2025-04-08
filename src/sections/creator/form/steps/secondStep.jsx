@@ -14,10 +14,10 @@ import {
   InputAdornment,
 } from '@mui/material';
 
-import { primaryFont } from 'src/theme/typography';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { countries } from 'src/assets/data';
+import { primaryFont } from 'src/theme/typography';
 
 import Iconify from 'src/components/iconify';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
@@ -76,10 +76,10 @@ const SecondStep = ({ item }) => {
           fontFamily: '"Instrument Serif", serif',
           fontSize: '40px',
           fontWeight: 400,
-          color: '#231F20', 
+          color: '#231F20',
         }}
         secondaryTypographyProps={{
-          fontFamily: "InterDisplay",
+          fontFamily: 'InterDisplay',
           fontSize: '16px',
           fontWeight: 400,
           color: '#636366',
@@ -95,7 +95,10 @@ const SecondStep = ({ item }) => {
         }}
       >
         <Stack spacing={1}>
-            <FormLabel required sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}>
+          <FormLabel
+            required
+            sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
+          >
             What is your country of residence?
           </FormLabel>
           <RHFAutocomplete
@@ -109,7 +112,10 @@ const SecondStep = ({ item }) => {
         </Stack>
 
         <Stack spacing={1}>
-          <FormLabel required sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}>
+          <FormLabel
+            required
+            sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
+          >
             Which city are you from?
           </FormLabel>
           <RHFTextField

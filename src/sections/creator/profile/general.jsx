@@ -1,53 +1,44 @@
+import dayjs from 'dayjs';
 import * as Yup from 'yup';
 import 'croppie/croppie.css';
+import { useForm } from 'react-hook-form';
 import { useState, useCallback } from 'react';
-import { yupResolver } from '@hookform/resolvers/yup';
 import { formatIncompletePhoneNumber } from 'libphonenumber-js';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
+import { alpha, useTheme } from '@mui/material/styles';
 import {
   Button,
-  Checkbox,
-  TextField,
-  IconButton,
-  InputAdornment,
-  FormControlLabel,
   Dialog,
+  Avatar,
+  Select,
+  MenuItem,
   DialogTitle,
   DialogActions,
   DialogContent,
   DialogContentText,
-  MenuItem,
-  Avatar,
 } from '@mui/material';
 
-import { typography } from 'src/theme/typography';
+import { useResponsive } from 'src/hooks/use-responsive';
 
-// import { fData } from 'src/utils/format-number';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
-import { regions } from 'src/assets/data/regions';
+import { typography } from 'src/theme/typography';
 
-// import Iconify from 'src/components/iconify';
+import Image from 'src/components/image';
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, {
-  RHFTextField,
-  RHFUploadAvatar,
-  RHFAutocomplete,
   RHFSelect,
-  RHFMultiSelect,
+  RHFTextField,
+  RHFDatePicker,
+  RHFAutocomplete,
 } from 'src/components/hook-form';
-import Image from 'src/components/image';
-import { interestsLists } from 'src/contants/interestLists';
-import { alpha, useTheme } from '@mui/material/styles';
 
 // ----------------------------------------------------------------------
 
@@ -58,6 +49,8 @@ export default function AccountGeneral() {
   const [openModal, setOpenModal] = useState(false);
   const [openImageDialog, setOpenImageDialog] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const mdDown = useResponsive('down', 'lg');
+  const [countryCode, setCountryCode] = useState(user?.phoneNumber.split(' ')[0] || null);
 
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -78,13 +71,15 @@ export default function AccountGeneral() {
     email: user?.email || '',
     photoURL: user?.photoURL || null,
     photoBackgroundURL: user?.photoBackgroundURL || null,
-    phoneNumber: user?.phoneNumber || '',
+    employment: user?.creator?.employment || '',
+    phoneNumber: user?.phoneNumber.split(' ')[1] || '',
+    birthDate: dayjs(user?.creator?.birthDate) || '',
     country: user?.country || '',
     address: user?.creator?.address || '',
     state: user?.creator?.state || '',
     about: user?.creator?.mediaKit?.about || '',
     pronounce: user?.creator?.pronounce || '',
-    interests: user?.creator?.interests?.map(interest => interest.name) || [],
+    interests: user?.creator?.interests?.map((interest) => interest.name) || [],
     bodyMeasurement: user?.paymentForm?.bodyMeasurement || '',
     allergies: user?.paymentForm?.allergies?.map((allergy) => ({ name: allergy })) || [
       { name: '' },
@@ -92,7 +87,7 @@ export default function AccountGeneral() {
   };
 
   const methods = useForm({
-    resolver: yupResolver(UpdateUserSchema),
+    // resolver: yupResolver(UpdateUserSchema),
     defaultValues,
   });
 
@@ -100,7 +95,6 @@ export default function AccountGeneral() {
     setValue,
     handleSubmit,
     watch,
-    control,
     formState: { isSubmitting, isDirty },
   } = methods;
 
@@ -109,10 +103,14 @@ export default function AccountGeneral() {
   //   name: 'allergies',
   // });
 
+  const handleChangeCountryCode = (val) => {
+    setCountryCode(val);
+  };
+
   const handlePhoneChange = (event, onChange) => {
     const formattedNumber = formatIncompletePhoneNumber(
       event.target.value,
-      countries.find((country) => country.label === nationality).code
+      countries.find((country) => country.phone === countryCode).code
     ); // Replace 'MY' with your country code
     onChange(formattedNumber);
   };
@@ -123,10 +121,11 @@ export default function AccountGeneral() {
     const newObj = {
       ...data,
       id: user?.id,
-      interests: Array.isArray(data.interests) 
-        ? data.interests.map(interest => ({ name: interest }))
+      interests: Array.isArray(data.interests)
+        ? data.interests.map((interest) => ({ name: interest }))
         : [],
-      pronounce: data.pronounce || ''
+      pronounce: data.pronounce || '',
+      phoneNumber: `${countryCode} ${data.phoneNumber}`,
     };
 
     formData.append('image', data?.photoURL);
@@ -162,9 +161,6 @@ export default function AccountGeneral() {
     [setValue]
   );
 
-  const country = watch('country');
-  const nationality = watch('country');
-
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
 
@@ -175,31 +171,32 @@ export default function AccountGeneral() {
       ...currentValues,
       id: user?.id,
       removePhoto: true,
-      interests: Array.isArray(currentValues.interests) 
-        ? currentValues.interests.map(interest => ({ name: interest }))
+      interests: Array.isArray(currentValues.interests)
+        ? currentValues.interests.map((interest) => ({ name: interest }))
         : [],
-      pronounce: currentValues.pronounce || ''
+      pronounce: currentValues.pronounce || '',
     };
 
     formData.append('data', JSON.stringify(newObj));
-    
-    axiosInstance.patch(endpoints.auth.updateProfileCreator, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-    .then((res) => {
-      setValue('photoURL', null);
-      setImage(null);
-      setPreviewImage(null);
-      handleCloseModal();
-      enqueueSnackbar(res?.data.message);
-    })
-    .catch((error) => {
-      enqueueSnackbar(error?.response?.data?.message || 'Error removing photo', {
-        variant: 'error',
+
+    axiosInstance
+      .patch(endpoints.auth.updateProfileCreator, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      .then((res) => {
+        setValue('photoURL', null);
+        setImage(null);
+        setPreviewImage(null);
+        handleCloseModal();
+        enqueueSnackbar(res?.data.message);
+      })
+      .catch((error) => {
+        enqueueSnackbar(error?.response?.data?.message || 'Error removing photo', {
+          variant: 'error',
+        });
       });
-    });
   };
 
   const handleOpenImage = () => setOpenImageDialog(true);
@@ -211,14 +208,22 @@ export default function AccountGeneral() {
     <FormProvider methods={methods} onSubmit={onSubmit}>
       <Grid container spacing={3}>
         <Grid xs={12}>
-          <Stack spacing={1} alignItems="flex-start">
+          <Stack spacing={1} alignItems="flex-start" direction={{ xs: 'column', md: 'row' }}>
             {/* Profile Picture Section */}
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack
+              spacing={2}
+              alignItems="center"
+              bgcolor={!mdDown ? '#F4F4F4' : 'white'}
+              // bgcolor="#F4F4F4"
+              borderRadius={2}
+              p={2}
+              width={mdDown ? 1 : 443}
+            >
               <Box
                 onClick={handleOpenImage}
                 sx={{
-                  width: 80,
-                  height: 80,
+                  width: 240,
+                  height: 240,
                   cursor: 'pointer',
                   borderRadius: '50%',
                   overflow: 'hidden',
@@ -254,17 +259,22 @@ export default function AccountGeneral() {
               </Box>
 
               <Stack spacing={1}>
-                <Typography variant="subtitle1" 
-                sx={{ color: '#636366', fontSize: '0.75rem', fontWeight: typography.fontWeightMedium }}>Display Photo 
-                <span style={{ color: '#FF3500', fontSize: '0.75rem'}}> *</span></Typography>
-                <Stack
-                  direction="row"
-                  spacing={1}
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    color: '#636366',
+                    fontSize: '0.75rem',
+                    fontWeight: typography.fontWeightMedium,
+                  }}
                 >
+                  Display Photo
+                  <span style={{ color: '#FF3500', fontSize: '0.75rem' }}> *</span>
+                </Typography>
+                <Stack direction="row" spacing={1}>
                   <Button
                     component="label"
                     variant="contained"
-                    sx={{ 
+                    sx={{
                       width: '78px',
                       height: '38px',
                       bgcolor: '#FFFFFF',
@@ -291,9 +301,9 @@ export default function AccountGeneral() {
                       accept="image/*"
                     />
                   </Button>
-                  
+
                   <Button
-                    sx={{ 
+                    sx={{
                       width: '78px',
                       height: '38px',
                       bgcolor: '#FFFFFF',
@@ -316,26 +326,39 @@ export default function AccountGeneral() {
                 </Stack>
               </Stack>
             </Stack>
-
             {/* Form Fields Section */}
             <Box
-              sx={{
-                width: '100%',
-                maxWidth: '100%',
-                mt: 2,
-              }}
+              spacing={2}
+              alignItems="center"
+              bgcolor={!mdDown ? '#F4F4F4' : 'white'}
+              // bgcolor="#F4F4F4"
+              borderRadius={2}
+              p={2}
+              width={mdDown ? 1 : 600}
             >
-              <Stack spacing={3}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: 'repeat(1,1fr)', md: 'repeat(2,1fr)' },
+                  gap: 1,
+                }}
+              >
                 {/* Name field */}
                 <Box>
-                  <Typography variant="body2" color="#636366" fontWeight={typography.fontWeightMedium} 
-                    sx={{ 
-                      fontSize: { xs: '12px', sm: '13px' }, 
-                      mb: 1, 
-                      color: '#636366' 
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
                     }}
                   >
-                    Display Name <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                    Name{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
                   </Typography>
                   <RHFTextField
                     name="name"
@@ -343,11 +366,10 @@ export default function AccountGeneral() {
                     InputLabelProps={{ shrink: false }}
                     sx={{
                       width: '100%',
-                      maxWidth: { xs: '100%', sm: 500 },
+                      // maxWidth: { xs: '100%', sm: 500 },
                       '&.MuiTextField-root': {
                         bgcolor: 'white',
                         borderRadius: 1,
-                        height: { xs: 40, sm: 48 },
                         '& .MuiInputLabel-root': {
                           display: 'none',
                         },
@@ -366,14 +388,20 @@ export default function AccountGeneral() {
 
                 {/* Pronouns field */}
                 <Box>
-                  <Typography variant="body2" color="#636366" fontWeight={typography.fontWeightMedium} 
-                    sx={{ 
-                      fontSize: { xs: '12px', sm: '13px' }, 
-                      mb: 1, 
-                      color: '#636366' 
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
                     }}
                   >
-                    Pronouns
+                    Pronouns{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
                   </Typography>
                   <RHFSelect
                     name="pronounce"
@@ -381,7 +409,7 @@ export default function AccountGeneral() {
                     InputLabelProps={{ shrink: false }}
                     sx={{
                       width: '100%',
-                      maxWidth: { xs: '100%', sm: 500 },
+                      // maxWidth: { xs: '100%', sm: 500 },
                       height: { xs: 40, sm: 48 },
                       '& .MuiSelect-select': {
                         bgcolor: 'white',
@@ -401,23 +429,337 @@ export default function AccountGeneral() {
                   </RHFSelect>
                 </Box>
 
-                {/* Interests field */}
+                {/* Phone number */}
                 <Box>
-                  <Typography variant="body2" color="#636366" fontWeight={typography.fontWeightMedium} 
-                    sx={{ 
-                      fontSize: { xs: '12px', sm: '13px' }, 
-                      mb: 1, 
-                      color: '#636366' 
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
                     }}
                   >
-                    Interests <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                    Phone Number{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    <Select
+                      sx={{
+                        bgcolor: 'white',
+                        borderRadius: 1,
+                        width: 80,
+                      }}
+                      value={countryCode}
+                      onChange={(e) => handleChangeCountryCode(e.target.value)}
+                    >
+                      {countries
+                        .filter((item) => item.phone)
+                        .sort((a, b) => {
+                          const phoneA = parseInt(a.phone.replace(/-/g, ''), 10);
+                          const phoneB = parseInt(b.phone.replace(/-/g, ''), 10);
+                          return phoneA - phoneB;
+                        })
+                        .map((item, index) => (
+                          <MenuItem key={index} value={item.phone}>
+                            + {item.phone}
+                          </MenuItem>
+                        ))}
+                    </Select>
+
+                    {/* <Controller
+                      name="phone"
+                      control={control}
+                      defaultValue=""
+                      rules={{ required: 'Phone number is required' }}
+                      render={({ field, fieldState }) => (
+                        <TextField
+                          {...field}
+                          sx={{
+                            width: '100%',
+                            '&.MuiTextField-root': {
+                              bgcolor: 'white',
+                              borderRadius: 1,
+                              '& .MuiInputLabel-root': {
+                                display: 'none',
+                              },
+                              '& .MuiInputBase-input::placeholder': {
+                                color: '#B0B0B0',
+                                fontSize: { xs: '14px', sm: '16px' },
+                                opacity: 1,
+                              },
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1,
+                              },
+                            },
+                          }}
+                          placeholder="Phone Number"
+                          variant="outlined"
+                          fullWidth
+                          error={!!fieldState.error}
+                          helperText={fieldState.error ? fieldState.error.message : ''}
+                          onChange={(event) => handlePhoneChange(event, field.onChange)}
+                        />
+                      )}
+                    /> */}
+
+                    <RHFTextField
+                      name="phoneNumber"
+                      placeholder="Phone Number"
+                      InputLabelProps={{ shrink: false }}
+                      type="number"
+                      sx={{
+                        width: '100%',
+                        // maxWidth: { xs: '100%', sm: 500 },
+                        '&.MuiTextField-root': {
+                          bgcolor: 'white',
+                          borderRadius: 1,
+                          '& .MuiInputLabel-root': {
+                            display: 'none',
+                          },
+                          '& .MuiInputBase-input::placeholder': {
+                            color: '#B0B0B0',
+                            fontSize: { xs: '14px', sm: '16px' },
+                            opacity: 1,
+                          },
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1,
+                          },
+                        },
+                      }}
+                    />
+                  </Stack>
+                </Box>
+
+                {/* Email address */}
+                <Box>
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
+                    }}
+                  >
+                    Email Address{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
+                  </Typography>
+                  <RHFTextField
+                    name="email"
+                    placeholder="Email"
+                    InputLabelProps={{ shrink: false }}
+                    sx={{
+                      width: '100%',
+                      // maxWidth: { xs: '100%', sm: 500 },
+                      '&.MuiTextField-root': {
+                        bgcolor: 'white',
+                        borderRadius: 1,
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                          color: '#B0B0B0',
+                          fontSize: { xs: '14px', sm: '16px' },
+                          opacity: 1,
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* COR */}
+                <Box>
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
+                    }}
+                  >
+                    Country Of Residence{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
+                  </Typography>
+                  <RHFAutocomplete
+                    name="country"
+                    placeholder="Country"
+                    options={countries}
+                    InputLabelProps={{ shrink: false }}
+                    sx={{
+                      width: '100%',
+                      '& .MuiTextField-root': {
+                        bgcolor: 'white',
+                        borderRadius: 1,
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                          color: '#B0B0B0',
+                          fontSize: { xs: '14px', sm: '16px' },
+                          opacity: 1,
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* City */}
+                <Box>
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
+                    }}
+                  >
+                    City{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
+                  </Typography>
+                  <RHFAutocomplete
+                    name="country"
+                    placeholder="Country"
+                    options={countries}
+                    InputLabelProps={{ shrink: false }}
+                    sx={{
+                      width: '100%',
+                      '& .MuiTextField-root': {
+                        bgcolor: 'white',
+                        borderRadius: 1,
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                          color: '#B0B0B0',
+                          fontSize: { xs: '14px', sm: '16px' },
+                          opacity: 1,
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* Employment status */}
+                <Box>
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
+                    }}
+                  >
+                    Employment Status{' '}
+                  </Typography>
+
+                  <RHFSelect
+                    name="employment"
+                    multiple={false}
+                    sx={{
+                      width: '100%',
+                      // maxWidth: { xs: '100%', sm: 500 },
+                      '&.MuiTextField-root': {
+                        bgcolor: 'white',
+                        borderRadius: 1,
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                          color: '#B0B0B0',
+                          fontSize: { xs: '14px', sm: '16px' },
+                          opacity: 1,
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        },
+                      },
+                    }}
+                  >
+                    <MenuItem value="fulltime">I have a full-time job</MenuItem>
+                    <MenuItem value="freelance">I&apos;m a freelancer</MenuItem>
+                    <MenuItem value="part_time">I only work part-time</MenuItem>
+                    <MenuItem value="student">I&apos;m a student</MenuItem>
+                    <MenuItem value="in_between">I&apos;m in between jobs/transitioning </MenuItem>
+                    <MenuItem value="unemployed">I&apos;m unemployed</MenuItem>
+                    <MenuItem value="others">Others </MenuItem>
+                  </RHFSelect>
+                </Box>
+
+                {/* Birth date */}
+                <Box>
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
+                    }}
+                  >
+                    Birth Date{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
+                  </Typography>
+                  <RHFDatePicker
+                    name="birthDate"
+                    sx={{
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                    }}
+                  />
+                </Box>
+
+                {/* Interests field */}
+                {/* <Box>
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
+                    }}
+                  >
+                    Interests{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
                   </Typography>
                   <RHFMultiSelect
                     name="interests"
                     placeholder="Select interests"
                     options={interestsLists.map((interest) => ({
                       value: interest,
-                      label: interest
+                      label: interest,
                     }))}
                     checkbox
                     chip
@@ -446,18 +788,21 @@ export default function AccountGeneral() {
                       },
                     }}
                   />
-                </Box>
+                </Box> */}
 
                 {/* Bio field */}
-                <Box>
-                  <Typography variant="body2" color="#636366" fontWeight={typography.fontWeightMedium} 
-                    sx={{ 
-                      fontSize: { xs: '12px', sm: '13px' }, 
-                      mb: 1, 
-                      color: '#636366' 
+                <Box gridColumn={{ md: 'span 2' }}>
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
                     }}
                   >
-                    Bio
+                    About Me
                   </Typography>
                   <RHFTextField
                     name="about"
@@ -466,8 +811,7 @@ export default function AccountGeneral() {
                     placeholder="Tell us about yourself"
                     InputLabelProps={{ shrink: false }}
                     sx={{
-                      width: '100%',
-                      maxWidth: { xs: '100%', sm: 500 },
+                      width: 1,
                       '&.MuiTextField-root': {
                         bgcolor: 'white',
                         borderRadius: 1,
@@ -486,22 +830,23 @@ export default function AccountGeneral() {
                     }}
                   />
                 </Box>
-              </Stack>
+              </Box>
 
-              <Stack spacing={3} alignItems={{ xs: 'center', sm: 'flex-start' }} sx={{ mt: 3 }}>
+              <Stack spacing={3} alignItems={{ xs: 'center', sm: 'flex-end' }} sx={{ mt: 3 }}>
                 <LoadingButton
                   type="submit"
                   variant="contained"
                   loading={isSubmitting}
                   sx={{
-                    background: isDirty || image
-                      ? '#1340FF'
-                      : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
-                    pointerEvents: (!isDirty && !image) && 'none',
+                    background:
+                      isDirty || image
+                        ? '#1340FF'
+                        : 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+                    pointerEvents: !isDirty && !image && 'none',
                     fontSize: '16px',
                     fontWeight: 600,
                     borderRadius: '10px',
-                    borderBottom: (isDirty || image) ? '3px solid #0c2aa6' : '3px solid #91a2e5',
+                    borderBottom: isDirty || image ? '3px solid #0c2aa6' : '3px solid #91a2e5',
                     transition: 'none',
                     width: { xs: '100%', sm: '90px' },
                     height: '44px',
@@ -538,7 +883,7 @@ export default function AccountGeneral() {
       >
         <Button
           onClick={handleCloseImage}
-          sx={{ 
+          sx={{
             position: 'fixed',
             top: 20,
             right: 20,
