@@ -34,8 +34,9 @@ export default function ChatMessageList({ messages }) {
       sx={{ 
         px: 3, 
         py: 0.1, 
-        height: '100%', // Use 100% height instead of fixed height
-        flexGrow: 0,
+        height: '100%',
+        flexGrow: 1,
+        overflow: 'auto'
       }}
     >
       <Box sx={{ mt: 2, mb: 2 }}>
