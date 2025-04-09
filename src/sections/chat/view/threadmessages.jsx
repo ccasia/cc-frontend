@@ -86,12 +86,14 @@ const ThreadMessages = ({ threadId }) => {
   const isGroup = thread?.isGroup;
 
   return (
-    <Stack sx={{ width: 1, height: 1, overflow: 'hidden' }}>
+    <Stack sx={{ width: 1, height: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <ChatHeaderCompose currentUserId={user.id} threadId={threadId} />
 
       <Divider sx={{ width: '97%', mx: 'auto' }} />
 
-      <ChatMessageList messages={messages} />
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <ChatMessageList messages={messages} />
+      </Box>
 
       {isGroup && campaignStatus === 'COMPLETED' ? (
         <Typography

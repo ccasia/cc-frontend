@@ -382,7 +382,7 @@ export default function ChatNav({}) {
         </Box>
       )}
 
-      <Scrollbar sx={{ pb: 1 }}>{renderList}</Scrollbar>
+      <Scrollbar sx={{ pb: 1, flex: 1, overflow: 'auto', height: '100%' }}>{renderList}</Scrollbar>
     </>
   );
 
@@ -392,11 +392,13 @@ export default function ChatNav({}) {
 
       <Stack
         sx={{
-          height: 800,
+          height: '100%',
           width: NAV_WIDTH,
           position: 'relative',
           overflow: 'hidden',
           flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
           transition: theme.transitions.create(['width'], {
             duration: theme.transitions.duration.shorter,
           }),
