@@ -101,7 +101,8 @@ export default function ApprovePitch() {
                     <TableRow key={pitch.id}>
                       <TableCell>{pitch.id}</TableCell>
                       <TableCell>
-                        {pitch.status === "approved" ? (
+                         <Box display="flex" alignItems="center">
+                         {pitch.status === "approved" ? (
                           <>
                             <CheckCircleIcon color="success" sx={{ mr: 1 }} />
                             Approved
@@ -112,6 +113,9 @@ export default function ApprovePitch() {
                             Pending Approval
                           </>
                         )}
+
+                         </Box>
+                      
                       </TableCell>
                       <TableCell>{turnaroundTime}</TableCell>
                       <TableCell>{pitch.admin?.user?.name || "Not approved yet"}</TableCell>

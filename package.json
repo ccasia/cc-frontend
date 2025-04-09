@@ -56,6 +56,8 @@
     "dayjs": "^1.11.11",
     "emoji-picker-react": "^4.12.0",
     "esbuild": "0.21.5",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
     "framer-motion": "^10.16.16",
     "highlight.js": "^11.9.0",
     "history": "^5.3.0",

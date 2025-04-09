@@ -36,7 +36,9 @@ export default function TotalPitches({ users }) {
   return (
     <Card>
       <CardContent>
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h3" gutterBottom 
+        style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}
+        >
           Creator Pitches
         </Typography>
       </CardContent>

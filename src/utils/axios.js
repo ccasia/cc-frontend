@@ -118,6 +118,7 @@ export const endpoints = {
     getAdmins: '/api/user/getAdmins',
     allusers: '/api/users',
     changePassword: '/api/user/changePassword',
+    getAdminlogs: (id) => `/api/user/admin-logs/${id}`,
   },
   mail: {
     list: '/api/mail/list',

@@ -101,20 +101,13 @@ export default function TotalCreators() {
   return (
     <Card>
       <CardContent>
-        <Typography  marginBottom={2} variant="h6" gutterBottom>
+        <Typography  marginBottom={2} variant="h3" gutterBottom 
+        style={{ fontFamily: 'Instrument Serif', fontWeight: 550 }}
+        >
           Total Creators on Platform: {creators.length}
         </Typography>
 
-        {/* Line Graph - Filter by Age Range */}
-        {/* <LineChart
-          mb={8}
-          width={400}
-          height={200}
-          series={[{ data: Object.values(ageGroups), label: 'Creators by Age' }]}
-          xAxis={[{ scaleType: 'point', data: Object.keys(ageGroups) }]}
-        /> */}
-
-        <Typography variant="h8" align="start" sx={{  mt: 4, mb: 2, fontWeight: 'bold' }}>
+        <Typography variant="h8" fontWeight="bold" align="start" sx={{  mt: 4, mb: 2}}>
           Creators by Age Group
         </Typography>
         <Box sx={{ display: "flex", justifyContent: "center" }}>
