@@ -4,26 +4,26 @@ import { mutate } from 'swr';
 import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
 import { useTheme } from '@emotion/react';
-import { Toaster } from 'react-hot-toast';
-import React, { useState, useCallback, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
-  Tab,
+  Box,
   Grid,
   Card,
-  Tabs,
   Stack,
   alpha,
   Avatar,
+  Button,
   MenuItem,
   Container,
   Typography,
+  ListItemText,
   InputAdornment,
-  Button,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -39,7 +39,6 @@ import { useSettingsContext } from 'src/components/settings';
 import { RHFSelect } from 'src/components/hook-form/rhf-select';
 import FormProvider from 'src/components/hook-form/form-provider';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import CreatorProfile from 'src/sections/creator/profile/general';
 
@@ -47,10 +46,10 @@ import API from './api';
 import UploadPhoto from './dropzone';
 import AccountSecurity from './security';
 import { Billing } from '../creator/profile/billing';
+import Preference from '../creator/profile/preferences';
 import AccountSocialLinks from '../creator/profile/social';
 import PaymentFormProfile from '../creator/profile/payment-form';
 import AccountNotifications from '../creator/profile/notification';
-import Preference from '../creator/profile/preferences';
 
 // import x from '../creator/profile/notification';
 
@@ -62,7 +61,7 @@ const Profile = () => {
   const theme = useTheme();
   const { user } = useAuthContext();
   const location = useLocation();
-  const navigate = useNavigate();
+
   const [image, setImage] = useState(null);
   const { section } = useParams();
 
@@ -120,46 +119,59 @@ const Profile = () => {
     [setValue]
   );
 
-  // const handleChangeTab = useCallback((tab) => {
-  //   if (['admin', 'superadmin'].includes(user?.role)) {
-  //     switch (tab) {
-  //       case 'general':
-  //         navigate(paths.dashboard.user.profileTabs.general);
-  //         break;
-  //       case 'security':
-  //         navigate(paths.dashboard.user.profileTabs.security);
-  //         break;
-  //       case 'api':
-  //         navigate(paths.dashboard.user.profileTabs.api);
-  //         break;
-  //       default:
-  //         navigate(paths.dashboard.user.profileTabs.general);
-  //     }
-  //   } else {
-  //     switch (tab) {
-  //       case 'general':
-  //         navigate(paths.dashboard.user.profileTabs.account);
-  //         break;
-  //       case 'security':
-  //         navigate(paths.dashboard.user.profileTabs.security);
-  //         break;
-  //       case 'Social Links':
-  //         navigate(paths.dashboard.user.profileTabs.socials);
-  //         break;
-  //       case 'paymentForm':
-  //         navigate(paths.dashboard.user.profileTabs.payment);
-  //         break;
-  //       case 'Billing':
-  //         navigate(paths.dashboard.user.profileTabs.billing);
-  //         break;
-  //       case 'Notifications':
-  //         navigate(paths.dashboard.user.profileTabs.notifications);
-  //         break;
-  //       default:
-  //         navigate(paths.dashboard.user.profileTabs.account);
-  //     }
-  //   }
-  // }, [navigate, user?.role]);
+  const profileCompletion = useMemo(() => {
+    const account = {
+      name: user?.name,
+      pronounce: user?.creator?.pronounce,
+      phoneNumber: user?.phoneNumber,
+      email: user?.email,
+      cor: user?.country,
+      city: user?.city,
+      address: user?.creator?.address,
+      employementStatus: user?.creator?.employment,
+      birthDate: user?.creator?.birthDate,
+      aboutMe: user?.creator?.mediaKit?.about,
+    };
+
+    const preferences = {
+      languages: user?.creator?.languages,
+      interests: user?.creator?.interests,
+    };
+
+    const socials = {
+      isTikTokConnected: user?.creator?.isTiktokConnected,
+      isInstagramConnected: user?.creator?.isFacebookConnected,
+    };
+
+    const payment = {
+      countryOfBank: user?.paymentForm?.countryOfBank,
+      bankName: user?.paymentForm?.bankName,
+      accountHolderName: user?.paymentForm?.bankAccountName,
+      accountNumber: user?.paymentForm?.bankAccountNumber,
+      icNumber: user?.paymentForm?.icNumber,
+    };
+
+    const combinedProfile = {
+      ...account,
+      ...preferences,
+      ...socials,
+      ...payment,
+    };
+
+    const totalFields = Object.keys(combinedProfile).length;
+
+    const filledFields = Object.values(combinedProfile).filter((value) => {
+      if (Array.isArray(value)) return value.length > 0; // array fields (e.g., languages, interests)
+      if (typeof value === 'boolean') return value !== false; // allow boolean fields like isTikTokConnected
+      return value !== undefined && value !== null && value !== '';
+    }).length;
+
+    console.log(filledFields, totalFields);
+
+    const completionPercentage = Math.round((filledFields / totalFields) * 100);
+
+    return completionPercentage;
+  }, [user]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -295,7 +307,7 @@ const Profile = () => {
       sx={{
         position: 'relative',
         width: '100%',
-        mb: { xs: 3, md: 5 },
+        mb: 3,
         '&::after': {
           content: '""',
           position: 'absolute',
@@ -458,7 +470,7 @@ const Profile = () => {
       sx={{
         position: 'relative',
         width: '100%',
-        mb: { xs: 3, md: 5 },
+        mb: 3,
         '&::after': {
           content: '""',
           position: 'absolute',
@@ -749,11 +761,89 @@ const Profile = () => {
       >
         Settings ⚙️
       </Typography>
-
       {['admin', 'superadmin'].includes(user?.role) ? Admintabs : CreatorTabs}
+
+      {profileCompletion < 100 ? (
+        <Stack mb={2} direction="row" alignItems="center" spacing={2}>
+          <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+            <CircularProgress
+              thickness={4}
+              value={profileCompletion}
+              variant="determinate"
+              size={60}
+              sx={{
+                color: '#2944B7',
+                strokeLinecap: 'round',
+              }}
+            />
+            <Box
+              sx={{
+                top: 0,
+                left: 0,
+                bottom: 0,
+                right: 0,
+                position: 'absolute',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography variant="subtitle2">{`${Math.round(profileCompletion)}%`}</Typography>
+            </Box>
+          </Box>
+          <ListItemText
+            primary="You're almost there!"
+            secondary="Complete your account now to get selected for campaigns"
+            primaryTypographyProps={{
+              fontFamily: theme.typography.fontSecondaryFamily,
+              variant: 'body1',
+              fontSize: 25,
+            }}
+          />
+        </Stack>
+      ) : (
+        <Stack mb={2} direction="row" alignItems="center" spacing={2}>
+          <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+            <CircularProgress
+              thickness={4}
+              value={profileCompletion}
+              variant="determinate"
+              size={60}
+              sx={{
+                color: '#2944B7',
+                strokeLinecap: 'round',
+              }}
+            />
+            <Box
+              sx={{
+                top: 0,
+                left: 0,
+                bottom: 0,
+                right: 0,
+                position: 'absolute',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography variant="subtitle2">{`${Math.round(profileCompletion)}%`}</Typography>
+            </Box>
+          </Box>
+          <ListItemText
+            primary="Congratulations!"
+            secondary="Your account now has a higher chance to get selected for campaigns!"
+            primaryTypographyProps={{
+              fontFamily: theme.typography.fontSecondaryFamily,
+              variant: 'body1',
+              fontSize: 25,
+            }}
+          />
+        </Stack>
+      )}
+
       {['admin', 'superadmin'].includes(user?.role) ? adminContents : creatorContents}
 
-      <Toaster />
+      {/* <Toaster /> */}
     </Container>
   );
 };
