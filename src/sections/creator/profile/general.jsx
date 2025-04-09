@@ -39,6 +39,7 @@ import FormProvider, {
   RHFDatePicker,
   RHFAutocomplete,
 } from 'src/components/hook-form';
+import { countriesCities } from 'src/contants/countries';
 
 // ----------------------------------------------------------------------
 
@@ -84,6 +85,7 @@ export default function AccountGeneral() {
     allergies: user?.paymentForm?.allergies?.map((allergy) => ({ name: allergy })) || [
       { name: '' },
     ],
+    city: user?.city || '',
   };
 
   const methods = useForm({
@@ -102,6 +104,10 @@ export default function AccountGeneral() {
   //   control,
   //   name: 'allergies',
   // });
+
+  console.log(watch('city'));
+
+  const countrySelected = watch('country');
 
   const handleChangeCountryCode = (val) => {
     setCountryCode(val);
@@ -597,7 +603,7 @@ export default function AccountGeneral() {
                   <RHFAutocomplete
                     name="country"
                     placeholder="Country"
-                    options={countries}
+                    options={Object.keys(countriesCities)}
                     InputLabelProps={{ shrink: false }}
                     sx={{
                       width: '100%',
@@ -638,13 +644,54 @@ export default function AccountGeneral() {
                     </Box>
                   </Typography>
                   <RHFAutocomplete
-                    name="country"
-                    placeholder="Country"
-                    options={countries}
+                    name="city"
+                    placeholder="City"
+                    options={[...new Set(countriesCities[countrySelected])]}
                     InputLabelProps={{ shrink: false }}
                     sx={{
                       width: '100%',
                       '& .MuiTextField-root': {
+                        bgcolor: 'white',
+                        borderRadius: 1,
+                        '& .MuiInputLabel-root': {
+                          display: 'none',
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                          color: '#B0B0B0',
+                          fontSize: { xs: '14px', sm: '16px' },
+                          opacity: 1,
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 1,
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* Bio field */}
+                <Box gridColumn={{ md: 'span 2' }}>
+                  <Typography
+                    variant="body2"
+                    color="#636366"
+                    fontWeight={typography.fontWeightMedium}
+                    sx={{
+                      fontSize: { xs: '12px', sm: '13px' },
+                      mb: 1,
+                      color: '#636366',
+                    }}
+                  >
+                    Full Address
+                  </Typography>
+                  <RHFTextField
+                    name="address"
+                    multiline
+                    rows={4}
+                    placeholder="Your address"
+                    InputLabelProps={{ shrink: false }}
+                    sx={{
+                      width: 1,
+                      '&.MuiTextField-root': {
                         bgcolor: 'white',
                         borderRadius: 1,
                         '& .MuiInputLabel-root': {
@@ -736,59 +783,6 @@ export default function AccountGeneral() {
                     }}
                   />
                 </Box>
-
-                {/* Interests field */}
-                {/* <Box>
-                  <Typography
-                    variant="body2"
-                    color="#636366"
-                    fontWeight={typography.fontWeightMedium}
-                    sx={{
-                      fontSize: { xs: '12px', sm: '13px' },
-                      mb: 1,
-                      color: '#636366',
-                    }}
-                  >
-                    Interests{' '}
-                    <Box component="span" sx={{ color: 'error.main' }}>
-                      *
-                    </Box>
-                  </Typography>
-                  <RHFMultiSelect
-                    name="interests"
-                    placeholder="Select interests"
-                    options={interestsLists.map((interest) => ({
-                      value: interest,
-                      label: interest,
-                    }))}
-                    checkbox
-                    chip
-                    InputLabelProps={{ shrink: false }}
-                    sx={{
-                      width: '100%',
-                      maxWidth: { xs: '100%', sm: 500 },
-                      '& .MuiOutlinedInput-root': {
-                        bgcolor: 'white',
-                        borderRadius: 1,
-                        minHeight: { xs: 40, sm: 48 },
-                        height: 'auto',
-                        maxHeight: { xs: 100, sm: 120 },
-                        overflow: 'auto',
-                      },
-                      '& .MuiSelect-select': {
-                        fontSize: { xs: '14px', sm: '16px' },
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '4px',
-                        padding: '8px !important',
-                      },
-                      '& .MuiChip-root': {
-                        margin: '2px',
-                        fontSize: { xs: '12px', sm: '14px' },
-                      },
-                    }}
-                  />
-                </Box> */}
 
                 {/* Bio field */}
                 <Box gridColumn={{ md: 'span 2' }}>
