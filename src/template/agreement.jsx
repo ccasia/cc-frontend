@@ -141,10 +141,9 @@ export default function AgreementTemplate({
             Utama, 47400 Petaling Jaya, Selangor Darul Ehsan, Malaysia{' '}
             <Text style={{ fontWeight: 800 }}>(“Cult Creative”)</Text> and{' '}
             <Text style={{ fontWeight: 800 }}>{FREELANCER_FULL_NAME} </Text>
-            (NRIC/Passport No. :<Text style={{ fontWeight: 800 }}>{IC_NUMBER} </Text>) located at{' '}
-            <Text style={{ fontWeight: 800 }}>{ADDRESS} (“Freelancer”). </Text>
-            Cult Creative and the Freelancer may each be referred to in this Agreement as a “Party”
-            and collectively as the “Parties”. It is hereby agreed between the parties as follows:
+            (NRIC/Passport No. :<Text style={{ fontWeight: 800 }}>{IC_NUMBER} </Text>) Cult Creative
+            and the Freelancer may each be referred to in this Agreement as a “Party” and
+            collectively as the “Parties”. It is hereby agreed between the parties as follows:
           </Text>
           <View style={styles.line} />
 
@@ -171,8 +170,9 @@ export default function AgreementTemplate({
               </Text>
               <Text style={styles.item}>
                 c) To film, edit, and draft out the pieces of content required and deliver it to
-                Cult Creative for viewing and approval within 4 working days from the Effective Date
-                (<Text style={styles.bold}>{effectiveDate}</Text>), which extends and includes the
+                Cult Creative for viewing and approval within{' '}
+                <Text style={styles.bold}>4 working days</Text> from the Effective Date (
+                <Text style={styles.bold}>{effectiveDate}</Text>), which extends and includes the
                 day of receiving the product and/or the day scheduled for attending the designated
                 location. Any delay will require a valid, reasonable reason.
               </Text>
