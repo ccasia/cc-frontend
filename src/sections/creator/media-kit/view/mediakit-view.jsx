@@ -158,7 +158,6 @@ const MediaKitCreator = () => {
 
   return (
     <Container maxWidth="xl" sx={{ position: 'relative' }}>
-      
       {/* Desktop View */}
       <Box
         sx={{
@@ -190,22 +189,22 @@ const MediaKitCreator = () => {
           Share
         </Button>
       </Box>
-      
+
       {/* Mobile View */}
-      <Stack 
-        direction="row" 
-        justifyContent="space-between" 
+      <Stack
+        direction="row"
+        justifyContent="space-between"
         alignItems="center"
         width="100%"
         mb={{ xs: 3, sm: 4, md: 6 }}
         mt={{ xs: 2, sm: 1.5, md: 2 }}
       >
-        <Box 
+        <Box
           component="img"
           src="/logo/cultcreativelogo.svg"
           alt="Cult Creative Logo"
           draggable="false"
-          sx={{ 
+          sx={{
             height: { xs: 60, sm: 100, md: 120 },
           }}
         />
@@ -235,7 +234,11 @@ const MediaKitCreator = () => {
       </Stack>
 
       {/* Creator Details */}
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 4, md: 15 }} justifyContent="space-between">
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={{ xs: 4, md: 15 }}
+        justifyContent="space-between"
+      >
         <Stack flex="1">
           <Stack direction="row" alignItems="center">
             <Typography
@@ -307,19 +310,19 @@ const MediaKitCreator = () => {
         {/* Social Media Stats */}
         <Stack flex="1" alignItems={{ xs: 'start', md: 'flex-start' }} spacing={3}>
           {/* Divider for mobile screens only */}
-          <Box 
-            sx={{ 
+          <Box
+            sx={{
               display: { xs: 'block', sm: 'none' },
-              width: '100%', 
+              width: '100%',
               height: '1px',
               backgroundColor: '#E7E7E7',
               mb: 2,
-            }} 
+            }}
           />
-          
+
           {/* Total Audience Section */}
           <Stack alignItems="flex-start" sx={{ pl: { xs: 1, sm: 0 } }}>
-            <Typography 
+            <Typography
               variant="h2"
               color="#231F20"
               fontFamily="Instrument Serif"
@@ -335,7 +338,7 @@ const MediaKitCreator = () => {
               align="left"
               sx={{ fontSize: { xs: '3rem', md: '4rem' } }}
             >
-              300,488 {/* Change to actual number later */}
+              0 {/* Change to actual number later */}
             </Typography>
             <Box
               component="span"
@@ -346,14 +349,21 @@ const MediaKitCreator = () => {
                 fontWeight: 300,
                 letterSpacing: '0.05em',
                 textAlign: 'left',
-                display: 'block'
+                display: 'block',
               }}
             >
               Total Audience
             </Box>
           </Stack>
 
-          <Stack direction="row" alignItems="center" spacing={1} my={2} color="text.secondary" sx={{ pl: { xs: 1, sm: 0 } }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            my={2}
+            color="text.secondary"
+            sx={{ pl: { xs: 1, sm: 0 } }}
+          >
             <Button
               variant="outlined"
               startIcon={<Iconify icon="mdi:instagram" width={24} />}
@@ -417,7 +427,7 @@ const MediaKitCreator = () => {
                 <Stack spacing={2}>
                   {/* Followers */}
                   <Stack alignItems="flex-start">
-                    <Typography 
+                    <Typography
                       variant="h3"
                       color="#1340FF"
                       fontFamily="Instrument Serif"
@@ -435,7 +445,7 @@ const MediaKitCreator = () => {
                     >
                       {socialMediaAnalytics.followers}
                     </Typography>
-                    <Typography 
+                    <Typography
                       variant="caption"
                       color="#1340FF"
                       fontWeight={500}
@@ -445,21 +455,21 @@ const MediaKitCreator = () => {
                       Followers
                     </Typography>
                   </Stack>
-                  
+
                   {/* Divider */}
-                  <Box 
-                    sx={{ 
-                      width: 140, 
+                  <Box
+                    sx={{
+                      width: 140,
                       height: '1px',
                       backgroundColor: '#1340FF',
                       mt: 3,
                       mb: 2,
-                    }} 
+                    }}
                   />
-                  
+
                   {/* Average likes */}
                   <Stack alignItems="flex-start">
-                    <Typography 
+                    <Typography
                       variant="h3"
                       color="#1340FF"
                       fontFamily="Instrument Serif"
@@ -477,7 +487,7 @@ const MediaKitCreator = () => {
                     >
                       {socialMediaAnalytics.averageLikes}
                     </Typography>
-                    <Typography 
+                    <Typography
                       variant="caption"
                       color="#1340FF"
                       fontWeight={500}
@@ -488,11 +498,11 @@ const MediaKitCreator = () => {
                     </Typography>
                   </Stack>
                 </Stack>
-                
+
                 <Stack spacing={2}>
                   {/* Average Comments */}
                   <Stack alignItems="flex-start">
-                    <Typography 
+                    <Typography
                       variant="h3"
                       color="#1340FF"
                       fontFamily="Instrument Serif"
@@ -510,7 +520,7 @@ const MediaKitCreator = () => {
                     >
                       0 {/* Change to actual number later */}
                     </Typography>
-                    <Typography 
+                    <Typography
                       variant="caption"
                       color="#1340FF"
                       fontWeight={500}
@@ -520,21 +530,21 @@ const MediaKitCreator = () => {
                       Avg Comments
                     </Typography>
                   </Stack>
-                  
+
                   {/* Divider */}
-                  <Box 
-                    sx={{ 
-                      width: 140, 
+                  <Box
+                    sx={{
+                      width: 140,
                       height: '1px',
                       backgroundColor: '#1340FF',
-                      mt: 3,  
+                      mt: 3,
                       mb: 2,
-                    }} 
+                    }}
                   />
-                  
+
                   {/* Total Engagement */}
                   <Stack alignItems="flex-start">
-                    <Typography 
+                    <Typography
                       variant="h3"
                       color="#1340FF"
                       fontFamily="Instrument Serif"
@@ -552,7 +562,7 @@ const MediaKitCreator = () => {
                     >
                       {socialMediaAnalytics.engagement_rate}
                     </Typography>
-                    <Typography 
+                    <Typography
                       variant="caption"
                       color="#1340FF"
                       fontWeight={500}
@@ -571,10 +581,15 @@ const MediaKitCreator = () => {
 
       {smDown && (
         <Stack spacing={3} sx={{ py: 2, my: 2 }}>
-          <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ width: '100%', pl: 2 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            spacing={1}
+            sx={{ width: '100%', pl: 2 }}
+          >
             {/* Followers */}
             <Stack alignItems="flex-start" sx={{ flex: 1 }}>
-              <Typography 
+              <Typography
                 variant="h5"
                 color="#1340FF"
                 fontWeight={400}
@@ -585,7 +600,7 @@ const MediaKitCreator = () => {
               >
                 {socialMediaAnalytics.followers}
               </Typography>
-              <Typography 
+              <Typography
                 variant="caption"
                 color="#1340FF"
                 fontWeight={600}
@@ -598,7 +613,7 @@ const MediaKitCreator = () => {
 
             {/* Average Comments */}
             <Stack alignItems="flex-start" sx={{ flex: 1 }}>
-              <Typography 
+              <Typography
                 variant="h5"
                 color="#1340FF"
                 fontWeight={400}
@@ -609,7 +624,7 @@ const MediaKitCreator = () => {
               >
                 0 {/* Change to actual number later */}
               </Typography>
-              <Typography 
+              <Typography
                 variant="caption"
                 color="#1340FF"
                 fontWeight={600}
@@ -622,7 +637,7 @@ const MediaKitCreator = () => {
 
             {/* Average likes */}
             <Stack alignItems="flex-start" sx={{ flex: 1 }}>
-              <Typography 
+              <Typography
                 variant="h5"
                 color="#1340FF"
                 fontWeight={400}
@@ -633,7 +648,7 @@ const MediaKitCreator = () => {
               >
                 {socialMediaAnalytics.averageLikes}
               </Typography>
-              <Typography 
+              <Typography
                 variant="caption"
                 color="#1340FF"
                 fontWeight={600}
@@ -646,7 +661,7 @@ const MediaKitCreator = () => {
 
             {/* Total Engagement */}
             <Stack alignItems="flex-start" sx={{ flex: 1 }}>
-              <Typography 
+              <Typography
                 variant="h5"
                 color="#1340FF"
                 fontWeight={400}
@@ -657,7 +672,7 @@ const MediaKitCreator = () => {
               >
                 {socialMediaAnalytics.engagement_rate}
               </Typography>
-              <Typography 
+              <Typography
                 variant="caption"
                 color="#1340FF"
                 fontWeight={600}
