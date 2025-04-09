@@ -204,6 +204,7 @@ const MediaKitCreator = () => {
           component="img"
           src="/logo/cultcreativelogo.svg"
           alt="Cult Creative Logo"
+          draggable="false"
           sx={{ 
             height: { xs: 60, sm: 100, md: 120 },
           }}
