@@ -21,47 +21,50 @@ import { primaryFont } from 'src/theme/typography';
 
 import Iconify from 'src/components/iconify';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import { countriesCities } from 'src/contants/countries';
 
 const SecondStep = ({ item }) => {
   const loading = useBoolean();
-  const { setValue } = useFormContext();
+  const { setValue, watch } = useFormContext();
 
-  const creatorLocation = useCallback(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          loading.onTrue();
-          try {
-            const address = await axios.get(
-              `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
-            );
-            setValue('location', address.data.display_name);
-          } catch (error) {
-            enqueueSnackbar('Error fetch location', {
-              variant: 'error',
-            });
-          } finally {
-            loading.onFalse();
-          }
-        },
-        (error) => {
-          console.error(`Error Code = ${error.code} - ${error.message}`);
-          enqueueSnackbar('Error fetch location', {
-            variant: 'error',
-          });
-          loading.onFalse();
-        }
-      );
-    } else {
-      console.log('Geolocation is not supported by this browser.');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setValue]);
+  const countrySelected = watch('Nationality');
 
-  useEffect(() => {
-    creatorLocation();
-  }, [creatorLocation]);
+  // const creatorLocation = useCallback(() => {
+  //   if ('geolocation' in navigator) {
+  //     navigator.geolocation.getCurrentPosition(
+  //       async (position) => {
+  //         const { latitude, longitude } = position.coords;
+  //         loading.onTrue();
+  //         try {
+  //           const address = await axios.get(
+  //             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+  //           );
+  //           setValue('location', address.data.display_name);
+  //         } catch (error) {
+  //           enqueueSnackbar('Error fetch location', {
+  //             variant: 'error',
+  //           });
+  //         } finally {
+  //           loading.onFalse();
+  //         }
+  //       },
+  //       (error) => {
+  //         console.error(`Error Code = ${error.code} - ${error.message}`);
+  //         enqueueSnackbar('Error fetch location', {
+  //           variant: 'error',
+  //         });
+  //         loading.onFalse();
+  //       }
+  //     );
+  //   } else {
+  //     console.log('Geolocation is not supported by this browser.');
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [setValue]);
+
+  // useEffect(() => {
+  //   creatorLocation();
+  // }, [creatorLocation]);
 
   return (
     <Box>
@@ -101,13 +104,37 @@ const SecondStep = ({ item }) => {
           >
             What is your country of residence?
           </FormLabel>
-          <RHFAutocomplete
+          {/* <RHFAutocomplete
             name="Nationality"
             type="country"
             placeholder="Select Country"
             fullWidth
             options={countries.map((option) => option.label)}
             getOptionLabel={(option) => option}
+          /> */}
+          <RHFAutocomplete
+            name="Nationality"
+            placeholder="Select Country"
+            options={Object.keys(countriesCities)}
+            InputLabelProps={{ shrink: false }}
+            // sx={{
+            //   width: '100%',
+            //   '& .MuiTextField-root': {
+            //     bgcolor: 'white',
+            //     borderRadius: 1,
+            //     '& .MuiInputLabel-root': {
+            //       display: 'none',
+            //     },
+            //     '& .MuiInputBase-input::placeholder': {
+            //       color: '#B0B0B0',
+            //       fontSize: { xs: '14px', sm: '16px' },
+            //       opacity: 1,
+            //     },
+            //     '& .MuiOutlinedInput-root': {
+            //       borderRadius: 1,
+            //     },
+            //   },
+            // }}
           />
         </Stack>
 
@@ -118,7 +145,7 @@ const SecondStep = ({ item }) => {
           >
             Which city are you from?
           </FormLabel>
-          <RHFTextField
+          {/* <RHFTextField
             name="location"
             placeholder="Select City"
             multiline
@@ -140,6 +167,30 @@ const SecondStep = ({ item }) => {
                   </Tooltip>
                 </InputAdornment>
               ),
+            }}
+          /> */}
+          <RHFAutocomplete
+            name="city"
+            placeholder="City"
+            options={[...new Set(countriesCities[countrySelected])]}
+            InputLabelProps={{ shrink: false }}
+            sx={{
+              width: '100%',
+              '& .MuiTextField-root': {
+                bgcolor: 'white',
+                borderRadius: 1,
+                '& .MuiInputLabel-root': {
+                  display: 'none',
+                },
+                '& .MuiInputBase-input::placeholder': {
+                  color: '#B0B0B0',
+                  fontSize: { xs: '14px', sm: '16px' },
+                  opacity: 1,
+                },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                },
+              },
             }}
           />
         </Stack>

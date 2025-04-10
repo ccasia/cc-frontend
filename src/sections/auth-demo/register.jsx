@@ -287,6 +287,7 @@ const Register = () => {
             employment: creatorData.employment || 'fulltime',
             birthDate: creatorData.birthDate || null,
             Nationality: creatorData.Nationality || '',
+            city: creatorData.city || '',
           },
         };
 
@@ -301,7 +302,7 @@ const Register = () => {
         router.push(paths.auth.verify);
       }
     } catch (err) {
-      console.error('Registration error:', err);
+      console.error('Registration error:', err.message);
 
       if (err.message === 'Token is missing.') {
         enqueueSnackbar('reCAPTCHA verification failed. Please try again.', {
