@@ -95,7 +95,7 @@ export const interestsList = [
 // ];
 
 const stepSchemas = Yup.object({
-  location: Yup.string().required('City/Area is required'),
+  // location: Yup.string().required('City/Area is required'),
   Nationality: Yup.string().required('Nationality is required'),
   phone: Yup.string().required('Phone number is required'),
   pronounce: Yup.string().required('Pronouns are required'),
@@ -113,6 +113,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
   const [ratingIndustries, setRatingIndustries] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedSteps, setCompletedSteps] = useState({});
+  const [countryCode, setCountryCode] = useState(null);
 
   const { logout, initialize } = useAuthContext();
   const smDown = useResponsive('down', 'sm');
@@ -146,13 +147,14 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       phone: '',
       tiktok: '',
       pronounce: '',
-      location: '',
+      // location: '',
       interests: [],
       languages: [],
       instagram: '',
       employment: '',
       birthDate: null,
       Nationality: '',
+      city: '',
       otherPronounce: '',
     }),
     []
@@ -196,11 +198,12 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       console.log('CreatorForm data being submitted:', data);
 
       if (registerUser) {
-        await registerUser(data);
+        await registerUser({ ...data, phone: `${countryCode} ${data.phone}` });
       } else {
         try {
           const res = await axiosInstance.put(endpoints.auth.updateCreator, {
             ...data,
+            phone: `${countryCode} ${data.phone}`,
             pronounce: data.otherPronounce || data.pronounce,
           });
           enqueueSnackbar(`Welcome ${res.data.name}!`);
@@ -292,14 +295,16 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
         case 0:
           return <SecondStep item={info} />;
         case 1:
-          return <ThirdStep item={info} />;
+          return (
+            <ThirdStep item={info} setCountryCode={setCountryCode} countryCode={countryCode} />
+          );
         case 2:
           return <FourthStep item={info} />;
         default:
           return <SecondStep item={info} />;
       }
     },
-    [activeStep]
+    [activeStep, countryCode]
   );
 
   const isNextButtonEnabled = useMemo(() => {

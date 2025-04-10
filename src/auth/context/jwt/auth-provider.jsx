@@ -163,13 +163,12 @@ export function AuthProvider({ children }) {
   // REGISTER
   const register = useCallback(async (data) => {
     try {
-      console.log('Registration data being sent:', JSON.stringify(data, null, 2));
       const response = await axios.post(endpoints.auth.registerCreator, data);
       return response.data.user;
     } catch (error) {
-      console.error('Backend registration error:', error);
-      console.error('Error response:', error.response?.data);
-      const message = error.response?.data?.message || 'Something went wrong';
+      // console.error('Backend registration error:', error);
+      // console.error('Error response:', error.response?.data);
+      const message = error?.message || 'Something went wrong';
       throw new Error(message);
     }
   }, []);

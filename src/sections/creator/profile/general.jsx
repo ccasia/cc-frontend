@@ -105,8 +105,6 @@ export default function AccountGeneral() {
   //   name: 'allergies',
   // });
 
-  console.log(watch('city'));
-
   const countrySelected = watch('country');
 
   const handleChangeCountryCode = (val) => {

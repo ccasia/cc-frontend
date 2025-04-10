@@ -1,28 +1,31 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Controller, useFormContext } from 'react-hook-form';
-import { formatIncompletePhoneNumber } from 'libphonenumber-js';
+import { useFormContext } from 'react-hook-form';
 
-import { Stack, MenuItem, FormLabel, TextField, ListItemText } from '@mui/material';
+import { Stack, Select, MenuItem, FormLabel, ListItemText } from '@mui/material';
 
-import { primaryFont } from 'src/theme/typography';
 import { countries } from 'src/assets/data';
+import { primaryFont } from 'src/theme/typography';
 
 import { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
 
-const ThirdStep = ({ item }) => {
-  const { watch, control } = useFormContext();
+const ThirdStep = ({ item, setCountryCode, countryCode }) => {
+  const { watch } = useFormContext();
 
-  const nationality = watch('Nationality');
+  // const nationality = watch('Nationality');
   const pronounce = watch('pronounce');
 
-  const handlePhoneChange = (event, onChange) => {
-    const formattedNumber = formatIncompletePhoneNumber(
-      event.target.value,
-      countries.find((country) => country.label === nationality).code
-    ); // Replace 'MY' with your country code
+  // const handlePhoneChange = (event, onChange) => {
+  //   const formattedNumber = formatIncompletePhoneNumber(
+  //     event.target.value,
+  //     countries.find((country) => country.label === nationality).code
+  //   ); // Replace 'MY' with your country code
 
-    onChange(formattedNumber);
+  //   onChange(formattedNumber);
+  // };
+
+  const handleChangeCountryCode = (val) => {
+    setCountryCode(val);
   };
 
   return (
@@ -41,7 +44,7 @@ const ThirdStep = ({ item }) => {
           color: '#231F20',
         }}
         secondaryTypographyProps={{
-          fontFamily: "InterDisplay",
+          fontFamily: 'InterDisplay',
           fontSize: '16px',
           fontWeight: 400,
           color: '#636366',
@@ -57,7 +60,10 @@ const ThirdStep = ({ item }) => {
         }}
       >
         <Stack spacing={1}>
-          <FormLabel required sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}>
+          <FormLabel
+            required
+            sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
+          >
             Employment Status
           </FormLabel>
           <RHFSelect name="employment" multiple={false}>
@@ -72,11 +78,100 @@ const ThirdStep = ({ item }) => {
         </Stack>
 
         <Stack spacing={1}>
-          <FormLabel required sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}>
+          <FormLabel
+            required
+            sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
+          >
             Phone Number
           </FormLabel>
 
-          <Controller
+          <Stack direction="row" spacing={1}>
+            <Select
+              sx={{
+                bgcolor: 'white',
+                borderRadius: 1,
+                width: 80,
+              }}
+              value={countryCode}
+              onChange={(e) => handleChangeCountryCode(e.target.value)}
+            >
+              {[...new Set(countries.map((c) => c.phone).filter(Boolean))]
+                .sort((a, b) => {
+                  const phoneA = parseInt(a.replace(/-/g, ''), 10);
+                  const phoneB = parseInt(b.replace(/-/g, ''), 10);
+                  return phoneA - phoneB;
+                })
+                .map((val, index) => (
+                  <MenuItem key={index} value={val}>
+                    + {val}
+                  </MenuItem>
+                ))}
+            </Select>
+
+            {/* <Controller
+                      name="phone"
+                      control={control}
+                      defaultValue=""
+                      rules={{ required: 'Phone number is required' }}
+                      render={({ field, fieldState }) => (
+                        <TextField
+                          {...field}
+                          sx={{
+                            width: '100%',
+                            '&.MuiTextField-root': {
+                              bgcolor: 'white',
+                              borderRadius: 1,
+                              '& .MuiInputLabel-root': {
+                                display: 'none',
+                              },
+                              '& .MuiInputBase-input::placeholder': {
+                                color: '#B0B0B0',
+                                fontSize: { xs: '14px', sm: '16px' },
+                                opacity: 1,
+                              },
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1,
+                              },
+                            },
+                          }}
+                          placeholder="Phone Number"
+                          variant="outlined"
+                          fullWidth
+                          error={!!fieldState.error}
+                          helperText={fieldState.error ? fieldState.error.message : ''}
+                          onChange={(event) => handlePhoneChange(event, field.onChange)}
+                        />
+                      )}
+                    /> */}
+
+            <RHFTextField
+              name="phone"
+              placeholder="Phone Number"
+              InputLabelProps={{ shrink: false }}
+              type="number"
+              sx={{
+                width: '100%',
+                // maxWidth: { xs: '100%', sm: 500 },
+                '&.MuiTextField-root': {
+                  bgcolor: 'white',
+                  borderRadius: 1,
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: '#B0B0B0',
+                    fontSize: { xs: '14px', sm: '16px' },
+                    opacity: 1,
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                  },
+                },
+              }}
+            />
+          </Stack>
+
+          {/* <Controller
             name="phone"
             control={control}
             defaultValue=""
@@ -92,20 +187,6 @@ const ThirdStep = ({ item }) => {
                 onChange={(event) => handlePhoneChange(event, field.onChange)}
               />
             )}
-          />
-
-          {/* <RHFTextField
-            name="phone"
-            type="number"
-            placeholder="Phone Number"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  +
-                  {countries.filter((country) => country.label === nationality).map((e) => e.phone)}
-                </InputAdornment>
-              ),
-            }}
           /> */}
         </Stack>
 
@@ -140,4 +221,6 @@ ThirdStep.propTypes = {
     title: PropTypes.string,
     description: PropTypes.string,
   }),
+  setCountryCode: PropTypes.func,
+  countryCode: PropTypes.string,
 };
