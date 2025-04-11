@@ -16,21 +16,22 @@ import {
   Button,
   Divider,
   Tooltip,
+  TextField,
   IconButton,
   Typography,
   DialogContent,
   DialogActions,
-  TextField,
 } from '@mui/material';
+
+import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
-import Label from 'src/components/label';
-import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -761,7 +762,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   : 'Are you sure you want to decline this pitch?'}
               </Typography>
             </Stack>
-            {confirmDialog.type === 'approve' && (
+            {campaign?.campaignCredits && confirmDialog.type === 'approve' && (
               <Box mt={2} width={1}>
                 <TextField
                   value={totalUGCVideos}
@@ -811,7 +812,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             onClick={confirmDialog.type === 'approve' ? handleApprove : handleDecline}
             disabled={
               isSubmitting ||
-              (confirmDialog.type === 'approve' && (!totalUGCVideos || totalUGCVideos > ugcLeft))
+              (campaign?.campaignCredits &&
+                confirmDialog.type === 'approve' &&
+                (!totalUGCVideos || totalUGCVideos > ugcLeft))
             }
             sx={{
               bgcolor: confirmDialog.type === 'approve' ? '#2e6c56' : '#ffffff',
