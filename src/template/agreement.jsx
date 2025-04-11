@@ -163,18 +163,15 @@ export default function AgreementTemplate({
                 a) To report directly to the appointed Client Success Managers from Cult Creative;
               </Text>
               <Text style={styles.item}>
-                b) To remain contactable and responsive via email at{' '}
-                <Text style={styles.bold}>{ccEmail}</Text> and/or via phone at{' '}
-                <Text style={styles.bold}>{ccPhoneNumber}</Text> throughout the duration of the
-                entire campaign; and
+                b) To remain contactable and responsive via email and/or via phone throughout the
+                duration of the entire campaign; and
               </Text>
               <Text style={styles.item}>
-                c) To film, edit, and draft out the pieces of content required and deliver it to
-                Cult Creative for viewing and approval within{' '}
-                <Text style={styles.bold}>4 working days</Text> from the Effective Date (
-                <Text style={styles.bold}>{effectiveDate}</Text>), which extends and includes the
-                day of receiving the product and/or the day scheduled for attending the designated
-                location. Any delay will require a valid, reasonable reason.
+                c) To film, edit and draft out the pieces of content required and deliver it to Cult
+                Creative for viewing and approval within 4 working days from the Effective Date
+                which extends and includes the day of receiving the product and/or the day scheduled
+                for attending the designated location. Any delay will require a valid, reasonable
+                reason.
               </Text>
             </View>
           </View>
@@ -273,7 +270,6 @@ export default function AgreementTemplate({
           </View>
 
           {/* Signature */}
-
           <View style={styles.signatureView}>
             <View
               style={{
