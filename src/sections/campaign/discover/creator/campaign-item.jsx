@@ -4,9 +4,21 @@ import { enqueueSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
-import { Bookmark, BookmarkBorder } from '@mui/icons-material';
-import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { Bookmark, BookmarkBorder } from '@mui/icons-material';
+import {
+  Box,
+  Card,
+  Chip,
+  Avatar,
+  Typography,
+  CircularProgress,
+  Stack,
+  Divider,
+} from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -15,9 +27,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Image from 'src/components/image';
-
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
 
 import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
@@ -298,6 +307,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
           borderRadius: '15px',
           border: '1.2px solid',
           borderColor: '#ebebeb',
+          position: 'relative',
           mb: -0.5,
           height: 335,
           '&:hover': {
@@ -307,6 +317,34 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
         }}
         onClick={handleCardClick}
       >
+        {campaign?.isKWSPCampaign && (
+          <Box
+            mt={4}
+            sx={{
+              border: '1.5px solid #0062CD',
+              borderBottom: '4px solid #0062CD',
+              borderRadius: 1,
+              p: 0.5,
+              px: 1,
+              mb: 1,
+              position: 'absolute',
+              right: 15,
+              top: '38%',
+              zIndex: 10000,
+              bgcolor: 'white',
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#0062CD',
+                fontWeight: 600,
+              }}
+            >
+              Partnered with KWSP i-Saraan{' '}
+            </Typography>
+          </Box>
+        )}
         {renderImage}
         {renderCampaignInfo}
       </Card>
