@@ -252,6 +252,7 @@ export default function JwtLoginView() {
           p: 3,
           bgcolor: '#F4F4F4',
           borderRadius: 2,
+          width: 350,
         }}
       >
         <Typography

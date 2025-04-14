@@ -63,6 +63,7 @@ export default function AuthModernLayout({ children, image }) {
           boxShadow: { md: 'none' },
           overflow: { md: 'unset' },
           bgcolor: { md: 'background.default' },
+          mt: { md: 5 },
         }}
       >
         {children}

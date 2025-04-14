@@ -209,10 +209,11 @@ export default function AgreementTemplate({
               approved services & deliverables for the duration of this agreement.
             </Text>
             <Text style={{ marginTop: 10 }}>
-              The Freelancer shall receive an invoice from Cult Creative within fourteen (14)
-              calendar days of completion of the work done. Cult Creative shall pay the invoice
-              within fourteen (14) calendar days of the date on the invoice. The payment shall be
-              paid at the end of the calendar month via bank transfer as follows:
+              The Freelancer shall receive an invoice from Cult Creative and henceforth Cult
+              Creative shall pay the invoice within twenty-eight (28) calendar days of the date on
+              the invoice. If the 28th day falls on a weekend or public holiday, the payment shall
+              be made on the next business day. The payment shall be paid via bank transfer as
+              follows:
             </Text>
           </View>
 
