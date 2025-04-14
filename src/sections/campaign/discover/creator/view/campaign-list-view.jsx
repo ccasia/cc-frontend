@@ -1,7 +1,7 @@
 import { m } from 'framer-motion';
 import useSWRInfinite from 'swr/infinite';
-import { orderBy, debounce, throttle } from 'lodash';
 import { enqueueSnackbar } from 'notistack';
+import { orderBy, debounce, throttle } from 'lodash';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Container from '@mui/material/Container';
@@ -34,7 +34,6 @@ import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
-import CreatorForm from '../creator-form';
 import CampaignLists from '../campaign-list';
 
 // ----------------------------------------------------------------------
@@ -308,11 +307,19 @@ export default function CampaignListView() {
     if (lgUp) {
       // Desktop view handler
       if (!mainRef?.current) return; // Early return if ref not available
-      
+
       const scrollContainer = mainRef.current;
-      const bottom = scrollContainer.scrollHeight <= scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
-      
-      if (bottom && !isValidating && data && data.length > 0 && data[data.length - 1]?.metaData?.lastCursor) {
+      const bottom =
+        scrollContainer.scrollHeight <=
+        scrollContainer.scrollTop + scrollContainer.clientHeight + 1;
+
+      if (
+        bottom &&
+        !isValidating &&
+        data &&
+        data.length > 0 &&
+        data[data.length - 1]?.metaData?.lastCursor
+      ) {
         setSize(size + 1);
       }
     } else {
@@ -320,11 +327,17 @@ export default function CampaignListView() {
       const windowHeight = window.innerHeight;
       const documentHeight = document.body.scrollHeight;
       const scrolled = window.scrollY;
-      
+
       // checks if user has scrolled to bottom
-      const isAtBottom = (windowHeight + scrolled + 50) >= documentHeight;
-      
-      if (isAtBottom && !isValidating && data && data.length > 0 && data[data.length - 1]?.metaData?.lastCursor) {
+      const isAtBottom = windowHeight + scrolled + 50 >= documentHeight;
+
+      if (
+        isAtBottom &&
+        !isValidating &&
+        data &&
+        data.length > 0 &&
+        data[data.length - 1]?.metaData?.lastCursor
+      ) {
         setSize((currentSize) => currentSize + 1);
       }
     }
@@ -332,18 +345,18 @@ export default function CampaignListView() {
 
   useEffect(() => {
     const scrollElement = lgUp ? mainRef?.current : window;
-    
+
     if (!scrollElement) {
-      return undefined; 
+      return undefined;
     }
 
     const handleScrollThrottled = throttle(handleScroll, 200);
-    
+
     scrollElement.addEventListener('scroll', handleScrollThrottled);
-    
+
     // also checks scroll position on content load
     handleScrollThrottled();
-    
+
     return () => {
       scrollElement.removeEventListener('scroll', handleScrollThrottled);
       handleScrollThrottled.cancel();
@@ -396,7 +409,10 @@ export default function CampaignListView() {
       >
         Discover Campaigns ✨
       </Typography>
-      <Typography variant="body1" sx={{ fontFamily: theme.typography.fontFamily, color: '#636366', mb: 3 }}>
+      <Typography
+        variant="body1"
+        sx={{ fontFamily: theme.typography.fontFamily, color: '#636366', mb: 3 }}
+      >
         Here are the top campaigns that fit your profile!
       </Typography>
 
@@ -405,7 +421,6 @@ export default function CampaignListView() {
           mb: 2.5,
         }}
       >
-
         <Stack
           direction="row"
           spacing={0.5}
@@ -607,13 +622,13 @@ export default function CampaignListView() {
                       border: '0.5px solid #E7E7E7',
                       borderBottom: '3px solid #E7E7E7',
                       mt: 1,
-                    }
-                  }
+                    },
+                  },
                 }}
                 renderValue={(selected) => (
-                  <Typography 
-                    variant="body1" 
-                    sx={{ 
+                  <Typography
+                    variant="body1"
+                    sx={{
                       fontWeight: 600,
                       fontSize: '0.95rem',
                     }}
@@ -639,24 +654,24 @@ export default function CampaignListView() {
                   '&:active': {
                     bgcolor: '#f2f2f2',
                     transition: 'background-color 0.2s ease',
-                  }
+                  },
                 }}
               >
-                <MenuItem 
+                <MenuItem
                   value="Most matched"
-                  sx={{ 
+                  sx={{
                     mx: 0.2,
                     my: 0.5,
                     borderRadius: 0.5,
                     '&.Mui-selected': {
                       bgcolor: '#F5F5F5 !important',
                       '&:hover': {
-                        bgcolor: '#F5F5F5'
-                      }
+                        bgcolor: '#F5F5F5',
+                      },
                     },
                     '&:hover': {
-                      bgcolor: '#F5F5F5'
-                    }
+                      bgcolor: '#F5F5F5',
+                    },
                   }}
                 >
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
@@ -669,21 +684,21 @@ export default function CampaignListView() {
                     )}
                   </Stack>
                 </MenuItem>
-                <MenuItem 
+                <MenuItem
                   value="Most recent"
-                  sx={{ 
+                  sx={{
                     mx: 0.2,
                     my: 0.5,
                     borderRadius: 0.5,
                     '&.Mui-selected': {
                       bgcolor: '#F5F5F5 !important',
                       '&:hover': {
-                        bgcolor: '#F5F5F5'
-                      }
+                        bgcolor: '#F5F5F5',
+                      },
                     },
                     '&:hover': {
-                      bgcolor: '#F5F5F5'
-                    }
+                      bgcolor: '#F5F5F5',
+                    },
                   }}
                 >
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
@@ -721,8 +736,8 @@ export default function CampaignListView() {
                   border: '0.5px solid #E7E7E7',
                   borderBottom: '3px solid #E7E7E7',
                   mt: 1,
-                }
-              }
+                },
+              },
             }}
             sx={{
               border: '0.5px solid #E7E7E7',
@@ -747,12 +762,12 @@ export default function CampaignListView() {
               '&:active': {
                 bgcolor: '#f2f2f2',
                 transition: 'background-color 0.2s ease',
-              }
+              },
             }}
             renderValue={(selected) => (
-              <Typography 
-                variant="body1" 
-                sx={{ 
+              <Typography
+                variant="body1"
+                sx={{
                   fontWeight: 600,
                   fontSize: '1rem',
                 }}
@@ -761,20 +776,23 @@ export default function CampaignListView() {
               </Typography>
             )}
           >
-            <MenuItem value="Most matched" sx={{ 
-              mx: 0.2,
-              my: 0.5,
-              borderRadius: 0.5,
-              '&.Mui-selected': {
-                bgcolor: '#F5F5F5 !important',
+            <MenuItem
+              value="Most matched"
+              sx={{
+                mx: 0.2,
+                my: 0.5,
+                borderRadius: 0.5,
+                '&.Mui-selected': {
+                  bgcolor: '#F5F5F5 !important',
+                  '&:hover': {
+                    bgcolor: '#F5F5F5',
+                  },
+                },
                 '&:hover': {
-                  bgcolor: '#F5F5F5'
-                }
-              },
-              '&:hover': {
-                bgcolor: '#F5F5F5'
-              }
-            }}>
+                  bgcolor: '#F5F5F5',
+                },
+              }}
+            >
               <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                 Most matched
                 {sortBy === 'Most matched' && (
@@ -785,20 +803,23 @@ export default function CampaignListView() {
                 )}
               </Stack>
             </MenuItem>
-            <MenuItem value="Most recent" sx={{ 
-              mx: 0.2,
-              my: 0.5,
-              borderRadius: 0.5,
-              '&.Mui-selected': {
-                bgcolor: '#F5F5F5 !important',
+            <MenuItem
+              value="Most recent"
+              sx={{
+                mx: 0.2,
+                my: 0.5,
+                borderRadius: 0.5,
+                '&.Mui-selected': {
+                  bgcolor: '#F5F5F5 !important',
+                  '&:hover': {
+                    bgcolor: '#F5F5F5',
+                  },
+                },
                 '&:hover': {
-                  bgcolor: '#F5F5F5'
-                }
-              },
-              '&:hover': {
-                bgcolor: '#F5F5F5'
-              }
-            }}>
+                  bgcolor: '#F5F5F5',
+                },
+              }}
+            >
               <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
                 Most recent
                 {sortBy === 'Most recent' && (
