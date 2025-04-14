@@ -5,7 +5,18 @@ import useSWR from 'swr';
 import { useTheme } from '@mui/material/styles';
 import dayjs from 'dayjs';
 
-import { Box, Stack, Button, Container, Typography, Avatar, Chip, IconButton, CircularProgress} from '@mui/material';
+import {
+  Box,
+  Stack,
+  Button,
+  Container,
+  Typography,
+  Avatar,
+  Chip,
+  IconButton,
+  CircularProgress,
+  Divider,
+} from '@mui/material';
 
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
@@ -19,7 +30,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { fetcher, endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
-
 
 import CampaignModalMobile from './campaign-modal-mobile';
 import CreatorForm from './creator-form';
@@ -67,13 +77,13 @@ const calculateMatchPercentage = (user, campaign) => {
     if (requirements?.gender?.length) {
       totalCriteria += 1;
       let creatorGender = 'nonbinary';
-      
+
       if (creator.pronounce === 'he/him') {
         creatorGender = 'male';
       } else if (creator.pronounce === 'she/her') {
         creatorGender = 'female';
       }
-      
+
       if (requirements.gender.includes(creatorGender)) matches += 1;
     }
 
@@ -529,7 +539,7 @@ const MobileModalView = () => {
               zIndex: 9,
             }}
           />
-          
+
           <Box sx={{ height: 250, overflow: 'hidden', borderRadius: 2, mx: 1 }}>
             <Image
               alt={campaignData?.name}
@@ -568,14 +578,42 @@ const MobileModalView = () => {
             {campaignData?.company?.name}
           </Typography>
 
-          <Box sx={{ mt: 2 }}>
-            {renderActionButton()}
-          </Box>
+          <Box sx={{ mt: 2 }}>{renderActionButton()}</Box>
         </Stack>
       </Stack>
 
-      {campaignData ? <CampaignModalMobile campaign={campaignData} /> : <LoadingScreen />}
+      {campaignData?.isKWSPCampaign && (
+        <Box
+          mt={4}
+          sx={{
+            border: '1.5px solid #0062CD',
+            borderBottom: '4px solid #0062CD',
+            borderRadius: 1,
+            p: 1,
+            mb: 1,
+          }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Stack spacing={0.5}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: '#0062CD',
+                  fontWeight: 600,
+                }}
+              >
+                Partnered with KWSP i-Saraan{' '}
+              </Typography>
+              <Divider />
+              <Typography variant="caption" color="black" fontWeight={400}>
+                Score an extra RM100! T&C’s apply.
+              </Typography>
+            </Stack>
+          </Stack>
+        </Box>
+      )}
 
+      {campaignData ? <CampaignModalMobile campaign={campaignData} /> : <LoadingScreen />}
       <CampaignPitchOptionsModal
         open={pitchOptionsOpen}
         handleClose={handlePitchOptionsClose}

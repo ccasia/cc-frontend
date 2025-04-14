@@ -19,7 +19,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { interestsLists } from 'src/contants/interestLists';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import { RHFCheckbox, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 // TODO: Copied from `src/sections/campaign/create/form.jsx`, consider consolidating them sometime
 
@@ -29,6 +29,7 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
       name: campaign?.name || '',
       description: campaign?.description || '',
       campaignIndustries: campaign?.campaignBrief?.industries || [],
+      isKWSPCampaign: campaign?.isKWSPCampaign || false,
     },
   });
 
@@ -103,6 +104,8 @@ export const EditCampaignInfo = ({ open, campaign, onClose }) => {
                   ))
                 }
               />
+
+              <RHFCheckbox name="isKWSPCampaign" label="KWSP Campaign" />
             </Box>
           </DialogContentText>
         </DialogContent>

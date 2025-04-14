@@ -28,6 +28,7 @@ import {
   DialogContent,
   TableContainer,
   CircularProgress,
+  Divider,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -157,6 +158,38 @@ const CampaignDetailContent = ({ campaign }) => {
         {/* Left Column */}
         <Stack spacing={-3} sx={{ flex: { xs: 1, md: 2.5 } }}>
           {/* Demographics Box */}
+
+          {!campaign?.isKWSPCampaign && (
+            <Box
+              mt={4}
+              sx={{
+                border: '1.5px solid #0062CD',
+                borderBottom: '4px solid #0062CD',
+                borderRadius: 1,
+                p: 1,
+                mb: 1,
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Stack spacing={0.5}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#0062CD',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Partnered with KWSP i-Saraan{' '}
+                  </Typography>
+                  <Divider />
+                  <Typography variant="caption" color="black" fontWeight={400}>
+                    Score an extra RM100! T&C’s apply.
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Box>
+          )}
+
           <Box sx={{ ...BoxStyle, mt: 1 }}>
             <Box className="header">
               <img
