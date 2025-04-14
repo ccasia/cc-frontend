@@ -134,7 +134,9 @@ const Login = () => {
   };
 
   const LoginSchema = Yup.object().shape({
-    email: Yup.string().required('Email is required.').email('Invalid email entered. Please try again.'),
+    email: Yup.string()
+      .required('Email is required.')
+      .email('Invalid email entered. Please try again.'),
     password: Yup.string().required('Password is required.'),
   });
 
@@ -159,53 +161,53 @@ const Login = () => {
     if (/tablet/i.test(userAgent)) return 'tablet';
     return 'desktop';
   };
-  
+
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await login(data.email, data.password, { admin: false });
-      
+
       // Check if user is a creator
       const isCreator = !!res?.user?.creator;
-      
+
       // Push login success event to GTM
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
-        event: "login_success",
+        event: 'login_success',
         user_device: getDeviceType(),
         user_email: data.email,
-        user_type: isCreator ? "creator" : "admin", 
+        user_type: isCreator ? 'creator' : 'admin',
       });
 
       // If user is a creator, track them as active
       if (isCreator) {
         window.dataLayer.push({
-          event: "creator_active",
+          event: 'creator_active',
           user_email: data.email,
           timestamp: new Date().toISOString(),
-          last_login: new Date().toISOString(), 
+          last_login: new Date().toISOString(),
         });
       }
-      
+
       enqueueSnackbar('Logged in. Welcome back!');
     } catch (err) {
       // Push failure event to GTM
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
-        event: "login_failed",
+        event: 'login_failed',
         error_message: err.message,
       });
-      
+
       // error message for user that has not registered yet
       if (err.message === 'User not registered.') {
         methods.setError('email', {
           type: 'manual',
-          message: 'User not registered.'
+          message: 'User not registered.',
         });
       } else {
         // error message for incorrect password
         methods.setError('password', {
           type: 'manual',
-          message: 'Incorrect password entered. Please try again.'
+          message: 'Incorrect password entered. Please try again.',
         });
       }
     }
@@ -217,8 +219,16 @@ const Login = () => {
 
   const renderForm = (
     <Stack spacing={2.5}>
-      <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: -2 }}>
-        Email <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+      <Typography
+        variant="body2"
+        color="#636366"
+        fontWeight={500}
+        sx={{ fontSize: '13px', mb: -2 }}
+      >
+        Email{' '}
+        <Box component="span" sx={{ color: 'error.main' }}>
+          *
+        </Box>
       </Typography>
       <Box>
         <RHFTextField
@@ -241,9 +251,9 @@ const Login = () => {
             },
           }}
         />
-        <Typography 
-          variant="caption" 
-          sx={{ 
+        <Typography
+          variant="caption"
+          sx={{
             color: '#F04438',
             mt: 0.5,
             ml: 0.5,
@@ -255,8 +265,16 @@ const Login = () => {
         </Typography>
       </Box>
 
-      <Typography variant="body2" color="#636366" fontWeight={500} sx={{ fontSize: '13px', mb: -2 }}>
-        Password <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+      <Typography
+        variant="body2"
+        color="#636366"
+        fontWeight={500}
+        sx={{ fontSize: '13px', mb: -2 }}
+      >
+        Password{' '}
+        <Box component="span" sx={{ color: 'error.main' }}>
+          *
+        </Box>
       </Typography>
       <Box>
         <RHFTextField
@@ -269,8 +287,13 @@ const Login = () => {
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton onClick={password.onToggle}>
-                  <Box component="img" src={`/assets/icons/components/${password.value ? 'ic_open_passwordeye.svg' 
-                    : 'ic_closed_passwordeye.svg'}`} sx={{ width: 24, height: 24 }} />
+                  <Box
+                    component="img"
+                    src={`/assets/icons/components/${
+                      password.value ? 'ic_open_passwordeye.svg' : 'ic_closed_passwordeye.svg'
+                    }`}
+                    sx={{ width: 24, height: 24 }}
+                  />
                 </IconButton>
               </InputAdornment>
             ),
@@ -289,10 +312,10 @@ const Login = () => {
               },
             },
           }}
-        />  
-        <Typography 
-          variant="caption" 
-          sx={{ 
+        />
+        <Typography
+          variant="caption"
+          sx={{
             color: '#F04438',
             mt: 0.5,
             ml: 0.5,
@@ -310,7 +333,14 @@ const Login = () => {
         variant="body2"
         color="#636366"
         underline="always"
-        sx={{ alignSelf: 'flex-start', fontWeight: 500, fontSize: '14px', mb: -0.5, mt: -1, ml: 0.1 }}
+        sx={{
+          alignSelf: 'flex-start',
+          fontWeight: 500,
+          fontSize: '14px',
+          mb: -0.5,
+          mt: -1,
+          ml: 0.1,
+        }}
       >
         Forgot your password?
       </Link>
@@ -335,8 +365,20 @@ const Login = () => {
         Login
       </LoadingButton>
 
-      <Box sx={{ color: 'text.secondary', fontSize: 14, position: 'relative', textAlign: 'center' }}>
-        <Box sx={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', height: '1px', bgcolor: 'divider' }} />
+      <Box
+        sx={{ color: 'text.secondary', fontSize: 14, position: 'relative', textAlign: 'center' }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: 0,
+            right: 0,
+            transform: 'translateY(-50%)',
+            height: '1px',
+            bgcolor: 'divider',
+          }}
+        />
         <Box component="span" sx={{ position: 'relative', bgcolor: '#F4F4F4', px: 2 }}>
           More login options
         </Box>
@@ -384,20 +426,21 @@ const Login = () => {
         typography: 'caption',
         color: '#8E8E93',
         fontSize: '13px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '4px',
+        // display: 'flex',
+        // alignItems: 'center',
+        // justifyContent: 'center',
+        // gap: '4px',
+        // textWrap: 'wrap',
       }}
     >
-      By signing up, I agree to
+      By signing up, I agree to{' '}
       <Link
         component="button"
         underline="always"
         color="text.primary"
         onClick={handleOpenTerms}
         type="button"
-        sx={{ 
+        sx={{
           verticalAlign: 'baseline',
           fontSize: '13px',
           lineHeight: 1,
@@ -406,7 +449,7 @@ const Login = () => {
         }}
       >
         Terms of Service
-      </Link>
+      </Link>{' '}
       and
       <Link
         component="button"
@@ -414,7 +457,7 @@ const Login = () => {
         color="text.primary"
         onClick={handleOpenPrivacy}
         type="button"
-        sx={{ 
+        sx={{
           verticalAlign: 'baseline',
           fontSize: '13px',
           lineHeight: 1,
@@ -435,8 +478,9 @@ const Login = () => {
             p: 3,
             bgcolor: '#F4F4F4',
             borderRadius: 2,
-            width: { xs: '100%', sm: 394 },  
-            maxWidth: { xs: '100%', sm: 394 },
+            width: 350,
+            // width: { xs: '100%', sm: 350 },
+            // maxWidth: { xs: '100%', sm: 350 },
             mx: 'auto',
           }}
         >
