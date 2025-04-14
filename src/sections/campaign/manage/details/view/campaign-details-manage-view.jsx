@@ -292,13 +292,42 @@ const CampaignDetailManageView = ({ id }) => {
             <Label color="secondary">{campaign?.campaignBrief?.industries}</Label>
           </Stack>
         </Stack>
+
+        {campaign?.isKWSPCampaign && (
+          <Box
+            mt={4}
+            sx={{
+              border: '1.5px solid #0062CD',
+              borderBottom: '4px solid #0062CD',
+              borderRadius: 1,
+              p: 1,
+              mb: 1,
+            }}
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Stack spacing={0.5}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#0062CD',
+                    fontWeight: 600,
+                  }}
+                >
+                  Partnered with KWSP i-Saraan{' '}
+                </Typography>
+                <Divider />
+                <Typography variant="caption" color="black" fontWeight={400}>
+                  Score an extra RM100! T&C’s apply.
+                </Typography>
+              </Stack>
+            </Stack>
+          </Box>
+        )}
       </Box>
 
       <EditCampaignInfo open={open} campaign={campaign} onClose={onClose} />
     </>
   );
-
-  console.log(campaign?.brand);
 
   const renderBrand = (
     <>

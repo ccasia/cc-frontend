@@ -530,7 +530,10 @@ const CampaignModal = ({
                         }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <Typography variant="caption" sx={{ display: 'block', mb: 1, textAlign: 'left'}}>
+                        <Typography
+                          variant="caption"
+                          sx={{ display: 'block', mb: 1, textAlign: 'left' }}
+                        >
                           Please complete your payment details to access this feature.
                         </Typography>
                         <Button
@@ -743,9 +746,40 @@ const CampaignModal = ({
             </Grid>
           </Grid>
 
-          {/* Add Divider here */}
-          <Divider sx={{ my: 2, mb: 3, mt: 4 }} />
+          {campaign?.isKWSPCampaign && (
+            <Box
+              mt={4}
+              sx={{
+                border: '1.5px solid #0062CD',
+                borderBottom: '4px solid #0062CD',
+                borderRadius: 1,
+                p: 1,
+                mb: 1,
+                width: 'fit-content',
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Stack spacing={0.5}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#0062CD',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Partnered with KWSP i-Saraan{' '}
+                  </Typography>
+                  <Divider />
+                  <Typography variant="caption" color="black" fontWeight={400}>
+                    Score an extra RM100! T&C’s apply.
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Box>
+          )}
 
+          {/* Add Divider here */}
+          <Divider sx={{ my: 2, mb: 3 }} />
           {/* Campaign details grid */}
           <Grid container spacing={2}>
             {/* Left column */}
@@ -824,7 +858,7 @@ const CampaignModal = ({
                               src="/assets/icons/components/ic_bluesmiley.svg"
                               sx={{
                                 width: 20,
-                                height: 20
+                                height: 20,
                               }}
                             />
                             <Typography
