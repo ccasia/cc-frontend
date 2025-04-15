@@ -65,6 +65,13 @@ const UploadDraftVideoModal = ({
   };
 
   const onSubmit = handleSubmit(async (data) => {
+    if (!data?.draftVideo?.length) {
+      enqueueSnackbar(`Upload a video in order to proceed`, {
+        variant: 'error',
+      });
+      return;
+    }
+
     if (!validateFileCount(data.draftVideo)) {
       return;
     }
@@ -75,6 +82,7 @@ const UploadDraftVideoModal = ({
       });
       return;
     }
+
     try {
       setIsSubmitting(true);
       const formData = new FormData();
