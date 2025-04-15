@@ -399,7 +399,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             <Grid container spacing={2} sx={{ pb: 2 }}>
               {/* Languages Section */}
               {currentPitch?.user?.creator?.languages?.length > 0 && (
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                       Languages
@@ -428,9 +428,37 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Grid>
               )}
 
+              {/* Country Section */}
+              {currentPitch?.user?.country && (
+                <Grid item xs={12} md={4}>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      Country
+                    </Typography>
+                    <Stack direction="row" flexWrap="wrap" gap={1}>
+                      <Chip
+                        label={currentPitch.user.country}
+                        size="small"
+                        sx={{
+                          bgcolor: 'background.neutral',
+                          color: 'text.primary',
+                          cursor: 'default',
+                          '& .MuiChip-label': {
+                            fontWeight: 500,
+                          },
+                          '&:hover': {
+                            bgcolor: 'background.neutral',
+                          },
+                        }}
+                      />
+                    </Stack>
+                  </Box>
+                </Grid>
+              )}
+
               {/* Interests Section */}
               {currentPitch?.user?.creator?.interests?.length > 0 && (
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
                       Interests
