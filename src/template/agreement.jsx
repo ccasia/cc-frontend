@@ -204,7 +204,7 @@ export default function AgreementTemplate({
           <View style={styles.section}>
             <Text style={styles.titlee}>3. Remuneration</Text>
             <Text>
-              The Freelancer shall receive a payment of RM
+               The Freelancer shall receive a payment of{' '}
               <Text style={styles.bold}>{creatorPayment}</Text> upon completion of the accepted and
               approved services & deliverables for the duration of this agreement.
             </Text>
