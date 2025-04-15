@@ -389,10 +389,12 @@ const CampaignAgreements = ({ campaign }) => {
                     <TableCell>
                       {isAmountValid ? (
                         <>
-                          {item?.user?.shortlisted[0]?.currency === 'SGD' && 'S$ '}
+                          {item?.user?.shortlisted[0]?.currency === 'SGD' && '$ '}
                           {item?.user?.shortlisted[0]?.currency === 'MYR' && 'RM '}
-                          {item?.user?.shortlisted[0]?.currency === 'AUD' && 'A$ '}
+                          {item?.user?.shortlisted[0]?.currency === 'AUD' && '$ '}
                           {item?.user?.shortlisted[0]?.currency === 'JPY' && '¥ '}
+                          {item?.user?.shortlisted[0]?.currency === 'IDR' && 'Rp '}
+                          {item?.user?.shortlisted[0]?.currency === 'USD' && '$ '}
                           {parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}
                         </>
                       ) : (

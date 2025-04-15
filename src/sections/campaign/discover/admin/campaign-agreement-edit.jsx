@@ -35,7 +35,7 @@ import { RHFCheckbox, RHFTextField, RHFSelect } from 'src/components/hook-form';
 
 const CURRENCY_PREFIXES = {
   SGD: {
-    prefix: 'S$',
+    prefix: '$',
     label: 'SGD',
   },
   MYR: {
@@ -43,13 +43,21 @@ const CURRENCY_PREFIXES = {
     label: 'MYR',
   },
   AUD: {
-    prefix: 'A$',
+    prefix: '$',
     label: 'AUD',
   },
   JPY: {
     prefix: '¥',
     label: 'JPY',
-  }
+  },
+  IDR: {
+    prefix: 'Rp',
+    label: 'IDR',
+  },
+  USD: {
+    prefix: '$',
+    label: 'USD',
+  },
 };
 
 const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
@@ -248,7 +256,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
                   <MenuItem disabled sx={{ fontStyle: 'italic' }}>
                     Select currency
                   </MenuItem>
-                  {['SGD', 'MYR', 'AUD', 'JPY'].map((curr) => (
+                  {['SGD', 'MYR', 'AUD', 'JPY', 'IDR', 'USD'].map((curr) => (
                     <MenuItem key={curr} value={curr}>
                       {curr}
                     </MenuItem>
