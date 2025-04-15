@@ -95,13 +95,14 @@ export function RHFUpload({
       control={control}
       render={({ field, fieldState: { error } }) => {
         const normalImages = uploadedFiles.length ? uploadedFiles : field.value;
+
         return (
           <Upload
             multiple={multiple}
             accept={accept}
             // files={multiple ? uploadedFiles : undefined}
             files={normalImages || undefined}
-            file={multiple ? undefined : uploadedFiles[0]}
+            file={multiple ? undefined : normalImages}
             error={!!error}
             uploadType={uploadType}
             onDrop={(acceptedFiles) => {
