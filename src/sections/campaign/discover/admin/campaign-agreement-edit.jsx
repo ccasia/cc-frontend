@@ -60,6 +60,16 @@ const CURRENCY_PREFIXES = {
   },
 };
 
+const formatAmount = (value) => {
+  const cleanValue = value.toString().replace(/[^\d.]/g, '');
+  const parts = cleanValue.split('.');
+  if (parts.length > 2) return parts[0] + '.' + parts.slice(1).join('');
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(cleanValue);
+};
+
 const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
@@ -115,6 +125,12 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
     loading.onTrue();
 
     try {
+      console.log('Generating PDF with values:', {
+        currency: data.currency,
+        amount: data.paymentAmount,
+        formattedPayment: `${CURRENCY_PREFIXES[data.currency]?.prefix}${data.paymentAmount}`
+      });
+
       const blob = await pdf(
         <AgreementTemplate
           DATE={dayjs().format('LL')}
@@ -133,7 +149,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
           CREATOR_BANK_NAME={agreement?.user?.paymentForm?.bankName}
           AGREEMENT_ENDDATE={dayjs().add(1, 'month').format('LL')}
           NOW_DATE={dayjs().format('LL')}
-          VERSION_NUMBER="V1"
+          VERSION_NUMBER={`V${dayjs().unix()}`}
           ADMIN_IC_NUMBER={extractAgremmentsInfo?.adminICNumber ?? 'Default'}
           ADMIN_NAME={extractAgremmentsInfo?.adminName ?? 'Default'}
           SIGNATURE={extractAgremmentsInfo?.signURL ?? 'Default'}
@@ -141,13 +157,18 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
       ).toBlob();
 
       const formData = new FormData();
-
       formData.append('agreementForm', blob);
-      formData.append('data', JSON.stringify({ 
-        ...data, 
-        ...agreement,
-        currency: data.currency
-      }));
+      
+      const requestData = {
+        paymentAmount: data.paymentAmount,
+        currency: data.currency,
+        user: agreement?.user,
+        campaignId: agreement?.campaignId,
+        id: agreement?.id
+      };
+
+      console.log('Sending data to backend:', requestData);
+      formData.append('data', JSON.stringify(requestData));
 
       const res = await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, formData, {
         headers: {
@@ -155,15 +176,40 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         },
       });
 
-      await handleSendAgreement();
+      await mutate(
+        endpoints.campaign.creatorAgreement(agreement.campaignId),
+        (currentData) => {
+          if (currentData) {
+            return currentData.map(item => 
+              item.id === agreement.id 
+                ? {
+                    ...item,
+                    amount: data.paymentAmount,
+                    currency: data.currency,
+                    agreementUrl: res.data.agreement?.agreementUrl || item.agreementUrl,
+                    user: {
+                      ...item.user,
+                      shortlisted: [{
+                        ...item.user.shortlisted[0],
+                        amount: data.paymentAmount,
+                        currency: data.currency
+                      }]
+                    }
+                  }
+                : item
+            );
+          }
+          return currentData;
+        },
+        { revalidate: true }
+      );
+
       enqueueSnackbar(res?.data?.message);
-      mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
-      reset();
       dialog.onFalse();
+      reset();
     } catch (error) {
-      enqueueSnackbar('Error', {
-        variant: 'error',
-      });
+      console.error('Error updating agreement:', error);
+      enqueueSnackbar('Error updating agreement', { variant: 'error' });
     } finally {
       loading.onFalse();
     }
@@ -265,7 +311,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
 
                 <RHFTextField
                   name="paymentAmount"
-                  type="number"
+                  type="text"
                   label="Payment Amount"
                   InputLabelProps={{ shrink: true }}
                   disabled={isDefault}
@@ -276,6 +322,14 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
                       </Typography>
                     ),
                   }}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/,/g, '');
+                    if (!isNaN(rawValue) && rawValue !== '') {
+                      setValue('paymentAmount', rawValue);
+                      e.target.value = formatAmount(rawValue);
+                    }
+                  }}
+                  value={formatAmount(watch('paymentAmount') || '')}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1,
