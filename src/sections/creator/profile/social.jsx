@@ -147,22 +147,22 @@ export default function AccountSocialLinks() {
       <Stack spacing={4} sx={{ maxWidth: { xs: '100%', sm: 500 } }}>
         {/* Instagram Connection */}
         <Box>
-          <Typography 
-            variant="body2" 
-            sx={{ 
+          <Typography
+            variant="body2"
+            sx={{
               fontSize: '13px',
               mb: 0.75,
               color: '#636366',
               fontWeight: typography.fontWeightMedium,
-              letterSpacing: '0.01em'
+              letterSpacing: '0.01em',
             }}
           >
             Instagram Account
           </Typography>
-          
-          <Stack 
-            direction="row" 
-            alignItems="center" 
+
+          <Stack
+            direction="row"
+            alignItems="center"
             sx={{
               bgcolor: 'white',
               borderRadius: '6px',
@@ -174,28 +174,28 @@ export default function AccountSocialLinks() {
               },
             }}
           >
-            <Stack 
-              direction="row" 
-              alignItems="center" 
+            <Stack
+              direction="row"
+              alignItems="center"
               spacing={1.5}
-              sx={{ 
+              sx={{
                 flex: 1,
                 px: 1.5,
                 py: 1.25,
-                minHeight: 42
+                minHeight: 42,
               }}
             >
-              <Iconify 
-                icon="mdi:instagram" 
+              <Iconify
+                icon="mdi:instagram"
                 width={24}
                 height={24}
                 sx={{
                   color: user?.creator?.isFacebookConnected ? '#231F20' : '#B0B0B0',
                 }}
               />
-              <Typography 
+              <Typography
                 variant="body2"
-                sx={{ 
+                sx={{
                   color: user?.creator?.isFacebookConnected ? '#231F20' : '#B0B0B0',
                   fontSize: '0.875rem',
                   fontWeight: 500,
@@ -229,7 +229,8 @@ export default function AccountSocialLinks() {
             ) : (
               <Button
                 LinkComponent="a"
-                href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://staging.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
+                // Later need to change
+                href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://app.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
                 target="_blank"
                 startIcon={<Iconify icon="material-symbols:add-rounded" width={18} height={18} />}
                 sx={{
@@ -254,22 +255,22 @@ export default function AccountSocialLinks() {
 
         {/* TikTok Connection */}
         <Box>
-          <Typography 
-            variant="body2" 
-            sx={{ 
+          <Typography
+            variant="body2"
+            sx={{
               fontSize: '13px',
               mb: 0.75,
               color: '#636366',
               fontWeight: typography.fontWeightMedium,
-              letterSpacing: '0.01em'
+              letterSpacing: '0.01em',
             }}
           >
             TikTok Account
           </Typography>
-          
-          <Stack 
-            direction="row" 
-            alignItems="center" 
+
+          <Stack
+            direction="row"
+            alignItems="center"
             sx={{
               bgcolor: 'white',
               borderRadius: '6px',
@@ -281,28 +282,28 @@ export default function AccountSocialLinks() {
               },
             }}
           >
-            <Stack 
-              direction="row" 
-              alignItems="center" 
+            <Stack
+              direction="row"
+              alignItems="center"
               spacing={1.5}
-              sx={{ 
+              sx={{
                 flex: 1,
                 px: 1.5,
                 py: 1.25,
-                minHeight: 42
+                minHeight: 42,
               }}
             >
-              <Iconify 
-                icon="ic:baseline-tiktok" 
+              <Iconify
+                icon="ic:baseline-tiktok"
                 width={24}
                 height={24}
                 sx={{
                   color: user?.creator?.isTiktokConnected ? '#231F20' : '#B0B0B0',
                 }}
               />
-              <Typography 
+              <Typography
                 variant="body2"
-                sx={{ 
+                sx={{
                   color: user?.creator?.isTiktokConnected ? '#231F20' : '#B0B0B0',
                   fontSize: '0.875rem',
                   fontWeight: 500,

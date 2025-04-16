@@ -15,6 +15,7 @@ import {
   Stack,
   Button,
   Dialog,
+  MenuItem,
   Typography,
   DialogTitle,
   DialogActions,
@@ -30,7 +31,44 @@ import AgreementTemplate from 'src/template/agreement';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFCheckbox, RHFTextField } from 'src/components/hook-form';
+import { RHFSelect, RHFCheckbox, RHFTextField } from 'src/components/hook-form';
+
+const CURRENCY_PREFIXES = {
+  SGD: {
+    prefix: '$',
+    label: 'SGD',
+  },
+  MYR: {
+    prefix: 'RM',
+    label: 'MYR',
+  },
+  AUD: {
+    prefix: '$',
+    label: 'AUD',
+  },
+  JPY: {
+    prefix: '¥',
+    label: 'JPY',
+  },
+  IDR: {
+    prefix: 'Rp',
+    label: 'IDR',
+  },
+  USD: {
+    prefix: '$',
+    label: 'USD',
+  },
+};
+
+const formatAmount = (value) => {
+  const cleanValue = value.toString().replace(/[^\d.]/g, '');
+  const parts = cleanValue.split('.');
+  if (parts.length > 2) return `${parts[0]}.${parts.slice(1).join('')}`;
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(cleanValue);
+};
 
 const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const settings = useSettingsContext();
@@ -38,23 +76,15 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
 
   const schema = yup.object().shape({
     paymentAmount: yup.string().required('Payment Amount is required.'),
-    // ugcVideos: yup
-    //   .number()
-    //   .required('Number of UGC videos is required')
-    //   .min(1, 'Minumum is 1')
-    //   .when([], (ugcVideos, scheme) =>
-    //     campaign?.campaignCredits
-    //       ? scheme.max(campaign.campaignCredits, `Maximum is ${campaign.campaignCredits}`)
-    //       : scheme
-    //   ),
+    currency: yup.string().required('Currency is required'),
     default: yup.boolean(),
   });
 
   const methods = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      paymentAmount: parseInt(agreement?.amount, 10) || '',
-      // ugcVideos: null,
+      paymentAmount: parseInt(agreement?.shortlistedCreator?.amount, 10) || '',
+      currency: agreement?.shortlistedCreator?.currency || 'SGD',
       default: false,
     },
     reValidateMode: 'onChange',
@@ -63,12 +93,13 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
   const { watch, handleSubmit, setValue, reset } = methods;
 
   const isDefault = watch('default');
+  const selectedCurrency = watch('currency');
 
   useEffect(() => {
     if (isDefault) {
       setValue('paymentAmount', '200');
     } else {
-      setValue('paymentAmount', agreement?.amount);
+      setValue('paymentAmount', agreement?.shortlistedCreator?.amount);
     }
   }, [setValue, isDefault, agreement]);
 
@@ -94,6 +125,12 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
     loading.onTrue();
 
     try {
+      console.log('Generating PDF with values:', {
+        currency: data.currency,
+        amount: data.paymentAmount,
+        formattedPayment: `${CURRENCY_PREFIXES[data.currency]?.prefix}${data.paymentAmount}`,
+      });
+
       const blob = await pdf(
         <AgreementTemplate
           DATE={dayjs().format('LL')}
@@ -103,7 +140,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
           ccEmail="hello@cultcreative.com"
           ccPhoneNumber="+60162678757"
           effectiveDate={dayjs().add(4, 'day').format('LL')}
-          creatorPayment={data.paymentAmount.toString()}
+          creatorPayment={`${CURRENCY_PREFIXES[data.currency]?.prefix}${data.paymentAmount}`}
           CREATOR_NAME={agreement?.user?.name}
           CREATOR_ACCOUNT_NUMBER={agreement?.user?.paymentForm?.bankAccountNumber}
           CREATOR_BANK_ACCOUNT_NAME={
@@ -112,7 +149,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
           CREATOR_BANK_NAME={agreement?.user?.paymentForm?.bankName}
           AGREEMENT_ENDDATE={dayjs().add(1, 'month').format('LL')}
           NOW_DATE={dayjs().format('LL')}
-          VERSION_NUMBER="V1"
+          VERSION_NUMBER={`V${dayjs().unix()}`}
           ADMIN_IC_NUMBER={extractAgremmentsInfo?.adminICNumber ?? 'Default'}
           ADMIN_NAME={extractAgremmentsInfo?.adminName ?? 'Default'}
           SIGNATURE={extractAgremmentsInfo?.signURL ?? 'Default'}
@@ -120,9 +157,18 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
       ).toBlob();
 
       const formData = new FormData();
-
       formData.append('agreementForm', blob);
-      formData.append('data', JSON.stringify({ ...data, ...agreement }));
+
+      const requestData = {
+        paymentAmount: data.paymentAmount,
+        currency: data.currency,
+        user: agreement?.user,
+        campaignId: agreement?.campaignId,
+        id: agreement?.id,
+      };
+
+      console.log('Sending data to backend:', requestData);
+      formData.append('data', JSON.stringify(requestData));
 
       const res = await axiosInstance.patch(endpoints.campaign.updateAmountAgreement, formData, {
         headers: {
@@ -131,14 +177,45 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
       });
 
       await handleSendAgreement();
-      enqueueSnackbar(res?.data?.message);
+
       mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
-      reset();
+
+      // await mutate(
+      //   endpoints.campaign.creatorAgreement(agreement.campaignId),
+      //   (currentData) => {
+      //     if (currentData) {
+      //       return currentData.map((item) =>
+      //         item.id === agreement.id
+      //           ? {
+      //               ...item,
+      //               amount: data.paymentAmount,
+      //               currency: data.currency,
+      //               agreementUrl: res.data.agreement?.agreementUrl || item.agreementUrl,
+      //               user: {
+      //                 ...item.user,
+      //                 shortlisted: [
+      //                   {
+      //                     ...item.user.shortlisted[0],
+      //                     amount: data.paymentAmount,
+      //                     currency: data.currency,
+      //                   },
+      //                 ],
+      //               },
+      //             }
+      //           : item
+      //       );
+      //     }
+      //     return currentData;
+      //   },
+      //   { revalidate: true }
+      // );
+
+      enqueueSnackbar(res?.data?.message);
       dialog.onFalse();
+      reset();
     } catch (error) {
-      enqueueSnackbar('Error', {
-        variant: 'error',
-      });
+      console.error('Error updating agreement:', error);
+      enqueueSnackbar('Error updating agreement', { variant: 'error' });
     } finally {
       loading.onFalse();
     }
@@ -210,18 +287,62 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         <DialogContent>
           <Stack sx={{ mt: 2 }} spacing={2}>
             <Stack spacing={1}>
-              <RHFTextField
-                name="paymentAmount"
-                type="number"
-                label="Payment Amount"
-                InputLabelProps={{ shrink: true }}
-                disabled={isDefault}
+              <Box
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 1,
-                  },
+                  display: 'grid',
+                  gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: '0.8fr 1.2fr' },
+                  gap: 2,
                 }}
-              />
+              >
+                <RHFSelect
+                  name="currency"
+                  label="Currency"
+                  disabled={isDefault}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1,
+                    },
+                  }}
+                >
+                  <MenuItem disabled sx={{ fontStyle: 'italic' }}>
+                    Select currency
+                  </MenuItem>
+                  {['SGD', 'MYR', 'AUD', 'JPY', 'IDR', 'USD'].map((curr) => (
+                    <MenuItem key={curr} value={curr}>
+                      {curr}
+                    </MenuItem>
+                  ))}
+                </RHFSelect>
+
+                <RHFTextField
+                  name="paymentAmount"
+                  type="text"
+                  label="Payment Amount"
+                  InputLabelProps={{ shrink: true }}
+                  disabled={isDefault}
+                  InputProps={{
+                    startAdornment: (
+                      <Typography sx={{ color: 'text.secondary', mr: 0.5 }}>
+                        {CURRENCY_PREFIXES[selectedCurrency]?.prefix || ''}
+                      </Typography>
+                    ),
+                  }}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/,/g, '');
+                    if (!Number.isNaN(rawValue) && rawValue !== '') {
+                      setValue('paymentAmount', rawValue);
+                      e.target.value = formatAmount(rawValue);
+                    }
+                  }}
+                  value={formatAmount(watch('paymentAmount') || '')}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+              </Box>
               <RHFCheckbox
                 name="default"
                 label="Default"
@@ -231,18 +352,6 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
                 }}
               />
             </Stack>
-            {/* <RHFTextField
-              name="ugcVideos"
-              type="number"
-              label="UGC Videos"
-              InputLabelProps={{ shrink: true }}
-              disabled={isDefault}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 1,
-                },
-              }}
-            /> */}
           </Stack>
         </DialogContent>
 

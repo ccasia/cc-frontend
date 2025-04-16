@@ -109,6 +109,7 @@ const CampaignAgreements = ({ campaign }) => {
     return <EmptyContent title="No agreements found" />;
   }
 
+  console.log(data);
   return (
     <Box sx={{ overflowX: 'auto' }}>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
@@ -305,7 +306,7 @@ const CampaignAgreements = ({ campaign }) => {
             {!isLoading &&
               filteredData?.map((item) => {
                 // eslint-disable-next-line no-restricted-globals
-                const isAmountValid = !isNaN(parseFloat(item?.amount?.toString()));
+                const isAmountValid = !isNaN(parseFloat(item?.user?.shortlisted[0]?.amount?.toString()));
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
@@ -386,7 +387,19 @@ const CampaignAgreements = ({ campaign }) => {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      {isAmountValid ? `RM ${parseFloat(item?.amount?.toString())}` : 'Not set'}
+                      {isAmountValid ? (
+                        <>
+                          {item?.user?.shortlisted[0]?.currency === 'SGD' && '$ '}
+                          {item?.user?.shortlisted[0]?.currency === 'MYR' && 'RM '}
+                          {item?.user?.shortlisted[0]?.currency === 'AUD' && '$ '}
+                          {item?.user?.shortlisted[0]?.currency === 'JPY' && '¥ '}
+                          {item?.user?.shortlisted[0]?.currency === 'IDR' && 'Rp '}
+                          {item?.user?.shortlisted[0]?.currency === 'USD' && '$ '}
+                          {parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}
+                        </>
+                      ) : (
+                        'Not set'
+                      )}
                     </TableCell>
                     <TableCell>
                       {smUp ? (

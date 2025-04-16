@@ -173,8 +173,6 @@ export default function Upload({
     </Box>
   );
 
-  console.log(files);
-
   const renderSinglePreview = (
     <SingleFilePreview imgUrl={typeof file === 'string' ? file : file?.preview} />
   );
