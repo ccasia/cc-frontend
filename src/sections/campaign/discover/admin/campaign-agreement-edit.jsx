@@ -15,11 +15,11 @@ import {
   Stack,
   Button,
   Dialog,
+  MenuItem,
   Typography,
   DialogTitle,
   DialogActions,
   DialogContent,
-  MenuItem,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -31,7 +31,7 @@ import AgreementTemplate from 'src/template/agreement';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFCheckbox, RHFTextField, RHFSelect } from 'src/components/hook-form';
+import { RHFSelect, RHFCheckbox, RHFTextField } from 'src/components/hook-form';
 
 const CURRENCY_PREFIXES = {
   SGD: {
@@ -63,7 +63,7 @@ const CURRENCY_PREFIXES = {
 const formatAmount = (value) => {
   const cleanValue = value.toString().replace(/[^\d.]/g, '');
   const parts = cleanValue.split('.');
-  if (parts.length > 2) return parts[0] + '.' + parts.slice(1).join('');
+  if (parts.length > 2) return `${parts[0]}.${parts.slice(1).join('')}`;
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
@@ -128,7 +128,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
       console.log('Generating PDF with values:', {
         currency: data.currency,
         amount: data.paymentAmount,
-        formattedPayment: `${CURRENCY_PREFIXES[data.currency]?.prefix}${data.paymentAmount}`
+        formattedPayment: `${CURRENCY_PREFIXES[data.currency]?.prefix}${data.paymentAmount}`,
       });
 
       const blob = await pdf(
@@ -158,13 +158,13 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
 
       const formData = new FormData();
       formData.append('agreementForm', blob);
-      
+
       const requestData = {
         paymentAmount: data.paymentAmount,
         currency: data.currency,
         user: agreement?.user,
         campaignId: agreement?.campaignId,
-        id: agreement?.id
+        id: agreement?.id,
       };
 
       console.log('Sending data to backend:', requestData);
@@ -176,33 +176,39 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
         },
       });
 
-      await mutate(
-        endpoints.campaign.creatorAgreement(agreement.campaignId),
-        (currentData) => {
-          if (currentData) {
-            return currentData.map(item => 
-              item.id === agreement.id 
-                ? {
-                    ...item,
-                    amount: data.paymentAmount,
-                    currency: data.currency,
-                    agreementUrl: res.data.agreement?.agreementUrl || item.agreementUrl,
-                    user: {
-                      ...item.user,
-                      shortlisted: [{
-                        ...item.user.shortlisted[0],
-                        amount: data.paymentAmount,
-                        currency: data.currency
-                      }]
-                    }
-                  }
-                : item
-            );
-          }
-          return currentData;
-        },
-        { revalidate: true }
-      );
+      await handleSendAgreement();
+
+      mutate(endpoints.campaign.creatorAgreement(agreement?.campaignId));
+
+      // await mutate(
+      //   endpoints.campaign.creatorAgreement(agreement.campaignId),
+      //   (currentData) => {
+      //     if (currentData) {
+      //       return currentData.map((item) =>
+      //         item.id === agreement.id
+      //           ? {
+      //               ...item,
+      //               amount: data.paymentAmount,
+      //               currency: data.currency,
+      //               agreementUrl: res.data.agreement?.agreementUrl || item.agreementUrl,
+      //               user: {
+      //                 ...item.user,
+      //                 shortlisted: [
+      //                   {
+      //                     ...item.user.shortlisted[0],
+      //                     amount: data.paymentAmount,
+      //                     currency: data.currency,
+      //                   },
+      //                 ],
+      //               },
+      //             }
+      //           : item
+      //       );
+      //     }
+      //     return currentData;
+      //   },
+      //   { revalidate: true }
+      // );
 
       enqueueSnackbar(res?.data?.message);
       dialog.onFalse();
@@ -324,7 +330,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
                   }}
                   onChange={(e) => {
                     const rawValue = e.target.value.replace(/,/g, '');
-                    if (!isNaN(rawValue) && rawValue !== '') {
+                    if (!Number.isNaN(rawValue) && rawValue !== '') {
                       setValue('paymentAmount', rawValue);
                       e.target.value = formatAmount(rawValue);
                     }
