@@ -305,8 +305,10 @@ const CampaignAgreements = ({ campaign }) => {
           <TableBody>
             {!isLoading &&
               filteredData?.map((item) => {
-                // eslint-disable-next-line no-restricted-globals
-                const isAmountValid = !isNaN(parseFloat(item?.user?.shortlisted[0]?.amount?.toString()));
+                const isAmountValid = !Number.isNaN(
+                  parseFloat(item?.user?.shortlisted[0]?.amount?.toString()) ||
+                    parseFloat(item?.amount?.toString())
+                );
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
@@ -389,13 +391,20 @@ const CampaignAgreements = ({ campaign }) => {
                     <TableCell>
                       {isAmountValid ? (
                         <>
-                          {item?.user?.shortlisted[0]?.currency === 'SGD' && '$ '}
-                          {item?.user?.shortlisted[0]?.currency === 'MYR' && 'RM '}
-                          {item?.user?.shortlisted[0]?.currency === 'AUD' && '$ '}
-                          {item?.user?.shortlisted[0]?.currency === 'JPY' && '¥ '}
-                          {item?.user?.shortlisted[0]?.currency === 'IDR' && 'Rp '}
-                          {item?.user?.shortlisted[0]?.currency === 'USD' && '$ '}
-                          {parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}
+                          {item?.user?.shortlisted[0]?.currency ? (
+                            <>
+                              {item?.user?.shortlisted[0]?.currency === 'SGD' && '$ '}
+                              {item?.user?.shortlisted[0]?.currency === 'MYR' && 'RM '}
+                              {item?.user?.shortlisted[0]?.currency === 'AUD' && '$ '}
+                              {item?.user?.shortlisted[0]?.currency === 'JPY' && '¥ '}
+                              {item?.user?.shortlisted[0]?.currency === 'IDR' && 'Rp '}
+                              {item?.user?.shortlisted[0]?.currency === 'USD' && '$ '}
+                              {parseFloat(item?.amount?.toString()) ||
+                                parseFloat(item?.user?.shortlisted[0]?.amount?.toString())}
+                            </>
+                          ) : (
+                            <>{`RM ${parseFloat(item?.amount?.toString())}`}</>
+                          )}
                         </>
                       ) : (
                         'Not set'
