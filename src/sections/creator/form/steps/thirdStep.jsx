@@ -39,24 +39,27 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
         secondary={item.description}
         primaryTypographyProps={{
           fontFamily: '"Instrument Serif", serif',
-          fontSize: '40px',
+          fontSize: { xs: '28px', sm: '40px' },
           fontWeight: 400,
           color: '#231F20',
         }}
         secondaryTypographyProps={{
           fontFamily: 'InterDisplay',
-          fontSize: '16px',
+          fontSize: { xs: '14px', sm: '16px' },
           fontWeight: 400,
           color: '#636366',
+          mt: 1,
         }}
       />
 
       <Stack
         gap={4}
         sx={{
-          width: { sm: 400 },
+          width: '100%',
+          maxWidth: { xs: '100%', sm: 400 },
           mx: 'auto',
-          my: 5,
+          my: { xs: 4, sm: 5 },
+          px: { xs: 1, sm: 0 },
         }}
       >
         <Stack spacing={1}>
@@ -90,10 +93,37 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
               sx={{
                 bgcolor: 'white',
                 borderRadius: 1,
-                width: 80,
+                width: { xs: 80, sm: 90 },
+                height: { xs: 52, sm: 56 },
+                '& .MuiSelect-select': {
+                  p: { xs: '8px 8px', sm: '14px 12px' },
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+                '&.MuiInputBase-root': {
+                  fontFamily: 'monospace',
+                }
               }}
               value={countryCode}
               onChange={(e) => handleChangeCountryCode(e.target.value)}
+              displayEmpty
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    maxHeight: 300,
+                    '& .MuiMenuItem-root': {
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                      fontFamily: 'monospace',
+                      py: 1,
+                      display: 'flex',
+                      justifyContent: 'center',
+                    },
+                  },
+                },
+              }}
             >
               {[...new Set(countries.map((c) => c.phone).filter(Boolean))]
                 .sort((a, b) => {
@@ -103,7 +133,7 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
                 })
                 .map((val, index) => (
                   <MenuItem key={index} value={val}>
-                    + {val}
+                    +{val}
                   </MenuItem>
                 ))}
             </Select>
@@ -151,12 +181,15 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
               type="number"
               sx={{
                 width: '100%',
-                // maxWidth: { xs: '100%', sm: 500 },
                 '&.MuiTextField-root': {
                   bgcolor: 'white',
                   borderRadius: 1,
                   '& .MuiInputLabel-root': {
                     display: 'none',
+                  },
+                  '& .MuiInputBase-input': {
+                    p: { xs: '13px 14px', sm: '16.5px 14px' },
+                    fontSize: { xs: '0.875rem', sm: '1rem' },
                   },
                   '& .MuiInputBase-input::placeholder': {
                     color: '#B0B0B0',
