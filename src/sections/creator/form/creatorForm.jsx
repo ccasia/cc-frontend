@@ -11,7 +11,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
 import Dialog from '@mui/material/Dialog';
-import { Stack, Avatar, Button, InputAdornment } from '@mui/material';
+import { Stack, Avatar, Button, InputAdornment, useTheme } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
@@ -113,10 +113,11 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
   const [ratingIndustries, setRatingIndustries] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedSteps, setCompletedSteps] = useState({});
-  const [countryCode, setCountryCode] = useState(null);
+  const [countryCode, setCountryCode] = useState('');
 
   const { logout, initialize } = useAuthContext();
   const smDown = useResponsive('down', 'sm');
+  const theme = useTheme();
 
   // const resolver = yupResolver(stepSchemas[activeStep] || null);
   const resolver = yupResolver(stepSchemas || null);
@@ -124,8 +125,8 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
   const logo = (
     <Avatar
       sx={{
-        width: 45,
-        height: 45,
+        width: { xs: 40, sm: 45 },
+        height: { xs: 40, sm: 45 },
         borderRadius: 1,
         bgcolor: 'rgba(19, 64, 255, 1)',
       }}
@@ -134,8 +135,8 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
         src="/logo/newlogo.svg"
         alt="Background Image"
         style={{
-          width: 25,
-          height: 25,
+          width: smDown ? 20 : 25,
+          height: smDown ? 20 : 25,
           borderRadius: 'inherit',
         }}
       />
@@ -314,6 +315,10 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
     return isValid;
   }, [activeStep, completedSteps, isValid]);
 
+  // Adjusted step indicator dimensions for mobile
+  const stepWidth = smDown ? 90 : 120;
+  const connectorWidth = smDown ? 20 : 40;
+
   return (
     <Dialog
       fullWidth
@@ -324,8 +329,8 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
         sx: {
           bgcolor: '#FFF',
           borderRadius: 2,
-          p: 4,
-          m: 2,
+          p: { xs: 2, sm: 4 },
+          m: { xs: 1, sm: 2 },
           height: '97vh',
           position: 'relative',
           overflow: 'hidden',
@@ -336,14 +341,16 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       <Box
         sx={{
           position: 'absolute',
-          top: 55,
+          top: { xs: 60, sm: 55 },
           left: '50%',
           transform: 'translateX(-50%)',
           width: '100%',
-          maxWidth: 500,
+          maxWidth: { xs: 350, sm: 500 },
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          px: { xs: 2, sm: 0 },
+          mt: { xs: 2, sm: 0 }
         }}
       >
         <Stack
@@ -357,17 +364,17 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
           <Box
             onClick={() => activeStep > 0 && setActiveStep(0)}
             sx={{
-              width: 120,
+              width: stepWidth,
               py: 1,
               textAlign: 'center',
               borderRadius: 1.5,
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
               fontWeight: activeStep === 0 || (completedSteps[0] && activeStep > 0) ? 600 : 400,
               bgcolor:
                 activeStep === 0 || (completedSteps[0] && activeStep > 0) ? '#1340FF' : '#fff',
               color: activeStep === 0 || (completedSteps[0] && activeStep > 0) ? '#fff' : '#636366',
               border: '1px solid',
               borderColor: activeStep >= 0 ? '#1340FF' : '#636366',
-              // cursor: activeStep > 0 ? 'pointer' : 'default',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               '&:hover': {
@@ -383,7 +390,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             sx={{
               height: 2,
               flexGrow: 1,
-              maxWidth: 40,
+              maxWidth: connectorWidth,
               bgcolor: activeStep >= 1 ? '#1340FF' : '#636366',
             }}
           />
@@ -393,17 +400,17 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             component="div"
             onClick={() => setActiveStep(1)}
             sx={{
-              width: 120,
+              width: stepWidth,
               py: 1,
               textAlign: 'center',
               borderRadius: 1.5,
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
               fontWeight: activeStep === 1 || (completedSteps[1] && activeStep > 1) ? 600 : 400,
               bgcolor:
                 activeStep === 1 || (completedSteps[1] && activeStep > 1) ? '#1340FF' : '#fff',
               color: activeStep === 1 || (completedSteps[1] && activeStep > 1) ? '#fff' : '#636366',
               border: '1px solid',
               borderColor: activeStep >= 1 ? '#1340FF' : '#636366',
-              // cursor: activeStep > 1 ? 'pointer' : 'default',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               '&:hover': {
@@ -419,7 +426,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             sx={{
               height: 2,
               flexGrow: 1,
-              maxWidth: 40,
+              maxWidth: connectorWidth,
               bgcolor: activeStep >= 2 ? '#1340FF' : '#636366',
             }}
           />
@@ -428,10 +435,11 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
           <Box
             onClick={() => setActiveStep(2)}
             sx={{
-              width: 120,
+              width: stepWidth,
               py: 1,
               textAlign: 'center',
               borderRadius: 1.5,
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
               fontWeight: activeStep === 2 || (completedSteps[2] && activeStep > 2) ? 600 : 400,
               bgcolor:
                 activeStep === 2 || (completedSteps[2] && activeStep > 2) ? '#1340FF' : '#fff',
@@ -449,41 +457,58 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       <Stack
         alignItems="center"
         sx={{
-          mt: 5,
+          mt: { xs: 10, sm: 5 },
           height: 1,
           overflow: 'auto',
           scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
         }}
       >
         <FormProvider methods={methods} onSubmit={onSubmit}>
-          <Box>{renderForm(steps[activeStep])}</Box>
+          <Box sx={{ width: '100%', px: { xs: 2, sm: 0 } }}>{renderForm(steps[activeStep])}</Box>
 
           <Box
             sx={{
               width: 1,
-              px: 4,
+              px: { xs: 2, sm: 4 },
               zIndex: 999,
               textAlign: 'center',
+              pb: { xs: 6, sm: 4 },
               ...(smDown && {
-                position: 'fixed',
-                bottom: 30,
-                left: '50%',
-                transform: 'translateX(-50%)',
+                position: 'sticky',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                bgcolor: '#fff',
+                pt: 2,
               }),
             }}
           >
             {activeStep < steps.length - 1 && (
-              <Stack direction="row" spacing={2} justifyContent="center">
+              <Stack 
+                direction="row" 
+                spacing={2} 
+                justifyContent="center"
+                sx={{ 
+                  width: '100%', 
+                  maxWidth: { xs: '100%', sm: 400 }, 
+                  mx: 'auto',
+                  '& .MuiButton-root': {
+                    flex: 1,
+                    minHeight: { xs: 44, sm: 48 },
+                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                  }
+                }}
+              >
                 {activeStep > 0 && (
                   <Button
                     onClick={handleBack}
-                    fullWidth={smDown}
                     sx={{
                       bgcolor: '#fff',
                       border: '1px solid #1340FF',
                       color: '#1340FF',
-                      px: 6,
-                      py: 1,
                       '&:hover': {
                         bgcolor: 'rgba(19, 64, 255, 0.04)',
                       },
@@ -500,8 +525,6 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
                     bgcolor: '#1340FF',
                     borderBottom: '3px solid #10248c',
                     color: '#FFF',
-                    px: 6,
-                    py: 1,
                     '&:hover': {
                       bgcolor: '#2c55ff',
                       borderBottom: '3px solid #10248c',
@@ -517,12 +540,14 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               <>
                 <Box
                   sx={{
-                    mb: 5,
-                    mt: -2,
+                    mb: { xs: 3, sm: 5 },
+                    mt: { xs: 0, sm: -2 },
                     display: 'flex',
-                    justifyContent: 'flex-start',
-                    width: { sm: 400 },
-                    mx: 'auto',
+                    justifyContent: 'center',
+                    width: '100%',
+                    transform: smDown ? 'scale(0.85)' : 'none',
+                    transformOrigin: 'center',
+                    overflow: 'hidden',
                   }}
                 >
                   <ReCAPTCHA
@@ -532,16 +557,27 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
                     }}
                   />
                 </Box>
-                <Stack direction="row" spacing={2} justifyContent="center">
+                <Stack 
+                  direction="row" 
+                  spacing={2} 
+                  justifyContent="center"
+                  sx={{ 
+                    width: '100%', 
+                    maxWidth: { xs: '100%', sm: 400 }, 
+                    mx: 'auto',
+                    '& .MuiButton-root': {
+                      flex: 1,
+                      minHeight: { xs: 44, sm: 48 },
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                    }
+                  }}
+                >
                   <Button
                     onClick={handleBack}
-                    fullWidth={smDown}
                     sx={{
                       bgcolor: '#fff',
                       border: '1px solid #1340FF',
                       color: '#1340FF',
-                      px: 6,
-                      py: 1,
                       '&:hover': {
                         bgcolor: 'rgba(19, 64, 255, 0.04)',
                       },
@@ -550,13 +586,10 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
                     Back
                   </Button>
                   <LoadingButton
-                    fullWidth={smDown}
                     sx={{
                       bgcolor: '#1340FF',
                       boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
                       color: '#FFF',
-                      px: 6,
-                      py: 1,
                       '&:hover': {
                         bgcolor: '#1340FF',
                       },
@@ -574,43 +607,6 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
           </Box>
         </FormProvider>
       </Stack>
-
-      {/* <Box
-        sx={{
-          ...(smDown
-            ? {
-                position: 'absolute',
-                top: 20,
-                right: 20,
-              }
-            : {
-                position: 'absolute',
-                bottom: 20,
-                left: 20,
-              }),
-        }}
-      >
-        {smDown ? (
-          <IconButton
-            variant="outlined"
-            onClick={async () => {
-              await logout();
-            }}
-          >
-            <Iconify icon="tabler:logout-2" width={20} />
-          </IconButton>
-        ) : (
-          <Button
-            variant="outlined"
-            onClick={async () => {
-              await logout();
-            }}
-            startIcon={<Iconify icon="tabler:logout-2" width={20} />}
-          >
-            Logout
-          </Button>
-        )}
-      </Box> */}
     </Dialog>
   );
 }

@@ -27,6 +27,7 @@ import {
   Typography,
   IconButton,
   DialogTitle,
+  ListItemText,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -1470,7 +1471,6 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                           </Stack>
                         </Box>
                       )}
-
                       {/* Content Display Box */}
                       <Box
                         component={Paper}
@@ -1636,8 +1636,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                     }}
                                   />
                                 </Box>
-
-                                {submission?.caption && (
+                                {/* {submission?.caption && (
                                   <Box
                                     sx={{
                                       p: 2,
@@ -1664,7 +1663,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                       {submission?.caption}
                                     </Typography>
                                   </Box>
-                                )}
+                                )} */}
                               </>
                             )}
 
@@ -1673,7 +1672,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                             )}
 
                             {/* Caption Section for legacy support */}
-                            {submission?.caption && !deliverables?.videos?.length && (
+                            {submission?.caption && (
                               <Box
                                 sx={{
                                   p: 2,
@@ -2118,100 +2117,98 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                             </>
 
                             <>
-                              {!campaign?.campaignCredits &&
-                                (submission?.status === 'CHANGES_REQUIRED' ||
-                                  submission?.status === 'IN_PROGRESS') && (
-                                  <Grid container spacing={2}>
-                                    <Grid item xs={12}>
-                                      {/* Admin Feedback */}
-                                      {[...submission.feedback, ...firstDraftSubmission.feedback]
-                                        .sort(
-                                          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-                                        )
-                                        .map((feedback, index) => (
+                              {(submission?.status === 'CHANGES_REQUIRED' ||
+                                submission?.status === 'IN_PROGRESS') && (
+                                <Grid container spacing={2}>
+                                  <Grid item xs={12}>
+                                    {/* Admin Feedback */}
+                                    {[...submission.feedback, ...firstDraftSubmission.feedback]
+                                      ?.filter((item) => item.content)
+                                      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                                      .map((feedback, index) => (
+                                        <Box
+                                          key={index}
+                                          mb={2}
+                                          p={2}
+                                          border={1}
+                                          borderColor="grey.300"
+                                          borderRadius={1}
+                                          display="flex"
+                                          alignItems="flex-start"
+                                        >
+                                          <Avatar
+                                            src={feedback.admin?.photoURL || '/default-avatar.png'}
+                                            alt={feedback.admin?.name || 'User'}
+                                            sx={{ mr: 2 }}
+                                          />
                                           <Box
-                                            key={index}
-                                            mb={2}
-                                            p={2}
-                                            border={1}
-                                            borderColor="grey.300"
-                                            borderRadius={1}
-                                            display="flex"
-                                            alignItems="flex-start"
+                                            flexGrow={1}
+                                            sx={{
+                                              display: 'flex',
+                                              flexDirection: 'column',
+                                              textAlign: 'left',
+                                            }}
                                           >
-                                            <Avatar
-                                              src={
-                                                feedback.admin?.photoURL || '/default-avatar.png'
-                                              }
-                                              alt={feedback.admin?.name || 'User'}
-                                              sx={{ mr: 2 }}
-                                            />
-                                            <Box
-                                              flexGrow={1}
-                                              sx={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                textAlign: 'left',
-                                              }}
+                                            <Stack
+                                              direction={{ md: 'row' }}
+                                              alignItems={{ md: 'end' }}
                                             >
-                                              <Typography
-                                                variant="subtitle1"
-                                                sx={{ fontWeight: 'bold', marginBottom: '2px' }}
-                                              >
-                                                {feedback.admin?.name || 'Unknown User'}
-                                              </Typography>
+                                              <ListItemText
+                                                primary={feedback.admin?.name || 'Unknown User'}
+                                                secondary={feedback.admin?.role || 'No Role'}
+                                              />
                                               <Typography variant="caption" color="text.secondary">
-                                                {feedback.admin?.role || 'No Role'}
+                                                {dayjs(feedback.createdAd).format('LLL')}
                                               </Typography>
-                                              <Box sx={{ textAlign: 'left', mt: 1 }}>
-                                                {feedback.content.split('\n').map((line, i) => (
-                                                  <Typography key={i} variant="body2">
-                                                    {line}
-                                                  </Typography>
-                                                ))}
-                                                {feedback.reasons &&
-                                                  feedback.reasons.length > 0 && (
-                                                    <Box mt={1} sx={{ textAlign: 'left' }}>
-                                                      <Stack
-                                                        direction="row"
-                                                        spacing={0.5}
-                                                        flexWrap="wrap"
+                                            </Stack>
+                                            <Box sx={{ textAlign: 'left', mt: 1 }}>
+                                              {feedback.content.split('\n').map((line, i) => (
+                                                <Typography key={i} variant="body2">
+                                                  {line}
+                                                </Typography>
+                                              ))}
+                                              {feedback.reasons && feedback.reasons.length > 0 && (
+                                                <Box mt={1} sx={{ textAlign: 'left' }}>
+                                                  <Stack
+                                                    direction="row"
+                                                    spacing={0.5}
+                                                    flexWrap="wrap"
+                                                  >
+                                                    {feedback.reasons.map((reason, idx) => (
+                                                      <Box
+                                                        key={idx}
+                                                        sx={{
+                                                          border: '1.5px solid #e7e7e7',
+                                                          borderBottom: '4px solid #e7e7e7',
+                                                          borderRadius: 1,
+                                                          p: 0.5,
+                                                          display: 'inline-flex',
+                                                        }}
                                                       >
-                                                        {feedback.reasons.map((reason, idx) => (
-                                                          <Box
-                                                            key={idx}
-                                                            sx={{
-                                                              border: '1.5px solid #e7e7e7',
-                                                              borderBottom: '4px solid #e7e7e7',
-                                                              borderRadius: 1,
-                                                              p: 0.5,
-                                                              display: 'inline-flex',
-                                                            }}
-                                                          >
-                                                            <Chip
-                                                              label={reason}
-                                                              size="small"
-                                                              color="default"
-                                                              variant="outlined"
-                                                              sx={{
-                                                                border: 'none',
-                                                                color: '#8e8e93',
-                                                                fontSize: '0.75rem',
-                                                                padding: '1px 2px',
-                                                              }}
-                                                            />
-                                                          </Box>
-                                                        ))}
-                                                      </Stack>
-                                                    </Box>
-                                                  )}
-                                              </Box>
+                                                        <Chip
+                                                          label={reason}
+                                                          size="small"
+                                                          color="default"
+                                                          variant="outlined"
+                                                          sx={{
+                                                            border: 'none',
+                                                            color: '#8e8e93',
+                                                            fontSize: '0.75rem',
+                                                            padding: '1px 2px',
+                                                          }}
+                                                        />
+                                                      </Box>
+                                                    ))}
+                                                  </Stack>
+                                                </Box>
+                                              )}
                                             </Box>
                                           </Box>
-                                        ))}
-                                    </Grid>
+                                        </Box>
+                                      ))}
                                   </Grid>
-                                )}
+                                </Grid>
+                              )}
                             </>
                           </>
                         )}

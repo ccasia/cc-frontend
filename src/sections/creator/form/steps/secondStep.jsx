@@ -77,24 +77,27 @@ const SecondStep = ({ item }) => {
         secondary={item.description}
         primaryTypographyProps={{
           fontFamily: '"Instrument Serif", serif',
-          fontSize: '40px',
+          fontSize: { xs: '28px', sm: '40px' },
           fontWeight: 400,
           color: '#231F20',
         }}
         secondaryTypographyProps={{
           fontFamily: 'InterDisplay',
-          fontSize: '16px',
+          fontSize: { xs: '14px', sm: '16px' },
           fontWeight: 400,
           color: '#636366',
+          mt: 1,
         }}
       />
 
       <Stack
         gap={4}
         sx={{
-          width: { sm: 400 },
+          width: '100%', 
+          maxWidth: { xs: '100%', sm: 400 },
           mx: 'auto',
-          my: 7,
+          my: { xs: 4, sm: 7 },
+          px: { xs: 1, sm: 0 },
         }}
       >
         <Stack spacing={1}>
