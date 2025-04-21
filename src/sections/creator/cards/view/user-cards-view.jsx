@@ -9,6 +9,10 @@ import {
   Container,
   TextField,
   InputAdornment,
+  IconButton,
+  InputBase,
+  Paper,
+  alpha,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -34,6 +38,10 @@ export default function UserCardsView() {
   const filteredCreators = creators?.filter((creator) =>
     creator.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
 
   // return (
   //   <Box position="absolute" top="50%" left="50%" sx={{ transform: 'translate(-50%, -50%)' }}>
@@ -68,7 +76,7 @@ export default function UserCardsView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Creators Media Kits"
+        heading="Creator Media Kits"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Creator', href: paths.dashboard.creator.root },
@@ -77,21 +85,50 @@ export default function UserCardsView() {
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-        <TextField
-          label="Search creators"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ width: '50%' }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                {/* <SearchIcon /> */}
-                <Iconify icon="material-symbols:search" />
-              </InputAdornment>
-            ),
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          mb: 4,
+          width: '100%' 
+        }}
+      >
+        <Paper
+          elevation={2}
+          sx={{
+            px: 2,
+            py: 0.5,
+            display: 'flex',
+            width: { xs: '100%', md: '500px' },
+            border: '1px solid #E0E0E0',
+            borderRadius: 2,
           }}
-        />
+        >
+          <InputBase
+            fullWidth
+            placeholder="Search creators..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            startAdornment={
+              <InputAdornment position="start">
+                <Iconify icon="material-symbols:search" width={20} sx={{ color: 'text.disabled', mr: 1 }} />
+              </InputAdornment>
+            }
+            endAdornment={
+              searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={handleClearSearch} edge="end" aria-label="clear search">
+                    <Iconify icon="material-symbols:close" width={18} />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
+            sx={{ 
+              height: 44,
+              typography: 'body1',
+            }}
+          />
+        </Paper>
       </Box>
 
       {isLoading && <LoadingScreen />}
