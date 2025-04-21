@@ -23,14 +23,38 @@ const Verify = () => {
       {email ? (
         <Box
           sx={{
-            background: `url('/background/register.jpg') no-repeat fixed center`,
-            backgroundSize: 'cover',
+            position: 'relative',
             height: '100vh',
             width: 1,
             overflow: 'auto',
-            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: `
+                linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+                url('/background/signup.jpeg') no-repeat fixed center
+              `,
+              backgroundSize: 'cover',
+              zIndex: -1,
+            },
           }}
         >
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: `url('/background/grain.png') repeat`,
+              backgroundSize: 'cover',
+              zIndex: 0,
+            }}
+          />
           <Stack
             sx={{
               width: 1,
