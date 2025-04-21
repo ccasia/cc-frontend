@@ -40,7 +40,7 @@ const MediaKitCreator = () => {
   const isLoading = useBoolean();
   const instaLoading = useBoolean();
 
-  const [currentTab, setCurrentTab] = useState('tiktok');
+  const [currentTab, setCurrentTab] = useState('instagram');
   const [openSetting, setOpenSetting] = useState(false);
 
   const getInstagram = useCallback(async () => {
@@ -243,7 +243,7 @@ const MediaKitCreator = () => {
           <Stack direction="row" alignItems="center">
             <Typography
               sx={{
-                fontFamily: theme.typography.fontPrimaryFamily,
+                fontFamily: 'Aileron, sans-serif',
                 fontWeight: 400,
                 fontSize: 40,
               }}
@@ -302,7 +302,7 @@ const MediaKitCreator = () => {
             src={user?.photoURL}
           />
 
-          <Typography sx={{ fontSize: 14, color: '#231F20', fontWeight: 400 }} my={1} mt={2} mb={2}>
+          <Typography sx={{ fontSize: 14, color: '#231F20', fontWeight: 400, fontFamily: 'Aileron, sans-serif' }} my={1} mt={2} mb={2}>
             {user?.creator?.mediaKit?.about}
           </Typography>
         </Stack>
@@ -325,7 +325,8 @@ const MediaKitCreator = () => {
             <Typography
               variant="h2"
               color="#231F20"
-              fontFamily="Instrument Serif"
+              fontFamily="Aileron, sans-serif"
+              fontWeight={600}
               component={m.div}
               initial={{ scale: 0.5 }}
               animate={{ scale: 1 }}
@@ -373,9 +374,9 @@ const MediaKitCreator = () => {
                 px: 3,
                 minWidth: '140px',
                 height: '48px',
-                borderWidth: 1,
+                borderWidth: 2,
                 borderColor: currentTab === 'instagram' ? '#1340FF' : 'rgba(0, 0, 0, 0.12)',
-                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                // boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                 ...(currentTab === 'instagram' && {
                   color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
                   boxShadow: 'none',
@@ -396,9 +397,9 @@ const MediaKitCreator = () => {
                 px: 3,
                 minWidth: '140px',
                 height: '48px',
-                borderWidth: 1,
+                borderWidth: 2,
                 borderColor: currentTab === 'tiktok' ? '#1340FF' : 'rgba(0, 0, 0, 0.12)',
-                boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                // boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                 ...(currentTab === 'tiktok' && {
                   color: theme.palette.mode === 'light' ? '#1340FF' : '#4e70ff',
                   boxShadow: 'none',
@@ -448,7 +449,8 @@ const MediaKitCreator = () => {
                     <Typography
                       variant="caption"
                       color="#1340FF"
-                      fontWeight={500}
+                      fontFamily="Aileron, sans-serif"
+                      fontWeight={600}
                       align="left"
                       sx={{ fontSize: { xs: '0.9rem', md: '1.3rem' } }}
                     >
@@ -490,7 +492,8 @@ const MediaKitCreator = () => {
                     <Typography
                       variant="caption"
                       color="#1340FF"
-                      fontWeight={500}
+                      fontFamily="Aileron, sans-serif"
+                      fontWeight={600}
                       align="left"
                       sx={{ fontSize: { xs: '0.9rem', md: '1.3rem' } }}
                     >
@@ -523,7 +526,8 @@ const MediaKitCreator = () => {
                     <Typography
                       variant="caption"
                       color="#1340FF"
-                      fontWeight={500}
+                      fontFamily="Aileron, sans-serif"
+                      fontWeight={600}
                       align="left"
                       sx={{ fontSize: { xs: '0.9rem', md: '1.3rem' } }}
                     >
@@ -565,7 +569,8 @@ const MediaKitCreator = () => {
                     <Typography
                       variant="caption"
                       color="#1340FF"
-                      fontWeight={500}
+                      fontFamily="Aileron, sans-serif"
+                      fontWeight={600}
                       align="left"
                       sx={{ fontSize: { xs: '0.9rem', md: '1.3rem' } }}
                     >
@@ -603,6 +608,7 @@ const MediaKitCreator = () => {
               <Typography
                 variant="caption"
                 color="#1340FF"
+                fontFamily="Aileron, sans-serif"
                 fontWeight={600}
                 align="left"
                 sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
@@ -627,6 +633,7 @@ const MediaKitCreator = () => {
               <Typography
                 variant="caption"
                 color="#1340FF"
+                fontFamily="Aileron, sans-serif"
                 fontWeight={600}
                 align="left"
                 sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
@@ -651,6 +658,7 @@ const MediaKitCreator = () => {
               <Typography
                 variant="caption"
                 color="#1340FF"
+                fontFamily="Aileron, sans-serif"
                 fontWeight={600}
                 align="left"
                 sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
@@ -675,6 +683,7 @@ const MediaKitCreator = () => {
               <Typography
                 variant="caption"
                 color="#1340FF"
+                fontFamily="Aileron, sans-serif"
                 fontWeight={600}
                 align="left"
                 sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
@@ -689,7 +698,7 @@ const MediaKitCreator = () => {
       <Divider sx={{ my: 3 }} />
       {/* Bottom View */}
 
-      <Typography fontWeight={400} fontFamily="Instrument Serif" fontSize="40px" mb={1}>
+      <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1}>
         Top Content {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`}
       </Typography>
 
@@ -759,7 +768,7 @@ const MediaKitCreator = () => {
       )} */}
 
       <MediaKitSocial currentTab={currentTab} />
-      <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} />
+      {/* <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} /> */}
     </Container>
   );
 };
