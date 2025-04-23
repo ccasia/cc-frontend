@@ -60,7 +60,7 @@ const MediaKit = ({ id, noBigScreen }) => {
             ),
             data?.creator?.instagramUser?.followers_count
           ) || 0
-        }%`,
+        }`,
         averageLikes: data?.creator?.instagramUser?.average_like || 0,
         username: data?.creator?.instagramUser?.username,
       };
