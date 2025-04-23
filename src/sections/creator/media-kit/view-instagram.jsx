@@ -101,7 +101,7 @@ const TopContentGrid = ({ topContents }) => {
               position: 'relative',
               height: 600,
               overflow: 'hidden',
-              borderRadius: 3,
+              // borderRadius: 3,
               cursor: 'pointer',
               '&:hover .image': {
                 scale: 1.05,
