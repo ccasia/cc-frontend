@@ -19,7 +19,7 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function NotificationItem({ notification, markAsRead }) {
+export default function NotificationItem({ notification, markAsRead, onClose }) {
   const { user } = useAuthContext();
   const router = useRouter();
 
@@ -83,6 +83,10 @@ export default function NotificationItem({ notification, markAsRead }) {
           : `/dashboard/invoiceCreator/${invoiceId}`;
         break;
 
+      case 'PaymentForm':
+        link = `/dashboard/user/profile/payment`;
+        break;
+
       default:
         console.warn('Unknown notification entity type:', entity);
         break;
@@ -94,6 +98,7 @@ export default function NotificationItem({ notification, markAsRead }) {
 
     if (link) {
       router.push(link);
+      onClose();
     } else {
       console.error('No valid route found for notification entity:', entity);
     }
@@ -126,12 +131,7 @@ export default function NotificationItem({ notification, markAsRead }) {
   );
 
   const renderUnReadBadge = !notification.read && (
-    <Badge
-      badgeContent={1}
-      color="error"
-      variant="dot"
-      sx={{ marginRight: '1px' }}
-     />
+    <Badge badgeContent={1} color="error" variant="dot" sx={{ marginRight: '1px' }} />
   );
 
   const renderReadStatus = notification.read && (
@@ -220,4 +220,5 @@ export default function NotificationItem({ notification, markAsRead }) {
 NotificationItem.propTypes = {
   notification: PropTypes.object,
   markAsRead: PropTypes.func,
+  onClose: PropTypes.func,
 };

@@ -17,7 +17,7 @@ import { RHFSelect, RHFTextField } from 'src/components/hook-form';
 export default function InvoiceNewEditDetails() {
   const { control, setValue, watch, resetField } = useFormContext();
 
-  const { fields, remove } = useFieldArray({
+  const { fields } = useFieldArray({
     control,
     name: 'items',
   });
@@ -87,15 +87,15 @@ export default function InvoiceNewEditDetails() {
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ width: 1 }}>
               <RHFTextField
                 size="small"
-                name={`items[${index}].title`}
-                label="Title"
+                name={`items[${index}].campaignName`}
+                label="Campaign Name"
                 InputLabelProps={{ shrink: true }}
               />
 
               <RHFTextField
                 size="small"
-                name={`items[${index}].description`}
-                label="Description"
+                name={`items[${index}].clientName`}
+                label="Client Name"
                 InputLabelProps={{ shrink: true }}
               />
 

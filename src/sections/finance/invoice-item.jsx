@@ -39,7 +39,16 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         <Typography variant="subtitle2">{formatAmount(invoice?.amount)}</Typography>
       </TableCell>
       <TableCell>
-        <Label color={invoice?.status === 'approved' ? 'success' : 'warning'}>
+        <Label
+          color={
+            // eslint-disable-next-line no-nested-ternary
+            invoice?.status === 'approved'
+              ? 'success'
+              : invoice?.status === 'rejected'
+                ? 'error'
+                : 'warning'
+          }
+        >
           {invoice?.status}
         </Label>
       </TableCell>
