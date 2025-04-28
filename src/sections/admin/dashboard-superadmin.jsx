@@ -1,3 +1,4 @@
+import useSWR from 'swr';
 import dayjs from 'dayjs';
 import { useTheme } from '@emotion/react';
 import React, { useState, useEffect } from 'react';
@@ -23,6 +24,7 @@ import {
 import useGetCreators from 'src/hooks/use-get-creators';
 import useGetCampaigns from 'src/hooks/use-get-campaigns';
 
+import { fetcher } from 'src/utils/axios';
 import { fNumber } from 'src/utils/format-number';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -39,11 +41,12 @@ const DashboardSuperadmin = () => {
   const { socket } = useSocketContext();
   const [onlineUsers, setOnlineUsers] = useState(null);
   const { user } = useAuthContext();
+  const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher);
 
   const theme = useTheme();
   const setting = useSettingsContext();
 
-  const loadingDone = !isLoading && !creatorLoading;
+  // const loadingDone = !isLoading && !creatorLoading;
 
   const taskLists =
     !isLoading &&
@@ -171,7 +174,28 @@ const DashboardSuperadmin = () => {
     };
   }, [socket]);
 
-  return loadingDone ? (
+  if (creatorLoading || isClientLoading) {
+    return (
+      <Box
+        sx={{
+          position: 'relative',
+          top: 200,
+          textAlign: 'center',
+        }}
+      >
+        <CircularProgress
+          thickness={7}
+          size={25}
+          sx={{
+            color: theme.palette.common.black,
+            strokeLinecap: 'round',
+          }}
+        />
+      </Box>
+    );
+  }
+
+  return (
     <Grid container spacing={3}>
       {user?.role === 'superadmin' && (
         <Grid item xs={12} justifyItems="end">
@@ -208,13 +232,15 @@ const DashboardSuperadmin = () => {
         >
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
-              Total Pitch
+              Total Chats
             </Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="h2">
-                {campaigns
+                {/* {campaigns
+                
                   ?.filter((campaign) => campaign.status === 'ACTIVE')
-                  .reduce((acc, campaign) => acc + campaign.pitch.length, 0)}
+                  .reduce((acc, campaign) => acc + campaign.pitch.length, 0)} */}
+                {user?._count?.UserThread || 0}
               </Typography>
               <Chart
                 dir="ltr"
@@ -260,10 +286,10 @@ const DashboardSuperadmin = () => {
         >
           <Stack gap={1}>
             <Typography variant="subtitle2" color="text.secondary">
-              Total Task
+              Total Clients
             </Typography>
             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
-              <Typography variant="h2">{taskLists?.length}</Typography>
+              <Typography variant="h2">{clientData || 0}</Typography>
               <Chart
                 dir="ltr"
                 type="bar"
@@ -291,23 +317,6 @@ const DashboardSuperadmin = () => {
         </Box>
       </Grid>
     </Grid>
-  ) : (
-    <Box
-      sx={{
-        position: 'relative',
-        top: 200,
-        textAlign: 'center',
-      }}
-    >
-      <CircularProgress
-        thickness={7}
-        size={25}
-        sx={{
-          color: theme.palette.common.black,
-          strokeLinecap: 'round',
-        }}
-      />
-    </Box>
   );
 };
 

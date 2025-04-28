@@ -8,16 +8,11 @@ import {
   Grid,
   Stack,
   alpha,
-  Button,
   useTheme,
   CardMedia,
   Typography,
   useMediaQuery,
 } from '@mui/material';
-
-import { useSocialMediaData } from 'src/utils/store';
-
-import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -89,7 +84,7 @@ const TopContentGrid = ({ topContents }) => {
               position: 'relative',
               height: 600,
               overflow: 'hidden',
-              borderRadius: 3,
+              // borderRadius: 3,
               cursor: 'pointer',
               '&:hover .image': {
                 scale: 1.05,
