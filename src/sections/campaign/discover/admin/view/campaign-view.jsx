@@ -508,7 +508,7 @@ const CampaignView = () => {
           </Box>
         ) : (
           <EmptyContent
-            title={`No ${filter === 'active' ? 'active' : filter === 'completed' ? 'completed' : 'paused'} campaigns available`}
+            title={`No ${filter} campaigns available`}
           />
         ))}
       {/* <CampaignFilter
