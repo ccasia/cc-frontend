@@ -325,10 +325,10 @@ const StyledNavItem = styled(ListItemButton, {
           }),
           ...(active && {
             transform: 'scale(2)',
-            backgroundColor: 'rgba(19, 64, 255, 1)',
+            backgroundColor: 'rgba(45, 194, 98, 1)',
           }),
           ...(opened && {
-            backgroundColor: 'rgba(19, 64, 255, 1)',
+            backgroundColor: 'rgba(45, 194, 98, 1)',
           }),
         },
       },
