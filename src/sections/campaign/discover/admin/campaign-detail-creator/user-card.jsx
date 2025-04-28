@@ -148,7 +148,7 @@ export default function UserCard({
           {/* Right Side - Social Links and Label */}
           <Stack alignItems="flex-end" spacing={1} sx={{ ml: 1 }}>
             {/* Alphabetical Sort Button */}
-            <Button
+            {/* <Button
               onClick={handleToggleSort}
               endIcon={
                 <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -197,7 +197,7 @@ export default function UserCard({
               }}
             >
               Alphabetical
-            </Button>
+            </Button> */}
 
             <Stack direction="row" spacing={1}>
               {creator?.creator?.instagram && (
