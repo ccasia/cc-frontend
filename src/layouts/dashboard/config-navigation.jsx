@@ -135,11 +135,11 @@ export function useNavData() {
               //   title: 'Create',
               //   path: paths.dashboard.campaign.create,
               // },
-              // {
-              //   roles: ['superadmin', 'CSM'],
-              //   title: 'Edit',
-              //   path: paths.dashboard.campaign.manage,
-              // },
+              {
+                roles: ['superadmin', 'CSM'],
+                title: 'Edit',
+                path: paths.dashboard.campaign.manage,
+              },
               {
                 // title: 'Manage Campaign',
                 title: 'Lists',

@@ -5,6 +5,7 @@ import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
 import { pink, deepOrange } from '@mui/material/colors';
@@ -44,6 +45,7 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
+import CampaignTabs from 'src/components/campaign/CampaignTabs';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
@@ -59,9 +61,23 @@ import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch'
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
 import { CampaignLog } from '../../../manage/list/CampaignLog';
 
+// Ensure campaignTabs exists and is loaded from localStorage
+if (typeof window !== 'undefined') {
+  if (!window.campaignTabs) {
+    try {
+      const storedTabs = localStorage.getItem('campaignTabs');
+      window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
+    } catch (error) {
+      console.error('Error loading campaign tabs from localStorage:', error);
+      window.campaignTabs = [];
+    }
+  }
+}
+
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
+  const location = useLocation();
   // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -88,6 +104,28 @@ const CampaignDetailView = ({ id }) => {
   const open = Boolean(anchorEl);
 
   console.log('campaignid', campaign);
+
+  // Add this campaign to tabs and save to localStorage
+  useEffect(() => {
+    if (id && window.campaignTabs) {
+      if (!window.campaignTabs.some(tab => tab.id === id)) {
+        // Wait for campaign data to get the name if available
+        const tabName = campaign ? campaign.name || 'Campaign Details' : 'Campaign Details';
+        
+        window.campaignTabs.push({
+          id,
+          name: tabName
+        });
+        
+        // Save to localStorage
+        try {
+          localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
+        } catch (error) {
+          console.error('Error saving campaign tabs to localStorage:', error);
+        }
+      }
+    }
+  }, [id, campaign]);
 
   useEffect(() => {
     if (!campaignLoading && campaign) {
@@ -526,12 +564,16 @@ const CampaignDetailView = ({ id }) => {
           Back
         </Button>
 
+        {/* Campaign Tabs */}
+        <CampaignTabs />
+
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           alignItems="center"
           justifyContent="space-between"
           spacing={2}
           width="100%"
+          sx={{ mt: -1 }}
         >
           <Stack direction="row" alignItems="center" spacing={2}>
             {campaign?.campaignBrief?.images?.[0] && (
