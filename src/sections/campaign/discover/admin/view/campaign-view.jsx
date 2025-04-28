@@ -120,6 +120,21 @@ const CampaignView = () => {
   const completedCount = completedCampaigns.length;
   const pausedCount = pausedCampaigns.length;
 
+  // Store campaign status information for each campaign
+  useEffect(() => {
+    if (!campaigns) return;
+    
+    const statusMap = {};
+    campaigns.forEach(campaign => {
+      statusMap[campaign.id] = {
+        status: campaign.status
+      };
+    });
+    
+    // Make this available globally
+    window.campaignTabsStatus = statusMap;
+  }, [campaigns]);
+
   const dataFiltered = useMemo(
     () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
     [data]
@@ -160,7 +175,7 @@ const CampaignView = () => {
       </Typography>
 
       {/* Campaign Tabs */}
-      <CampaignTabs />
+      <CampaignTabs filter={filter} />
 
       <Box sx={{ mb: 2.5 }}>
         <Stack

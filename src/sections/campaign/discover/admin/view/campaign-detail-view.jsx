@@ -117,6 +117,19 @@ const CampaignDetailView = ({ id }) => {
           name: tabName
         });
         
+        // Add status information to the global campaignTabsStatus
+        if (campaign && campaign.status) {
+          // Initialize campaignTabsStatus if it doesn't exist
+          if (!window.campaignTabsStatus) {
+            window.campaignTabsStatus = {};
+          }
+          
+          // Store the campaign status
+          window.campaignTabsStatus[id] = {
+            status: campaign.status
+          };
+        }
+        
         // Save to localStorage
         try {
           localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
@@ -565,7 +578,7 @@ const CampaignDetailView = ({ id }) => {
         </Button>
 
         {/* Campaign Tabs */}
-        <CampaignTabs />
+        <CampaignTabs filter={campaign?.status?.toLowerCase()} />
 
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
