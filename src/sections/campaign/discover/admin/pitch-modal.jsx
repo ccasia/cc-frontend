@@ -4,6 +4,7 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import {
@@ -41,6 +42,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { user } = useAuthContext();
   const [totalUGCVideos, setTotalUGCVideos] = useState(null);
   const { mutate } = useGetCampaignById(campaign.id);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setCurrentPitch(pitch);
@@ -192,6 +194,11 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
     }, 300);
   };
 
+  const handleShortlistedProfileClick = (e) => {
+    e.stopPropagation();
+    navigate(`/dashboard/campaign/discover/detail/${campaign.id}/creator/${currentPitch?.user?.id}`);
+  };
+
   return (
     <>
       <Dialog
@@ -212,16 +219,17 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
           onClick={onClose}
           sx={{
             position: 'absolute',
-            right: 16,
+            right: 18,
             top: 16,
             zIndex: 9,
             padding: 1,
+            color: '#636366',
             '&:hover': {
               bgcolor: 'action.hover',
             },
           }}
         >
-          <Iconify icon="eva:close-fill" width={24} height={24} />
+          <Iconify icon="eva:close-fill" width={32} height={32} />
         </IconButton>
 
         {/* Fixed User Info Section */}
@@ -231,22 +239,20 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             top: 0,
             bgcolor: 'background.paper',
             zIndex: 8,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            pt: 3,
-            px: 3,
+            pt: 7,
+            px: 4,
           }}
         >
           <Stack spacing={3}>
-            {/* Creator Info and Social Media */}
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              alignItems={{ xs: 'flex-start', sm: 'center' }}
-              justifyContent="space-between"
-              sx={{ pr: 4 }}
-            >
-              {/* Creator Info */}
-              <Stack direction="row" spacing={2} alignItems="center">
+            {/* Creator Info and Social Media - Horizontal Layout */}
+            <Box sx={{ position: 'relative' }}>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                spacing={2}
+                sx={{ pr: { xs: 0, sm: 8 } }} 
+              >
+                {/* Creator Info */}
                 <Avatar
                   src={currentPitch?.user?.photoURL}
                   sx={{
@@ -258,82 +264,16 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   }}
                 />
                 <Stack spacing={0.5}>
-                  <Typography variant="h6">{currentPitch?.user?.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography sx={{ fontSize: '16px', fontWeight: 700, lineHeight: '18px', color: '#231F20' }}>
+                    {currentPitch?.user?.name}
+                  </Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 400, lineHeight: '16px', color: '#8E8E93' }}>
                     {currentPitch?.user?.email}
                   </Typography>
 
-                  {/* Social Media Icons Chip - Mobile */}
+                  {/* Social Media Icons - Mobile */}
                   <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
-                    <Chip
-                      icon={
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          {currentPitch?.user?.creator?.instagram && (
-                            <Tooltip title="Instagram Profile">
-                              <IconButton
-                                href={`https://instagram.com/${currentPitch.user.creator.instagram}`}
-                                target="_blank"
-                                size="small"
-                                sx={{
-                                  p: 0.8,
-                                  color: '#E1306C',
-                                  '&:hover': {
-                                    bgcolor: 'rgba(225, 48, 108, 0.08)',
-                                  },
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Iconify icon="mdi:instagram" width={24} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          {currentPitch?.user?.creator?.tiktok && (
-                            <Tooltip title="TikTok Profile">
-                              <IconButton
-                                href={`https://tiktok.com/@${currentPitch.user.creator.tiktok}`}
-                                target="_blank"
-                                size="small"
-                                sx={{
-                                  p: 0.8,
-                                  color: '#000000',
-                                  '&:hover': {
-                                    bgcolor: 'rgba(0, 0, 0, 0.08)',
-                                  },
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Iconify icon="ic:baseline-tiktok" width={24} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Stack>
-                      }
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.common.white,
-                        height: '42px',
-                        borderRadius: '10px',
-                        border: '1px solid #ebebeb',
-                        borderBottom: '3px solid #ebebeb',
-                        '& .MuiChip-icon': {
-                          margin: '0 8px',
-                        },
-                        '& .MuiChip-label': {
-                          display: 'none',
-                        },
-                        '&:hover': {
-                          backgroundColor: (theme) => theme.palette.common.white,
-                        },
-                      }}
-                    />
-                  </Box>
-                </Stack>
-              </Stack>
-
-              {/* Social Media Icons Chip - Desktop */}
-              <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                <Chip
-                  icon={
-                    <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Stack direction="row" spacing={1.5}>
                       {currentPitch?.user?.creator?.instagram && (
                         <Tooltip title="Instagram Profile">
                           <IconButton
@@ -342,9 +282,15 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             size="small"
                             sx={{
                               p: 0.8,
-                              color: '#E1306C',
+                              color: '#231F20',
+                              bgcolor: '#FFF',
+                              border: '1px solid #ebebeb',
+                              borderBottom: '3px solid #ebebeb',
+                              borderRadius: '10px',
+                              height: '42px',
+                              width: '42px',
                               '&:hover': {
-                                bgcolor: 'rgba(225, 48, 108, 0.08)',
+                                bgcolor: '#f5f5f5',
                               },
                             }}
                             onClick={(e) => e.stopPropagation()}
@@ -362,8 +308,14 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             sx={{
                               p: 0.8,
                               color: '#000000',
+                              bgcolor: '#FFF',
+                              border: '1px solid #ebebeb',
+                              borderBottom: '3px solid #ebebeb',
+                              borderRadius: '10px',
+                              height: '42px',
+                              width: '42px',
                               '&:hover': {
-                                bgcolor: 'rgba(0, 0, 0, 0.08)',
+                                bgcolor: '#f5f5f5',
                               },
                             }}
                             onClick={(e) => e.stopPropagation()}
@@ -372,28 +324,123 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                           </IconButton>
                         </Tooltip>
                       )}
+                      {currentPitch?.status === 'approved' && (
+                        <Tooltip title="View Shortlisted Profile">
+                          <Button
+                            size="small"
+                            sx={{
+                              p: 2,
+                              color: '#FFFFFF',
+                              bgcolor: '#3A3A3C',
+                              border: '1px solid #282424',
+                              borderBottom: '3px solid #282424',
+                              borderRadius: '10px',
+                              height: '42px',
+                              fontWeight: 600,
+                              fontSize: '12px',
+                              textTransform: 'none',
+                              '&:hover': {
+                                bgcolor: '#4a4a4c',
+                              },
+                            }}
+                            onClick={handleShortlistedProfileClick}
+                          >
+                            Profile
+                          </Button>
+                        </Tooltip>
+                      )}
                     </Stack>
-                  }
-                  sx={{
-                    backgroundColor: (theme) => theme.palette.common.white,
-                    height: '42px',
-                    borderRadius: '10px',
-                    border: '1px solid #ebebeb',
-                    borderBottom: '3px solid #ebebeb',
-                    mr: 2,
-                    '& .MuiChip-icon': {
-                      margin: '0 8px',
-                    },
-                    '& .MuiChip-label': {
-                      display: 'none',
-                    },
-                    '&:hover': {
-                      backgroundColor: (theme) => theme.palette.common.white,
-                    },
-                  }}
-                />
+                  </Box>
+                </Stack>
+              </Stack>
+
+              {/* Social Media Icons - Desktop */}
+              <Box sx={{ 
+                display: { xs: 'none', sm: 'block' },
+                position: 'absolute',
+                right: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 9,
+              }}>
+                <Stack direction="row" spacing={1}>
+                  {currentPitch?.user?.creator?.instagram && (
+                    <Tooltip title="Instagram Profile">
+                      <IconButton
+                        href={`https://instagram.com/${currentPitch.user.creator.instagram}`}
+                        target="_blank"
+                        size="small"
+                        sx={{
+                          p: 0.8,
+                          color: '#231F20',
+                          bgcolor: '#FFF',
+                          border: '1px solid #ebebeb',
+                          borderBottom: '3px solid #ebebeb',
+                          borderRadius: '10px',
+                          height: '48px',
+                          width: '48px',
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                          },
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Iconify icon="mdi:instagram" width={28} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {currentPitch?.user?.creator?.tiktok && (
+                    <Tooltip title="TikTok Profile">
+                      <IconButton
+                        href={`https://tiktok.com/@${currentPitch.user.creator.tiktok}`}
+                        target="_blank"
+                        size="small"
+                        sx={{
+                          p: 0.8,
+                          color: '#000000',
+                          bgcolor: '#FFF',
+                          border: '1px solid #ebebeb',
+                          borderBottom: '3px solid #ebebeb',
+                          borderRadius: '10px',
+                          height: '48px',
+                          width: '48px',
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                          },
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Iconify icon="ic:baseline-tiktok" width={28} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {currentPitch?.status === 'approved' && (
+                    <Tooltip title="View Shortlisted Profile">
+                      <Button
+                        size="small"
+                        sx={{
+                          p: 2,
+                          color: '#FFFFFF',
+                          bgcolor: '#3A3A3C',
+                          borderBottom: '3px solid #282424',
+                          borderRadius: '10px',
+                          height: '48px',
+                          fontWeight: 600,
+                          fontSize: '14px',
+                          textTransform: 'none',
+                          '&:hover': {
+                            bgcolor: '#4a4a4c',
+                          },
+                        }}
+                        onClick={handleShortlistedProfileClick}
+                      >
+                        Shortlisted Profile
+                      </Button>
+                    </Tooltip>
+                  )}
+                </Stack>
               </Box>
-            </Stack>
+            </Box>
 
             {/* Languages and Interests Grid */}
             <Grid container spacing={2} sx={{ pb: 2 }}>
@@ -401,24 +448,35 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               {currentPitch?.user?.creator?.languages?.length > 0 && (
                 <Grid item xs={12} md={4}>
                   <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" color="#8E8E93" sx={{ mb: 1 }}>
                       Languages
                     </Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1}>
+                    <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: -1.5 }}>
                       {currentPitch.user.creator.languages.map((language, index) => (
                         <Chip
                           key={index}
-                          label={language}
-                          size="small"
+                          label={language.toUpperCase()}
+                          size="medium"
                           sx={{
-                            bgcolor: 'background.neutral',
-                            color: 'text.primary',
+                            bgcolor: '#FFF',
+                            border: '1px solid #EBEBEB',
+                            borderRadius: 1,
+                            color: '#8E8E93',
+                            height: '34px',
+                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
                             cursor: 'default',
                             '& .MuiChip-label': {
-                              fontWeight: 500,
+                              fontWeight: 600,
+                              px: 1.5,
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginTop: '-3px',
+                              fontSize: '0.8rem',
                             },
                             '&:hover': {
-                              bgcolor: 'background.neutral',
+                              bgcolor: '#FFF',
                             },
                           }}
                         />
@@ -429,7 +487,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               )}
 
               {/* Country Section */}
-              {currentPitch?.user?.country && (
+              {/* {currentPitch?.user?.country && (
                 <Grid item xs={12} md={4}>
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
@@ -454,10 +512,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     </Stack>
                   </Box>
                 </Grid>
-              )}
+              )} */}
 
               {/* Interests Section */}
-              {currentPitch?.user?.creator?.interests?.length > 0 && (
+              {/* {currentPitch?.user?.creator?.interests?.length > 0 && (
                 <Grid item xs={12} md={4}>
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
@@ -485,8 +543,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     </Stack>
                   </Box>
                 </Grid>
-              )}
+              )} */}
             </Grid>
+            <Divider />
           </Stack>
         </Box>
 
@@ -518,11 +577,19 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 {/* Pitch Type Section */}
                 <Grid item xs={12} md={6}>
                   <Stack direction="row" spacing={2} alignItems="center">
-                    <AvatarIcon
-                      icon={
-                        currentPitch?.type === 'video' ? 'akar-icons:video' : 'solar:document-bold'
-                      }
-                    />
+                    {currentPitch?.type === 'video' ? (
+                      <Box
+                        component="img"
+                        src="/assets/icons/components/ic_videopitch.svg"
+                        sx={{ width: 64, height: 64 }}
+                      />
+                    ) : (
+                      <Box
+                        component="img"
+                          src="/assets/icons/components/ic_letterpitch.svg"
+                          sx={{ width: 64, height: 64 }}
+                        />
+                    )}
                     <Stack>
                       <Typography variant="h6">
                         {currentPitch?.type === 'video' ? 'Video Pitch' : 'Letter Pitch'}
@@ -618,7 +685,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                               ? 'success.main'
                               : currentPitch?.status === 'rejected'
                                 ? 'error.main'
-                                : 'warning.main',
+                                : '#FFC702',
                         }}
                       >
                         {currentPitch?.status?.charAt(0).toUpperCase() +
@@ -629,7 +696,9 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Grid>
               </Grid>
             </Box>
+
             <Divider />
+
             {/* Pitch Content Section */}
             <Box>
               {currentPitch?.type === 'video' &&
@@ -666,7 +735,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     borderRadius: 2,
                     bgcolor: '#ffffff',
                     border: '1px solid #203ff5',
-                    borderBottom: '3px solid #203ff5',
+                    // borderBottom: '3px solid #203ff5',
                     '& p': {
                       margin: 0,
                       '& + p': {
@@ -679,7 +748,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                     variant="body1"
                     sx={{
                       color: '#000000',
-                      lineHeight: 1.7,
+                      lineHeight: 1.5,
                       whiteSpace: 'pre-wrap',
                     }}
                     dangerouslySetInnerHTML={{ __html: currentPitch.content }}
@@ -691,7 +760,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         </DialogContent>
 
         {/* Action Buttons */}
-        <DialogActions sx={{ px: 3, pb: 3 }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: -1, mt: -3 }}>
           <Button
             variant="contained"
             onClick={() => setConfirmDialog({ open: true, type: 'decline' })}
@@ -701,20 +770,24 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               minHeight: 42,
               minWidth: 100,
               bgcolor: '#ffffff',
-              color: '#ff3b30',
+              color: '#D4321C',
               border: '1.5px solid',
               borderColor: '#e7e7e7',
               borderBottom: '3px solid',
               borderBottomColor: '#e7e7e7',
               borderRadius: 1.15,
               fontWeight: 600,
-              fontSize: '0.875rem',
+              fontSize: '16px',
               '&:hover': {
-                bgcolor: '#e7e7e7',
+                bgcolor: '#f5f5f5',
+                border: '1.5px solid',
+                borderColor: '#D4321C',
+                borderBottom: '3px solid',
+                borderBottomColor: '#D4321C',
               },
             }}
           >
-            Decline
+            Reject
           </Button>
           <Button
             variant="contained"
@@ -724,19 +797,24 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               textTransform: 'none',
               minHeight: 42,
               minWidth: 100,
-              bgcolor: '#2e6c56',
-              color: '#fff',
+              bgcolor: '#FFFFFF',
+              color: '#1ABF66',
+              border: '1.5px solid',
+              borderColor: '#E7E7E7',
               borderBottom: '3px solid',
-              borderBottomColor: '#202021',
+              borderBottomColor: '#E7E7E7',
               borderRadius: 1.15,
               fontWeight: 600,
-              fontSize: '0.875rem',
+              fontSize: '16px',
               '&:hover': {
-                bgcolor: '#1e4a3a',
+                bgcolor: '#f5f5f5',
+                border: '1.5px solid',
+                borderColor: '#1ABF66',
+                borderBottom: '3px solid',
+                borderBottomColor: '#1ABF66',
               },
             }}
           >
-            <Iconify icon="eva:checkmark-fill" width={20} sx={{ mr: 0.5 }} />
             Approve
           </Button>
         </DialogActions>
