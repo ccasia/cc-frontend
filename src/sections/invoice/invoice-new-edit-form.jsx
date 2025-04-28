@@ -201,8 +201,8 @@ export default function InvoiceNewEditForm({ id, creators }) {
         accountEmail: '',
       },
       totalAmount: invoice?.amount || 0,
-      reason: invoice?.creator?.user?.paymentForm?.reason,
-      otherReason: invoice?.creator?.user?.paymentForm?.reason,
+      reason: invoice?.creator?.user?.paymentForm?.reason || '',
+      otherReason: invoice?.creator?.user?.paymentForm?.reason || '',
     }),
     [invoice]
   );
