@@ -5,6 +5,7 @@ import { useTheme } from '@emotion/react';
 import { useMemo, useState } from 'react';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
+import { useRouter } from 'src/routes/hooks';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -88,6 +89,7 @@ EditButton.propTypes = {
 
 const CampaignDetailManageView = ({ id }) => {
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
+  const router = useRouter();
 
   const [pages, setPages] = useState();
 
@@ -317,7 +319,7 @@ const CampaignDetailManageView = ({ id }) => {
                 </Typography>
                 <Divider />
                 <Typography variant="caption" color="black" fontWeight={400}>
-                  Score an extra RM100! T&C’s apply.
+                  Score an extra RM100! T&C&apos;s apply.
                 </Typography>
               </Stack>
             </Stack>
@@ -904,78 +906,93 @@ const CampaignDetailManageView = ({ id }) => {
 
   return (
     <Container maxWidth="lg">
-      <CustomBreadcrumbs
-        heading="Detail"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.root },
-          {
-            name: 'Campaign',
-            href: paths.dashboard.campaign.manage,
-          },
-          { name: 'Edit' },
-          { name: campaign?.name },
-        ]}
-        action={
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            {campaign?.status === 'ACTIVE' && (
-              <LoadingButton
-                startIcon={<Iconify icon="ion:close" />}
-                variant="outlined"
-                color="error"
-                onClick={modalConfirm.onTrue}
-                size="small"
-                disabled={isDisabled}
-              >
-                End Campaign
-              </LoadingButton>
-            )}
-            {campaign?.status === 'SCHEDULED' &&
-              dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') && (
+      <Stack spacing={1}>
+        <Button
+          color="inherit"
+          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
+          onClick={() => router.push(`/dashboard/campaign/discover/detail/${id}`)}
+          sx={{
+            alignSelf: 'flex-start',
+            color: '#636366',
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+          }}
+        >
+          Back to {campaign?.name}
+        </Button>
+      
+        <CustomBreadcrumbs
+          heading="Detail"
+          links={[
+            { name: 'Dashboard', href: paths.dashboard.root },
+            {
+              name: 'Campaign',
+              href: paths.dashboard.campaign.manage,
+            },
+            { name: 'Edit' },
+            { name: campaign?.name },
+          ]}
+          action={
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+              {campaign?.status === 'ACTIVE' && (
                 <LoadingButton
-                  variant="contained"
-                  color="success"
-                  onClick={() => handleChangeStatus('ACTIVE')}
+                  startIcon={<Iconify icon="ion:close" />}
+                  variant="outlined"
+                  color="error"
+                  onClick={modalConfirm.onTrue}
                   size="small"
                   disabled={isDisabled}
                 >
-                  Start Campaign
+                  End Campaign
                 </LoadingButton>
               )}
-            {campaign &&
-              (campaign?.status === 'PAUSED' ||
-                (campaign?.status === 'DRAFT' &&
-                  dayjs(campaignStartDate).isSame(dayjs(), 'D'))) && (
+              {campaign?.status === 'SCHEDULED' &&
+                dayjs().isSame(dayjs(campaign?.campaignBrief?.startDate), 'date') && (
+                  <LoadingButton
+                    variant="contained"
+                    color="success"
+                    onClick={() => handleChangeStatus('ACTIVE')}
+                    size="small"
+                    disabled={isDisabled}
+                  >
+                    Start Campaign
+                  </LoadingButton>
+                )}
+              {campaign &&
+                (campaign?.status === 'PAUSED' ||
+                  (campaign?.status === 'DRAFT' &&
+                    dayjs(campaignStartDate).isSame(dayjs(), 'D'))) && (
+                  <LoadingButton
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                    onClick={() => handleChangeStatus('ACTIVE')}
+                    loading={loadingButton.value}
+                    disabled={isDisabled}
+                  >
+                    Publish
+                  </LoadingButton>
+                )}
+              {campaign && campaign?.status === 'ACTIVE' && (
                 <LoadingButton
                   variant="contained"
-                  color="primary"
+                  color="warning"
                   size="small"
-                  startIcon={<Iconify icon="eva:cloud-upload-fill" />}
-                  onClick={() => handleChangeStatus('ACTIVE')}
+                  startIcon={<Iconify icon="solar:file-text-bold" />}
+                  onClick={() => handleChangeStatus('PAUSED')}
                   loading={loadingButton.value}
                   disabled={isDisabled}
                 >
-                  Publish
+                  Pause
                 </LoadingButton>
               )}
-            {campaign && campaign?.status === 'ACTIVE' && (
-              <LoadingButton
-                variant="contained"
-                color="warning"
-                size="small"
-                startIcon={<Iconify icon="solar:file-text-bold" />}
-                onClick={() => handleChangeStatus('PAUSED')}
-                loading={loadingButton.value}
-                disabled={isDisabled}
-              >
-                Pause
-              </LoadingButton>
-            )}
-          </Stack>
-        }
-        sx={{
-          mb: { xs: 3, md: 5 },
-        }}
-      />
+            </Stack>
+          }
+          sx={{
+            mb: { xs: 3, md: 5 },
+          }}
+        />
+      </Stack>
 
       <Grid container spacing={2}>
         {!campaignLoading ? (

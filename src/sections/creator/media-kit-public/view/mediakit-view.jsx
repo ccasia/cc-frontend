@@ -666,7 +666,7 @@ const MediaKit = ({ id, noBigScreen }) => {
       {/* Bottom View */}
 
       <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1}>
-        Top Content {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`}
+        Top Content {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
       </Typography>
 
       <MediaKitSocial currentTab={currentTab} data={data} />
