@@ -84,7 +84,7 @@ const CampaignAgreementEdit = ({ dialog, agreement, campaign }) => {
     resolver: yupResolver(schema),
     defaultValues: {
       paymentAmount: parseInt(agreement?.shortlistedCreator?.amount, 10) || '',
-      currency: agreement?.shortlistedCreator?.currency || 'SGD',
+      currency: agreement?.shortlistedCreator?.currency || 'MYR',
       default: false,
     },
     reValidateMode: 'onChange',
