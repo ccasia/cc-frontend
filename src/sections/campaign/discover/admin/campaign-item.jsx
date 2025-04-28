@@ -71,6 +71,17 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         name: campaign.name || 'Campaign Details'
       });
       
+      // Update status tracking for tabs
+      if (typeof window !== 'undefined') {
+        if (!window.campaignTabsStatus) {
+          window.campaignTabsStatus = {};
+        }
+        
+        window.campaignTabsStatus[campaign.id] = {
+          status: campaign.status
+        };
+      }
+      
       // Save to localStorage
       try {
         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));

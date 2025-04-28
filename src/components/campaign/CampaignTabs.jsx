@@ -9,9 +9,10 @@ import { useLocation } from 'react-router-dom';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignTabs() {
+export default function CampaignTabs({ filter = 'active' }) {
   const [tabs, setTabs] = useState([]);
   const [activeTabId, setActiveTabId] = useState(null);
+  const [filteredTabs, setFilteredTabs] = useState([]);
   const router = useRouter();
   const location = useLocation();
   
@@ -31,6 +32,20 @@ export default function CampaignTabs() {
     
     return () => clearInterval(intervalId);
   }, []);
+  
+  // Filter tabs based on current filter and campaign status
+  useEffect(() => {
+    // If we don't have campaignStatus data in the tabs, we show all tabs
+    if (window.campaignTabsStatus) {
+      const filtered = tabs.filter(tab => {
+        const status = window.campaignTabsStatus[tab.id]?.status?.toLowerCase() || '';
+        return status === filter.toLowerCase();
+      });
+      setFilteredTabs(filtered);
+    } else {
+      setFilteredTabs(tabs);
+    }
+  }, [tabs, filter]);
   
   // Check the current URL to determine which campaign tab is active
   useEffect(() => {
@@ -80,13 +95,19 @@ export default function CampaignTabs() {
     }
   };
   
-  if (!tabs.length) {
+  if (!filteredTabs.length) {
     return null;
   }
   
+  // Get the display text based on current filter
+  const getCampaignTypeText = () => {
+    const type = filter.charAt(0).toUpperCase() + filter.slice(1);
+    return `${type} Campaigns`;
+  };
+  
   return (
     <Box sx={{ width: '100%' }}>
-      {tabs.length > 0 && (
+      {filteredTabs.length > 0 && (
         <Box sx={{ mb: 2 }}>
           <Stack 
             direction="row" 
@@ -115,10 +136,10 @@ export default function CampaignTabs() {
                 }
               }}
             >
-              Active Campaigns
+              {getCampaignTypeText()}
               <ArrowForwardIosIcon sx={{ fontSize: '0.8rem', mx: 1 }} />
             </Typography>
-            {tabs.map((tab) => {
+            {filteredTabs.map((tab) => {
               const isActive = activeTabId === tab.id;
               return (
                 <Button
@@ -184,4 +205,8 @@ export default function CampaignTabs() {
       )}
     </Box>
   );
-} 
+}
+
+CampaignTabs.propTypes = {
+  filter: PropTypes.string,
+}; 
