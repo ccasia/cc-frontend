@@ -109,6 +109,7 @@ export const endpoints = {
       instagram: (id) => `/api/social/instagram/overview/${id}`,
     },
     updatePreference: (id) => `/api/creator/updatePreference/${id}`,
+    exportCreators: '/api/creator/exportCreators',
   },
   users: {
     newAdmin: '/api/user/admins',
