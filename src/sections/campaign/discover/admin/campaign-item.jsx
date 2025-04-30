@@ -16,6 +16,7 @@ import { formatText } from 'src/utils/format-test';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
+import { CampaignLog } from '../../manage/list/CampaignLog';
 
 // ----------------------------------------------------------------------
 
@@ -41,6 +42,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
   
   // Handle menu open
   const handleClick = (event) => {
@@ -58,17 +60,31 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   const handleOpenInNewTab = (event) => {
     event.stopPropagation();
     
+    const campaignName = campaign?.name || 'Campaign Details';
+    
     // Check if this campaign is already in campaignTabs
     const tabExists = window.campaignTabs.some(tab => tab.id === campaign.id);
     
     if (tabExists) {
-      // If tab already exists, navigate to it
-      router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
+      // If tab already exists, update the name to ensure it's current
+      window.campaignTabs = window.campaignTabs.map(tab => {
+        if (tab.id === campaign.id) {
+          return { ...tab, name: campaignName };
+        }
+        return tab;
+      });
+      
+      // Save updated tabs to localStorage
+      try {
+        localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
+      } catch (error) {
+        console.error('Error saving campaign tabs to localStorage:', error);
+      }
     } else {
-      // If tab doesn't exist yet, it will be added to campaignTabs without navigating
+      // If tab doesn't exist yet, add it to campaignTabs
       window.campaignTabs.push({
         id: campaign.id,
-        name: campaign.name || 'Campaign Details'
+        name: campaignName
       });
       
       // Update status tracking for tabs
@@ -94,6 +110,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     // router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
     
     handleClose();
+  };
+
+  const onCloseCampaignLog = (event) => {
+    if (event) event.stopPropagation();
+    setCampaignLogIsOpen(false);
   };
 
   const renderImages = (
@@ -302,6 +323,26 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
             >
               Open in New Tab
             </MenuItem>
+            <MenuItem 
+              onClick={(event) => {
+                event.stopPropagation();
+                setCampaignLogIsOpen(true);
+                handleClose();
+              }}
+              sx={{
+                borderRadius: 1,
+                backgroundColor: 'white',
+                color: 'black',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                p: 1.5,
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                },
+              }}
+            >
+              View Log
+            </MenuItem>
           </Menu>
         </Stack>
       </Stack>
@@ -360,6 +401,10 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       )}
       {renderImages}
       {renderTexts}
+
+      <Box onClick={(e) => e.stopPropagation()}>
+        <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
+      </Box>
     </Card>
   );
 }
