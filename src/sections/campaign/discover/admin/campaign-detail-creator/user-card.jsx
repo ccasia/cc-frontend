@@ -12,6 +12,7 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
+import Tooltip from '@mui/material/Tooltip';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -88,13 +89,16 @@ export default function UserCard({
       // onClick={handleCardClick}
       sx={{
         position: 'relative',
-        cursor: 'pointer',
+        // cursor: 'pointer',
         width: '100%',
         '&:hover': {
-          '& .MuiCard-root': {
-            transform: 'translateY(-5px)',
-            transition: 'transform 0.3s ease',
-          },
+          // '& .MuiCard-root': {
+          //   transform: 'translateY(-5px)',
+          //   transition: 'transform 0.3s ease',
+          // },
+          // '& .MuiCard-root': {
+          //   border: '1px solid #1340FF',
+          // },
         },
       }}
     >
@@ -200,46 +204,64 @@ export default function UserCard({
             </Button> */}
 
             <Stack direction="row" spacing={1}>
-              {creator?.creator?.instagram && (
-                <IconButton
-                  component="a"
-                  href={`https://instagram.com/${creator?.creator?.instagram}`}
-                  target="_blank"
-                  onClick={(e) => e.stopPropagation()}
-                  sx={{
-                    color: '#636366',
-                    border: '1px solid #e7e7e7',
-                    borderBottom: '3px solid #e7e7e7',
-                    borderRadius: 1,
-                    cursor: 'pointer',
-                    '&:hover': {
-                      bgcolor: alpha('#636366', 0.08),
-                    },
-                  }}
-                >
-                  <Iconify icon="mdi:instagram" width={24} />
-                </IconButton>
-              )}
-              {creator?.creator?.tiktok && (
-                <IconButton
-                  component="a"
-                  href={`https://tiktok.com/@${creator?.creator?.tiktok}`}
-                  target="_blank"
-                  onClick={(e) => e.stopPropagation()}
-                  sx={{
-                    color: '#636366',
-                    border: '1px solid #e7e7e7',
-                    borderBottom: '3px solid #e7e7e7',
-                    borderRadius: 1,
-                    cursor: 'pointer',
-                    '&:hover': {
-                      bgcolor: alpha('#636366', 0.08),
-                    },
-                  }}
-                >
-                  <Iconify icon="ic:baseline-tiktok" width={24} />
-                </IconButton>
-              )}
+              <Tooltip title={creator?.creator?.instagram ? "Instagram account connected" : "Instagram account not connected"}>
+                <span>
+                  <IconButton
+                    component={creator?.creator?.instagram ? "a" : "button"}
+                    href={creator?.creator?.instagram ? `https://instagram.com/${creator?.creator?.instagram}` : undefined}
+                    target="_blank"
+                    disabled={!creator?.creator?.instagram}
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{
+                      color: creator?.creator?.instagram ? '#636366' : '#a3a3a6',
+                      border: '1px solid #e7e7e7',
+                      borderBottom: '3px solid #e7e7e7',
+                      borderRadius: 1,
+                      cursor: creator?.creator?.instagram ? 'pointer' : 'not-allowed',
+                      '&:hover': {
+                        bgcolor: creator?.creator?.instagram ? alpha('#636366', 0.08) : 'transparent',
+                      },
+                      '&.Mui-disabled': {
+                        color: '#a3a3a6',
+                        border: '1px solid #e7e7e7',
+                        borderBottom: '3px solid #e7e7e7',
+                        opacity: 0.6,
+                      },
+                    }}
+                  >
+                    <Iconify icon="mdi:instagram" width={24} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title={creator?.creator?.tiktok ? "TikTok account connected" : "TikTok account not connected"}>
+                <span>
+                  <IconButton
+                    component={creator?.creator?.tiktok ? "a" : "button"}
+                    href={creator?.creator?.tiktok ? `https://tiktok.com/@${creator?.creator?.tiktok}` : undefined}
+                    target="_blank"
+                    disabled={!creator?.creator?.tiktok}
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{
+                      color: creator?.creator?.tiktok ? '#636366' : '#a3a3a6',
+                      border: '1px solid #e7e7e7',
+                      borderBottom: '3px solid #e7e7e7',
+                      borderRadius: 1,
+                      cursor: creator?.creator?.tiktok ? 'pointer' : 'not-allowed',
+                      '&:hover': {
+                        bgcolor: creator?.creator?.tiktok ? alpha('#636366', 0.08) : 'transparent',
+                      },
+                      '&.Mui-disabled': {
+                        color: '#a3a3a6',
+                        border: '1px solid #e7e7e7',
+                        borderBottom: '3px solid #e7e7e7',
+                        opacity: 0.6,
+                      },
+                    }}
+                  >
+                    <Iconify icon="ic:baseline-tiktok" width={24} />
+                  </IconButton>
+                </span>
+              </Tooltip>
             </Stack>
 
             {!isSent && (
@@ -263,16 +285,15 @@ export default function UserCard({
 
         {/* Stats Section */}
         <Box
-          display="grid"
-          gridTemplateColumns="repeat(3, 1fr)"
-          gap={3}
           sx={{
+            display: 'flex',
+            width: '100%',
+            justifyContent: 'space-between',
             mb: 3,
             mt: -1,
-            minWidth: 0,
           }}
         >
-          <Stack spacing={1} alignItems="flex-start" sx={{ minWidth: 0 }}>
+          <Stack spacing={1} alignItems="flex-start" sx={{ minWidth: 0, flex: 0.8 }}>
             <Box
               component="img"
               src="/assets/icons/overview/purpleGroup.svg"
@@ -295,16 +316,9 @@ export default function UserCard({
             </Typography>
           </Stack>
 
-          <Stack
-            spacing={1}
-            alignItems="flex-start"
-            sx={{
-              borderLeft: '1px solid #ebebeb',
-              borderRight: '1px solid #ebebeb',
-              px: 2,
-              minWidth: 0,
-            }}
-          >
+          <Divider orientation="vertical" flexItem sx={{ ml: 1, mr: 2 }} />
+
+          <Stack spacing={1} alignItems="flex-start" sx={{ minWidth: 0, flex: 1.2 }}>
             <Box
               component="img"
               src="/assets/icons/overview/greenChart.svg"
@@ -327,7 +341,9 @@ export default function UserCard({
             </Typography>
           </Stack>
 
-          <Stack spacing={1} alignItems="flex-start" sx={{ minWidth: 0 }}>
+          <Divider orientation="vertical" flexItem sx={{ ml: 2, mr: 1 }} />
+
+          <Stack spacing={1} alignItems="flex-start" sx={{ minWidth: 0, flex: 1 }}>
             <Box
               component="img"
               src="/assets/icons/overview/bubbleHeart.svg"

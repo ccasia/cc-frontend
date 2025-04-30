@@ -46,7 +46,7 @@ const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topFiveContents = topContents?.slice(0, 5);
+  const topThreeContents = topContents?.slice(0, 3);
 
   return (
     <Grid
@@ -65,7 +65,7 @@ const TopContentGrid = ({ topContents }) => {
       animate="show"
       initial="hidden"
     >
-      {topFiveContents.map((content, index) => (
+      {topThreeContents.map((content, index) => (
         <Grid
           item
           xs={12}

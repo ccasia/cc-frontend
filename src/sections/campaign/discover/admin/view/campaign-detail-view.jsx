@@ -106,39 +106,39 @@ const CampaignDetailView = ({ id }) => {
   console.log('campaignid', campaign);
 
   // Add this campaign to tabs and save to localStorage
-  useEffect(() => {
-    if (id && window.campaignTabs) {
-      if (!window.campaignTabs.some(tab => tab.id === id)) {
-        // Wait for campaign data to get the name if available
-        const tabName = campaign ? campaign.name || 'Campaign Details' : 'Campaign Details';
+  // useEffect(() => {
+  //   if (id && window.campaignTabs) {
+  //     if (!window.campaignTabs.some(tab => tab.id === id)) {
+  //       // Wait for campaign data to get the name if available
+  //       const tabName = campaign ? campaign.name || 'Campaign Details' : 'Campaign Details';
         
-        window.campaignTabs.push({
-          id,
-          name: tabName
-        });
+  //       window.campaignTabs.push({
+  //         id,
+  //         name: tabName
+  //       });
         
-        // Add status information to the global campaignTabsStatus
-        if (campaign && campaign.status) {
-          // Initialize campaignTabsStatus if it doesn't exist
-          if (!window.campaignTabsStatus) {
-            window.campaignTabsStatus = {};
-          }
+  //       // Add status information to the global campaignTabsStatus
+  //       if (campaign && campaign.status) {
+  //         // Initialize campaignTabsStatus if it doesn't exist
+  //         if (!window.campaignTabsStatus) {
+  //           window.campaignTabsStatus = {};
+  //         }
           
-          // Store the campaign status
-          window.campaignTabsStatus[id] = {
-            status: campaign.status
-          };
-        }
+  //         // Store the campaign status
+  //         window.campaignTabsStatus[id] = {
+  //           status: campaign.status
+  //         };
+  //       }
         
-        // Save to localStorage
-        try {
-          localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
-        } catch (error) {
-          console.error('Error saving campaign tabs to localStorage:', error);
-        }
-      }
-    }
-  }, [id, campaign]);
+  //       // Save to localStorage
+  //       try {
+  //         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
+  //       } catch (error) {
+  //         console.error('Error saving campaign tabs to localStorage:', error);
+  //       }
+  //     }
+  //   }
+  // }, [id, campaign]);
 
   useEffect(() => {
     if (!campaignLoading && campaign) {
@@ -249,7 +249,7 @@ const CampaignDetailView = ({ id }) => {
               value: 'pitch',
             },
             {
-              label: `Creators (${campaign?.shortlisted?.length || 0})`,
+              label: `Shortlisted Creators (${campaign?.shortlisted?.length || 0})`,
               value: 'creator',
             },
             {

@@ -486,66 +486,109 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                 </Grid>
               )}
 
-              {/* Country Section */}
-              {/* {currentPitch?.user?.country && (
-                <Grid item xs={12} md={4}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                      Country
-                    </Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1}>
-                      <Chip
-                        label={currentPitch.user.country}
-                        size="small"
-                        sx={{
-                          bgcolor: 'background.neutral',
-                          color: 'text.primary',
-                          cursor: 'default',
-                          '& .MuiChip-label': {
-                            fontWeight: 500,
-                          },
-                          '&:hover': {
-                            bgcolor: 'background.neutral',
-                          },
-                        }}
-                      />
-                    </Stack>
-                  </Box>
-                </Grid>
-              )} */}
-
-              {/* Interests Section */}
-              {/* {currentPitch?.user?.creator?.interests?.length > 0 && (
-                <Grid item xs={12} md={4}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                      Interests
-                    </Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1}>
-                      {currentPitch.user.creator.interests.map((interest, index) => (
-                        <Chip
-                          key={index}
-                          label={typeof interest === 'string' ? interest : interest.name}
-                          size="small"
-                          sx={{
-                            bgcolor: 'background.neutral',
-                            color: 'text.primary',
-                            cursor: 'default',
-                            '& .MuiChip-label': {
-                              fontWeight: 500,
-                            },
-                            '&:hover': {
-                              bgcolor: 'background.neutral',
-                            },
-                          }}
+              {/* Stats Section  */}
+              <Grid item xs={12} md={8}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    minWidth: 0,
+                    ml: 'auto',
+                    width: { xs: '100%', md: '90%' },
+                    mb: -1.5,
+                  }}
+                >
+                  <Stack direction="row" spacing={0} width="100%" justifyContent="flex-end">
+                    {/* First stat */}
+                    <Box sx={{ flex: 0, display: 'flex', justifyContent: 'flex-end', minWidth: '80px' }}>
+                      <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                        <Box
+                          component="img"
+                          src="/assets/icons/overview/purpleGroup.svg"
+                          sx={{ width: 20, height: 20 }}
                         />
-                      ))}
-                    </Stack>
-                  </Box>
-                </Grid>
-              )} */}
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>N/A</Typography>
+                        <Typography
+                          variant="caption"
+                          color="#8e8e93"
+                          sx={{
+                            whiteSpace: 'nowrap',
+                            fontWeight: 500,
+                            overflow: 'visible',
+                            width: '100%',
+                            fontSize: '12px',
+                            textAlign: 'right'
+                          }}
+                        >
+                          Followers
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    
+                    {/* Divider */}
+                    <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                    
+                    {/* Second stat */}
+                    <Box sx={{ flex: 0, display: 'flex', justifyContent: 'flex-end', minWidth: '120px' }}>
+                      <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                        <Box
+                          component="img"
+                          src="/assets/icons/overview/greenChart.svg"
+                          sx={{ width: 20, height: 20 }}
+                        />
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>N/A</Typography>
+                        <Typography
+                          variant="caption"
+                          color="#8e8e93"
+                          sx={{
+                            whiteSpace: 'nowrap',
+                            fontWeight: 500,
+                            overflow: 'visible',
+                            width: '100%',
+                            fontSize: '12px',
+                            textAlign: 'right'
+                          }}
+                        >
+                          Engagement Rate
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    
+                    {/* Divider */}
+                    <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                    
+                    {/* Third stat */}
+                    <Box sx={{ flex: 0, display: 'flex', justifyContent: 'flex-end', minWidth: '105px' }}>
+                      <Stack spacing={0.5} alignItems="flex-end" sx={{ minWidth: 0 }}>
+                        <Box
+                          component="img"
+                          src="/assets/icons/overview/bubbleHeart.svg"
+                          sx={{ width: 20, height: 20 }}
+                        />
+                        <Typography variant="body1" sx={{ fontWeight: 600, fontSize: '14px' }}>N/A</Typography>
+                        <Typography
+                          variant="caption"
+                          color="#8e8e93"
+                          sx={{
+                            whiteSpace: 'nowrap',
+                            fontWeight: 500,
+                            overflow: 'visible',
+                            width: '100%',
+                            fontSize: '12px',
+                            textAlign: 'right'
+                          }}
+                        >
+                          Average Likes
+                        </Typography>
+                      </Stack>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Grid>
             </Grid>
+
             <Divider />
+
           </Stack>
         </Box>
 
