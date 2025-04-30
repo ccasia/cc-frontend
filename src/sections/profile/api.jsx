@@ -31,17 +31,11 @@ const API = () => {
           {!isLoading &&
             (!data?.token ? (
               <Button variant="outlined" onClick={handleActivateXero}>
-                Activate
+                Connect to Xero
               </Button>
             ) : (
-              <Button
-                variant="outlined"
-                color="success"
-                sx={{
-                  pointerEvents: 'none',
-                }}
-              >
-                Connected
+              <Button variant="outlined" color="error">
+                Disconnect
               </Button>
             ))}
         </Stack>
