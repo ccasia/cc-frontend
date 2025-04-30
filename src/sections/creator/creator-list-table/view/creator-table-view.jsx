@@ -81,6 +81,7 @@ function CreatorTableView() {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [ageRange, setAgeRange] = useState(defaultFilters.ageRange);
   const { user: admin } = useAuthContext();
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleAgeRangeChange = (newValue) => {
     setAgeRange(newValue);
@@ -109,6 +110,32 @@ function CreatorTableView() {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleExportToSpreadsheet = async () => {
+    try {
+      setIsExporting(true);
+      const response = await axiosInstance.get(endpoints.creators.exportCreators);
+      
+      if (response.data && response.data.url) {
+        // Open the spreadsheet in a new tab
+        const a = document.createElement('a');
+        a.href = response.data.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        enqueueSnackbar('Creators exported to spreadsheet successfully', { variant: 'success' });
+      }
+    } catch (error) {
+      console.log(`Spreadsheet url: ${process.env.REGISTERED_CREATORS_SPREADSHEET_ID}`);
+      console.error('Error exporting creators to spreadsheet: ', error);
+      enqueueSnackbar('Failed to export creators to spreadsheet', { variant: 'error' });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const table = useTable();
@@ -218,6 +245,33 @@ function CreatorTableView() {
             { name: 'Creators' },
             { name: 'List' },
           ]}
+          action={
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Iconify icon="tabler:external-link" width={16} />}
+              onClick={handleExportToSpreadsheet}
+              disabled={isExporting}
+              sx={{
+                height: 32,
+                borderRadius: 1,
+                color: '#221f20',
+                border: '1px solid #e7e7e7',
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                px: 1.5,
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  border: '1px solid #e7e7e7',
+                  backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                },
+                boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
+              }}
+            >
+              {isExporting ? 'Exporting...' : 'Google Spreadsheet'}
+            </Button>
+          }
           sx={{
             mb: { xs: 3, md: 5 },
           }}
