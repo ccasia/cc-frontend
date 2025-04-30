@@ -538,17 +538,18 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                           borderBottom: '3px solid',
                           borderRadius: 0.8,
                           bgcolor: 'white',
+                          whiteSpace: 'nowrap',
                           ...(pitch.status === 'pending' && {
-                            color: '#f19f39',
-                            borderColor: '#f19f39',
+                            color: '#FF9A02',
+                            borderColor: '#FF9A02',
                           }),
                           ...(pitch.status === 'undecided' && {
-                            color: '#f19f39',
-                            borderColor: '#f19f39',
+                            color: '#FF9A02',
+                            borderColor: '#FF9A02',
                           }),
                           ...(pitch.status === 'approved' && {
-                            color: '#2e6b55',
-                            borderColor: '#2e6b55',
+                            color: '#1ABF66',
+                            borderColor: '#1ABF66',
                           }),
                           ...(pitch.status === 'rejected' && {
                             color: '#ff4842',
@@ -556,7 +557,7 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                           }),
                         }}
                       >
-                        {pitch.status || 'PENDING'}
+                        {pitch.status === 'undecided' ? 'PENDING REVIEW' : pitch.status?.toUpperCase() || 'PENDING'}
                       </Typography>
                     </TableCell>
                     <TableCell>

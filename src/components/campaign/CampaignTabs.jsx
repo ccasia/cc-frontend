@@ -6,6 +6,7 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 // ----------------------------------------------------------------------
 
@@ -16,11 +17,48 @@ export default function CampaignTabs({ filter = 'active' }) {
   const router = useRouter();
   const location = useLocation();
   
+  const fetchCampaignData = async (campaignId) => {
+    try {
+      const response = await axios.get(`/api/admin/campaign/${campaignId}`);
+      if (response.data && response.data.name) {
+        // Update the tab with the actual campaign name
+        const updatedTabs = window.campaignTabs.map(tab => {
+          if (tab.id === campaignId) {
+            return { ...tab, name: response.data.name };
+          }
+          return tab;
+        });
+        
+        window.campaignTabs = updatedTabs;
+        
+        // Save to localStorage
+        try {
+          localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
+        } catch (error) {
+          console.error('Error saving campaign tabs to localStorage:', error);
+        }
+        
+        return response.data.name;
+      }
+    } catch (error) {
+      console.error(`Error fetching campaign data for ID ${campaignId}:`, error);
+    }
+    return null;
+  };
+  
   // Load tabs from window.campaignTabs
   useEffect(() => {
     const handleTabsUpdate = () => {
       if (window.campaignTabs) {
         setTabs([...window.campaignTabs]);
+        
+        // Check for any tabs with "Campaign Details" and try to update them
+        window.campaignTabs.forEach(tab => {
+          if (tab.name === 'Campaign Details' || !tab.name) {
+            // For tabs with default names, try to fetch actual campaign name
+            fetchCampaignData(tab.id);
+          }
+        });
       }
     };
     
@@ -54,6 +92,7 @@ export default function CampaignTabs({ filter = 'active' }) {
     const match = pathname.match(/\/campaign\/discover\/detail\/([^/]+)/);
     if (match && match[1]) {
       setActiveTabId(match[1]);
+      
     } else {
       setActiveTabId(null);
     }

@@ -45,7 +45,7 @@ const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topFiveContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 5);
+  const topThreeContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 3);
 
   // const topFiveContents = [
   //   {
@@ -76,7 +76,7 @@ const TopContentGrid = ({ topContents }) => {
       animate="show"
       initial="hidden"
     >
-      {topFiveContents.map((content, index) => (
+      {topThreeContents.map((content, index) => (
         <Grid
           item
           xs={12}
