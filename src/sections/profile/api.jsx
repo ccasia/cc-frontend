@@ -1,7 +1,10 @@
 import React from 'react';
+import { enqueueSnackbar } from 'notistack';
 
+import { LoadingButton } from '@mui/lab';
 import { Box, Card, Stack, Button, Typography } from '@mui/material';
 
+import { useBoolean } from 'src/hooks/use-boolean';
 import useGetTokenExpiry from 'src/hooks/use-get-token-expiry';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -9,7 +12,9 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 
 const API = () => {
-  const { data, isLoading } = useGetTokenExpiry();
+  const { data, isLoading, mutate } = useGetTokenExpiry();
+
+  const isDisconnecting = useBoolean();
 
   const handleActivateXero = async () => {
     try {
@@ -17,6 +22,21 @@ const API = () => {
       window.location.href = response.data.url;
     } catch (error) {
       console.error('Error connecting to Xero:', error);
+    }
+  };
+
+  const handleDisconnectXero = async () => {
+    try {
+      isDisconnecting.onTrue();
+      const res = await axiosInstance.patch(endpoints.admin.disconnectXero);
+      enqueueSnackbar(res?.data?.message);
+      mutate();
+    } catch (error) {
+      enqueueSnackbar(error?.message, {
+        variant: 'error',
+      });
+    } finally {
+      isDisconnecting.onFalse();
     }
   };
 
@@ -34,15 +54,14 @@ const API = () => {
                 Activate
               </Button>
             ) : (
-              <Button
+              <LoadingButton
                 variant="outlined"
-                color="success"
-                sx={{
-                  pointerEvents: 'none',
-                }}
+                color="error"
+                onClick={handleDisconnectXero}
+                loading={isDisconnecting.value}
               >
-                Connected
-              </Button>
+                Disconnect
+              </LoadingButton>
             ))}
         </Stack>
       </Card>

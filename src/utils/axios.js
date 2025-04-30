@@ -140,6 +140,7 @@ export const endpoints = {
   },
   admin: {
     delete: '/api/admin',
+    disconnectXero: '/api/admin/xero/disconnect',
   },
   company: {
     create: '/api/company/createCompany',
