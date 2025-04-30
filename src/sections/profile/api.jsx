@@ -51,7 +51,7 @@ const API = () => {
           {!isLoading &&
             (!data?.token ? (
               <Button variant="outlined" onClick={handleActivateXero}>
-                Activate
+                Connect to Xero
               </Button>
             ) : (
               <LoadingButton
