@@ -111,7 +111,7 @@ const MediaKitCreator = () => {
             ),
             instagram?.instagramUser?.followers_count
           ) || 0
-        }%`,
+        }`,
         averageLikes: instagram?.instagramUser?.average_like || 0,
         username: instagram?.instagramUser?.username,
       };
@@ -302,7 +302,17 @@ const MediaKitCreator = () => {
             src={user?.photoURL}
           />
 
-          <Typography sx={{ fontSize: 14, color: '#231F20', fontWeight: 400, fontFamily: 'Aileron, sans-serif' }} my={1} mt={2} mb={2}>
+          <Typography
+            sx={{
+              fontSize: 14,
+              color: '#231F20',
+              fontWeight: 400,
+              fontFamily: 'Aileron, sans-serif',
+            }}
+            my={1}
+            mt={2}
+            mb={2}
+          >
             {user?.creator?.mediaKit?.about}
           </Typography>
         </Stack>
@@ -348,7 +358,7 @@ const MediaKitCreator = () => {
                 fontSize: { xs: '2rem', md: '3rem' },
                 fontFamily: 'Aileron, sans-serif',
                 fontWeight: 300,
-                letterSpacing: '0.05em',
+                // letterSpacing: '0.05em',
                 textAlign: 'left',
                 display: 'block',
               }}
@@ -699,7 +709,7 @@ const MediaKitCreator = () => {
       {/* Bottom View */}
 
       <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1}>
-        Top Content {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`}
+        Top Content {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
       </Typography>
 
       {/* {smDown && (

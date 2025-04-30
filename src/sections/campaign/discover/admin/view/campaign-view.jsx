@@ -29,6 +29,7 @@ import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
+import CampaignTabs from 'src/components/campaign/CampaignTabs';
 
 import CreateCampaignForm from 'src/sections/campaign/create/form';
 
@@ -110,9 +111,29 @@ const CampaignView = () => {
     () => campaigns?.filter((campaign) => campaign?.status === 'COMPLETED') || [],
     [campaigns]
   );
+  const pausedCampaigns = useMemo(
+    () => campaigns?.filter((campaign) => campaign?.status === 'PAUSED') || [],
+    [campaigns]
+  );
 
   const activeCount = activeCampaigns.length;
   const completedCount = completedCampaigns.length;
+  const pausedCount = pausedCampaigns.length;
+
+  // Store campaign status information for each campaign
+  useEffect(() => {
+    if (!campaigns) return;
+    
+    const statusMap = {};
+    campaigns.forEach(campaign => {
+      statusMap[campaign.id] = {
+        status: campaign.status
+      };
+    });
+    
+    // Make this available globally
+    window.campaignTabsStatus = statusMap;
+  }, [campaigns]);
 
   const dataFiltered = useMemo(
     () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
@@ -145,13 +166,16 @@ const CampaignView = () => {
       <Typography
         variant="h2"
         sx={{
-          mb: 4,
+          mb: 2,
           fontFamily: 'fontSecondaryFamily',
           fontWeight: 'normal',
         }}
       >
         Manage Campaigns ✨
       </Typography>
+
+      {/* Campaign Tabs */}
+      <CampaignTabs filter={filter} />
 
       <Box sx={{ mb: 2.5 }}>
         <Stack
@@ -271,6 +295,53 @@ const CampaignView = () => {
             >
               Completed ({completedCount})
             </Button>
+            <Button
+              disableRipple
+              size="large"
+              onClick={() => setFilter('paused')}
+              sx={{
+                px: 1,
+                py: 0.5,
+                pb: 1,
+                ml: 2,
+                minWidth: 'fit-content',
+                color: filter === 'paused' ? theme.palette.common : '#8e8e93',
+                position: 'relative',
+                fontSize: '1.05rem',
+                fontWeight: 650,
+                transition: 'transform 0.1s ease-in-out',
+                '&:focus': {
+                  outline: 'none',
+                  bgcolor: 'transparent',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  bgcolor: 'transparent',
+                },
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '2px',
+                  width: filter === 'paused' ? '100%' : '0%',
+                  bgcolor: '#1340ff',
+                  transition: 'all 0.3s ease-in-out',
+                  transform: 'scaleX(1)',
+                  transformOrigin: 'left',
+                },
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  '&::after': {
+                    width: '100%',
+                    opacity: filter === 'paused' ? 1 : 0.5,
+                  },
+                },
+              }}
+            >
+              Paused ({pausedCount})
+            </Button>
           </Stack>
 
           <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
@@ -336,30 +407,47 @@ const CampaignView = () => {
           vertical: 'top',
           horizontal: 'right',
         }}
-        PaperProps={{
-          sx: {
-            mt: { xs: -8, sm: 0 },
-            mb: { xs: 1, sm: 1 },
-            width: 200,
-            bgcolor: 'white',
-            border: '1px solid #e7e7e7',
-            borderBottom: '2px solid #e7e7e7',
-            borderRadius: 1,
-            '& .MuiMenuItem-root': {
-              px: 2,
-              py: 1.5,
+        slotProps={{
+          paper: {
+            sx: {
+              backgroundColor: 'white',
+              backgroundImage: 'none',
+              boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e7e7e7',
+              borderBottom: '2px solid #e7e7e7',
               borderRadius: 1,
-              color: '#000000',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
+              mt: { xs: -8, sm: 0 },
+              mb: { xs: 1, sm: 1 },
+              width: 200,
+              overflow: 'visible',
             },
           },
         }}
+        MenuListProps={{
+          sx: {
+            backgroundColor: 'white',
+            p: 0.5,
+          },
+        }}
       >
-        <MenuItem onClick={handleNewCampaign} disabled={isDisabled}>
+        <MenuItem 
+          onClick={handleNewCampaign} 
+          disabled={isDisabled}
+          sx={{
+            borderRadius: 1,
+            backgroundColor: 'white',
+            color: isDisabled ? '#9e9e9e' : 'black',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            p: 1.5,
+            '&:hover': {
+              backgroundColor: isDisabled ? 'white' : '#f5f5f5',
+            },
+            '&.Mui-disabled': {
+              opacity: 0.7,
+            }
+          }}
+        >
           <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2 }} />
           New Campaign
         </MenuItem>
@@ -435,7 +523,7 @@ const CampaignView = () => {
           </Box>
         ) : (
           <EmptyContent
-            title={`No ${filter === 'active' ? 'active' : 'completed'} campaigns available`}
+            title={`No ${filter} campaigns available`}
           />
         ))}
       {/* <CampaignFilter

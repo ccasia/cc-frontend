@@ -1,9 +1,12 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
-import { Box, Card, Chip, Avatar, Typography } from '@mui/material';
+import { Box, Card, Chip, Avatar, Typography, IconButton, Menu, MenuItem } from '@mui/material';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import Iconify from 'src/components/iconify';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -16,11 +19,82 @@ import Image from 'src/components/image';
 
 // ----------------------------------------------------------------------
 
+// store open campaign tabs in localStorage
+if (typeof window !== 'undefined') {
+  if (!window.campaignTabs) {
+    // load from localStorage
+    try {
+      const storedTabs = localStorage.getItem('campaignTabs');
+      window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
+    } catch (error) {
+      console.error('Error loading campaign tabs from localStorage:', error);
+      window.campaignTabs = [];
+    }
+  }
+}
+
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
   const theme = useTheme();
   const { user } = useAuthContext();
-
   const router = useRouter();
+  
+  // Menu state
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+  
+  // Handle menu open
+  const handleClick = (event) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
+  
+  // Handle menu close
+  const handleClose = (event) => {
+    if (event) event.stopPropagation();
+    setAnchorEl(null);
+  };
+  
+  // Handle open in new tab
+  const handleOpenInNewTab = (event) => {
+    event.stopPropagation();
+    
+    // Check if this campaign is already in campaignTabs
+    const tabExists = window.campaignTabs.some(tab => tab.id === campaign.id);
+    
+    if (tabExists) {
+      // If tab already exists, navigate to it
+      router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
+    } else {
+      // If tab doesn't exist yet, it will be added to campaignTabs without navigating
+      window.campaignTabs.push({
+        id: campaign.id,
+        name: campaign.name || 'Campaign Details'
+      });
+      
+      // Update status tracking for tabs
+      if (typeof window !== 'undefined') {
+        if (!window.campaignTabsStatus) {
+          window.campaignTabsStatus = {};
+        }
+        
+        window.campaignTabsStatus[campaign.id] = {
+          status: campaign.status
+        };
+      }
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
+      } catch (error) {
+        console.error('Error saving campaign tabs to localStorage:', error);
+      }
+    }
+    
+    // Navigate to the campaign detail page - commented out for now in case CC wants this feature
+    // router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
+    
+    handleClose();
+  };
 
   const renderImages = (
     <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
@@ -141,27 +215,94 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
           </Typography>
         </Stack>
 
-        <Stack direction="row" alignItems="center" spacing={1.2}>
-          <img
-            src="/assets/icons/overview/SmallCalendar.svg"
-            alt="Calendar"
-            style={{
-              width: 20,
-              height: 20,
-            }}
-          />
-          <Typography
-            variant="caption"
-            sx={{
-              color: '#8e8e93',
-              fontSize: '0.875rem',
-              fontWeight: 500,
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={1.2}>
+            <img
+              src="/assets/icons/overview/SmallCalendar.svg"
+              alt="Calendar"
+              style={{
+                width: 20,
+                height: 20,
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#8e8e93',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+              }}
+            >
+              {`${dayjs(campaign?.campaignBrief?.startDate).format('D MMM YYYY')} - ${dayjs(
+                campaign?.campaignBrief?.endDate
+              ).format('D MMM YYYY')}`}
+            </Typography>
+          </Stack>
+          
+          <IconButton 
+            size="small" 
+            onClick={handleClick}
+            sx={{ 
+              ml: 1,
+              p: 0.5,
+              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
             }}
           >
-            {`${dayjs(campaign?.campaignBrief?.startDate).format('D MMM YYYY')} - ${dayjs(
-              campaign?.campaignBrief?.endDate
-            ).format('D MMM YYYY')}`}
-          </Typography>
+            <MoreHorizIcon fontSize="small" />
+          </IconButton>
+          
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleClose}
+            onClick={handleClose}
+            anchorOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            slotProps={{
+              paper: {
+                sx: {
+                  backgroundColor: 'white',
+                  backgroundImage: 'none',
+                  boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.1)',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '2px solid #e7e7e7',
+                  borderRadius: 1,
+                  mt: -1,
+                  width: 200,
+                  overflow: 'visible',
+                },
+              },
+            }}
+            MenuListProps={{
+              sx: {
+                backgroundColor: 'white',
+                p: 0.5,
+              },
+            }}
+          >
+            <MenuItem 
+              onClick={handleOpenInNewTab}
+              sx={{
+                borderRadius: 1,
+                backgroundColor: 'white',
+                color: 'black',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                p: 1.5,
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                },
+              }}
+            >
+              Open in New Tab
+            </MenuItem>
+          </Menu>
         </Stack>
       </Stack>
     </Box>
