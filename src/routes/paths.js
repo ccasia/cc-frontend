@@ -92,6 +92,7 @@ export const paths = {
       invoiceCreator: `${ROOTS.DASHBOARD}/invoiceCreator`,
       invoiceDetail: (invoiceId) => `${ROOTS.DASHBOARD}/invoiceCreator/${invoiceId}`,
       inbox: `${ROOTS.DASHBOARD}/inbox`,
+      profile: (id) => `/dashboard/creator/profile/${id}`,
     },
     landing: {
       creator: `${ROOTS.DASHBOARD}/landing/creator`,
