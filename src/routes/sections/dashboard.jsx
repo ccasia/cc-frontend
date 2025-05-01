@@ -98,6 +98,9 @@ const MobileModalView = lazy(
   () => import('src/sections/campaign/discover/creator/mobile-modal-view')
 );
 
+// Creator Profile
+const CreatorProfile = lazy(() => import('src/pages/dashboard/creator/profile'));
+
 // ----------------------------------------------------------------------
 
 export const dashboardRoutes = [
@@ -171,6 +174,14 @@ export const dashboardRoutes = [
                 ),
               },
             ],
+          },
+          {
+            path: 'profile/:id',
+            element: (
+              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+                <CreatorProfile />
+              </RoleBasedGuard>
+            ),
           },
         ],
       },
