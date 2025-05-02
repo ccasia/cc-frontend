@@ -246,18 +246,21 @@ export default function InvoiceListView({ campId, invoices }) {
     <>
       <Container 
         maxWidth={settings.themeStretch ? false : 'xl'}
-          sx={{
+        sx={{
           px: { xs: 2, md: 3, lg: 4 },
-          maxWidth: '100%'
+          maxWidth: '100%',
         }}
       >
-        {/* Filter buttons and search bar in one row */}
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           alignItems={{ xs: 'stretch', md: 'center' }}
           justifyContent="space-between"
           spacing={2}
-          sx={{ mb: 2 }}
+          sx={{ 
+            mb: 2,
+            width: '100%',
+            ml: { md: -4 },
+          }}
         >
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -266,7 +269,6 @@ export default function InvoiceListView({ campId, invoices }) {
               width: { xs: '100%', md: 'auto' },
             }}
           >
-            {/* Filter buttons container */}
             <Box
               sx={{
                 display: 'grid',
@@ -282,6 +284,7 @@ export default function InvoiceListView({ campId, invoices }) {
               {TABS.map((tab) => (
                 <Button
                   key={tab.value}
+                  fullWidth={!smUp}
                   onClick={() => handleFilters('status', tab.value)}
                   sx={{
                     px: 1.5,
@@ -293,7 +296,6 @@ export default function InvoiceListView({ campId, invoices }) {
                     fontSize: '0.85rem',
                     fontWeight: 600,
                     textTransform: 'none',
-                    width: '100%',
                     ...(filters.status === tab.value
                       ? {
                           color: '#203ff5',
@@ -306,9 +308,6 @@ export default function InvoiceListView({ campId, invoices }) {
                     '&:hover': {
                       bgcolor: filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
                     },
-                    '@media (min-width: 600px)': {
-                      width: 'auto',
-                    }
                   }}
                 >
                   {`${tab.label} (${tab.count})`}
@@ -316,6 +315,7 @@ export default function InvoiceListView({ campId, invoices }) {
               ))}
 
               <Button
+                fullWidth={!smUp}
                 onClick={handleToggleSort}
                 endIcon={
                   <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -357,15 +357,10 @@ export default function InvoiceListView({ campId, invoices }) {
                   textTransform: 'none',
                   whiteSpace: 'nowrap',
                   boxShadow: 'none',
-                  width: '100%',
-                  gridColumn: { xs: '1 / -1', sm: 'auto' },
                   '&:hover': {
                     backgroundColor: 'transparent',
                     color: '#221f20',
                   },
-                  '@media (min-width: 600px)': {
-                    width: 'auto',
-                  }
                 }}
               >
                 Alphabetical
@@ -373,35 +368,43 @@ export default function InvoiceListView({ campId, invoices }) {
             </Box>
           </Stack>
 
-          <TextField
-            placeholder="Search customer or invoice number"
-            value={filters.name}
-            onChange={(e) => handleFilters('name', e.target.value)}
-            fullWidth={!smUp}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
-                </InputAdornment>
-              ),
-              sx: {
-                height: '42px',
-                '& input': {
-                  py: 3,
-                  height: '42px',
-                },
-              },
-            }}
+          <Box
             sx={{
-              width: { xs: '100%', md: 260 },
-              '& .MuiOutlinedInput-root': {
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-              },
+              width: { xs: '100%', md: 'auto' },
+              ml: { md: 'auto' },
+              mr: { md: -8 },
             }}
-          />
+          >
+            <TextField
+              placeholder="Search customer or invoice number"
+              value={filters.name}
+              onChange={(e) => handleFilters('name', e.target.value)}
+              fullWidth={!smUp}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                  </InputAdornment>
+                ),
+                sx: {
+                  height: '42px',
+                  '& input': {
+                    py: 3,
+                    height: '42px',
+                  },
+                },
+              }}
+              sx={{
+                width: { xs: '100%', md: '300px' },
+                '& .MuiOutlinedInput-root': {
+                  height: '42px',
+                  border: '1px solid #e7e7e7',
+                  borderBottom: '3px solid #e7e7e7',
+                  borderRadius: 1,
+                },
+              }}
+            />
+          </Box>
         </Stack>
 
           {canReset && (
@@ -414,53 +417,63 @@ export default function InvoiceListView({ campId, invoices }) {
           />
         )}
 
-        <Box sx={{ mb: 3, ml: { xs: 0, md: -4 }, mt: 1 }}>
+        <Box sx={{ 
+          mb: 3, 
+          ml: { xs: 0, md: -4 }, 
+          mr: { md: -6 }, 
+          mt: 1,
+        }}>
           <Scrollbar>
             <TableContainer
               sx={{
-                width: '100%',
+                width: 'calc(100% + -16px)',
                 minWidth: 1000,
                 position: 'relative',
                 bgcolor: 'transparent',
                 borderBottom: '1px solid',
                 borderColor: 'divider',
                 pb: 2,
+                overflow: 'visible',
               }}
             >
-            <TableSelectedAction
-              dense={table.dense}
-              numSelected={table.selected.length}
-              rowCount={dataFiltered?.length}
-              onSelectAllRows={(checked) => {
-                table.onSelectAllRows(
-                  checked,
-                  dataFiltered?.map((row) => row.id)
-                );
-              }}
-              action={
-                <Stack direction="row">
-                  <Tooltip title="Download">
-                    <IconButton color="primary">
-                      <Iconify icon="eva:download-outline" />
-                    </IconButton>
-                  </Tooltip>
+              <Table 
+                sx={{ 
+                  width: '100%',
+                }}
+              >
+                <TableSelectedAction
+                  dense={table.dense}
+                  numSelected={table.selected.length}
+                  rowCount={dataFiltered?.length}
+                  onSelectAllRows={(checked) => {
+                    table.onSelectAllRows(
+                      checked,
+                      dataFiltered?.map((row) => row.id)
+                    );
+                  }}
+                  action={
+                    <Stack direction="row">
+                      <Tooltip title="Download">
+                        <IconButton color="primary">
+                          <Iconify icon="eva:download-outline" />
+                        </IconButton>
+                      </Tooltip>
 
-                  <Tooltip title="Print">
-                    <IconButton color="primary">
-                      <Iconify icon="solar:printer-minimalistic-bold" />
-                    </IconButton>
-                  </Tooltip>
+                      <Tooltip title="Print">
+                        <IconButton color="primary">
+                          <Iconify icon="solar:printer-minimalistic-bold" />
+                        </IconButton>
+                      </Tooltip>
 
-                  <Tooltip title="Delete">
-                    <IconButton color="primary" onClick={confirm.onTrue} disabled={isDisabled}>
-                      <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              }
-            />
+                      <Tooltip title="Delete">
+                        <IconButton color="primary" onClick={confirm.onTrue} disabled={isDisabled}>
+                          <Iconify icon="solar:trash-bin-trash-bold" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  }
+                />
 
-              <Table sx={{ width: '100%' }}>
                 <TableHead>
                   <TableRow>
                     <TableCell
@@ -767,7 +780,7 @@ export default function InvoiceListView({ campId, invoices }) {
                 </TableBody>
               </Table>
             </TableContainer>
-            </Scrollbar>
+          </Scrollbar>
         </Box>
 
           <TablePaginationCustom
