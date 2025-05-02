@@ -254,119 +254,130 @@ export default function InvoiceListView({ campId, invoices }) {
         {/* Filter buttons and search bar in one row */}
         <Stack
           direction={{ xs: 'column', md: 'row' }}
-          alignItems={{ xs: 'flex-start', md: 'center' }}
+          alignItems={{ xs: 'stretch', md: 'center' }}
           justifyContent="space-between"
-          spacing={3}
+          spacing={2}
           sx={{ mb: 2 }}
         >
-          {/* Left side - Filter buttons with alphabetical button */}
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
-            spacing={1.5}
-            alignItems={{ xs: 'flex-start', sm: 'center' }}
-            justifyContent="flex-start"
-            flexWrap="wrap"
-            sx={{ ml: { xs: 0, md: -4 } }}
+            spacing={1}
+            sx={{ 
+              width: { xs: '100%', md: 'auto' },
+            }}
           >
-            {TABS.map((tab) => (
-              <Button
-                key={tab.value}
-                onClick={() => handleFilters('status', tab.value)}
-                sx={{
-                  px: 1.5,
-                  py: 2.5,
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  ...(filters.status === tab.value
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor: filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                {`${tab.label} (${tab.count})`}
-              </Button>
-            ))}
-            
-            {/* Alphabetical Sort Button */}
-            <Button
-              onClick={handleToggleSort}
-              endIcon={
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  {sortDirection === 'asc' ? (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                        A
-                      </Typography>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                        Z
-                      </Typography>
-                    </Stack>
-                  ) : (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                        Z
-                      </Typography>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                        A
-                      </Typography>
-                    </Stack>
-                  )}
-                  <Iconify 
-                    icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
-                    width={12}
-                  />
-                </Stack>
-              }
+            {/* Filter buttons container */}
+            <Box
               sx={{
-                px: 1.5,
-                py: 0.75,
-                height: '42px',
-                color: '#637381',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: 1,
-                textTransform: 'none',
-                whiteSpace: 'nowrap',
-                boxShadow: 'none',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  color: '#221f20',
-                },
+                display: 'grid',
+                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'auto' },
+                gap: 1,
+                width: '100%',
+                '@media (min-width: 600px)': {
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                }
               }}
             >
-              Alphabetical
-            </Button>
+              {TABS.map((tab) => (
+                <Button
+                  key={tab.value}
+                  onClick={() => handleFilters('status', tab.value)}
+                  sx={{
+                    px: 1.5,
+                    py: 2.5,
+                    height: '42px',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    borderRadius: 1,
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    width: '100%',
+                    ...(filters.status === tab.value
+                      ? {
+                          color: '#203ff5',
+                          bgcolor: 'rgba(32, 63, 245, 0.04)',
+                        }
+                      : {
+                          color: '#637381',
+                          bgcolor: 'transparent',
+                        }),
+                    '&:hover': {
+                      bgcolor: filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                    },
+                    '@media (min-width: 600px)': {
+                      width: 'auto',
+                    }
+                  }}
+                >
+                  {`${tab.label} (${tab.count})`}
+                </Button>
+              ))}
+
+              <Button
+                onClick={handleToggleSort}
+                endIcon={
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    {sortDirection === 'asc' ? (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
+                          A
+                        </Typography>
+                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
+                          Z
+                        </Typography>
+                      </Stack>
+                    ) : (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
+                          Z
+                        </Typography>
+                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
+                          A
+                        </Typography>
+                      </Stack>
+                    )}
+                    <Iconify 
+                      icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
+                      width={12}
+                    />
+                  </Stack>
+                }
+                sx={{
+                  px: 1.5,
+                  py: 0.75,
+                  height: '42px',
+                  color: '#637381',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: 1,
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  boxShadow: 'none',
+                  width: '100%',
+                  gridColumn: { xs: '1 / -1', sm: 'auto' },
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    color: '#221f20',
+                  },
+                  '@media (min-width: 600px)': {
+                    width: 'auto',
+                  }
+                }}
+              >
+                Alphabetical
+              </Button>
+            </Box>
           </Stack>
 
-          {/* Right side - Search bar */}
           <TextField
-            sx={{
-              width: { xs: '100%', md: '240px' },
-              '& .MuiOutlinedInput-root': {
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-              },
-            }}
+            placeholder="Search customer or invoice number"
             value={filters.name}
             onChange={(e) => handleFilters('name', e.target.value)}
-            placeholder="Search customer or invoice number"
+            fullWidth={!smUp}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -379,6 +390,15 @@ export default function InvoiceListView({ campId, invoices }) {
                   py: 3,
                   height: '42px',
                 },
+              },
+            }}
+            sx={{
+              width: { xs: '100%', md: 260 },
+              '& .MuiOutlinedInput-root': {
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
               },
             }}
           />

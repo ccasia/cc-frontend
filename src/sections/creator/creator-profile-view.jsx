@@ -53,10 +53,13 @@ const CreatorProfileView = ({ id }) => {
     () => {
       // Calculate total from all campaigns
       const totalFromCampaigns = campaigns.reduce((total, campaign) => {
-        // Make sure shortlisted is an array before using find
-        const shortlistedArray = Array.isArray(campaign.shortlisted) ? campaign.shortlisted : [];
-        const creatorInCampaign = shortlistedArray.find(x => x.userId === id);
-        return total + (creatorInCampaign?.ugcVideos || 0);
+        // Check if the shortlisted object belongs to this user
+        const isUserShortlisted = campaign.shortlisted?.userId === id;
+        
+        // Get ugcVideos from the shortlisted object if it belongs to this user
+        const creditsForThisCampaign = isUserShortlisted ? (campaign.shortlisted?.ugcVideos || 0) : 0;
+        
+        return total + creditsForThisCampaign;
       }, 0);
       
       return totalFromCampaigns;
