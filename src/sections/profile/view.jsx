@@ -472,7 +472,7 @@ const Profile = () => {
           </Button>
         )}
       </Stack>
-
+      
       {/* Indicator for more tabs */}
       <Box
         sx={{
@@ -480,8 +480,7 @@ const Profile = () => {
           right: { xs: '15px', sm: '20px', md: 0 },
           top: 0,
           height: '100%',
-          background:
-            'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,1) 100%)',
+          background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,1) 100%)',
           width: { xs: '80px', sm: '100px' },
           pointerEvents: 'none',
           display: { xs: 'block', md: 'none' },
@@ -511,16 +510,14 @@ const Profile = () => {
   );
 
   const CreatorTabs = (
-    <Box
-      sx={{
-        position: 'relative',
-        width: '100%',
-        mb: 3,
-        overflow: 'hidden',
-      }}
-    >
+    <Box sx={{ 
+      position: 'relative', 
+      width: '100%', 
+      mb: 3,
+      overflow: 'hidden'
+    }}>
       {/* Separate divider positioned below the tabs */}
-      <Box
+      <Box 
         sx={{
           position: 'absolute',
           bottom: 0,
@@ -531,7 +528,7 @@ const Profile = () => {
           zIndex: 5,
         }}
       />
-
+      
       <Stack
         direction="row"
         spacing={0.5}
@@ -543,24 +540,24 @@ const Profile = () => {
           '&::-webkit-scrollbar': { display: 'none' },
           msOverflowStyle: 'none',
           paddingRight: { xs: '80px', sm: '100px', md: 0 },
-          paddingBottom: '1px',
+          paddingBottom: '1px', 
         }}
+
         onScroll={(e) => {
           if (window.innerWidth >= 900) return;
-
+          
           const element = e.target;
           const leftArrow = document.getElementById('creator-tabs-left-arrow');
           const rightArrow = document.getElementById('creator-tabs-right-arrow');
-
+          
           // Show left arrow when scrolled right
           if (leftArrow) {
             leftArrow.style.display = element.scrollLeft > 20 ? 'flex' : 'none';
           }
-
+          
           // Show right arrow when not scrolled to the end
           if (rightArrow) {
-            const isAtEnd =
-              Math.ceil(element.scrollLeft + element.clientWidth) >= element.scrollWidth - 10;
+            const isAtEnd = Math.ceil(element.scrollLeft + element.clientWidth) >= element.scrollWidth - 10;
             rightArrow.style.display = isAtEnd ? 'none' : 'flex';
           }
         }}
@@ -801,10 +798,10 @@ const Profile = () => {
             },
           }}
         >
-          {user?.paymentForm?.status === 'rejected' && `⚠️`} Payment
+          Payment
         </Button>
       </Stack>
-
+      
       {/* Left arrow indicator */}
       <Box
         id="creator-tabs-left-arrow"
@@ -813,15 +810,14 @@ const Profile = () => {
           left: 0,
           top: 0,
           height: '100%',
-          background:
-            'linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 60%, rgba(255,255,255,0.3) 100%)',
+          background: 'linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 60%, rgba(255,255,255,0.3) 100%)',
           width: { xs: '50px', sm: '60px' },
           pointerEvents: 'none',
           display: 'none',
           zIndex: 1,
-          '@media (min-width: 900px)': {
-            display: 'none !important',
-          },
+          '@media (min-width: 900px)': { 
+            display: 'none !important'
+          }
         }}
       >
         <Box
@@ -843,7 +839,7 @@ const Profile = () => {
           <Iconify icon="eva:arrow-ios-back-fill" width={16} color="#1340ff" />
         </Box>
       </Box>
-
+      
       {/* Right arrow indicator */}
       <Box
         id="creator-tabs-right-arrow"
@@ -852,15 +848,14 @@ const Profile = () => {
           right: { xs: '15px', sm: '20px', md: 0 },
           top: 0,
           height: '100%',
-          background:
-            'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,1) 100%)',
+          background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,1) 100%)',
           width: { xs: '80px', sm: '100px' },
           pointerEvents: 'none',
           display: { xs: 'flex', md: 'none' },
           zIndex: 1,
-          '@media (min-width: 900px)': {
-            display: 'none !important',
-          },
+          '@media (min-width: 900px)': { 
+            display: 'none !important'
+          }
         }}
       >
         <Box

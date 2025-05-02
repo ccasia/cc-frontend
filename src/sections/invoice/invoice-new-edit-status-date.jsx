@@ -32,16 +32,10 @@ export default function InvoiceNewEditStatusDate() {
         label="Status"
         InputLabelProps={{ shrink: true }}
         PaperPropsSx={{ textTransform: 'capitalize' }}
-        // disabled={values.status === 'approved'}
+        disabled={values.status === 'approved'}
       >
-        {['approved', 'paid', 'draft', 'rejected'].map((option) => (
-          <MenuItem
-            key={option}
-            value={option}
-            sx={{
-              color: (theme) => option === 'rejected' && theme.palette.error.main,
-            }}
-          >
+        {['approved', 'paid', 'draft'].map((option) => (
+          <MenuItem key={option} value={option}>
             {option}
           </MenuItem>
         ))}

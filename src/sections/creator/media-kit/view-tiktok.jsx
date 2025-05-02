@@ -78,7 +78,7 @@ const TopContentGrid = ({ topContents }) => {
             show: { opacity: 1, y: 0 },
           }}
         >
-          <Box height={600} overflow="hidden">
+          <Box height={600} borderRadius={2} overflow="hidden">
             <iframe
               src={content?.embed_link}
               title="tiktok"

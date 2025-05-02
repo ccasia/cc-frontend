@@ -160,12 +160,6 @@ const InvoiceLists = ({ invoices }) => {
             iconPosition="end"
             icon={<Label color="success">{filter('paid')}</Label>}
           />
-          <Tab
-            value="rejected"
-            label="Rejected"
-            iconPosition="end"
-            icon={<Label color="error">{filter('rejected')}</Label>}
-          />
         </Tabs>
 
         <InvoiceTableToolbar filters={filters} onFilters={handleFilters} campaigns={campaigns} />
@@ -245,7 +239,7 @@ const InvoiceLists = ({ invoices }) => {
         <TableNoData notFound={notFound} />
       </Card>
 
-      <Dialog open={editDialog.value} onClose={closeEditInvoice} fullWidth maxWidth="lg">
+      <Dialog open={editDialog.value} onClose={closeEditInvoice} fullWidth maxWidth="md">
         <DialogContent sx={{ p: 2 }}>
           <InvoiceNewEditForm id={selectedId} creators={selectedData} />
         </DialogContent>

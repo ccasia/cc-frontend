@@ -5,7 +5,6 @@ import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
 import { pink, deepOrange } from '@mui/material/colors';
@@ -23,8 +22,6 @@ import {
   DialogTitle,
   DialogActions,
   DialogContent,
-  Menu,
-  MenuItem,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -45,7 +42,6 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
-import CampaignTabs from 'src/components/campaign/CampaignTabs';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
@@ -56,28 +52,12 @@ import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
-import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
-import { CampaignLog } from '../../../manage/list/CampaignLog';
-
-// Ensure campaignTabs exists and is loaded from localStorage
-if (typeof window !== 'undefined') {
-  if (!window.campaignTabs) {
-    try {
-      const storedTabs = localStorage.getItem('campaignTabs');
-      window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
-    } catch (error) {
-      console.error('Error loading campaign tabs from localStorage:', error);
-      window.campaignTabs = [];
-    }
-  }
-}
 
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
-  const location = useLocation();
   // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -97,48 +77,10 @@ const CampaignDetailView = ({ id }) => {
   const lgUp = useResponsive('up', 'lg');
   const templateModal = useBoolean();
   const linking = useBoolean();
-  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
-  const menuOpen = Boolean(menuAnchorEl);
-  const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
 
   const open = Boolean(anchorEl);
 
   console.log('campaignid', campaign);
-
-  // Add this campaign to tabs and save to localStorage
-  useEffect(() => {
-    if (id && window.campaignTabs) {
-      if (!window.campaignTabs.some(tab => tab.id === id)) {
-        // Wait for campaign data to get the name if available
-        const tabName = campaign ? campaign.name || 'Campaign Details' : 'Campaign Details';
-        
-        window.campaignTabs.push({
-          id,
-          name: tabName
-        });
-        
-        // Add status information to the global campaignTabsStatus
-        if (campaign && campaign.status) {
-          // Initialize campaignTabsStatus if it doesn't exist
-          if (!window.campaignTabsStatus) {
-            window.campaignTabsStatus = {};
-          }
-          
-          // Store the campaign status
-          window.campaignTabsStatus[id] = {
-            status: campaign.status
-          };
-        }
-        
-        // Save to localStorage
-        try {
-          localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
-        } catch (error) {
-          console.error('Error saving campaign tabs to localStorage:', error);
-        }
-      }
-    }
-  }, [id, campaign]);
 
   useEffect(() => {
     if (!campaignLoading && campaign) {
@@ -255,10 +197,6 @@ const CampaignDetailView = ({ id }) => {
             {
               label: `Agreements (${campaign?.creatorAgreement?.length || 0})`,
               value: 'agreement',
-            },
-            {
-              label: `Creator Deliverables`,
-              value: 'deliverables',
             },
             {
               label: `Invoices (${campaignInvoices?.length || 0})`,
@@ -400,7 +338,6 @@ const CampaignDetailView = ({ id }) => {
         campaign={campaign}
       />
     ),
-    deliverables: <CampaignCreatorDeliverables campaign={campaign} />,
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
   };
 
@@ -546,16 +483,6 @@ const CampaignDetailView = ({ id }) => {
     [user]
   );
 
-  const handleMenuOpen = (event) => {
-    setMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-  };
-
-  const onCloseCampaignLog = () => setCampaignLogIsOpen(false);
-
   return (
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
@@ -577,16 +504,12 @@ const CampaignDetailView = ({ id }) => {
           Back
         </Button>
 
-        {/* Campaign Tabs */}
-        <CampaignTabs filter={campaign?.status?.toLowerCase()} />
-
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           alignItems="center"
           justifyContent="space-between"
           spacing={2}
           width="100%"
-          sx={{ mt: -1 }}
         >
           <Stack direction="row" alignItems="center" spacing={2}>
             {campaign?.campaignBrief?.images?.[0] && (
@@ -654,7 +577,7 @@ const CampaignDetailView = ({ id }) => {
 
             <Box
               sx={{
-                height: '42px',
+                height: '76px',
                 width: '1px',
                 backgroundColor: '#e7e7e7',
                 mx: 2,
@@ -662,7 +585,7 @@ const CampaignDetailView = ({ id }) => {
               }}
             />
 
-            <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+            <Stack direction="column" spacing={1} sx={{ width: { xs: '100%', sm: '180px' } }}>
               <Button
                 variant="outlined"
                 size="small"
@@ -671,8 +594,8 @@ const CampaignDetailView = ({ id }) => {
                     src="/assets/icons/overview/editButton.svg"
                     alt="edit"
                     style={{
-                      width: 20,
-                      height: 20,
+                      width: 16,
+                      height: 16,
                       opacity: isDisabled ? 0.3 : 1,
                     }}
                   />
@@ -680,115 +603,120 @@ const CampaignDetailView = ({ id }) => {
                 onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
                 disabled={isDisabled}
                 sx={{
-                  height: 42,
+                  height: 32,
                   borderRadius: 1,
                   color: '#221f20',
                   border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid #e7e7e7',
+                  textTransform: 'none',
                   fontWeight: 600,
-                  fontSize: '0.95rem',
-                  px: 2,
+                  fontSize: '0.85rem',
+                  px: 1.5,
+                  width: '100%',
                   whiteSpace: 'nowrap',
                   '&:hover': {
+                    border: '1px solid #e7e7e7',
                     backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                  }, 
+                  },
+                  boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
                 }}
               >
                 Edit Details
               </Button>
 
-              <Box
-                onClick={handleMenuOpen}
-                component="button"
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: 42,
-                  width: 42,
-                  borderRadius: 1,
-                  color: '#221f20',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid #e7e7e7',
-                  padding: 0,
-                  backgroundColor: 'transparent',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                    border: '1px solid #231F20',
-                    borderBottom: '4px solid #231F20',
-                  },
-                }}
-              >
-                <Iconify icon="eva:more-horizontal-fill" width={24} />
-              </Box>
-
-              <Menu
-                anchorEl={menuAnchorEl}
-                open={menuOpen}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  sx: { 
-                    minWidth: 200,
-                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.1)'
-                  },
-                }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-              >
-                {!isCampaignHasSpreadSheet ? (
-                  <MenuItem
-                    onClick={() => {
-                      generateSpreadSheet();
-                      handleMenuClose();
-                    }}
-                    disabled={isDisabled || loading.value}
-                    sx={{ py: 1 }}
-                  >
-                    <Iconify icon="lucide:file-spreadsheet" width={16} sx={{ mr: 1.5 }} />
-                    Generate Spreadsheet
-                  </MenuItem>
-                ) : (
-                  <MenuItem
-                    onClick={() => {
-                      const a = document.createElement('a');
-                      a.href = campaign?.spreadSheetURL;
-                      a.target = '_blank';
-                      a.click();
-                      handleMenuClose();
-                    }}
-                    disabled={!campaign?.spreadSheetURL}
-                    sx={{ py: 1 }}
-                  >
-                    <Iconify icon="tabler:external-link" width={16} sx={{ mr: 1.5 }} />
-                    Google Spreadsheet
-                  </MenuItem>
-                )}
-                <MenuItem
-                  onClick={() => {
-                    generatePublicUrl();
-                    handleMenuClose();
+              {!isCampaignHasSpreadSheet ? (
+                <LoadingButton
+                  startIcon={<Iconify icon="lucide:file-spreadsheet" width={16} />}
+                  variant="outlined"
+                  size="small"
+                  disabled={isDisabled}
+                  sx={{
+                    height: 32,
+                    borderRadius: 1,
+                    color: '#221f20',
+                    border: '1px solid #e7e7e7',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    px: 1.5,
+                    width: '100%',
+                    whiteSpace: 'nowrap',
+                    '&:hover': {
+                      border: '1px solid #e7e7e7',
+                      backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                    },
+                    boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
                   }}
-                  sx={{ py: 1 }}
+                  onClick={generateSpreadSheet}
+                  loading={loading.value}
                 >
+                  Generate Spreadsheet
+                </LoadingButton>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Iconify icon="tabler:external-link" width={16} />}
+                  onClick={() => {
+                    const a = document.createElement('a');
+                    a.href = campaign?.spreadSheetURL;
+                    a.target = '_blank';
+                    a.click();
+                    document.body.removeChild(a);
+                  }}
+                  sx={{
+                    height: 32,
+                    borderRadius: 1,
+                    color: '#221f20',
+                    border: '1px solid #e7e7e7',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    px: 1.5,
+                    width: '100%',
+                    whiteSpace: 'nowrap',
+                    '&:hover': {
+                      border: '1px solid #e7e7e7',
+                      backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                    },
+                    boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
+                  }}
+                  disabled={!campaign?.spreadSheetURL}
+                >
+                  Google Spreadsheet
+                </Button>
+              )}
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={
                   <img
                     src="/assets/icons/overview/generateIcon.svg"
                     alt="generate icon"
-                    style={{ width: 16, height: 16, marginRight: 12 }}
+                    style={{ width: 16, height: 16 }}
                   />
-                  Generate URL
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    setCampaignLogIsOpen(true);
-                    handleMenuClose();
-                  }}
-                  sx={{ py: 1 }}
-                >
-                  <Iconify icon="material-symbols:note-rounded" width={16} sx={{ mr: 1.5 }} />
-                  View Log
-                </MenuItem>
-              </Menu>
+                }
+                onClick={generatePublicUrl}
+                sx={{
+                  height: 32,
+                  borderRadius: 1,
+                  color: '#221f20',
+                  border: '1px solid #e7e7e7',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  px: 1.5,
+                  width: '100%',
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    border: '1px solid #e7e7e7',
+                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                  },
+                  boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
+                }}
+                // disabled={loading}
+              >
+                Generate URL
+              </Button>
             </Stack>
           </Stack>
         </Stack>
@@ -815,8 +743,6 @@ const CampaignDetailView = ({ id }) => {
         publicUrl={publicUrl}
         password={password}
       />
-
-      <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
 
       <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>
         <DialogTitle>

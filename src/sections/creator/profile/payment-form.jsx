@@ -10,10 +10,8 @@ import { Box, Stack, TextField, Typography, createFilterOptions } from '@mui/mat
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
+import { banks } from 'src/contants/bank';
 import { newBanks } from 'src/contants/banksv2';
-import { useAuthContext } from 'src/auth/hooks';
 import { updatePaymentForm } from 'src/api/paymentForm';
 
 import FormProvider from 'src/components/hook-form/form-provider';
@@ -35,7 +33,6 @@ const filter = createFilterOptions();
 const PaymentFormProfile = ({ user }) => {
   const paymentForm = user?.paymentForm;
   const mdDown = useResponsive('down', 'lg');
-  const { dispatch } = useAuthContext();
 
   const methods = useForm({
     resolver: yupResolver(schema),
@@ -62,15 +59,8 @@ const PaymentFormProfile = ({ user }) => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const response = await updatePaymentForm(data);
-      const res = await axiosInstance.get(endpoints.auth.me);
-      dispatch({
-        type: 'INITIAL',
-        payload: {
-          user: res.data.user,
-        },
-      });
-      enqueueSnackbar(response?.data?.message);
+      const res = await updatePaymentForm(data);
+      enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar('Error submitting payment form', {
         variant: 'error',
@@ -159,9 +149,6 @@ const PaymentFormProfile = ({ user }) => {
             fontWeight={500}
             sx={{ fontSize: '13px', mb: 1 }}
           >
-            {user?.paymentForm?.status === 'rejected' &&
-              user?.paymentForm?.reason?.includes('Bank Name') &&
-              '⚠️'}{' '}
             Bank Name{' '}
             <Box component="span" sx={{ color: 'error.main' }}>
               *
@@ -171,6 +158,7 @@ const PaymentFormProfile = ({ user }) => {
             selectOnFocus
             clearOnBlur
             name="bankName"
+            // options={banks.map((item) => item.bank)}
             options={newBanks.find((item) => item.country === countryOfBank)?.banks || []}
             getOptionLabel={(option) => option}
             filterOptions={(options, params) => {
@@ -210,9 +198,6 @@ const PaymentFormProfile = ({ user }) => {
             fontWeight={500}
             sx={{ fontSize: '13px', mb: 1 }}
           >
-            {user?.paymentForm?.status === 'rejected' &&
-              user?.paymentForm?.reason?.includes('Account Holder Name') &&
-              '⚠️'}{' '}
             Account Holder Name{' '}
             <Box component="span" sx={{ color: 'error.main' }}>
               *
@@ -249,9 +234,6 @@ const PaymentFormProfile = ({ user }) => {
             fontWeight={500}
             sx={{ fontSize: '13px', mb: 1 }}
           >
-            {user?.paymentForm?.status === 'rejected' &&
-              user?.paymentForm?.reason?.includes('Account Number') &&
-              '⚠️'}{' '}
             Account Number{' '}
             <Box component="span" sx={{ color: 'error.main' }}>
               *
