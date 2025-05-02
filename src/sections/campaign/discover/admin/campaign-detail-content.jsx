@@ -542,67 +542,8 @@ const CampaignDetailContent = ({ campaign }) => {
 
         {/* Right Column */}
         <Stack spacing={-3} sx={{ flex: { xs: 1, md: 1 } }}>
-
-          {/* Deliverables Box */}
-          <Box sx={{ ...BoxStyle, mt: 0.9 }}>
-            <Box className="header">
-              <Iconify
-                icon="mdi:cube-outline"
-                sx={{
-                  color: '#203ff5',
-                  width: 18,
-                  height: 18,
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                }}
-              >
-                DELIVERABLES
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {[
-                { label: 'UGC Videos', value: true },
-                { label: 'Raw Footage', value: campaign?.rawFootage },
-                { label: 'Photos', value: campaign?.photos },
-                { label: 'Ads', value: campaign?.ads },
-                { label: 'Cross Posting', value: campaign?.crossPosting },
-              ].map(
-                (deliverable) =>
-                  deliverable.value && (
-                    <Chip
-                      key={deliverable.label}
-                      label={deliverable.label}
-                      size="small"
-                      sx={{   
-                        bgcolor: '#F5F5F5',
-                        borderRadius: 1,
-                        color: '#231F20',
-                        height: '32px',
-                        '& .MuiChip-label': {
-                          fontWeight: 700,
-                          px: 1.5,
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginTop: '-3px',
-                        },
-                        '&:hover': { bgcolor: '#F5F5F5' },}}
-                    />
-                  )
-              )}
-            </Box>
-          </Box>
-
           {/* Campaign Admin Box */}
-          <Box sx={{ ...CompactHeaderStyle }}>
+          <Box sx={{ ...CompactHeaderStyle, mt: 1 }}>
             <Box className="header">
               <Typography
                 variant="body2"
@@ -809,6 +750,50 @@ const CampaignDetailContent = ({ campaign }) => {
                 </Box>
               ))}
             </Stack>
+          </Box>
+
+          {/* Deliverables Box */}
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="mdi:cube-outline"
+                sx={{
+                  color: '#203ff5',
+                  width: 18,
+                  height: 18,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#221f20',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                }}
+              >
+                DELIVERABLES
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {[
+                { label: 'UGC Videos', value: true },
+                { label: 'Raw Footage', value: campaign?.rawFootage },
+                { label: 'Photos', value: campaign?.photos },
+                { label: 'Ads', value: campaign?.ads },
+                { label: 'Cross Posting', value: campaign?.crossPosting },
+              ].map(
+                (deliverable) =>
+                  deliverable.value && (
+                    <Chip
+                      key={deliverable.label}
+                      label={deliverable.label}
+                      size="small"
+                      sx={ChipStyle}
+                    />
+                  )
+              )}
+            </Box>
           </Box>
 
           {/* Agreement Form Box */}

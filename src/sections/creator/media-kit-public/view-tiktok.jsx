@@ -2,10 +2,26 @@ import React from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { keyframes } from '@emotion/react';
+import { enqueueSnackbar } from 'notistack';
 
-import { Box, Grid, Stack, alpha, useTheme, Typography, useMediaQuery } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Stack,
+  alpha,
+  Button,
+  useTheme,
+  Typography,
+  useMediaQuery,
+} from '@mui/material';
+
+import axiosInstance from 'src/utils/axios';
+import { useSocialMediaData } from 'src/utils/store';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
 const formatNumber = (num) => {
@@ -62,7 +78,7 @@ const TopContentGrid = ({ topContents }) => {
             show: { opacity: 1, y: 0 },
           }}
         >
-          <Box height={600} overflow="hidden">
+          <Box height={600} borderRadius={2} overflow="hidden">
             <iframe
               src={content?.embed_link}
               title="tiktok"
