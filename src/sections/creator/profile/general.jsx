@@ -73,7 +73,7 @@ export default function AccountGeneral() {
     photoURL: user?.photoURL || null,
     photoBackgroundURL: user?.photoBackgroundURL || null,
     employment: user?.creator?.employment || '',
-    phoneNumber: user?.phoneNumber.split(' ')[1] || '',
+    phoneNumber: user?.phoneNumber?.split(' ')[1] || '',
     birthDate: dayjs(user?.creator?.birthDate) || '',
     country: user?.country || '',
     address: user?.creator?.address || '',
