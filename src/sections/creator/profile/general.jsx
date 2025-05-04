@@ -51,7 +51,7 @@ export default function AccountGeneral() {
   const [openImageDialog, setOpenImageDialog] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const mdDown = useResponsive('down', 'lg');
-  const [countryCode, setCountryCode] = useState(user?.phoneNumber.split(' ')[0] || null);
+  const [countryCode, setCountryCode] = useState(user?.phoneNumber?.split(' ')[0] || null);
 
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
