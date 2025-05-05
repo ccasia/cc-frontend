@@ -2,17 +2,11 @@ import { useState } from 'react';
 
 import {
   Box,
-  Stack,
-  Avatar,
-  Button,
-  ListItemText,
-  Container,
-  TextField,
-  InputAdornment,
-  IconButton,
-  InputBase,
   Paper,
-  alpha,
+  Container,
+  InputBase,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -20,11 +14,12 @@ import { useRouter } from 'src/routes/hooks';
 
 import useGetCreators from 'src/hooks/use-get-creators';
 
-import { useSettingsContext } from 'src/components/settings';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import Iconify from 'src/components/iconify';
-import { LoadingScreen } from 'src/components/loading-screen';
 import EmptyContent from 'src/components/empty-content';
+import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
+import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
+
 import UserCardList from '../user-card-list';
 
 // ----------------------------------------------------------------------

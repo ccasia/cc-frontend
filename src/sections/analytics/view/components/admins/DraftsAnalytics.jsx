@@ -1,17 +1,18 @@
 // components/admins/SendAgreementsAnalytics.jsx
 
-import React, { useState, useEffect } from "react";
-import axiosInstance, { endpoints } from "src/utils/axios";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
-import AlarmOnIcon from "@mui/icons-material/AlarmOn";
+import React, { useState, useEffect } from "react";
+
 import EditIcon from "@mui/icons-material/Edit";
+import CancelIcon from "@mui/icons-material/Cancel";
+import AlarmOnIcon from "@mui/icons-material/AlarmOn";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
-import { Card, Table, TableRow, TableHead, TableBody, TableCell, CardContent, TableContainer, Typography, CircularProgress, Box } from "@mui/material";
-import { sub } from "date-fns";
+import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
+import { Box, Card, Table, TableRow, TableHead, TableBody, TableCell, Typography, CardContent, TableContainer, CircularProgress } from "@mui/material";
+
+import axiosInstance, { endpoints } from "src/utils/axios";
 
 // Extend dayjs to use duration plugin
 dayjs.extend(duration);
@@ -30,9 +31,7 @@ export default function DraftAnalytics() {
     PENDING: { label: "Pending Approval", icon: <HourglassEmptyIcon color="warning" sx={{ mr: 1 }} /> },
   };
 
-  const getStatusContent = (status) => {
-    return statusConfig[status] || statusConfig["PENDING"];
-  };
+  const getStatusContent = (status) => statusConfig[status] || statusConfig.PENDING;
 
   useEffect(() => {
     async function fetchSubmissions() {
@@ -110,12 +109,9 @@ export default function DraftAnalytics() {
                           {(() => {
                             const { label, icon } = getStatusContent(submission.status);
                             return (
-                              <>
-                               <Box display="flex" alignItems="center">
+                              <Box display="flex" alignItems="center">
                                {icon} {label}
                                </Box>
-                               
-                              </>
                             );
                           })()}
                         </TableCell>

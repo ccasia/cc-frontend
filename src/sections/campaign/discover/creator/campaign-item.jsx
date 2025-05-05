@@ -13,8 +13,6 @@ import {
   Avatar,
   Typography,
   CircularProgress,
-  Stack,
-  Divider,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';

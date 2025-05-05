@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 
-import { Box, Stack, Typography, Divider } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';

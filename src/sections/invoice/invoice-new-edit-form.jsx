@@ -12,7 +12,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CircularProgress from '@mui/material/CircularProgress';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { Table, TableRow, TableBody, TableCell, TableHead, TableContainer } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetInvoiceById from 'src/hooks/use-get-invoice';

@@ -1,26 +1,27 @@
 import * as Yup from 'yup';
 import { mutate } from 'swr';
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useEffect } from 'react';
 import 'react-quill/dist/quill.snow.css';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { useMemo, useState, useEffect } from 'react';
 
-import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Stack,
   Button,
   Dialog,
-  IconButton,
+  Divider,
+  Typography,
   DialogTitle,
   ListItemText,
   DialogActions,
   DialogContent,
-  Divider,
-  Typography,
 } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -31,10 +32,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { RHFEditor } from 'src/components/hook-form';
-import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
 
 const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
   const smUp = useResponsive('sm', 'down');

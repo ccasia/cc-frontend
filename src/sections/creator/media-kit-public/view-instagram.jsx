@@ -8,16 +8,11 @@ import {
   Grid,
   Stack,
   alpha,
-  Button,
   useTheme,
   CardMedia,
   Typography,
   useMediaQuery,
 } from '@mui/material';
-
-import { useSocialMediaData } from 'src/utils/store';
-
-import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';

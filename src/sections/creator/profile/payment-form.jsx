@@ -10,7 +10,6 @@ import { Box, Stack, TextField, Typography, createFilterOptions } from '@mui/mat
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import { banks } from 'src/contants/bank';
 import { newBanks } from 'src/contants/banksv2';
 import { updatePaymentForm } from 'src/api/paymentForm';
 

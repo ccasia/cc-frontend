@@ -3,6 +3,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
+  Chip,
   Stack,
   Avatar,
   Button,
@@ -10,9 +11,7 @@ import {
   useTheme,
   Container,
   Typography,
-  ListItemText,
   CircularProgress,
-  Chip,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -23,10 +22,8 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
-import MediaKitSetting from '../media-kit-setting';
 import MediaKitSocial from './media-kit-social-view';
 
 const MediaKitCreator = () => {

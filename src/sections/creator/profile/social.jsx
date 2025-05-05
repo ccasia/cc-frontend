@@ -1,19 +1,17 @@
 import { useForm } from 'react-hook-form';
 
 import { LoadingButton } from '@mui/lab';
-import { Stack, Button, Typography, Box } from '@mui/material';
+import { Box, Stack, Button, Typography } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import axiosInstance from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { typography } from 'src/theme/typography';
 
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
-
-import { typography } from 'src/theme/typography';
 
 // ----------------------------------------------------------------------
 

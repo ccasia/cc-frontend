@@ -3,8 +3,8 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
-import { useEffect, useCallback, useState } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -170,7 +170,7 @@ export default function DashboardLayout({ children }) {
 
   const onKwspSubmit = handleKwspSubmit(async (data) => {
     try {
-      const response = await axiosInstance.post('/api/kwsp/submit', {
+      await axiosInstance.post('/api/kwsp/submit', {
         fullName: data.fullName,
         nricPassport: data.nricPassport,
       });
@@ -398,7 +398,8 @@ export default function DashboardLayout({ children }) {
                 mt: 2,
               }}
             >
-              By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan initiative. You will be notified via email once the funds have been transferred!
+              By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan
+              initiative. You will be notified via email once the funds have been transferred!
             </Typography>
           </Stack>
         </DialogContent>
@@ -408,13 +409,15 @@ export default function DashboardLayout({ children }) {
             type="submit"
             loading={isKwspSubmitting}
             sx={{
-              background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+              background:
+                'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
               boxShadow: '0px -3px 0px 0px rgba(68, 68, 77, 0.45) inset',
               '&:hover': {
                 background: '#1340FF',
               },
               '&.Mui-disabled': {
-                background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+                background:
+                  'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
                 color: 'rgba(255, 255, 255, 0.5)',
               },
             }}
