@@ -84,19 +84,40 @@ export default function InvoiceListView({ campId, invoices }) {
 
   const confirm = useBoolean();
 
-  // const tableData = invoices?.campaigns ? invoices.campaigns : _invoices;
-  const [tableData, setTableData] = useState(invoices?.campaigns ? invoices.campaigns : _invoices);
+  const [tableData, setTableData] = useState(
+    invoices?.campaigns ? invoices.campaigns : _invoices
+  );
 
   const [filters, setFilters] = useState(defaultFilters);
 
   const dateError = isAfter(filters.startDate, filters.endDate);
 
-  const dataFiltered = applyFilter({
-    inputData: tableData || undefined,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-    dateError,
-  });
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [alphabetical, setAlphabetical] = useState(false);
+
+  // Filtering only
+  const filteredData = useMemo(() => {
+    return applyFilter({
+      inputData: tableData || undefined,
+      comparator: getComparator(table.order, table.orderBy),
+      filters,
+      dateError,
+    });
+  }, [tableData, table, filters, dateError]);
+
+  // Sorting (alphabetical or default)
+  const dataFiltered = useMemo(() => {
+    if (alphabetical) {
+      return [...filteredData].sort((a, b) => {
+        const nameA = (a.invoiceFrom?.name || '').toLowerCase();
+        const nameB = (b.invoiceFrom?.name || '').toLowerCase();
+        return sortDirection === 'asc'
+          ? nameA.localeCompare(nameB)
+          : nameB.localeCompare(nameA);
+      });
+    }
+    return filteredData;
+  }, [filteredData, alphabetical, sortDirection]);
 
   const dataInPage = dataFiltered?.slice(
     table.page * table.rowsPerPage,
@@ -236,10 +257,9 @@ export default function InvoiceListView({ campId, invoices }) {
     [user]
   );
 
-  const [sortDirection, setSortDirection] = useState('asc');
-
   const handleToggleSort = () => {
-    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    setAlphabetical(true);
+    setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   };
 
   return (
@@ -432,13 +452,12 @@ export default function InvoiceListView({ campId, invoices }) {
                 bgcolor: 'transparent',
                 borderBottom: '1px solid',
                 borderColor: 'divider',
-                pb: 2,
-                overflow: 'visible',
               }}
             >
               <Table 
                 sx={{ 
                   width: '100%',
+                  borderCollapse: 'collapse',
                 }}
               >
                 <TableSelectedAction
@@ -479,14 +498,14 @@ export default function InvoiceListView({ campId, invoices }) {
                     <TableCell
                       sx={{
                         py: 1,
-                        px: 2,
                         color: '#221f20',
                         fontWeight: 600,
                         width: 300,
                         borderRadius: '10px 0 0 10px',
                         bgcolor: '#f5f5f5',
                         whiteSpace: 'nowrap',
-                        fontSize: '0.875rem',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                       }}
                     >
                       Creator
@@ -494,13 +513,13 @@ export default function InvoiceListView({ campId, invoices }) {
                     <TableCell
                       sx={{
                         py: 1,
-                        px: 2,
                         color: '#221f20',
                         fontWeight: 600,
                         width: 120,
                         bgcolor: '#f5f5f5',
                         whiteSpace: 'nowrap',
-                        fontSize: '0.875rem',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                       }}
                     >
                       Invoice Date
@@ -508,13 +527,13 @@ export default function InvoiceListView({ campId, invoices }) {
                     <TableCell
                       sx={{
                         py: 1,
-                        px: 2,
                         color: '#221f20',
                         fontWeight: 600,
                         width: 120,
                         bgcolor: '#f5f5f5',
                         whiteSpace: 'nowrap',
-                        fontSize: '0.875rem',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                       }}
                     >
                       Due Date
@@ -522,13 +541,13 @@ export default function InvoiceListView({ campId, invoices }) {
                     <TableCell
                       sx={{
                         py: 1,
-                        px: 2,
                         color: '#221f20',
                         fontWeight: 600,
                         width: 100,
                         bgcolor: '#f5f5f5',
                         whiteSpace: 'nowrap',
-                        fontSize: '0.875rem',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                       }}
                     >
                       Amount
@@ -536,13 +555,13 @@ export default function InvoiceListView({ campId, invoices }) {
                     <TableCell
                       sx={{
                         py: 1,
-                        px: 2,
                         color: '#221f20',
                         fontWeight: 600,
                         width: 100,
                         bgcolor: '#f5f5f5',
                         whiteSpace: 'nowrap',
-                        fontSize: '0.875rem',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                       }}
                     >
                       Status
@@ -550,14 +569,14 @@ export default function InvoiceListView({ campId, invoices }) {
                     <TableCell
                       sx={{
                         py: 1,
-                        px: 2,
                         color: '#221f20',
                         fontWeight: 600,
                         width: 240,
                         borderRadius: '0 10px 10px 0',
                         bgcolor: '#f5f5f5',
                         whiteSpace: 'nowrap',
-                        fontSize: '0.875rem',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                       }}
                     >
                       Actions
@@ -575,15 +594,21 @@ export default function InvoiceListView({ campId, invoices }) {
                       const selected = table.selected.includes(row.id);
                       return (
                         <TableRow
-                        key={row.id}
+                          key={row.id}
                           hover
                           selected={selected}
                           sx={{
+                            bgcolor: 'transparent',
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
                             '& td': {
                               py: 2,
-                              px: 2,
-                              borderBottom: '1px solid',
-                              borderColor: 'divider',
+                            },
+                            '&:last-child': {
+                              borderBottom: 'none',
+                            },
+                            '&:hover': {
+                              bgcolor: 'action.hover',
                             },
                           }}
                         >
@@ -595,7 +620,7 @@ export default function InvoiceListView({ campId, invoices }) {
                             <ListItemText
                               disableTypography
                               primary={
-                                <Typography variant="body2" noWrap>
+                                <Typography variant="body2" noWrap sx={{ mt: 1 }}>
                                   {row.invoiceFrom?.name}
                                 </Typography>
                               }
@@ -604,7 +629,7 @@ export default function InvoiceListView({ campId, invoices }) {
                                   noWrap
                                   variant="body2"
                                   onClick={() => handleViewRow(row.id)}
-                                  sx={{ color: 'text.disabled', cursor: 'pointer' }}
+                                  sx={{ color: 'text.disabled', cursor: 'pointer', mt: 0.5 }}
                                 >
                                   {row.invoiceNumber}
                                 </Link>
