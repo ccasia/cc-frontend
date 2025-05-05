@@ -243,8 +243,15 @@ export default function DashboardLayout({ children }) {
           : {
               position: 'fixed',
               transform: 'rotate(-90deg)',
-              top: 400,
-              right: -110,
+              top: 370,
+              right: -84,
+              zIndex: 9999,
+              '@media (max-width: 600px)': {
+                '& .MuiButton-root': {
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                }
+              },
             }),
       }}
     >
@@ -352,16 +359,20 @@ export default function DashboardLayout({ children }) {
       sx={{
         '& .MuiDialog-paper': {
           scrollbarWidth: 'none',
+          '@media (max-width: 600px)': {
+            margin: '16px',
+            maxHeight: 'calc(100% - 32px)',
+          },
         },
       }}
     >
       <FormProvider methods={kwspMethods} onSubmit={onKwspSubmit}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" px={1}>
-          <DialogTitle>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" px={1}>
+          <DialogTitle sx={{ p: { xs: 2, sm: 3 } }}>
             <Typography
               sx={{
                 fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                fontSize: 30,
+                fontSize: { xs: 24, sm: 30 },
                 fontWeight: 300,
               }}
             >
@@ -369,7 +380,7 @@ export default function DashboardLayout({ children }) {
             </Typography>
             <Typography
               sx={{
-                fontSize: 14,
+                fontSize: { xs: 12, sm: 14 },
                 color: 'text.secondary',
                 mt: 1,
               }}
@@ -377,23 +388,40 @@ export default function DashboardLayout({ children }) {
               No registration needed. Just drop your details below!
             </Typography>
           </DialogTitle>
-          <IconButton onClick={kwspFormDialog.onFalse}>
+          <IconButton 
+            onClick={kwspFormDialog.onFalse}
+            sx={{ 
+              '@media (max-width: 600px)': {
+                mt: 2,
+                mr: 0,
+                ml: -3
+              }
+            }}
+          >
             <Iconify icon="charm:cross" width={20} />
           </IconButton>
         </Stack>
-        <DialogContent>
-          <Stack spacing={3}>
+        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
+          <Stack spacing={{ xs: 2, sm: 3 }}>
             <FormField label="Full Name">
-              <RHFTextField name="fullName" placeholder="Enter your full name" />
+              <RHFTextField 
+                name="fullName" 
+                placeholder="Enter your full name"
+                size="small"
+              />
             </FormField>
 
             <FormField label="NRIC/Passport Number">
-              <RHFTextField name="nricPassport" placeholder="Enter your NRIC/Passport No." />
+              <RHFTextField 
+                name="nricPassport" 
+                placeholder="Enter your NRIC/Passport No."
+                size="small"
+              />
             </FormField>
 
             <Typography
               sx={{
-                fontSize: 14,
+                fontSize: { xs: 12, sm: 14 },
                 color: 'text.secondary',
                 mt: 2,
               }}
@@ -402,7 +430,7 @@ export default function DashboardLayout({ children }) {
             </Typography>
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
           <LoadingButton
             variant="contained"
             type="submit"

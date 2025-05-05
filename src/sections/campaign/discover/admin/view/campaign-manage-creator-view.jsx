@@ -413,11 +413,11 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                         variant="body2"
                         sx={{
                           wordBreak: 'break-word',
-                          mt: 0.5,
-                          width: '100%',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          overflowWrap: 'break-word',
+                          maxWidth: '100%',
+                          whiteSpace: 'normal',
+                          display: 'block',
+                          mt: 0.5
                         }}
                       >
                         {item.value || item.fallback}
@@ -519,11 +519,11 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                         variant="body2"
                         sx={{
                           wordBreak: 'break-word',
-                          mt: 0.5,
-                          width: '100%',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          overflowWrap: 'break-word',
+                          maxWidth: '100%',
+                          whiteSpace: 'normal',
+                          display: 'block',
+                          mt: 0.5
                         }}
                       >
                         {item.value}
@@ -535,7 +535,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             </Box>
 
             {/* Right Column - Submission Status and Credits */}
-            <Box sx={{ width: { xs: '100%', md: '40%' }, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ width: { xs: '100%', md: '65%' }, display: 'flex', flexDirection: 'column' }}>
               {/* Submission Status Box */}
               <Box sx={{ ...BoxStyle, mb: 2, height: 'auto', minHeight: 'auto' }}>
                 <Box className="header">
@@ -580,62 +580,70 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                         >
                           {item.label}
                         </Typography>
-                        <Typography
-                          variant="caption"
-                          noWrap
-                          sx={{
-                            px: 1,
-                            py: 0.5,
-                            borderRadius: 0.7,
-                            display: 'inline-block',
-                            mt: 0.5,
-                            maxWidth: '100%',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            color:
-                              status === 'APPROVED'
-                                ? '#1ABF66'
-                                : status === 'REJECTED'
-                                  ? '#FF4842'
-                                  : status === 'CHANGES_REQUIRED'
-                                    ? '#D4321C'
-                                    : status === 'PENDING_REVIEW'
-                                      ? '#FFC702'
-                                      : status === 'IN_PROGRESS'
-                                        ? '#8A5AFE'
-                                        : '#8E8E93',
-                            border: `1px solid ${
-                              status === 'APPROVED'
-                                ? '#1ABF66'
-                                : status === 'REJECTED'
-                                  ? '#FF4842'
-                                  : status === 'CHANGES_REQUIRED'
-                                    ? '#D4321C'
-                                    : status === 'PENDING_REVIEW'
-                                      ? '#FFC702'
-                                      : status === 'IN_PROGRESS'
-                                        ? '#8A5AFE'
-                                        : '#8E8E93'
-                            }`,
-                            borderBottom: `3px solid ${
-                              status === 'APPROVED'
-                                ? '#1ABF66'
-                                : status === 'REJECTED'
-                                  ? '#FF4842'
-                                  : status === 'CHANGES_REQUIRED'
-                                    ? '#D4321C'
-                                    : status === 'PENDING_REVIEW'
-                                      ? '#FFC702'
-                                      : status === 'IN_PROGRESS'
-                                        ? '#8A5AFE'
-                                        : '#8E8E93'
-                            }`,
-                            fontWeight: 600,
-                          }}
-                        >
-                          {status === 'NOT_STARTED' ? 'NOT STARTED' : status.replace(/_/g, ' ')}
-                        </Typography>
+                        <Box sx={{ 
+                          mt: 0.5,
+                          display: 'flex',
+                          justifyContent: 'center',
+                          width: '100%'
+                        }}>
+                          <Typography
+                            variant="caption"
+                            noWrap
+                            sx={{
+                              px: 1,
+                              py: 0.5,
+                              borderRadius: 0.7,
+                              display: 'inline-block',
+                              maxWidth: '100%',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                              whiteSpace: 'normal',
+                              textAlign: 'center',
+                              width: '100%',
+                              color:
+                                status === 'APPROVED'
+                                  ? '#1ABF66'
+                                  : status === 'REJECTED'
+                                    ? '#FF4842'
+                                    : status === 'CHANGES_REQUIRED'
+                                      ? '#D4321C'
+                                      : status === 'PENDING_REVIEW'
+                                        ? '#FFC702'
+                                        : status === 'IN_PROGRESS'
+                                          ? '#8A5AFE'
+                                          : '#8E8E93',
+                              border: `1px solid ${
+                                status === 'APPROVED'
+                                  ? '#1ABF66'
+                                  : status === 'REJECTED'
+                                    ? '#FF4842'
+                                    : status === 'CHANGES_REQUIRED'
+                                      ? '#D4321C'
+                                      : status === 'PENDING_REVIEW'
+                                        ? '#FFC702'
+                                        : status === 'IN_PROGRESS'
+                                          ? '#8A5AFE'
+                                          : '#8E8E93'
+                              }`,
+                              borderBottom: `3px solid ${
+                                status === 'APPROVED'
+                                  ? '#1ABF66'
+                                  : status === 'REJECTED'
+                                    ? '#FF4842'
+                                    : status === 'CHANGES_REQUIRED'
+                                      ? '#D4321C'
+                                      : status === 'PENDING_REVIEW'
+                                        ? '#FFC702'
+                                        : status === 'IN_PROGRESS'
+                                          ? '#8A5AFE'
+                                          : '#8E8E93'
+                              }`,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {status === 'NOT_STARTED' ? 'NOT STARTED' : status.replace(/_/g, ' ')}
+                          </Typography>
+                        </Box>
                       </Box>
                     );
                   })}

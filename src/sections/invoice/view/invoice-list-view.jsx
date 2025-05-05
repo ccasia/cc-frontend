@@ -246,142 +246,165 @@ export default function InvoiceListView({ campId, invoices }) {
     <>
       <Container 
         maxWidth={settings.themeStretch ? false : 'xl'}
-          sx={{
+        sx={{
           px: { xs: 2, md: 3, lg: 4 },
-          maxWidth: '100%'
+          maxWidth: '100%',
         }}
       >
-        {/* Filter buttons and search bar in one row */}
         <Stack
           direction={{ xs: 'column', md: 'row' }}
-          alignItems={{ xs: 'flex-start', md: 'center' }}
+          alignItems={{ xs: 'stretch', md: 'center' }}
           justifyContent="space-between"
-          spacing={3}
-          sx={{ mb: 2 }}
+          spacing={2}
+          sx={{ 
+            mb: 2,
+            width: '100%',
+            ml: { md: -4 },
+          }}
         >
-          {/* Left side - Filter buttons with alphabetical button */}
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
-            spacing={1.5}
-            alignItems={{ xs: 'flex-start', sm: 'center' }}
-            justifyContent="flex-start"
-            flexWrap="wrap"
-            sx={{ ml: { xs: 0, md: -4 } }}
+            spacing={1}
+            sx={{ 
+              width: { xs: '100%', md: 'auto' },
+            }}
           >
-            {TABS.map((tab) => (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'auto' },
+                gap: 1,
+                width: '100%',
+                '@media (min-width: 600px)': {
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                }
+              }}
+            >
+              {TABS.map((tab) => (
+                <Button
+                  key={tab.value}
+                  fullWidth={!smUp}
+                  onClick={() => handleFilters('status', tab.value)}
+                  sx={{
+                    px: 1.5,
+                    py: 2.5,
+                    height: '42px',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    borderRadius: 1,
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    ...(filters.status === tab.value
+                      ? {
+                          color: '#203ff5',
+                          bgcolor: 'rgba(32, 63, 245, 0.04)',
+                        }
+                      : {
+                          color: '#637381',
+                          bgcolor: 'transparent',
+                        }),
+                    '&:hover': {
+                      bgcolor: filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                    },
+                  }}
+                >
+                  {`${tab.label} (${tab.count})`}
+                </Button>
+              ))}
+
               <Button
-                key={tab.value}
-                onClick={() => handleFilters('status', tab.value)}
+                fullWidth={!smUp}
+                onClick={handleToggleSort}
+                endIcon={
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    {sortDirection === 'asc' ? (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
+                          A
+                        </Typography>
+                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
+                          Z
+                        </Typography>
+                      </Stack>
+                    ) : (
+                      <Stack direction="column" alignItems="center" spacing={0}>
+                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
+                          Z
+                        </Typography>
+                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
+                          A
+                        </Typography>
+                      </Stack>
+                    )}
+                    <Iconify 
+                      icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
+                      width={12}
+                    />
+                  </Stack>
+                }
                 sx={{
                   px: 1.5,
-                  py: 2.5,
+                  py: 0.75,
+                  height: '42px',
+                  color: '#637381',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: 1,
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    color: '#221f20',
+                  },
+                }}
+              >
+                Alphabetical
+              </Button>
+            </Box>
+          </Stack>
+
+          <Box
+            sx={{
+              width: { xs: '100%', md: 'auto' },
+              ml: { md: 'auto' },
+              mr: { md: -8 },
+            }}
+          >
+            <TextField
+              placeholder="Search customer or invoice number"
+              value={filters.name}
+              onChange={(e) => handleFilters('name', e.target.value)}
+              fullWidth={!smUp}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                  </InputAdornment>
+                ),
+                sx: {
+                  height: '42px',
+                  '& input': {
+                    py: 3,
+                    height: '42px',
+                  },
+                },
+              }}
+              sx={{
+                width: { xs: '100%', md: '300px' },
+                '& .MuiOutlinedInput-root': {
                   height: '42px',
                   border: '1px solid #e7e7e7',
                   borderBottom: '3px solid #e7e7e7',
                   borderRadius: 1,
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  ...(filters.status === tab.value
-                    ? {
-                        color: '#203ff5',
-                        bgcolor: 'rgba(32, 63, 245, 0.04)',
-                      }
-                    : {
-                        color: '#637381',
-                        bgcolor: 'transparent',
-                      }),
-                  '&:hover': {
-                    bgcolor: filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
-                  },
-                }}
-              >
-                {`${tab.label} (${tab.count})`}
-              </Button>
-            ))}
-            
-            {/* Alphabetical Sort Button */}
-            <Button
-              onClick={handleToggleSort}
-              endIcon={
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  {sortDirection === 'asc' ? (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                        A
-                      </Typography>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                        Z
-                      </Typography>
-                    </Stack>
-                  ) : (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                        Z
-                      </Typography>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                        A
-                      </Typography>
-                    </Stack>
-                  )}
-                  <Iconify 
-                    icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
-                    width={12}
-                  />
-                </Stack>
-              }
-              sx={{
-                px: 1.5,
-                py: 0.75,
-                height: '42px',
-                color: '#637381',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: 1,
-                textTransform: 'none',
-                whiteSpace: 'nowrap',
-                boxShadow: 'none',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  color: '#221f20',
                 },
               }}
-            >
-              Alphabetical
-            </Button>
-          </Stack>
-
-          {/* Right side - Search bar */}
-          <TextField
-            sx={{
-              width: { xs: '100%', md: '240px' },
-              '& .MuiOutlinedInput-root': {
-                height: '42px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1,
-              },
-            }}
-            value={filters.name}
-            onChange={(e) => handleFilters('name', e.target.value)}
-            placeholder="Search customer or invoice number"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
-                </InputAdornment>
-              ),
-              sx: {
-                height: '42px',
-                '& input': {
-                  py: 3,
-                  height: '42px',
-                },
-              },
-            }}
-          />
+            />
+          </Box>
         </Stack>
 
           {canReset && (
@@ -394,53 +417,63 @@ export default function InvoiceListView({ campId, invoices }) {
           />
         )}
 
-        <Box sx={{ mb: 3, ml: { xs: 0, md: -4 }, mt: 1 }}>
+        <Box sx={{ 
+          mb: 3, 
+          ml: { xs: 0, md: -4 }, 
+          mr: { md: -6 }, 
+          mt: 1,
+        }}>
           <Scrollbar>
             <TableContainer
               sx={{
-                width: '100%',
+                width: 'calc(100% + -16px)',
                 minWidth: 1000,
                 position: 'relative',
                 bgcolor: 'transparent',
                 borderBottom: '1px solid',
                 borderColor: 'divider',
                 pb: 2,
+                overflow: 'visible',
               }}
             >
-            <TableSelectedAction
-              dense={table.dense}
-              numSelected={table.selected.length}
-              rowCount={dataFiltered?.length}
-              onSelectAllRows={(checked) => {
-                table.onSelectAllRows(
-                  checked,
-                  dataFiltered?.map((row) => row.id)
-                );
-              }}
-              action={
-                <Stack direction="row">
-                  <Tooltip title="Download">
-                    <IconButton color="primary">
-                      <Iconify icon="eva:download-outline" />
-                    </IconButton>
-                  </Tooltip>
+              <Table 
+                sx={{ 
+                  width: '100%',
+                }}
+              >
+                <TableSelectedAction
+                  dense={table.dense}
+                  numSelected={table.selected.length}
+                  rowCount={dataFiltered?.length}
+                  onSelectAllRows={(checked) => {
+                    table.onSelectAllRows(
+                      checked,
+                      dataFiltered?.map((row) => row.id)
+                    );
+                  }}
+                  action={
+                    <Stack direction="row">
+                      <Tooltip title="Download">
+                        <IconButton color="primary">
+                          <Iconify icon="eva:download-outline" />
+                        </IconButton>
+                      </Tooltip>
 
-                  <Tooltip title="Print">
-                    <IconButton color="primary">
-                      <Iconify icon="solar:printer-minimalistic-bold" />
-                    </IconButton>
-                  </Tooltip>
+                      <Tooltip title="Print">
+                        <IconButton color="primary">
+                          <Iconify icon="solar:printer-minimalistic-bold" />
+                        </IconButton>
+                      </Tooltip>
 
-                  <Tooltip title="Delete">
-                    <IconButton color="primary" onClick={confirm.onTrue} disabled={isDisabled}>
-                      <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              }
-            />
+                      <Tooltip title="Delete">
+                        <IconButton color="primary" onClick={confirm.onTrue} disabled={isDisabled}>
+                          <Iconify icon="solar:trash-bin-trash-bold" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  }
+                />
 
-              <Table sx={{ width: '100%' }}>
                 <TableHead>
                   <TableRow>
                     <TableCell
@@ -747,7 +780,7 @@ export default function InvoiceListView({ campId, invoices }) {
                 </TableBody>
               </Table>
             </TableContainer>
-            </Scrollbar>
+          </Scrollbar>
         </Box>
 
           <TablePaginationCustom

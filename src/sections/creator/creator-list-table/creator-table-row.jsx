@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { Avatar } from '@mui/material';
@@ -17,6 +17,9 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import CreatorQuickForm from './creator-quick-edit';
 import MediaKitCreator from '../media-kit-creator-view/mediakit-view-by-id';
@@ -41,6 +44,8 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
   const quickEdit = useBoolean();
 
   const popover = usePopover();
+
+  const router = useRouter();
 
   return (
     <>
@@ -103,6 +108,29 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
         </TableCell>
 
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
+          <Button
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              px: 1.5,
+              py: 0.5,
+              fontSize: '0.85rem',
+              border: '1px solid #e0e0e0',
+              borderBottom: '3px solid #e0e0e0',
+              borderRadius: 0.8,
+              bgcolor: 'white',
+              color: '#221f20',
+              minWidth: '65px',
+              height: '32px',
+              mr: 1
+            }}
+            onClick={() => {
+              router.push(paths.dashboard.creator.profile(row.id));
+            }}
+          >
+            Creator Profile
+          </Button>
+
           <Tooltip title="Quick Edit" placement="top" arrow>
             <IconButton
               color={quickEdit.value ? 'inherit' : 'default'}
@@ -122,16 +150,12 @@ export default function CreatorTableRow({ row, selected, onEditRow, onSelectRow,
           >
             <IconButton
               onClick={() => {
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                // if (useCheckPermission(['delete:creator'])) {
                 confirm.onTrue();
                 popover.onClose();
-                // }
               }}
               sx={{
                 color: 'error.main',
               }}
-              // disabled={!useCheckPermission(['delete:creator'])}
             >
               <Iconify icon="solar:trash-bin-trash-bold" />
             </IconButton>
