@@ -267,6 +267,8 @@ export default function InvoiceNewEditForm({ id, creators }) {
         invoiceId: id,
         newContact,
         xeroContactId: invoice.creator.xeroContactId,
+        reason: data.otherReason || data.reason,
+        campaignId: invoice?.campaignId,
       });
 
       reset();
