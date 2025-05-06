@@ -233,26 +233,11 @@ export default function DashboardLayout({ children }) {
     <Box
       component="div"
       sx={{
-        ...(lgUp
-          ? {
-              position: 'absolute',
-              top: 400,
-              right: -98,
-              transform: 'rotate(-90deg)',
-            }
-          : {
-              position: 'fixed',
-              transform: 'rotate(-90deg)',
-              top: 370,
-              right: -84,
-              zIndex: 9999,
-              '@media (max-width: 600px)': {
-                '& .MuiButton-root': {
-                  padding: '6px 12px',
-                  fontSize: '12px',
-                }
-              },
-            }),
+        position: { xs: 'fixed', lg: 'absolute' },
+        top: { xs: 370, md: 390 },
+        right: { xs: -84, sm: -84, md: -108, lg: -98, xl: -120 },
+        transform: 'rotate(-90deg)',
+        zIndex: 1200,
       }}
     >
       <Button
@@ -263,9 +248,10 @@ export default function DashboardLayout({ children }) {
           borderBottomRightRadius: 0,
           borderBottomLeftRadius: 0,
           backgroundColor: '#1340FF',
-          padding: '8px 24px',
+          padding: { xs: '6px 12px', md: '8px 24px' },
           whiteSpace: 'nowrap',
-          fontSize: '14px',
+          fontSize: { xs: '12px', md: '14px' },
+          minWidth: { xs: 120, md: 220 },
           '&:hover': {
             backgroundColor: '#1340FF',
           },
