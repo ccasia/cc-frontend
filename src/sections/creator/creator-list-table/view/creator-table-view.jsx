@@ -116,7 +116,7 @@ function CreatorTableView() {
     try {
       setIsExporting(true);
       const response = await axiosInstance.get(endpoints.creators.exportCreators);
-      
+
       if (response.data && response.data.url) {
         // Open the spreadsheet in a new tab
         const a = document.createElement('a');
@@ -126,7 +126,7 @@ function CreatorTableView() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        
+
         enqueueSnackbar('Creators exported to spreadsheet successfully', { variant: 'success' });
       }
     } catch (error) {
@@ -207,6 +207,7 @@ function CreatorTableView() {
         mutate(endpoints.creators.getCreators);
         enqueueSnackbar('Successfully deleted Creator');
       } catch (error) {
+        console.log(error);
         enqueueSnackbar('Error delete Creator', { variant: 'error' });
         // toast.error('Error delete Creator');
       }
