@@ -1,5 +1,7 @@
 /* eslint-disable no-unused-vars */
 import * as Yup from 'yup';
+// import LastStep from './steps/lastStep';
+import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
@@ -24,7 +26,6 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
-// import LastStep from './steps/lastStep';
 // import FirstStep from './steps/firstStep';
 import ThirdStep from './steps/thirdStep';
 import FourthStep from './steps/fourtStep';
@@ -217,6 +218,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
         }
       }
 
+      mutate(`/api/campaign/matchCampaignWithCreator?take=${10}`);
       onClose();
     } catch (error) {
       console.error('Form submission error:', error);
@@ -350,7 +352,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
           justifyContent: 'center',
           alignItems: 'center',
           px: { xs: 2, sm: 0 },
-          mt: { xs: 2, sm: 0 }
+          mt: { xs: 2, sm: 0 },
         }}
       >
         <Stack
@@ -487,19 +489,19 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
             }}
           >
             {activeStep < steps.length - 1 && (
-              <Stack 
-                direction="row" 
-                spacing={2} 
+              <Stack
+                direction="row"
+                spacing={2}
                 justifyContent="center"
-                sx={{ 
-                  width: '100%', 
-                  maxWidth: { xs: '100%', sm: 400 }, 
+                sx={{
+                  width: '100%',
+                  maxWidth: { xs: '100%', sm: 400 },
                   mx: 'auto',
                   '& .MuiButton-root': {
                     flex: 1,
                     minHeight: { xs: 44, sm: 48 },
                     fontSize: { xs: '0.875rem', sm: '1rem' },
-                  }
+                  },
                 }}
               >
                 {activeStep > 0 && (
@@ -557,19 +559,19 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
                     }}
                   />
                 </Box>
-                <Stack 
-                  direction="row" 
-                  spacing={2} 
+                <Stack
+                  direction="row"
+                  spacing={2}
                   justifyContent="center"
-                  sx={{ 
-                    width: '100%', 
-                    maxWidth: { xs: '100%', sm: 400 }, 
+                  sx={{
+                    width: '100%',
+                    maxWidth: { xs: '100%', sm: 400 },
                     mx: 'auto',
                     '& .MuiButton-root': {
                       flex: 1,
                       minHeight: { xs: 44, sm: 48 },
                       fontSize: { xs: '0.875rem', sm: '1rem' },
-                    }
+                    },
                   }}
                 >
                   <Button

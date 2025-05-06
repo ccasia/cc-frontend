@@ -105,8 +105,6 @@ const socialLogins = [
 const Register = () => {
   const password = useBoolean();
 
-  const mdDown = useResponsive('down', 'lg');
-
   const { register } = useAuthContext();
 
   const router = useRouter();
@@ -186,8 +184,7 @@ const Register = () => {
   const {
     handleSubmit,
     control,
-    formState: { isSubmitting, errors, isValid },
-    setValue,
+    formState: { isSubmitting, isValid },
     watch,
   } = methods;
 
@@ -199,10 +196,6 @@ const Register = () => {
   // const errorRecaptcha = errors?.recaptcha;
 
   const curPassword = watch('password');
-
-  const open = Boolean(anchorEl);
-
-  const id = open ? 'popper' : undefined;
 
   useEffect(() => {
     const handleClose = (event) => {
