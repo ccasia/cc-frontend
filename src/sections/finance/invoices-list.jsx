@@ -13,6 +13,7 @@ import {
   TableBody,
   DialogContent,
   TableContainer,
+  Button,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -218,7 +219,7 @@ const InvoiceLists = ({ invoices }) => {
                       onChangeStatus={changeInvoiceStatus}
                       selected={table.selected.includes(invoice.id)}
                       onSelectRow={() => table.onSelectRow(invoice.id)}
-                      openEditInvoice={openEditInvoice}
+                      openEditInvoice={() => openEditInvoice(invoice.id)}
                     />
                   ))}
 
