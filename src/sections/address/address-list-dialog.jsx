@@ -128,10 +128,7 @@ export default function AddressListDialog({
           }}
         />
       </Stack>
-
-     
-        {renderList}
-     
+      {renderList}
     </Dialog>
   );
 }

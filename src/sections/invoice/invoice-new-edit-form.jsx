@@ -386,7 +386,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
       </Box>
     );
 
-  console.log(invoice);
   return (
     <Stack spacing={1}>
       <Box sx={{ mb: 2, textAlign: 'end' }}>
