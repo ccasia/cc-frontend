@@ -1,10 +1,10 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
+import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { pdf } from '@react-pdf/renderer';
 import { FixedSizeList } from 'react-window';
 import { yupResolver } from '@hookform/resolvers/yup';
-import React, { useMemo, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -91,8 +91,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
   const { enqueueSnackbar } = useSnackbar();
 
   const loadingSend = useBoolean();
-
-  const [loading, setLoading] = useState(true);
 
   const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
     id: creator.user.id,
@@ -220,13 +218,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
     formState: { isSubmitting, isValid },
     setValue,
   } = methods;
-
-  useEffect(() => {
-    if (!isLoading) {
-      setLoading(false);
-    }
-    reset(defaultValues);
-  }, [defaultValues, isLoading, reset]);
 
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
@@ -379,14 +370,18 @@ export default function InvoiceNewEditForm({ id, creators }) {
     </Box>
   );
 
-  if (loading)
+  useEffect(() => {
+    reset(defaultValues);
+    console.log('DAS');
+  }, [reset, defaultValues]);
+
+  if (isLoading)
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="80vh">
         <CircularProgress />
       </Box>
     );
 
-  console.log(invoice);
   return (
     <Stack spacing={1}>
       <Box sx={{ mb: 2, textAlign: 'end' }}>
@@ -476,68 +471,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
               </LoadingButton>
             )}
           </Stack>
-
-          {/* {invoice?.status !== 'paid' && (
-            <Stack
-              justifyContent="flex-end"
-              direction={{ sm: 'column', md: 'row' }}
-              gap={2}
-              sx={{ mt: 3 }}
-              alignItems="end"
-            >
-              {values?.status !== 'rejected' ? (
-                <>
-                  {values?.reason !== 'Others' ? (
-                    <RHFSelect
-                      fullWidth
-                      name="reason"
-                      label="Reason for Rejection"
-                      InputLabelProps={{ shrink: true }}
-                      PaperPropsSx={{ textTransform: 'capitalize' }}
-                    >
-                      {reasons.map((option, index) => (
-                        <MenuItem key={index} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </RHFSelect>
-                  ) : (
-                    <Stack direction="row" width={1} spacing={1} alignItems="center">
-                      <Tooltip title="Back">
-                        <IconButton onClick={() => setValue('reason', '')}>
-                          <Iconify icon="majesticons:arrow-left" width={18} />
-                        </IconButton>
-                      </Tooltip>
-                      <RHFTextField
-                        name="otherReason"
-                        placeholder="Others - Reason for Rejection"
-                      />
-                    </Stack>
-                  )}
-                </>
-              ) : (
-                <Box width={1} alignSelf="center" ml={2}>
-                  <Typography variant="subtitle1">
-                    Reason: {invoice?.creator?.user?.paymentForm?.reason}
-                  </Typography>
-                </Box>
-              )}
-
-              <LoadingButton
-                size="large"
-                variant="outlined"
-                loading={loadingSend.value && isSubmitting}
-                onClick={handleCreateAndSend}
-                sx={{
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  width: 180,
-                }}
-                disabled={!isValid}
-              >
-                {invoice ? 'Update' : 'Create'} & Send
-              </LoadingButton>
-            </Stack>
-          )} */}
         </Card>
       </FormProvider>
     </Stack>
