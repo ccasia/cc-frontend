@@ -3,8 +3,8 @@ import { mutate } from 'swr';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { useEffect, useCallback, useState } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -170,7 +170,7 @@ export default function DashboardLayout({ children }) {
 
   const onKwspSubmit = handleKwspSubmit(async (data) => {
     try {
-      await axiosInstance.post('/api/kwsp/submit', {
+      const response = await axiosInstance.post('/api/kwsp/submit', {
         fullName: data.fullName,
         nricPassport: data.nricPassport,
       });
@@ -233,19 +233,11 @@ export default function DashboardLayout({ children }) {
     <Box
       component="div"
       sx={{
-        ...(lgUp
-          ? {
-              position: 'absolute',
-              top: 400,
-              right: -98,
-              transform: 'rotate(-90deg)',
-            }
-          : {
-              position: 'fixed',
-              transform: 'rotate(-90deg)',
-              top: 400,
-              right: -110,
-            }),
+        position: { xs: 'fixed', lg: 'absolute' },
+        top: { xs: 370, md: 390 },
+        right: { xs: -84, sm: -84, md: -108, lg: -98, xl: -120 },
+        transform: 'rotate(-90deg)',
+        zIndex: 1200,
       }}
     >
       <Button
@@ -256,9 +248,10 @@ export default function DashboardLayout({ children }) {
           borderBottomRightRadius: 0,
           borderBottomLeftRadius: 0,
           backgroundColor: '#1340FF',
-          padding: '8px 24px',
+          padding: { xs: '6px 12px', md: '8px 24px' },
           whiteSpace: 'nowrap',
-          fontSize: '14px',
+          fontSize: { xs: '12px', md: '14px' },
+          minWidth: { xs: 120, md: 220 },
           '&:hover': {
             backgroundColor: '#1340FF',
           },
@@ -352,16 +345,20 @@ export default function DashboardLayout({ children }) {
       sx={{
         '& .MuiDialog-paper': {
           scrollbarWidth: 'none',
+          '@media (max-width: 600px)': {
+            margin: '16px',
+            maxHeight: 'calc(100% - 32px)',
+          },
         },
       }}
     >
       <FormProvider methods={kwspMethods} onSubmit={onKwspSubmit}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" px={1}>
-          <DialogTitle>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" px={1}>
+          <DialogTitle sx={{ p: { xs: 2, sm: 3 } }}>
             <Typography
               sx={{
                 fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                fontSize: 30,
+                fontSize: { xs: 24, sm: 30 },
                 fontWeight: 300,
               }}
             >
@@ -369,7 +366,7 @@ export default function DashboardLayout({ children }) {
             </Typography>
             <Typography
               sx={{
-                fontSize: 14,
+                fontSize: { xs: 12, sm: 14 },
                 color: 'text.secondary',
                 mt: 1,
               }}
@@ -377,47 +374,61 @@ export default function DashboardLayout({ children }) {
               No registration needed. Just drop your details below!
             </Typography>
           </DialogTitle>
-          <IconButton onClick={kwspFormDialog.onFalse}>
+          <IconButton 
+            onClick={kwspFormDialog.onFalse}
+            sx={{ 
+              '@media (max-width: 600px)': {
+                mt: 2,
+                mr: 0,
+                ml: -3
+              }
+            }}
+          >
             <Iconify icon="charm:cross" width={20} />
           </IconButton>
         </Stack>
-        <DialogContent>
-          <Stack spacing={3}>
+        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
+          <Stack spacing={{ xs: 2, sm: 3 }}>
             <FormField label="Full Name">
-              <RHFTextField name="fullName" placeholder="Enter your full name" />
+              <RHFTextField 
+                name="fullName" 
+                placeholder="Enter your full name"
+                size="small"
+              />
             </FormField>
 
             <FormField label="NRIC/Passport Number">
-              <RHFTextField name="nricPassport" placeholder="Enter your NRIC/Passport No." />
+              <RHFTextField 
+                name="nricPassport" 
+                placeholder="Enter your NRIC/Passport No."
+                size="small"
+              />
             </FormField>
 
             <Typography
               sx={{
-                fontSize: 14,
+                fontSize: { xs: 12, sm: 14 },
                 color: 'text.secondary',
                 mt: 2,
               }}
             >
-              By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan
-              initiative. You will be notified via email once the funds have been transferred!
+              By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan initiative. You will be notified via email once the funds have been transferred!
             </Typography>
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
           <LoadingButton
             variant="contained"
             type="submit"
             loading={isKwspSubmitting}
             sx={{
-              background:
-                'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+              background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
               boxShadow: '0px -3px 0px 0px rgba(68, 68, 77, 0.45) inset',
               '&:hover': {
                 background: '#1340FF',
               },
               '&.Mui-disabled': {
-                background:
-                  'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+                background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
                 color: 'rgba(255, 255, 255, 0.5)',
               },
             }}
