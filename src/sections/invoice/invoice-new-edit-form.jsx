@@ -94,19 +94,19 @@ const ListboxComponent = React.forwardRef((props, ref) => {
 
 //   const { enqueueSnackbar } = useSnackbar();
 
-//   const loadingSend = useBoolean();
+// const loadingSend = useBoolean();
 
-//   const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
-//     id: creator.user.id,
-//     name: creator.user.name,
-//     email: creator.user.email,
-//     fullAddress: creator.user.creator.location,
-//     phoneNumber: creator.user.phoneNumber,
-//     company: creator.user.creator.employment,
-//     addressType: 'Home',
-//     primary: false,
-//     contactId: creator.user.creator.xeroContactId || null,
-//   }));
+// const creatorList = creators?.campaign?.shortlisted?.map((creator) => ({
+//   id: creator.user.id,
+//   name: creator.user.name,
+//   email: creator.user.email,
+//   fullAddress: creator.user.creator.location,
+//   phoneNumber: creator.user.phoneNumber,
+//   company: creator.user.creator.employment,
+//   addressType: 'Home',
+//   primary: false,
+//   contactId: creator.user.creator.xeroContactId || null,
+// }));
 
 const NewInvoiceSchema = Yup.object().shape({
   invoiceTo: Yup.mixed().nullable().required('Invoice to is required'),

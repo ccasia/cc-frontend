@@ -13,7 +13,6 @@ import {
   TableBody,
   DialogContent,
   TableContainer,
-  DialogActions,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
