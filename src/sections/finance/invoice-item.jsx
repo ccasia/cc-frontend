@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
-import { Box, Button, TableRow, Checkbox, TableCell, Typography, Tooltip } from '@mui/material';
+import { Box, Button, TableRow, Checkbox, TableCell, Typography } from '@mui/material';
 
 import Label from 'src/components/label';
 

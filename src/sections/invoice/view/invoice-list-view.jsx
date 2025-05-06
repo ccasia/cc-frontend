@@ -3,34 +3,36 @@ import PropTypes from 'prop-types';
 import { useMemo, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
+import Link from '@mui/material/Link';
 import Table from '@mui/material/Table';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Avatar from '@mui/material/Avatar';
+import Tooltip from '@mui/material/Tooltip';
+import TableRow from '@mui/material/TableRow';
+import Container from '@mui/material/Container';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
-import Tooltip from '@mui/material/Tooltip';
-import Avatar from '@mui/material/Avatar';
-import Link from '@mui/material/Link';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
+import InputAdornment from '@mui/material/InputAdornment';
+import TableContainer from '@mui/material/TableContainer';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { isAfter, isBetween, fDate, fTime } from 'src/utils/format-time';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 
-import { useAuthContext } from 'src/auth/hooks';
+import axiosInstance, { endpoints } from 'src/utils/axios';
+import { fDate, fTime, isAfter, isBetween } from 'src/utils/format-time';
+
 import { _invoices } from 'src/_mock';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
@@ -47,7 +49,6 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import InvoiceTableRow from '../invoice-table-row';
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';
 
 // ----------------------------------------------------------------------
@@ -96,14 +97,12 @@ export default function InvoiceListView({ campId, invoices }) {
   const [alphabetical, setAlphabetical] = useState(false);
 
   // Filtering only
-  const filteredData = useMemo(() => {
-    return applyFilter({
+  const filteredData = useMemo(() => applyFilter({
       inputData: tableData || undefined,
       comparator: getComparator(table.order, table.orderBy),
       filters,
       dateError,
-    });
-  }, [tableData, table, filters, dateError]);
+    }), [tableData, table, filters, dateError]);
 
   // Sorting (alphabetical or default)
   const dataFiltered = useMemo(() => {

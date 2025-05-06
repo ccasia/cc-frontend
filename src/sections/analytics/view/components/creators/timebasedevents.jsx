@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Box, Card, Typography, CardContent } from '@mui/material';
 
 export default function TimeBasedEvents() {
   // Example data: Time spent (in minutes) on different onboarding sections

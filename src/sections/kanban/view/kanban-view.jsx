@@ -1,18 +1,18 @@
 import { useCallback } from 'react';
 import { Droppable, DragDropContext } from '@hello-pangea/dnd';
 
-import Stack from '@mui/material/Stack';
-import Container from '@mui/material/Container';
-import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
+import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
+import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
-import { useSettingsContext } from 'src/components/settings';
+import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { moveTask, moveColumn, useGetBoard } from 'src/api/kanban';
 
 import Scrollbar from 'src/components/scrollbar';
+import { useSettingsContext } from 'src/components/settings';
 
 import KanbanColumn from '../kanban-column';
 import KanbanColumnAdd from '../kanban-column-add';

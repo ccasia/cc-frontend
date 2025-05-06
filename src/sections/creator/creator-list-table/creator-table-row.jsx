@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 
 import { Avatar } from '@mui/material';
 import Button from '@mui/material/Button';
@@ -10,6 +10,9 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 import useCheckPermission from 'src/hooks/use-check-permission';
 
@@ -17,9 +20,6 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
-
-import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
 
 import CreatorQuickForm from './creator-quick-edit';
 import MediaKitCreator from '../media-kit-creator-view/mediakit-view-by-id';

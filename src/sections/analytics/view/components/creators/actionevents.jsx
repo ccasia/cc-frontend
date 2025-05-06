@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Box, Card, Typography, CardContent } from '@mui/material';
 
 export default function ActionEvents() {
   // Example data: Frequency of notification openings per week

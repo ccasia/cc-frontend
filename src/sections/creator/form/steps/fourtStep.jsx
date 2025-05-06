@@ -2,9 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { Chip, Stack, FormLabel, ListItemText } from '@mui/material';
-import { primaryFont } from 'src/theme/typography';
 
 import { langList } from 'src/contants/language';
+import { primaryFont } from 'src/theme/typography';
 import { interestsLists } from 'src/contants/interestLists';
 
 import { RHFAutocomplete } from 'src/components/hook-form';

@@ -1,26 +1,19 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { Page, pdfjs, Document } from 'react-pdf';
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { endpoints } from 'src/utils/axios';
-import axios from 'axios';
 
 import Link from '@mui/material/Link';
 import { LoadingButton } from '@mui/lab';
 import {
   Box,
-  Fade,
   Stack,
-  Paper,
   Dialog,
   Button,
-  Popper,
   Divider,
-  TextField,
   Typography,
   IconButton,
   DialogTitle,
@@ -39,11 +32,11 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { useCreator } from 'src/hooks/zustands/useCreator';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { RECAPTCHA_SITEKEY } from 'src/config-global';
 
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
+
 import CreatorForm from 'src/sections/creator/form/creatorForm';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(

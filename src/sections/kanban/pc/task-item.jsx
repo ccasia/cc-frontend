@@ -5,7 +5,6 @@ import { Draggable } from '@hello-pangea/dnd';
 
 import { Box, Stack, Avatar, Divider, Typography, ListItemText } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
 
 const dictionary = {
   Agreement: 'Sign Agreement Letter',

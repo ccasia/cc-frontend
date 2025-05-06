@@ -1,15 +1,14 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
-import { Box, Stack, Typography, Avatar, Accordion, AccordionSummary, AccordionDetails, Button } from '@mui/material';
-
-import Label from 'src/components/label';
-import Iconify from 'src/components/iconify';
-import EmptyContent from 'src/components/empty-content/empty-content';
+import { Box, Stack, Avatar, Button, Accordion, Typography, AccordionSummary, AccordionDetails } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
+
+import Iconify from 'src/components/iconify';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
 import FirstDraft from './creator-stuff/submissions/firstDraft';
 import FinalDraft from './creator-stuff/submissions/finalDraft';

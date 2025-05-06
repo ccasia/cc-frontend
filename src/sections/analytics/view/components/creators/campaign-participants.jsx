@@ -1,9 +1,7 @@
 /* eslint-disable react/prop-types */
 
-import PropTypes from "prop-types";
 
-import { Card, CardContent, Typography, Box, Grid } from "@mui/material";
-import { PieChart } from "@mui/x-charts";
+import { Box, Card, Grid, Typography, CardContent } from "@mui/material";
 
 export default function CampaignParticipation({ creators }) {
   const campaignCounts = {

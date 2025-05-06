@@ -3,8 +3,8 @@
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import {
@@ -32,7 +32,6 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
 
 const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();

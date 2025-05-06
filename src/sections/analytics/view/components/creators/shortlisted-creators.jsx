@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 
-import { Card, CardContent, Typography, Box } from '@mui/material';
 import { PieChart } from '@mui/x-charts';
+import { Box, Card, Typography, CardContent } from '@mui/material';
 
 export default function ShortlistedCreators({ creators } ) {
 
