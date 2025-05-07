@@ -85,9 +85,7 @@ export default function InvoiceListView({ campId, invoices }) {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(
-    invoices?.campaigns ? invoices.campaigns : _invoices
-  );
+  const [tableData, setTableData] = useState(invoices?.campaigns ? invoices.campaigns : _invoices);
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -97,12 +95,16 @@ export default function InvoiceListView({ campId, invoices }) {
   const [alphabetical, setAlphabetical] = useState(false);
 
   // Filtering only
-  const filteredData = useMemo(() => applyFilter({
-      inputData: tableData || undefined,
-      comparator: getComparator(table.order, table.orderBy),
-      filters,
-      dateError,
-    }), [tableData, table, filters, dateError]);
+  const filteredData = useMemo(
+    () =>
+      applyFilter({
+        inputData: tableData || undefined,
+        comparator: getComparator(table.order, table.orderBy),
+        filters,
+        dateError,
+      }),
+    [tableData, table, filters, dateError]
+  );
 
   // Sorting (alphabetical or default)
   const dataFiltered = useMemo(() => {
@@ -110,9 +112,7 @@ export default function InvoiceListView({ campId, invoices }) {
       return [...filteredData].sort((a, b) => {
         const nameA = (a.invoiceFrom?.name || '').toLowerCase();
         const nameB = (b.invoiceFrom?.name || '').toLowerCase();
-        return sortDirection === 'asc'
-          ? nameA.localeCompare(nameB)
-          : nameB.localeCompare(nameA);
+        return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
       });
     }
     return filteredData;
@@ -263,7 +263,7 @@ export default function InvoiceListView({ campId, invoices }) {
 
   return (
     <>
-      <Container 
+      <Container
         maxWidth={settings.themeStretch ? false : 'xl'}
         sx={{
           px: { xs: 2, md: 3, lg: 4 },
@@ -275,7 +275,7 @@ export default function InvoiceListView({ campId, invoices }) {
           alignItems={{ xs: 'stretch', md: 'center' }}
           justifyContent="space-between"
           spacing={2}
-          sx={{ 
+          sx={{
             mb: 2,
             width: '100%',
             ml: { md: -4 },
@@ -284,7 +284,7 @@ export default function InvoiceListView({ campId, invoices }) {
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1}
-            sx={{ 
+            sx={{
               width: { xs: '100%', md: 'auto' },
             }}
           >
@@ -297,7 +297,7 @@ export default function InvoiceListView({ campId, invoices }) {
                 '@media (min-width: 600px)': {
                   display: 'flex',
                   flexWrap: 'wrap',
-                }
+                },
               }}
             >
               {TABS.map((tab) => (
@@ -325,14 +325,14 @@ export default function InvoiceListView({ campId, invoices }) {
                           bgcolor: 'transparent',
                         }),
                     '&:hover': {
-                      bgcolor: filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                      bgcolor:
+                        filters.status === tab.value ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
                     },
                   }}
                 >
                   {`${tab.label} (${tab.count})`}
                 </Button>
               ))}
-
               <Button
                 fullWidth={!smUp}
                 onClick={handleToggleSort}
@@ -340,25 +340,41 @@ export default function InvoiceListView({ campId, invoices }) {
                   <Stack direction="row" alignItems="center" spacing={0.5}>
                     {sortDirection === 'asc' ? (
                       <Stack direction="column" alignItems="center" spacing={0}>
-                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                        >
                           A
                         </Typography>
-                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                        >
                           Z
                         </Typography>
                       </Stack>
                     ) : (
                       <Stack direction="column" alignItems="center" spacing={0}>
-                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                        >
                           Z
                         </Typography>
-                        <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                        >
                           A
                         </Typography>
                       </Stack>
                     )}
-                    <Iconify 
-                      icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
+                    <Iconify
+                      icon={
+                        sortDirection === 'asc'
+                          ? 'eva:arrow-downward-fill'
+                          : 'eva:arrow-upward-fill'
+                      }
                       width={12}
                     />
                   </Stack>
@@ -426,22 +442,24 @@ export default function InvoiceListView({ campId, invoices }) {
           </Box>
         </Stack>
 
-          {canReset && (
-            <InvoiceTableFiltersResult
-              filters={filters}
-              onFilters={handleFilters}
-              onResetFilters={handleResetFilters}
-              results={dataFiltered?.length}
+        {canReset && (
+          <InvoiceTableFiltersResult
+            filters={filters}
+            onFilters={handleFilters}
+            onResetFilters={handleResetFilters}
+            results={dataFiltered?.length}
             sx={{ mb: 2, ml: { xs: 0, md: -4 } }}
           />
         )}
 
-        <Box sx={{ 
-          mb: 3, 
-          ml: { xs: 0, md: -4 }, 
-          mr: { md: -6 }, 
-          mt: 1,
-        }}>
+        <Box
+          sx={{
+            mb: 3,
+            ml: { xs: 0, md: -4 },
+            mr: { md: -6 },
+            mt: 1,
+          }}
+        >
           <Scrollbar>
             <TableContainer
               sx={{
@@ -453,8 +471,8 @@ export default function InvoiceListView({ campId, invoices }) {
                 borderColor: 'divider',
               }}
             >
-              <Table 
-                sx={{ 
+              <Table
+                sx={{
                   width: '100%',
                   borderCollapse: 'collapse',
                 }}
@@ -648,7 +666,7 @@ export default function InvoiceListView({ campId, invoices }) {
                               }}
                             />
                           </TableCell>
-                          
+
                           <TableCell sx={{ width: 120 }}>
                             <ListItemText
                               primary={fDate(row.dueDate)}
@@ -661,9 +679,9 @@ export default function InvoiceListView({ campId, invoices }) {
                               }}
                             />
                           </TableCell>
-                          
+
                           <TableCell sx={{ width: 100 }}>{`RM${row.amount || 0}`}</TableCell>
-                          
+
                           <TableCell sx={{ width: 100 }}>
                             <Typography
                               variant="body2"
@@ -703,16 +721,18 @@ export default function InvoiceListView({ campId, invoices }) {
                               {row.status || 'pending'}
                             </Typography>
                           </TableCell>
-                          
-                          <TableCell sx={{ 
-                            width: 240, 
-                            py: 2,
-                            px: 2,
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                            verticalAlign: 'middle',
-                            height: '100%'
-                          }}>
+
+                          <TableCell
+                            sx={{
+                              width: 240,
+                              py: 2,
+                              px: 2,
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
+                              verticalAlign: 'middle',
+                              height: '100%',
+                            }}
+                          >
                             <Stack direction="row" spacing={1} alignItems="center">
                               {/* View Button */}
                               <Button
@@ -734,7 +754,7 @@ export default function InvoiceListView({ campId, invoices }) {
                               >
                                 View
                               </Button>
-                              
+
                               {/* Edit Button */}
                               <Button
                                 startIcon={<Iconify icon="solar:pen-bold" width={16} />}
@@ -756,7 +776,7 @@ export default function InvoiceListView({ campId, invoices }) {
                               >
                                 Edit
                               </Button>
-                              
+
                               {/* Delete Button */}
                               <Button
                                 sx={{
@@ -791,14 +811,14 @@ export default function InvoiceListView({ campId, invoices }) {
                     emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
                   />
 
-                  <TableNoData 
-                    notFound={notFound} 
-                    sx={{ 
+                  <TableNoData
+                    notFound={notFound}
+                    sx={{
                       ml: { xs: 0, md: -4 },
                       '& .MuiTableCell-root': {
                         p: 0,
                         height: 300,
-                      }
+                      },
                     }}
                   />
                 </TableBody>
@@ -807,16 +827,16 @@ export default function InvoiceListView({ campId, invoices }) {
           </Scrollbar>
         </Box>
 
-          <TablePaginationCustom
-            count={dataFiltered.length}
-            page={table.page}
-            rowsPerPage={table.rowsPerPage}
-            onPageChange={table.onChangePage}
-            onRowsPerPageChange={table.onChangeRowsPerPage}
-            dense={table.dense}
-            onChangeDense={table.onChangeDense}
+        <TablePaginationCustom
+          count={dataFiltered.length}
+          page={table.page}
+          rowsPerPage={table.rowsPerPage}
+          onPageChange={table.onChangePage}
+          onRowsPerPageChange={table.onChangeRowsPerPage}
+          dense={table.dense}
+          onChangeDense={table.onChangeDense}
           sx={{ py: 2, ml: { xs: 0, md: -4 } }}
-          />
+        />
       </Container>
 
       <ConfirmDialog

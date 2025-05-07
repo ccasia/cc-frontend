@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { pdf } from '@react-pdf/renderer';
 import { FixedSizeList } from 'react-window';
-import React, { useMemo, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import React, { useMemo, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -15,12 +15,14 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import CircularProgress from '@mui/material/CircularProgress';
 import {
   Table,
+  Dialog,
   Tooltip,
   TableRow,
   TableBody,
   TableCell,
   TableHead,
   IconButton,
+  DialogContent,
   TableContainer,
   createFilterOptions,
 } from '@mui/material';
@@ -31,6 +33,7 @@ import useGetInvoiceById from 'src/hooks/use-get-invoice';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { newBanks } from 'src/contants/banksv2';
+import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -85,8 +88,56 @@ const ListboxComponent = React.forwardRef((props, ref) => {
   );
 });
 
+const NewInvoiceSchema = Yup.object().shape({
+  invoiceTo: Yup.mixed().nullable().required('Invoice to is required'),
+  createDate: Yup.mixed().nullable().required('Create date is required'),
+  dueDate: Yup.mixed()
+    .required('Due date is required')
+    .test(
+      'date-min',
+      'Due date must be later than create date',
+      (value, { parent }) => value.getTime() > parent.createDate.getTime()
+    ),
+  items: Yup.lazy(() =>
+    Yup.array().of(
+      Yup.object({
+        campaignName: Yup.string().required('Campaign name is required'),
+        clientName: Yup.string().required('Client name is required'),
+        // title: Yup.string().required('Title is required'),
+        // service: Yup.string().required('Service is required'),
+        quantity: Yup.number()
+          .required('Quantity is required')
+          .min(1, 'Quantity must be more than 0'),
+      })
+    )
+  ),
+  bankInfo: Yup.object().shape({
+    accountNumber: Yup.string().required('Account number is required'),
+    bankName: Yup.string().required('Bank name is required'),
+    accountEmail: Yup.string().email('Must be a valid email').required('Email is required'),
+    payTo: Yup.string().required('Pay to is required'),
+  }),
+  status: Yup.string().required('Status is required'),
+  invoiceFrom: Yup.mixed(),
+  totalAmount: Yup.number(),
+  invoiceNumber: Yup.string(),
+  reason: Yup.string().when('status', {
+    is: (val) => val === 'rejected',
+    then: (s) => s.required('Reason of rejection is required'),
+    otherwise: (s) => s,
+  }),
+  otherReason: Yup.string().when('reason', {
+    is: (val) => val === 'Others',
+    then: (s) => s.required('Reason of rejection is required'),
+    otherwise: (s) => s,
+  }),
+});
+
 export default function InvoiceNewEditForm({ id, creators }) {
   const { isLoading, invoice, mutate } = useGetInvoiceById(id);
+  const { user } = useAuthContext();
+  const dialog = useBoolean();
+  const xeroLoading = useBoolean();
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -103,51 +154,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
     primary: false,
     contactId: creator.user.creator.xeroContactId || null,
   }));
-
-  const NewInvoiceSchema = Yup.object().shape({
-    invoiceTo: Yup.mixed().nullable().required('Invoice to is required'),
-    createDate: Yup.mixed().nullable().required('Create date is required'),
-    dueDate: Yup.mixed()
-      .required('Due date is required')
-      .test(
-        'date-min',
-        'Due date must be later than create date',
-        (value, { parent }) => value.getTime() > parent.createDate.getTime()
-      ),
-    items: Yup.lazy(() =>
-      Yup.array().of(
-        Yup.object({
-          campaignName: Yup.string().required('Campaign name is required'),
-          clientName: Yup.string().required('Client name is required'),
-          // title: Yup.string().required('Title is required'),
-          // service: Yup.string().required('Service is required'),
-          quantity: Yup.number()
-            .required('Quantity is required')
-            .min(1, 'Quantity must be more than 0'),
-        })
-      )
-    ),
-    bankInfo: Yup.object().shape({
-      accountNumber: Yup.string().required('Account number is required'),
-      bankName: Yup.string().required('Bank name is required'),
-      accountEmail: Yup.string().email('Must be a valid email').required('Email is required'),
-      payTo: Yup.string().required('Pay to is required'),
-    }),
-    status: Yup.string().required('Status is required'),
-    invoiceFrom: Yup.mixed(),
-    totalAmount: Yup.number(),
-    invoiceNumber: Yup.string(),
-    reason: Yup.string().when('status', {
-      is: (val) => val === 'rejected',
-      then: (s) => s.required('Reason of rejection is required'),
-      otherwise: (s) => s,
-    }),
-    otherReason: Yup.string().when('reason', {
-      is: (val) => val === 'Others',
-      then: (s) => s.required('Reason of rejection is required'),
-      otherwise: (s) => s,
-    }),
-  });
 
   const generateRandomInvoiceNumber = () => {
     const randomNumber = Math.floor(1000 + Math.random() * 9000);
@@ -220,6 +226,14 @@ export default function InvoiceNewEditForm({ id, creators }) {
   } = methods;
 
   const handleCreateAndSend = handleSubmit(async (data) => {
+    if (data?.status === 'approved' && !user?.admin?.xeroTokenSet) {
+      enqueueSnackbar(`You're not connected to Xero`, {
+        variant: 'error',
+      });
+      dialog.onTrue();
+      return;
+    }
+
     loadingSend.onTrue();
     let newContact;
 
@@ -249,6 +263,18 @@ export default function InvoiceNewEditForm({ id, creators }) {
     }
   });
 
+  const handleActivateXero = useCallback(async () => {
+    try {
+      xeroLoading.onTrue();
+      const response = await axiosInstance.get(endpoints.invoice.xero, { withCredentials: true });
+      window.location.href = response.data.url;
+    } catch (error) {
+      console.error('Error connecting to Xero:', error);
+    } finally {
+      xeroLoading.onFalse();
+    }
+  }, [xeroLoading]);
+
   const values = watch();
 
   const filter = createFilterOptions();
@@ -259,23 +285,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
         Bank Information:
       </Typography>
       <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} sx={{ p: 3 }}>
-        {/* <RHFSelect
-          required
-          name="bankInfo.bankName"
-          label="Bank Name"
-          InputLabelProps={{ shrink: true }}
-          PaperPropsSx={{ textTransform: 'capitalize' }}
-          value={values.bankInfo?.bankName}
-        >
-          {newBanks
-            ?.flatMap((a) => a.banks)
-            .map((option, index) => (
-              <MenuItem key={index} value={option}>
-                {option}
-              </MenuItem>
-            ))}
-        </RHFSelect> */}
-
         <RHFAutocomplete
           name="bankInfo.bankName"
           ListboxComponent={ListboxComponent}
@@ -372,7 +381,6 @@ export default function InvoiceNewEditForm({ id, creators }) {
 
   useEffect(() => {
     reset(defaultValues);
-    console.log('DAS');
   }, [reset, defaultValues]);
 
   if (isLoading)
@@ -383,97 +391,120 @@ export default function InvoiceNewEditForm({ id, creators }) {
     );
 
   return (
-    <Stack spacing={1}>
-      <Box sx={{ mb: 2, textAlign: 'end' }}>
-        <LoadingButton
-          variant="outlined"
-          startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
-          onClick={handleDownload}
-        >
-          Download Invoice
-        </LoadingButton>
-      </Box>
-
-      <FormProvider methods={methods}>
-        <Card sx={{ p: 1 }}>
-          <InvoiceNewEditAddress creators={creatorList} />
-
-          <InvoiceNewEditStatusDate />
-
-          {bankAccount}
-
-          {invoice?.deliverables?.length && deliverablesInfo}
-
-          <InvoiceNewEditDetails />
-
-          <Stack
-            justifyContent="flex-end"
-            direction={{ sm: 'column', md: 'row' }}
-            gap={2}
-            sx={{ mt: 3 }}
-            alignItems="end"
+    <>
+      <Stack spacing={2}>
+        <Box sx={{ textAlign: 'end' }}>
+          <LoadingButton
+            variant="outlined"
+            startIcon={<Iconify icon="material-symbols:download-rounded" width={18} />}
+            onClick={handleDownload}
           >
-            {values?.status === 'rejected' && (
-              <>
-                {invoice?.creator?.user?.paymentForm?.status === 'rejected' ? (
-                  <Box width={1} alignSelf="center" ml={2}>
-                    <Typography variant="subtitle1">
-                      Reason: {invoice?.creator?.user?.paymentForm?.reason}
-                    </Typography>
-                  </Box>
-                ) : (
-                  <>
-                    {values?.reason !== 'Others' ? (
-                      <RHFSelect
-                        fullWidth
-                        name="reason"
-                        label="Reason for Rejection"
-                        InputLabelProps={{ shrink: true }}
-                        PaperPropsSx={{ textTransform: 'capitalize' }}
-                      >
-                        {reasons.map((option, index) => (
-                          <MenuItem key={index} value={option}>
-                            {option}
-                          </MenuItem>
-                        ))}
-                      </RHFSelect>
-                    ) : (
-                      <Stack direction="row" width={1} spacing={1} alignItems="center">
-                        <Tooltip title="Back">
-                          <IconButton onClick={() => setValue('reason', '')}>
-                            <Iconify icon="majesticons:arrow-left" width={18} />
-                          </IconButton>
-                        </Tooltip>
-                        <RHFTextField
-                          name="otherReason"
-                          placeholder="Others - Reason for Rejection"
-                        />
-                      </Stack>
-                    )}
-                  </>
-                )}
-              </>
-            )}
+            Download Invoice
+          </LoadingButton>
+        </Box>
 
-            {invoice?.status !== 'paid' && (
-              <LoadingButton
-                size="large"
-                variant="outlined"
-                loading={loadingSend.value && isSubmitting}
-                onClick={handleCreateAndSend}
-                sx={{
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  width: 180,
-                }}
-                disabled={!isValid}
-              >
-                {invoice ? 'Update' : 'Create'} & Send
-              </LoadingButton>
-            )}
-          </Stack>
-        </Card>
-      </FormProvider>
-    </Stack>
+        <FormProvider methods={methods}>
+          <Card sx={{ p: 1, height: '80vh', overflow: 'auto', scrollbarWidth: 'thin' }}>
+            <InvoiceNewEditAddress creators={creatorList} />
+
+            <InvoiceNewEditStatusDate />
+
+            {bankAccount}
+
+            {invoice?.deliverables?.length && deliverablesInfo}
+
+            <InvoiceNewEditDetails />
+
+            <Stack
+              justifyContent="flex-end"
+              direction={{ sm: 'column', md: 'row' }}
+              gap={2}
+              sx={{ mt: 3 }}
+              alignItems="end"
+            >
+              {values?.status === 'rejected' && (
+                <>
+                  {invoice?.creator?.user?.paymentForm?.status === 'rejected' ? (
+                    <Box width={1} alignSelf="center" ml={2}>
+                      <Typography variant="subtitle1">
+                        Reason: {invoice?.creator?.user?.paymentForm?.reason}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      {values?.reason !== 'Others' ? (
+                        <RHFSelect
+                          fullWidth
+                          name="reason"
+                          label="Reason for Rejection"
+                          InputLabelProps={{ shrink: true }}
+                          PaperPropsSx={{ textTransform: 'capitalize' }}
+                        >
+                          {reasons.map((option, index) => (
+                            <MenuItem key={index} value={option}>
+                              {option}
+                            </MenuItem>
+                          ))}
+                        </RHFSelect>
+                      ) : (
+                        <Stack direction="row" width={1} spacing={1} alignItems="center">
+                          <Tooltip title="Back">
+                            <IconButton onClick={() => setValue('reason', '')}>
+                              <Iconify icon="majesticons:arrow-left" width={18} />
+                            </IconButton>
+                          </Tooltip>
+                          <RHFTextField
+                            name="otherReason"
+                            placeholder="Others - Reason for Rejection"
+                          />
+                        </Stack>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {invoice?.status !== 'paid' && (
+                <LoadingButton
+                  size="large"
+                  variant="outlined"
+                  loading={loadingSend.value && isSubmitting}
+                  onClick={handleCreateAndSend}
+                  sx={{
+                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                    width: 180,
+                  }}
+                  disabled={!isValid}
+                >
+                  {invoice ? 'Update' : 'Create'} & Send
+                </LoadingButton>
+              )}
+            </Stack>
+          </Card>
+        </FormProvider>
+      </Stack>
+
+      <Dialog
+        open={dialog.value}
+        onClose={dialog.onFalse}
+        PaperProps={{
+          sx: {
+            borderRadius: 1,
+            p: 1,
+          },
+        }}
+      >
+        <DialogContent>
+          <LoadingButton
+            startIcon={<Iconify icon="logos:xero" width={18} />}
+            onClick={handleActivateXero}
+            loading={xeroLoading.value}
+          >
+            Connect to Xero
+          </LoadingButton>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

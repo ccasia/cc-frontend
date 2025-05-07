@@ -13,6 +13,7 @@ import {
   TableBody,
   DialogContent,
   TableContainer,
+  DialogActions,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -124,6 +125,15 @@ const InvoiceLists = ({ invoices }) => {
     setSelectedData();
     editDialog.onFalse();
   }, [editDialog]);
+
+  // const handleActivateXero = async () => {
+  //   try {
+  //     const response = await axiosInstance.get(endpoints.invoice.xero, { withCredentials: true });
+  //     window.location.href = response.data.url;
+  //   } catch (error) {
+  //     console.error('Error connecting to Xero:', error);
+  //   }
+  // };
 
   return (
     <Box>
@@ -245,8 +255,18 @@ const InvoiceLists = ({ invoices }) => {
         <TableNoData notFound={notFound} />
       </Card>
 
-      <Dialog open={editDialog.value} onClose={closeEditInvoice} fullWidth maxWidth="lg">
-        <DialogContent sx={{ p: 2 }}>
+      <Dialog
+        open={editDialog.value}
+        onClose={closeEditInvoice}
+        fullWidth
+        maxWidth="lg"
+        PaperProps={{
+          sx: {
+            borderRadius: 1,
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 2, overflow: 'hidden' }}>
           <InvoiceNewEditForm id={selectedId} creators={selectedData} />
         </DialogContent>
       </Dialog>
