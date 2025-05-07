@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 
 import {
   Box,
+  Chip,
   Stack,
   Avatar,
   Button,
@@ -10,18 +11,16 @@ import {
   useTheme,
   Container,
   Typography,
-  ListItemText,
-  CircularProgress,
-  Chip,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useSWRGetCreatorByID } from 'src/hooks/use-get-creators';
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import MediaKitSocial from './media-kit-social-view';

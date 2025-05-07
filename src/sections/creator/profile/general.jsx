@@ -30,6 +30,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 import { typography } from 'src/theme/typography';
+import { countriesCities } from 'src/contants/countries';
 
 import Image from 'src/components/image';
 import { useSnackbar } from 'src/components/snackbar';
@@ -39,7 +40,6 @@ import FormProvider, {
   RHFDatePicker,
   RHFAutocomplete,
 } from 'src/components/hook-form';
-import { countriesCities } from 'src/contants/countries';
 
 // ----------------------------------------------------------------------
 

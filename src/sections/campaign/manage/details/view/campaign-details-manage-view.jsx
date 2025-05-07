@@ -5,7 +5,6 @@ import { useTheme } from '@emotion/react';
 import { useMemo, useState } from 'react';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
-import { useRouter } from 'src/routes/hooks';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -35,6 +34,7 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';

@@ -1,11 +1,14 @@
-import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
 
 import {
   Box,
   Table,
+  Paper,
+  Stack,
   Button,
   Dialog,
+  Avatar,
   TableRow,
   TableHead,
   TableCell,
@@ -15,14 +18,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Paper,
-  Avatar,
-  Stack,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
-import Image from 'src/components/image';
 
 export const CampaignLog = ({ open, campaign, onClose }) => {
   const rows =

@@ -1,12 +1,11 @@
 import dayjs from 'dayjs';
-import PropTypes from 'prop-types';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
-import { Box, Card, Chip, Avatar, Typography, IconButton, Menu, MenuItem } from '@mui/material';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import Iconify from 'src/components/iconify';
+import { Box, Card, Chip, Menu, Avatar, MenuItem, Typography, IconButton } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -16,6 +15,7 @@ import { formatText } from 'src/utils/format-test';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
+
 import { CampaignLog } from '../../manage/list/CampaignLog';
 
 // ----------------------------------------------------------------------

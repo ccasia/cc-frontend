@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import React, { useMemo, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import React, { useMemo, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -9,10 +9,10 @@ import { LoadingButton } from '@mui/lab';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
-import Tooltip from '@mui/material/Tooltip';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -434,11 +434,9 @@ export default function UserCard({
         onClose={confirmationDialog.onFalse}
         title="Withdraw from Campaign?"
         content={
-          <>
-            <Typography variant="body2" gutterBottom>
+          <Typography variant="body2" gutterBottom>
               Are you sure you want to remove this creator? This action cannot be undone
             </Typography>
-          </>
         }
         action={
           <LoadingButton

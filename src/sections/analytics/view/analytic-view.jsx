@@ -5,18 +5,18 @@ import { Tab, Box, Tabs, Grid, Container, Typography, CircularProgress } from '@
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import CreatorSendDrafts from './components/creators/drafts';
 import ApprovePitch from './components/admins/PitchAnalytics';
 import TotalPitches from './components/creators/total-pitches';
+import CreatorSendPosting from './components/creators/posting';
 import TotalCreators from './components/creators/totalcreators';
+import CreatorSendAgreement from './components/creators/agreements';
+import PostingAnalytics from './components/admins/PostingAnalytics';
 import ApproveDraftsAnalytics from './components/admins/DraftsAnalytics';
 import ShortlistedCreators from './components/creators/shortlisted-creators';
 import CampaignParticipation from './components/creators/campaign-participants';
 import SendAgreementsAnalytics from './components/admins/SendAgreementsAnalytics';
 import ApproveAgreementsAnalytics from './components/admins/ApproveAgreementsAnalytics';
-import CreatorSendAgreement from './components/creators/agreements';
-import CreatorSendDrafts from './components/creators/drafts';
-import CreatorSendPosting from './components/creators/posting';
-import PostingAnalytics from './components/admins/PostingAnalytics';
 
 
 

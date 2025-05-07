@@ -8,36 +8,31 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Box,
+  Tab,
   Chip,
-  Grid,
+  Tabs,
   Stack,
   Paper,
+  alpha,
   Button,
   Dialog,
   Avatar,
+  Select,
   Divider,
   useTheme,
   Collapse,
-  Accordion,
+  MenuItem,
   Typography,
   IconButton,
+  InputLabel,
   DialogTitle,
+  FormControl,
   DialogContent,
   DialogActions,
   useMediaQuery,
   LinearProgress,
-  AccordionSummary,
-  AccordionDetails,
-  Tabs,
-  Tab,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  alpha,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';

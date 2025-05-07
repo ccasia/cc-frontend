@@ -21,7 +21,6 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { updateEvent, useGetEvents } from 'src/api/calendar';
 import { CALENDAR_COLOR_OPTIONS } from 'src/_mock/_calendar';
 
-import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
 import { StyledCalendar } from '../styles';

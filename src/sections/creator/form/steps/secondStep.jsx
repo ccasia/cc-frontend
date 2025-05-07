@@ -1,27 +1,20 @@
-import axios from 'axios';
+import React from 'react';
 import PropTypes from 'prop-types';
-import { enqueueSnackbar } from 'notistack';
 import { useFormContext } from 'react-hook-form';
-import React, { useEffect, useCallback } from 'react';
 
 import {
   Box,
   Stack,
-  Tooltip,
   FormLabel,
-  IconButton,
   ListItemText,
-  InputAdornment,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { countries } from 'src/assets/data';
 import { primaryFont } from 'src/theme/typography';
-
-import Iconify from 'src/components/iconify';
-import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 import { countriesCities } from 'src/contants/countries';
+
+import { RHFAutocomplete } from 'src/components/hook-form';
 
 const SecondStep = ({ item }) => {
   const loading = useBoolean();

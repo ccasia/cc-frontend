@@ -4,24 +4,25 @@ import PropTypes from 'prop-types';
 
 import { alpha } from '@mui/material/styles';
 import {
-  Avatar,
   Box,
-  Button,
-  CircularProgress,
-  Container,
-  Divider,
   Grid,
   Stack,
+  Avatar,
+  Button,
+  Divider,
   Tooltip,
+  Container,
   Typography,
+  CircularProgress,
 } from '@mui/material';
 
-import Iconify from 'src/components/iconify';
-import Label from 'src/components/label';
+import { useRouter } from 'src/routes/hooks';
 
 import { useGetMyCampaign } from 'src/hooks/use-get-my-campaign';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
-import { useRouter } from 'src/routes/hooks';
+
+import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 
 const BoxStyle = {
   border: '1px solid #e0e0e0',

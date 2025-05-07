@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from "react";
-import axiosInstance, { endpoints } from "src/utils/axios";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import React, { useState, useEffect } from "react";
+
 import { 
+    Box, 
     Card, 
     Table, 
     TableRow, 
     TableHead, 
     TableBody, 
     TableCell, 
-    CardContent, 
-    TableContainer, 
     Typography, 
-    CircularProgress,
-    Box
+    CardContent, 
+    TableContainer
  } from "@mui/material";
+
+import axiosInstance, { endpoints } from "src/utils/axios";
 
 // Extend dayjs to use duration plugin
 dayjs.extend(duration);

@@ -1,10 +1,9 @@
-import PropTypes from 'prop-types';
 import React from 'react';
+import PropTypes from 'prop-types';
 
-import { Box, Stack, Typography, Chip, Divider } from '@mui/material';
+import { Box, Chip, Stack, Divider, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
-import { fDate } from 'src/utils/format-time';
 
 const ChipStyle = {
   bgcolor: '#FFF',

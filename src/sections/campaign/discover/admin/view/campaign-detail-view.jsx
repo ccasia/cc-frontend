@@ -4,27 +4,27 @@ import PropTypes from 'prop-types';
 import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
-import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { pink, deepOrange } from '@mui/material/colors';
 import {
   Box,
+  Menu,
   Stack,
   Alert,
   Radio,
   Button,
   Dialog,
   Avatar,
+  MenuItem,
   Container,
   Typography,
   IconButton,
   DialogTitle,
   DialogActions,
   DialogContent,
-  Menu,
-  MenuItem,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -44,8 +44,8 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
-import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
+import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
@@ -55,11 +55,11 @@ import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
+import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
-import { CampaignLog } from '../../../manage/list/CampaignLog';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {

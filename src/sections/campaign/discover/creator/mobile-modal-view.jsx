@@ -1,45 +1,45 @@
-import PropTypes from 'prop-types';
-import React, { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import useSWR from 'swr';
-import { useTheme } from '@mui/material/styles';
 import dayjs from 'dayjs';
+import { useParams } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
 
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
+  Chip,
   Stack,
   Button,
+  Avatar,
+  Divider,
   Container,
   Typography,
-  Avatar,
-  Chip,
-  IconButton,
   CircularProgress,
-  Divider,
 } from '@mui/material';
 
-import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
-import { useSettingsContext } from 'src/components/settings';
-import Iconify from 'src/components/iconify';
-import { LoadingScreen } from 'src/components/loading-screen';
-import Image from 'src/components/image';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { fetcher, endpoints } from 'src/utils/axios';
-import { useAuthContext } from 'src/auth/hooks';
-import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
-import CampaignModalMobile from './campaign-modal-mobile';
+import { useAuthContext } from 'src/auth/hooks';
+
+import Image from 'src/components/image';
+import Iconify from 'src/components/iconify';
+import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
+
 import CreatorForm from './creator-form';
+import CampaignModalMobile from './campaign-modal-mobile';
+import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 
 // ----------------------------------------------------------------------
 
 const calculateMatchPercentage = (user, campaign) => {
   if (!user?.creator || !campaign?.campaignRequirement) return 0;
 
-  const creator = user.creator;
+  const {creator} = user;
   const requirements = campaign.campaignRequirement;
 
   // Calculate interest matching percentage

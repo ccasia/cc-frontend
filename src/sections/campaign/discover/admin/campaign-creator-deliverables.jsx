@@ -1,15 +1,14 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
-import { Box, Stack, Typography, Avatar, Accordion, AccordionSummary, AccordionDetails, Button } from '@mui/material';
-
-import Label from 'src/components/label';
-import Iconify from 'src/components/iconify';
-import EmptyContent from 'src/components/empty-content/empty-content';
+import { Box, Stack, Avatar, Button, Accordion, Typography, AccordionSummary, AccordionDetails } from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
+
+import Iconify from 'src/components/iconify';
+import EmptyContent from 'src/components/empty-content/empty-content';
 
 import FirstDraft from './creator-stuff/submissions/firstDraft';
 import FinalDraft from './creator-stuff/submissions/finalDraft';
@@ -17,7 +16,7 @@ import Posting from './creator-stuff/submissions/posting/posting';
 
 const CampaignCreatorDeliverables = ({ campaign }) => {
   const [selectedCreator, setSelectedCreator] = useState(null);
-  const [expandedAccordion, setExpandedAccordion] = useState('posting');
+  const [expandedAccordion, setExpandedAccordion] = useState(null); 
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
   // Get shortlisted creators from campaign
@@ -350,10 +349,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
               }}
             >
               <Stack spacing={1.5}>
-                {/* Posting Link Accordion */}
+
+                {/* First Draft Accordion */}
                 <Accordion 
-                  expanded={expandedAccordion === 'posting'} 
-                  onChange={handleAccordionChange('posting')}
+                  expanded={expandedAccordion === 'firstDraft'} 
+                  onChange={handleAccordionChange('firstDraft')}
                   sx={{ 
                     boxShadow: 'none',
                     border: '1px solid',
@@ -365,22 +365,22 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                       margin: 0,
                     },
                     '& .MuiAccordionSummary-root': {
-                      borderRadius: expandedAccordion === 'posting' ? '16px 16px 0 0' : 16,
+                      borderRadius: expandedAccordion === 'firstDraft' ? '16px 16px 0 0' : 16,
                     },
                   }}
                 >
                   <AccordionSummary
                     expandIcon={
-                      expandedAccordion === 'posting' 
+                      expandedAccordion === 'firstDraft' 
                         ? <Iconify icon="eva:arrow-ios-upward-fill" width={24} height={24} color="#8E8E93" /> 
                         : <Iconify icon="eva:arrow-ios-forward-fill" width={24} height={24} color="#8E8E93" />
                     }
                     sx={{ 
-                      borderBottom: expandedAccordion === 'posting' ? '1px solid' : 'none',
+                      borderBottom: expandedAccordion === 'firstDraft' ? '1px solid' : 'none',
                       borderColor: 'divider',
                       p: { xs: 1, md: 1.5 },
                       minHeight: { xs: 48, md: 54 },
-                      bgcolor: expandedAccordion === 'posting' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                      bgcolor: expandedAccordion === 'firstDraft' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
                       borderTopLeftRadius: 16,
                       borderTopRightRadius: 16,
                     }}
@@ -398,15 +398,15 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                           variant="h6"
                           sx={{
                             fontWeight: 600,
-                            color: '#221f20',
+                            color: '#231F20',
                             fontSize: { xs: '1rem', md: '1.125rem' },
                             ml: 1,
                             width: 110,
                           }}
                         >
-                          Posting Link
+                          First Draft
                         </Typography>
-                        {renderAccordionStatus(postingSubmission)}
+                        {renderAccordionStatus(firstDraftSubmission)}
                       </Box>
                     </Stack>
                   </AccordionSummary>
@@ -419,15 +419,19 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                     borderBottomLeftRadius: 16,
                     borderBottomRightRadius: 16,
                   }}>
-                    {postingSubmission ? (
-                      <Posting
-                        submission={postingSubmission}
+                    {firstDraftSubmission ? (
+                      <FirstDraft
+                        submission={firstDraftSubmission}
                         campaign={campaign}
                         creator={selectedCreator}
+                        deliverablesData={{
+                          deliverables: deliverablesData,
+                          deliverableMutate: () => {},
+                        }}
                       />
                     ) : (
                       <Box sx={{ p: 3 }}>
-                        <EmptyContent title="No posting submission found" />
+                        <EmptyContent title="No first draft submission found" />
                       </Box>
                     )}
                   </AccordionDetails>
@@ -521,10 +525,10 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                   </AccordionDetails>
                 </Accordion>
 
-                {/* First Draft Accordion */}
+                {/* Posting Link Accordion */}
                 <Accordion 
-                  expanded={expandedAccordion === 'firstDraft'} 
-                  onChange={handleAccordionChange('firstDraft')}
+                  expanded={expandedAccordion === 'posting'} 
+                  onChange={handleAccordionChange('posting')}
                   sx={{ 
                     boxShadow: 'none',
                     border: '1px solid',
@@ -536,22 +540,22 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                       margin: 0,
                     },
                     '& .MuiAccordionSummary-root': {
-                      borderRadius: expandedAccordion === 'firstDraft' ? '16px 16px 0 0' : 16,
+                      borderRadius: expandedAccordion === 'posting' ? '16px 16px 0 0' : 16,
                     },
                   }}
                 >
                   <AccordionSummary
                     expandIcon={
-                      expandedAccordion === 'firstDraft' 
+                      expandedAccordion === 'posting' 
                         ? <Iconify icon="eva:arrow-ios-upward-fill" width={24} height={24} color="#8E8E93" /> 
                         : <Iconify icon="eva:arrow-ios-forward-fill" width={24} height={24} color="#8E8E93" />
                     }
                     sx={{ 
-                      borderBottom: expandedAccordion === 'firstDraft' ? '1px solid' : 'none',
+                      borderBottom: expandedAccordion === 'posting' ? '1px solid' : 'none',
                       borderColor: 'divider',
                       p: { xs: 1, md: 1.5 },
                       minHeight: { xs: 48, md: 54 },
-                      bgcolor: expandedAccordion === 'firstDraft' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                      bgcolor: expandedAccordion === 'posting' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
                       borderTopLeftRadius: 16,
                       borderTopRightRadius: 16,
                     }}
@@ -569,15 +573,15 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                           variant="h6"
                           sx={{
                             fontWeight: 600,
-                            color: '#231F20',
+                            color: '#221f20',
                             fontSize: { xs: '1rem', md: '1.125rem' },
                             ml: 1,
                             width: 110,
                           }}
                         >
-                          First Draft
+                          Posting Link
                         </Typography>
-                        {renderAccordionStatus(firstDraftSubmission)}
+                        {renderAccordionStatus(postingSubmission)}
                       </Box>
                     </Stack>
                   </AccordionSummary>
@@ -590,19 +594,15 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                     borderBottomLeftRadius: 16,
                     borderBottomRightRadius: 16,
                   }}>
-                    {firstDraftSubmission ? (
-                      <FirstDraft
-                        submission={firstDraftSubmission}
+                    {postingSubmission ? (
+                      <Posting
+                        submission={postingSubmission}
                         campaign={campaign}
                         creator={selectedCreator}
-                        deliverablesData={{
-                          deliverables: deliverablesData,
-                          deliverableMutate: () => {},
-                        }}
                       />
                     ) : (
                       <Box sx={{ p: 3 }}>
-                        <EmptyContent title="No first draft submission found" />
+                        <EmptyContent title="No posting submission found" />
                       </Box>
                     )}
                   </AccordionDetails>

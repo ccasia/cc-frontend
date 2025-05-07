@@ -1,13 +1,15 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { Navigate } from 'react-router';
-import { Box, Button, Typography, Stack } from '@mui/material';
+
+import { Box, Stack, Button, Typography } from '@mui/material';
+
 import { paths } from 'src/routes/paths';
-import { useCreator } from 'src/hooks/zustands/useCreator';
 import { useRouter } from 'src/routes/hooks';
-import { enqueueSnackbar } from 'notistack';
-import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useCreator } from 'src/hooks/zustands/useCreator';
+
 
 const Verify = () => {
   const { email } = useCreator();

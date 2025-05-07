@@ -1,18 +1,20 @@
-import PropTypes from 'prop-types';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
+
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
-import { Stack, Avatar, Typography } from '@mui/material';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
+import { Stack, Avatar } from '@mui/material';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { countries } from 'src/assets/data';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Label from 'src/components/label';
@@ -20,9 +22,9 @@ import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 
+import { AdminLogsModal } from './adminLog';
 // eslint-disable-next-line import/no-cycle
 import UserQuickEditForm from './user-quick-edit-form';
-import { AdminLogsModal } from './adminLog';
 
 // ----------------------------------------------------------------------
 

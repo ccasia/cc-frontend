@@ -18,7 +18,6 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
 
 import CampaignPitchTextModal from './pitch/pitch-text-modal';
 import CampaignPitchVideoModal from './pitch/pitch-video-modal';

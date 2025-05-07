@@ -4,14 +4,15 @@ import { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Avatar from '@mui/material/Avatar';
-import { Stack, IconButton, Tooltip } from '@mui/material';
-import { useTheme, alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
+import { alpha, useTheme } from '@mui/material/styles';
+import { Stack, Tooltip, IconButton } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { formatText } from 'src/utils/format-test';
+
 import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -325,7 +326,7 @@ function MetricBar({ label, value, color }) {
             justifyContent: 'center',
             borderRadius: '50%',
             bgcolor: alpha(color, 0.12),
-            color: color,
+            color,
           }}
         >
           <Iconify icon={getMetricIcon()} width={14} />

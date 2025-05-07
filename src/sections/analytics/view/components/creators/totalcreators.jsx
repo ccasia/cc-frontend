@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, Typography, CircularProgress, Box, Stack } from '@mui/material';
-import { LineChart, PieChart, BarChart } from '@mui/x-charts';
-import axiosInstance, { endpoints } from 'src/utils/axios';
 import dayjs from 'dayjs';
+import { useState, useEffect } from 'react';
+
+import { PieChart, BarChart } from '@mui/x-charts';
+import { Box, Card, Stack, Typography, CardContent, CircularProgress } from '@mui/material';
+
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
 const calculateAge = (birthDate) => {
   if (!birthDate) return null; // Handle missing birthDate

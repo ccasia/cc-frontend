@@ -29,8 +29,8 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
-import MediaKitSocial from '../media-kit/view/media-kit-social-view';
 import { formatNumber } from '../media-kit/view-instagram';
+import MediaKitSocial from '../media-kit/view/media-kit-social-view';
 
 const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
 

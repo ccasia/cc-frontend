@@ -16,6 +16,7 @@ import {
   Dialog,
   Avatar,
   Button,
+  Divider,
   TableRow,
   ListItem,
   TableHead,
@@ -28,7 +29,6 @@ import {
   DialogContent,
   TableContainer,
   CircularProgress,
-  Divider,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';

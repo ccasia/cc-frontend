@@ -1,12 +1,14 @@
+import axios from 'axios';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import { Box, Button, Stack, IconButton, Typography } from '@mui/material';
+import { useLocation } from 'react-router-dom';
+
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { Box, Stack, Button, IconButton, Typography } from '@mui/material';
+
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-import { useLocation } from 'react-router-dom';
-import axios from 'axios';
 
 // ----------------------------------------------------------------------
 
@@ -87,7 +89,7 @@ export default function CampaignTabs({ filter = 'active' }) {
   
   // Check the current URL to determine which campaign tab is active
   useEffect(() => {
-    const pathname = location.pathname;
+    const {pathname} = location;
     // regex that gets the campaign ID from URLs like /dashboard/campaign/discover/detail/id
     const match = pathname.match(/\/campaign\/discover\/detail\/([^/]+)/);
     if (match && match[1]) {
