@@ -426,7 +426,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       </DialogTitle>
       <DialogContent sx={{ mt: 2 }}>
         <Stack spacing={2}>
-          <DialogContentText>Are you sure you want to submit now?</DialogContentText>
+          <DialogContentText>Are you sure you want to approve this submission?</DialogContentText>
 
           {/* Show schedule if set */}
           {watch('schedule.startDate') && watch('schedule.endDate') && (
@@ -475,20 +475,20 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           size="small"
           sx={{
             bgcolor: 'white',
-            border: 1,
-            borderRadius: 0.8,
+            border: 1.5,
+            borderRadius: 1.15,
             borderColor: '#e7e7e7',
             borderBottom: 3,
             borderBottomColor: '#e7e7e7',
             color: 'text.primary',
             '&:hover': {
               bgcolor: '#f5f5f5',
-              borderColor: '#e7e7e7',
+              borderColor: '#231F20',
             },
             textTransform: 'none',
             px: 2.5,
             py: 1.2,
-            fontSize: '0.875rem',
+            fontSize: '0.9rem',
             minWidth: '80px',
             height: '45px',
           }}
@@ -505,27 +505,27 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           size="small"
           loading={isSubmitting}
           sx={{
-            bgcolor: '#2e6c56',
-            color: 'white',
+            bgcolor: '#FFFFFF',
+            color: '#1ABF66',
+            border: '1.5px solid',
+            borderColor: '#e7e7e7',
             borderBottom: 3,
-            borderBottomColor: '#1a3b2f',
-            borderRadius: 0.8,
+            borderBottomColor: '#e7e7e7',
+            borderRadius: 1.15,
             px: 2.5,
             py: 1.2,
+            fontWeight: 600,
             '&:hover': {
-              bgcolor: '#2e6c56',
-              opacity: 0.9,
+              bgcolor: '#f5f5f5',
+              borderColor: '#1ABF66',
             },
-            '&:disabled': {
-              display: 'none',
-            },
-            fontSize: '0.875rem',
+            fontSize: '0.9rem',
             minWidth: '80px',
             height: '45px',
             textTransform: 'none',
           }}
         >
-          Submit
+          Approve
         </LoadingButton>
       </DialogActions>
     </Dialog>
@@ -631,20 +631,20 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           size="small"
           sx={{
             bgcolor: 'white',
-            border: 1,
-            borderRadius: 0.8,
+            border: 1.5,
+            borderRadius: 1.15,
             borderColor: '#e7e7e7',
             borderBottom: 3,
             borderBottomColor: '#e7e7e7',
             color: 'text.primary',
             '&:hover': {
               bgcolor: '#f5f5f5',
-              borderColor: '#e7e7e7',
+              borderColor: '#231F20',
             },
             textTransform: 'none',
             px: 2.5,
             py: 1.2,
-            fontSize: '0.875rem',
+            fontSize: '0.9rem',
             minWidth: '80px',
             height: '45px',
           }}
@@ -673,18 +673,21 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
             (selectedTab === 'photos' && selectedPhotosForChange.length === 0)
           }
           sx={{
-            bgcolor: '#2e6c56',
-            color: 'white',
+            bgcolor: '#FFFFFF',
+            color: '#1ABF66',
+            border: '1.5px solid',
+            borderColor: '#e7e7e7',
             borderBottom: 3,
-            borderBottomColor: '#1a3b2f',
-            borderRadius: 0.8,
+            borderBottomColor: '#e7e7e7',
+            borderRadius: 1.15,
             px: 2.5,
             py: 1.2,
+            fontWeight: 600,
             '&:hover': {
-              bgcolor: '#2e6c56',
-              opacity: 0.9,
+              bgcolor: '#f5f5f5',
+              borderColor: '#1ABF66',
             },
-            fontSize: '0.875rem',
+            fontSize: '0.9rem',
             minWidth: '80px',
             height: '45px',
             textTransform: 'none',
@@ -1168,31 +1171,29 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                       disabled={isDisabled}
                       size="small"
                       variant="contained"
-                      startIcon={<Iconify icon="solar:close-circle-bold" />}
+                      // startIcon={<Iconify icon="solar:close-circle-bold" />}
                       sx={{
-                        bgcolor: 'white',
-                        border: 1,
-                        borderRadius: 0.8,
+                        bgcolor: '#FFFFFF',
+                        border: 1.5,
+                        borderRadius: 1.15,
                         borderColor: '#e7e7e7',
                         borderBottom: 3,
                         borderBottomColor: '#e7e7e7',
-                        color: 'error.main',
+                        color: '#D4321C',
                         '&:hover': {
-                          bgcolor: '#e7e7e7',
-                          borderColor: '#e7e7e7',
-                        },
-                        '&:disabled': {
-                          display: 'none',
+                          bgcolor: '#f5f5f5',
+                          borderColor: '#D4321C',
                         },
                         textTransform: 'none',
                         px: 2.5,
                         py: 1.2,
-                        fontSize: '0.875rem',
+                        fontSize: '1rem',
+                        fontWeight: 600,
                         minWidth: '80px',
                         height: '45px',
                       }}
                     >
-                      Request a change
+                      Request a Change
                     </Button>
                   </Stack>
                 </Stack>
@@ -1247,20 +1248,20 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                         size="small"
                         sx={{
                           bgcolor: 'white',
-                          border: 1,
-                          borderRadius: 0.8,
+                          border: 1.5,
+                          borderRadius: 1.15,
                           borderColor: '#e7e7e7',
                           borderBottom: 3,
                           borderBottomColor: '#e7e7e7',
                           color: 'text.primary',
                           '&:hover': {
                             bgcolor: '#f5f5f5',
-                            borderColor: '#e7e7e7',
+                            borderColor: '#231F20',
                           },
                           textTransform: 'none',
                           px: 2.5,
                           py: 1.2,
-                          fontSize: '0.875rem',
+                          fontSize: '1rem',
                           minWidth: '80px',
                           height: '45px',
                         }}
@@ -1273,18 +1274,21 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                         onClick={photosRequest.onTrue}
                         disabled={photosType === 'request' && selectedPhotosForChange.length === 0}
                         sx={{
-                          bgcolor: '#2e6c56',
-                          color: 'white',
+                          bgcolor: '#FFFFFF',
+                          color: '#1ABF66',
+                          border: '1.5px solid',
+                          borderColor: '#e7e7e7',
                           borderBottom: 3,
-                          borderBottomColor: '#1a3b2f',
-                          borderRadius: 0.8,
+                          borderBottomColor: '#e7e7e7',
+                          borderRadius: 1.15,
                           px: 2.5,
                           py: 1.2,
+                          fontWeight: 600,
                           '&:hover': {
-                            bgcolor: '#2e6c56',
-                            opacity: 0.9,
+                            bgcolor: '#f5f5f5',
+                            borderColor: '#1ABF66',
                           },
-                          fontSize: '0.875rem',
+                          fontSize: '1rem',
                           minWidth: '80px',
                           height: '45px',
                           textTransform: 'none',
@@ -1307,9 +1311,12 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
   useEffect(() => {
     if (
       campaign?.campaignCredits &&
-      (submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'IN_PROGRESS')
+      (submission?.status === 'CHANGES_REQUIRED' || submission?.status === 'IN_PROGRESS') &&
+      submission?.status !== 'PENDING_REVIEW'
     ) {
       setType('request');
+    } else if (submission?.status === 'PENDING_REVIEW') {
+      setType('approve');
     }
   }, [submission, campaign]);
 
@@ -1752,7 +1759,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
                                         {/* Feedback Content */}
                                         <Box sx={{ textAlign: 'left', mt: 1 }}>
-                                          {feedback.content.split('\n').map((line, i) => (
+                                          {feedback.content && feedback.content.split('\n').map((line, i) => (
                                             <Typography key={i} variant="body2">
                                               {line}
                                             </Typography>
@@ -1858,49 +1865,53 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                         onClick={handleDraftVideoRequestClick}
                                         size="small"
                                         variant="contained"
-                                        startIcon={<Iconify icon="solar:close-circle-bold" />}
+                                        // startIcon={<Iconify icon="solar:close-circle-bold" />}
                                         sx={{
-                                          bgcolor: 'white',
-                                          border: 1,
-                                          borderRadius: 0.8,
+                                          bgcolor: '#FFFFFF',
+                                          border: 1.5,
+                                          borderRadius: 1.15,
                                           borderColor: '#e7e7e7',
                                           borderBottom: 3,
                                           borderBottomColor: '#e7e7e7',
-                                          color: 'error.main',
+                                          color: '#D4321C',
                                           '&:hover': {
-                                            bgcolor: '#e7e7e7',
-                                            borderColor: '#e7e7e7',
+                                            bgcolor: '#f5f5f5',
+                                            borderColor: '#D4321C',
                                           },
                                           textTransform: 'none',
                                           px: 2.5,
                                           py: 1.2,
-                                          fontSize: '0.875rem',
+                                          fontSize: '1rem',
+                                          fontWeight: 600,
                                           minWidth: '80px',
                                           height: '45px',
                                         }}
                                       >
-                                        Request a change
+                                        Request a Change
                                       </Button>
 
                                       <LoadingButton
                                         onClick={approve.onTrue}
                                         variant="contained"
                                         size="small"
-                                        startIcon={<Iconify icon="solar:check-circle-bold" />}
+                                        // startIcon={<Iconify icon="solar:check-circle-bold" />}
                                         loading={isSubmitting}
                                         sx={{
-                                          bgcolor: '#2e6c56',
-                                          color: 'white',
+                                          bgcolor: '#FFFFFF',
+                                          color: '#1ABF66',
+                                          border: '1.5px solid',
+                                          borderColor: '#e7e7e7',
                                           borderBottom: 3,
-                                          borderBottomColor: '#1a3b2f',
-                                          borderRadius: 0.8,
+                                          borderBottomColor: '#e7e7e7',
+                                          borderRadius: 1.15,
                                           px: 2.5,
                                           py: 1.2,
+                                          fontWeight: 600,
                                           '&:hover': {
-                                            bgcolor: '#2e6c56',
-                                            opacity: 0.9,
+                                            bgcolor: '#f5f5f5',
+                                            borderColor: '#1ABF66',
                                           },
-                                          fontSize: '0.875rem',
+                                          fontSize: '1rem',
                                           minWidth: '80px',
                                           height: '45px',
                                           textTransform: 'none',
@@ -1972,20 +1983,20 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                           size="small"
                                           sx={{
                                             bgcolor: 'white',
-                                            border: 1,
-                                            borderRadius: 0.8,
+                                            border: 1.5,
+                                            borderRadius: 1.15,
                                             borderColor: '#e7e7e7',
                                             borderBottom: 3,
                                             borderBottomColor: '#e7e7e7',
                                             color: 'text.primary',
                                             '&:hover': {
                                               bgcolor: '#f5f5f5',
-                                              borderColor: '#e7e7e7',
+                                              borderColor: '#231F20',
                                             },
                                             textTransform: 'none',
                                             px: 2.5,
                                             py: 1.2,
-                                            fontSize: '0.875rem',
+                                            fontSize: '1rem',
                                             minWidth: '80px',
                                             height: '45px',
                                           }}
@@ -2001,18 +2012,21 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                             selectedVideosForChange.length === 0
                                           }
                                           sx={{
-                                            bgcolor: '#2e6c56',
-                                            color: 'white',
+                                            bgcolor: '#FFFFFF',
+                                            color: '#1ABF66',
+                                            border: '1.5px solid',
+                                            borderColor: '#e7e7e7',
                                             borderBottom: 3,
-                                            borderBottomColor: '#1a3b2f',
-                                            borderRadius: 0.8,
+                                            borderBottomColor: '#e7e7e7',
+                                            borderRadius: 1.15,
                                             px: 2.5,
                                             py: 1.2,
+                                            fontWeight: 600,
                                             '&:hover': {
-                                              bgcolor: '#2e6c56',
-                                              opacity: 0.9,
+                                              bgcolor: '#f5f5f5',
+                                              borderColor: '#1ABF66',
                                             },
-                                            fontSize: '0.875rem',
+                                            fontSize: '1rem',
                                             minWidth: '80px',
                                             height: '45px',
                                             textTransform: 'none',
@@ -2089,18 +2103,21 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                           onClick={request.onTrue}
                                           disabled={selectedVideosForChange.length === 0}
                                           sx={{
-                                            bgcolor: '#2e6c56',
-                                            color: 'white',
+                                            bgcolor: '#FFFFFF',
+                                            color: '#1ABF66',
+                                            border: '1.5px solid',
+                                            borderColor: '#e7e7e7',
                                             borderBottom: 3,
-                                            borderBottomColor: '#1a3b2f',
-                                            borderRadius: 0.8,
+                                            borderBottomColor: '#e7e7e7',
+                                            borderRadius: 1.15,
                                             px: 2.5,
                                             py: 1.2,
+                                            fontWeight: 600,
                                             '&:hover': {
-                                              bgcolor: '#2e6c56',
-                                              opacity: 0.9,
+                                              bgcolor: '#f5f5f5',
+                                              borderColor: '#1ABF66',
                                             },
-                                            fontSize: '0.875rem',
+                                            fontSize: '1rem',
                                             minWidth: '80px',
                                             height: '45px',
                                             textTransform: 'none',
@@ -2162,7 +2179,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                               </Typography>
                                             </Stack>
                                             <Box sx={{ textAlign: 'left', mt: 1 }}>
-                                              {feedback.content.split('\n').map((line, i) => (
+                                              {feedback.content && feedback.content.split('\n').map((line, i) => (
                                                 <Typography key={i} variant="body2">
                                                   {line}
                                                 </Typography>
@@ -2458,31 +2475,29 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                               disabled={isDisabled}
                                               size="small"
                                               variant="contained"
-                                              startIcon={<Iconify icon="solar:close-circle-bold" />}
+                                              // startIcon={<Iconify icon="solar:close-circle-bold" />}
                                               sx={{
-                                                bgcolor: 'white',
-                                                border: 1,
-                                                borderRadius: 0.8,
+                                                bgcolor: '#FFFFFF',
+                                                border: 1.5,
+                                                borderRadius: 1.15,
                                                 borderColor: '#e7e7e7',
                                                 borderBottom: 3,
                                                 borderBottomColor: '#e7e7e7',
-                                                color: 'error.main',
+                                                color: '#D4321C',
                                                 '&:hover': {
-                                                  bgcolor: '#e7e7e7',
-                                                  borderColor: '#e7e7e7',
-                                                },
-                                                '&:disabled': {
-                                                  display: 'none',
+                                                  bgcolor: '#f5f5f5',
+                                                  borderColor: '#D4321C',
                                                 },
                                                 textTransform: 'none',
                                                 px: 2.5,
                                                 py: 1.2,
-                                                fontSize: '0.875rem',
+                                                fontSize: '1rem',
+                                                fontWeight: 600,
                                                 minWidth: '80px',
                                                 height: '45px',
                                               }}
                                             >
-                                              Request a change
+                                              Request a Change
                                             </Button>
                                           </Stack>
                                         </Stack>
@@ -2540,20 +2555,20 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                                 size="small"
                                                 sx={{
                                                   bgcolor: 'white',
-                                                  border: 1,
-                                                  borderRadius: 0.8,
+                                                  border: 1.5,
+                                                  borderRadius: 1.15,
                                                   borderColor: '#e7e7e7',
                                                   borderBottom: 3,
                                                   borderBottomColor: '#e7e7e7',
                                                   color: 'text.primary',
                                                   '&:hover': {
                                                     bgcolor: '#f5f5f5',
-                                                    borderColor: '#e7e7e7',
+                                                    borderColor: '#231F20',
                                                   },
                                                   textTransform: 'none',
                                                   px: 2.5,
                                                   py: 1.2,
-                                                  fontSize: '0.875rem',
+                                                  fontSize: '1rem',
                                                   minWidth: '80px',
                                                   height: '45px',
                                                 }}
@@ -2569,18 +2584,21 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                                   selectedRawFootagesForChange.length === 0
                                                 }
                                                 sx={{
-                                                  bgcolor: '#2e6c56',
-                                                  color: 'white',
+                                                  bgcolor: '#FFFFFF',
+                                                  color: '#1ABF66',
+                                                  border: '1.5px solid',
+                                                  borderColor: '#e7e7e7',
                                                   borderBottom: 3,
-                                                  borderBottomColor: '#1a3b2f',
-                                                  borderRadius: 0.8,
+                                                  borderBottomColor: '#e7e7e7',
+                                                  borderRadius: 1.15,
                                                   px: 2.5,
                                                   py: 1.2,
+                                                  fontWeight: 600,
                                                   '&:hover': {
-                                                    bgcolor: '#2e6c56',
-                                                    opacity: 0.9,
+                                                    bgcolor: '#f5f5f5',
+                                                    borderColor: '#1ABF66',
                                                   },
-                                                  fontSize: '0.875rem',
+                                                  fontSize: '1rem',
                                                   minWidth: '80px',
                                                   height: '45px',
                                                   textTransform: 'none',
