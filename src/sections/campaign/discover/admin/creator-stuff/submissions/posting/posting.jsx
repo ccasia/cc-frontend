@@ -40,12 +40,11 @@ const Posting = ({ campaign, submission, creator }) => {
   const loading = useBoolean();
   const postingDate = useBoolean();
   const [date, setDate] = useState({
-    startDate: submission?.startDate,
-    endDate: submission?.endDate,
+    dueDate: submission?.endDate,
   });
   const loadingDate = useBoolean();
 
-  const [dateError, setDateError] = useState({ startDate: null, endDate: null });
+  const [dateError, setDateError] = useState({ dueDate: null });
 
   const onSubmit = async (type) => {
     let res;
@@ -84,7 +83,7 @@ const Posting = ({ campaign, submission, creator }) => {
     try {
       loadingDate.onTrue();
       const res = await axiosInstance.patch('/api/submission/posting', {
-        ...data,
+        endDate: data.dueDate,
         submissionId: submission.id,
       });
 
@@ -103,16 +102,10 @@ const Posting = ({ campaign, submission, creator }) => {
   };
 
   useEffect(() => {
-    if (dayjs(date.startDate).isAfter(dayjs(date.endDate), 'date')) {
-      setDateError((prev) => ({ ...prev, startDate: 'Start Date cannot be after end date' }));
+    if (dayjs(date.dueDate).isBefore(dayjs(), 'date')) {
+      setDateError((prev) => ({ ...prev, dueDate: 'Due Date cannot be in the past' }));
     } else {
-      setDateError((prev) => ({ ...prev, startDate: null }));
-    }
-
-    if (dayjs(date.endDate).isBefore(dayjs(date.startDate), 'date')) {
-      setDateError((prev) => ({ ...prev, endDate: 'End Date cannot be before start date' }));
-    } else {
-      setDateError((prev) => ({ ...prev, endDate: null }));
+      setDateError((prev) => ({ ...prev, dueDate: null }));
     }
   }, [date]);
 
@@ -641,36 +634,22 @@ const Posting = ({ campaign, submission, creator }) => {
             sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
             variant="h4"
           >
-            Change Posting Date
+            Change Due Date
           </Typography>
         </DialogTitle>
         <DialogContent>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Stack direction={{ sm: 'row' }} gap={2} py={1}>
               <DatePicker
-                value={dayjs(date.startDate)}
-                onChange={(val) => setDate((prev) => ({ ...prev, startDate: val }))}
-                label="Start Date"
+                label="Due Date"
+                value={dayjs(date.dueDate)}
+                onChange={(val) => setDate((prev) => ({ ...prev, dueDate: val }))}
                 format="DD/MM/YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,
-                    error: !!dateError.startDate,
-                    helperText: dateError.startDate,
-                  },
-                }}
-                minDate={dayjs()}
-              />
-              <DatePicker
-                label="End Date"
-                value={dayjs(date.endDate)}
-                onChange={(val) => setDate((prev) => ({ ...prev, endDate: val }))}
-                format="DD/MM/YYYY"
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    error: !!dateError.endDate,
-                    helperText: dateError.endDate,
+                    error: !!dateError.dueDate,
+                    helperText: dateError.dueDate,
                   },
                 }}
                 minDate={dayjs()}
@@ -683,7 +662,7 @@ const Posting = ({ campaign, submission, creator }) => {
           <LoadingButton
             variant="contained"
             onClick={() => handleChangeDate(date)}
-            disabled={!!dateError.startDate || !!dateError.endDate}
+            disabled={!!dateError.dueDate}
             loading={loadingDate.value}
           >
             Change

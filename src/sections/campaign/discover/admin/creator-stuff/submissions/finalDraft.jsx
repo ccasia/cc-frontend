@@ -180,10 +180,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       feedback: 'Thank you for submitting!',
       type: '',
       reasons: [],
-      schedule: {
-        startDate: null,
-        endDate: null,
-      },
+      dueDate: null,
     });
     setSelectedVideosForChange([]);
   };
@@ -246,10 +243,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
   const normalSchema = Yup.object().shape({
     feedback: Yup.string().required('Comment is required.'),
-    schedule: Yup.object().shape({
-      startDate: Yup.string().required('Start Date is required.'),
-      endDate: Yup.string().required('End Date is required.'),
-    }),
+    dueDate: Yup.string().required('Due Date is required.'),
   });
 
   const draftVideoMethods = useForm({
@@ -258,10 +252,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       feedback: 'Thank you for submitting!',
       type: '',
       reasons: [],
-      schedule: {
-        startDate: null,
-        endDate: null,
-      },
+      dueDate: null,
     },
   });
 
@@ -311,7 +302,14 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
         videos: selectedVideosForChange,
         userId: user.id,
         type,
+        schedule: data.dueDate
+          ? {
+              startDate: data.dueDate,
+              endDate: data.dueDate,
+            }
+          : undefined,
       };
+      delete payload.dueDate; // Remove dueDate from the payload, only send schedule
 
       if (campaign?.campaignCredits) {
         const res = await axiosInstance.patch(`/api/submission/manageVideos`, payload);
@@ -429,10 +427,10 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           <DialogContentText>Are you sure you want to submit now?</DialogContentText>
 
           {/* Show schedule if set */}
-          {watch('schedule.startDate') && watch('schedule.endDate') && (
+          {watch('dueDate') && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Schedule:
+                Due Date:
               </Typography>
               <Typography
                 variant="body2"
@@ -442,7 +440,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                   borderRadius: 1,
                 }}
               >
-                {`${dayjs(watch('schedule.startDate')).format('MMM D, YYYY')} - ${dayjs(watch('schedule.endDate')).format('MMM D, YYYY')}`}
+                {dayjs(watch('dueDate')).format('MMM D, YYYY')}
               </Typography>
             </Box>
           )}
@@ -1814,27 +1812,14 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                   >
                                     <Stack gap={1} mb={2}>
                                       <Typography variant="subtitle1" mb={1} mx={1}>
-                                        Schedule This Post
+                                        Due Date
                                       </Typography>
-                                      <Stack
-                                        direction={{ xs: 'column', sm: 'row' }}
-                                        gap={{ xs: 2, sm: 3 }}
-                                      >
-                                        <RHFDatePicker
-                                          name="schedule.startDate"
-                                          label="Start Date"
-                                          minDate={dayjs()}
-                                        />
-                                        <RHFDatePicker
-                                          name="schedule.endDate"
-                                          label="End Date"
-                                          minDate={dayjs(
-                                            draftVideoMethods.watch('schedule.startDate')
-                                          )}
-                                        />
-                                      </Stack>
+                                      <RHFDatePicker
+                                        name="dueDate"
+                                        label=""
+                                        minDate={dayjs()}
+                                      />
                                     </Stack>
-
                                     <Stack gap={2}>
                                       <Typography variant="subtitle1" mb={1} mx={1}>
                                         Comments For Creator
@@ -1883,7 +1868,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                       </Button>
 
                                       <LoadingButton
-                                        onClick={approve.onTrue}
+                                        type="submit"
                                         variant="contained"
                                         size="small"
                                         startIcon={<Iconify icon="solar:check-circle-bold" />}
@@ -1909,7 +1894,23 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
                                         Approve
                                       </LoadingButton>
                                     </Stack>
-                                    {confirmationApproveModal(approve.value, approve.onFalse)}
+                                    {watch('dueDate') && (
+                                      <Box>
+                                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                          Due Date:
+                                        </Typography>
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            bgcolor: 'grey.100',
+                                            p: 1.5,
+                                            borderRadius: 1,
+                                          }}
+                                        >
+                                          {dayjs(watch('dueDate')).format('MMM D, YYYY')}
+                                        </Typography>
+                                      </Box>
+                                    )}
                                   </FormProvider>
                                 )}
 
