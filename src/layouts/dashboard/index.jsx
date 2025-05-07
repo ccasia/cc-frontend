@@ -245,7 +245,6 @@ export default function DashboardLayout({ children }) {
           borderBottomRightRadius: 0,
           borderBottomLeftRadius: 0,
           backgroundColor: '#1340FF',
-          // padding: { xs: '6px 12px', md: '8px 24px' },
           whiteSpace: 'nowrap',
           fontSize: { xs: '10px', sm: '11px', md: '14px' },
           py: { xs: 0.5, sm: 0.75, md: 1 },
