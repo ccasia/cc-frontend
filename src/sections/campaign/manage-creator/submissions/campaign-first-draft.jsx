@@ -596,13 +596,7 @@ const CampaignFirstDraft = ({
                             Deliverables Incomplete
                           </Typography>
                           <Typography variant="body2" sx={{ color: '#636366' }}>
-                            1. Please complete all deliverables to ensure your submission goes through.
-                            {totalUGCVideos && (
-                              <>
-                                <br />
-                                2. You are required to upload <span style={{ color: '#231F20', fontWeight: 600 }}>{totalUGCVideos} UGC {totalUGCVideos === 1 ? 'Video' : 'Videos'}</span>.
-                              </>
-                            )}
+                            Please complete all deliverables to ensure your submission goes through.
                           </Typography>
                         </Box>
                       )}
