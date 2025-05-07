@@ -1,4 +1,3 @@
-import useSWR from 'swr';
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -7,10 +6,11 @@ import { Box, Container, CircularProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
-import useGetCampaignsFinance from 'src/hooks/use-get-campaign-finance';
+import { useBoolean } from 'src/hooks/use-boolean';
 
-import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
+import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllInvoices } from 'src/api/invoices';
 
 import { useSettingsContext } from 'src/components/settings';
@@ -22,15 +22,10 @@ function CampaignPage() {
   const settings = useSettingsContext();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthContext();
+  const dialog = useBoolean();
 
-  const { campaigns } = useGetCampaignsFinance();
   const { data: invoices, isLoading: invoicesLoading } = useGetAllInvoices();
-
-  const { data: invoiceData, isLoading } = useSWR(endpoints.invoice.ConnectToXero, fetcher, {
-    revalidateOnFocus: true,
-    revalidateOnMount: true,
-    revalidateOnReconnect: true,
-  });
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -53,6 +48,14 @@ function CampaignPage() {
 
     fetchToken();
   }, [navigate, location]);
+
+  useEffect(() => {
+    if (user && user?.role === 'superadmin') {
+      if (!user?.admin?.xeroTokenSet) {
+        dialog.onTrue();
+      }
+    }
+  }, [user, dialog]);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>

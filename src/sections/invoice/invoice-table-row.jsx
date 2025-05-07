@@ -51,7 +51,6 @@ export default function InvoiceTableRow({
         <TableCell padding="checkbox">
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell>
-
         <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
           <Avatar alt={invoiceFrom.name} sx={{ mr: 2 }}>
             {invoiceFrom.name.charAt(0).toUpperCase()}
