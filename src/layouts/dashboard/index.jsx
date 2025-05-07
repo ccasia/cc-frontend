@@ -193,19 +193,12 @@ export default function DashboardLayout({ children }) {
     <Box
       component="div"
       sx={{
-        ...(lgUp
-          ? {
-              position: 'absolute',
-              top: 200,
-              right: -37,
-              transform: 'rotate(-90deg)',
-            }
-          : {
-              position: 'fixed',
-              transform: 'rotate(-90deg)',
-              top: 200,
-              right: -50,
-            }),
+        position: 'fixed',
+        transform: 'rotate(-90deg)',
+        transformOrigin: 'bottom right',
+        top: { xs: 140, sm: 150, md: 160 },
+        right: { xs: 8, sm: 12, md: 15 },
+        zIndex: 9999,
       }}
     >
       <Button
@@ -219,6 +212,9 @@ export default function DashboardLayout({ children }) {
           borderBottomLeftRadius: 0,
           opacity: 0.5,
           transition: 'all linear .2s',
+          py: { xs: 0.5, sm: 0.75, md: 1 },
+          px: { xs: 1, sm: 1.5, md: 2 },
+          fontSize: { xs: '11px', sm: '12px', md: '14px' },
           '&:hover': {
             opacity: 1,
           },
@@ -233,11 +229,12 @@ export default function DashboardLayout({ children }) {
     <Box
       component="div"
       sx={{
-        position: { xs: 'fixed', lg: 'absolute' },
-        top: { xs: 370, md: 390 },
-        right: { xs: -84, sm: -84, md: -108, lg: -98, xl: -120 },
+        position: 'fixed',
         transform: 'rotate(-90deg)',
-        zIndex: 1200,
+        transformOrigin: 'bottom right',
+        top: { xs: 280, sm: 300, md: 320 },
+        right: { xs: 8, sm: 12, md: 15 },
+        zIndex: 9999,
       }}
     >
       <Button
@@ -248,12 +245,14 @@ export default function DashboardLayout({ children }) {
           borderBottomRightRadius: 0,
           borderBottomLeftRadius: 0,
           backgroundColor: '#1340FF',
-          padding: { xs: '6px 12px', md: '8px 24px' },
+          // padding: { xs: '6px 12px', md: '8px 24px' },
           whiteSpace: 'nowrap',
-          fontSize: { xs: '12px', md: '14px' },
-          minWidth: { xs: 120, md: 220 },
+          fontSize: { xs: '10px', sm: '11px', md: '14px' },
+          py: { xs: 0.5, sm: 0.75, md: 1 },
+          px: { xs: 1, sm: 1.5, md: 2 },
+          minWidth: { xs: 100, sm: 160, md: 220 },
           '&:hover': {
-            backgroundColor: '#1340FF',
+            backgroundColor: '#4D73FF',
           },
         }}
       >
