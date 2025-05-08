@@ -91,8 +91,10 @@ const EditCampaignImages = ({ open, campaign, onClose }) => {
             }}
           >
             <Typography variant="h4">Upload Campaign Images</Typography>
+
             <RHFUpload
               multiple
+              type="file"
               thumbnail
               name="campaignImages"
               maxSize={3145728}
