@@ -202,30 +202,32 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                       mt: { xs: 2, sm: 0 },
                     }}
                   >
-                    <Button
-                      onClick={() => handleOpenPreview(file)}
-                      variant="contained"
-                      sx={{
-                        bgcolor: 'white',
-                        border: 1,
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        color: '#221f20',
-                        '&:hover': {
+                    {file?.type !== 'application/pdf' && (
+                      <Button
+                        onClick={() => handleOpenPreview(file)}
+                        variant="contained"
+                        sx={{
                           bgcolor: 'white',
+                          border: 1,
                           borderColor: '#e7e7e7',
-                        },
-                        textTransform: 'none',
-                        px: 2,
-                        py: 1.5,
-                        fontSize: '0.875rem',
-                        minWidth: '80px',
-                        height: '45px',
-                      }}
-                    >
-                      Preview
-                    </Button>
+                          borderBottom: 3,
+                          borderBottomColor: '#e7e7e7',
+                          color: '#221f20',
+                          '&:hover': {
+                            bgcolor: 'white',
+                            borderColor: '#e7e7e7',
+                          },
+                          textTransform: 'none',
+                          px: 2,
+                          py: 1.5,
+                          fontSize: '0.875rem',
+                          minWidth: '80px',
+                          height: '45px',
+                        }}
+                      >
+                        Preview
+                      </Button>
+                    )}
                     {onRemove && (
                       <Button
                         onClick={() => onRemove(file)}
@@ -283,7 +285,7 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                 m: 0,
               }}
             >
-              Preview Draft
+              Preview {selectedFile?.type === 'application/pdf' ? 'PDF' : 'Draft'}
             </Typography>
 
             <IconButton

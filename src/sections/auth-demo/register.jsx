@@ -28,7 +28,6 @@ import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useResponsive } from 'src/hooks/use-responsive';
 import { useCreator } from 'src/hooks/zustands/useCreator';
 
 import { useAuthContext } from 'src/auth/hooks';
