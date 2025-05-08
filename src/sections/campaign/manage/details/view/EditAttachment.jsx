@@ -27,7 +27,7 @@ const EditAttachments = ({ open, campaign, onClose }) => {
     handleSubmit,
     setValue,
     watch,
-    formState: { isSubmitting, dirtyFields },
+    formState: { isSubmitting },
   } = methods;
 
   const values = watch();
@@ -92,14 +92,14 @@ const EditAttachments = ({ open, campaign, onClose }) => {
           >
             <RHFUpload
               multiple
-              type="otherAttachment"
+              type="doc"
               name="otherAttachments"
               onDrop={handleDropMultiFile}
               onRemove={(inputFile) =>
                 setValue(
                   'otherAttachments',
                   values.otherAttachments &&
-                    values.otherAttachments?.filter((file, index) => file !== inputFile),
+                    values.otherAttachments?.filter((file) => file !== inputFile),
                   { shouldValidate: true }
                 )
               }

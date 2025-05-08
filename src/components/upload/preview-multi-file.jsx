@@ -201,33 +201,33 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                       justifyContent: { xs: 'flex-end', sm: 'flex-start' },
                       mt: { xs: 2, sm: 0 },
                     }}
+                    flexWrap="wrap"
                   >
-                    {file?.type !== 'application/pdf' && (
-                      <Button
-                        onClick={() => handleOpenPreview(file)}
-                        variant="contained"
-                        sx={{
+                    <Button
+                      onClick={() => handleOpenPreview(file)}
+                      variant="contained"
+                      sx={{
+                        bgcolor: 'white',
+                        border: 1,
+                        borderColor: '#e7e7e7',
+                        borderBottom: 3,
+                        borderBottomColor: '#e7e7e7',
+                        color: '#221f20',
+                        '&:hover': {
                           bgcolor: 'white',
-                          border: 1,
                           borderColor: '#e7e7e7',
-                          borderBottom: 3,
-                          borderBottomColor: '#e7e7e7',
-                          color: '#221f20',
-                          '&:hover': {
-                            bgcolor: 'white',
-                            borderColor: '#e7e7e7',
-                          },
-                          textTransform: 'none',
-                          px: 2,
-                          py: 1.5,
-                          fontSize: '0.875rem',
-                          minWidth: '80px',
-                          height: '45px',
-                        }}
-                      >
-                        Preview
-                      </Button>
-                    )}
+                        },
+                        textTransform: 'none',
+                        px: 2,
+                        py: 1.5,
+                        fontSize: '0.875rem',
+                        minWidth: '80px',
+                        height: '45px',
+                      }}
+                    >
+                      Preview
+                    </Button>
+
                     {onRemove && (
                       <Button
                         onClick={() => onRemove(file)}
