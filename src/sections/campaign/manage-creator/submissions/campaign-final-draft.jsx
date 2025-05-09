@@ -33,6 +33,7 @@ import {
   DialogActions,
   useMediaQuery,
   LinearProgress,
+  ListItemText,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -524,6 +525,7 @@ const CampaignFinalDraft = ({
                 Your final draft is being reviewed.
               </Typography>
             </Stack>
+            
             <Button
               onClick={() => {
                 display.onTrue();
@@ -1805,6 +1807,95 @@ const CampaignFinalDraft = ({
                 Your Final Draft has been approved.
               </Typography>
             </Stack>
+
+            {/* Display Admin Feedback */}
+            {submission?.feedback && submission.feedback.length > 0 && (
+              <Box sx={{ width: '100%', maxWidth: 600, mt: 2 }}>
+                {submission.feedback
+                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                  .map((feedback, index) => (
+                    <Box
+                      key={index}
+                      mb={2}
+                      p={2}
+                      border={1}
+                      borderColor="grey.300"
+                      borderRadius={2}
+                      display="flex"
+                      alignItems="flex-start"
+                      sx={{ bgcolor: 'background.paper' }}
+                    >
+                      <Avatar
+                        src={feedback.admin?.photoURL || '/default-avatar.png'}
+                        alt={feedback.admin?.name || 'Admin'}
+                        sx={{ mr: 2 }}
+                      />
+
+                      <Box
+                        flexGrow={1}
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <Stack direction={{ md: 'row' }} alignItems={{ md: 'end' }}>
+                          <ListItemText
+                            primary={feedback.admin?.name || 'Unknown User'}
+                            secondary={feedback.admin?.role || 'No Role'}
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            {dayjs(feedback.createdAd).format('LLL')}
+                          </Typography>
+                        </Stack>
+
+                        <Box sx={{ mt: 1 }}>
+                          {feedback.content && feedback.content.split('\n').map((line, i) => (
+                            <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
+                              {line}
+                            </Typography>
+                          ))}
+
+                          {feedback.reasons && feedback.reasons.length > 0 && (
+                            <Box mt={1}>
+                              <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                                {feedback.reasons.map((reason, idx) => (
+                                  <Box
+                                    key={idx}
+                                    sx={{
+                                      border: '1.5px solid #e7e7e7',
+                                      borderBottom: '4px solid #e7e7e7',
+                                      borderRadius: 1,
+                                      p: 0.5,
+                                      display: 'inline-flex',
+                                      mb: 0.5,
+                                      mr: 0.5,
+                                    }}
+                                  >
+                                    <Chip
+                                      label={reason}
+                                      size="small"
+                                      color="default"
+                                      variant="outlined"
+                                      sx={{
+                                        border: 'none',
+                                        color: '#8e8e93',
+                                        fontSize: '0.75rem',
+                                        padding: '1px 2px',
+                                      }}
+                                    />
+                                  </Box>
+                                ))}
+                              </Stack>
+                            </Box>
+                          )}
+                        </Box>
+                      </Box>
+                    </Box>
+                  ))}
+              </Box>
+            )}
+
             <Button
               onClick={() => {
                 display.onTrue();
