@@ -201,6 +201,7 @@ export default function MultiFilePreview({ thumbnail, files, onRemove, sx }) {
                       justifyContent: { xs: 'flex-end', sm: 'flex-start' },
                       mt: { xs: 2, sm: 0 },
                     }}
+                    flexWrap="wrap"
                   >
                     <Button
                       onClick={() => handleOpenPreview(file)}
