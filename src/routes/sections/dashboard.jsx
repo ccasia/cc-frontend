@@ -79,6 +79,9 @@ const CreateInvoice = lazy(() => import('src/pages/dashboard/finance/createInvoi
 
 const AdminTaskPage = lazy(() => import('src/pages/dashboard/admin/tasks'));
 
+// Performance report
+const Reporting = lazy(() => import('src/pages/dashboard/reporting/reporting'))
+
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
 const ManageRole = lazy(() => import('src/pages/dashboard/roles/manage-role'));
@@ -190,6 +193,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
             <AdminTaskPage />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'reporting', // The URL path for the new page
+        element: (
+          <RoleBasedGuard roles={['superadmin']} hasContent>
+            <Reporting />
           </RoleBasedGuard>
         ),
       },
