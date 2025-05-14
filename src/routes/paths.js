@@ -118,6 +118,9 @@ export const paths = {
     packages: {
       root: `${ROOTS.DASHBOARD}/packages`,
     },
+    reporting: {
+      root: `${ROOTS.DASHBOARD}/reporting`,
+    },
     template: {
       root: `${ROOTS.DASHBOARD}/template`,
     },

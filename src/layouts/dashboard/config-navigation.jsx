@@ -216,6 +216,12 @@ export function useNavData() {
           },
           {
             roles: ['superadmin'],
+            title: 'Performance Report',
+            path: paths.dashboard.reporting.root,
+            icon: <Iconify icon="carbon:report" width={25} />,
+          },
+          {
+            roles: ['superadmin'],
             title: 'Roles',
             path: paths.dashboard.roles.root,
             icon: <Iconify icon="oui:app-users-roles" width={25} />,
