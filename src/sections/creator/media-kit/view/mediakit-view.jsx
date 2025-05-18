@@ -333,7 +333,7 @@ const MediaKitCreator = () => {
         element.style.zIndex = '-1';
         
         // Give some time for content to properly render
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Take the screenshot
         const dataUrl = await toPng(element, {
@@ -435,7 +435,7 @@ const MediaKitCreator = () => {
         element.style.top = '0';
         element.style.zIndex = '-1';
         
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
         dataUrl = await toPng(element, {
           quality: 1.0,
