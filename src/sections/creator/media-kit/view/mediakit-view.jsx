@@ -18,6 +18,7 @@ import {
   Alert,
   Menu,
   MenuItem,
+  Backdrop,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -48,6 +49,7 @@ const MediaKitCreator = () => {
   const desktopShareButtonRef = useRef(null);
   const mobileShareButtonRef = useRef(null);
   const [captureLoading, setCaptureLoading] = useState(false);
+  const [captureState, setCaptureState] = useState('idle');
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const menuOpen = Boolean(menuAnchorEl);
   const [snackbar, setSnackbar] = useState({
@@ -161,6 +163,40 @@ const MediaKitCreator = () => {
   //   setOpenSetting(!openSetting);
   // };
 
+  // Helper function to ensure all images and iframes are loaded
+  const ensureContentLoaded = useCallback(async (element) => {
+    setCaptureState('rendering');
+    // Ensure images are loaded
+    const images = element.querySelectorAll('img');
+    const imageLoadPromises = Array.from(images).map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve; // Handle error case too
+      });
+    });
+
+    // Ensure iframes are loaded (best effort)
+    const iframes = element.querySelectorAll('iframe');
+    const iframeLoadPromises = Array.from(iframes).map(iframe => new Promise(resolve => {
+      if (iframe.contentDocument?.readyState === 'complete') {
+        resolve();
+        return;
+      }
+      
+      iframe.onload = resolve;
+      // Set a backup timeout in case iframe doesn't load
+      setTimeout(resolve, 2000);
+    }));
+
+    // Wait for all content to load
+    await Promise.all([...imageLoadPromises, ...iframeLoadPromises]);
+    
+    // Additional delay to ensure all rendering is complete
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setCaptureState('capturing');
+  }, []);
+
   const getScreenshotStyles = useCallback(() => `
       .desktop-screenshot-view .MuiBox-root[style*="border-radius: 2px"] {
         margin-bottom: 16px !important;
@@ -256,9 +292,9 @@ const MediaKitCreator = () => {
   const captureScreenshot = useCallback(async () => {
     try {
       setCaptureLoading(true);
+      setCaptureState('preparing');
       
       // Choose which element to capture based on screen size
-      // For desktop, capture the actual container. For smaller screens, use hidden desktop layout (refer to line 1346)
       const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
       
       if (!element) {
@@ -286,6 +322,9 @@ const MediaKitCreator = () => {
         // Scroll to top to ensure entire content is visible
         window.scrollTo(0, 0);
         
+        // Ensure all images and iframes are loaded
+        await ensureContentLoaded(element);
+        
         // Take the screenshot
         const dataUrl = await toPng(element, {
           quality: 0.95,
@@ -304,6 +343,7 @@ const MediaKitCreator = () => {
         // Restore scroll position
         window.scrollTo(0, scrollTop);
         
+        setCaptureState('processing');
         // Create and trigger download
         const link = document.createElement('a');
         link.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.png`;
@@ -332,8 +372,8 @@ const MediaKitCreator = () => {
         element.style.top = '0';
         element.style.zIndex = '-1';
         
-        // Give some time for content to properly render
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Ensure all images and iframes are loaded
+        await ensureContentLoaded(element);
         
         // Take the screenshot
         const dataUrl = await toPng(element, {
@@ -355,6 +395,7 @@ const MediaKitCreator = () => {
         // Remove temporary style fix
         document.head.removeChild(styleFixForMedia);
         
+        setCaptureState('processing');
         // Create and trigger download
         const link = document.createElement('a');
         link.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.png`;
@@ -367,6 +408,7 @@ const MediaKitCreator = () => {
         message: 'Screenshot saved successfully!',
         severity: 'success',
       });
+      setCaptureState('complete');
     } catch (error) {
       console.error('Error capturing screenshot:', error);
       setSnackbar({
@@ -375,13 +417,17 @@ const MediaKitCreator = () => {
         severity: 'error',
       });
     } finally {
-      setCaptureLoading(false);
+      setTimeout(() => {
+        setCaptureLoading(false);
+        setCaptureState('idle');
+      }, 500);
     }
-  }, [user?.creator?.mediaKit?.displayName, user?.name, isDesktop, getScreenshotStyles]);
+  }, [user?.creator?.mediaKit?.displayName, user?.name, isDesktop, getScreenshotStyles, ensureContentLoaded]);
 
   const capturePdf = useCallback(async () => {
     try {
       setCaptureLoading(true);
+      setCaptureState('preparing');
 
       const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
 
@@ -404,6 +450,9 @@ const MediaKitCreator = () => {
           desktopShareButtonRef.current.style.display = 'none';
         }
         window.scrollTo(0, 0);
+        
+        // Ensure all images and iframes are loaded
+        await ensureContentLoaded(element);
 
         dataUrl = await toPng(element, {
           quality: 1.0,
@@ -435,7 +484,8 @@ const MediaKitCreator = () => {
         element.style.top = '0';
         element.style.zIndex = '-1';
         
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Ensure all images and iframes are loaded
+        await ensureContentLoaded(element);
 
         dataUrl = await toPng(element, {
           quality: 1.0,
@@ -454,6 +504,7 @@ const MediaKitCreator = () => {
         document.head.removeChild(styleFixForMedia);
       }
 
+      setCaptureState('processing');
       // Create a new image to get the dimensions
       const img = new Image();
       img.src = dataUrl;
@@ -507,6 +558,7 @@ const MediaKitCreator = () => {
         message: 'PDF saved successfully!',
         severity: 'success',
       });
+      setCaptureState('complete');
     } catch (error) {
       console.error('Error capturing PDF:', error);
       setSnackbar({
@@ -515,9 +567,12 @@ const MediaKitCreator = () => {
         severity: 'error',
       });
     } finally {
-      setCaptureLoading(false);
+      setTimeout(() => {
+        setCaptureLoading(false);
+        setCaptureState('idle');
+      }, 500);
     }
-  }, [user?.creator?.mediaKit?.displayName, user?.name, isDesktop, getScreenshotStyles]);
+  }, [user?.creator?.mediaKit?.displayName, user?.name, isDesktop, getScreenshotStyles, ensureContentLoaded]);
 
   const handleCloseSnackbar = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
@@ -532,6 +587,22 @@ const MediaKitCreator = () => {
     if (event) event.stopPropagation();
     setMenuAnchorEl(null);
   };
+
+  // Helper function to get button text based on loading state
+  const getButtonText = useCallback(() => {
+    if (!captureLoading) return 'Share';
+    
+    switch (captureState) {
+      case 'rendering':
+        return 'Loading...';
+      case 'capturing':
+        return 'Capturing...';
+      case 'processing':
+        return 'Processing...';
+      default:
+        return 'Working...';
+    }
+  }, [captureLoading, captureState]);
 
   useEffect(() => {
     getInstagram();
@@ -601,7 +672,7 @@ const MediaKitCreator = () => {
               height: 44,
             }}
           >
-            {captureLoading ? 'Capturing...' : 'Share'}
+            {getButtonText()}
           </Button>
           <Menu
             anchorEl={menuAnchorEl}
@@ -718,10 +789,10 @@ const MediaKitCreator = () => {
                 px: 3,
                 fontWeight: 600,
                 fontSize: 14,
-                height: 40,
+                height: 40,                
               }}
             >
-              {captureLoading ? 'Capturing...' : 'Share'}
+              {getButtonText()}
             </Button>
             <Menu
               anchorEl={menuAnchorEl}
@@ -1757,6 +1828,25 @@ const MediaKitCreator = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      
+      {/* Loading Backdrop */}
+      <Backdrop
+        sx={{ 
+          color: '#fff', 
+          zIndex: theme.zIndex.drawer + 1,
+          flexDirection: 'column'
+        }}
+        open={captureLoading}
+      >
+        <CircularProgress color="inherit" size={50} thickness={4} />
+        <Typography sx={{ mt: 2, fontWeight: 600, fontSize: 18 }}>
+          {captureState === 'preparing' && 'Preparing media kit...'}
+          {captureState === 'rendering' && 'Loading all content...'}
+          {captureState === 'capturing' && 'Capturing...'}
+          {captureState === 'processing' && 'Finalizing download...'}
+          {captureState === 'complete' && 'Download complete!'}
+        </Typography>
+      </Backdrop>
     </>
   );
 };
