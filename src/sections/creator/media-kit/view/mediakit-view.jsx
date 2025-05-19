@@ -107,11 +107,8 @@ const MediaKitCreator = () => {
         followers: instagram?.overview?.followers_count || 0,
         engagement_rate: `${
           calculateEngagementRate(
-            instagram?.instagramUser?.instagramVideo?.reduce(
-              (sum, acc) => sum + parseInt(acc.like_count, 10),
-              0
-            ),
-            instagram?.instagramUser?.followers_count
+            (instagram?.medias?.totalLikes ?? 0) + (instagram?.medias?.totalComments ?? 0),
+            instagram?.overview?.followers_count
           ) || 0
         }`,
         averageLikes: instagram?.medias?.averageLikes || 0,
