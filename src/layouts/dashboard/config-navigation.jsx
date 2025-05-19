@@ -66,6 +66,7 @@ const ICONS = {
   mytasks: icon('ic_mytasks'),
   mediakit: icon('ic_mediakit'),
   settings: icon('ic_settings'),
+  report: icon('ic_fund')
   // calendar: icon('lets-icons:calendar-duotone'),
 };
 
@@ -216,9 +217,9 @@ export function useNavData() {
           },
           {
             roles: ['superadmin'],
-            title: 'Performance Report',
-            path: paths.dashboard.reporting.root,
-            icon: <Iconify icon="carbon:report" width={25} />,
+            title: 'Content Performance Report',
+            path: paths.dashboard.report.root,
+            icon: ICONS.report
           },
           {
             roles: ['superadmin'],
