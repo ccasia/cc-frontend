@@ -1275,7 +1275,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
                 >
-                  0 {/* Change to actual number later */}
+                  {socialMediaAnalytics.averageComments}
                 </Typography>
                 <Typography
                   variant="caption"
