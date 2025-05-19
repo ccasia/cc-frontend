@@ -1,24 +1,23 @@
-import { m } from 'framer-motion';
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
+import { m } from 'framer-motion';
+import { toPng } from 'html-to-image';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
   Chip,
+  Menu,
   Stack,
+  Alert,
   Avatar,
   Button,
-  Divider,
   useTheme,
+  Snackbar,
+  MenuItem,
+  Backdrop,
   Container,
   Typography,
   CircularProgress,
-  Snackbar,
-  Alert,
-  Menu,
-  MenuItem,
-  Backdrop,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -73,7 +72,7 @@ const MediaKitCreator = () => {
   const getInstagram = useCallback(async () => {
     try {
       instaLoading.onTrue();
-      const res = await axiosInstance.get(endpoints.creators.social.instagram(user?.id));
+      const res = await axiosInstance.get(endpoints.creators.social.instagramV2(user?.id));
       setInstagram(res.data);
     } catch (error) {
       return;
@@ -97,30 +96,6 @@ const MediaKitCreator = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setTiktok]);
 
-  // const { data: socialData, isLoading } = useSWR(
-  //   endpoints.creators.social.tiktok(user.id),
-  //   fetcher,
-  //   {
-  //     revalidateIfStale: false,
-  //     revalidateOnFocus: false,
-  //     onSuccess: (data) => {
-  //       setTiktok(data);
-  //     },
-  //   }
-  // );
-
-  // const { data: instaData, isLoading: instaLoading } = useSWR(
-  //   endpoints.creators.social.instagram(user.id),
-  //   fetcher,
-  //   {
-  //     revalidateIfStale: false,
-  //     revalidateOnFocus: false,
-  //     onSuccess: (data) => {
-  //       setInstagram(data);
-  //     },
-  //   }
-  // );
-
   const calculateEngagementRate = useCallback((totalLikes, followers) => {
     if (!(totalLikes || followers)) return null;
     return ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2);
@@ -129,7 +104,7 @@ const MediaKitCreator = () => {
   const socialMediaAnalytics = useMemo(() => {
     if (currentTab === 'instagram') {
       return {
-        followers: instagram?.instagramUser?.followers_count || 0,
+        followers: instagram?.overview?.followers_count || 0,
         engagement_rate: `${
           calculateEngagementRate(
             instagram?.instagramUser?.instagramVideo?.reduce(
@@ -139,7 +114,8 @@ const MediaKitCreator = () => {
             instagram?.instagramUser?.followers_count
           ) || 0
         }`,
-        averageLikes: instagram?.instagramUser?.average_like || 0,
+        averageLikes: instagram?.medias?.averageLikes || 0,
+        averageComments: instagram?.medias?.averageComments || 0,
         username: instagram?.instagramUser?.username,
       };
     }
@@ -168,9 +144,9 @@ const MediaKitCreator = () => {
     setCaptureState('rendering');
     // Ensure images are loaded
     const images = element.querySelectorAll('img');
-    const imageLoadPromises = Array.from(images).map(img => {
+    const imageLoadPromises = Array.from(images).map((img) => {
       if (img.complete) return Promise.resolve();
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         img.onload = resolve;
         img.onerror = resolve; // Handle error case too
       });
@@ -178,26 +154,30 @@ const MediaKitCreator = () => {
 
     // Ensure iframes are loaded (best effort)
     const iframes = element.querySelectorAll('iframe');
-    const iframeLoadPromises = Array.from(iframes).map(iframe => new Promise(resolve => {
-      if (iframe.contentDocument?.readyState === 'complete') {
-        resolve();
-        return;
-      }
-      
-      iframe.onload = resolve;
-      // Set a backup timeout in case iframe doesn't load
-      setTimeout(resolve, 2000);
-    }));
+    const iframeLoadPromises = Array.from(iframes).map(
+      (iframe) =>
+        new Promise((resolve) => {
+          if (iframe.contentDocument?.readyState === 'complete') {
+            resolve();
+            return;
+          }
+
+          iframe.onload = resolve;
+          // Set a backup timeout in case iframe doesn't load
+          setTimeout(resolve, 2000);
+        })
+    );
 
     // Wait for all content to load
     await Promise.all([...imageLoadPromises, ...iframeLoadPromises]);
-    
+
     // Additional delay to ensure all rendering is complete
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     setCaptureState('capturing');
   }, []);
 
-  const getScreenshotStyles = useCallback(() => `
+  const getScreenshotStyles = useCallback(
+    () => `
       .desktop-screenshot-view .MuiBox-root[style*="border-radius: 2px"] {
         margin-bottom: 16px !important;
         padding-bottom: 16px !important;
@@ -287,16 +267,18 @@ const MediaKitCreator = () => {
         text-align: center !important;
         font-family: 'Aileron, sans-serif' !important;
       }
-    `, []);
+    `,
+    []
+  );
 
   const captureScreenshot = useCallback(async () => {
     try {
       setCaptureLoading(true);
       setCaptureState('preparing');
-      
+
       // Choose which element to capture based on screen size
       const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
-      
+
       if (!element) {
         setSnackbar({
           open: true,
@@ -305,26 +287,26 @@ const MediaKitCreator = () => {
         });
         return;
       }
-      
+
       if (isDesktop) {
         // Desktop direct capture method
         // Save current scroll position
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        
+
         // Hide share buttons during capture
         let desktopButtonDisplay = null;
-        
+
         if (desktopShareButtonRef.current) {
           desktopButtonDisplay = desktopShareButtonRef.current.style.display;
           desktopShareButtonRef.current.style.display = 'none';
         }
-        
+
         // Scroll to top to ensure entire content is visible
         window.scrollTo(0, 0);
-        
+
         // Ensure all images and iframes are loaded
         await ensureContentLoaded(element);
-        
+
         // Take the screenshot
         const dataUrl = await toPng(element, {
           quality: 0.95,
@@ -334,15 +316,15 @@ const MediaKitCreator = () => {
           width: 1200,
           cacheBust: true,
         });
-        
+
         // Restore share button visibility
         if (desktopShareButtonRef.current) {
           desktopShareButtonRef.current.style.display = desktopButtonDisplay;
         }
-        
+
         // Restore scroll position
         window.scrollTo(0, scrollTop);
-        
+
         setCaptureState('processing');
         // Create and trigger download
         const link = document.createElement('a');
@@ -355,26 +337,26 @@ const MediaKitCreator = () => {
         const styleFixForMedia = document.createElement('style');
         styleFixForMedia.textContent = getScreenshotStyles();
         document.head.appendChild(styleFixForMedia);
-        
+
         // Make the desktop layout visible just for the capture
         const originalVisibility = element.style.visibility;
         const originalPosition = element.style.position;
         const originalLeft = element.style.left;
         const originalZIndex = element.style.zIndex;
-        
+
         // Add class for CSS override
         element.classList.add('desktop-screenshot-view');
-        
+
         // Temporarily make the element visible but off-screen for rendering
         element.style.visibility = 'visible';
         element.style.position = 'fixed';
         element.style.left = '0';
         element.style.top = '0';
         element.style.zIndex = '-1';
-        
+
         // Ensure all images and iframes are loaded
         await ensureContentLoaded(element);
-        
+
         // Take the screenshot
         const dataUrl = await toPng(element, {
           quality: 0.95,
@@ -384,17 +366,17 @@ const MediaKitCreator = () => {
           width: element.scrollWidth,
           cacheBust: true,
         });
-        
+
         // Restore original styles
         element.style.visibility = originalVisibility;
         element.style.position = originalPosition;
         element.style.left = originalLeft;
         element.style.zIndex = originalZIndex;
         element.classList.remove('desktop-screenshot-view');
-        
+
         // Remove temporary style fix
         document.head.removeChild(styleFixForMedia);
-        
+
         setCaptureState('processing');
         // Create and trigger download
         const link = document.createElement('a');
@@ -402,7 +384,7 @@ const MediaKitCreator = () => {
         link.href = dataUrl;
         link.click();
       }
-      
+
       setSnackbar({
         open: true,
         message: 'Screenshot saved successfully!',
@@ -422,7 +404,13 @@ const MediaKitCreator = () => {
         setCaptureState('idle');
       }, 500);
     }
-  }, [user?.creator?.mediaKit?.displayName, user?.name, isDesktop, getScreenshotStyles, ensureContentLoaded]);
+  }, [
+    user?.creator?.mediaKit?.displayName,
+    user?.name,
+    isDesktop,
+    getScreenshotStyles,
+    ensureContentLoaded,
+  ]);
 
   const capturePdf = useCallback(async () => {
     try {
@@ -450,7 +438,7 @@ const MediaKitCreator = () => {
           desktopShareButtonRef.current.style.display = 'none';
         }
         window.scrollTo(0, 0);
-        
+
         // Ensure all images and iframes are loaded
         await ensureContentLoaded(element);
 
@@ -483,7 +471,7 @@ const MediaKitCreator = () => {
         element.style.left = '0';
         element.style.top = '0';
         element.style.zIndex = '-1';
-        
+
         // Ensure all images and iframes are loaded
         await ensureContentLoaded(element);
 
@@ -508,51 +496,51 @@ const MediaKitCreator = () => {
       // Create a new image to get the dimensions
       const img = new Image();
       img.src = dataUrl;
-      
+
       await new Promise((resolve) => {
         img.onload = resolve;
       });
-      
+
       // Use a standard A4 page size (595.28 x 841.89 points in portrait)
       const pdfWidth = 595.28;
       const pdfHeight = 841.89;
-      
+
       // Calculate the aspect ratio of the image
       const imgRatio = img.width / img.height;
-      
+
       // Calculate dimensions to fit the image within the PDF page
       // while maintaining aspect ratio
       let imgWidth = pdfWidth;
       let imgHeight = pdfWidth / imgRatio;
-      
+
       // If the height is too large, scale based on height instead
       if (imgHeight > pdfHeight) {
         imgHeight = pdfHeight;
         imgWidth = pdfHeight * imgRatio;
       }
-      
+
       // Center the image on the page
       const xOffset = (pdfWidth - imgWidth) / 2;
       const yOffset = (pdfHeight - imgHeight) / 2;
-      
+
       // eslint-disable-next-line new-cap
       const pdf = new jsPDF({
         orientation: 'p', // portrait
         unit: 'pt', // points
         format: 'a4', // A4 paper size
-        compress: false // Disable compression for better quality
+        compress: false, // Disable compression for better quality
       });
-      
+
       // Add the image to the PDF with proper scaling and high quality
       pdf.addImage(dataUrl, 'PNG', xOffset, yOffset, imgWidth, imgHeight, undefined, 'FAST');
-      
+
       // Also make a higher resolution version available for download
       const highResLink = document.createElement('a');
       highResLink.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit_HighRes.png`;
       highResLink.href = dataUrl;
-      
+
       pdf.save(`${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.pdf`);
-      
+
       setSnackbar({
         open: true,
         message: 'PDF saved successfully!',
@@ -572,17 +560,23 @@ const MediaKitCreator = () => {
         setCaptureState('idle');
       }, 500);
     }
-  }, [user?.creator?.mediaKit?.displayName, user?.name, isDesktop, getScreenshotStyles, ensureContentLoaded]);
+  }, [
+    user?.creator?.mediaKit?.displayName,
+    user?.name,
+    isDesktop,
+    getScreenshotStyles,
+    ensureContentLoaded,
+  ]);
 
   const handleCloseSnackbar = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
-  
+
   const handleMenuOpen = (event) => {
     event.stopPropagation();
     setMenuAnchorEl(event.currentTarget);
   };
-  
+
   const handleMenuClose = (event) => {
     if (event) event.stopPropagation();
     setMenuAnchorEl(null);
@@ -591,7 +585,7 @@ const MediaKitCreator = () => {
   // Helper function to get button text based on loading state
   const getButtonText = useCallback(() => {
     if (!captureLoading) return 'Share';
-    
+
     switch (captureState) {
       case 'rendering':
         return 'Loading...';
@@ -626,19 +620,19 @@ const MediaKitCreator = () => {
 
   return (
     <>
-      <Container 
-        maxWidth="xl" 
-        sx={{ 
+      <Container
+        maxWidth="xl"
+        sx={{
           position: 'relative',
-          bgcolor: '#FFFFFF', 
-          minHeight: '100vh', 
+          bgcolor: '#FFFFFF',
+          minHeight: '100vh',
           pb: 8,
           mb: 6,
           overflow: 'visible',
           height: 'auto',
           display: 'flex',
-          flexDirection: 'column'
-        }} 
+          flexDirection: 'column',
+        }}
         ref={containerRef}
       >
         {/* Desktop View */}
@@ -709,7 +703,7 @@ const MediaKitCreator = () => {
               },
             }}
           >
-            <MenuItem 
+            <MenuItem
               onClick={(event) => {
                 event.stopPropagation();
                 captureScreenshot();
@@ -729,7 +723,7 @@ const MediaKitCreator = () => {
             >
               Download as Image
             </MenuItem>
-            <MenuItem 
+            <MenuItem
               onClick={(event) => {
                 event.stopPropagation();
                 capturePdf();
@@ -789,7 +783,7 @@ const MediaKitCreator = () => {
                 px: 3,
                 fontWeight: 600,
                 fontSize: 14,
-                height: 40,                
+                height: 40,
               }}
             >
               {getButtonText()}
@@ -829,7 +823,7 @@ const MediaKitCreator = () => {
                 },
               }}
             >
-              <MenuItem 
+              <MenuItem
                 onClick={(event) => {
                   event.stopPropagation();
                   captureScreenshot();
@@ -849,7 +843,7 @@ const MediaKitCreator = () => {
               >
                 Download as Image
               </MenuItem>
-              <MenuItem 
+              <MenuItem
                 onClick={(event) => {
                   event.stopPropagation();
                   capturePdf();
@@ -958,13 +952,13 @@ const MediaKitCreator = () => {
           </Stack>
 
           {/* Social Media Stats */}
-          <Stack 
-            flex="1" 
-            alignItems={{ xs: 'start', md: 'flex-start' }} 
+          <Stack
+            flex="1"
+            alignItems={{ xs: 'start', md: 'flex-start' }}
             spacing={3}
-            sx={{ 
+            sx={{
               mt: { xs: 4, md: 0 },
-              width: '100%'
+              width: '100%',
             }}
           >
             {/* Divider for mobile screens only */}
@@ -1177,7 +1171,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        0 {/* Change to actual number later */}
+                        {socialMediaAnalytics.averageComments}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1355,7 +1349,8 @@ const MediaKitCreator = () => {
         {/* Bottom View */}
 
         <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1} mt={3}>
-          Top Content {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
+          Top Content{' '}
+          {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
         </Typography>
 
         {/* {smDown && (
@@ -1427,24 +1422,24 @@ const MediaKitCreator = () => {
         <Box sx={{ height: 60 }} />
         {/* <MediaKitSetting open={openSetting} handleClose={handleClose} user={user} /> */}
       </Container>
-      
-{/* ----------------------------------------------------------------------------------------------------------------------------------------------------------*/}
-      
+
+      {/* ----------------------------------------------------------------------------------------------------------------------------------------------------------*/}
+
       {/* Hidden Desktop-only Layout for Screenshot */}
-      <Container 
-        maxWidth="xl" 
-        sx={{ 
+      <Container
+        maxWidth="xl"
+        sx={{
           position: 'absolute',
           left: '-9999px',
           visibility: 'hidden',
-          bgcolor: '#FFFFFF', 
+          bgcolor: '#FFFFFF',
           width: '1200px',
           height: 'auto',
           overflow: 'visible',
           pb: 2,
           display: 'flex',
           flexDirection: 'column',
-        }} 
+        }}
         ref={desktopLayoutRef}
         className="desktop-screenshot-view"
       >
@@ -1467,22 +1462,18 @@ const MediaKitCreator = () => {
         </Stack>
 
         {/* Creator Details - Desktop Layout with adjusted spacing */}
-        <Stack
-          direction="row"
-          spacing={8}
-          justifyContent="space-between"
-        >
+        <Stack direction="row" spacing={8} justifyContent="space-between">
           <Stack flex="1.2">
             <Stack direction="row" alignItems="center">
-            <Typography
-              sx={{
-                fontFamily: 'Aileron, sans-serif',
-                fontWeight: 400,
-                fontSize: 48,
-              }}
-            >
-              {user?.creator?.mediaKit?.displayName ?? user?.name}
-            </Typography>
+              <Typography
+                sx={{
+                  fontFamily: 'Aileron, sans-serif',
+                  fontWeight: 400,
+                  fontSize: 48,
+                }}
+              >
+                {user?.creator?.mediaKit?.displayName ?? user?.name}
+              </Typography>
             </Stack>
             <Stack direction="row" alignItems="center" spacing={0.5}>
               <Typography fontSize={16} color="#231F20">
@@ -1581,13 +1572,7 @@ const MediaKitCreator = () => {
               </Box>
             </Stack>
 
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              my={2}
-              color="text.secondary"
-            >
+            <Stack direction="row" alignItems="center" spacing={1} my={2} color="text.secondary">
               <Button
                 variant="outlined"
                 startIcon={<Iconify icon="mdi:instagram" width={24} />}
@@ -1773,16 +1758,22 @@ const MediaKitCreator = () => {
         {/* <Divider sx={{ my: 3 }} /> */}
 
         <Box sx={{ flexGrow: 1 }}>
-          <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1} mt={3}>
+          <Typography
+            fontWeight={600}
+            fontFamily="Aileron, sans-serif"
+            fontSize="24px"
+            mb={1}
+            mt={3}
+          >
             Top Content
           </Typography>
 
           <MediaKitSocial
             currentTab={currentTab}
             className="desktop-screenshot-mediakit"
-            sx={{ 
+            sx={{
               '& > div > div': {
-                flexDirection: 'row !important', 
+                flexDirection: 'row !important',
                 width: '100%',
                 justifyContent: 'flex-start !important',
                 gap: '32px !important',
@@ -1792,49 +1783,43 @@ const MediaKitCreator = () => {
                   maxWidth: '350px !important',
                   '& > div:first-of-type': {
                     height: '550px !important',
-                  }
-                }
+                  },
+                },
               },
               '& iframe': {
                 border: 'none !important',
                 borderRadius: '4px !important',
-                height: '100% !important', 
-                width: '100% !important'
-              }
+                height: '100% !important',
+                width: '100% !important',
+              },
             }}
-            data={
-              (() => {
-                if (currentTab === 'instagram') return { instagram };
-                if (currentTab === 'tiktok') return { tiktok };
-                return null;
-              })()
-            }
+            data={(() => {
+              if (currentTab === 'instagram') return { instagram };
+              if (currentTab === 'tiktok') return { tiktok };
+              return null;
+            })()}
           />
         </Box>
       </Container>
-      
+
       {/* Feedback Snackbar */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
-      
+
       {/* Loading Backdrop */}
       <Backdrop
-        sx={{ 
-          color: '#fff', 
+        sx={{
+          color: '#fff',
           zIndex: theme.zIndex.drawer + 1,
-          flexDirection: 'column'
+          flexDirection: 'column',
         }}
         open={captureLoading}
       >

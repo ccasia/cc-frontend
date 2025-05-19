@@ -107,6 +107,7 @@ export const endpoints = {
     social: {
       tiktok: (id) => `/api/social/tiktok/${id}`,
       instagram: (id) => `/api/social/instagram/overview/${id}`,
+      instagramV2: (id) => `/api/social/v2/instagramOverview/${id}`,
     },
     updatePreference: (id) => `/api/creator/updatePreference/${id}`,
     exportCreators: '/api/creator/exportCreators',
