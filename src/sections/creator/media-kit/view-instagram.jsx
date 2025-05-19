@@ -48,7 +48,7 @@ const TopContentGrid = ({ topContents }) => {
 
   const topThreeContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 3);
 
-  // Dummy data for testing 
+  // Dummy data for testing
   const dummyContents = [
     {
       comments_count: 342,
@@ -57,7 +57,8 @@ const TopContentGrid = ({ topContents }) => {
       media_url: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=1000',
       permalink: 'https://www.instagram.com/p/sample1',
       id: '18056628766068743',
-      caption: '✨ Living my best life! Weekend vibes with amazing friends at the coolest spots in town. Swipe to see more adventures! 🌟 #WeekendVibes #LifestyleBlogger #Adventure',
+      caption:
+        '✨ Living my best life! Weekend vibes with amazing friends at the coolest spots in town. Swipe to see more adventures! 🌟 #WeekendVibes #LifestyleBlogger #Adventure',
     },
     {
       comments_count: 256,
@@ -66,7 +67,8 @@ const TopContentGrid = ({ topContents }) => {
       media_url: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=1000',
       permalink: 'https://www.instagram.com/p/sample2',
       id: '18056628766068744',
-      caption: '🌿 Self-care Sunday essentials! Sharing my morning routine and favorite wellness tips. What\'s your go-to morning ritual? 🧘‍♀️ #WellnessJourney #SelfCareSunday #HealthyLifestyle',
+      caption:
+        "🌿 Self-care Sunday essentials! Sharing my morning routine and favorite wellness tips. What's your go-to morning ritual? 🧘‍♀️ #WellnessJourney #SelfCareSunday #HealthyLifestyle",
     },
     {
       comments_count: 189,
@@ -75,8 +77,9 @@ const TopContentGrid = ({ topContents }) => {
       media_url: 'https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?q=80&w=1000',
       permalink: 'https://www.instagram.com/p/sample3',
       id: '18056628766068745',
-      caption: '🎥 Behind the scenes of my latest project! So excited to share this with you all. Drop a ❤️ if you want more content like this! #CreatorLife #BTS #NewProject',
-    }
+      caption:
+        '🎥 Behind the scenes of my latest project! So excited to share this with you all. Drop a ❤️ if you want more content like this! #CreatorLife #BTS #NewProject',
+    },
   ];
 
   // Use either real data or dummy data
@@ -92,7 +95,7 @@ const TopContentGrid = ({ topContents }) => {
         gap: { xs: 2, md: 4 },
         justifyContent: { xs: 'center', sm: 'flex-start' },
         alignItems: { xs: 'center', sm: 'flex-start' },
-        overflow: 'auto'
+        overflow: 'auto',
       }}
       component={m.div}
       variants={{
@@ -181,7 +184,7 @@ const TopContentGrid = ({ topContents }) => {
               </Stack>
             </Box>
           </Box>
-          
+
           <Typography
             variant="body2"
             className="media-kit-caption"
@@ -237,19 +240,21 @@ const MediaKitSocialContent = ({ instagram }) => {
         }}
       >
         <Stack spacing={2.5} alignItems="center" sx={{ maxWidth: 280, textAlign: 'center' }}>
-          <Box sx={{ 
-            width: 56, 
-            height: 56, 
-            borderRadius: 1.5,
-            bgcolor: '#FFFFFF',
-            boxShadow: '0px 0px 10px 0px rgba(0, 0, 0, 0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
+          <Box
+            sx={{
+              width: 56,
+              height: 56,
+              borderRadius: 1.5,
+              bgcolor: '#FFFFFF',
+              boxShadow: '0px 0px 10px 0px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <Iconify icon="skill-icons:instagram" width={28} sx={{ color: '#E1306C' }} />
           </Box>
-          
+
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Connect your Instagram to showcase your top content and analytics.
           </Typography>
@@ -258,7 +263,7 @@ const MediaKitSocialContent = ({ instagram }) => {
             variant="outlined"
             size="medium"
             color="primary"
-            sx={{ 
+            sx={{
               borderRadius: 1,
               px: 2.5,
               borderColor: '#E1306C',
@@ -266,9 +271,9 @@ const MediaKitSocialContent = ({ instagram }) => {
               '&:hover': {
                 borderColor: '#E1306C',
                 bgcolor: (theme) => alpha('#E1306C', 0.08),
-              }
+              },
             }}
-            startIcon={<Iconify icon="mingcute:link-line" width={20} color="#E1306C"/>}
+            startIcon={<Iconify icon="mingcute:link-line" width={20} color="#E1306C" />}
             LinkComponent="a"
             href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://app.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
             target="_blank"
@@ -289,7 +294,7 @@ const MediaKitSocialContent = ({ instagram }) => {
         </Typography>
       )} */}
       {/* Pass empty array to use dummy data or instagram data */}
-      <TopContentGrid topContents={instagramData?.instagramUser?.instagramVideo || []} />
+      <TopContentGrid topContents={instagramData?.medias?.sortedVideos || []} />
     </Box>
   );
 };
