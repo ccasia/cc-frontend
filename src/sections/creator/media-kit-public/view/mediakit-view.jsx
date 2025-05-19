@@ -36,6 +36,19 @@ const calculateEngagementRate = (totalLikes, followers) => {
   return ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2);
 };
 
+const formatNumber = (num) => {
+  if (num >= 1000000000) {
+    return `${(num / 1000000000).toFixed(1)}G`;
+  }
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1)}M`;
+  }
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`;
+  }
+  return num.toString();
+};
+
 // eslint-disable-next-line react/prop-types
 const MediaKit = ({ id, noBigScreen }) => {
   const theme = useTheme();
@@ -43,24 +56,38 @@ const MediaKit = ({ id, noBigScreen }) => {
   const smDown = useResponsive('down', 'sm');
   const { data, isLoading, isError } = useSWRGetCreatorByID(id);
 
-  console.log(data);
-
   const [currentTab, setCurrentTab] = useState('instagram');
 
   const socialMediaAnalytics = useMemo(() => {
+    // if (currentTab === 'instagram') {
+    //   return {
+    //     followers: data?.creator?.instagramUser?.followers_count || 0,
+    //     engagement_rate: `${
+    //       calculateEngagementRate(
+    //         data?.creator?.instagramUser?.instagramVideo?.reduce(
+    //           (sum, acc) => sum + parseInt(acc.like_count, 10),
+    //           0
+    //         ),
+    //         data?.creator?.instagramUser?.followers_count
+    //       ) || 0
+    //     }`,
+    //     averageLikes: data?.creator?.instagramUser?.average_like || 0,
+    //     username: data?.creator?.instagramUser?.username,
+    //   };
+    // }
+
     if (currentTab === 'instagram') {
       return {
         followers: data?.creator?.instagramUser?.followers_count || 0,
         engagement_rate: `${
           calculateEngagementRate(
-            data?.creator?.instagramUser?.instagramVideo?.reduce(
-              (sum, acc) => sum + parseInt(acc.like_count, 10),
-              0
-            ),
+            (data?.creator?.instagramUser?.totalLikes ?? 0) +
+              (data?.creator?.instagramUser?.totalComments ?? 0),
             data?.creator?.instagramUser?.followers_count
           ) || 0
         }`,
-        averageLikes: data?.creator?.instagramUser?.average_like || 0,
+        averageLikes: data?.creator?.instagramUser?.averageLikes || 0,
+        averageComments: data?.creator?.instagramUser?.averageComments || 0,
         username: data?.creator?.instagramUser?.username,
       };
     }
@@ -307,7 +334,7 @@ const MediaKit = ({ id, noBigScreen }) => {
               sx={{ fontSize: { xs: '3rem', md: '4rem' } }}
             >
               {/* Total audience value - can be added later */}
-              {socialMediaAnalytics.followers}
+              {formatNumber(socialMediaAnalytics.followers)}
             </Typography>
             <Box
               component="span"
@@ -410,7 +437,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                       align="left"
                       sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                     >
-                      {socialMediaAnalytics.followers}
+                      {formatNumber(socialMediaAnalytics.followers)}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -453,7 +480,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                       align="left"
                       sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                     >
-                      {socialMediaAnalytics.averageLikes}
+                      {socialMediaAnalytics.averageLikes.toFixed(2)}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -487,7 +514,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                       align="left"
                       sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                     >
-                      0 {/* Change to actual number later */}
+                      {socialMediaAnalytics.averageComments.toFixed(2)}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -569,7 +596,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                 align="left"
                 sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
               >
-                {socialMediaAnalytics.followers}
+                {formatNumber(socialMediaAnalytics.followers)}
               </Typography>
               <Typography
                 variant="caption"
@@ -594,7 +621,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                 align="left"
                 sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
               >
-                0 {/* Change to actual number later */}
+                {socialMediaAnalytics.averageComments.toFixed(2)}
               </Typography>
               <Typography
                 variant="caption"
@@ -619,7 +646,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                 align="left"
                 sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
               >
-                {socialMediaAnalytics.averageLikes}
+                {socialMediaAnalytics.averageLikes.toFixed(2)}
               </Typography>
               <Typography
                 variant="caption"
@@ -665,7 +692,8 @@ const MediaKit = ({ id, noBigScreen }) => {
       {/* Bottom View */}
 
       <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1}>
-        Top Content {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
+        Top Content{' '}
+        {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
       </Typography>
 
       <MediaKitSocial currentTab={currentTab} data={data} />
