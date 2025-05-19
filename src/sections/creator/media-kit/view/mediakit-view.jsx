@@ -1134,7 +1134,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.averageLikes}
+                        {socialMediaAnalytics.averageLikes.toFixed(2)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1168,7 +1168,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.averageComments}
+                        {socialMediaAnalytics.averageComments.toFixed(2)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1211,7 +1211,7 @@ const MediaKitCreator = () => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.engagement_rate}
+                        {socialMediaAnalytics.engagement_rate.toFixed(2)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1275,7 +1275,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.averageComments}
+                  {socialMediaAnalytics.averageComments.toFixed(2)}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1300,7 +1300,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.averageLikes}
+                  {socialMediaAnalytics.averageLikes.toFixed(2)}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1325,7 +1325,7 @@ const MediaKitCreator = () => {
                   align="left"
                   sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.engagement_rate}
+                  {socialMediaAnalytics.engagement_rate.toFixed(2)}
                 </Typography>
                 <Typography
                   variant="caption"
