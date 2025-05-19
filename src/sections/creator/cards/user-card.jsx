@@ -279,7 +279,7 @@ export default function UserCard({ user }) {
 
           <MetricBar
             label="Avg Likes"
-            value={formatNumber(socialMediaAnalytics.averageLikes || 'N/A')}
+            value={formatNumber(socialMediaAnalytics.averageLikes.toFixed(2) || 'N/A')}
             color={currentTab === 'instagram' ? PLATFORM_COLORS.instagram : PLATFORM_COLORS.tiktok}
           />
         </Stack>
