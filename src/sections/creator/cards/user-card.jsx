@@ -55,19 +55,33 @@ export default function UserCard({ user }) {
   const router = useRouter();
 
   const socialMediaAnalytics = useMemo(() => {
+    // if (currentTab === 'instagram') {
+    //   return {
+    //     followers: user?.creator?.instagramUser?.followers_count || 0,
+    //     engagement_rate: `${
+    //       calculateEngagementRate(
+    //         (user?.creator?.instagramUser?.totalLikes ?? 0) +
+    //           (instagram?.medias?.totalComments ?? 0),
+    //         instagram?.overview?.followers_count
+    //       ) || 0
+    //     }`,
+    //     averageLikes: user?.creator?.instagramUser?.average_like || 0,
+    //     username: user?.creator?.instagramUser?.username,
+    //   };
+    // }
+
     if (currentTab === 'instagram') {
       return {
         followers: user?.creator?.instagramUser?.followers_count || 0,
         engagement_rate: `${
           calculateEngagementRate(
-            user?.creator?.instagramUser?.instagramVideo?.reduce(
-              (sum, acc) => sum + parseInt(acc.like_count, 10),
-              0
-            ),
+            (user?.creator?.instagramUser?.totalLikes ?? 0) +
+              (user?.creator?.instagramUser?.totalComments ?? 0),
             user?.creator?.instagramUser?.followers_count
           ) || 0
-        }%`,
-        averageLikes: user?.creator?.instagramUser?.average_like || 0,
+        }`,
+        averageLikes: user?.creator?.instagramUser?.averageLikes || 0,
+        averageComments: user?.creator?.instagramUser?.averageComments || 0,
         username: user?.creator?.instagramUser?.username,
       };
     }
@@ -106,11 +120,11 @@ export default function UserCard({ user }) {
         cursor: 'pointer',
       }}
     >
-      <Stack 
-        direction="row" 
-        spacing={2} 
-        alignItems="center" 
-        sx={{ 
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        sx={{
           py: 2.5,
           px: 2.25,
           borderBottom: '1px solid',
@@ -129,35 +143,35 @@ export default function UserCard({ user }) {
             borderRadius: 1.5,
           }}
         />
-        
+
         <Box sx={{ minWidth: 0, flexGrow: 1 }}>
           <Stack direction="row" alignItems="center" spacing={0.6}>
             <Typography variant="subtitle1" noWrap fontWeight="600" sx={{ lineHeight: 1.3 }}>
               {name}
             </Typography>
-              <Box
-                component="img"
-                src="/assets/icons/overview/creatorVerified.svg"
-                sx={{
-                  width: 16,
-                  height: 16,
-                }}
-              />
+            <Box
+              component="img"
+              src="/assets/icons/overview/creatorVerified.svg"
+              sx={{
+                width: 16,
+                height: 16,
+              }}
+            />
           </Stack>
-          
-          <Typography 
-            variant="body2" 
-            sx={{ 
+
+          <Typography
+            variant="body2"
+            sx={{
               color: 'text.secondary',
               fontWeight: 500,
               mt: 0.1,
-            }} 
+            }}
             noWrap
           >
             {formatText(role)}
           </Typography>
         </Box>
-        
+
         <Box
           sx={{
             p: 0.5,
@@ -169,43 +183,51 @@ export default function UserCard({ user }) {
         >
           <Stack direction="row" spacing={0.5}>
             <Tooltip title="Instagram">
-              <IconButton 
+              <IconButton
                 size="small"
                 onClick={(e) => handleChange(e, 'instagram')}
-                sx={{ 
+                sx={{
                   p: 0.5,
                   color: currentTab === 'instagram' ? PLATFORM_COLORS.instagram : 'text.secondary',
-                  bgcolor: currentTab === 'instagram' 
-                    ? alpha(PLATFORM_COLORS.instagram, 0.08)
-                    : 'transparent',
-                  '&:hover': { 
-                    bgcolor: currentTab === 'instagram'
-                      ? alpha(PLATFORM_COLORS.instagram, 0.12)
-                      : 'action.hover'
+                  bgcolor:
+                    currentTab === 'instagram'
+                      ? alpha(PLATFORM_COLORS.instagram, 0.08)
+                      : 'transparent',
+                  '&:hover': {
+                    bgcolor:
+                      currentTab === 'instagram'
+                        ? alpha(PLATFORM_COLORS.instagram, 0.12)
+                        : 'action.hover',
                   },
-                  border: currentTab === 'instagram' ? `1px solid ${alpha(PLATFORM_COLORS.instagram, 0.3)}` : 'none',
+                  border:
+                    currentTab === 'instagram'
+                      ? `1px solid ${alpha(PLATFORM_COLORS.instagram, 0.3)}`
+                      : 'none',
                 }}
               >
                 <Iconify icon="ant-design:instagram-filled" width={18} />
               </IconButton>
             </Tooltip>
-            
+
             <Tooltip title="TikTok">
-              <IconButton 
+              <IconButton
                 size="small"
                 onClick={(e) => handleChange(e, 'tiktok')}
-                sx={{ 
+                sx={{
                   p: 0.5,
                   color: currentTab === 'tiktok' ? PLATFORM_COLORS.tiktok : 'text.secondary',
-                  bgcolor: currentTab === 'tiktok' 
-                    ? alpha(PLATFORM_COLORS.tiktok, 0.08)
-                    : 'transparent',
-                  '&:hover': { 
-                    bgcolor: currentTab === 'tiktok'
-                      ? alpha(PLATFORM_COLORS.tiktok, 0.12)
-                      : 'action.hover'
+                  bgcolor:
+                    currentTab === 'tiktok' ? alpha(PLATFORM_COLORS.tiktok, 0.08) : 'transparent',
+                  '&:hover': {
+                    bgcolor:
+                      currentTab === 'tiktok'
+                        ? alpha(PLATFORM_COLORS.tiktok, 0.12)
+                        : 'action.hover',
                   },
-                  border: currentTab === 'tiktok' ? `1px solid ${alpha(PLATFORM_COLORS.tiktok, 0.3)}` : 'none',
+                  border:
+                    currentTab === 'tiktok'
+                      ? `1px solid ${alpha(PLATFORM_COLORS.tiktok, 0.3)}`
+                      : 'none',
                 }}
               >
                 <Iconify icon="ant-design:tik-tok-filled" width={18} />
@@ -214,14 +236,15 @@ export default function UserCard({ user }) {
           </Stack>
         </Box>
       </Stack>
-      
+
       <Box sx={{ p: 1.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ mb: 0.5 }}>
-          <Typography 
-            variant="overline" 
-            sx={{ 
-              fontSize: 9, 
-              color: currentTab === 'instagram' ? PLATFORM_COLORS.instagram : PLATFORM_COLORS.tiktok,
+          <Typography
+            variant="overline"
+            sx={{
+              fontSize: 9,
+              color:
+                currentTab === 'instagram' ? PLATFORM_COLORS.instagram : PLATFORM_COLORS.tiktok,
               textTransform: 'uppercase',
               letterSpacing: 0.5,
               display: 'flex',
@@ -229,34 +252,38 @@ export default function UserCard({ user }) {
               gap: 0.5,
             }}
           >
-            <Iconify 
-              icon={currentTab === 'instagram' ? 'ant-design:instagram-filled' : 'ant-design:tik-tok-filled'} 
-              width={10} 
+            <Iconify
+              icon={
+                currentTab === 'instagram'
+                  ? 'ant-design:instagram-filled'
+                  : 'ant-design:tik-tok-filled'
+              }
+              width={10}
             />
             {currentTab === 'instagram' ? 'Instagram' : 'TikTok'} Metrics
           </Typography>
         </Box>
-        
+
         <Stack spacing={0.5} sx={{ flexGrow: 1 }}>
-          <MetricBar 
-            label="Followers" 
-            value={formatNumber(socialMediaAnalytics.followers || "N/A")}
+          <MetricBar
+            label="Followers"
+            value={formatNumber(socialMediaAnalytics.followers || 'N/A')}
             color={currentTab === 'instagram' ? PLATFORM_COLORS.instagram : PLATFORM_COLORS.tiktok}
           />
-          
-          <MetricBar 
-            label="Engagement" 
+
+          <MetricBar
+            label="Engagement"
             value={socialMediaAnalytics.engagement_rate || 'N/A'}
             color={currentTab === 'instagram' ? PLATFORM_COLORS.instagram : PLATFORM_COLORS.tiktok}
           />
-          
-          <MetricBar 
-            label="Avg Likes" 
-            value={formatNumber(socialMediaAnalytics.averageLikes || "N/A")}
+
+          <MetricBar
+            label="Avg Likes"
+            value={formatNumber(socialMediaAnalytics.averageLikes || 'N/A')}
             color={currentTab === 'instagram' ? PLATFORM_COLORS.instagram : PLATFORM_COLORS.tiktok}
           />
         </Stack>
-        
+
         {currentTab === 'instagram' && socialMediaAnalytics.username && (
           <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 1 }}>
             <Box
@@ -272,9 +299,9 @@ export default function UserCard({ user }) {
             >
               <Iconify icon="ant-design:instagram-filled" width={12} />
             </Box>
-            <Typography 
-              variant="caption" 
-              sx={{ 
+            <Typography
+              variant="caption"
+              sx={{
                 fontWeight: 500,
                 color: 'text.secondary',
                 fontSize: '0.7rem',
@@ -291,7 +318,7 @@ export default function UserCard({ user }) {
 
 function MetricBar({ label, value, color }) {
   const theme = useTheme();
-  
+
   const getMetricIcon = () => {
     switch (label.toLowerCase()) {
       case 'followers':
@@ -304,7 +331,7 @@ function MetricBar({ label, value, color }) {
         return 'eva:bar-chart-fill';
     }
   };
-  
+
   return (
     <Box
       sx={{
@@ -331,24 +358,24 @@ function MetricBar({ label, value, color }) {
         >
           <Iconify icon={getMetricIcon()} width={14} />
         </Box>
-        
+
         <Box sx={{ flexGrow: 1 }}>
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              color: 'text.secondary', 
-              display: 'block', 
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              display: 'block',
               lineHeight: 1.1,
               fontSize: '0.65rem',
             }}
           >
             {label}
           </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontWeight: 700, 
-              color, 
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 700,
+              color,
               lineHeight: 1.2,
               fontSize: '0.8rem',
             }}
