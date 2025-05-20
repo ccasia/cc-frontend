@@ -18,7 +18,7 @@ import {
   Container,
   Typography,
   CircularProgress,
-  IconButton,
+  Dialog,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -2011,57 +2011,66 @@ const MediaKitCreator = () => {
       </Backdrop>
 
       {/* Mobile Image Preview Modal */}
-      <Backdrop
-        sx={{
-          color: '#fff',
-          zIndex: theme.zIndex.drawer + 2,
-          backdropFilter: 'blur(8px)',
-          backgroundColor: 'rgb(0, 0, 0)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+      <Dialog
         open={mobilePreview.open}
-      >
-        <Box
-          sx={{
+        onClose={closeMobilePreview}
+        fullScreen
+        PaperProps={{
+          sx: {
+            backgroundColor: 'rgb(0, 0, 0)',
+            overflow: 'visible',
             position: 'relative',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+          },
+        }}
+        sx={{
+          zIndex: 9999,
+          '& .MuiDialog-container': {
             alignItems: 'center',
             justifyContent: 'center',
+          },
+          '& .MuiDialog-paper': {
+            m: 0,
+            width: '100%',
+            height: '100%',
+          },
+        }}
+      >
+        {/* Close button */}
+        <Button
+          onClick={closeMobilePreview}
+          sx={{
+            position: 'fixed',
+            top: 20,
+            right: 20,
+            minWidth: '38px',
+            width: '38px',
+            height: '38px',
+            p: 0,
+            bgcolor: '#FFFFFF',
+            color: '#000000',
+            border: '1px solid #E7E7E7',
+            borderBottom: '3px solid #E7E7E7',
+            borderRadius: '8px',
+            fontWeight: 650,
+            zIndex: 9999,
+            '&:hover': {
+              bgcolor: '#F5F5F5',
+            },
           }}
         >
-          {/* Close button */}
-          <Button
-            onClick={closeMobilePreview}
-            sx={{
-              position: 'fixed',
-              top: 20,
-              right: 20,
-              minWidth: '38px',
-              width: '38px',
-              height: '38px',
-              p: 0,
-              bgcolor: '#FFFFFF',
-              color: '#000000',
-              border: '1px solid #E7E7E7',
-              borderBottom: '3px solid #E7E7E7',
-              borderRadius: '8px',
-              fontWeight: 650,
-              zIndex: 9999,
-              '&:hover': {
-                bgcolor: '#F5F5F5',
-              },
-            }}
-          >
-            X
-          </Button>
-          
-          {/* Image */}
+          X
+        </Button>
+        
+        {/* Image */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+          }}
+        >
           <Box
             component="img"
             src={mobilePreview.imageUrl}
@@ -2072,39 +2081,39 @@ const MediaKitCreator = () => {
               objectFit: 'contain',
             }}
           />
-          
-          {/* Instructions */}
-          <Box
-            className="instructions"
-            sx={{
-              position: 'fixed',
-              bottom: 20,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 'auto',
-              maxWidth: '80%',
-              backgroundColor: 'white',
-              color: 'black',
-              textAlign: 'center',
-              padding: '8px 16px',
-              fontFamily: 'sans-serif',
-              borderRadius: 1.5,
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1,
-              fontSize: '12px',
-              fontWeight: 500,
-            }}
-          >
-            <svg width="18" height="20" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z" fill="#1340FF"/>
-            </svg>
-            Long-press the image to save to your gallery
-          </Box>
         </Box>
-      </Backdrop>
+        
+        {/* Instructions */}
+        <Box
+          className="instructions"
+          sx={{
+            position: 'fixed',
+            bottom: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'auto',
+            maxWidth: '80%',
+            backgroundColor: 'white',
+            color: 'black',
+            textAlign: 'center',
+            padding: '8px 16px',
+            fontFamily: 'sans-serif',
+            borderRadius: 1.5,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1,
+            fontSize: '12px',
+            fontWeight: 500,
+          }}
+        >
+          <svg width="18" height="20" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z" fill="#1340FF"/>
+          </svg>
+          Long-press the image to save to your gallery
+        </Box>
+      </Dialog>
     </>
   );
 };
