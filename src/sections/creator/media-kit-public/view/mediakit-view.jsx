@@ -97,6 +97,7 @@ const MediaKit = ({ id, noBigScreen }) => {
         followers: data?.creator?.tiktokUser?.follower_count || 0,
         engagement_rate: data?.creator?.tiktokUser?.follower_count || 0,
         averageLikes: data?.creator?.tiktokUser?.likes_count || 0,
+        averageComments: data?.creator?.tiktokUser?.averageComments || 0,
       };
     }
 

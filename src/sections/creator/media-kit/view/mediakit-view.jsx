@@ -122,6 +122,7 @@ const MediaKitCreator = () => {
         followers: tiktok?.creator?.tiktokUser?.follower_count || 0,
         engagement_rate: tiktok?.creator?.tiktokUser?.follower_count || 0,
         averageLikes: tiktok?.creator?.tiktokUser?.likes_count || 0,
+        averageComments: tiktok?.creator?.tiktokUser?.averageComments || 0,
       };
     }
 
