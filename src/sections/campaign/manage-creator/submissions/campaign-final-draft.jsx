@@ -159,24 +159,38 @@ const CampaignFinalDraft = ({
   );
 
   const feedbacksTesting = useMemo(() => {
-    const currentFeedbacks =
-      (submission.feedback.length && submission.feedback) ||
-      (previousSubmission.feedback.length && previousSubmission.feedback);
+    // Get feedback from both submissions
+    const allFeedbacks = [
+      ...(submission?.feedback || []),
+      ...(previousSubmission?.feedback || [])
+    ];
 
-    return currentFeedbacks
+    // Sort by date and remove duplicates
+    const uniqueFeedbacks = allFeedbacks
       .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)))
-      .map((item) => {
-        const photoFeedbacks = item?.photosToUpdate?.length || null;
-        const videoFeedbacks = item?.videosToUpdate?.length || null;
-        const rawFootageFeedbacks = item?.rawFootageToUpdate?.length || null;
+      .filter((feedback, index, self) => 
+        index === self.findIndex((f) => f.id === feedback.id)
+      );
 
+    // Only process feedbacks that have actual changes
+    return uniqueFeedbacks
+      .filter(item => 
+        item?.photosToUpdate?.length > 0 || 
+        item?.videosToUpdate?.length > 0 || 
+        item?.rawFootageToUpdate?.length > 0
+      )
+      .map((item) => {
         const changes = [];
 
-        if (photoFeedbacks) {
-          changes.push({ content: item.photoContent, changes: item.photosToUpdate, type: 'photo' });
+        if (item?.photosToUpdate?.length > 0) {
+          changes.push({ 
+            content: item.photoContent, 
+            changes: item.photosToUpdate, 
+            type: 'photo' 
+          });
         }
 
-        if (videoFeedbacks) {
+        if (item?.videosToUpdate?.length > 0) {
           changes.push({
             content: item.content,
             changes: item.videosToUpdate,
@@ -185,7 +199,7 @@ const CampaignFinalDraft = ({
           });
         }
 
-        if (rawFootageFeedbacks) {
+        if (item?.rawFootageToUpdate?.length > 0) {
           changes.push({
             content: item.rawFootageContent,
             changes: item.rawFootageToUpdate,
@@ -194,13 +208,14 @@ const CampaignFinalDraft = ({
         }
 
         return {
+          id: item.id,
           adminName: item?.admin?.name,
           role: item?.admin?.role,
-          changes: changes || null,
+          changes: changes.length > 0 ? changes : null,
           reasons: item?.reasons?.length ? item?.reasons : null,
           createdAt: item?.createdAt,
         };
-      })[0];
+      });
   }, [submission, previousSubmission]);
 
   useEffect(() => {
@@ -598,8 +613,11 @@ const CampaignFinalDraft = ({
               {previousSubmission?.status === 'CHANGES_REQUIRED' && (
                 <Box sx={{ mt: 3 }}>
                   {campaign?.campaignCredits
-                    ? !!feedbacksTesting && (
+                    ? feedbacksTesting && feedbacksTesting.length > 0 && (
+                        <>
+                          {feedbacksTesting.map((feedback, feedbackIndex) => (
                         <Box
+                              key={`feedback-${feedbackIndex}`}
                           component="div"
                           mb={2}
                           p={2}
@@ -612,13 +630,16 @@ const CampaignFinalDraft = ({
                             cursor: 'pointer',
                           }}
                           onClick={() => {
-                            setCollapseOpen((prev) => !prev);
+                                setCollapseOpen((prev) => ({
+                                  ...prev,
+                                  [feedbackIndex]: !prev[feedbackIndex]
+                                }));
                           }}
                           position="relative"
                         >
                           {/* Handle icon */}
                           <Box sx={{ position: 'absolute', top: 5, right: 10 }}>
-                            {collapseOpen ? (
+                                {collapseOpen[feedbackIndex] ? (
                               <Iconify
                                 icon="iconamoon:arrow-up-2-bold"
                                 width={20}
@@ -634,7 +655,7 @@ const CampaignFinalDraft = ({
                           </Box>
                           <Avatar
                             src="/default-avatar.png"
-                            alt={feedbacksTesting?.adminName || 'User'}
+                                alt={feedback?.adminName || 'User'}
                             sx={{ mr: 2 }}
                           />
 
@@ -658,10 +679,10 @@ const CampaignFinalDraft = ({
                                   variant="subtitle1"
                                   sx={{ fontWeight: 'bold', marginBottom: '2px' }}
                                 >
-                                  {feedbacksTesting.adminName || 'Unknown User'}
+                                      {feedback.adminName || 'Unknown User'}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                  {feedbacksTesting.role || 'No Role'}
+                                      {feedback.role || 'No Role'}
                                 </Typography>
                               </Box>
                               <Chip
@@ -683,11 +704,11 @@ const CampaignFinalDraft = ({
                                 }}
                               />
                             </Box>
-                            <Collapse in={collapseOpen} timeout="auto" unmountOnExit>
+                                <Collapse in={collapseOpen[feedbackIndex]} timeout="auto" unmountOnExit>
                               <Box sx={{ textAlign: 'left', mt: 1 }}>
-                                {!!feedbacksTesting.changes.length &&
-                                  feedbacksTesting.changes.map((item) => (
-                                    <>
+                                    {!!feedback.changes?.length &&
+                                      feedback.changes.map((item, itemIndex) => (
+                                        <React.Fragment key={`change-${feedbackIndex}-${itemIndex}`}>
                                       {item?.type === 'video' && !!item.changes?.length && (
                                         <Box mt={2}>
                                           {item?.content?.split('\n').map((line, i) => (
@@ -747,7 +768,7 @@ const CampaignFinalDraft = ({
                                                         </Typography>
                                                       </Box>
 
-                                                      {!!item.reasons.length && (
+                                                          {!!item.reasons?.length && (
                                                         <Stack
                                                           direction="row"
                                                           spacing={0.5}
@@ -903,7 +924,7 @@ const CampaignFinalDraft = ({
                                             color="warning.darker"
                                             sx={{ mb: 1 }}
                                           >
-                                            Videos that need changes:
+                                                Raw Footage that needs changes:
                                           </Typography>
                                           <Box
                                             sx={{
@@ -916,10 +937,10 @@ const CampaignFinalDraft = ({
                                             }}
                                           >
                                             {deliverables.rawFootages
-                                              .filter((video) => item.changes.includes(video.id))
-                                              .map((video, videoIndex) => (
+                                                  .filter((footage) => item.changes.includes(footage.id))
+                                                  .map((footage, footageIndex) => (
                                                 <Box
-                                                  key={video.id}
+                                                      key={footage.id}
                                                   sx={{
                                                     p: 2,
                                                     borderRadius: 1,
@@ -935,7 +956,7 @@ const CampaignFinalDraft = ({
                                                           variant="subtitle2"
                                                           color="warning.darker"
                                                         >
-                                                          Video {videoIndex + 1}
+                                                              Footage {footageIndex + 1}
                                                         </Typography>
                                                         <Typography
                                                           variant="caption"
@@ -945,41 +966,6 @@ const CampaignFinalDraft = ({
                                                           Requires changes
                                                         </Typography>
                                                       </Box>
-
-                                                      {!!item.reasons?.length && (
-                                                        <Stack
-                                                          direction="row"
-                                                          spacing={0.5}
-                                                          flexWrap="wrap"
-                                                        >
-                                                          {item.reasons.map((reason, idx) => (
-                                                            <Box
-                                                              key={idx}
-                                                              sx={{
-                                                                border: '1.5px solid #e7e7e7',
-                                                                borderBottom: '4px solid #e7e7e7',
-                                                                bgcolor: 'white',
-                                                                borderRadius: 1,
-                                                                p: 0.5,
-                                                                display: 'inline-flex',
-                                                              }}
-                                                            >
-                                                              <Chip
-                                                                label={reason}
-                                                                size="small"
-                                                                color="default"
-                                                                variant="outlined"
-                                                                sx={{
-                                                                  border: 'none',
-                                                                  color: '#8e8e93',
-                                                                  fontSize: '0.75rem',
-                                                                  padding: '1px 2px',
-                                                                }}
-                                                              />
-                                                            </Box>
-                                                          ))}
-                                                        </Stack>
-                                                      )}
                                                     </Stack>
 
                                                     <Box
@@ -994,7 +980,7 @@ const CampaignFinalDraft = ({
                                                     >
                                                       <Box
                                                         component="video"
-                                                        src={video.url}
+                                                            src={footage.url}
                                                         controls
                                                         sx={{
                                                           position: 'absolute',
@@ -1013,13 +999,17 @@ const CampaignFinalDraft = ({
                                         </Box>
                                       )}
 
+                                          {item !== feedback.changes[feedback.changes.length - 1] && (
                                       <Divider sx={{ my: 2 }} />
-                                    </>
+                                          )}
+                                        </React.Fragment>
                                   ))}
                               </Box>
                             </Collapse>
                           </Box>
                         </Box>
+                          ))}
+                        </>
                       )
                     : [...submission.feedback, ...previousSubmission.feedback]
                         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -1109,8 +1099,11 @@ const CampaignFinalDraft = ({
             {campaign?.campaignCredits ? (
               <Stack spacing={2}>
                 <Box>
-                  {!!feedbacksTesting && (
+                  {feedbacksTesting && feedbacksTesting.length > 0 && (
+                    <>
+                      {feedbacksTesting.map((feedback, feedbackIndex) => (
                     <Box
+                          key={`feedback-required-${feedbackIndex}`}
                       component="div"
                       mb={2}
                       p={2}
@@ -1123,13 +1116,16 @@ const CampaignFinalDraft = ({
                         cursor: 'pointer',
                       }}
                       onClick={() => {
-                        setCollapseOpen((prev) => !prev);
+                            setCollapseOpen((prev) => ({
+                              ...prev,
+                              [feedbackIndex]: !prev[feedbackIndex]
+                            }));
                       }}
                       position="relative"
                     >
                       {/* Handle icon */}
                       <Box sx={{ position: 'absolute', top: 5, right: 10 }}>
-                        {collapseOpen ? (
+                            {collapseOpen[feedbackIndex] ? (
                           <Iconify
                             icon="iconamoon:arrow-up-2-bold"
                             width={20}
@@ -1145,7 +1141,7 @@ const CampaignFinalDraft = ({
                       </Box>
                       <Avatar
                         src="/default-avatar.png"
-                        alt={feedbacksTesting?.adminName || 'User'}
+                            alt={feedback?.adminName || 'User'}
                         sx={{ mr: 2 }}
                       />
 
@@ -1169,10 +1165,10 @@ const CampaignFinalDraft = ({
                               variant="subtitle1"
                               sx={{ fontWeight: 'bold', marginBottom: '2px' }}
                             >
-                              {feedbacksTesting.adminName || 'Unknown User'}
+                                  {feedback.adminName || 'Unknown User'}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {feedbacksTesting.role || 'No Role'}
+                                  {feedback.role || 'No Role'}
                             </Typography>
                           </Box>
                           <Chip
@@ -1194,11 +1190,11 @@ const CampaignFinalDraft = ({
                             }}
                           />
                         </Box>
-                        <Collapse in={collapseOpen} timeout="auto" unmountOnExit>
+                            <Collapse in={collapseOpen[feedbackIndex]} timeout="auto" unmountOnExit>
                           <Box sx={{ textAlign: 'left', mt: 1 }}>
-                            {!!feedbacksTesting.changes.length &&
-                              feedbacksTesting.changes.map((item) => (
-                                <>
+                                {!!feedback.changes?.length &&
+                                  feedback.changes.map((item, itemIndex) => (
+                                    <React.Fragment key={`change-required-${feedbackIndex}-${itemIndex}`}>
                                   {item?.type === 'video' && !!item.changes?.length && (
                                     <Box mt={2}>
                                       {item?.content?.split('\n').map((line, i) => (
@@ -1258,7 +1254,7 @@ const CampaignFinalDraft = ({
                                                     </Typography>
                                                   </Box>
 
-                                                  {!!item.reasons.length && (
+                                                      {!!item.reasons?.length && (
                                                     <Stack
                                                       direction="row"
                                                       spacing={0.5}
@@ -1414,7 +1410,7 @@ const CampaignFinalDraft = ({
                                         color="warning.darker"
                                         sx={{ mb: 1 }}
                                       >
-                                        Videos that need changes:
+                                            Raw Footage that needs changes:
                                       </Typography>
                                       <Box
                                         sx={{
@@ -1427,10 +1423,10 @@ const CampaignFinalDraft = ({
                                         }}
                                       >
                                         {deliverables.rawFootages
-                                          .filter((video) => item.changes.includes(video.id))
-                                          .map((video, videoIndex) => (
+                                              .filter((footage) => item.changes.includes(footage.id))
+                                              .map((footage, footageIndex) => (
                                             <Box
-                                              key={video.id}
+                                                  key={footage.id}
                                               sx={{
                                                 p: 2,
                                                 borderRadius: 1,
@@ -1446,7 +1442,7 @@ const CampaignFinalDraft = ({
                                                       variant="subtitle2"
                                                       color="warning.darker"
                                                     >
-                                                      Video {videoIndex + 1}
+                                                          Footage {footageIndex + 1}
                                                     </Typography>
                                                     <Typography
                                                       variant="caption"
@@ -1456,41 +1452,6 @@ const CampaignFinalDraft = ({
                                                       Requires changes
                                                     </Typography>
                                                   </Box>
-
-                                                  {!!item.reasons?.length && (
-                                                    <Stack
-                                                      direction="row"
-                                                      spacing={0.5}
-                                                      flexWrap="wrap"
-                                                    >
-                                                      {item.reasons.map((reason, idx) => (
-                                                        <Box
-                                                          key={idx}
-                                                          sx={{
-                                                            border: '1.5px solid #e7e7e7',
-                                                            borderBottom: '4px solid #e7e7e7',
-                                                            bgcolor: 'white',
-                                                            borderRadius: 1,
-                                                            p: 0.5,
-                                                            display: 'inline-flex',
-                                                          }}
-                                                        >
-                                                          <Chip
-                                                            label={reason}
-                                                            size="small"
-                                                            color="default"
-                                                            variant="outlined"
-                                                            sx={{
-                                                              border: 'none',
-                                                              color: '#8e8e93',
-                                                              fontSize: '0.75rem',
-                                                              padding: '1px 2px',
-                                                            }}
-                                                          />
-                                                        </Box>
-                                                      ))}
-                                                    </Stack>
-                                                  )}
                                                 </Stack>
 
                                                 <Box
@@ -1505,7 +1466,7 @@ const CampaignFinalDraft = ({
                                                 >
                                                   <Box
                                                     component="video"
-                                                    src={video.url}
+                                                        src={footage.url}
                                                     controls
                                                     sx={{
                                                       position: 'absolute',
@@ -1524,13 +1485,17 @@ const CampaignFinalDraft = ({
                                     </Box>
                                   )}
 
+                                      {item !== feedback.changes[feedback.changes.length - 1] && (
                                   <Divider sx={{ my: 2 }} />
-                                </>
+                                      )}
+                                    </React.Fragment>
                               ))}
                           </Box>
                         </Collapse>
                       </Box>
                     </Box>
+                      ))}
+                    </>
                   )}
 
                   <Box
