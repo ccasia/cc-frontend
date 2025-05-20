@@ -18,6 +18,7 @@ import {
   Container,
   Typography,
   CircularProgress,
+  IconButton,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -55,6 +56,12 @@ const MediaKitCreator = () => {
     open: false,
     message: '',
     severity: 'success',
+  });
+  
+  // New state for mobile preview
+  const [mobilePreview, setMobilePreview] = useState({
+    open: false,
+    imageUrl: '',
   });
 
   const [currentTab, setCurrentTab] = useState('instagram');
@@ -332,69 +339,11 @@ const MediaKitCreator = () => {
           link.href = dataUrl;
           link.click();
         } else {
-          // Open in new tab for mobile preview
-          const tab = window.open();
-          if (tab) {
-            tab.document.write(`
-              <html>
-                <head>
-                  <title>${user?.creator?.mediaKit?.displayName || user?.name} Media Kit</title>
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  <style>
-                    body {
-                      margin: 0;
-                      padding: 0;
-                      display: flex;
-                      justify-content: center;
-                      align-items: center;
-                      background-color:rgb(0, 0, 0);
-                    }
-                    img {
-                      max-width: 100%;
-                      height: auto;
-                      display: block;
-                    }
-                    .instructions {
-                      position: fixed;
-                      bottom: 20px;
-                      left: 50%;
-                      transform: translateX(-50%);
-                      width: auto;
-                      max-width: 80%;
-                      background-color: white;
-                      color: black;
-                      text-align: center;
-                      padding: 8px 16px;
-                      font-family: sans-serif;
-                      border-radius: 6px;
-                      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      gap: 8px;
-                      font-size: 12px;
-                      font-weight: 500;
-                    }
-                    .instructions svg {
-                      width: 14px;
-                      height: 16px;
-                      flex-shrink: 0;
-                    }
-                  </style>
-                </head>
-                <body>
-                  <img src="${dataUrl}" alt="${user?.creator?.mediaKit?.displayName || user?.name} Media Kit" />
-                  <div class="instructions">
-                    <svg width="18" height="20" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z" fill="#1340FF"/>
-                    </svg>
-                    Long-press the image to save to your gallery
-                  </div>
-                </body>
-              </html>
-            `);
-            tab.document.close();
-          }
+          // Open in-page preview for mobile
+          setMobilePreview({
+            open: true,
+            imageUrl: dataUrl,
+          });
         }
       } else {
         // Small screen method using hidden desktop layout
@@ -451,74 +400,16 @@ const MediaKitCreator = () => {
           link.href = dataUrl;
           link.click();
         } else {
-          // Open in new tab for mobile preview
-          const tab = window.open();
-          if (tab) {
-            tab.document.write(`
-              <html>
-                <head>
-                  <title>${user?.creator?.mediaKit?.displayName || user?.name} Media Kit</title>
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  <style>
-                    body {
-                      margin: 0;
-                      padding: 0;
-                      display: flex;
-                      justify-content: center;
-                      align-items: center;
-                      background-color:rgb(0, 0, 0);
-                    }
-                    img {
-                      max-width: 100%;
-                      height: auto;
-                      display: block;
-                    }
-                    .instructions {
-                      position: fixed;
-                      bottom: 20px;
-                      left: 50%;
-                      transform: translateX(-50%);
-                      width: auto;
-                      max-width: 80%;
-                      background-color: white;
-                      color: black;
-                      text-align: center;
-                      padding: 8px 16px;
-                      font-family: sans-serif;
-                      border-radius: 6px;
-                      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      gap: 8px;
-                      font-size: 12px;
-                      font-weight: 500;
-                    }
-                    .instructions svg {
-                      width: 14px;
-                      height: 16px;
-                      flex-shrink: 0;
-                    }
-                  </style>
-                </head>
-                <body>
-                  <img src="${dataUrl}" alt="${user?.creator?.mediaKit?.displayName || user?.name} Media Kit" />
-                  <div class="instructions">
-                    <svg width="18" height="20" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z" fill="#1340FF"/>
-                    </svg>
-                    Long-press the image to save to your gallery
-                  </div>
-                </body>
-              </html>
-            `);
-            tab.document.close();
-          }
+          // Open in-page preview for mobile
+          setMobilePreview({
+            open: true,
+            imageUrl: dataUrl,
+          });
         }
       }
 
       const successMessage = isMobile 
-        ? 'Image generated successfully!'
+        ? 'Done!'
         : 'Screenshot saved successfully!';
         
       setSnackbar({
@@ -547,6 +438,14 @@ const MediaKitCreator = () => {
     getScreenshotStyles,
     ensureContentLoaded,
   ]);
+
+  // New function to close mobile preview
+  const closeMobilePreview = () => {
+    setMobilePreview({
+      open: false,
+      imageUrl: '',
+    });
+  };
 
   const capturePdf = useCallback(async () => {
     try {
@@ -2108,6 +2007,102 @@ const MediaKitCreator = () => {
           >
             Please wait while we prepare your Media Kit
           </Typography>
+        </Box>
+      </Backdrop>
+
+      {/* Mobile Image Preview Modal */}
+      <Backdrop
+        sx={{
+          color: '#fff',
+          zIndex: theme.zIndex.drawer + 2,
+          backdropFilter: 'blur(8px)',
+          backgroundColor: 'rgb(0, 0, 0)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        open={mobilePreview.open}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {/* Close button */}
+          <Button
+            onClick={closeMobilePreview}
+            sx={{
+              position: 'fixed',
+              top: 20,
+              right: 20,
+              minWidth: '38px',
+              width: '38px',
+              height: '38px',
+              p: 0,
+              bgcolor: '#FFFFFF',
+              color: '#000000',
+              border: '1px solid #E7E7E7',
+              borderBottom: '3px solid #E7E7E7',
+              borderRadius: '8px',
+              fontWeight: 650,
+              zIndex: 9999,
+              '&:hover': {
+                bgcolor: '#F5F5F5',
+              },
+            }}
+          >
+            X
+          </Button>
+          
+          {/* Image */}
+          <Box
+            component="img"
+            src={mobilePreview.imageUrl}
+            alt={`${user?.creator?.mediaKit?.displayName || user?.name} Media Kit`}
+            sx={{
+              maxWidth: '100%',
+              maxHeight: '90vh',
+              objectFit: 'contain',
+            }}
+          />
+          
+          {/* Instructions */}
+          <Box
+            className="instructions"
+            sx={{
+              position: 'fixed',
+              bottom: 20,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'auto',
+              maxWidth: '80%',
+              backgroundColor: 'white',
+              color: 'black',
+              textAlign: 'center',
+              padding: '8px 16px',
+              fontFamily: 'sans-serif',
+              borderRadius: 1.5,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              fontSize: '12px',
+              fontWeight: 500,
+            }}
+          >
+            <svg width="18" height="20" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z" fill="#1340FF"/>
+            </svg>
+            Long-press the image to save to your gallery
+          </Box>
         </Box>
       </Backdrop>
     </>
