@@ -164,7 +164,7 @@ const MediaKitSocialContent = ({ user }) => {
               Engagement Rate
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
-              {engagement_rate ? `${Number(engagement_rate).toFixed(2)}%` : 'N/A'}
+              {engagement_rate ? `${Number(engagement_rate)?.toFixed(2)}%` : 'N/A'}
             </Typography>
           </Box>
         </Grid>

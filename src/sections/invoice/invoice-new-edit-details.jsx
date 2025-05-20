@@ -156,7 +156,7 @@ export default function InvoiceNewEditDetails() {
                 value={
                   Number(values.items[index]?.total) === 0
                     ? ''
-                    : Number(values.items[index]?.total).toFixed(2)
+                    : Number(values.items[index]?.total)?.toFixed(2)
                 }
                 onChange={(event) => handleChangePrice(event, index)}
                 InputProps={{

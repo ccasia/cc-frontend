@@ -158,7 +158,7 @@ const MediaKitSocialContent = ({ user }) => {
             </Typography>
             <Typography variant="h2" sx={{ fontSize: isMobile ? 40 : 20 }}>
               {user?.user.creator?.socialMediaData?.tiktok?.engagement_rate
-                ? `${Number(user?.user.creator?.socialMediaData.tiktok.engagement_rate).toFixed(2)}%`
+                ? `${Number(user?.user.creator?.socialMediaData.tiktok.engagement_rate)?.toFixed(2)}%`
                 : 'N/A'}
             </Typography>
           </Box>
