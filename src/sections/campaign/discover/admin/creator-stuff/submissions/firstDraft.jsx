@@ -9,7 +9,7 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 /* eslint-disable no-undef */
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -31,6 +31,28 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  ListItemIcon,
+  Menu,
+  MenuItem,
+  Radio,
+  RadioGroup,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tabs,
+  Tab,
+  Select,
+  FormHelperText,
+  OutlinedInput,
+  InputLabel,
+  TextField,
+  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -43,6 +65,7 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 const options_changes = [
   'Missing caption requirements',
@@ -173,6 +196,243 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   const photosRequest = useBoolean();
   const [selectedPhotosForChange, setSelectedPhotosForChange] = useState([]);
 
+  // Add a state to track if status sync is in progress to prevent multiple runs
+  const [isSyncingStatus, setIsSyncingStatus] = useState(false);
+  
+  // Add this function before any effects
+  const checkAndFixFinalDraftStatus = async () => {
+    try {
+      // Only run this check for final drafts
+      const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
+      if (!isFinalDraft) return;
+      
+      // If the status is not APPROVED, but all sections are approved, fix it
+      if (submission?.status !== 'APPROVED') {
+        console.log('Final draft has incorrect status - checking if it should be APPROVED');
+        
+        // Check if all sections are approved
+        const allSectionsApproved = 
+          (!deliverables?.videos?.length || deliverables.videos.every(v => v.status === 'APPROVED')) &&
+          (!deliverables?.rawFootages?.length || deliverables.rawFootages.every(f => f.status === 'APPROVED')) &&
+          (!deliverables?.photos?.length || deliverables.photos.every(p => p.status === 'APPROVED'));
+        
+        if (allSectionsApproved) {
+          console.log('Detected approved final draft with incorrect status - restoring APPROVED status');
+          
+          try {
+            const restorePayload = {
+              submissionId: submission.id,
+              status: 'APPROVED',
+              preserveFinalStatus: true,
+              forceStatusChange: true,
+              skipAutoSync: true
+            };
+            
+            await axiosInstance.patch(`/api/submission/status`, restorePayload);
+            console.log('Successfully restored APPROVED status for final draft');
+          } catch (error) {
+            console.error('Error restoring final draft status:', error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking final draft status:', error);
+    }
+  };
+
+  // Only check status once when component mounts
+  useEffect(() => {
+    if (submission?.submissionType?.type === 'FINAL_DRAFT') {
+      console.log('Final draft detected, checking status once on load');
+      checkAndFixFinalDraftStatus().catch(error => {
+        console.error('Error checking final draft status on mount:', error);
+      });
+    }
+  }, []);
+
+  // Update useEffect to handle automatic status checking
+  useEffect(() => {
+    // This will run when deliverables data is updated
+    if (deliverables && !isSyncingStatus) {
+      console.log('Deliverables updated, but skipping automatic status check');
+      
+      // Instead of automatically checking, we'll just update the UI
+      // Status updates will now happen only after explicit user actions
+      
+      // We'll still check if a final draft needs fixing, but only once
+      if (submission?.submissionType?.type === 'FINAL_DRAFT' && 
+          submission?.status !== 'APPROVED') {
+        console.log('Final draft with non-APPROVED status detected, checking if it needs fixing');
+        checkAndFixFinalDraftStatus();
+      }
+    }
+  }, [deliverables, submission?.status]);
+
+  // Add a new effect to handle manual refresh for final drafts
+  useEffect(() => {
+    // For final drafts, we'll only refresh when the user explicitly requests it
+    // or when there's a specific action that requires a refresh
+    if (submission?.submissionType?.type === 'FINAL_DRAFT') {
+      const manualRefreshInterval = setInterval(() => {
+        // Only refresh if user is actively viewing the page (not in another tab)
+        if (document.visibilityState === 'visible') {
+          console.log('Checking final draft status...');
+          // Instead of full refresh, just check if status needs fixing
+          checkAndFixFinalDraftStatus().catch(error => {
+            console.error('Error checking final draft status:', error);
+          });
+        }
+      }, 15000); // 15 seconds for final drafts
+
+      // Clean up interval on unmount
+      return () => {
+        clearInterval(manualRefreshInterval);
+      };
+    }
+  }, [submission?.submissionType?.type]);
+
+  // New function to automatically check if submission is ready for status update
+  const checkSubmissionReadiness = async () => {
+    if (isSyncingStatus) return; // Prevent concurrent runs
+    
+    try {
+      setIsSyncingStatus(true);
+      console.log('Auto-checking submission status readiness...');
+      
+      if (!deliverables) {
+        console.log('Deliverables not loaded yet, skipping check');
+        setIsSyncingStatus(false);
+        return;
+      }
+      
+      // Skip check if submission is not in eligible status
+      if (!['PENDING_REVIEW', 'CHANGES_REQUIRED'].includes(submission?.status)) {
+        console.log(`Submission status is ${submission?.status}, which is not eligible for auto-check`);
+        setIsSyncingStatus(false);
+        return;
+      }
+      
+      // IMPORTANT: Skip check if this is a final draft that's already approved
+      const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
+      if (isFinalDraft && submission?.status === 'APPROVED') {
+        console.log('Final draft is already approved - skipping status check to preserve APPROVED status');
+        setIsSyncingStatus(false);
+        return;
+      }
+      
+      // Determine which sections exist in this submission
+      const hasVideos = deliverables?.videos?.length > 0 || !!submission?.content;
+      const hasRawFootages = campaign?.rawFootage && (deliverables?.rawFootages?.length > 0);
+      const hasPhotos = campaign?.photos && (deliverables?.photos?.length > 0);
+      
+      console.log('Submission sections:', { hasVideos, hasRawFootages, hasPhotos });
+      
+      // Check if all available deliverables have decisions
+      let allHaveDecisions = true;
+      let hasChangesRequested = false;
+      let hasOnlySomeDecisions = false;
+      
+      // For videos
+      if (hasVideos) {
+        const hasUndecidedVideos = deliverables?.videos?.length > 0 && 
+          deliverables.videos.some(v => v.status !== 'APPROVED' && v.status !== 'REVISION_REQUESTED');
+        
+        if (hasUndecidedVideos) {
+          allHaveDecisions = false;
+        }
+        
+        // Check if any videos need changes
+        if (deliverables?.videos?.length > 0 && 
+            deliverables.videos.some(v => v.status === 'REVISION_REQUESTED')) {
+          hasChangesRequested = true;
+        }
+        
+        // If videos have decisions but other sections don't
+        if (!hasUndecidedVideos && (hasRawFootages || hasPhotos)) {
+          hasOnlySomeDecisions = true;
+        }
+      }
+      
+      // For raw footages
+      if (hasRawFootages) {
+        const hasUndecidedRawFootages = deliverables.rawFootages.some(
+          f => f.status !== 'APPROVED' && f.status !== 'REVISION_REQUESTED'
+        );
+        
+        if (hasUndecidedRawFootages) {
+          allHaveDecisions = false;
+          
+          // If videos have decisions but raw footage doesn't, mark flag
+          if (hasVideos && deliverables?.videos?.length > 0) {
+            const allVideoDecided = deliverables.videos.every(
+              v => v.status === 'APPROVED' || v.status === 'REVISION_REQUESTED'
+            );
+            if (allVideoDecided) {
+              hasOnlySomeDecisions = true;
+            }
+          }
+        }
+        
+        // Check if any raw footages need changes
+        if (deliverables.rawFootages.some(f => f.status === 'REVISION_REQUESTED')) {
+          hasChangesRequested = true;
+        }
+      }
+      
+      // For photos
+      if (hasPhotos) {
+        const hasUndecidedPhotos = deliverables.photos.some(
+          p => p.status !== 'APPROVED' && p.status !== 'REVISION_REQUESTED'
+        );
+        
+        if (hasUndecidedPhotos) {
+          allHaveDecisions = false;
+          
+          // If videos have decisions but photos don't, mark flag
+          if (hasVideos && deliverables?.videos?.length > 0) {
+            const allVideoDecided = deliverables.videos.every(
+              v => v.status === 'APPROVED' || v.status === 'REVISION_REQUESTED'
+            );
+            if (allVideoDecided) {
+              hasOnlySomeDecisions = true;
+            }
+          }
+        }
+        
+        // Check if any photos need changes
+        if (deliverables.photos.some(p => p.status === 'REVISION_REQUESTED')) {
+          hasChangesRequested = true;
+        }
+      }
+      
+      console.log('Status check results:', {
+        allHaveDecisions,
+        hasChangesRequested,
+        hasOnlySomeDecisions,
+        currentStatus: submission?.status
+      });
+      
+      // CRITICAL: Don't sync status if we have a mix of decided and undecided sections
+      if (hasOnlySomeDecisions) {
+        console.log('Some sections have decisions but others don\'t - not syncing status to avoid auto-progression');
+        setIsSyncingStatus(false);
+        return;
+      }
+      
+      // If all sections have decisions, run sync to update parent status
+      if (allHaveDecisions) {
+        console.log('All deliverables have decisions, triggering status update');
+        await syncSubmissionStatus();
+      } else {
+        console.log('Some deliverables still need decisions, skipping status update');
+      }
+    } catch (error) {
+      console.error('Error checking submission readiness:', error);
+    } finally {
+      setIsSyncingStatus(false);
+    }
+  };
+
   // Reset handlers for each section
   const resetDraftVideoForm = () => {
     setType('approve');
@@ -210,6 +470,20 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     setType('request');
     draftVideoMethods.setValue('type', 'request');
     draftVideoMethods.setValue('feedback', '');
+  };
+
+  // Raw footage request handler
+  const handleRawFootageRequestClick = () => {
+    setRawFootageType('request');
+    rawFootageMethods.setValue('type', 'request');
+    rawFootageMethods.setValue('footageFeedback', '');
+  };
+
+  // Photos request handler
+  const handlePhotosRequestClick = () => {
+    setPhotosType('request');
+    photoMethods.setValue('type', 'request');
+    photoMethods.setValue('photoFeedback', '');
   };
 
   const [videoModalOpen, setVideoModalOpen] = useState(false);
@@ -294,114 +568,372 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     [user]
   );
 
-  const onSubmitDraftVideo = draftVideoMethods.handleSubmit(async (data) => {
+  // Function to run after any section update
+  const onSectionUpdated = async () => {
     try {
-      const payload = {
-        ...data,
-        submissionId: submission.id,
-        videos: selectedVideosForChange,
-        type,
-        schedule: data.dueDate
-          ? {
-              startDate: data.dueDate,
-              endDate: data.dueDate,
-            }
-          : undefined,
-      };
-      delete payload.dueDate; // Remove dueDate from the payload, only send schedule
+      console.log('First draft section updated, refreshing data...');
+      await refreshAllData();
+    } catch (error) {
+      console.error('Error refreshing after section update:', error);
+    }
+  };
 
-      if (campaign?.campaignCredits) {
-        const res = await axiosInstance.patch(`/api/submission/manageVideos`, payload);
-        enqueueSnackbar(res?.data?.message);
-        deliverableMutate();
-      } else {
-        const res = await axiosInstance.patch(endpoints.submission.admin.draft, payload);
-        enqueueSnackbar(res?.data?.message);
+  // Function to refresh all data at once
+  const refreshAllData = async () => {
+    try {
+      // Only refresh first draft data
+      await deliverableMutate();
+      await mutate(`${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}&type=FIRST_DRAFT`);
+      console.log('First draft data refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing first draft data:', error);
+    }
+  };
+
+  // Update the onSubmitDraftVideo function to ensure refresh happens after action
+  const onSubmitDraftVideo = async () => {
+    try {
+      console.log('Submitting draft video review with data:', draftVideoMethods.getValues());
+      console.log('Selected videos for change:', selectedVideosForChange);
+
+      const values = draftVideoMethods.getValues();
+      const type = values.type || 'approve';
+
+      if (values.type !== 'request' && values.type !== 'approve') {
+        throw new Error('Invalid submission type. Please try again.');
       }
 
-      mutate(
-        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
-      );
+      if (
+        values.type === 'request' &&
+        selectedVideosForChange.length === 0 &&
+        campaign?.campaignCredits
+      ) {
+        throw new Error('Please select at least one video that needs changes');
+      }
 
-      approve.onFalse();
-      request.onFalse();
+      // If there's a full campaign content to approve and no individual videos
+      if (submission?.content && deliverables?.videos?.length === 0) {
+      const payload = {
+        submissionId: submission.id,
+          content: submission.content,
+          type: values.type,
+          feedback: values.feedback,
+          reasons: values.reasons,
+          dueDate: values.type === 'approve' ? values.dueDate : null,
+          sectionOnly: true // This ensures we only update the video section
+        };
+
+        const res = await axiosInstance.patch(endpoints.submission.admin.draft, payload);
+        console.log('Manual approval result:', res.data);
+
+        if (values.type === 'approve') {
+          console.log('Video draft approved');
+          enqueueSnackbar('Draft videos approved successfully!', {
+            variant: 'success',
+          });
+        } else {
+          console.log('Video draft rejected, requesting changes');
+          enqueueSnackbar('Changes requested for draft videos.', {
+            variant: 'warning',
+          });
+        }
+
+        // Refresh data and directly try to sync status
+        await refreshAllData();
+        // Directly attempt to sync submission status without conditions
+        await syncSubmissionStatus();
+        
+        // After successful submission, trigger immediate status sync
+        await triggerImmediateStatusSync();
+        
+        // For final drafts, we need to be extra careful about status
+        if (submission?.submissionType?.type === 'FINAL_DRAFT') {
+          // Add a delayed check to ensure status is correct
+          setTimeout(async () => {
+            await checkAndFixFinalDraftStatus();
+          }, 1000);
+        }
+        
+        return true;
+      }
+
+      // Get the selected videos (or all if approving all)
+      const selectedVideoIds =
+        type === 'request'
+          ? selectedVideosForChange
+          : deliverables?.videos?.map(video => video.id) || [];
+
+      if (!selectedVideoIds.length && type === 'approve') {
+        throw new Error('No videos found to approve');
+      }
+
+      const payload = {
+        submissionId: submission.id,
+        videos: selectedVideoIds,
+        type,
+        feedback: values.feedback || '',
+        reasons: values.reasons || [],
+        dueDate: type === 'approve' ? values.dueDate : null,
+        sectionOnly: true // CRITICAL: Must be true to prevent affecting overall status
+      };
+
+      // Show a loading notification
+      // const loadingKey = enqueueSnackbar('Processing video review...', { 
+      //   variant: 'info',
+      //   autoHideDuration: 2000
+      // });
+
+      // Use the correct endpoint path
+      const res = await axiosInstance.patch('/api/submission/manageVideos', payload);
+
+      console.log('Submit result:', res.data);
+
+      if (type === 'approve') {
+        enqueueSnackbar('Draft videos approved successfully!', {
+          variant: 'success',
+        });
+      } else {
+        enqueueSnackbar('Changes requested for draft videos.', {
+          variant: 'warning',
+        });
+        setSelectedVideosForChange([]);
+      }
+
+      // Reset form
       resetDraftVideoForm();
+
+      // Refresh data and directly try to sync status
+      await refreshAllData();
+      // Directly attempt to sync submission status without conditions
+      await syncSubmissionStatus();
+      
+      // Add a second refresh after a delay to ensure UI is updated
+      setTimeout(async () => {
+        await refreshAllData();
+        // Check for final draft status issues
+        if (submission?.submissionType?.type === 'FINAL_DRAFT') {
+          await checkAndFixFinalDraftStatus();
+        }
+      }, 1000);
+      
+      return true;
     } catch (error) {
-      console.error('Submission error:', error);
-      enqueueSnackbar(error?.message || 'Failed to submit changes', {
+      console.error('Error submitting draft video review:', error);
+      enqueueSnackbar(error?.message || 'Error submitting review', {
         variant: 'error',
       });
-      approve.onFalse();
-      request.onFalse();
+      return false;
     }
-  });
+  };
 
-  const onSubmitRawFootage = rawFootageMethods.handleSubmit(async (data) => {
-    console.log('Raw Footage Form Data:', data);
-    console.log('Selected Footages:', selectedRawFootagesForChange);
-
+  // Update onSubmitRawFootage with similar refresh logic
+  const onSubmitRawFootage = async () => {
     try {
+      const values = rawFootageMethods.getValues();
+      const type = values.type || 'approve';
+
+      if (type !== 'request' && type !== 'approve') {
+        throw new Error('Invalid submission type. Please try again.');
+      }
+
+      if (
+        type === 'request' &&
+        selectedRawFootagesForChange.length === 0 &&
+        campaign?.campaignCredits
+      ) {
+        throw new Error('Please select at least one raw footage that needs changes');
+      }
+
+      // Get the selected footage ids (or all if approving all)
+      const selectedFootageIds =
+        type === 'request'
+          ? selectedRawFootagesForChange
+          : deliverables?.rawFootages?.map((footage) => footage.id) || [];
+
+      if (type === 'approve' && !selectedFootageIds.length) {
+        throw new Error('No raw footage found to approve');
+      }
+
       const payload = {
         submissionId: submission.id,
-        // userId: creator?.user?.id,
-        rawFootages: selectedRawFootagesForChange,
-        // footageFeedback: data.footageFeedback,
-        // rawFootageContent: data.footageFeedback,
-        // type: 'request',
+        rawFootages: selectedFootageIds,
+        type,
+        rawFootageContent: values.footageFeedback || '',
+        sectionOnly: true, // This ensures we're only updating this section
+        status: type === 'request' ? 'CHANGES_REQUIRED' : 'APPROVED',
+        dueDate: type === 'request' ? dayjs().add(7, 'day').format('YYYY-MM-DD') : null
       };
 
-      const res = await axiosInstance.patch(`/api/submission/manageRawFootages`, payload);
+      // Use the correct endpoint path
+      const res = await axiosInstance.patch('/api/submission/manageRawFootages', payload);
 
-      mutate(
-        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
-      );
-      enqueueSnackbar(res?.data?.message);
-      rawFootageApprove.onFalse();
-      rawFootageRequest.onFalse();
-      rawFootageMethods.reset();
-      deliverableMutate();
-      setSelectedRawFootagesForChange([]);
+      console.log('Submit raw footage result:', res.data);
+
+      if (type === 'approve') {
+        enqueueSnackbar('Raw footage approved successfully!', {
+          variant: 'success',
+        });
+      } else {
+        enqueueSnackbar('Changes requested for raw footage.', {
+          variant: 'warning',
+        });
+        setSelectedRawFootagesForChange([]);
+      }
+
+      // Reset form
+      resetRawFootageForm();
+
+      // Refresh data using mutate
+      await deliverableMutate();
+
+      return true;
     } catch (error) {
-      console.error('Raw Footage Submission Error:', error);
-      enqueueSnackbar('Error submitting', {
+      console.error('Error submitting raw footage review:', error);
+      enqueueSnackbar(error?.message || 'Error submitting review', {
         variant: 'error',
       });
-      rawFootageApprove.onFalse();
-      rawFootageRequest.onFalse();
+      return false;
     }
-  });
+  };
 
-  // Update the onSubmitPhotos function
-  const onSubmitPhotos = photoMethods.handleSubmit(async (data) => {
+  // Update onSubmitPhotos with the same refresh pattern
+  const onSubmitPhotos = async () => {
     try {
+      const values = photoMethods.getValues();
+      const type = values.type || 'approve';
+
+      if (type !== 'request' && type !== 'approve') {
+        throw new Error('Invalid submission type. Please try again.');
+      }
+
+      if (
+        type === 'request' &&
+        selectedPhotosForChange.length === 0 &&
+        campaign?.campaignCredits
+      ) {
+        throw new Error('Please select at least one photo that needs changes');
+      }
+
+      // Get the selected photo ids (or all if approving all)
+      const selectedPhotoIds =
+        type === 'request'
+          ? selectedPhotosForChange
+          : deliverables?.photos?.map((photo) => photo.id) || [];
+
+      if (type === 'approve' && !selectedPhotoIds.length) {
+        throw new Error('No photos found to approve');
+      }
+
       const payload = {
         submissionId: submission.id,
-        photos: selectedPhotosForChange,
+        photos: selectedPhotoIds,
+        type,
+        photoFeedback: values.photoFeedback || '',
+        sectionOnly: true // This ensures we're only updating this section
       };
 
-      const res = await axiosInstance.patch(`/api/submission/managePhotos`, payload);
+      // Show a loading notification
+      // const loadingKey = enqueueSnackbar('Processing photo review...', { 
+      //   variant: 'info',
+      //   autoHideDuration: 2000
+      // });
 
-      mutate(
-        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
-      );
+      // Use the correct endpoint path
+      const res = await axiosInstance.patch('/api/submission/managePhotos', payload);
 
-      enqueueSnackbar(res?.data?.message);
-      photosApprove.onFalse();
-      photosRequest.onFalse();
-      photoMethods.reset();
-      deliverableMutate();
-      setSelectedPhotosForChange([]);
+      console.log('Submit photo result:', res.data);
+
+      if (type === 'approve') {
+        enqueueSnackbar('Photos approved successfully!', {
+          variant: 'success',
+        });
+      } else {
+        enqueueSnackbar('Changes requested for photos.', {
+          variant: 'warning',
+        });
+        setSelectedPhotosForChange([]);
+      }
+
+      // Reset form
+      resetPhotosForm();
+
+      // Refresh data and directly try to sync status
+      await refreshAllData();
+      // Directly attempt to sync submission status without conditions
+      await syncSubmissionStatus();
+      
+      // Add a second refresh after a delay to ensure UI is updated
+      setTimeout(async () => {
+        await refreshAllData();
+        // Check for final draft status issues
+        if (submission?.submissionType?.type === 'FINAL_DRAFT') {
+          await checkAndFixFinalDraftStatus();
+        }
+      }, 1000);
+      
+      // After successful submission, trigger immediate status sync
+      await triggerImmediateStatusSync();
+      
+      // For final drafts, we need to be extra careful about status
+      if (submission?.submissionType?.type === 'FINAL_DRAFT') {
+        // Add a delayed check to ensure status is correct
+        setTimeout(async () => {
+          await checkAndFixFinalDraftStatus();
+        }, 1000);
+      }
+      
+      return true;
     } catch (error) {
-      console.error('Photos Submission Error:', error);
-      enqueueSnackbar('Error submitting', {
+      console.error('Error submitting photo review:', error);
+      enqueueSnackbar(error?.message || 'Error submitting review', {
         variant: 'error',
       });
-      photosApprove.onFalse();
-      photosRequest.onFalse();
+      return false;
     }
-  });
+  };
 
-  const confirmationApproveModal = (open, onclose) => (
+  // Add a helper function to trigger immediate status update
+  const triggerImmediateStatusSync = async () => {
+    try {
+      console.log('Triggering immediate status sync after action');
+      
+      // Check if this is a final draft that was just approved
+      const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
+      const wasJustApproved = submission?.status === 'APPROVED';
+      
+      // If this is an approved final draft, skip sync entirely to avoid status bounce
+      if (isFinalDraft && wasJustApproved) {
+        console.log('Final draft is approved - skipping status sync entirely to preserve APPROVED status');
+        return;
+      }
+      
+      // First refresh deliverables
+      await refreshAllData();
+      
+      // Force multiple refreshes to ensure we catch any backend changes
+      // But be careful with final draft approvals to avoid IN_PROGRESS notifications
+      if (!(isFinalDraft && wasJustApproved)) {
+        const statusChanged = await syncSubmissionStatus();
+        
+        // Add a second refresh after a delay to ensure UI is updated
+        setTimeout(async () => {
+          console.log('Performing delayed refresh after status sync');
+          await refreshAllData();
+          
+          // Check for final draft status issues
+          if (isFinalDraft) {
+            await checkAndFixFinalDraftStatus();
+          }
+        }, 1000);
+      } else {
+        console.log('Final draft was just approved - skipping aggressive refresh to avoid status bounce');
+      }
+    } catch (error) {
+      console.error('Error in triggerImmediateStatusSync:', error);
+    }
+  };
+
+  const confirmationApproveModal = (open, onclose, sectionType = 'video') => (
     <Dialog
       open={open}
       onClose={onclose}
@@ -420,14 +952,16 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           pb: 2,
         }}
       >
-        Approve Confirmation
+        Approve {sectionType === 'video' ? 'Draft Videos' : sectionType === 'rawFootages' ? 'Raw Footages' : 'Photos'}
       </DialogTitle>
       <DialogContent sx={{ mt: 2 }}>
         <Stack spacing={2}>
-          <DialogContentText>Are you sure you want to approve this submission?</DialogContentText>
+          <DialogContentText>
+            Are you sure you want to approve {sectionType === 'video' ? 'these draft videos' : sectionType === 'rawFootages' ? 'these raw footages' : 'these photos'}?
+          </DialogContentText>
 
-          {/* Show due date if set */}
-          {watch('dueDate') && (
+          {/* Show due date if set and if approving videos */}
+          {sectionType === 'video' && watch('dueDate') && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Due Date:
@@ -445,8 +979,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             </Box>
           )}
 
-          {/* Show feedback comment */}
-          {watch('feedback') && (
+          {/* Show feedback comment based on section type */}
+          {sectionType === 'video' && watch('feedback') && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Feedback:
@@ -462,6 +996,46 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 }}
               >
                 {watch('feedback')}
+              </Typography>
+            </Box>
+          )}
+          
+          {sectionType === 'rawFootages' && rawFootageMethods.watch('footageFeedback') && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Feedback:
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  bgcolor: 'grey.100',
+                  p: 1.5,
+                  borderRadius: 1,
+                  maxHeight: '100px',
+                  overflowY: 'auto',
+                }}
+              >
+                {rawFootageMethods.watch('footageFeedback')}
+              </Typography>
+            </Box>
+          )}
+          
+          {sectionType === 'photos' && photoMethods.watch('photoFeedback') && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Feedback:
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  bgcolor: 'grey.100',
+                  p: 1.5,
+                  borderRadius: 1,
+                  maxHeight: '100px',
+                  overflowY: 'auto',
+                }}
+              >
+                {photoMethods.watch('photoFeedback')}
               </Typography>
             </Box>
           )}
@@ -494,9 +1068,37 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           Cancel
         </Button>
         <LoadingButton
-          onClick={() => {
-            setValue('type', 'approve');
-            onSubmitDraftVideo();
+          onClick={async () => {
+            try {
+              if (sectionType === 'video') {
+                draftVideoMethods.setValue('type', 'approve');
+                const success = await onSubmitDraftVideo();
+                if (success) {
+                  await mutate(`${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`);
+                  await deliverableMutate();
+                  onclose();
+                }
+              } else if (sectionType === 'rawFootages') {
+                rawFootageMethods.setValue('type', 'approve');
+                const success = await onSubmitRawFootage();
+                if (success) {
+                  await mutate(`${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`);
+                  await deliverableMutate();
+                  onclose(); 
+                }
+              } else if (sectionType === 'photos') {
+                photoMethods.setValue('type', 'approve');
+                const success = await onSubmitPhotos();
+                if (success) {
+                  await mutate(`${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`);
+                  await deliverableMutate();
+                  onclose(); 
+                }
+              }
+            } catch (error) {
+              console.error('Error during approval:', error);
+              enqueueSnackbar('Error during approval', { variant: 'error' });
+            }
           }}
           disabled={isDisabled}
           variant="contained"
@@ -530,7 +1132,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   );
 
   // Update the confirmation modal for raw footage
-  const confirmationRequestModal = (open, onclose) => (
+  const confirmationRequestModal = (open, onclose, sectionType = 'video') => (
     <Dialog
       open={open}
       onClose={onclose}
@@ -549,7 +1151,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           pb: 2,
         }}
       >
-        Confirm Change Request
+        Confirm Change Request for {sectionType === 'video' ? 'Draft Videos' : sectionType === 'rawFootages' ? 'Raw Footages' : 'Photos'}
       </DialogTitle>
       <DialogContent sx={{ mt: 2 }}>
         <Stack spacing={2}>
@@ -557,8 +1159,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             Are you sure you want to submit this change request?
           </DialogContentText>
 
-          {/* Show feedback and reasons for all content types */}
-          {selectedTab === 'video' && (
+          {/* Show feedback and reasons based on section type */}
+          {sectionType === 'video' && (
             <>
               {draftVideoMethods.watch('reasons')?.length > 0 && (
                 <Box>
@@ -600,8 +1202,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             </>
           )}
 
-          {/* Show feedback for raw footage and photos */}
-          {(rawFootageMethods.watch('footageFeedback') || photoMethods.watch('photoFeedback')) && (
+          {/* Show feedback for raw footage */}
+          {sectionType === 'rawFootages' && rawFootageMethods.watch('footageFeedback') && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Feedback:
@@ -616,7 +1218,28 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   overflowY: 'auto',
                 }}
               >
-                {rawFootageMethods.watch('footageFeedback') || photoMethods.watch('photoFeedback')}
+                {rawFootageMethods.watch('footageFeedback')}
+              </Typography>
+            </Box>
+          )}
+          
+          {/* Show feedback for photos */}
+          {sectionType === 'photos' && photoMethods.watch('photoFeedback') && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Feedback:
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  bgcolor: 'grey.100',
+                  p: 1.5,
+                  borderRadius: 1,
+                  maxHeight: '100px',
+                  overflowY: 'auto',
+                }}
+              >
+                {photoMethods.watch('photoFeedback')}
               </Typography>
             </Box>
           )}
@@ -651,23 +1274,42 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         <LoadingButton
           variant="contained"
           size="small"
-          onClick={() => {
-            if (selectedTab === 'video') {
-              draftVideoMethods.setValue('type', 'request');
-              onSubmitDraftVideo();
-            } else if (selectedTab === 'rawFootages') {
-              onSubmitRawFootage();
-            } else if (selectedTab === 'photos') {
-              onSubmitPhotos();
+          onClick={async () => {
+            try {
+              // Set the appropriate form field values and submit
+              if (sectionType === 'video') {
+                draftVideoMethods.setValue('type', 'request');
+                const success = await onSubmitDraftVideo();
+                if (success) {
+                  onclose(); 
+                  triggerImmediateStatusSync();
+                }
+              } else if (sectionType === 'rawFootages') {
+                rawFootageMethods.setValue('type', 'request');
+                const success = await onSubmitRawFootage();
+                if (success) {
+                  onclose(); 
+                  triggerImmediateStatusSync();
+                }
+              } else if (sectionType === 'photos') {
+                photoMethods.setValue('type', 'request');
+                const success = await onSubmitPhotos();
+                if (success) {
+                  onclose(); 
+                  triggerImmediateStatusSync();
+                }
+              }
+            } catch (error) {
+              console.error('Error submitting request for changes:', error);
+              enqueueSnackbar('Error submitting request', { variant: 'error' });
             }
-            onclose();
           }}
           disabled={
-            (campaign?.campaignCredits &&
-              selectedTab === 'video' &&
-              selectedVideosForChange.length === 0) ||
-            (selectedTab === 'rawFootages' && selectedRawFootagesForChange.length === 0) ||
-            (selectedTab === 'photos' && selectedPhotosForChange.length === 0)
+            (sectionType === 'video' && 
+             campaign?.campaignCredits &&
+             selectedVideosForChange.length === 0) ||
+            (sectionType === 'rawFootages' && selectedRawFootagesForChange.length === 0) ||
+            (sectionType === 'photos' && selectedPhotosForChange.length === 0)
           }
           sx={{
             bgcolor: '#FFFFFF',
@@ -867,7 +1509,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               }}
             />
           </Box>
-          <Box>
+          <Box sx={{ flex: 1 }}>
             <Typography
               variant="subtitle1"
               sx={{
@@ -908,7 +1550,28 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           }}
         >
           <Iconify icon="solar:check-circle-bold" color="success.main" />
-          <Typography color="success.darker">This submission has been approved</Typography>
+          <Typography color="success.darker" sx={{ flex: 1 }}>This submission has been approved</Typography>
+        </Box>
+      );
+    }
+    
+    if (submission?.status === 'PENDING_REVIEW') {
+      return (
+        <Box
+          sx={{
+            mb: 3,
+            p: 2,
+            borderRadius: 2,
+            bgcolor: 'info.lighter',
+            border: '1px solid',
+            borderColor: 'info.light',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <Iconify icon="material-symbols:hourglass-outline" color="info.main" />
+          <Typography color="info.darker" sx={{ flex: 1 }}>This submission is pending review</Typography>
         </Box>
       );
     }
@@ -938,9 +1601,79 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
 
   // helper to check if all photos are marked for changes
   const areAllPhotosMarkedForChanges = () => {
-    if (!submission?.photos?.length || !submission?.status === 'CHANGES_REQUIRED') return false;
-    return submission.photos.every((photo) =>
-      submission.feedback?.some((feedback) => feedback.photosToUpdate?.includes(photo.id))
+    // If there are no photos or submission is not in CHANGES_REQUIRED state, return false
+    if (!deliverables?.photos?.length || submission?.status !== 'CHANGES_REQUIRED') {
+      return false;
+    }
+    
+    // Check if all photos have APPROVED status
+    if (deliverables.photos.every(photo => photo.status === 'APPROVED')) {
+      return true;
+    }
+    
+    // If using the old system, check feedback entries
+    if (submission.feedback?.length) {
+      return deliverables.photos.every(photo =>
+        submission.feedback.some(feedback => feedback.photosToUpdate?.includes(photo.id))
+      );
+    }
+    
+    return false;
+  };
+
+  const renderSectionStatusBanner = (sectionType) => {
+    // Get the appropriate items array based on section type
+    let items = [];
+    let sectionName = '';
+    
+    if (sectionType === 'video') {
+      items = deliverables?.videos || [];
+      sectionName = 'Draft Videos';
+    } else if (sectionType === 'rawFootages') {
+      items = deliverables?.rawFootages || [];
+      sectionName = 'Raw Footage';
+    } else if (sectionType === 'photos') {
+      items = deliverables?.photos || [];
+      sectionName = 'Photos';
+    }
+    
+    // No items, no banner
+    if (!items.length) {
+      return null;
+    }
+    
+    // Check if any items need changes
+    const hasChangesRequired = items.some(item => item.status === 'REVISION_REQUESTED');
+    
+    // Check if all items are approved
+    const allApproved = items.every(item => item.status === 'APPROVED');
+    
+    // Return a simple chip with the status instead of a full box
+    return (
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        {hasChangesRequired ? (
+          <Chip 
+            size="small" 
+            color="warning" 
+            label="Changes Required" 
+            icon={<Iconify icon="solar:danger-triangle-bold" />} 
+          />
+        ) : allApproved ? (
+          <Chip 
+            size="small" 
+            color="success" 
+            label="Approved" 
+            icon={<Iconify icon="solar:check-circle-bold" />} 
+          />
+        ) : (
+          <Chip 
+            size="small" 
+            color="info" 
+            label="Pending Review" 
+            icon={<Iconify icon="material-symbols:hourglass-outline" />} 
+          />
+        )}
+      </Box>
     );
   };
 
@@ -1130,8 +1863,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         </Box>
       )}
 
-      {/* Photos Request Section */}
-      {submission?.status === 'PENDING_REVIEW' && !areAllPhotosMarkedForChanges() && (
+      {/* Photos Review Section */}
+      {deliverables?.photos?.length > 0 && submission?.status === 'PENDING_REVIEW' && (
         <Box
           component={Paper}
           sx={{
@@ -1142,157 +1875,787 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             borderColor: 'divider',
           }}
         >
-          {photosType === 'approve' && (
-            <FormProvider methods={photoMethods} onSubmit={onSubmitPhotos}>
-              <Stack gap={2}>
-                <Stack
-                  alignItems={{ xs: 'stretch', sm: 'center' }}
-                  direction={{ xs: 'column', sm: 'row' }}
-                  gap={1.5}
-                  justifyContent="end"
-                >
-                  <Button
-                    fullWidth
-                    onClick={() => {
-                      setPhotosType('request');
-                      photoMethods.setValue('type', 'request');
-                      photoMethods.setValue('photoFeedback', '');
-                    }}
-                    disabled={isDisabled}
-                    size="small"
-                    variant="contained"
-                    // startIcon={<Iconify icon="solar:close-circle-bold" />}
-                    sx={{
-                      bgcolor: '#FFFFFF',
-                      border: 1.5,
-                      borderRadius: 1.15,
-                      borderColor: '#e7e7e7',
-                      borderBottom: 3,
-                      borderBottomColor: '#e7e7e7',
-                      color: '#D4321C',
-                      '&:hover': {
-                        bgcolor: '#f5f5f5',
-                        borderColor: '#D4321C',
-                      },
-                      textTransform: 'none',
-                      px: 2.5,
-                      py: 1.2,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      minWidth: '80px',
-                      height: '45px',
-                    }}
-                  >
-                    Request a Change
-                  </Button>
-                </Stack>
-              </Stack>
-            </FormProvider>
-          )}
-
-          {photosType === 'request' && (
-            <>
-              <Typography variant="h6" mb={1} mx={1}>
-                Request Changes
+          <Typography variant="h6" mb={2}>
+            Photos Review
+          </Typography>
+          
+          {/* Check if all photos are already approved */}
+          {deliverables?.photos?.length > 0 && 
+           deliverables.photos.every(p => p.status === 'APPROVED') ? (
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 1,
+                bgcolor: 'success.lighter',
+                border: '1px solid',
+                borderColor: 'success.light',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Iconify icon="solar:check-circle-bold" color="success.main" />
+              <Typography color="success.darker">
+                All photos have been approved
               </Typography>
-              <FormProvider methods={photoMethods} onSubmit={onSubmitPhotos} disabled={isDisabled}>
-                <Stack gap={2}>
-                  <RHFTextField
-                    name="photoFeedback"
-                    multiline
-                    minRows={5}
-                    placeholder="Provide feedback for selected photos."
-                  />
-
-                  {photosType === 'request' && selectedPhotosForChange.length === 0 && (
-                    <Typography
-                      color="warning.main"
-                      sx={{
-                        mt: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                    >
-                      <Iconify icon="solar:danger-triangle-bold" />
-                      Please select at least one photo that needs changes.
+            </Box>
+          ) : (
+            <>
+              {photosType === 'approve' && (
+                <FormProvider methods={photoMethods} onSubmit={onSubmitPhotos}>
+                  <Stack gap={2}>
+                    {/* Add feedback field for approve flow */}
+                    <Typography variant="subtitle1" mb={1} mx={1}>
+                      Comments For Creator
                     </Typography>
-                  )}
-
-                  <Stack
-                    alignItems={{ xs: 'stretch', sm: 'center' }}
-                    direction={{ xs: 'column', sm: 'row' }}
-                    gap={1.5}
-                    alignSelf="end"
-                  >
-                    <Button
-                      onClick={() => {
-                        setPhotosType('approve');
-                        photoMethods.setValue('type', 'approve');
-                        photoMethods.setValue('photoFeedback', '');
-                      }}
-                      size="small"
-                      sx={{
-                        bgcolor: 'white',
-                        border: 1.5,
-                        borderRadius: 1.15,
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        color: 'text.primary',
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#231F20',
-                        },
-                        textTransform: 'none',
-                        px: 2.5,
-                        py: 1.2,
-                        fontSize: '1rem',
-                        minWidth: '80px',
-                        height: '45px',
-                      }}
+                    <RHFTextField
+                      name="photoFeedback"
+                      multiline
+                      minRows={5}
+                      placeholder="Provide feedback for the photos."
+                      sx={{ mb: 2 }}
+                    />
+                    
+                    <Stack
+                      alignItems={{ xs: 'stretch', sm: 'center' }}
+                      direction={{ xs: 'column', sm: 'row' }}
+                      gap={1.5}
+                      justifyContent="end"
                     >
-                      Back
-                    </Button>
-                    <LoadingButton
-                      variant="contained"
-                      size="small"
-                      onClick={photosRequest.onTrue}
-                      disabled={photosType === 'request' && selectedPhotosForChange.length === 0}
-                      sx={{
-                        bgcolor: '#FFFFFF',
-                        color: '#1ABF66',
-                        border: '1.5px solid',
-                        borderColor: '#e7e7e7',
-                        borderBottom: 3,
-                        borderBottomColor: '#e7e7e7',
-                        borderRadius: 1.15,
-                        px: 2.5,
-                        py: 1.2,
-                        fontWeight: 600,
-                        '&:hover': {
-                          bgcolor: '#f5f5f5',
-                          borderColor: '#1ABF66',
-                        },
-                        fontSize: '1rem',
-                        minWidth: '80px',
-                        height: '45px',
-                        textTransform: 'none',
-                      }}
-                    >
-                      Submit
-                    </LoadingButton>
+                      <Button
+                        onClick={handlePhotosRequestClick}
+                        disabled={isDisabled}
+                        size="small"
+                        variant="contained"
+                        sx={{
+                          bgcolor: '#FFFFFF',
+                          border: 1.5,
+                          borderRadius: 1.15,
+                          borderColor: '#e7e7e7',
+                          borderBottom: 3,
+                          borderBottomColor: '#e7e7e7',
+                          color: '#D4321C',
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                            borderColor: '#D4321C',
+                          },
+                          textTransform: 'none',
+                          px: 2.5,
+                          py: 1.2,
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                          minWidth: '80px',
+                          height: '45px',
+                        }}
+                      >
+                        Request a Change
+                      </Button>
+                      
+                      <LoadingButton
+                        onClick={() => photosApprove.onTrue()}
+                        variant="contained"
+                        size="small"
+                        sx={{
+                          bgcolor: '#FFFFFF',
+                          color: '#1ABF66',
+                          border: '1.5px solid',
+                          borderColor: '#e7e7e7',
+                          borderBottom: 3,
+                          borderBottomColor: '#e7e7e7',
+                          borderRadius: 1.15,
+                          px: 2.5,
+                          py: 1.2,
+                          fontWeight: 600,
+                          '&:hover': {
+                            bgcolor: '#f5f5f5',
+                            borderColor: '#1ABF66',
+                          },
+                          fontSize: '1rem',
+                          minWidth: '80px',
+                          height: '45px',
+                          textTransform: 'none',
+                        }}
+                      >
+                        Approve
+                      </LoadingButton>
+                    </Stack>
+                    
+                    {confirmationApproveModal(photosApprove.value, photosApprove.onFalse, 'photos')}
                   </Stack>
-                </Stack>
+                </FormProvider>
+              )}
 
-                {confirmationRequestModal(photosRequest.value, photosRequest.onFalse)}
-              </FormProvider>
+              {photosType === 'request' && (
+                <>
+                  <Typography variant="h6" mb={1} mx={1}>
+                    Request Changes for Photos
+                  </Typography>
+                  <FormProvider methods={photoMethods} onSubmit={onSubmitPhotos} disabled={isDisabled}>
+                    <Stack gap={2}>
+                      <RHFTextField
+                        name="photoFeedback"
+                        multiline
+                        minRows={5}
+                        placeholder="Provide feedback for selected photos."
+                      />
+
+                      {photosType === 'request' && selectedPhotosForChange.length === 0 && (
+                        <Typography
+                          color="warning.main"
+                          sx={{
+                            mt: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Iconify icon="solar:danger-triangle-bold" />
+                          Please select at least one photo that needs changes.
+                        </Typography>
+                      )}
+
+                      <Stack
+                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                        direction={{ xs: 'column', sm: 'row' }}
+                        gap={1.5}
+                        alignSelf="end"
+                      >
+                        <Button
+                          onClick={() => {
+                            setPhotosType('approve');
+                            photoMethods.setValue('type', 'approve');
+                            photoMethods.setValue('photoFeedback', '');
+                          }}
+                          size="small"
+                          sx={{
+                            bgcolor: 'white',
+                            border: 1.5,
+                            borderRadius: 1.15,
+                            borderColor: '#e7e7e7',
+                            borderBottom: 3,
+                            borderBottomColor: '#e7e7e7',
+                            color: 'text.primary',
+                            '&:hover': {
+                              bgcolor: '#f5f5f5',
+                              borderColor: '#231F20',
+                            },
+                            textTransform: 'none',
+                            px: 2.5,
+                            py: 1.2,
+                            fontSize: '1rem',
+                            minWidth: '80px',
+                            height: '45px',
+                          }}
+                        >
+                          Back
+                        </Button>
+                        <LoadingButton
+                          variant="contained"
+                          size="small"
+                          onClick={() => {
+                            // Ensure photo feedback is set
+                            if (!photoMethods.getValues('photoFeedback')) {
+                              enqueueSnackbar('Please provide feedback for the photos', { variant: 'error' });
+                              return;
+                            }
+                            
+                            // If no photos selected and selection is required, show error
+                            if (selectedPhotosForChange.length === 0) {
+                              enqueueSnackbar('Please select at least one photo that needs changes', { variant: 'error' });
+                              return;
+                            }
+                            
+                            // Show confirmation dialog
+                            photosRequest.onTrue();
+                          }}
+                          disabled={photosType === 'request' && selectedPhotosForChange.length === 0}
+                          sx={{
+                            bgcolor: '#FFFFFF',
+                            color: '#1ABF66',
+                            border: '1.5px solid',
+                            borderColor: '#e7e7e7',
+                            borderBottom: 3,
+                            borderBottomColor: '#e7e7e7',
+                            borderRadius: 1.15,
+                            px: 2.5,
+                            py: 1.2,
+                            fontWeight: 600,
+                            '&:hover': {
+                              bgcolor: '#f5f5f5',
+                              borderColor: '#1ABF66',
+                            },
+                            fontSize: '1rem',
+                            minWidth: '80px',
+                            height: '45px',
+                            textTransform: 'none',
+                          }}
+                        >
+                          Submit
+                        </LoadingButton>
+                      </Stack>
+                    </Stack>
+
+                    {confirmationRequestModal(photosRequest.value, photosRequest.onFalse, 'photos')}
+                  </FormProvider>
+                </>
+              )}
             </>
           )}
         </Box>
       )}
     </>
   );
+
+  // Effect to refresh sections when deliverables change
+  useEffect(() => {
+    // This will re-render the component when deliverables data is updated
+    // including when a section is approved or changes are requested
+    console.log('Deliverables updated, refreshing UI');
+    
+    // Check if we should show or hide the review sections based on updated statuses
+    if (deliverables) {
+      const allVideosApproved = deliverables.videos?.length > 0 ? 
+        deliverables.videos.every(v => v.status === 'APPROVED') : 
+        submission?.status === 'APPROVED';
+      
+      const allRawFootagesApproved = deliverables.rawFootages?.length > 0 ? 
+        deliverables.rawFootages.every(f => f.status === 'APPROVED') : true;
+      
+      const allPhotosApproved = deliverables.photos?.length > 0 ? 
+        deliverables.photos.every(p => p.status === 'APPROVED') : true;
+        
+      console.log('Section approval status:', {
+        videos: allVideosApproved,
+        rawFootages: allRawFootagesApproved,
+        photos: allPhotosApproved
+      });
+    }
+  }, [deliverables, submission?.status]);
+
+  // Function to update submission status to CHANGES_REQUIRED
+  const updateSubmissionToChangesRequired = async (message) => {
+    try {
+      if (!submission) {
+        console.error('No submission data available');
+        return false;
+      }
+
+      const updatePayload = {
+        submissionId: submission.id,
+        status: 'CHANGES_REQUIRED',
+        feedback: message || null,
+        dueDate: dayjs().add(7, 'day').format('YYYY-MM-DD')
+      };
+
+      const res = await axiosInstance.patch(`/api/submission/status`, updatePayload);
+      console.log('Submission status updated to CHANGES_REQUIRED:', res.data);
+      
+      await refreshAllData();
+      return true;
+    } catch (error) {
+      console.error('Error updating submission to changes required:', error);
+      return false;
+    }
+  };
+
+  // Function to directly sync the submission status with section statuses
+  const syncSubmissionStatus = async () => {
+    try {
+      console.log('Starting syncSubmissionStatus, checking all section statuses...');
+      
+      if (!submission || !deliverables) {
+        console.log('Submission or deliverables not loaded yet, skipping status check');
+        return false;
+      }
+      
+      // Store original status to check for specific transitions
+      const originalStatus = submission.status;
+      
+      // IMPORTANT: For final drafts, we need to be extra careful
+      const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
+      
+      // If this is a final draft and all sections are approved, force APPROVED status
+      if (isFinalDraft) {
+        const allSectionsApproved = 
+          (!deliverables?.videos?.length || deliverables.videos.every(v => v.status === 'APPROVED')) &&
+          (!deliverables?.rawFootages?.length || deliverables.rawFootages.every(f => f.status === 'APPROVED')) &&
+          (!deliverables?.photos?.length || deliverables.photos.every(p => p.status === 'APPROVED'));
+        
+        if (allSectionsApproved) {
+          console.log('Final draft with all sections approved - forcing APPROVED status');
+          
+          // Force APPROVED status for final draft
+          try {
+            const restorePayload = {
+              submissionId: submission.id,
+              status: 'APPROVED',
+              preserveFinalStatus: true,
+              forceStatusChange: true,
+              skipAutoSync: true // Add flag to skip auto-sync on backend
+            };
+            
+            await axiosInstance.patch(`/api/submission/status`, restorePayload);
+            console.log('Forced APPROVED status for final draft');
+            return true;
+          } catch (error) {
+            console.error('Error forcing APPROVED status:', error);
+          }
+        }
+      }
+      
+      // Skip if submission is in a state that should not be synced
+      if (!['PENDING_REVIEW', 'CHANGES_REQUIRED', 'APPROVED', 'IN_PROGRESS'].includes(originalStatus)) {
+        console.log(`Submission status is ${originalStatus}, which is not eligible for auto-sync`);
+        return false;
+      }
+      
+      // Get the due date from the draft video form if available
+      const dueDate = draftVideoMethods.getValues('dueDate') || 
+                      dayjs().add(7, 'day').format('YYYY-MM-DD');
+      
+      const updatePayload = {
+        submissionId: submission.id,
+        status: 'AUTO_SYNC',
+        dueDate,
+        preserveFinalDraftApproval: true,
+        forcePreserveApproved: isFinalDraft,
+        skipAutoSync: isFinalDraft // Skip auto-sync for final drafts
+      };
+      
+      console.log('Sending status sync with payload:', updatePayload);
+      
+      try {
+        const res = await axiosInstance.patch(`/api/submission/status`, updatePayload);
+        console.log('Auto submission status update response:', res.data);
+        
+        // For final drafts, we need to verify the status didn't change incorrectly
+        if (isFinalDraft && res.data.submission) {
+          const newStatus = res.data.submission.status;
+          if (newStatus !== 'APPROVED') {
+            console.log('Final draft status changed incorrectly - restoring APPROVED status');
+            
+            // Force restore APPROVED status
+            const restorePayload = {
+              submissionId: submission.id,
+              status: 'APPROVED',
+              preserveFinalStatus: true,
+              forceStatusChange: true,
+              skipAutoSync: true
+            };
+            
+            await axiosInstance.patch(`/api/submission/status`, restorePayload);
+            console.log('Restored APPROVED status for final draft');
+          }
+        }
+        
+        await refreshAllData();
+        return true;
+      } catch (error) {
+        console.error('Error during status update:', error);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error in syncSubmissionStatus:', error);
+      return false;
+    }
+  };
+
+  // Add this function right after the syncSubmissionStatus function
+  const checkAllSectionsStatus = () => {
+    // Show a loading notification
+    const notifyKey = enqueueSnackbar('Checking submission status...', { 
+      variant: 'info',
+      autoHideDuration: 3000 
+    });
+    
+    // Force immediate sync without conditions
+    triggerImmediateStatusSync();
+    
+    // Also add a delayed check to ensure everything is updated
+    setTimeout(async () => {
+      await refreshAllData();
+      
+      // Check for final draft status issues
+      if (submission?.submissionType?.type === 'FINAL_DRAFT') {
+        await checkAndFixFinalDraftStatus();
+      }
+      
+      enqueueSnackbar('Status check complete', {
+        variant: 'success',
+        autoHideDuration: 2000
+      });
+    }, 1500);
+  };
+
+  // Add a new function to render submission summary status
+  const renderSubmissionSummary = () => {
+    if (submission?.status !== 'PENDING_REVIEW' && submission?.status !== 'CHANGES_REQUIRED') {
+      return null; // Only show for submissions under review or with changes required
+    }
+    
+    // Get status for each section
+    const hasVideos = deliverables?.videos?.length > 0 || submission?.content;
+    const hasRawFootages = campaign?.rawFootage ? (deliverables?.rawFootages?.length > 0) : false;
+    const hasPhotos = campaign?.photos ? (deliverables?.photos?.length > 0) : false;
+    
+    // Check section approval status
+    const videosApproved = hasVideos ? 
+      (deliverables?.videos?.length > 0 ? 
+        deliverables.videos.every(v => v.status === 'APPROVED') : 
+        submission?.status === 'APPROVED' || submission?.content?.status === 'APPROVED') : 
+      false;
+    
+    const rawFootagesApproved = hasRawFootages ? 
+      deliverables.rawFootages.every(f => f.status === 'APPROVED') : 
+      false;
+    
+    const photosApproved = hasPhotos ? 
+      deliverables.photos.every(p => p.status === 'APPROVED') : 
+      false;
+    
+    // Check if any section has changes required
+    const videosNeedChanges = hasVideos && 
+      (deliverables?.videos?.some(v => v.status === 'REVISION_REQUESTED') ||
+      (submission?.content && submission?.status === 'CHANGES_REQUIRED'));
+    
+    const rawFootagesNeedChanges = hasRawFootages && 
+      deliverables.rawFootages.some(f => f.status === 'REVISION_REQUESTED');
+    
+    const photosNeedChanges = hasPhotos && 
+      deliverables.photos.some(p => p.status === 'REVISION_REQUESTED');
+    
+    // Count required and approved sections
+    const requiredSectionCount = [hasVideos, hasRawFootages, hasPhotos].filter(Boolean).length;
+    const approvedSectionCount = [
+      hasVideos && videosApproved,
+      hasRawFootages && rawFootagesApproved,
+      hasPhotos && photosApproved
+    ].filter(Boolean).length;
+    
+    if (requiredSectionCount === 0) return null;
+    
+    // return (
+    //   <Box
+    //     sx={{
+    //       mb: 3,
+    //       p: 2.5,
+    //       borderRadius: 2,
+    //       bgcolor: 'background.neutral',
+    //       border: '1px solid',
+    //       borderColor: 'divider',
+    //     }}
+    //   >
+    //     <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+    //       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+    //         Approval Status
+    //       </Typography>
+          
+    //       {/* Add the sync status button */}
+    //       <StatusSyncButton />
+    //     </Stack>
+        
+    //     <Stack spacing={1.5}>
+    //       {hasVideos && (
+    //         <Stack direction="row" alignItems="center" justifyContent="space-between">
+    //           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    //             <Iconify icon="solar:video-library-bold" width={20} />
+    //             <Typography variant="body2">Draft Videos</Typography>
+    //           </Box>
+              
+    //           <Box>
+    //             {videosApproved ? (
+    //               <Chip 
+    //                 size="small" 
+    //                 color="success" 
+    //                 label="Approved" 
+    //                 icon={<Iconify icon="solar:check-circle-bold" />} 
+    //               />
+    //             ) : videosNeedChanges ? (
+    //               <Chip 
+    //                 size="small" 
+    //                 color="warning" 
+    //                 label="Changes Required" 
+    //                 icon={<Iconify icon="solar:danger-triangle-bold" />} 
+    //               />
+    //             ) : (
+    //               <Chip 
+    //                 size="small" 
+    //                 color="default" 
+    //                 label="Pending Review" 
+    //                 icon={<Iconify icon="solar:clock-circle-bold" />} 
+    //               />
+    //             )}
+    //           </Box>
+    //         </Stack>
+    //       )}
+          
+    //       {hasRawFootages && (
+    //         <Stack direction="row" alignItems="center" justifyContent="space-between">
+    //           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    //             <Iconify icon="solar:camera-bold" width={20} />
+    //             <Typography variant="body2">Raw Footages</Typography>
+    //           </Box>
+              
+    //           <Box>
+    //             {rawFootagesApproved ? (
+    //               <Chip 
+    //                 size="small" 
+    //                 color="success" 
+    //                 label="Approved" 
+    //                 icon={<Iconify icon="solar:check-circle-bold" />} 
+    //               />
+    //             ) : rawFootagesNeedChanges ? (
+    //               <Chip 
+    //                 size="small" 
+    //                 color="warning" 
+    //                 label="Changes Required" 
+    //                 icon={<Iconify icon="solar:danger-triangle-bold" />} 
+    //               />
+    //             ) : (
+    //               <Chip 
+    //                 size="small" 
+    //                 color="default" 
+    //                 label="Pending Review" 
+    //                 icon={<Iconify icon="solar:clock-circle-bold" />} 
+    //               />
+    //             )}
+    //           </Box>
+    //         </Stack>
+    //       )}
+          
+    //       {hasPhotos && (
+    //         <Stack direction="row" alignItems="center" justifyContent="space-between">
+    //           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    //             <Iconify icon="solar:gallery-wide-bold" width={20} />
+    //             <Typography variant="body2">Photos</Typography>
+    //           </Box>
+              
+    //           <Box>
+    //             {photosApproved ? (
+    //               <Chip 
+    //                 size="small" 
+    //                 color="success" 
+    //                 label="Approved" 
+    //                 icon={<Iconify icon="solar:check-circle-bold" />} 
+    //               />
+    //             ) : photosNeedChanges ? (
+    //               <Chip 
+    //                 size="small" 
+    //                 color="warning" 
+    //                 label="Changes Required" 
+    //                 icon={<Iconify icon="solar:danger-triangle-bold" />} 
+    //               />
+    //             ) : (
+    //               <Chip 
+    //                 size="small" 
+    //                 color="default" 
+    //                 label="Pending Review" 
+    //                 icon={<Iconify icon="solar:clock-circle-bold" />} 
+    //               />
+    //             )}
+    //           </Box>
+    //         </Stack>
+    //       )}
+    //     </Stack>
+        
+    //     <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
+    //       <Stack direction="row" alignItems="center" justifyContent="space-between">
+    //         <Typography variant="subtitle2">Overall Status</Typography>
+            
+    //         <Box>
+    //           {approvedSectionCount === requiredSectionCount ? (
+    //             <Chip 
+    //               color="success" 
+    //               label="Ready to Approve" 
+    //               icon={<Iconify icon="solar:check-circle-bold" />} 
+    //             />
+    //           ) : (approvedSectionCount > 0) ? (
+    //             <Chip 
+    //               color="info" 
+    //               label={`${approvedSectionCount}/${requiredSectionCount} Approved`} 
+    //               icon={<Iconify icon="solar:hourglass-bold" />} 
+    //             />
+    //           ) : (
+    //             <Chip 
+    //               color="default" 
+    //               label="Pending Review" 
+    //               icon={<Iconify icon="solar:clock-circle-bold" />} 
+    //             />
+    //           )}
+    //         </Box>
+    //       </Stack>
+    //     </Box>
+    //   </Box>
+    // );
+  };
+
+  // Add a new "Sync Status" button to the UI
+  const StatusSyncButton = () => {
+    const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
+    const isApproved = submission?.status === 'APPROVED';
+
+    // For final drafts that are approved, don't show the button
+    if (isFinalDraft && isApproved) {
+      return null;
+    }
+
+    return (
+      <Button
+        variant="contained"
+        onClick={isFinalDraft ? checkAndFixFinalDraftStatus : refreshAllData}
+        disabled={isSyncingStatus}
+        startIcon={isSyncingStatus ? <CircularProgress size={20} /> : <RefreshIcon />}
+        sx={{
+          bgcolor: '#FFFFFF',
+          color: isFinalDraft ? '#1ABF66' : '#1844fc',
+          border: '1.5px solid',
+          borderColor: '#e7e7e7',
+          borderBottom: 3,
+          borderBottomColor: '#e7e7e7',
+          borderRadius: 1.15,
+          px: 2,
+          py: 1,
+          fontWeight: 600,
+          fontSize: '0.875rem',
+          '&:hover': {
+            bgcolor: '#f5f5f5',
+            borderColor: isFinalDraft ? '#1ABF66' : '#1844fc',
+          },
+          textTransform: 'none',
+          ml: 'auto',
+        }}
+      >
+        {isFinalDraft ? 'Restore Approved Status' : 'Refresh Status'}
+      </Button>
+    );
+  };
+
+  // Function to handle manual refresh
+  const handleManualRefresh = async () => {
+    if (isSyncingStatus) return; // Prevent multiple refreshes
+    
+    try {
+      setIsSyncingStatus(true);
+      console.log('Manual refresh initiated');
+      await refreshAllData();
+    } finally {
+      setIsSyncingStatus(false);
+    }
+  };
+
+  // Add an effect to watch for deliverable status changes and trigger sync
+  useEffect(() => {
+    if (!deliverables || !submission) return;
+    
+    // Check if this is a final draft that's already approved - skip sync to preserve status
+    const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
+    const isApproved = submission?.status === 'APPROVED';
+    
+    if (isFinalDraft && isApproved) {
+      console.log('Final draft is approved - skipping automatic status sync to preserve APPROVED status');
+      return;
+    }
+    
+    
+    // Extract current statuses into a string for comparison
+    const getStatusString = () => {
+      const videoStatuses = deliverables.videos?.map(v => `${v.id}:${v.status}`).join(',') || '';
+      const rawFootageStatuses = deliverables.rawFootages?.map(r => `${r.id}:${r.status}`).join(',') || '';
+      const photoStatuses = deliverables.photos?.map(p => `${p.id}:${p.status}`).join(',') || '';
+      return `${videoStatuses}|${rawFootageStatuses}|${photoStatuses}`;
+    };
+    
+    // Store current status string in ref for comparison
+    const statusString = getStatusString();
+    
+    // If any deliverable statuses have changed, trigger sync
+    console.log('Deliverables updated, checking for status changes...');
+    
+    // Check if we have a mix of approved and changed-requested items
+    const hasVideos = deliverables?.videos?.length > 0 || !!submission?.content;
+    const hasRawFootages = deliverables?.rawFootages?.length > 0;
+    const hasPhotos = deliverables?.photos?.length > 0;
+    
+    const videoDecided = hasVideos && 
+      (!deliverables?.videos?.length || 
+        deliverables.videos.every(v => ['APPROVED', 'REVISION_REQUESTED'].includes(v.status)));
+    
+    const rawFootageDecided = hasRawFootages && 
+      deliverables.rawFootages.every(f => ['APPROVED', 'REVISION_REQUESTED'].includes(f.status));
+    
+    const photosDecided = hasPhotos && 
+      deliverables.photos.every(p => ['APPROVED', 'REVISION_REQUESTED'].includes(p.status));
+    
+    // If all sections have decisions and this is not an already approved final draft, immediately sync
+    if (videoDecided && rawFootageDecided && photosDecided &&
+        (hasVideos || hasRawFootages || hasPhotos) &&
+        !(isFinalDraft && isApproved)) { // Skip auto-sync for approved final drafts
+      console.log('All sections have decisions - triggering immediate sync');
+      
+      // Add an extra check for all items being approved in final draft
+      const allApproved = 
+        (!hasVideos || !deliverables?.videos?.length || deliverables.videos.every(v => v.status === 'APPROVED')) &&
+        (!hasRawFootages || deliverables.rawFootages.every(f => f.status === 'APPROVED')) &&
+        (!hasPhotos || deliverables.photos.every(p => p.status === 'APPROVED'));
+      
+      // If this is a final draft and everything is approved, be extra careful with auto-sync
+      if (isFinalDraft && allApproved) {
+        console.log('All items in final draft are approved - refreshing once but skipping aggressive sync');
+        refreshAllData(); // Just refresh data once without triggering sync
+      } else {
+        // Schedule a sync with a slight delay to allow other operations to complete
+        const syncTimer = setTimeout(() => {
+          triggerImmediateStatusSync();
+        }, 500);
+        
+        return () => clearTimeout(syncTimer);
+      }
+    }
+  }, [deliverables]);
+
+  // Add a function to check and fix any inappropriate status changes for final drafts
+  // const checkAndFixFinalDraftStatus = async () => {
+  //   try {
+  //     // Only run this check for final drafts
+  //     const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
+  //     if (!isFinalDraft) return;
+      
+  //     // If the status is not APPROVED, but all sections are approved, fix it
+  //     if (submission?.status !== 'APPROVED') {
+  //       console.log('Final draft has incorrect status - checking if it should be APPROVED');
+        
+  //       // Check if all sections are approved
+  //       const allSectionsApproved = 
+  //         (!deliverables?.videos?.length || deliverables.videos.every(v => v.status === 'APPROVED')) &&
+  //         (!deliverables?.rawFootages?.length || deliverables.rawFootages.every(f => f.status === 'APPROVED')) &&
+  //         (!deliverables?.photos?.length || deliverables.photos.every(p => p.status === 'APPROVED'));
+        
+  //       if (allSectionsApproved) {
+  //         console.log('Detected approved final draft with incorrect status - restoring APPROVED status');
+          
+  //         try {
+  //           const restorePayload = {
+  //             submissionId: submission.id,
+  //             status: 'APPROVED',
+  //             preserveFinalStatus: true,
+  //             forceStatusChange: true,
+  //             skipAutoSync: true // Add flag to skip auto-sync on backend
+  //           };
+            
+  //           await axiosInstance.patch(`/api/submission/status`, restorePayload);
+  //           console.log('Successfully restored APPROVED status for final draft');
+            
+  //           // Refresh data to show updated status
+  //           await refreshAllData();
+  //         } catch (error) {
+  //           console.error('Error restoring final draft status:', error);
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error checking final draft status:', error);
+  //   }
+  // };
 
   return (
     <Box>
@@ -1357,6 +2720,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   <Grid item xs={12}>
                     {/* Status Banner */}
                     {renderStatusBanner()}
+
+                    {/* Submission Summary - Show sections approval status */}
+                    {renderSubmissionSummary()}
 
                     {/* Media Selection Navigation */}
                     <Box sx={{ mb: 3 }}>
@@ -1458,6 +2824,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                     >
                       {selectedTab === 'video' && (
                         <>
+                          {/* Status banner for videos */}
+                          {renderSectionStatusBanner('video')}
+                          
                           {campaign?.campaignCredits && !!deliverables?.videos?.length && (
                             <Grid container spacing={{ xs: 1, sm: 2 }}>
                               {deliverables.videos.map((videoItem, index) => (
@@ -1605,10 +2974,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                 }}
                               />
                             </Box>
-                          )}
-
-                          {!submission?.content && !deliverables?.videos?.length && (
-                            <Typography>No draft video uploaded yet.</Typography>
                           )}
                           {/* Caption Section for legacy support */}
                           {submission?.caption && !submission?.videos?.length && (
@@ -1813,7 +3178,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                 </Box>
                               </Box>
                             ))}
-                          {/* Schedule Post and Request Changes Section */}
+                          {/* Schedule Post and Request Changes Section for VIDEOS */}
                           {submission?.status === 'PENDING_REVIEW' && (
                             <Box
                               component={Paper}
@@ -1822,220 +3187,248 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                 borderRadius: 1,
                                 border: '1px solid',
                                 borderColor: 'divider',
+                                mt: 3,
                               }}
                             >
-                              {type === 'approve' && (
-                                <FormProvider
-                                  methods={draftVideoMethods}
-                                  onSubmit={onSubmitDraftVideo}
+                              <Typography variant="h6" mb={2}>
+                                Draft Videos Review
+                              </Typography>
+                              
+                              {/* Check if all videos are already approved */}
+                              {(deliverables?.videos?.length > 0 && 
+                                deliverables.videos.every(v => v.status === 'APPROVED')) ||
+                             (submission?.content && submission?.status === 'APPROVED') ? (
+                                <Box
+                                  sx={{
+                                    p: 2,
+                                    borderRadius: 1,
+                                    bgcolor: 'success.lighter',
+                                    border: '1px solid',
+                                    borderColor: 'success.light',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                  }}
                                 >
-                                  <Stack gap={1} mb={2}>
-                                    <Typography variant="subtitle1" mb={1} mx={1}>
-                                      Due Date
-                                    </Typography>
-                                    <RHFDatePicker
-                                      name="dueDate"
-                                      label="Due Date"
-                                      minDate={dayjs()}
-                                    />
-                                  </Stack>
-
-                                  <Stack gap={2}>
-                                    <Typography variant="subtitle1" mb={1} mx={1}>
-                                      Comments For Creator
-                                    </Typography>
-                                    <RHFTextField
-                                      name="feedback"
-                                      multiline
-                                      minRows={5}
-                                      placeholder="Provide feedback for the creator."
-                                      sx={{ mb: 2 }}
-                                    />
-                                  </Stack>
-
-                                  <Stack
-                                    alignItems={{ xs: 'stretch', sm: 'center' }}
-                                    direction={{ xs: 'column', sm: 'row' }}
-                                    gap={1.5}
-                                    justifyContent="end"
-                                  >
-                                    <Button
-                                      onClick={handleDraftVideoRequestClick}
-                                      size="small"
-                                      variant="contained"
-                                      // startIcon={<Iconify icon="solar:close-circle-bold" />}
-                                      sx={{
-                                        bgcolor: '#FFFFFF',
-                                        border: 1.5,
-                                        borderRadius: 1.15,
-                                        borderColor: '#e7e7e7',
-                                        borderBottom: 3,
-                                        borderBottomColor: '#e7e7e7',
-                                        color: '#D4321C',
-                                        '&:hover': {
-                                          bgcolor: '#f5f5f5',
-                                          borderColor: '#D4321C',
-                                        },
-                                        textTransform: 'none',
-                                        px: 2.5,
-                                        py: 1.2,
-                                        fontSize: '1rem',
-                                        fontWeight: 600,
-                                        minWidth: '80px',
-                                        height: '45px',
-                                      }}
-                                    >
-                                      Request a Change
-                                    </Button>
-
-                                    <LoadingButton
-                                      onClick={approve.onTrue}
-                                      variant="contained"
-                                      size="small"
-                                      // startIcon={<Iconify icon="solar:check-circle-bold" />}
-                                      loading={isSubmitting}
-                                      sx={{
-                                        bgcolor: '#FFFFFF',
-                                        color: '#1ABF66',
-                                        border: '1.5px solid',
-                                        borderColor: '#e7e7e7',
-                                        borderBottom: 3,
-                                        borderBottomColor: '#e7e7e7',
-                                        borderRadius: 1.15,
-                                        px: 2.5,
-                                        py: 1.2,
-                                        fontWeight: 600,
-                                        '&:hover': {
-                                          bgcolor: '#f5f5f5',
-                                          borderColor: '#1ABF66',
-                                        },
-                                        fontSize: '1rem',
-                                        minWidth: '80px',
-                                        height: '45px',
-                                        textTransform: 'none',
-                                      }}
-                                    >
-                                      Approve
-                                    </LoadingButton>
-                                  </Stack>
-                                  {confirmationApproveModal(approve.value, approve.onFalse)}
-                                </FormProvider>
-                              )}
-
-                              {type === 'request' && (
-                                <FormProvider
-                                  methods={draftVideoMethods}
-                                  onSubmit={onSubmitDraftVideo}
-                                >
-                                  <Typography variant="h6" mb={1} mx={1}>
-                                    Request Changes
+                                  <Iconify icon="solar:check-circle-bold" color="success.main" />
+                                  <Typography color="success.darker">
+                                    All draft videos have been approved
                                   </Typography>
-
-                                  <Stack gap={2}>
-                                    <RHFMultiSelect
-                                      name="reasons"
-                                      checkbox
-                                      chip
-                                      options={options_changes.map((item) => ({
-                                        value: item,
-                                        label: item,
-                                      }))}
-                                      label="Reasons"
-                                    />
-                                    <RHFTextField
-                                      name="feedback"
-                                      multiline
-                                      minRows={5}
-                                      placeholder="Provide feedback for the draft video."
-                                    />
-
-                                    {selectedVideosForChange.length === 0 && (
-                                      <Typography
-                                        color="warning.main"
-                                        sx={{
-                                          mt: 1,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 1,
-                                        }}
-                                      >
-                                        <Iconify icon="solar:danger-triangle-bold" />
-                                        Please select at least one video that needs changes.
-                                      </Typography>
-                                    )}
-
-                                    <Stack
-                                      alignItems={{ xs: 'stretch', sm: 'center' }}
-                                      direction={{ xs: 'column', sm: 'row' }}
-                                      gap={1.5}
-                                      alignSelf="end"
+                                </Box>
+                              ) : (
+                                <>
+                                  {type === 'approve' && (
+                                    <FormProvider
+                                      methods={draftVideoMethods}
+                                      onSubmit={onSubmitDraftVideo}
                                     >
-                                      <Button
-                                        onClick={() => {
-                                          setType('approve');
-                                          draftVideoMethods.setValue('type', 'approve');
-                                          draftVideoMethods.setValue('feedback', '');
-                                          draftVideoMethods.setValue('reasons', []);
-                                        }}
-                                        size="small"
-                                        sx={{
-                                          bgcolor: 'white',
-                                          border: 1.5,
-                                          borderRadius: 1.15,
-                                          borderColor: '#e7e7e7',
-                                          borderBottom: 3,
-                                          borderBottomColor: '#e7e7e7',
-                                          color: 'text.primary',
-                                          '&:hover': {
-                                            bgcolor: '#f5f5f5',
-                                            borderColor: '#231F20',
-                                          },
-                                          textTransform: 'none',
-                                          px: 2.5,
-                                          py: 1.2,
-                                          fontSize: '1rem',
-                                          minWidth: '80px',
-                                          height: '45px',
-                                        }}
-                                      >
-                                        Back
-                                      </Button>
-                                      <LoadingButton
-                                        variant="contained"
-                                        size="small"
-                                        onClick={request.onTrue}
-                                        disabled={
-                                          campaign?.campaignCredits &&
-                                          selectedVideosForChange.length === 0
-                                        }
-                                        sx={{
-                                          bgcolor: '#FFFFFF',
-                                          color: '#1ABF66',
-                                          border: '1.5px solid',
-                                          borderColor: '#e7e7e7',
-                                          borderBottom: 3,
-                                          borderBottomColor: '#e7e7e7',
-                                          borderRadius: 1.15,
-                                          px: 2.5,
-                                          py: 1.2,
-                                          fontWeight: 600,
-                                          '&:hover': {
-                                            bgcolor: '#f5f5f5',
-                                            borderColor: '#1ABF66',
-                                          },
-                                          fontSize: '1rem',
-                                          minWidth: '80px',
-                                          height: '45px',
-                                          textTransform: 'none',
-                                        }}
-                                      >
-                                        Submit
-                                      </LoadingButton>
-                                    </Stack>
-                                  </Stack>
+                                      <Stack gap={1} mb={2}>
+                                        <Typography variant="subtitle1" mb={1} mx={1}>
+                                          Due Date
+                                        </Typography>
+                                        <RHFDatePicker
+                                          name="dueDate"
+                                          label="Due Date"
+                                          minDate={dayjs()}
+                                        />
+                                      </Stack>
 
-                                  {confirmationRequestModal(request.value, request.onFalse)}
-                                </FormProvider>
+                                      <Stack gap={2}>
+                                        <Typography variant="subtitle1" mb={1} mx={1}>
+                                          Comments For Creator
+                                        </Typography>
+                                        <RHFTextField
+                                          name="feedback"
+                                          multiline
+                                          minRows={5}
+                                          placeholder="Provide feedback for the creator."
+                                          sx={{ mb: 2 }}
+                                        />
+                                      </Stack>
+
+                                      <Stack
+                                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        gap={1.5}
+                                        justifyContent="end"
+                                      >
+                                        <Button
+                                          onClick={handleDraftVideoRequestClick}
+                                          size="small"
+                                          variant="contained"
+                                          sx={{
+                                            bgcolor: '#FFFFFF',
+                                            border: 1.5,
+                                            borderRadius: 1.15,
+                                            borderColor: '#e7e7e7',
+                                            borderBottom: 3,
+                                            borderBottomColor: '#e7e7e7',
+                                            color: '#D4321C',
+                                            '&:hover': {
+                                              bgcolor: '#f5f5f5',
+                                              borderColor: '#D4321C',
+                                            },
+                                            textTransform: 'none',
+                                            px: 2.5,
+                                            py: 1.2,
+                                            fontSize: '1rem',
+                                            fontWeight: 600,
+                                            minWidth: '80px',
+                                            height: '45px',
+                                          }}
+                                        >
+                                          Request a Change
+                                        </Button>
+
+                                        <LoadingButton
+                                          onClick={() => approve.onTrue()}
+                                          variant="contained"
+                                          size="small"
+                                          loading={isSubmitting}
+                                          sx={{
+                                            bgcolor: '#FFFFFF',
+                                            color: '#1ABF66',
+                                            border: '1.5px solid',
+                                            borderColor: '#e7e7e7',
+                                            borderBottom: 3,
+                                            borderBottomColor: '#e7e7e7',
+                                            borderRadius: 1.15,
+                                            px: 2.5,
+                                            py: 1.2,
+                                            fontWeight: 600,
+                                            '&:hover': {
+                                              bgcolor: '#f5f5f5',
+                                              borderColor: '#1ABF66',
+                                            },
+                                            fontSize: '1rem',
+                                            minWidth: '80px',
+                                            height: '45px',
+                                            textTransform: 'none',
+                                          }}
+                                        >
+                                          Approve
+                                        </LoadingButton>
+                                      </Stack>
+                                      {confirmationApproveModal(approve.value, approve.onFalse, 'video')}
+                                    </FormProvider>
+                                  )}
+
+                                  {type === 'request' && (
+                                    <FormProvider
+                                      methods={draftVideoMethods}
+                                      onSubmit={onSubmitDraftVideo}
+                                    >
+                                      <Typography variant="h6" mb={1} mx={1}>
+                                        Request Changes for Draft Videos
+                                      </Typography>
+
+                                      <Stack gap={2}>
+                                        <RHFMultiSelect
+                                          name="reasons"
+                                          checkbox
+                                          chip
+                                          options={options_changes.map((item) => ({
+                                            value: item,
+                                            label: item,
+                                          }))}
+                                          label="Reasons"
+                                        />
+                                        <RHFTextField
+                                          name="feedback"
+                                          multiline
+                                          minRows={5}
+                                          placeholder="Provide feedback for the draft video."
+                                        />
+
+                                        {campaign?.campaignCredits && selectedVideosForChange.length === 0 && (
+                                          <Typography
+                                            color="warning.main"
+                                            sx={{
+                                              mt: 1,
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: 1,
+                                            }}
+                                          >
+                                            <Iconify icon="solar:danger-triangle-bold" />
+                                            Please select at least one video that needs changes.
+                                          </Typography>
+                                        )}
+
+                                        <Stack
+                                          alignItems={{ xs: 'stretch', sm: 'center' }}
+                                          direction={{ xs: 'column', sm: 'row' }}
+                                          gap={1.5}
+                                          alignSelf="end"
+                                        >
+                                          <Button
+                                            onClick={() => {
+                                              setType('approve');
+                                              draftVideoMethods.setValue('type', 'approve');
+                                              draftVideoMethods.setValue('feedback', '');
+                                              draftVideoMethods.setValue('reasons', []);
+                                            }}
+                                            size="small"
+                                            sx={{
+                                              bgcolor: 'white',
+                                              border: 1.5,
+                                              borderRadius: 1.15,
+                                              borderColor: '#e7e7e7',
+                                              borderBottom: 3,
+                                              borderBottomColor: '#e7e7e7',
+                                              color: 'text.primary',
+                                              '&:hover': {
+                                                bgcolor: '#f5f5f5',
+                                                borderColor: '#231F20',
+                                              },
+                                              textTransform: 'none',
+                                              px: 2.5,
+                                              py: 1.2,
+                                              fontSize: '1rem',
+                                              minWidth: '80px',
+                                              height: '45px',
+                                            }}
+                                          >
+                                            Back
+                                          </Button>
+                                          <LoadingButton
+                                            variant="contained"
+                                            size="small"
+                                            onClick={() => request.onTrue()}
+                                            disabled={
+                                              campaign?.campaignCredits &&
+                                              selectedVideosForChange.length === 0
+                                            }
+                                            sx={{
+                                              bgcolor: '#FFFFFF',
+                                              color: '#1ABF66',
+                                              border: '1.5px solid',
+                                              borderColor: '#e7e7e7',
+                                              borderBottom: 3,
+                                              borderBottomColor: '#e7e7e7',
+                                              borderRadius: 1.15,
+                                              px: 2.5,
+                                              py: 1.2,
+                                              fontWeight: 600,
+                                              '&:hover': {
+                                                bgcolor: '#f5f5f5',
+                                                borderColor: '#1ABF66',
+                                              },
+                                              fontSize: '1rem',
+                                              minWidth: '80px',
+                                              height: '45px',
+                                              textTransform: 'none',
+                                            }}
+                                          >
+                                            Submit
+                                          </LoadingButton>
+                                        </Stack>
+                                      </Stack>
+
+                                      {confirmationRequestModal(request.value, request.onFalse, 'video')}
+                                    </FormProvider>
+                                  )}
+                                </>
                               )}
                             </Box>
                           )}
@@ -2044,6 +3437,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
 
                       {selectedTab === 'rawFootages' && (
                         <>
+                          {/* Status banner for raw footages */}
+                          {renderSectionStatusBanner('rawFootages')}
+                          
                           {deliverables?.rawFootages?.length > 0 ? (
                             <Grid container spacing={{ xs: 1, sm: 2 }}>
                               {deliverables.rawFootages.map((footage, index) => (
@@ -2215,167 +3611,231 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                   borderColor: 'divider',
                                 }}
                               >
-                                {rawFootageType === 'approve' && (
-                                  <FormProvider
-                                    methods={rawFootageMethods}
-                                    onSubmit={onSubmitRawFootage}
+                                <Typography variant="h6" mb={2}>
+                                  Raw Footage Review
+                                </Typography>
+                                
+                                {/* Check if all raw footages are already approved */}
+                                {deliverables?.rawFootages?.length > 0 && 
+                                 deliverables.rawFootages.every(f => f.status === 'APPROVED') ? (
+                                  <Box
+                                    sx={{
+                                      p: 2,
+                                      borderRadius: 1,
+                                      bgcolor: 'success.lighter',
+                                      border: '1px solid',
+                                      borderColor: 'success.light',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 1,
+                                    }}
                                   >
-                                    <Stack gap={2}>
-                                      <Stack
-                                        alignItems={{ xs: 'stretch', sm: 'center' }}
-                                        direction={{ xs: 'column', sm: 'row' }}
-                                        gap={1.5}
-                                        justifyContent="end"
-                                      >
-                                        <Button
-                                          fullWidth
-                                          onClick={() => {
-                                            setRawFootageType('request');
-                                            setValue('type', 'request');
-                                            setValue('footageFeedback', '');
-                                          }}
-                                          disabled={isDisabled}
-                                          size="small"
-                                          variant="contained"
-                                          startIcon={<Iconify icon="solar:close-circle-bold" />}
-                                          sx={{
-                                            bgcolor: '#FFFFFF',
-                                            border: 1.5,
-                                            borderRadius: 1.15,
-                                            borderColor: '#e7e7e7',
-                                            borderBottom: 3,
-                                            borderBottomColor: '#e7e7e7',
-                                            color: '#D4321C',
-                                            '&:hover': {
-                                              bgcolor: '#f5f5f5',
-                                              borderColor: '#D4321C',
-                                            },
-                                            textTransform: 'none',
-                                            px: 2.5,
-                                            py: 1.2,
-                                            fontSize: '1rem',
-                                            fontWeight: 600,
-                                            minWidth: '80px',
-                                            height: '45px',
-                                          }}
-                                        >
-                                          Request a Change
-                                        </Button>
-                                      </Stack>
-                                    </Stack>
-                                  </FormProvider>
-                                )}
-
-                                {rawFootageType === 'request' && (
-                                  <>
-                                    <Typography variant="h6" mb={1} mx={1}>
-                                      Request Changes
+                                    <Iconify icon="solar:check-circle-bold" color="success.main" />
+                                    <Typography color="success.darker">
+                                      All raw footage has been approved
                                     </Typography>
-                                    <FormProvider
-                                      methods={rawFootageMethods}
-                                      onSubmit={onSubmitRawFootage}
-                                      disabled={isDisabled}
-                                    >
-                                      <Stack gap={2}>
-                                        <RHFTextField
-                                          name="footageFeedback"
-                                          multiline
-                                          minRows={5}
-                                          placeholder="Provide feedback for selected raw footage."
-                                        />
-
-                                        {rawFootageType === 'request' &&
-                                          selectedRawFootagesForChange.length === 0 && (
-                                            <Typography
-                                              color="warning.main"
+                                  </Box>
+                                ) : (
+                                  <>
+                                    {rawFootageType === 'approve' && (
+                                      <FormProvider
+                                        methods={rawFootageMethods}
+                                        onSubmit={onSubmitRawFootage}
+                                      >
+                                        <Stack gap={2}>
+                                          {/* Add feedback field for approve flow */}
+                                          <Typography variant="subtitle1" mb={1} mx={1}>
+                                            Comments For Creator
+                                          </Typography>
+                                          <RHFTextField
+                                            name="footageFeedback"
+                                            multiline
+                                            minRows={5}
+                                            placeholder="Provide feedback for the raw footage."
+                                            sx={{ mb: 2 }}
+                                          />
+                                        
+                                          <Stack
+                                            alignItems={{ xs: 'stretch', sm: 'center' }}
+                                            direction={{ xs: 'column', sm: 'row' }}
+                                            gap={1.5}
+                                            justifyContent="end"
+                                          >
+                                            <Button
+                                              onClick={handleRawFootageRequestClick}
+                                              disabled={isDisabled}
+                                              size="small"
+                                              variant="contained"
                                               sx={{
-                                                mt: 1,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 1,
+                                                bgcolor: '#FFFFFF',
+                                                border: 1.5,
+                                                borderRadius: 1.15,
+                                                borderColor: '#e7e7e7',
+                                                borderBottom: 3,
+                                                borderBottomColor: '#e7e7e7',
+                                                color: '#D4321C',
+                                                '&:hover': {
+                                                  bgcolor: '#f5f5f5',
+                                                  borderColor: '#D4321C',
+                                                },
+                                                textTransform: 'none',
+                                                px: 2.5,
+                                                py: 1.2,
+                                                fontSize: '1rem',
+                                                fontWeight: 600,
+                                                minWidth: '80px',
+                                                height: '45px',
                                               }}
                                             >
-                                              <Iconify icon="solar:danger-triangle-bold" />
-                                              Please select at least one raw footage that needs
-                                              changes.
-                                            </Typography>
-                                          )}
-
-                                        <Stack
-                                          alignItems={{ xs: 'stretch', sm: 'center' }}
-                                          direction={{ xs: 'column', sm: 'row' }}
-                                          gap={1.5}
-                                          alignSelf="end"
-                                        >
-                                          <Button
-                                            onClick={() => {
-                                              setRawFootageType('approve');
-                                              rawFootageMethods.setValue('type', 'approve');
-                                              rawFootageMethods.setValue('footageFeedback', '');
-                                              rawFootageMethods.setValue('reasons', []);
-                                            }}
-                                            size="small"
-                                            sx={{
-                                              bgcolor: 'white',
-                                              border: 1.5,
-                                              borderRadius: 1.15,
-                                              borderColor: '#e7e7e7',
-                                              borderBottom: 3,
-                                              borderBottomColor: '#e7e7e7',
-                                              color: 'text.primary',
-                                              '&:hover': {
-                                                bgcolor: '#f5f5f5',
-                                                borderColor: '#231F20',
-                                              },
-                                              textTransform: 'none',
-                                              px: 2.5,
-                                              py: 1.2,
-                                              fontSize: '1rem',
-                                              minWidth: '80px',
-                                              height: '45px',
-                                            }}
-                                          >
-                                            Back
-                                          </Button>
-                                          <LoadingButton
-                                            variant="contained"
-                                            size="small"
-                                            onClick={rawFootageRequest.onTrue}
-                                            disabled={
-                                              rawFootageType === 'request' &&
-                                              selectedRawFootagesForChange.length === 0
-                                            }
-                                            sx={{
-                                              bgcolor: '#FFFFFF',
-                                              color: '#1ABF66',
-                                              border: '1.5px solid',
-                                              borderColor: '#e7e7e7',
-                                              borderBottom: 3,
-                                              borderBottomColor: '#e7e7e7',
-                                              borderRadius: 1.15,
-                                              px: 2.5,
-                                              py: 1.2,
-                                              fontWeight: 600,
-                                              '&:hover': {
-                                                bgcolor: '#f5f5f5',
-                                                borderColor: '#1ABF66',
-                                              },
-                                              fontSize: '1rem',
-                                              minWidth: '80px',
-                                              height: '45px',
-                                              textTransform: 'none',
-                                            }}
-                                          >
-                                            Submit
-                                          </LoadingButton>
+                                              Request a Change
+                                            </Button>
+                                            
+                                            <LoadingButton
+                                              onClick={() => rawFootageApprove.onTrue()}
+                                              variant="contained"
+                                              size="small"
+                                              sx={{
+                                                bgcolor: '#FFFFFF',
+                                                color: '#1ABF66',
+                                                border: '1.5px solid',
+                                                borderColor: '#e7e7e7',
+                                                borderBottom: 3,
+                                                borderBottomColor: '#e7e7e7',
+                                                borderRadius: 1.15,
+                                                px: 2.5,
+                                                py: 1.2,
+                                                fontWeight: 600,
+                                                '&:hover': {
+                                                  bgcolor: '#f5f5f5',
+                                                  borderColor: '#1ABF66',
+                                                },
+                                                fontSize: '1rem',
+                                                minWidth: '80px',
+                                                height: '45px',
+                                                textTransform: 'none',
+                                              }}
+                                            >
+                                              Approve
+                                            </LoadingButton>
+                                          </Stack>
+                                          
+                                          {confirmationApproveModal(rawFootageApprove.value, rawFootageApprove.onFalse, 'rawFootages')}
                                         </Stack>
-                                      </Stack>
+                                      </FormProvider>
+                                    )}
 
-                                      {confirmationRequestModal(
-                                        rawFootageRequest.value,
-                                        rawFootageRequest.onFalse
-                                      )}
-                                    </FormProvider>
+                                    {rawFootageType === 'request' && (
+                                      <>
+                                        <Typography variant="h6" mb={1} mx={1}>
+                                          Request Changes for Raw Footage
+                                        </Typography>
+                                        <FormProvider
+                                          methods={rawFootageMethods}
+                                          onSubmit={onSubmitRawFootage}
+                                          disabled={isDisabled}
+                                        >
+                                          <Stack gap={2}>
+                                            <RHFTextField
+                                              name="footageFeedback"
+                                              multiline
+                                              minRows={5}
+                                              placeholder="Provide feedback for selected raw footage."
+                                            />
+
+                                            {rawFootageType === 'request' &&
+                                              selectedRawFootagesForChange.length === 0 && (
+                                                <Typography
+                                                  color="warning.main"
+                                                  sx={{
+                                                    mt: 1,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 1,
+                                                  }}
+                                                >
+                                                  <Iconify icon="solar:danger-triangle-bold" />
+                                                  Please select at least one raw footage that needs
+                                                  changes.
+                                                </Typography>
+                                              )}
+
+                                            <Stack
+                                              alignItems={{ xs: 'stretch', sm: 'center' }}
+                                              direction={{ xs: 'column', sm: 'row' }}
+                                              gap={1.5}
+                                              alignSelf="end"
+                                            >
+                                              <Button
+                                                onClick={() => {
+                                                  setRawFootageType('approve');
+                                                  rawFootageMethods.setValue('type', 'approve');
+                                                  rawFootageMethods.setValue('footageFeedback', '');
+                                                }}
+                                                size="small"
+                                                sx={{
+                                                  bgcolor: 'white',
+                                                  border: 1.5,
+                                                  borderRadius: 1.15,
+                                                  borderColor: '#e7e7e7',
+                                                  borderBottom: 3,
+                                                  borderBottomColor: '#e7e7e7',
+                                                  color: 'text.primary',
+                                                  '&:hover': {
+                                                    bgcolor: '#f5f5f5',
+                                                    borderColor: '#231F20',
+                                                  },
+                                                  textTransform: 'none',
+                                                  px: 2.5,
+                                                  py: 1.2,
+                                                  fontSize: '1rem',
+                                                  minWidth: '80px',
+                                                  height: '45px',
+                                                }}
+                                              >
+                                                Back
+                                              </Button>
+                                              <LoadingButton
+                                                variant="contained"
+                                                size="small"
+                                                onClick={() => rawFootageRequest.onTrue()}
+                                                disabled={
+                                                  rawFootageType === 'request' &&
+                                                  selectedRawFootagesForChange.length === 0
+                                                }
+                                                sx={{
+                                                  bgcolor: '#FFFFFF',
+                                                  color: '#1ABF66',
+                                                  border: '1.5px solid',
+                                                  borderColor: '#e7e7e7',
+                                                  borderBottom: 3,
+                                                  borderBottomColor: '#e7e7e7',
+                                                  borderRadius: 1.15,
+                                                  px: 2.5,
+                                                  py: 1.2,
+                                                  fontWeight: 600,
+                                                  '&:hover': {
+                                                    bgcolor: '#f5f5f5',
+                                                    borderColor: '#1ABF66',
+                                                  },
+                                                  fontSize: '1rem',
+                                                  minWidth: '80px',
+                                                  height: '45px',
+                                                  textTransform: 'none',
+                                                }}
+                                              >
+                                                Submit
+                                              </LoadingButton>
+                                            </Stack>
+                                          </Stack>
+
+                                          {confirmationRequestModal(
+                                            rawFootageRequest.value,
+                                            rawFootageRequest.onFalse,
+                                            'rawFootages'
+                                          )}
+                                        </FormProvider>
+                                      </>
+                                    )}
                                   </>
                                 )}
                               </Box>
@@ -2383,7 +3843,14 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                         </>
                       )}
 
-                      {selectedTab === 'photos' && photos}
+                      {selectedTab === 'photos' && (
+                        <>
+                          {/* Status banner for photos */}
+                          {renderSectionStatusBanner('photos')}
+                          
+                          {photos}
+                        </>
+                      )}
                     </Box>
                   </Grid>
                 </Grid>
