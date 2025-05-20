@@ -269,7 +269,7 @@ const MediaKitCreator = () => {
     []
   );
 
-  const captureScreenshot = useCallback(async () => {
+  const captureScreenshot = useCallback(async (isMobile = false) => {
     try {
       setCaptureLoading(true);
       setCaptureState('preparing');
@@ -324,11 +324,78 @@ const MediaKitCreator = () => {
         window.scrollTo(0, scrollTop);
 
         setCaptureState('processing');
-        // Create and trigger download
-        const link = document.createElement('a');
-        link.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.png`;
-        link.href = dataUrl;
-        link.click();
+        
+        if (!isMobile) {
+          // Create and trigger download for desktop
+          const link = document.createElement('a');
+          link.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.png`;
+          link.href = dataUrl;
+          link.click();
+        } else {
+          // Open in new tab for mobile preview
+          const tab = window.open();
+          if (tab) {
+            tab.document.write(`
+              <html>
+                <head>
+                  <title>${user?.creator?.mediaKit?.displayName || user?.name} Media Kit</title>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <style>
+                    body {
+                      margin: 0;
+                      padding: 0;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      background-color:rgb(0, 0, 0);
+                    }
+                    img {
+                      max-width: 100%;
+                      height: auto;
+                      display: block;
+                    }
+                    .instructions {
+                      position: fixed;
+                      bottom: 20px;
+                      left: 50%;
+                      transform: translateX(-50%);
+                      width: auto;
+                      max-width: 80%;
+                      background-color: white;
+                      color: black;
+                      text-align: center;
+                      padding: 8px 16px;
+                      font-family: sans-serif;
+                      border-radius: 6px;
+                      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      gap: 8px;
+                      font-size: 12px;
+                      font-weight: 500;
+                    }
+                    .instructions svg {
+                      width: 14px;
+                      height: 16px;
+                      flex-shrink: 0;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <img src="${dataUrl}" alt="${user?.creator?.mediaKit?.displayName || user?.name} Media Kit" />
+                  <div class="instructions">
+                    <svg width="18" height="20" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z" fill="#1340FF"/>
+                    </svg>
+                    Long-press the image to save to your gallery
+                  </div>
+                </body>
+              </html>
+            `);
+            tab.document.close();
+          }
+        }
       } else {
         // Small screen method using hidden desktop layout
         // Temporarily apply a style fix to remove extra padding
@@ -376,16 +443,87 @@ const MediaKitCreator = () => {
         document.head.removeChild(styleFixForMedia);
 
         setCaptureState('processing');
-        // Create and trigger download
-        const link = document.createElement('a');
-        link.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.png`;
-        link.href = dataUrl;
-        link.click();
+        
+        if (!isMobile) {
+          // Create and trigger download for desktop
+          const link = document.createElement('a');
+          link.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.png`;
+          link.href = dataUrl;
+          link.click();
+        } else {
+          // Open in new tab for mobile preview
+          const tab = window.open();
+          if (tab) {
+            tab.document.write(`
+              <html>
+                <head>
+                  <title>${user?.creator?.mediaKit?.displayName || user?.name} Media Kit</title>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <style>
+                    body {
+                      margin: 0;
+                      padding: 0;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      background-color:rgb(0, 0, 0);
+                    }
+                    img {
+                      max-width: 100%;
+                      height: auto;
+                      display: block;
+                    }
+                    .instructions {
+                      position: fixed;
+                      bottom: 20px;
+                      left: 50%;
+                      transform: translateX(-50%);
+                      width: auto;
+                      max-width: 80%;
+                      background-color: white;
+                      color: black;
+                      text-align: center;
+                      padding: 8px 16px;
+                      font-family: sans-serif;
+                      border-radius: 6px;
+                      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      gap: 8px;
+                      font-size: 12px;
+                      font-weight: 500;
+                    }
+                    .instructions svg {
+                      width: 14px;
+                      height: 16px;
+                      flex-shrink: 0;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <img src="${dataUrl}" alt="${user?.creator?.mediaKit?.displayName || user?.name} Media Kit" />
+                  <div class="instructions">
+                    <svg width="18" height="20" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z" fill="#1340FF"/>
+                    </svg>
+                    Long-press the image to save to your gallery
+                  </div>
+                </body>
+              </html>
+            `);
+            tab.document.close();
+          }
+        }
       }
 
+      const successMessage = isMobile 
+        ? 'Image generated successfully!'
+        : 'Screenshot saved successfully!';
+        
       setSnackbar({
         open: true,
-        message: 'Screenshot saved successfully!',
+        message: successMessage,
         severity: 'success',
       });
       setCaptureState('complete');
@@ -824,7 +962,7 @@ const MediaKitCreator = () => {
               <MenuItem
                 onClick={(event) => {
                   event.stopPropagation();
-                  captureScreenshot();
+                  captureScreenshot(mdDown);
                   handleMenuClose();
                 }}
                 sx={{
@@ -839,7 +977,7 @@ const MediaKitCreator = () => {
                   },
                 }}
               >
-                Download as Image
+                {mdDown ? 'Download as Image' : 'Download as Image'}
               </MenuItem>
               <MenuItem
                 onClick={(event) => {
@@ -1061,7 +1199,7 @@ const MediaKitCreator = () => {
               </Button>
             </Stack>
 
-            {!smDown && (
+            {!mdDown && (
               <Stack width="100%">
                 <Stack
                   direction="row"
@@ -1232,13 +1370,13 @@ const MediaKitCreator = () => {
           </Stack>
         </Stack>
 
-        {smDown && (
+        {mdDown && (
           <Stack spacing={3} sx={{ py: 2, my: 2 }}>
             <Stack
               direction="row"
               justifyContent="space-between"
-              spacing={1}
-              sx={{ width: '100%', pl: 2 }}
+              spacing={0.5}
+              sx={{ width: '100%', pl: 1, pr: 1 }}
             >
               {/* Followers */}
               <Stack alignItems="flex-start" sx={{ flex: 1 }}>
@@ -1247,9 +1385,9 @@ const MediaKitCreator = () => {
                   color="#1340FF"
                   fontWeight={400}
                   fontFamily="Instrument Serif"
-                  mb={1}
+                  mb={0.5}
                   align="left"
-                  sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
+                  sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
                   {formatNumber(socialMediaAnalytics.followers)}
                 </Typography>
@@ -1259,7 +1397,7 @@ const MediaKitCreator = () => {
                   fontFamily="Aileron, sans-serif"
                   fontWeight={600}
                   align="left"
-                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                  sx={{ fontSize: { xs: '0.75rem', sm: '1rem' } }}
                 >
                   Followers
                 </Typography>
@@ -1272,9 +1410,9 @@ const MediaKitCreator = () => {
                   color="#1340FF"
                   fontWeight={400}
                   fontFamily="Instrument Serif"
-                  mb={1}
+                  mb={0.5}
                   align="left"
-                  sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
+                  sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
                   {socialMediaAnalytics.averageComments?.toFixed(2)}
                 </Typography>
@@ -1284,7 +1422,7 @@ const MediaKitCreator = () => {
                   fontFamily="Aileron, sans-serif"
                   fontWeight={600}
                   align="left"
-                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                  sx={{ fontSize: { xs: '0.75rem', sm: '1rem' } }}
                 >
                   Avg Comments
                 </Typography>
@@ -1297,9 +1435,9 @@ const MediaKitCreator = () => {
                   color="#1340FF"
                   fontWeight={400}
                   fontFamily="Instrument Serif"
-                  mb={1}
+                  mb={0.5}
                   align="left"
-                  sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
+                  sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
                   {socialMediaAnalytics.averageLikes?.toFixed(2)}
                 </Typography>
@@ -1309,7 +1447,7 @@ const MediaKitCreator = () => {
                   fontFamily="Aileron, sans-serif"
                   fontWeight={600}
                   align="left"
-                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                  sx={{ fontSize: { xs: '0.75rem', sm: '1rem'} }}
                 >
                   Avg Likes
                 </Typography>
@@ -1322,9 +1460,9 @@ const MediaKitCreator = () => {
                   color="#1340FF"
                   fontWeight={400}
                   fontFamily="Instrument Serif"
-                  mb={1}
+                  mb={0.5}
                   align="left"
-                  sx={{ fontSize: { xs: '3rem', sm: '2.5rem' } }}
+                  sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
                   {socialMediaAnalytics.engagement_rate}
                 </Typography>
@@ -1334,7 +1472,7 @@ const MediaKitCreator = () => {
                   fontFamily="Aileron, sans-serif"
                   fontWeight={600}
                   align="left"
-                  sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                  sx={{ fontSize: { xs: '0.75rem', sm: '1rem' } }}
                 >
                   Total Engagement
                 </Typography>
@@ -1562,6 +1700,7 @@ const MediaKitCreator = () => {
                   fontSize: '3rem',
                   fontFamily: 'Aileron, sans-serif',
                   fontWeight: 300,
+                  // letterSpacing: '0.05em',
                   textAlign: 'left',
                   display: 'block',
                 }}
@@ -1817,18 +1956,159 @@ const MediaKitCreator = () => {
         sx={{
           color: '#fff',
           zIndex: theme.zIndex.drawer + 1,
-          flexDirection: 'column',
+          backdropFilter: 'blur(8px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          transition: 'all 0.3s ease-in-out',
         }}
         open={captureLoading}
       >
-        <CircularProgress color="inherit" size={50} thickness={4} />
-        <Typography sx={{ mt: 2, fontWeight: 600, fontSize: 18 }}>
-          {captureState === 'preparing' && 'Preparing media kit...'}
-          {captureState === 'rendering' && 'Loading all content...'}
-          {captureState === 'capturing' && 'Capturing...'}
-          {captureState === 'processing' && 'Finalizing download...'}
-          {captureState === 'complete' && 'Download complete!'}
-        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'rgba(255, 255, 255, 0.98)',
+            borderRadius: 2,
+            py: 4,
+            px: { xs: 3, sm: 4 },
+            width: { xs: '85%', sm: '340px' },
+            boxShadow: '0 12px 24px rgba(0, 0, 0, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.4)',
+            animation: captureLoading ? 'fadeIn 0.4s ease-out forwards' : 'none',
+            '@keyframes fadeIn': {
+              from: { opacity: 0, transform: 'scale(0.95)' },
+              to: { opacity: 1, transform: 'scale(1)' }
+            },
+          }}
+        >
+          <Box
+            sx={{
+              position: 'relative',
+              width: 80,
+              height: 80,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 1,
+              animation: captureLoading ? 'fadeInSpin 0.5s ease-out forwards' : 'none',
+              '@keyframes fadeInSpin': {
+                from: { opacity: 0, transform: 'rotate(-20deg)' },
+                to: { opacity: 1, transform: 'rotate(0deg)' }
+              },
+            }}
+          >
+            {/* backdrop for circle */}
+            <Box
+              sx={{
+                position: 'absolute',
+                width: 70,
+                height: 70,
+                borderRadius: '50%',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                overflow: 'hidden',
+                backgroundColor: '#2E3033',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                animation: captureLoading ? 'pulseIn 0.6s ease-out forwards' : 'none',
+                '@keyframes pulseIn': {
+                  '0%': { opacity: 0, transform: 'scale(0.9)' },
+                  '70%': { opacity: 1, transform: 'scale(1.05)' },
+                  '100%': { opacity: 1, transform: 'scale(1)' }
+                },
+              }}
+            >
+              {/* progress fill */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  height: '100%',
+                  width: (() => {
+                    switch (captureState) {
+                      case 'complete':
+                        return '100%';
+                      case 'processing':
+                        return '75%';
+                      case 'capturing':
+                        return '50%';
+                      case 'rendering':
+                        return '25%';
+                      default:
+                        return '10%';
+                    }
+                  })(),
+                  backgroundColor: '#1340FF',
+                  transition: 'width 0.8s ease-out',
+                }}
+              />
+            </Box>
+            
+            {/* Cult logo in the center */}
+            <Box
+              component="img"
+              src="/logo/newlogo.svg"
+              alt="Cult Creative"
+              sx={{
+                width: 32,
+                height: 32,
+                position: 'relative',
+                zIndex: 2,
+                filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
+                animation: captureLoading ? 'popIn 0.6s 0.2s ease-out forwards' : 'none',
+                opacity: 0,
+                '@keyframes popIn': {
+                  '0%': { opacity: 0, transform: 'scale(0.8)' },
+                  '70%': { opacity: 1, transform: 'scale(1.1)' },
+                  '100%': { opacity: 1, transform: 'scale(1)' }
+                },
+              }}
+            />
+          </Box>
+          
+          <Typography 
+            sx={{ 
+              mt: 1.5, 
+              mb: 0.5,
+              fontWeight: 600, 
+              fontSize: 16, 
+              color: '#231F20',
+              fontFamily: 'Aileron, sans-serif',
+              textAlign: 'center',
+              letterSpacing: '0.01em',
+              animation: captureLoading ? 'slideUp 0.5s 0.3s ease-out forwards' : 'none',
+              opacity: 0,
+              transform: 'translateY(10px)',
+              '@keyframes slideUp': {
+                to: { opacity: 1, transform: 'translateY(0)' }
+              },
+            }}
+          >
+            {captureState === 'preparing' && 'Preparing media kit...'}
+            {captureState === 'rendering' && 'Loading all content...'}
+            {captureState === 'capturing' && 'Capturing...'}
+            {captureState === 'processing' && 'Finalizing download...'}
+            {captureState === 'complete' && 'Download complete!'}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: 'rgba(0, 0, 0, 0.6)',
+              fontFamily: 'Aileron, sans-serif',
+              textAlign: 'center',
+              maxWidth: '240px',
+              fontSize: 13,
+              lineHeight: 1.4,
+              animation: captureLoading ? 'fadeIn 0.5s 0.4s ease-out forwards' : 'none',
+              opacity: 0,
+              '@keyframes fadeIn': {
+                to: { opacity: 1 }
+              },
+            }}
+          >
+            Please wait while we prepare your Media Kit
+          </Typography>
+        </Box>
       </Backdrop>
     </>
   );
