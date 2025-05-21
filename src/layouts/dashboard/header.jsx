@@ -129,7 +129,7 @@ export default function Header({ onOpenNav, isOnline }) {
     <>
       <AppBar
         sx={{
-          position: 'fixed',
+          position: 'absolute',
           borderBottom: 1,
           borderBottomColor: theme.palette.divider,
           height: HEADER.H_MOBILE,
