@@ -5,12 +5,17 @@ import {
   Box, 
   TextField, 
   Grid,
-  Button
+  Button,
+  Card,
+  CardContent,
+  Divider,
+  CircularProgress,
+  Paper,
+  LinearProgress
 } from '@mui/material';
 import { useSettingsContext } from 'src/components/settings';
 import { useState, useCallback, useEffect } from 'react';
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import { format } from 'date-fns';
 import { debounce } from 'lodash';
 import { fDate } from 'src/utils/format-time';
 import Iconify from 'src/components/iconify';
@@ -25,47 +30,54 @@ const ReportingView = () => {
     datePosted: '',
     creatorName: '',
   });
-
-  // Parse URL to determine platform and content type
+  
   const parseContentUrl = (inputUrl) => {
     try {
       const urlObj = new URL(inputUrl);
+      
       // Instagram
       if (urlObj.hostname.includes('instagram.com')) {
-        let contentId = '';
-        let type = 'Post';
+        // Get the shortcode from Instagram URL
+        let shortcode = '';
         
         if (urlObj.pathname.includes('/reel/')) {
-          type = 'Reel';
-          contentId = urlObj.pathname.split('/reel/')[1].split('/')[0];
+          shortcode = urlObj.pathname.split('/reel/')[1].split('/')[0];
+          return {
+            platform: 'Instagram',
+            type: 'Reel',
+            id: shortcode,
+          };
         } else if (urlObj.pathname.includes('/p/')) {
-          type = 'Post';
-          contentId = urlObj.pathname.split('/p/')[1].split('/')[0];
-        } else {
-          return null;
+          shortcode = urlObj.pathname.split('/p/')[1].split('/')[0];
+          return {
+            platform: 'Instagram',
+            type: 'Post',
+            id: shortcode,
+          };
         }
-        
-        return {
-          platform: 'Instagram',
-          type,
-          id: contentId,
-        };
       }
+      
       // TikTok
       if (urlObj.hostname.includes('tiktok.com')) {
-        const videoId = urlObj.pathname.split('/video/')[1]?.split('?')[0] || 
-                      urlObj.pathname.split('/photo/')[1]?.split('?')[0];
-        const username = urlObj.pathname.split('@')[1]?.split('/')[0];
-        
-        if (!videoId || !username) return null;
-
-        return {
-          platform: 'TikTok',
-          type: urlObj.pathname.includes('/photo/') ? 'Photo' : 'Video',
-          id: videoId,
-          username
-        };
+        // TikTok URL can be in different formats
+        if (urlObj.pathname.includes('/video/')) {
+          const videoId = urlObj.pathname.split('/video/')[1].split('?')[0];
+          return {
+            platform: 'TikTok',
+            type: 'Video',
+            id: videoId,
+          };
+        } else if (urlObj.pathname.match(/\/@[^/]+\/[^/]+/)) {
+          // Handle format like /@username/video/1234567890
+          const videoId = urlObj.pathname.split('/').pop().split('?')[0];
+          return {
+            platform: 'TikTok',
+            type: 'Video',
+            id: videoId,
+          };
+        }
       }
+      
       return null;
     } catch (error) {
       console.error('Invalid URL:', error);
@@ -78,67 +90,83 @@ const ReportingView = () => {
     setLoading(true);
     try {
       if (parsedUrl.platform === 'Instagram') {
-        // First get the content details
+        // Fetch basic video data first
         const response = await axiosInstance.get(
           endpoints.creators.social.instagramContent(parsedUrl.id)
         );
-        
+          
         if (response.data?.instagramVideo) {
           const video = response.data.instagramVideo;
           
           // Get creator information
-          try {
-            const creatorInfo = await axiosInstance.get(
-              endpoints.creators.social.getCreatorByInstagramContent(parsedUrl.id)
-            );
-            
-            // Format the timestamp if available
-            const formattedDate = video.timestamp ? fDate(video.timestamp, 'dd/MM/yy') : 'Not available';
-            
-            setContentData({
-              account: 'Instagram',
-              contentType: parsedUrl.type,
-              datePosted: formattedDate,
-              creatorName: creatorInfo.data?.name || 'Unknown Creator',
-              caption: video.caption || "No caption available",
-              metrics: {
-                likes: video.like_count || 0,
-                comments: video.comments_count || 0,
-                shares: 0, // Instagram doesn't provide share counts
-                views: 0, // Only use real data
-                mediaType: video.media_type,
-                permalink: video.permalink,
-                mediaUrl: video.media_url || video.thumbnail_url || '/assets/images/placeholder-image.jpg'
-              },
-            });
-          } catch (creatorError) {
-            // If creator info fails, still show content but with limited info
-            console.error('Error fetching creator info:', creatorError);
-            setContentData({
-              account: 'Instagram',
-              contentType: parsedUrl.type,
-              datePosted: video.timestamp ? format(new Date(video.timestamp), 'dd/MM/yy') : 'Not available',
-              creatorName: 'Creator',
-              caption: video.caption || "No caption available",
-              metrics: {
-                likes: video.like_count || 0,
-                comments: video.comments_count || 0,
-                shares: 0, // Instagram doesn't provide share counts
-                views: 0, // Only use real data
-                mediaType: video.media_type,
-                permalink: video.permalink,
-                mediaUrl: video.media_url || video.thumbnail_url || '/assets/images/placeholder-image.jpg'
-              },
-            });
+          const creatorResponse = await axiosInstance.get(
+            endpoints.creators.social.getCreatorByInstagramContent(video.id)
+          );
+          
+          // Prepare metrics with video data as fallback
+          let metrics = {
+            likes: video.like_count,
+            comments: video.comments_count,
+            shares: video.shares_count,
+            views: 0,
+            reach: video.reach_count,
+            saved: video.saved_count,
+            profileVisits: 0,
+            interactions: (video.like_count || 0) + (video.comments_count || 0),
+            engagementRate: 0,
+            mediaType: video.media_type,
+            permalink: video.permalink,
+            mediaUrl: video.media_url || video.thumbnail_url || '/assets/images/placeholder-image.jpg',
+            comparisonMetrics: {
+              likesChange: '+8%',
+              commentsChange: '+5%',
+              viewsChange: '+20%',
+              savedChange: '+15%'
+            }
+          };
+          
+          // Try to get insights data if we have creator ID
+          if (creatorResponse.data?.id) {
+            try {
+              const insightResponse = await axiosInstance.get(
+                endpoints.creators.social.getInstagramMediaInsight(creatorResponse.data?.id),
+                { params: { url: parsedUrl.originalUrl } }
+              );
+              
+              // If insights exist, update metrics with real data
+              if (insightResponse.data?.insight && insightResponse.data.insight.length > 0) {
+                const insight = insightResponse.data.insight;
+                
+                // Override fallback metrics with real insight data
+                metrics.likes = insight.find(item => item.name === 'likes')?.value || metrics.likes;
+                metrics.comments = insight.find(item => item.name === 'comments')?.value || metrics.comments;
+                metrics.shares = insight.find(item => item.name === 'shares')?.value || metrics.shares;
+                metrics.views = insight.find(item => item.name === 'views')?.value || metrics.views;
+                metrics.reach = insight.find(item => item.name === 'reach')?.value || metrics.reach;
+                metrics.saved = insight.find(item => item.name === 'saved')?.value || metrics.saved;
+                metrics.interactions = insight.find(item => item.name === 'total_interactions')?.value || metrics.interactions;
+              }
+            } catch (error) {
+              console.log('Insights not available, using fallback data:', error);
+            }
           }
+          
+          // Set content data with our best available metrics
+          setContentData({
+            account: 'Instagram',
+            contentType: video.media_type === 'CAROUSEL_ALBUM' ? 'Carousel' : 
+                        video.media_type === 'VIDEO' ? 'Reel' : 'Post',
+            datePosted: video.datePosted ? fDate(video.datePosted) : 'Not available',
+            creatorName: creatorResponse.data?.name || 'Unknown Creator',
+            caption: video.caption || "No caption available",
+            metrics: metrics
+          });
         } else {
           setContentData({
             error: "This content is not tracked in our system. Only content from connected creator accounts can be analyzed."
           });
         }
-      }
-
-      if (parsedUrl.platform === 'TikTok') {
+      } else if (parsedUrl.platform === 'TikTok') {
         // First get the content details
         const response = await axiosInstance.get(
           endpoints.creators.social.tiktokContent(parsedUrl.id)
@@ -149,7 +177,7 @@ const ReportingView = () => {
           
           // Get creator information
           try {
-            const creatorInfo = await axiosInstance.get(
+            const creatorResponse = await axiosInstance.get(
               endpoints.creators.social.getCreatorByTiktokContent(parsedUrl.id)
             );
             
@@ -157,51 +185,77 @@ const ReportingView = () => {
             const likes = video.like_count || 0;
             const comments = video.comment_count || 0;
             const shares = video.share_count || 0;
+            const views = video.view_count || 0;
+            const favorites = video.favorites_count || 0;
             const interactions = video.interactions || (likes + comments + shares);
+            
+            // Estimate reach (not directly provided by TikTok API)
+            const estimatedReach = Math.round(views * 0.5);
+            const engagementRate = estimatedReach ? ((interactions / estimatedReach) * 100).toFixed(2) : 0;
             
             setContentData({
               account: 'TikTok',
-              contentType: parsedUrl.type,
-              datePosted: video.create_time ? fDate(video.create_time, 'dd/MM/yy') : 'Not available',
-              creatorName: creatorInfo.data?.display_name || 'Unknown Creator',
+              contentType: 'Video',
+              datePosted: video.create_time ? fDate(video.create_time) : 'Not available',
+              creatorName: creatorResponse.data?.display_name || 'Unknown Creator',
               caption: video.description || "No caption available",
               metrics: {
                 likes: likes,
                 comments: comments,
                 shares: shares,
-                views: video.view_count || 0,
-                favorites: video.favorites_count || 0,
+                views: views,
+                reach: estimatedReach,
+                saved: favorites,
                 interactions: interactions,
-                mediaType: parsedUrl.type,
+                engagementRate: engagementRate,
+                mediaType: 'Video',
                 permalink: video.embed_link,
-                mediaUrl: video.cover_image_url || '/assets/images/placeholder-image.jpg'
+                mediaUrl: video.cover_image_url || '/assets/images/placeholder-image.jpg',
+                comparisonMetrics: {
+                  likesChange: '--',
+                  commentsChange: '--',
+                  viewsChange: '--',
+                  savedChange: '--'
+                }
               },
             });
           } catch (creatorError) {
             console.error('Error fetching creator info:', creatorError);
             
-            // Calculate interactions from actual data
+            // Calculate interactions from actual data without creator info
             const likes = video.like_count || 0;
             const comments = video.comment_count || 0;
             const shares = video.share_count || 0;
+            const views = video.view_count || 0;
+            const favorites = video.favorites_count || 0;
             const interactions = video.interactions || (likes + comments + shares);
+            
+            // Estimate reach (not directly provided by TikTok API)
+            const estimatedReach = Math.round(views * 0.5);
             
             setContentData({
               account: 'TikTok',
-              contentType: parsedUrl.type,
-              datePosted: video.create_time ? fDate(video.create_time, 'dd/MM/yy') : 'Not available',
-              creatorName: parsedUrl.username || 'Creator',
+              contentType: 'Video',
+              datePosted: video.create_time ? fDate(new Date(video.create_time * 1000)) : 'Not available',
+              creatorName: 'Creator',
               caption: video.description || "No caption available",
               metrics: {
                 likes: likes,
                 comments: comments,
                 shares: shares,
-                views: video.view_count || 0,
-                favorites: video.favorites_count || 0,
+                views: views,
+                reach: estimatedReach,
+                saved: favorites,
                 interactions: interactions,
-                mediaType: parsedUrl.type,
+                mediaType: 'Video',
                 permalink: video.embed_link,
-                mediaUrl: video.cover_image_url || '/assets/images/placeholder-image.jpg'
+                mediaUrl: video.cover_image_url || '/assets/images/placeholder-image.jpg',
+                comparisonMetrics: {
+                  likesChange: '--',
+                  commentsChange: '--',
+                  viewsChange: '--',
+                  savedChange: '--'
+                }
               },
             });
           }
@@ -210,7 +264,7 @@ const ReportingView = () => {
             error: "This content is not tracked in our system. Only content from connected creator accounts can be analyzed."
           });
         }
-      }   
+      } 
     } catch (error) {
       console.error('Error fetching content:', error);
       setContentData({
@@ -227,10 +281,21 @@ const ReportingView = () => {
         handleClearContent();
         return;
       }
+
+      console.log("Original input URL:", inputUrl);
       
       const parsedUrl = parseContentUrl(inputUrl);
+
+      console.log("Parsed URL result:", parsedUrl);
+
       if (parsedUrl) {
+        parsedUrl.originalUrl = inputUrl;
         fetchContentData(parsedUrl);
+      } else {
+        setContentData({
+          error: "Invalid URL format. Please enter a valid Instagram or TikTok post URL."
+        });
+        setLoading(false);
       }
     }, 500),
     [fetchContentData]
@@ -256,6 +321,127 @@ const ReportingView = () => {
     setUrl('');
     handleClearContent();
   };
+
+  const renderStatBar = ({label, value}) => {
+    // Default to 0 if value is undefined or null
+    const displayValue = value || 0;
+    
+    // Calculate progress values based on the highest possible value among all metrics
+    // This ensures the bar length accurately reflects the value proportionally
+    const getProgressValue = (val) => {
+      // Assuming maximum value we might encounter is around 200
+      // Adjust this if your data has different ranges
+      const maxPossibleValue = 200;
+      return (val / maxPossibleValue) * 100;
+    };
+
+    return (
+      <Box sx={{ mb: 1, width: '80%' }}>
+        {/* Label in gray, large italic font */}
+        <Typography 
+          sx={{ 
+            fontSize: 32,
+            fontStyle: 'italic',
+            color: '#777',
+            fontFamily: 'Aileron',
+          }}
+        >
+          {label}
+        </Typography>
+        
+        <Box sx={{ position: 'relative', width: '100%' }}>
+          {/* Blue progress bar */}
+          <LinearProgress
+            variant="determinate"
+            value={getProgressValue(displayValue)}
+            sx={{
+              width: '100%',
+              height: 45,
+              borderRadius: 50,
+              backgroundColor: '#e0e0e0',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: '#0066FF',
+                borderRadius: 50,
+              },
+            }}
+          />
+          
+          {/* Number positioned to the right of the bar */}
+          <Typography 
+            sx={{ 
+              position: 'absolute',
+              right: -70, // Adjust this value to position the number correctly
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: 24,
+              fontWeight: 400,
+              color: '#555',
+              ml: 2
+            }}
+          >
+            {displayValue}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderEngagementCard = ({icon, title, value, change, isPositive}) => (
+    <Grid item xs={6} sm={3}>
+      <Paper
+        elevation={0}
+        sx={{
+          backgroundColor: '#f0f0f0',
+          borderRadius: 2,
+          padding: 2
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <Box 
+            sx={{ 
+              backgroundColor: '#0066FF', 
+              borderRadius: 1,
+              width: 32, 
+              height: 32, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              mr: 1
+            }}
+          >
+            <Iconify icon={icon} color="#fff" width={18} height={18} />
+          </Box>
+          <Typography sx={{ fontSize: 14, color: '#666' }}>
+            {title}
+          </Typography>
+        </Box>
+        
+        <Typography sx={{ fontSize: 20, fontWeight: 600, color: '#000' }}>
+          {typeof value === 'number' ? value.toLocaleString() : value}
+        </Typography>
+        
+        {change && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+            <Iconify 
+              icon={isPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'} 
+              color={isPositive ? '#4CAF50' : '#F44336'} 
+              width={14} 
+              height={14} 
+            />
+            <Typography 
+              sx={{ 
+                fontSize: 12,
+                color: isPositive ? '#4CAF50' : '#F44336',
+                ml: 0.5
+              }}
+            >
+              {change} from last post
+            </Typography>
+          </Box>
+        )}
+      </Paper>
+    </Grid>
+  );
 
   const reportLanding = () => {
     if (!url || !contentData.account) {
@@ -295,312 +481,166 @@ const ReportingView = () => {
     return null;
   };
 
-  const renderContentSection = () => {
-    if (!url || !contentData.account) {
-      return null;
-    }
-
-    if (contentData.error) {
-      return (
-        <Typography 
-          color="error" 
-          sx={{ mt: 3 }}
-        >
-          {contentData.error}
-        </Typography>
-      );
-    }
+  const renderContentDetails = () => {
+    if (!contentData.account) return null;
 
     return (
-      <Box mt={5}>
+      <Box sx={{ mt: 4 }}>
         <Typography
-          variant="h3"
+          variant="h4"
           sx={{
-            fontFamily: 'Aileron, sans-serif',
-            fontWeight: 600,
             fontSize: 24,
-            color: '#231F20',
-            mb: 1
+            fontWeight: 600,
+            mb: 3
           }}
         >
           Selected Content
         </Typography>
-        
+
         <Grid container spacing={3}>
-          {/* Left Side - Image */}
+          {/* Content Image and Caption */}
           <Grid item xs={12} md={5}>
-            <Box 
-              sx={{ 
-                width: '100%', 
-                height: 623,
-                bgcolor: '#f5f5f5',
-                mb: 2,
+            <Card 
+              sx={{  
+                borderRadius: 0,          // Sharp corners
                 overflow: 'hidden',
-                position: 'relative'
+                height: 'auto',           // Changed from 100% to auto
+                boxShadow: 'none',
+                border: '1px solid #eee',
+                display: 'flex',
+                flexDirection: 'column'
               }}
             >
               <Box
                 component="img"
-                src={contentData.metrics?.mediaUrl || '/assets/images/placeholder-image.jpg'}
-                alt="Content Preview"
+                src={contentData.metrics?.mediaUrl}
+                alt={contentData.caption || "Content"}
                 sx={{
                   width: '100%',
-                  height: '100%',
+                  aspectRatio: '1',       // Square aspect ratio
                   objectFit: 'cover',
-                  objectPosition: 'center',
-                }}
-                onError={(e) => {
-                  e.target.src = '/assets/icons/platforms/instagram.svg';
-                  e.target.style.padding = '40px';
-                  e.target.style.background = '#f5f5f5';
+                  display: 'block'        // Removes any extra spacing
                 }}
               />
-            </Box>
-            <Typography 
-              variant="body1" 
-              color="text.secondary"
-              sx={{ 
-                mt: 1, 
-                fontSize: 16,
-                lineHeight: 1.6,
-                fontFamily: 'Aileron, sans-serif',
-              }}
-            >
-              {contentData.caption}
-            </Typography>
-          </Grid>
-          
-          {/* Right Side - Content Info */}
-          <Grid item xs={12} md={7}>
-            <Grid container spacing={0}>
-              <Grid item xs={4}>
-                <Box 
-                  sx={{ 
-                    p: 3, 
-                    borderRight: '1px solid #0077FF',
-                    height: '100%' 
-                  }}
-                >
-                  <Typography 
-                    variant="subtitle1" 
-                    color="text.secondary"
-                    sx={{ mb: 2, fontFamily: "'Aileron', sans-serif", fontSize: 20, fontWeight: 600, color: '#606060' }}
-                  >
-                    Account
-                  </Typography>
-                  <Typography 
-                    sx={{ 
-                      fontSize: {xs: 28, md: 36},
-                      fontWeight: 400, 
-                      color: '#0066FF',
-                      fontFamily: 'Instrument Serif',
-                    }}
-                  >
-                    {contentData.account}
-                  </Typography>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={4}>
-                <Box 
-                  sx={{ 
-                    p: 3, 
-                    borderRight: '1px solid #0077FF',
-                    height: '100%' 
-                  }}
-                >
-                  <Typography 
-                    variant="subtitle1" 
-                    color="text.secondary"
-                    sx={{ mb: 2, fontFamily: "'Aileron', sans-serif", fontSize: 20, fontWeight: 600, color: '#606060' }}
-                  >
-                    Content Type
-                  </Typography>
-                  <Typography 
-                    sx={{ 
-                      fontSize: {xs: 28, md: 36}, 
-                      fontWeight: 400, 
-                      color: '#0066FF',
-                      fontFamily: 'Instrument Serif',
-                    }}
-                  >
-                    {contentData.contentType}
-                  </Typography>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={4}>
-                <Box 
-                  sx={{ 
-                    p: 3,
-                    height: '100%' 
-                  }}
-                >
-                  <Typography 
-                    variant="subtitle1" 
-                    color="text.secondary"
-                    sx={{ mb: 2, fontFamily: "'Aileron', sans-serif", fontSize: 20, fontWeight: 600, color: '#606060' }}
-                  >
-                    Date Posted
-                  </Typography>
-                  <Typography 
-                    sx={{ 
-                      fontSize: {xs: 28, md: 36},
-                      fontWeight: 400, 
-                      color: '#0066FF',
-                      fontFamily: 'Instrument Serif',
-                    }}
-                  >
-                    {contentData.datePosted}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-            
-            {/* Content Statistics */}
-            <Box mt={4} p={3}>
-              <Typography
-                variant="h3"
-                sx={{
-                  fontFamily: 'Aileron, sans-serif',
-                  fontWeight: 600,
-                  fontSize: 24,
-                  color: '#231F20',
-                  mb: 2
+              <Box 
+                sx={{ 
+                  p: 2, 
+                  borderTop: '1px solid #eee'  // Add a subtle separator
                 }}
               >
-                Content Statistics
-              </Typography>
-              
-              {/* Shares */}
-              <Box mb={3}>
-                <Typography 
-                  sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 32,
-                    fontWeight: 400,
-                    fontStyle: 'italic',
-                    color: '#606060',
-                    mb: 1
+                <Typography
+                  sx={{
+                    fontSize: 14,
+                    color: '#333',
+                    mb: 0,
+                    lineHeight: 1.4
                   }}
                 >
-                  Shares
+                  {contentData.caption}
                 </Typography>
-                <Box display="flex" alignItems="center">
-                  <Box 
-                    sx={{ 
-                      height: 45,
-                      bgcolor: '#0066FF',
-                      borderRadius: 10,
-                      width: contentData.metrics?.shares > 0 ? 
-                        `${Math.min(Math.max((contentData.metrics?.shares || 0) / 100 * 80, 10), 85)}%` : 
-                        '10%', // Minimum width for visual consistency
-                      mr: 2
-                    }}
-                  />
-                  <Typography 
-                    sx={{ 
-                      fontFamily: 'Aileron, sans-serif',
-                      fontSize: 20,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {contentData.metrics?.shares?.toLocaleString() || 0}
-                  </Typography>
-                </Box>
+              </Box>
+            </Card>
+          </Grid>
+
+          {/* Content Stats */}
+          <Grid item xs={12} md={7}>
+            {/* Account, Content Type, Date Posted Row */}
+            <Box 
+              sx={{ 
+                display: 'flex',
+                mb: 3,
+                pb: 2,
+              }}
+            >
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <Typography sx={{ fontSize: 20, color: '#666', mb: 1 }}>Account</Typography>
+                <Typography 
+                  sx={{ 
+                    fontSize: 36, 
+                    color: '#0066FF',
+                    fontWeight: 400,
+                    fontFamily: '"Instrument Serif", serif'
+                  }}
+                >
+                  {contentData.account}
+                </Typography>
               </Box>
               
-              {/* Interactions */}
-              <Box mb={3}>
+              <Divider orientation="vertical" flexItem sx={{ mx: 2, borderColor: '#0066FF', borderWidth: 0.5 }} />
+              
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <Typography sx={{ fontSize: 20, color: '#666', mb: 1 }}>Content Type</Typography>
                 <Typography 
                   sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 32,
+                    fontSize: 36, 
+                    color: '#0066FF',
                     fontWeight: 400,
-                    fontStyle: 'italic',
-                    color: '#606060',
-                    mb: 1
+                    fontFamily: '"Instrument Serif", serif'
                   }}
                 >
-                  Interactions
+                  {contentData.contentType}
                 </Typography>
-                <Box display="flex" alignItems="center">
-                  <Box 
-                    sx={{ 
-                      height: 45,
-                      bgcolor: '#0066FF',
-                      borderRadius: 10,
-                      width: contentData.metrics?.interactions > 0 ? 
-                        `${Math.min(Math.max((contentData.metrics?.interactions || 0) / 200 * 70, 20), 90)}%` : 
-                        '20%', // Minimum width for visual consistency
-                      mr: 2
-                    }}
-                  />
-                  <Typography 
-                    sx={{ 
-                      fontFamily: 'Aileron, sans-serif',
-                      fontSize: 20,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {contentData.metrics?.interactions?.toLocaleString() || 
-                     ((contentData.metrics?.likes || 0) + 
-                      (contentData.metrics?.comments || 0) + 
-                      (contentData.metrics?.shares || 0)).toLocaleString()}
-                  </Typography>
-                </Box>
               </Box>
               
-              {/* Reach */}
-              <Box mb={4}>
+              <Divider orientation="vertical" flexItem sx={{ mx: 2, borderColor: '#0066FF', borderWidth: 0.5 }} />
+              
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <Typography sx={{ fontSize: 20, color: '#666', mb: 1 }}>Date Posted</Typography>
                 <Typography 
                   sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 32,
+                    fontSize: 36, 
+                    color: '#0066FF',
                     fontWeight: 400,
-                    fontStyle: 'italic',
-                    color: '#606060',
-                    mb: 1
+                    fontFamily: '"Instrument Serif", serif'
                   }}
                 >
-                  Reach
+                  {contentData.datePosted}
                 </Typography>
-                <Box display="flex" alignItems="center">
-                  <Box 
-                    sx={{ 
-                      height: 45,
-                      bgcolor: '#0066FF',
-                      borderRadius: 10,
-                      width: contentData.metrics?.views > 0 ? 
-                        `${Math.min(Math.max((contentData.metrics?.views || 0) / 1000 * 60, 30), 80)}%` : 
-                        '30%', // Minimum width for visual consistency
-                      mr: 2
-                    }}
-                  />
-                  <Typography 
-                    sx={{ 
-                      fontFamily: 'Aileron, sans-serif',
-                      fontSize: 20,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {contentData.metrics?.views?.toLocaleString() || 0}
-                  </Typography>
-                </Box>
               </Box>
             </Box>
+
+            {/* Stats bars section */}
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontSize: 32,
+                fontWeight: 600,
+                mb: 4
+              }}
+            >
+              Content Statistics
+            </Typography>
+
+            {/* Stats bars */}
+            {renderStatBar({
+              label: 'Profile Visits',
+              value: contentData.metrics?.profileVisits || 0
+            })}
+
+            {renderStatBar({
+              label: 'Shares',
+              value: contentData.metrics?.shares_count || 0
+            })}
+
+            {renderStatBar({
+              label: 'Interactions',
+              value: contentData.metrics?.interactions || 0
+            })}
+
+            {renderStatBar({
+              label: 'Reach',
+              value: contentData.metrics?.reach || 0
+            })}
           </Grid>
         </Grid>
-        
-        {/* Content Engagement Section - Moved below both columns */}
-        <Box mt={5}>
+
+        {/* Content Engagement Section */}
+        <Box sx={{ mt: 6, mb: 4 }}>
           <Typography
-            variant="h3"
+            variant="h5"
             sx={{
-              fontFamily: 'Aileron, sans-serif',
+              fontSize: 20,
               fontWeight: 600,
-              fontSize: 24,
-              color: '#231F20',
               mb: 3
             }}
           >
@@ -608,245 +648,101 @@ const ReportingView = () => {
           </Typography>
           
           <Grid container spacing={2}>
-            {/* Views */}
-            <Grid item xs={6} sm={3}>
-              <Box 
-                sx={{ 
-                  bgcolor: '#f0f0f0',
-                  borderRadius: 2,
-                  p: 2,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <Box sx={{ mb: 1, display: 'flex', justifyContent: 'center' }}>
-                  <Iconify icon="mdi:eye" color="#0066FF" width={28} height={28} />
-                </Box>
-                <Typography 
-                  sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 16,
-                    color: '#606060',
-                    mb: 0.5
-                  }}
-                >
-                  Views
-                </Typography>
-                <Typography 
-                  sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 24,
-                    fontWeight: 600,
-                    color: '#231F20',
-                    textAlign: 'center'
-                  }}
-                >
-                  {contentData.metrics?.views?.toLocaleString() || 0}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <Iconify 
-                    icon="mdi:arrow-up" 
-                    color="#4CAF50" 
-                    width={16} 
-                    height={16} 
-                  />
-                  <Typography 
-                    sx={{ 
-                      fontFamily: 'Aileron, sans-serif',
-                      fontSize: 14,
-                      color: '#4CAF50',
-                      ml: 0.5
-                    }}
-                  >
-                    12% from last post
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
+            {renderEngagementCard({
+              icon: 'mdi:eye',
+              title: 'Views',
+              value: contentData.metrics?.views || 0,
+              change: '--',
+              isPositive: false
+            })}
             
-            {/* Likes */}
-            <Grid item xs={6} sm={3}>
-              <Box 
-                sx={{ 
-                  bgcolor: '#f0f0f0',
-                  borderRadius: 2,
-                  p: 2,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <Box sx={{ mb: 1, display: 'flex', justifyContent: 'center' }}>
-                  <Iconify icon="mdi:heart" color="#0066FF" width={28} height={28} />
-                </Box>
-                <Typography 
-                  sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 16,
-                    color: '#606060',
-                    mb: 0.5
-                  }}
-                >
-                  Likes
-                </Typography>
-                <Typography 
-                  sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 24,
-                    fontWeight: 600,
-                    color: '#231F20',
-                    textAlign: 'center'
-                  }}
-                >
-                  {contentData.metrics?.likes?.toLocaleString() || 0}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <Iconify 
-                    icon="mdi:arrow-down" 
-                    color="#F44336" 
-                    width={16} 
-                    height={16} 
-                  />
-                  <Typography 
-                    sx={{ 
-                      fontFamily: 'Aileron, sans-serif',
-                      fontSize: 14,
-                      color: '#F44336',
-                      ml: 0.5
-                    }}
-                  >
-                    5% from last post
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
+            {renderEngagementCard({
+              icon: 'mdi:heart',
+              title: 'Likes',
+              value: contentData.metrics?.likes || 0,
+              change: '--',
+              isPositive: false
+            })}
             
-            {/* Comments */}
-            <Grid item xs={6} sm={3}>
-              <Box 
-                sx={{ 
-                  bgcolor: '#f0f0f0',
-                  borderRadius: 2,
-                  p: 2,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <Box sx={{ mb: 1, display: 'flex', justifyContent: 'center' }}>
-                  <Iconify icon="mdi:comment" color="#0066FF" width={28} height={28} />
-                </Box>
-                <Typography 
-                  sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 16,
-                    color: '#606060',
-                    mb: 0.5
-                  }}
-                >
-                  Comments
-                </Typography>
-                <Typography 
-                  sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 24,
-                    fontWeight: 600,
-                    color: '#231F20',
-                    textAlign: 'center'
-                  }}
-                >
-                  {contentData.metrics?.comments?.toLocaleString() || 0}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <Iconify 
-                    icon="mdi:arrow-up" 
-                    color="#4CAF50" 
-                    width={16} 
-                    height={16} 
-                  />
-                  <Typography 
-                    sx={{ 
-                      fontFamily: 'Aileron, sans-serif',
-                      fontSize: 14,
-                      color: '#4CAF50',
-                      ml: 0.5
-                    }}
-                  >
-                    10% from last post
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
+            {renderEngagementCard({
+              icon: 'mdi:comment',
+              title: 'Comments',
+              value: contentData.metrics?.comments || 0,
+              change: '--',
+              isPositive: false
+            })}
             
-            {/* Saved */}
-            <Grid item xs={6} sm={3}>
-              <Box 
-                sx={{ 
-                  bgcolor: '#f0f0f0',
-                  borderRadius: 2,
-                  p: 2,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <Box sx={{ mb: 1, display: 'flex', justifyContent: 'center' }}>
-                  <Iconify icon="mdi:bookmark" color="#0066FF" width={28} height={28} />
-                </Box>
-                <Typography 
-                  sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 16,
-                    color: '#606060',
-                    mb: 0.5
-                  }}
-                >
-                  Saved
-                </Typography>
-                <Typography 
-                  sx={{ 
-                    fontFamily: 'Aileron, sans-serif',
-                    fontSize: 24,
-                    fontWeight: 600,
-                    color: '#231F20',
-                    textAlign: 'center'
-                  }}
-                >
-                  {contentData.metrics?.favorites?.toLocaleString() || 0}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <Iconify 
-                    icon="mdi:arrow-down" 
-                    color="#F44336" 
-                    width={16} 
-                    height={16} 
-                  />
-                  <Typography 
-                    sx={{ 
-                      fontFamily: 'Aileron, sans-serif',
-                      fontSize: 14,
-                      color: '#F44336',
-                      ml: 0.5
-                    }}
-                  >
-                    11% from last post
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
+            {renderEngagementCard({
+              icon: 'mdi:bookmark',
+              title: 'Saved',
+              value: contentData.metrics?.saved || 0,
+              change: '--',
+              isPositive: false
+            })}
           </Grid>
         </Box>
       </Box>
     );
+  };
+
+  const renderContentSection = () => {
+    if (!url) {
+      return null;
+    }
+
+    if (loading) {
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '50vh'
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if (contentData.error) {
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '30vh',
+            gap: 2,
+            mt: 5
+          }}
+        >
+          <Iconify icon="mdi:alert-circle-outline" color="#F44336" width={48} height={48} />
+          <Typography 
+            color="error" 
+            sx={{ 
+              mt: 1, 
+              textAlign: 'center',
+              maxWidth: 600,
+              fontFamily: 'Aileron, sans-serif',
+            }}
+          >
+            {contentData.error}
+          </Typography>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleBack}
+            sx={{ mt: 2 }}
+          >
+            Try Another URL
+          </Button>
+        </Box>
+      );
+    }
+
+    return renderContentDetails();
   };
 
   return (
@@ -855,66 +751,57 @@ const ReportingView = () => {
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         justifyContent="space-between"
-        sx={{
-          alignItems: { xs: 'center', md: 'flex-end' }
-        }}
+        alignItems={{ xs: 'flex-start', md: 'flex-end' }}
+        sx={{ mb: 5 }}
       >
-        {/* Content Title & URL Section */}
-        <Stack>
-          {(contentData.account) && (
+        {/* Left side: Back button, Title, Description, URL input */}
+        <Box sx={{ width: '100%' }}>
+          {contentData.account && (
             <Button
               startIcon={<Iconify icon="ion:chevron-back" />}
               onClick={handleBack}
               sx={{
-                justifyContent: 'flex-start',
-                color: '#636366',
-                fontFamily: 'Aileron, sans-serif',
-                fontSize: '14px',
-                fontWeight: 600,
-                '&:hover': {
-                  backgroundColor: '#fff',
-                }
+                color: '#666',
+                fontWeight: 500,
+                '&:hover': { backgroundColor: 'transparent' }
               }}
             >
               Back
             </Button>
           )}
+          
           <Typography
-            variant="h1"
             sx={{
-              fontFamily: 'Aileron, sans-serif',
+              fontFamily: 'Aileron',
+              fontSize: { xs: 24, md: 48 },
               fontWeight: 400,
-              fontSize: { xs: 35, md: 48 },
-              color: '#231F20',
             }}
           >
-            {contentData.creatorName || ''}
+            {contentData.creatorName || 'Content Performance Report'}
           </Typography>
+          
+          {contentData.creatorName && (
+            <Typography
+              sx={{
+                fontFamily: 'Aileron',
+                fontSize: { xs: 24, md: 48 },
+                fontWeight: 400,
+              }}
+            >
+              Content Performance Report
+            </Typography>
+          )}
+          
           <Typography
-            variant="h2"
             sx={{
-              fontFamily: 'Aileron, sans-serif',
-              fontWeight: 400,
-              fontSize: { xs: 35, md: 48 },
-              color: '#231F20',
-            }}
-            mb={1}
-          >
-            Content Performance Report
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: 'Aileron, sans-serif',
-              fontWeight: 400,
-              fontSize: 16,
-              color: '#231F20',
+              fontSize: 14,
               mb: 1
             }}
           >
             Post Link
           </Typography>
+          
           <TextField
-            fullWidth
             placeholder="https://www.instagram.com/p/contentperformancereport/"
             value={url}
             onChange={(e) => {
@@ -924,38 +811,30 @@ const ReportingView = () => {
               }
             }}
             sx={{
+              width: '90%',
               '& .MuiOutlinedInput-root': {
                 borderRadius: '8px',
                 backgroundColor: '#fff',
-                '& fieldset': {
-                  borderColor: '#E0E0E0',
-                },
-                '&:hover fieldset': {
-                  borderColor: '#1340FF',
-                },
               },
             }}
           />
-        </Stack>
+        </Box>
         
-        {/* Logo Section */}
+        {/* Right side: Logo (only shown when content is loaded) */}
         {(url && contentData.account) && (
-          <Stack>
-            <Box
-              component="img"
-              src="/logo/cultcreativelogo.svg"
-              alt="Cult Creative Logo"
-              draggable="false"
-              sx={{
-                height: { xs: 60, sm: 100, md: 135 },
-                mt: { xs: 3 }
-              }}
-            />
-          </Stack>
+          <Box 
+            component="img"
+            src="/logo/cultcreativelogo.svg"
+            alt="Cult Creative Logo"
+            sx={{
+              height: { xs: 50, sm: 100, md: 130 },
+              alignSelf: { xs: 'flex-start', md: 'flex-end' },
+            }}
+          />
         )}
       </Stack>
 
-      {/* Conditionally render either content or landing page */}
+      {/* Content or Landing Page */}
       {renderContentSection()}
       {reportLanding()}
     </Container>
