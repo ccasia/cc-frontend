@@ -4,8 +4,16 @@ import { format, getTime, formatDistanceToNow } from 'date-fns';
 
 export function fDate(date, newFormat) {
   const fm = newFormat || 'dd MMM yyyy';
+  
+  if (!date) return '';
+  
+  // Handle TikTok's numeric timestamp format
+  if (typeof date === 'number' || !isNaN(Number(date))) {
+    // TikTok uses seconds, we need milliseconds
+    return format(new Date(Number(date) * 1000), fm);
+  }
 
-  return date ? format(new Date(date), fm) : '';
+  return format(new Date(date), fm);
 }
 
 export function fTime(date, newFormat) {
