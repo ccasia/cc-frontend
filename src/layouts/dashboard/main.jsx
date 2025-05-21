@@ -56,12 +56,13 @@ export default function Main({ children, sx, ...other }) {
         ref={mainRef}
         component="main"
         sx={{
+          // position: 'relative',
           display: 'flex',
           flexGrow: 1,
           height: 1,
           overflow: 'auto',
           flexDirection: 'column',
-          pt: `${HEADER.H_MOBILE + SPACING}px`,
+          py: `${HEADER.H_MOBILE + SPACING}px`,
           ...(lgUp && {
             px: 2,
             py: `${HEADER.H_DESKTOP + SPACING}px`,

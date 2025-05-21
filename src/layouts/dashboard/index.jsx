@@ -452,6 +452,7 @@ export default function DashboardLayout({ children }) {
 
         <Box
           sx={{
+            // position: 'relative',
             ...(lgUp && {
               width: 1,
               height: '95vh',
@@ -460,10 +461,6 @@ export default function DashboardLayout({ children }) {
               overflow: 'hidden',
               position: 'relative',
               bgcolor: (theme) => theme.palette.background.paper,
-            }),
-            ...(!lgUp && {
-              overflow: 'auto',
-              position: 'relative',
             }),
           }}
         >
@@ -492,15 +489,21 @@ export default function DashboardLayout({ children }) {
 
       <Box
         sx={{
+          // ...(lgUp && {
+          //   width: lgUp ? 1 : '90vw',
+          //   height: '95vh',
+          //   borderRadius: 2,
+          //   my: 'auto',
+          //   overflow: 'hidden',
+          //   position: 'relative',
+          //   bgcolor: (theme) => theme.palette.background.paper,
+          // }),
           width: lgUp ? 1 : '97vw',
           mx: 'auto',
           height: '97vh',
           borderRadius: 2,
           my: 'auto',
-          overflow: {
-            xs: 'auto',
-            lg: 'hidden',
-          },
+          overflow: 'hidden',
           position: 'relative',
           bgcolor: (theme) => theme.palette.background.paper,
         }}
