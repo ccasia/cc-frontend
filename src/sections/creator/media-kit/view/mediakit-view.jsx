@@ -1278,11 +1278,11 @@ const MediaKitCreator = () => {
               sx={{ width: '100%', pl: 1, pr: 1 }}
             >
               {/* Followers */}
-              <Stack alignItems="flex-start" sx={{ flex: 1 }}>
+              <Stack alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
-                  variant="h5"
+                  variant="h6"
                   color="#1340FF"
-                  fontWeight={400}
+                  fontWeight={700}
                   fontFamily="Instrument Serif"
                   mb={0.5}
                   align="left"
@@ -1302,37 +1302,12 @@ const MediaKitCreator = () => {
                 </Typography>
               </Stack>
 
-              {/* Average Comments */}
-              <Stack alignItems="flex-start" sx={{ flex: 1 }}>
+              {/* Avg Likes */}
+              <Stack alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
-                  variant="h5"
+                  variant="h6"
                   color="#1340FF"
-                  fontWeight={400}
-                  fontFamily="Instrument Serif"
-                  mb={0.5}
-                  align="left"
-                  sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
-                >
-                  {socialMediaAnalytics.averageComments?.toFixed(2)}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="#1340FF"
-                  fontFamily="Aileron, sans-serif"
-                  fontWeight={600}
-                  align="left"
-                  sx={{ fontSize: { xs: '0.75rem', sm: '1rem' } }}
-                >
-                  Avg Comments
-                </Typography>
-              </Stack>
-
-              {/* Average likes */}
-              <Stack alignItems="flex-start" sx={{ flex: 1 }}>
-                <Typography
-                  variant="h5"
-                  color="#1340FF"
-                  fontWeight={400}
+                  fontWeight={700}
                   fontFamily="Instrument Serif"
                   mb={0.5}
                   align="left"
@@ -1346,18 +1321,43 @@ const MediaKitCreator = () => {
                   fontFamily="Aileron, sans-serif"
                   fontWeight={600}
                   align="left"
-                  sx={{ fontSize: { xs: '0.75rem', sm: '1rem'} }}
+                  sx={{ fontSize: { xs: '0.75rem', sm: '1rem' } }}
                 >
                   Avg Likes
                 </Typography>
               </Stack>
 
-              {/* Total Engagement */}
-              <Stack alignItems="flex-start" sx={{ flex: 1 }}>
+              {/* Avg Comments */}
+              <Stack alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
-                  variant="h5"
+                  variant="h6"
                   color="#1340FF"
-                  fontWeight={400}
+                  fontWeight={700}
+                  fontFamily="Instrument Serif"
+                  mb={0.5}
+                  align="left"
+                  sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
+                >
+                  {socialMediaAnalytics.averageComments?.toFixed(2)}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="#1340FF"
+                  fontFamily="Aileron, sans-serif"
+                  fontWeight={600}
+                  align="left"
+                  sx={{ fontSize: { xs: '0.75rem', sm: '1rem'} }}
+                >
+                  Avg Comments
+                </Typography>
+              </Stack>
+
+              {/* Total Engagement */}
+              <Stack alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  variant="h6"
+                  color="#1340FF"
+                  fontWeight={700}
                   fontFamily="Instrument Serif"
                   mb={0.5}
                   align="left"

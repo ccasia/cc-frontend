@@ -42,41 +42,126 @@ const typeAnimation = keyframes`
   to { width: 100%; }
 `;
 
-const TopContentGrid = ({ topContents }) => {
+const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
   const topThreeContents = topContents.slice(0, 3);
 
-  // Dummy data for when no real data is available
-  const dummyContents = [
-    {
-      like: 15896,
-      comment: 342,
-      cover_image_url: 'https://images.unsplash.com/photo-1595623238469-fc58b3839cf6?q=80&w=1000',
-      video_description: '✨ Creating some amazing TikTok content today! Check out this new dance trend. #TikTokDance #Trending #FYP',
-      embed_link: 'https://www.tiktok.com/embed/7258519720680394006',
-    },
-    {
-      like: 12453,
-      comment: 256,
-      cover_image_url: 'https://images.unsplash.com/photo-1595623238469-fc58b3839cf6?q=80&w=1000',
-      video_description: '🎬 Behind the scenes of my latest TikTok challenge! So much fun making this. Drop a comment if you want to see more! #BTS #TikTokChallenge',
-      embed_link: 'https://www.tiktok.com/embed/7276481943133737243',
-    },
-    {
-      like: 9872,
-      comment: 189,
-      cover_image_url: 'https://images.unsplash.com/photo-1595623238469-fc58b3839cf6?q=80&w=1000',
-      video_description: '🌟 Trying out the viral recipe everyone is talking about! Super easy to make and tastes amazing! #FoodTok #Viral #Recipe',
-      embed_link: 'https://www.tiktok.com/embed/7288858839104369966',
-    }
-  ];
+  // Only use real data
+  const displayContents = topThreeContents;
 
-  // Use either real data or dummy data
-  const displayContents = topContents?.length > 0 ? topThreeContents : dummyContents;
+  // Carousel layout for mobile
+  if (isMobile) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'nowrap',
+          width: '100%',
+          gap: 0.5,
+          justifyContent: 'flex-start',
+          alignItems: 'stretch',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { height: 0, display: 'none' },
+          pb: 2,
+          scrollSnapType: 'x mandatory',
+          px: 0,
+          pt: 1,
+        }}
+      >
+        {displayContents.length > 0 && displayContents.map((content, index) => (
+          <Box
+            key={index}
+            sx={{
+              minWidth: 240,
+              maxWidth: 280,
+              flex: '0 0 auto',
+              scrollSnapAlign: 'center',
+              borderRadius: 0,
+              overflow: 'hidden',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+              bgcolor: 'background.paper',
+              display: 'flex',
+              flexDirection: 'column',
+              mx: 0,
+            }}
+          >
+            <Box
+              sx={{
+                position: 'relative',
+                height: 400,
+                width: '100%',
+                overflow: 'hidden',
+                borderRadius: 1,
+              }}
+            >
+              <iframe
+                src={content?.embed_link}
+                title={`TikTok video ${index + 1}`}
+                style={{ 
+                  height: '100%', 
+                  width: '100%', 
+                  border: 'none',
+                  borderRadius: '4px',
+                }}
+                allowFullScreen
+              />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  width: '100%',
+                  color: 'white',
+                  p: 2,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+                }}
+                className="media-kit-engagement-icons"
+              >
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="material-symbols:favorite-outline" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
+                  </Stack>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="iconamoon:comment" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
+                  </Stack>
+                </Stack>
+              </Box>
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                fontSize: '0.8rem',
+                mt: 2,
+                mx: 2,
+                mb: 2,
+                color: 'text.primary',
+                fontWeight: 500,
+                width: '100%',
+                maxWidth: '100%',
+                lineHeight: 1.5,
+              }}
+            >
+              {content.video_description || 'No description available'}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    );
+  }
 
+  // Desktop layout (unchanged)
   return (
     <Box
       sx={{
@@ -102,7 +187,7 @@ const TopContentGrid = ({ topContents }) => {
       animate="show"
       initial="hidden"
     >
-      {displayContents.map((content, index) => (
+      {displayContents.length > 0 && displayContents.map((content, index) => (
         <Box
           key={index}
           component={m.div}
@@ -211,8 +296,15 @@ TopContentGrid.defaultProps = {
 const MediaKitSocialContent = ({ tiktok }) => {
   const theme = useTheme();
   const { user } = useAuthContext();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const tiktokData = useSocialMediaData((state) => state.tiktok);
+
+  // Get the real data from store
+  const realTopContent = tiktokData?.creator?.tiktokUser?.sortedVideos;
+  // Check if we have real content
+  const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
+  const isConnected = !!user?.creator?.isTiktokConnected;
 
   const connectTiktok = async () => {
     try {
@@ -224,8 +316,8 @@ const MediaKitSocialContent = ({ tiktok }) => {
     }
   };
 
-  // Comment out this condition to always show dummy data
-  if (!user?.creator?.isTiktokConnected)
+  if (!isConnected) {
+    // Show connect TikTok prompt
     return (
       <Box
         component={m.div}
@@ -233,49 +325,60 @@ const MediaKitSocialContent = ({ tiktok }) => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
         sx={{
-          height: 280,
+          height: { xs: 450, sm: 500, md: 550 },
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          width: 1,
-          borderRadius: 1.5,
-          bgcolor: alpha(theme.palette.background.neutral, 0.6),
-          border: `1px dashed ${theme.palette.divider}`,
+          width: '100%',
+          borderRadius: 2,
+          mb: 4,
+          bgcolor: (theme) => alpha(theme.palette.background.neutral, 0.4),
+          border: (theme) => `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
+          boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
         }}
       >
-        <Stack spacing={2.5} alignItems="center" sx={{ maxWidth: 280, textAlign: 'center' }}>
-          <Box sx={{ 
-            width: 56, 
-            height: 56, 
-            borderRadius: 1.5,
-            bgcolor: '#FFFFFF',
-            boxShadow: '0px 0px 10px 0px rgba(0, 0, 0, 0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Iconify icon="logos:tiktok-icon" width={24} />
+        <Stack spacing={3} alignItems="center" sx={{ maxWidth: 320, textAlign: 'center', p: 3 }}>
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: 2,
+              bgcolor: '#FFFFFF',
+              boxShadow: '0px 0px 15px 0px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Iconify icon="logos:tiktok-icon" width={42} />
           </Box>
-          
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Connect your TikTok to showcase your top content and analytics.
+
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+            Connect TikTok
+          </Typography>
+
+          <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+            Connect your TikTok account to showcase your top content and analytics in your media kit.
           </Typography>
 
           <Button
-            variant="outlined"
-            size="medium"
-            color="primary"
-            sx={{ 
-              borderRadius: 1,
-              px: 2.5,
-              borderColor: '#000000',
-              color: '#000000',
+            variant="contained"
+            size="large"
+            sx={{
+              borderRadius: 1.5,
+              px: 3,
+              py: 1.5,
+              mt: 2,
+              backgroundColor: '#000000',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               '&:hover': {
-                borderColor: '#000000',
-                bgcolor: alpha('#000000', 0.08),
-              }
+                backgroundColor: '#222222',
+                boxShadow: '0 6px 15px rgba(0,0,0,0.2)',
+              },
             }}
-            startIcon={<Iconify icon="mingcute:link-line" width={18} color="#000000"/>}
+            startIcon={<Iconify icon="mingcute:link-line" width={22} />}
             onClick={connectTiktok}
           >
             Connect TikTok
@@ -283,18 +386,49 @@ const MediaKitSocialContent = ({ tiktok }) => {
         </Stack>
       </Box>
     );
+  }
 
+  // Only show grid if connected and has content
+  const contentToShow = hasContent ? realTopContent : [];
+
+  // Carousel for mobile, grid for desktop
   return (
     <Box>
-      {/* {tiktokData?.videos?.data?.videos.length ? (
-        <TopContentGrid topContents={tiktokData?.videos?.data?.videos} />
+      {isMobile ? (
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            px: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            id="tiktok-mobile-connected"
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              flexWrap: 'nowrap',
+              width: '100%',
+              gap: 0.5,
+              justifyContent: 'flex-start',
+              alignItems: 'stretch',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { height: 0, display: 'none' },
+              pb: 2,
+              scrollSnapType: 'x mandatory',
+              px: 0,
+              pt: 1,
+            }}
+          >
+            {contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} mobileCarousel />}
+          </Box>
+        </Box>
       ) : (
-        <Typography variant="subtitle1" color="text.secondary" textAlign="center">
-          No top content data available
-        </Typography>
-      )} */}
-      {/* Pass videos array if it exists, otherwise empty array to use dummy data */}
-      <TopContentGrid topContents={tiktokData?.videos?.data?.videos || []} />
+        contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} />
+      )}
     </Box>
   );
 };
