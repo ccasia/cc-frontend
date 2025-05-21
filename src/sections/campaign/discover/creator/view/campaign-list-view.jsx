@@ -35,7 +35,8 @@ import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
 import CampaignLists from '../campaign-list';
-
+import ShortlistedCreatorPopUp from '../../admin/campaign-detail-creator/hooks/shortlisted-creator-popup';
+import { useShortlistedCreators } from '../../admin/campaign-detail-creator/hooks/shortlisted-creator';
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
@@ -49,6 +50,8 @@ export default function CampaignListView() {
   const { mainRef } = useMainContext();
 
   const lgUp = useResponsive('up', 'lg');
+
+  const { addCreators } = useShortlistedCreators(); 
 
   const [search, setSearch] = useState({
     query: '',
@@ -157,6 +160,27 @@ export default function CampaignListView() {
       socket?.off('pitch-uploaded', handlePitchSuccess);
     };
   }, [socket, upload, mutate]);
+
+const shortlistCreator = async (campaignId) => {
+  const res = await fetch(`/api/campaign/shortlistCreator?campaignId=${campaignId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  // 
+
+
+  const data = await res.json();
+  if (res.ok) {
+    handleShortlistSuccess(data);
+  } else {
+    console.error(data.message);
+  }
+};
+
+const handleShortlistSuccess = (shortlistedItem) => {
+  addCreators(shortlistedItem, user);
+};
+
 
   const renderUploadProgress = (
     <Box
@@ -899,6 +923,7 @@ export default function CampaignListView() {
           <Iconify icon="mdi:arrow-up" />
         </Fab>
       )}
+      <ShortlistedCreatorPopUp/>
     </Container>
   );
 }

@@ -21,6 +21,7 @@ import SocketProvider from './socket/context/socket';
 import PoppupProvider from './components/popup/popup-provider';
 import 'core-js/stable';
 // import CreatorOnBoardingForm from './components/CreatorOnBoardingForm';
+import ShortlistedCreatorPopUp from 'src/sections/campaign/discover/admin/campaign-detail-creator/hooks/shortlisted-creator-popup'
 
 // ----------------------------------------------------------------------
 // Test
@@ -52,6 +53,7 @@ export default function App() {
             themeStretch: false,
           }}
         >
+       
           <ThemeProvider>
             <PoppupProvider>
               <SnackbarProvider>
@@ -61,6 +63,8 @@ export default function App() {
                       {/* <CreatorOnBoardingForm /> */}
                       <SettingsDrawer />
                       <ProgressBar />
+                      <ShortlistedCreatorPopUp/>
+                     
                       <Router />
                     </UnreadMessageCountProvider>
                   </SocketProvider>
