@@ -3,7 +3,15 @@ import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { keyframes } from '@emotion/react';
 
-import { Box, Grid, Stack, alpha, useTheme, Typography, useMediaQuery } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Stack,
+  alpha,
+  useTheme,
+  Typography,
+  useMediaQuery,
+} from '@mui/material';
 
 import Label from 'src/components/label';
 
@@ -62,7 +70,7 @@ const TopContentGrid = ({ topContents }) => {
             show: { opacity: 1, y: 0 },
           }}
         >
-          <Box height={600} overflow="hidden">
+          <Box height={600} borderRadius={2} overflow="hidden">
             <iframe
               src={content?.embed_link}
               title="tiktok"

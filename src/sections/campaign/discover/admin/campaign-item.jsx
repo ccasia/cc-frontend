@@ -20,23 +20,10 @@ import { CampaignLog } from '../../manage/list/CampaignLog';
 
 // ----------------------------------------------------------------------
 
-// store open campaign tabs in localStorage
-if (typeof window !== 'undefined') {
-  if (!window.campaignTabs) {
-    // load from localStorage
-    try {
-      const storedTabs = localStorage.getItem('campaignTabs');
-      window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
-    } catch (error) {
-      console.error('Error loading campaign tabs from localStorage:', error);
-      window.campaignTabs = [];
-    }
-  }
-}
-
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
   const theme = useTheme();
   const { user } = useAuthContext();
+
   const router = useRouter();
   
   // Menu state

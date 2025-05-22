@@ -9,7 +9,7 @@ import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 /* eslint-disable no-undef */
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -31,28 +31,6 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  Divider,
-  FormControl,
-  FormControlLabel,
-  ListItemIcon,
-  Menu,
-  MenuItem,
-  Radio,
-  RadioGroup,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tabs,
-  Tab,
-  Select,
-  FormHelperText,
-  OutlinedInput,
-  InputLabel,
-  TextField,
-  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -65,7 +43,7 @@ import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import { RHFTextField, RHFDatePicker, RHFMultiSelect } from 'src/components/hook-form';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import Label from 'src/components/label';
 
 const options_changes = [
   'Missing caption requirements',
@@ -198,36 +176,41 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
 
   // Add a state to track if status sync is in progress to prevent multiple runs
   const [isSyncingStatus, setIsSyncingStatus] = useState(false);
-  
+
   // Add this function before any effects
   const checkAndFixFinalDraftStatus = async () => {
     try {
       // Only run this check for final drafts
       const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
       if (!isFinalDraft) return;
-      
+
       // If the status is not APPROVED, but all sections are approved, fix it
       if (submission?.status !== 'APPROVED') {
         console.log('Final draft has incorrect status - checking if it should be APPROVED');
-        
+
         // Check if all sections are approved
-        const allSectionsApproved = 
-          (!deliverables?.videos?.length || deliverables.videos.every(v => v.status === 'APPROVED')) &&
-          (!deliverables?.rawFootages?.length || deliverables.rawFootages.every(f => f.status === 'APPROVED')) &&
-          (!deliverables?.photos?.length || deliverables.photos.every(p => p.status === 'APPROVED'));
-        
+        const allSectionsApproved =
+          (!deliverables?.videos?.length ||
+            deliverables.videos.every((v) => v.status === 'APPROVED')) &&
+          (!deliverables?.rawFootages?.length ||
+            deliverables.rawFootages.every((f) => f.status === 'APPROVED')) &&
+          (!deliverables?.photos?.length ||
+            deliverables.photos.every((p) => p.status === 'APPROVED'));
+
         if (allSectionsApproved) {
-          console.log('Detected approved final draft with incorrect status - restoring APPROVED status');
-          
+          console.log(
+            'Detected approved final draft with incorrect status - restoring APPROVED status'
+          );
+
           try {
             const restorePayload = {
               submissionId: submission.id,
               status: 'APPROVED',
               preserveFinalStatus: true,
               forceStatusChange: true,
-              skipAutoSync: true
+              skipAutoSync: true,
             };
-            
+
             await axiosInstance.patch(`/api/submission/status`, restorePayload);
             console.log('Successfully restored APPROVED status for final draft');
           } catch (error) {
@@ -244,10 +227,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   useEffect(() => {
     if (submission?.submissionType?.type === 'FINAL_DRAFT') {
       console.log('Final draft detected, checking status once on load');
-      checkAndFixFinalDraftStatus().catch(error => {
+      checkAndFixFinalDraftStatus().catch((error) => {
         console.error('Error checking final draft status on mount:', error);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update useEffect to handle automatic status checking
@@ -255,20 +239,21 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     // This will run when deliverables data is updated
     if (deliverables && !isSyncingStatus) {
       console.log('Deliverables updated, but skipping automatic status check');
-      
+
       // Instead of automatically checking, we'll just update the UI
       // Status updates will now happen only after explicit user actions
-      
+
       // We'll still check if a final draft needs fixing, but only once
-      if (submission?.submissionType?.type === 'FINAL_DRAFT' && 
-          submission?.status !== 'APPROVED') {
+      if (submission?.submissionType?.type === 'FINAL_DRAFT' && submission?.status !== 'APPROVED') {
         console.log('Final draft with non-APPROVED status detected, checking if it needs fixing');
         checkAndFixFinalDraftStatus();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliverables, submission?.status]);
 
   // Add a new effect to handle manual refresh for final drafts
+  // eslint-disable-next-line consistent-return
   useEffect(() => {
     // For final drafts, we'll only refresh when the user explicitly requests it
     // or when there's a specific action that requires a refresh
@@ -278,7 +263,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         if (document.visibilityState === 'visible') {
           console.log('Checking final draft status...');
           // Instead of full refresh, just check if status needs fixing
-          checkAndFixFinalDraftStatus().catch(error => {
+          checkAndFixFinalDraftStatus().catch((error) => {
             console.error('Error checking final draft status:', error);
           });
         }
@@ -289,149 +274,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         clearInterval(manualRefreshInterval);
       };
     }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submission?.submissionType?.type]);
 
   // New function to automatically check if submission is ready for status update
-  const checkSubmissionReadiness = async () => {
-    if (isSyncingStatus) return; // Prevent concurrent runs
-    
-    try {
-      setIsSyncingStatus(true);
-      console.log('Auto-checking submission status readiness...');
-      
-      if (!deliverables) {
-        console.log('Deliverables not loaded yet, skipping check');
-        setIsSyncingStatus(false);
-        return;
-      }
-      
-      // Skip check if submission is not in eligible status
-      if (!['PENDING_REVIEW', 'CHANGES_REQUIRED'].includes(submission?.status)) {
-        console.log(`Submission status is ${submission?.status}, which is not eligible for auto-check`);
-        setIsSyncingStatus(false);
-        return;
-      }
-      
-      // IMPORTANT: Skip check if this is a final draft that's already approved
-      const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
-      if (isFinalDraft && submission?.status === 'APPROVED') {
-        console.log('Final draft is already approved - skipping status check to preserve APPROVED status');
-        setIsSyncingStatus(false);
-        return;
-      }
-      
-      // Determine which sections exist in this submission
-      const hasVideos = deliverables?.videos?.length > 0 || !!submission?.content;
-      const hasRawFootages = campaign?.rawFootage && (deliverables?.rawFootages?.length > 0);
-      const hasPhotos = campaign?.photos && (deliverables?.photos?.length > 0);
-      
-      console.log('Submission sections:', { hasVideos, hasRawFootages, hasPhotos });
-      
-      // Check if all available deliverables have decisions
-      let allHaveDecisions = true;
-      let hasChangesRequested = false;
-      let hasOnlySomeDecisions = false;
-      
-      // For videos
-      if (hasVideos) {
-        const hasUndecidedVideos = deliverables?.videos?.length > 0 && 
-          deliverables.videos.some(v => v.status !== 'APPROVED' && v.status !== 'REVISION_REQUESTED');
-        
-        if (hasUndecidedVideos) {
-          allHaveDecisions = false;
-        }
-        
-        // Check if any videos need changes
-        if (deliverables?.videos?.length > 0 && 
-            deliverables.videos.some(v => v.status === 'REVISION_REQUESTED')) {
-          hasChangesRequested = true;
-        }
-        
-        // If videos have decisions but other sections don't
-        if (!hasUndecidedVideos && (hasRawFootages || hasPhotos)) {
-          hasOnlySomeDecisions = true;
-        }
-      }
-      
-      // For raw footages
-      if (hasRawFootages) {
-        const hasUndecidedRawFootages = deliverables.rawFootages.some(
-          f => f.status !== 'APPROVED' && f.status !== 'REVISION_REQUESTED'
-        );
-        
-        if (hasUndecidedRawFootages) {
-          allHaveDecisions = false;
-          
-          // If videos have decisions but raw footage doesn't, mark flag
-          if (hasVideos && deliverables?.videos?.length > 0) {
-            const allVideoDecided = deliverables.videos.every(
-              v => v.status === 'APPROVED' || v.status === 'REVISION_REQUESTED'
-            );
-            if (allVideoDecided) {
-              hasOnlySomeDecisions = true;
-            }
-          }
-        }
-        
-        // Check if any raw footages need changes
-        if (deliverables.rawFootages.some(f => f.status === 'REVISION_REQUESTED')) {
-          hasChangesRequested = true;
-        }
-      }
-      
-      // For photos
-      if (hasPhotos) {
-        const hasUndecidedPhotos = deliverables.photos.some(
-          p => p.status !== 'APPROVED' && p.status !== 'REVISION_REQUESTED'
-        );
-        
-        if (hasUndecidedPhotos) {
-          allHaveDecisions = false;
-          
-          // If videos have decisions but photos don't, mark flag
-          if (hasVideos && deliverables?.videos?.length > 0) {
-            const allVideoDecided = deliverables.videos.every(
-              v => v.status === 'APPROVED' || v.status === 'REVISION_REQUESTED'
-            );
-            if (allVideoDecided) {
-              hasOnlySomeDecisions = true;
-            }
-          }
-        }
-        
-        // Check if any photos need changes
-        if (deliverables.photos.some(p => p.status === 'REVISION_REQUESTED')) {
-          hasChangesRequested = true;
-        }
-      }
-      
-      console.log('Status check results:', {
-        allHaveDecisions,
-        hasChangesRequested,
-        hasOnlySomeDecisions,
-        currentStatus: submission?.status
-      });
-      
-      // CRITICAL: Don't sync status if we have a mix of decided and undecided sections
-      if (hasOnlySomeDecisions) {
-        console.log('Some sections have decisions but others don\'t - not syncing status to avoid auto-progression');
-        setIsSyncingStatus(false);
-        return;
-      }
-      
-      // If all sections have decisions, run sync to update parent status
-      if (allHaveDecisions) {
-        console.log('All deliverables have decisions, triggering status update');
-        await syncSubmissionStatus();
-      } else {
-        console.log('Some deliverables still need decisions, skipping status update');
-      }
-    } catch (error) {
-      console.error('Error checking submission readiness:', error);
-    } finally {
-      setIsSyncingStatus(false);
-    }
-  };
 
   // Reset handlers for each section
   const resetDraftVideoForm = () => {
@@ -556,9 +403,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   });
 
   const {
-    handleSubmit,
-    setValue,
-    reset,
     watch,
     formState: { isSubmitting },
   } = draftVideoMethods;
@@ -569,21 +413,15 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   );
 
   // Function to run after any section update
-  const onSectionUpdated = async () => {
-    try {
-      console.log('First draft section updated, refreshing data...');
-      await refreshAllData();
-    } catch (error) {
-      console.error('Error refreshing after section update:', error);
-    }
-  };
 
   // Function to refresh all data at once
   const refreshAllData = async () => {
     try {
       // Only refresh first draft data
       await deliverableMutate();
-      await mutate(`${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}&type=FIRST_DRAFT`);
+      await mutate(
+        `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}&type=FIRST_DRAFT`
+      );
       console.log('First draft data refreshed successfully');
     } catch (error) {
       console.error('Error refreshing first draft data:', error);
@@ -597,35 +435,32 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       console.log('Selected videos for change:', selectedVideosForChange);
 
       const values = draftVideoMethods.getValues();
-      const type = values.type || 'approve';
-
+      // const type = values.type || 'approve';
       if (values.type !== 'request' && values.type !== 'approve') {
         throw new Error('Invalid submission type. Please try again.');
       }
 
       if (
         values.type === 'request' &&
-        selectedVideosForChange.length === 0 &&
-        campaign?.campaignCredits
+        campaign?.campaignCredits &&
+        selectedVideosForChange.length === 0
       ) {
         throw new Error('Please select at least one video that needs changes');
       }
 
       // If there's a full campaign content to approve and no individual videos
       if (submission?.content && deliverables?.videos?.length === 0) {
-      const payload = {
-        submissionId: submission.id,
+        const payload = {
+          submissionId: submission.id,
           content: submission.content,
           type: values.type,
           feedback: values.feedback,
           reasons: values.reasons,
           dueDate: values.type === 'approve' ? values.dueDate : null,
-          sectionOnly: true // This ensures we only update the video section
+          sectionOnly: true, // This ensures we only update the video section
         };
-
         const res = await axiosInstance.patch(endpoints.submission.admin.draft, payload);
         console.log('Manual approval result:', res.data);
-
         if (values.type === 'approve') {
           console.log('Video draft approved');
           enqueueSnackbar('Draft videos approved successfully!', {
@@ -637,15 +472,12 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             variant: 'warning',
           });
         }
-
         // Refresh data and directly try to sync status
         await refreshAllData();
         // Directly attempt to sync submission status without conditions
         await syncSubmissionStatus();
-        
         // After successful submission, trigger immediate status sync
         await triggerImmediateStatusSync();
-        
         // For final drafts, we need to be extra careful about status
         if (submission?.submissionType?.type === 'FINAL_DRAFT') {
           // Add a delayed check to ensure status is correct
@@ -653,7 +485,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             await checkAndFixFinalDraftStatus();
           }, 1000);
         }
-        
         return true;
       }
 
@@ -661,7 +492,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       const selectedVideoIds =
         type === 'request'
           ? selectedVideosForChange
-          : deliverables?.videos?.map(video => video.id) || [];
+          : deliverables?.videos?.map((video) => video.id) || [];
 
       if (!selectedVideoIds.length && type === 'approve') {
         throw new Error('No videos found to approve');
@@ -674,20 +505,18 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         feedback: values.feedback || '',
         reasons: values.reasons || [],
         dueDate: type === 'approve' ? values.dueDate : null,
-        sectionOnly: true // CRITICAL: Must be true to prevent affecting overall status
+        sectionOnly: true, // CRITICAL: Must be true to prevent affecting overall status
       };
 
       // Show a loading notification
-      // const loadingKey = enqueueSnackbar('Processing video review...', { 
+      // const loadingKey = enqueueSnackbar('Processing video review...', {
       //   variant: 'info',
       //   autoHideDuration: 2000
       // });
 
       // Use the correct endpoint path
       const res = await axiosInstance.patch('/api/submission/manageVideos', payload);
-
       console.log('Submit result:', res.data);
-
       if (type === 'approve') {
         enqueueSnackbar('Draft videos approved successfully!', {
           variant: 'success',
@@ -698,15 +527,12 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         });
         setSelectedVideosForChange([]);
       }
-
       // Reset form
       resetDraftVideoForm();
-
       // Refresh data and directly try to sync status
       await refreshAllData();
       // Directly attempt to sync submission status without conditions
       await syncSubmissionStatus();
-      
       // Add a second refresh after a delay to ensure UI is updated
       setTimeout(async () => {
         await refreshAllData();
@@ -715,7 +541,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           await checkAndFixFinalDraftStatus();
         }
       }, 1000);
-      
       return true;
     } catch (error) {
       console.error('Error submitting draft video review:', error);
@@ -730,7 +555,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   const onSubmitRawFootage = async () => {
     try {
       const values = rawFootageMethods.getValues();
-      const type = values.type || 'approve';
+      // const type = values.type || 'approve';
 
       if (type !== 'request' && type !== 'approve') {
         throw new Error('Invalid submission type. Please try again.');
@@ -761,7 +586,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         rawFootageContent: values.footageFeedback || '',
         sectionOnly: true, // This ensures we're only updating this section
         status: type === 'request' ? 'CHANGES_REQUIRED' : 'APPROVED',
-        dueDate: type === 'request' ? dayjs().add(7, 'day').format('YYYY-MM-DD') : null
+        dueDate: type === 'request' ? dayjs().add(7, 'day').format('YYYY-MM-DD') : null,
       };
 
       // Use the correct endpoint path
@@ -800,17 +625,13 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   const onSubmitPhotos = async () => {
     try {
       const values = photoMethods.getValues();
-      const type = values.type || 'approve';
+      // const type = values.type || 'approve';
 
       if (type !== 'request' && type !== 'approve') {
         throw new Error('Invalid submission type. Please try again.');
       }
 
-      if (
-        type === 'request' &&
-        selectedPhotosForChange.length === 0 &&
-        campaign?.campaignCredits
-      ) {
+      if (type === 'request' && selectedPhotosForChange.length === 0 && campaign?.campaignCredits) {
         throw new Error('Please select at least one photo that needs changes');
       }
 
@@ -829,11 +650,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         photos: selectedPhotoIds,
         type,
         photoFeedback: values.photoFeedback || '',
-        sectionOnly: true // This ensures we're only updating this section
+        sectionOnly: true, // This ensures we're only updating this section
       };
 
       // Show a loading notification
-      // const loadingKey = enqueueSnackbar('Processing photo review...', { 
+      // const loadingKey = enqueueSnackbar('Processing photo review...', {
       //   variant: 'info',
       //   autoHideDuration: 2000
       // });
@@ -861,7 +682,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       await refreshAllData();
       // Directly attempt to sync submission status without conditions
       await syncSubmissionStatus();
-      
+
       // Add a second refresh after a delay to ensure UI is updated
       setTimeout(async () => {
         await refreshAllData();
@@ -870,10 +691,10 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           await checkAndFixFinalDraftStatus();
         }
       }, 1000);
-      
+
       // After successful submission, trigger immediate status sync
       await triggerImmediateStatusSync();
-      
+
       // For final drafts, we need to be extra careful about status
       if (submission?.submissionType?.type === 'FINAL_DRAFT') {
         // Add a delayed check to ensure status is correct
@@ -881,7 +702,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           await checkAndFixFinalDraftStatus();
         }, 1000);
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error submitting photo review:', error);
@@ -896,37 +717,39 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   const triggerImmediateStatusSync = async () => {
     try {
       console.log('Triggering immediate status sync after action');
-      
+
       // Check if this is a final draft that was just approved
       const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
       const wasJustApproved = submission?.status === 'APPROVED';
-      
+
       // If this is an approved final draft, skip sync entirely to avoid status bounce
       if (isFinalDraft && wasJustApproved) {
-        console.log('Final draft is approved - skipping status sync entirely to preserve APPROVED status');
+        console.log(
+          'Final draft is approved - skipping status sync entirely to preserve APPROVED status'
+        );
         return;
       }
-      
+
       // First refresh deliverables
       await refreshAllData();
-      
+
       // Force multiple refreshes to ensure we catch any backend changes
       // But be careful with final draft approvals to avoid IN_PROGRESS notifications
       if (!(isFinalDraft && wasJustApproved)) {
-        const statusChanged = await syncSubmissionStatus();
-        
         // Add a second refresh after a delay to ensure UI is updated
         setTimeout(async () => {
           console.log('Performing delayed refresh after status sync');
           await refreshAllData();
-          
+
           // Check for final draft status issues
           if (isFinalDraft) {
             await checkAndFixFinalDraftStatus();
           }
         }, 1000);
       } else {
-        console.log('Final draft was just approved - skipping aggressive refresh to avoid status bounce');
+        console.log(
+          'Final draft was just approved - skipping aggressive refresh to avoid status bounce'
+        );
       }
     } catch (error) {
       console.error('Error in triggerImmediateStatusSync:', error);
@@ -952,12 +775,23 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           pb: 2,
         }}
       >
-        Approve {sectionType === 'video' ? 'Draft Videos' : sectionType === 'rawFootages' ? 'Raw Footages' : 'Photos'}
+        Approve{' '}
+        {sectionType === 'video'
+          ? 'Draft Videos'
+          : sectionType === 'rawFootages'
+            ? 'Raw Footages'
+            : 'Photos'}
       </DialogTitle>
       <DialogContent sx={{ mt: 2 }}>
         <Stack spacing={2}>
           <DialogContentText>
-            Are you sure you want to approve {sectionType === 'video' ? 'these draft videos' : sectionType === 'rawFootages' ? 'these raw footages' : 'these photos'}?
+            Are you sure you want to approve{' '}
+            {sectionType === 'video'
+              ? 'these draft videos'
+              : sectionType === 'rawFootages'
+                ? 'these raw footages'
+                : 'these photos'}
+            ?
           </DialogContentText>
 
           {/* Show due date if set and if approving videos */}
@@ -999,7 +833,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               </Typography>
             </Box>
           )}
-          
+
           {sectionType === 'rawFootages' && rawFootageMethods.watch('footageFeedback') && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -1019,7 +853,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               </Typography>
             </Box>
           )}
-          
+
           {sectionType === 'photos' && photoMethods.watch('photoFeedback') && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -1074,7 +908,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 draftVideoMethods.setValue('type', 'approve');
                 const success = await onSubmitDraftVideo();
                 if (success) {
-                  await mutate(`${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`);
+                  await mutate(
+                    `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+                  );
                   await deliverableMutate();
                   onclose();
                 }
@@ -1082,17 +918,21 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 rawFootageMethods.setValue('type', 'approve');
                 const success = await onSubmitRawFootage();
                 if (success) {
-                  await mutate(`${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`);
+                  await mutate(
+                    `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+                  );
                   await deliverableMutate();
-                  onclose(); 
+                  onclose();
                 }
               } else if (sectionType === 'photos') {
                 photoMethods.setValue('type', 'approve');
                 const success = await onSubmitPhotos();
                 if (success) {
-                  await mutate(`${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`);
+                  await mutate(
+                    `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
+                  );
                   await deliverableMutate();
-                  onclose(); 
+                  onclose();
                 }
               }
             } catch (error) {
@@ -1151,7 +991,12 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           pb: 2,
         }}
       >
-        Confirm Change Request for {sectionType === 'video' ? 'Draft Videos' : sectionType === 'rawFootages' ? 'Raw Footages' : 'Photos'}
+        Confirm Change Request for{' '}
+        {sectionType === 'video'
+          ? 'Draft Videos'
+          : sectionType === 'rawFootages'
+            ? 'Raw Footages'
+            : 'Photos'}
       </DialogTitle>
       <DialogContent sx={{ mt: 2 }}>
         <Stack spacing={2}>
@@ -1169,13 +1014,15 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {draftVideoMethods.watch('reasons').map((reason, idx) => (
-                      <Chip
+                      <Label
                         key={idx}
-                        label={reason}
-                        size="small"
+                        // label={reason}
+                        // size="small"
                         color="primary"
-                        variant="outlined"
-                      />
+                        // variant="outlined"
+                      >
+                        {reason}
+                      </Label>
                     ))}
                   </Box>
                 </Box>
@@ -1222,7 +1069,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               </Typography>
             </Box>
           )}
-          
+
           {/* Show feedback for photos */}
           {sectionType === 'photos' && photoMethods.watch('photoFeedback') && (
             <Box>
@@ -1281,21 +1128,21 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 draftVideoMethods.setValue('type', 'request');
                 const success = await onSubmitDraftVideo();
                 if (success) {
-                  onclose(); 
+                  onclose();
                   triggerImmediateStatusSync();
                 }
               } else if (sectionType === 'rawFootages') {
                 rawFootageMethods.setValue('type', 'request');
                 const success = await onSubmitRawFootage();
                 if (success) {
-                  onclose(); 
+                  onclose();
                   triggerImmediateStatusSync();
                 }
               } else if (sectionType === 'photos') {
                 photoMethods.setValue('type', 'request');
                 const success = await onSubmitPhotos();
                 if (success) {
-                  onclose(); 
+                  onclose();
                   triggerImmediateStatusSync();
                 }
               }
@@ -1305,9 +1152,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             }
           }}
           disabled={
-            (sectionType === 'video' && 
-             campaign?.campaignCredits &&
-             selectedVideosForChange.length === 0) ||
+            (sectionType === 'video' &&
+              campaign?.campaignCredits &&
+              selectedVideosForChange.length === 0) ||
             (sectionType === 'rawFootages' && selectedRawFootagesForChange.length === 0) ||
             (sectionType === 'photos' && selectedPhotosForChange.length === 0)
           }
@@ -1550,11 +1397,13 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           }}
         >
           <Iconify icon="solar:check-circle-bold" color="success.main" />
-          <Typography color="success.darker" sx={{ flex: 1 }}>This submission has been approved</Typography>
+          <Typography color="success.darker" sx={{ flex: 1 }}>
+            This submission has been approved
+          </Typography>
         </Box>
       );
     }
-    
+
     if (submission?.status === 'PENDING_REVIEW') {
       return (
         <Box
@@ -1571,7 +1420,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           }}
         >
           <Iconify icon="material-symbols:hourglass-outline" color="info.main" />
-          <Typography color="info.darker" sx={{ flex: 1 }}>This submission is pending review</Typography>
+          <Typography color="info.darker" sx={{ flex: 1 }}>
+            This submission is pending review
+          </Typography>
         </Box>
       );
     }
@@ -1600,32 +1451,12 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   };
 
   // helper to check if all photos are marked for changes
-  const areAllPhotosMarkedForChanges = () => {
-    // If there are no photos or submission is not in CHANGES_REQUIRED state, return false
-    if (!deliverables?.photos?.length || submission?.status !== 'CHANGES_REQUIRED') {
-      return false;
-    }
-    
-    // Check if all photos have APPROVED status
-    if (deliverables.photos.every(photo => photo.status === 'APPROVED')) {
-      return true;
-    }
-    
-    // If using the old system, check feedback entries
-    if (submission.feedback?.length) {
-      return deliverables.photos.every(photo =>
-        submission.feedback.some(feedback => feedback.photosToUpdate?.includes(photo.id))
-      );
-    }
-    
-    return false;
-  };
 
   const renderSectionStatusBanner = (sectionType) => {
     // Get the appropriate items array based on section type
     let items = [];
     let sectionName = '';
-    
+
     if (sectionType === 'video') {
       items = deliverables?.videos || [];
       sectionName = 'Draft Videos';
@@ -1636,41 +1467,41 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       items = deliverables?.photos || [];
       sectionName = 'Photos';
     }
-    
+
     // No items, no banner
     if (!items.length) {
       return null;
     }
-    
+
     // Check if any items need changes
-    const hasChangesRequired = items.some(item => item.status === 'REVISION_REQUESTED');
-    
+    const hasChangesRequired = items.some((item) => item.status === 'REVISION_REQUESTED');
+
     // Check if all items are approved
-    const allApproved = items.every(item => item.status === 'APPROVED');
-    
+    const allApproved = items.every((item) => item.status === 'APPROVED');
+
     // Return a simple chip with the status instead of a full box
     return (
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
         {hasChangesRequired ? (
-          <Chip 
-            size="small" 
-            color="warning" 
-            label="Changes Required" 
-            icon={<Iconify icon="solar:danger-triangle-bold" />} 
+          <Chip
+            size="small"
+            color="warning"
+            label="Changes Required"
+            icon={<Iconify icon="solar:danger-triangle-bold" />}
           />
         ) : allApproved ? (
-          <Chip 
-            size="small" 
-            color="success" 
-            label="Approved" 
-            icon={<Iconify icon="solar:check-circle-bold" />} 
+          <Chip
+            size="small"
+            color="success"
+            label="Approved"
+            icon={<Iconify icon="solar:check-circle-bold" />}
           />
         ) : (
-          <Chip 
-            size="small" 
-            color="info" 
-            label="Pending Review" 
-            icon={<Iconify icon="material-symbols:hourglass-outline" />} 
+          <Chip
+            size="small"
+            color="info"
+            label="Pending Review"
+            icon={<Iconify icon="material-symbols:hourglass-outline" />}
           />
         )}
       </Box>
@@ -1878,10 +1709,10 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           <Typography variant="h6" mb={2}>
             Photos Review
           </Typography>
-          
+
           {/* Check if all photos are already approved */}
-          {deliverables?.photos?.length > 0 && 
-           deliverables.photos.every(p => p.status === 'APPROVED') ? (
+          {deliverables?.photos?.length > 0 &&
+          deliverables.photos.every((p) => p.status === 'APPROVED') ? (
             <Box
               sx={{
                 p: 2,
@@ -1895,9 +1726,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               }}
             >
               <Iconify icon="solar:check-circle-bold" color="success.main" />
-              <Typography color="success.darker">
-                All photos have been approved
-              </Typography>
+              <Typography color="success.darker">All photos have been approved</Typography>
             </Box>
           ) : (
             <>
@@ -1915,7 +1744,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                       placeholder="Provide feedback for the photos."
                       sx={{ mb: 2 }}
                     />
-                    
+
                     <Stack
                       alignItems={{ xs: 'stretch', sm: 'center' }}
                       direction={{ xs: 'column', sm: 'row' }}
@@ -1950,7 +1779,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                       >
                         Request a Change
                       </Button>
-                      
+
                       <LoadingButton
                         onClick={() => photosApprove.onTrue()}
                         variant="contained"
@@ -1979,7 +1808,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                         Approve
                       </LoadingButton>
                     </Stack>
-                    
+
                     {confirmationApproveModal(photosApprove.value, photosApprove.onFalse, 'photos')}
                   </Stack>
                 </FormProvider>
@@ -1990,7 +1819,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   <Typography variant="h6" mb={1} mx={1}>
                     Request Changes for Photos
                   </Typography>
-                  <FormProvider methods={photoMethods} onSubmit={onSubmitPhotos} disabled={isDisabled}>
+                  <FormProvider
+                    methods={photoMethods}
+                    onSubmit={onSubmitPhotos}
+                    disabled={isDisabled}
+                  >
                     <Stack gap={2}>
                       <RHFTextField
                         name="photoFeedback"
@@ -2055,20 +1888,27 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                           onClick={() => {
                             // Ensure photo feedback is set
                             if (!photoMethods.getValues('photoFeedback')) {
-                              enqueueSnackbar('Please provide feedback for the photos', { variant: 'error' });
+                              enqueueSnackbar('Please provide feedback for the photos', {
+                                variant: 'error',
+                              });
                               return;
                             }
-                            
+
                             // If no photos selected and selection is required, show error
                             if (selectedPhotosForChange.length === 0) {
-                              enqueueSnackbar('Please select at least one photo that needs changes', { variant: 'error' });
+                              enqueueSnackbar(
+                                'Please select at least one photo that needs changes',
+                                { variant: 'error' }
+                              );
                               return;
                             }
-                            
+
                             // Show confirmation dialog
                             photosRequest.onTrue();
                           }}
-                          disabled={photosType === 'request' && selectedPhotosForChange.length === 0}
+                          disabled={
+                            photosType === 'request' && selectedPhotosForChange.length === 0
+                          }
                           sx={{
                             bgcolor: '#FFFFFF',
                             color: '#1ABF66',
@@ -2111,79 +1951,61 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     // This will re-render the component when deliverables data is updated
     // including when a section is approved or changes are requested
     console.log('Deliverables updated, refreshing UI');
-    
+
     // Check if we should show or hide the review sections based on updated statuses
     if (deliverables) {
-      const allVideosApproved = deliverables.videos?.length > 0 ? 
-        deliverables.videos.every(v => v.status === 'APPROVED') : 
-        submission?.status === 'APPROVED';
-      
-      const allRawFootagesApproved = deliverables.rawFootages?.length > 0 ? 
-        deliverables.rawFootages.every(f => f.status === 'APPROVED') : true;
-      
-      const allPhotosApproved = deliverables.photos?.length > 0 ? 
-        deliverables.photos.every(p => p.status === 'APPROVED') : true;
-        
+      const allVideosApproved =
+        deliverables.videos?.length > 0
+          ? deliverables.videos.every((v) => v.status === 'APPROVED')
+          : submission?.status === 'APPROVED';
+
+      const allRawFootagesApproved =
+        deliverables.rawFootages?.length > 0
+          ? deliverables.rawFootages.every((f) => f.status === 'APPROVED')
+          : true;
+
+      const allPhotosApproved =
+        deliverables.photos?.length > 0
+          ? deliverables.photos.every((p) => p.status === 'APPROVED')
+          : true;
+
       console.log('Section approval status:', {
         videos: allVideosApproved,
         rawFootages: allRawFootagesApproved,
-        photos: allPhotosApproved
+        photos: allPhotosApproved,
       });
     }
   }, [deliverables, submission?.status]);
-
-  // Function to update submission status to CHANGES_REQUIRED
-  const updateSubmissionToChangesRequired = async (message) => {
-    try {
-      if (!submission) {
-        console.error('No submission data available');
-        return false;
-      }
-
-      const updatePayload = {
-        submissionId: submission.id,
-        status: 'CHANGES_REQUIRED',
-        feedback: message || null,
-        dueDate: dayjs().add(7, 'day').format('YYYY-MM-DD')
-      };
-
-      const res = await axiosInstance.patch(`/api/submission/status`, updatePayload);
-      console.log('Submission status updated to CHANGES_REQUIRED:', res.data);
-      
-      await refreshAllData();
-      return true;
-    } catch (error) {
-      console.error('Error updating submission to changes required:', error);
-      return false;
-    }
-  };
 
   // Function to directly sync the submission status with section statuses
   const syncSubmissionStatus = async () => {
     try {
       console.log('Starting syncSubmissionStatus, checking all section statuses...');
-      
+
       if (!submission || !deliverables) {
         console.log('Submission or deliverables not loaded yet, skipping status check');
         return false;
       }
-      
+
       // Store original status to check for specific transitions
       const originalStatus = submission.status;
-      
+
       // IMPORTANT: For final drafts, we need to be extra careful
       const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
-      
+
       // If this is a final draft and all sections are approved, force APPROVED status
       if (isFinalDraft) {
-        const allSectionsApproved = 
-          (!deliverables?.videos?.length || deliverables.videos.every(v => v.status === 'APPROVED')) &&
-          (!deliverables?.rawFootages?.length || deliverables.rawFootages.every(f => f.status === 'APPROVED')) &&
-          (!deliverables?.photos?.length || deliverables.photos.every(p => p.status === 'APPROVED'));
-        
+        const allSectionsApproved =
+          (!deliverables?.videos?.length ||
+            deliverables.videos.every((v) => v.status === 'APPROVED')) &&
+          (!deliverables?.rawFootages?.length ||
+            deliverables.rawFootages.every((f) => f.status === 'APPROVED')) &&
+          (!deliverables?.photos?.length ||
+            deliverables.photos.every((p) => p.status === 'APPROVED'));
+
         if (allSectionsApproved) {
           console.log('Final draft with all sections approved - forcing APPROVED status');
-          
+
           // Force APPROVED status for final draft
           try {
             const restorePayload = {
@@ -2191,9 +2013,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               status: 'APPROVED',
               preserveFinalStatus: true,
               forceStatusChange: true,
-              skipAutoSync: true // Add flag to skip auto-sync on backend
+              skipAutoSync: true, // Add flag to skip auto-sync on backend
             };
-            
+
             await axiosInstance.patch(`/api/submission/status`, restorePayload);
             console.log('Forced APPROVED status for final draft');
             return true;
@@ -2202,52 +2024,54 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           }
         }
       }
-      
+
       // Skip if submission is in a state that should not be synced
-      if (!['PENDING_REVIEW', 'CHANGES_REQUIRED', 'APPROVED', 'IN_PROGRESS'].includes(originalStatus)) {
+      if (
+        !['PENDING_REVIEW', 'CHANGES_REQUIRED', 'APPROVED', 'IN_PROGRESS'].includes(originalStatus)
+      ) {
         console.log(`Submission status is ${originalStatus}, which is not eligible for auto-sync`);
         return false;
       }
-      
+
       // Get the due date from the draft video form if available
-      const dueDate = draftVideoMethods.getValues('dueDate') || 
-                      dayjs().add(7, 'day').format('YYYY-MM-DD');
-      
+      const dueDate =
+        draftVideoMethods.getValues('dueDate') || dayjs().add(7, 'day').format('YYYY-MM-DD');
+
       const updatePayload = {
         submissionId: submission.id,
         status: 'AUTO_SYNC',
         dueDate,
         preserveFinalDraftApproval: true,
         forcePreserveApproved: isFinalDraft,
-        skipAutoSync: isFinalDraft // Skip auto-sync for final drafts
+        skipAutoSync: isFinalDraft, // Skip auto-sync for final drafts
       };
-      
+
       console.log('Sending status sync with payload:', updatePayload);
-      
+
       try {
         const res = await axiosInstance.patch(`/api/submission/status`, updatePayload);
         console.log('Auto submission status update response:', res.data);
-        
+
         // For final drafts, we need to verify the status didn't change incorrectly
         if (isFinalDraft && res.data.submission) {
           const newStatus = res.data.submission.status;
           if (newStatus !== 'APPROVED') {
             console.log('Final draft status changed incorrectly - restoring APPROVED status');
-            
+
             // Force restore APPROVED status
             const restorePayload = {
               submissionId: submission.id,
               status: 'APPROVED',
               preserveFinalStatus: true,
               forceStatusChange: true,
-              skipAutoSync: true
+              skipAutoSync: true,
             };
-            
+
             await axiosInstance.patch(`/api/submission/status`, restorePayload);
             console.log('Restored APPROVED status for final draft');
           }
         }
-        
+
         await refreshAllData();
         return true;
       } catch (error) {
@@ -2260,80 +2084,39 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     }
   };
 
-  // Add this function right after the syncSubmissionStatus function
-  const checkAllSectionsStatus = () => {
-    // Show a loading notification
-    const notifyKey = enqueueSnackbar('Checking submission status...', { 
-      variant: 'info',
-      autoHideDuration: 3000 
-    });
-    
-    // Force immediate sync without conditions
-    triggerImmediateStatusSync();
-    
-    // Also add a delayed check to ensure everything is updated
-    setTimeout(async () => {
-      await refreshAllData();
-      
-      // Check for final draft status issues
-      if (submission?.submissionType?.type === 'FINAL_DRAFT') {
-        await checkAndFixFinalDraftStatus();
-      }
-      
-      enqueueSnackbar('Status check complete', {
-        variant: 'success',
-        autoHideDuration: 2000
-      });
-    }, 1500);
-  };
-
   // Add a new function to render submission summary status
   const renderSubmissionSummary = () => {
     if (submission?.status !== 'PENDING_REVIEW' && submission?.status !== 'CHANGES_REQUIRED') {
       return null; // Only show for submissions under review or with changes required
     }
-    
+
     // Get status for each section
     const hasVideos = deliverables?.videos?.length > 0 || submission?.content;
-    const hasRawFootages = campaign?.rawFootage ? (deliverables?.rawFootages?.length > 0) : false;
-    const hasPhotos = campaign?.photos ? (deliverables?.photos?.length > 0) : false;
-    
+    const hasRawFootages = campaign?.rawFootage ? deliverables?.rawFootages?.length > 0 : false;
+    const hasPhotos = campaign?.photos ? deliverables?.photos?.length > 0 : false;
+
     // Check section approval status
-    const videosApproved = hasVideos ? 
-      (deliverables?.videos?.length > 0 ? 
-        deliverables.videos.every(v => v.status === 'APPROVED') : 
-        submission?.status === 'APPROVED' || submission?.content?.status === 'APPROVED') : 
-      false;
-    
-    const rawFootagesApproved = hasRawFootages ? 
-      deliverables.rawFootages.every(f => f.status === 'APPROVED') : 
-      false;
-    
-    const photosApproved = hasPhotos ? 
-      deliverables.photos.every(p => p.status === 'APPROVED') : 
-      false;
-    
+    const videosApproved = hasVideos
+      ? deliverables?.videos?.length > 0
+        ? deliverables.videos.every((v) => v.status === 'APPROVED')
+        : submission?.status === 'APPROVED' || submission?.content?.status === 'APPROVED'
+      : false;
+
+    const rawFootagesApproved = hasRawFootages
+      ? deliverables.rawFootages.every((f) => f.status === 'APPROVED')
+      : false;
+
+    const photosApproved = hasPhotos
+      ? deliverables.photos.every((p) => p.status === 'APPROVED')
+      : false;
+
     // Check if any section has changes required
-    const videosNeedChanges = hasVideos && 
-      (deliverables?.videos?.some(v => v.status === 'REVISION_REQUESTED') ||
-      (submission?.content && submission?.status === 'CHANGES_REQUIRED'));
-    
-    const rawFootagesNeedChanges = hasRawFootages && 
-      deliverables.rawFootages.some(f => f.status === 'REVISION_REQUESTED');
-    
-    const photosNeedChanges = hasPhotos && 
-      deliverables.photos.some(p => p.status === 'REVISION_REQUESTED');
-    
+
     // Count required and approved sections
     const requiredSectionCount = [hasVideos, hasRawFootages, hasPhotos].filter(Boolean).length;
-    const approvedSectionCount = [
-      hasVideos && videosApproved,
-      hasRawFootages && rawFootagesApproved,
-      hasPhotos && photosApproved
-    ].filter(Boolean).length;
-    
+
     if (requiredSectionCount === 0) return null;
-    
+
     // return (
     //   <Box
     //     sx={{
@@ -2349,11 +2132,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     //       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
     //         Approval Status
     //       </Typography>
-          
+
     //       {/* Add the sync status button */}
     //       <StatusSyncButton />
     //     </Stack>
-        
+
     //     <Stack spacing={1.5}>
     //       {hasVideos && (
     //         <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -2361,125 +2144,125 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     //             <Iconify icon="solar:video-library-bold" width={20} />
     //             <Typography variant="body2">Draft Videos</Typography>
     //           </Box>
-              
+
     //           <Box>
     //             {videosApproved ? (
-    //               <Chip 
-    //                 size="small" 
-    //                 color="success" 
-    //                 label="Approved" 
-    //                 icon={<Iconify icon="solar:check-circle-bold" />} 
+    //               <Chip
+    //                 size="small"
+    //                 color="success"
+    //                 label="Approved"
+    //                 icon={<Iconify icon="solar:check-circle-bold" />}
     //               />
     //             ) : videosNeedChanges ? (
-    //               <Chip 
-    //                 size="small" 
-    //                 color="warning" 
-    //                 label="Changes Required" 
-    //                 icon={<Iconify icon="solar:danger-triangle-bold" />} 
+    //               <Chip
+    //                 size="small"
+    //                 color="warning"
+    //                 label="Changes Required"
+    //                 icon={<Iconify icon="solar:danger-triangle-bold" />}
     //               />
     //             ) : (
-    //               <Chip 
-    //                 size="small" 
-    //                 color="default" 
-    //                 label="Pending Review" 
-    //                 icon={<Iconify icon="solar:clock-circle-bold" />} 
+    //               <Chip
+    //                 size="small"
+    //                 color="default"
+    //                 label="Pending Review"
+    //                 icon={<Iconify icon="solar:clock-circle-bold" />}
     //               />
     //             )}
     //           </Box>
     //         </Stack>
     //       )}
-          
+
     //       {hasRawFootages && (
     //         <Stack direction="row" alignItems="center" justifyContent="space-between">
     //           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
     //             <Iconify icon="solar:camera-bold" width={20} />
     //             <Typography variant="body2">Raw Footages</Typography>
     //           </Box>
-              
+
     //           <Box>
     //             {rawFootagesApproved ? (
-    //               <Chip 
-    //                 size="small" 
-    //                 color="success" 
-    //                 label="Approved" 
-    //                 icon={<Iconify icon="solar:check-circle-bold" />} 
+    //               <Chip
+    //                 size="small"
+    //                 color="success"
+    //                 label="Approved"
+    //                 icon={<Iconify icon="solar:check-circle-bold" />}
     //               />
     //             ) : rawFootagesNeedChanges ? (
-    //               <Chip 
-    //                 size="small" 
-    //                 color="warning" 
-    //                 label="Changes Required" 
-    //                 icon={<Iconify icon="solar:danger-triangle-bold" />} 
+    //               <Chip
+    //                 size="small"
+    //                 color="warning"
+    //                 label="Changes Required"
+    //                 icon={<Iconify icon="solar:danger-triangle-bold" />}
     //               />
     //             ) : (
-    //               <Chip 
-    //                 size="small" 
-    //                 color="default" 
-    //                 label="Pending Review" 
-    //                 icon={<Iconify icon="solar:clock-circle-bold" />} 
+    //               <Chip
+    //                 size="small"
+    //                 color="default"
+    //                 label="Pending Review"
+    //                 icon={<Iconify icon="solar:clock-circle-bold" />}
     //               />
     //             )}
     //           </Box>
     //         </Stack>
     //       )}
-          
+
     //       {hasPhotos && (
     //         <Stack direction="row" alignItems="center" justifyContent="space-between">
     //           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
     //             <Iconify icon="solar:gallery-wide-bold" width={20} />
     //             <Typography variant="body2">Photos</Typography>
     //           </Box>
-              
+
     //           <Box>
     //             {photosApproved ? (
-    //               <Chip 
-    //                 size="small" 
-    //                 color="success" 
-    //                 label="Approved" 
-    //                 icon={<Iconify icon="solar:check-circle-bold" />} 
+    //               <Chip
+    //                 size="small"
+    //                 color="success"
+    //                 label="Approved"
+    //                 icon={<Iconify icon="solar:check-circle-bold" />}
     //               />
     //             ) : photosNeedChanges ? (
-    //               <Chip 
-    //                 size="small" 
-    //                 color="warning" 
-    //                 label="Changes Required" 
-    //                 icon={<Iconify icon="solar:danger-triangle-bold" />} 
+    //               <Chip
+    //                 size="small"
+    //                 color="warning"
+    //                 label="Changes Required"
+    //                 icon={<Iconify icon="solar:danger-triangle-bold" />}
     //               />
     //             ) : (
-    //               <Chip 
-    //                 size="small" 
-    //                 color="default" 
-    //                 label="Pending Review" 
-    //                 icon={<Iconify icon="solar:clock-circle-bold" />} 
+    //               <Chip
+    //                 size="small"
+    //                 color="default"
+    //                 label="Pending Review"
+    //                 icon={<Iconify icon="solar:clock-circle-bold" />}
     //               />
     //             )}
     //           </Box>
     //         </Stack>
     //       )}
     //     </Stack>
-        
+
     //     <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
     //       <Stack direction="row" alignItems="center" justifyContent="space-between">
     //         <Typography variant="subtitle2">Overall Status</Typography>
-            
+
     //         <Box>
     //           {approvedSectionCount === requiredSectionCount ? (
-    //             <Chip 
-    //               color="success" 
-    //               label="Ready to Approve" 
-    //               icon={<Iconify icon="solar:check-circle-bold" />} 
+    //             <Chip
+    //               color="success"
+    //               label="Ready to Approve"
+    //               icon={<Iconify icon="solar:check-circle-bold" />}
     //             />
     //           ) : (approvedSectionCount > 0) ? (
-    //             <Chip 
-    //               color="info" 
-    //               label={`${approvedSectionCount}/${requiredSectionCount} Approved`} 
-    //               icon={<Iconify icon="solar:hourglass-bold" />} 
+    //             <Chip
+    //               color="info"
+    //               label={`${approvedSectionCount}/${requiredSectionCount} Approved`}
+    //               icon={<Iconify icon="solar:hourglass-bold" />}
     //             />
     //           ) : (
-    //             <Chip 
-    //               color="default" 
-    //               label="Pending Review" 
-    //               icon={<Iconify icon="solar:clock-circle-bold" />} 
+    //             <Chip
+    //               color="default"
+    //               label="Pending Review"
+    //               icon={<Iconify icon="solar:clock-circle-bold" />}
     //             />
     //           )}
     //         </Box>
@@ -2489,128 +2272,89 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     // );
   };
 
-  // Add a new "Sync Status" button to the UI
-  const StatusSyncButton = () => {
-    const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
-    const isApproved = submission?.status === 'APPROVED';
-
-    // For final drafts that are approved, don't show the button
-    if (isFinalDraft && isApproved) {
-      return null;
-    }
-
-    return (
-      <Button
-        variant="contained"
-        onClick={isFinalDraft ? checkAndFixFinalDraftStatus : refreshAllData}
-        disabled={isSyncingStatus}
-        startIcon={isSyncingStatus ? <CircularProgress size={20} /> : <RefreshIcon />}
-        sx={{
-          bgcolor: '#FFFFFF',
-          color: isFinalDraft ? '#1ABF66' : '#1844fc',
-          border: '1.5px solid',
-          borderColor: '#e7e7e7',
-          borderBottom: 3,
-          borderBottomColor: '#e7e7e7',
-          borderRadius: 1.15,
-          px: 2,
-          py: 1,
-          fontWeight: 600,
-          fontSize: '0.875rem',
-          '&:hover': {
-            bgcolor: '#f5f5f5',
-            borderColor: isFinalDraft ? '#1ABF66' : '#1844fc',
-          },
-          textTransform: 'none',
-          ml: 'auto',
-        }}
-      >
-        {isFinalDraft ? 'Restore Approved Status' : 'Refresh Status'}
-      </Button>
-    );
-  };
-
-  // Function to handle manual refresh
-  const handleManualRefresh = async () => {
-    if (isSyncingStatus) return; // Prevent multiple refreshes
-    
-    try {
-      setIsSyncingStatus(true);
-      console.log('Manual refresh initiated');
-      await refreshAllData();
-    } finally {
-      setIsSyncingStatus(false);
-    }
-  };
-
   // Add an effect to watch for deliverable status changes and trigger sync
   useEffect(() => {
     if (!deliverables || !submission) return;
-    
+
     // Check if this is a final draft that's already approved - skip sync to preserve status
     const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
     const isApproved = submission?.status === 'APPROVED';
-    
+
     if (isFinalDraft && isApproved) {
-      console.log('Final draft is approved - skipping automatic status sync to preserve APPROVED status');
+      console.log(
+        'Final draft is approved - skipping automatic status sync to preserve APPROVED status'
+      );
       return;
     }
-    
-    
+
     // Extract current statuses into a string for comparison
     const getStatusString = () => {
-      const videoStatuses = deliverables.videos?.map(v => `${v.id}:${v.status}`).join(',') || '';
-      const rawFootageStatuses = deliverables.rawFootages?.map(r => `${r.id}:${r.status}`).join(',') || '';
-      const photoStatuses = deliverables.photos?.map(p => `${p.id}:${p.status}`).join(',') || '';
+      const videoStatuses = deliverables.videos?.map((v) => `${v.id}:${v.status}`).join(',') || '';
+      const rawFootageStatuses =
+        deliverables.rawFootages?.map((r) => `${r.id}:${r.status}`).join(',') || '';
+      const photoStatuses = deliverables.photos?.map((p) => `${p.id}:${p.status}`).join(',') || '';
       return `${videoStatuses}|${rawFootageStatuses}|${photoStatuses}`;
     };
-    
+
     // Store current status string in ref for comparison
-    const statusString = getStatusString();
-    
+
     // If any deliverable statuses have changed, trigger sync
     console.log('Deliverables updated, checking for status changes...');
-    
+
     // Check if we have a mix of approved and changed-requested items
     const hasVideos = deliverables?.videos?.length > 0 || !!submission?.content;
     const hasRawFootages = deliverables?.rawFootages?.length > 0;
     const hasPhotos = deliverables?.photos?.length > 0;
-    
-    const videoDecided = hasVideos && 
-      (!deliverables?.videos?.length || 
-        deliverables.videos.every(v => ['APPROVED', 'REVISION_REQUESTED'].includes(v.status)));
-    
-    const rawFootageDecided = hasRawFootages && 
-      deliverables.rawFootages.every(f => ['APPROVED', 'REVISION_REQUESTED'].includes(f.status));
-    
-    const photosDecided = hasPhotos && 
-      deliverables.photos.every(p => ['APPROVED', 'REVISION_REQUESTED'].includes(p.status));
-    
+
+    const videoDecided =
+      hasVideos &&
+      (!deliverables?.videos?.length ||
+        deliverables.videos.every((v) => ['APPROVED', 'REVISION_REQUESTED'].includes(v.status)));
+
+    const rawFootageDecided =
+      hasRawFootages &&
+      deliverables.rawFootages.every((f) => ['APPROVED', 'REVISION_REQUESTED'].includes(f.status));
+
+    const photosDecided =
+      hasPhotos &&
+      deliverables.photos.every((p) => ['APPROVED', 'REVISION_REQUESTED'].includes(p.status));
+
     // If all sections have decisions and this is not an already approved final draft, immediately sync
-    if (videoDecided && rawFootageDecided && photosDecided &&
-        (hasVideos || hasRawFootages || hasPhotos) &&
-        !(isFinalDraft && isApproved)) { // Skip auto-sync for approved final drafts
+    if (
+      videoDecided &&
+      rawFootageDecided &&
+      photosDecided &&
+      (hasVideos || hasRawFootages || hasPhotos) &&
+      !(isFinalDraft && isApproved)
+    ) {
+      // Skip auto-sync for approved final drafts
       console.log('All sections have decisions - triggering immediate sync');
-      
+
       // Add an extra check for all items being approved in final draft
-      const allApproved = 
-        (!hasVideos || !deliverables?.videos?.length || deliverables.videos.every(v => v.status === 'APPROVED')) &&
-        (!hasRawFootages || deliverables.rawFootages.every(f => f.status === 'APPROVED')) &&
-        (!hasPhotos || deliverables.photos.every(p => p.status === 'APPROVED'));
-      
+      const allApproved =
+        (!hasVideos ||
+          !deliverables?.videos?.length ||
+          deliverables.videos.every((v) => v.status === 'APPROVED')) &&
+        (!hasRawFootages || deliverables.rawFootages.every((f) => f.status === 'APPROVED')) &&
+        (!hasPhotos || deliverables.photos.every((p) => p.status === 'APPROVED'));
+
       // If this is a final draft and everything is approved, be extra careful with auto-sync
       if (isFinalDraft && allApproved) {
-        console.log('All items in final draft are approved - refreshing once but skipping aggressive sync');
+        console.log(
+          'All items in final draft are approved - refreshing once but skipping aggressive sync'
+        );
         refreshAllData(); // Just refresh data once without triggering sync
       } else {
         // Schedule a sync with a slight delay to allow other operations to complete
         const syncTimer = setTimeout(() => {
           triggerImmediateStatusSync();
         }, 500);
-        
+
+        // eslint-disable-next-line consistent-return
         return () => clearTimeout(syncTimer);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliverables]);
 
   // Add a function to check and fix any inappropriate status changes for final drafts
@@ -2619,20 +2363,20 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   //     // Only run this check for final drafts
   //     const isFinalDraft = submission?.submissionType?.type === 'FINAL_DRAFT';
   //     if (!isFinalDraft) return;
-      
+
   //     // If the status is not APPROVED, but all sections are approved, fix it
   //     if (submission?.status !== 'APPROVED') {
   //       console.log('Final draft has incorrect status - checking if it should be APPROVED');
-        
+
   //       // Check if all sections are approved
-  //       const allSectionsApproved = 
+  //       const allSectionsApproved =
   //         (!deliverables?.videos?.length || deliverables.videos.every(v => v.status === 'APPROVED')) &&
   //         (!deliverables?.rawFootages?.length || deliverables.rawFootages.every(f => f.status === 'APPROVED')) &&
   //         (!deliverables?.photos?.length || deliverables.photos.every(p => p.status === 'APPROVED'));
-        
+
   //       if (allSectionsApproved) {
   //         console.log('Detected approved final draft with incorrect status - restoring APPROVED status');
-          
+
   //         try {
   //           const restorePayload = {
   //             submissionId: submission.id,
@@ -2641,10 +2385,10 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   //             forceStatusChange: true,
   //             skipAutoSync: true // Add flag to skip auto-sync on backend
   //           };
-            
+
   //           await axiosInstance.patch(`/api/submission/status`, restorePayload);
   //           console.log('Successfully restored APPROVED status for final draft');
-            
+
   //           // Refresh data to show updated status
   //           await refreshAllData();
   //         } catch (error) {
@@ -2699,9 +2443,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 </Stack>
               </Stack>
             </Stack>
-
             {submission?.status === 'NOT_STARTED' && <EmptyContent title="No Submission" />}
-
             {submission?.status === 'IN_PROGRESS' &&
               !submission?.video?.length &&
               !submission?.photos?.length &&
@@ -2719,11 +2461,10 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
                     {/* Status Banner */}
-                    {renderStatusBanner()}
+                    {/* {renderStatusBanner()} */}
 
                     {/* Submission Summary - Show sections approval status */}
                     {renderSubmissionSummary()}
-
                     {/* Media Selection Navigation */}
                     <Box sx={{ mb: 3 }}>
                       <Stack
@@ -2811,7 +2552,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                         )}
                       </Stack>
                     </Box>
-
                     {/* Content Display Box */}
                     <Box
                       component={Paper}
@@ -2825,8 +2565,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                       {selectedTab === 'video' && (
                         <>
                           {/* Status banner for videos */}
-                          {renderSectionStatusBanner('video')}
-                          
+                          {/* {renderSectionStatusBanner('video')} */}
+
                           {campaign?.campaignCredits && !!deliverables?.videos?.length && (
                             <Grid container spacing={{ xs: 1, sm: 2 }}>
                               {deliverables.videos.map((videoItem, index) => (
@@ -3055,11 +2795,12 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
 
                                       {/* Feedback Content */}
                                       <Box sx={{ textAlign: 'left', mt: 1 }}>
-                                        {feedback.content && feedback.content.split('\n').map((line, i) => (
-                                          <Typography key={i} variant="body2">
-                                            {line}
-                                          </Typography>
-                                        ))}
+                                        {feedback.content &&
+                                          feedback.content.split('\n').map((line, i) => (
+                                            <Typography key={i} variant="body2">
+                                              {line}
+                                            </Typography>
+                                          ))}
 
                                         {/* Display reasons if available */}
                                         {feedback.reasons && feedback.reasons.length > 0 && (
@@ -3137,11 +2878,12 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                   </Stack>
 
                                   <Box sx={{ textAlign: 'left', mt: 1 }}>
-                                    {feedback.content && feedback.content.split('\n').map((line, i) => (
-                                      <Typography key={i} variant="body2">
-                                        {line}
-                                      </Typography>
-                                    ))}
+                                    {feedback.content &&
+                                      feedback.content.split('\n').map((line, i) => (
+                                        <Typography key={i} variant="body2">
+                                          {line}
+                                        </Typography>
+                                      ))}
 
                                     {feedback.reasons && feedback.reasons.length > 0 && (
                                       <Box mt={1} sx={{ textAlign: 'left' }}>
@@ -3193,11 +2935,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                               <Typography variant="h6" mb={2}>
                                 Draft Videos Review
                               </Typography>
-                              
+
                               {/* Check if all videos are already approved */}
-                              {(deliverables?.videos?.length > 0 && 
-                                deliverables.videos.every(v => v.status === 'APPROVED')) ||
-                             (submission?.content && submission?.status === 'APPROVED') ? (
+                              {(deliverables?.videos?.length > 0 &&
+                                deliverables.videos.every((v) => v.status === 'APPROVED')) ||
+                              (submission?.content && submission?.status === 'APPROVED') ? (
                                 <Box
                                   sx={{
                                     p: 2,
@@ -3267,6 +3009,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                             '&:hover': {
                                               bgcolor: '#f5f5f5',
                                               borderColor: '#D4321C',
+                                              scale: 1.02,
+                                              transition: 'all linear .2s',
                                             },
                                             textTransform: 'none',
                                             px: 2.5,
@@ -3299,6 +3043,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                             '&:hover': {
                                               bgcolor: '#f5f5f5',
                                               borderColor: '#1ABF66',
+                                              scale: 1.02,
+                                              transition: 'all linear .2s',
                                             },
                                             fontSize: '1rem',
                                             minWidth: '80px',
@@ -3309,7 +3055,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                           Approve
                                         </LoadingButton>
                                       </Stack>
-                                      {confirmationApproveModal(approve.value, approve.onFalse, 'video')}
+                                      {confirmationApproveModal(
+                                        approve.value,
+                                        approve.onFalse,
+                                        'video'
+                                      )}
                                     </FormProvider>
                                   )}
 
@@ -3340,20 +3090,23 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                           placeholder="Provide feedback for the draft video."
                                         />
 
-                                        {campaign?.campaignCredits && selectedVideosForChange.length === 0 && (
-                                          <Typography
-                                            color="warning.main"
-                                            sx={{
-                                              mt: 1,
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: 1,
-                                            }}
-                                          >
-                                            <Iconify icon="solar:danger-triangle-bold" />
-                                            Please select at least one video that needs changes.
-                                          </Typography>
-                                        )}
+                                        {campaign?.campaignCredits &&
+                                          selectedVideosForChange.length === 0 && (
+                                            <Label
+                                              startIcon={
+                                                <Iconify icon="solar:danger-triangle-bold" />
+                                              }
+                                              color="warning"
+                                              // sx={{
+                                              //   mt: 1,
+                                              //   display: 'flex',
+                                              //   alignItems: 'center',
+                                              //   gap: 1,
+                                              // }}
+                                            >
+                                              Please select at least one video that needs changes.
+                                            </Label>
+                                          )}
 
                                         <Stack
                                           alignItems={{ xs: 'stretch', sm: 'center' }}
@@ -3425,7 +3178,11 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                         </Stack>
                                       </Stack>
 
-                                      {confirmationRequestModal(request.value, request.onFalse, 'video')}
+                                      {confirmationRequestModal(
+                                        request.value,
+                                        request.onFalse,
+                                        'video'
+                                      )}
                                     </FormProvider>
                                   )}
                                 </>
@@ -3439,7 +3196,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                         <>
                           {/* Status banner for raw footages */}
                           {renderSectionStatusBanner('rawFootages')}
-                          
+
                           {deliverables?.rawFootages?.length > 0 ? (
                             <Grid container spacing={{ xs: 1, sm: 2 }}>
                               {deliverables.rawFootages.map((footage, index) => (
@@ -3614,10 +3371,10 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                 <Typography variant="h6" mb={2}>
                                   Raw Footage Review
                                 </Typography>
-                                
+
                                 {/* Check if all raw footages are already approved */}
-                                {deliverables?.rawFootages?.length > 0 && 
-                                 deliverables.rawFootages.every(f => f.status === 'APPROVED') ? (
+                                {deliverables?.rawFootages?.length > 0 &&
+                                deliverables.rawFootages.every((f) => f.status === 'APPROVED') ? (
                                   <Box
                                     sx={{
                                       p: 2,
@@ -3654,7 +3411,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                             placeholder="Provide feedback for the raw footage."
                                             sx={{ mb: 2 }}
                                           />
-                                        
+
                                           <Stack
                                             alignItems={{ xs: 'stretch', sm: 'center' }}
                                             direction={{ xs: 'column', sm: 'row' }}
@@ -3689,7 +3446,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                             >
                                               Request a Change
                                             </Button>
-                                            
+
                                             <LoadingButton
                                               onClick={() => rawFootageApprove.onTrue()}
                                               variant="contained"
@@ -3718,8 +3475,12 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                                               Approve
                                             </LoadingButton>
                                           </Stack>
-                                          
-                                          {confirmationApproveModal(rawFootageApprove.value, rawFootageApprove.onFalse, 'rawFootages')}
+
+                                          {confirmationApproveModal(
+                                            rawFootageApprove.value,
+                                            rawFootageApprove.onFalse,
+                                            'rawFootages'
+                                          )}
                                         </Stack>
                                       </FormProvider>
                                     )}
@@ -3847,7 +3608,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                         <>
                           {/* Status banner for photos */}
                           {renderSectionStatusBanner('photos')}
-                          
+
                           {photos}
                         </>
                       )}

@@ -11,9 +11,9 @@ import {
   alpha,
   Button,
   Avatar,
-  Tooltip,
   Container,
   Typography,
+  IconButton,
   CircularProgress,
 } from '@mui/material';
 
@@ -45,7 +45,7 @@ const BoxStyle = {
   border: '1px solid #e0e0e0',
   borderRadius: 2,
   p: 3,
-  height: 'auto',
+  height: 1,
   width: '100%',
   '& .header': {
     borderBottom: '1px solid #e0e0e0',
@@ -341,6 +341,47 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                   Generate invoice
                 </LoadingButton>
               )} */}
+
+            <Stack direction="row" spacing={1}>
+              {data?.user?.creator?.instagram && (
+                <IconButton
+                  component="a"
+                  href={`https://instagram.com/${data?.user?.creator?.instagram}`}
+                  target="_blank"
+                  sx={{
+                    color: '#636366',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: alpha('#636366', 0.08),
+                    },
+                  }}
+                >
+                  <Iconify icon="mdi:instagram" width={24} />
+                </IconButton>
+              )}
+              {data?.user?.creator?.tiktok && (
+                <IconButton
+                  component="a"
+                  href={`https://tiktok.com/@${data?.user?.creator?.tiktok}`}
+                  target="_blank"
+                  sx={{
+                    color: '#636366',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: alpha('#636366', 0.08),
+                    },
+                  }}
+                >
+                  <Iconify icon="ic:baseline-tiktok" width={24} />
+                </IconButton>
+              )}
+            </Stack>
           </Stack>
         </Box>
 
@@ -349,33 +390,71 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
 
         {currentTab === 'profile' && (
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} px={{ md: 3 }}>
-            {/* Left Column - Creator Info and Payment Info */}
-            <Box sx={{ width: { xs: '100%', md: '80%' }, display: 'flex', flexDirection: 'column' }}>
-              {/* Creator Information Box */}
-              <Box sx={{ ...BoxStyle, mb: 2, flex: 1 }}>
-                <Box className="header">
-                  <img
-                    src="/assets/icons/overview/bluesmileyface.svg"
-                    alt="Creator Info"
-                    style={{
-                      width: 20,
-                      height: 20,
-                      color: '#203ff5',
-                    }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#221f20',
-                      fontWeight: 600,
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    Creator Information
-                  </Typography>
-                </Box>
+            {/* Left Column - Stats Section */}
+            <Box
+              sx={{
+                border: '1px solid #e7e7e7',
+                borderRadius: 2,
+                p: 3,
+                ml: { xs: 0, sm: -3 },
+                width: { md: '25%' },
+                height: '100%',
+              }}
+            >
+              <Stack spacing={3}>
+                {/* Stats Groups */}
+                <Stack spacing={2}>
+                  {/* Followers */}
+                  <Stack direction="row" spacing={2}>
+                    <Box
+                      component="img"
+                      src="/assets/icons/overview/purpleGroup.svg"
+                      sx={{ width: 32, height: 32, alignSelf: 'center' }}
+                    />
+                    <Stack>
+                      <Typography variant="h6">N/A</Typography>
+                      <Typography variant="subtitle2" color="#8e8e93" sx={{ fontWeight: 500 }}>
+                        Followers
+                      </Typography>
+                    </Stack>
+                  </Stack>
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2 }}>
+                  {/* Engagement Rate */}
+                  <Stack direction="row" spacing={2}>
+                    <Box
+                      component="img"
+                      src="/assets/icons/overview/greenChart.svg"
+                      sx={{ width: 32, height: 32, alignSelf: 'center' }}
+                    />
+                    <Stack>
+                      <Typography variant="h6">N/A</Typography>
+                      <Typography variant="subtitle2" color="#8e8e93" sx={{ fontWeight: 500 }}>
+                        Engagement Rate
+                      </Typography>
+                    </Stack>
+                  </Stack>
+
+                  {/* Average Likes */}
+                  <Stack direction="row" spacing={2}>
+                    <Box
+                      component="img"
+                      src="/assets/icons/overview/bubbleHeart.svg"
+                      sx={{ width: 32, height: 32, alignSelf: 'center' }}
+                    />
+                    <Stack>
+                      <Typography variant="h6">N/A</Typography>
+                      <Typography variant="subtitle2" color="#8e8e93" sx={{ fontWeight: 500 }}>
+                        Average Likes
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Stack>
+
+                {/* Divider */}
+                <Box sx={{ borderTop: '1px solid #e7e7e7' }} />
+
+                {/* Personal Information */}
+                <Stack spacing={3}>
                   {[
                     {
                       label: 'Pronouns',
@@ -414,16 +493,60 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                           maxWidth: '100%',
                           whiteSpace: 'normal',
                           display: 'block',
-                          mt: 0.5
+                          mt: 0.5,
                         }}
                       >
                         {item.value || item.fallback}
                       </Typography>
                     </Box>
                   ))}
-                </Box>
-                
+                </Stack>
+                {/* </Box> */}
+
                 <Box sx={{ mt: 3 }}>
+                  <Typography
+                    variant="subtitle2"
+                    color="#8e8e93"
+                    sx={{ fontWeight: 600, display: 'block', mb: 1, mt: -1 }}
+                  >
+                    Interests
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {data?.user?.creator?.interests?.length > 0 ? (
+                      [
+                        ...new Set(data.user.creator.interests.map((interest) => interest.name)),
+                      ].map((name) => (
+                        <Box
+                          key={name}
+                          component="span"
+                          sx={{
+                            display: 'inline-block',
+                            color: '#8e8e93',
+                            border: '1px solid #ebebeb',
+                            borderBottom: '3px solid #ebebeb',
+                            fontWeight: 600,
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 0.8,
+                            mr: 0.5,
+                            mb: 0.5,
+                            textTransform: 'uppercase',
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          {name}
+                        </Box>
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="#8e8e93">
+                        Not specified
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+
+                {/* <Box sx={{ mt: 3 }}>
                   <Typography
                     variant="subtitle2"
                     color="#8e8e93"
@@ -454,19 +577,43 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                         >
                           {name}
                         </Box>
-                      )) : 
-                      <Typography variant="body2">Not specified</Typography>
-                    }
-                  </Box>
-                </Box>
-              </Box>
+                      )),
+                      fallback: 'Not specified',
+                    },
+                  ].map((item) => (
+                    <Stack key={item.label} spacing={1}>
+                      <Typography
+                        variant="subtitle2"
+                        color="#8e8e93"
+                        sx={{ fontWeight: 600, mt: -0.5 }}
+                      >
+                        {item.label}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          wordBreak: 'break-word',
+                          display: item.label === 'Interests' ? 'flex' : 'block',
+                          flexWrap: 'wrap',
+                          gap: 0.5,
+                        }}
+                      >
+                        {item.value || item.fallback}
+                      </Typography>
+                    </Stack>
+                  ))}
+                </Box> */}
+              </Stack>
+            </Box>
 
+            {/* Right Column */}
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
               {/* Payment Information Box */}
-              <Box sx={{ ...BoxStyle, flex: 1 }}>
+              <Box sx={{ ...BoxStyle, mb: 2, flex: 1 }}>
                 <Box className="header">
                   <img
                     src="/assets/icons/overview/bluesmileyface.svg"
-                    alt="Payment Info"
+                    alt="Campaign Info"
                     style={{
                       width: 20,
                       height: 20,
@@ -520,7 +667,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                           maxWidth: '100%',
                           whiteSpace: 'normal',
                           display: 'block',
-                          mt: 0.5
+                          mt: 0.5,
                         }}
                       >
                         {item.value}
@@ -532,9 +679,11 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             </Box>
 
             {/* Right Column - Submission Status and Credits */}
-            <Box sx={{ width: { xs: '100%', md: '65%' }, display: 'flex', flexDirection: 'column' }}>
+            <Box
+              sx={{ width: { xs: '100%', md: '65%' }, display: 'flex', flexDirection: 'column' }}
+            >
               {/* Submission Status Box */}
-              <Box sx={{ ...BoxStyle, mb: 2, height: 'auto', minHeight: 'auto' }}>
+              <Box sx={{ ...BoxStyle, flex: 1 }}>
                 <Box className="header">
                   <Iconify
                     icon="mdi:clipboard-check-outline"
@@ -556,7 +705,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                   </Typography>
                 </Box>
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+                <Stack spacing={2}>
                   {[
                     { type: 'AGREEMENT_FORM', label: 'Agreement' },
                     { type: 'FIRST_DRAFT', label: 'First Draft' },
@@ -567,7 +716,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                       (sub) => sub.submissionType?.type === item.type
                     );
                     const status = submission?.status || 'NOT_STARTED';
-                    
+
                     return (
                       <Box key={item.type}>
                         <Typography
@@ -577,12 +726,14 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                         >
                           {item.label}
                         </Typography>
-                        <Box sx={{ 
-                          mt: 0.5,
-                          display: 'flex',
-                          justifyContent: 'center',
-                          width: '100%'
-                        }}>
+                        <Box
+                          sx={{
+                            mt: 0.5,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%',
+                          }}
+                        >
                           <Typography
                             variant="caption"
                             noWrap
@@ -644,13 +795,14 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                       </Box>
                     );
                   })}
-                </Box>
+                </Stack>
               </Box>
-
-              {/* Credits Assigned Box */}
-              <Box sx={{ ...BoxStyle, flex: 1, height: 'auto', mb: 2}}>
+            </Box>
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+              {/* Credits Assigned */}
+              <Box sx={{ ...BoxStyle, mb: 2, flex: 1 }}>
                 <Box className="header">
-                  <Iconify icon="ri:coin-line" width={20} color="#1340FF" />
+                  <Iconify icon="ri:coin-line" width={20} color="info.main" />
                   <Typography
                     variant="body2"
                     sx={{
@@ -664,90 +816,8 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                 </Box>
 
                 <Typography variant="subtitle2">
-                  <Label color="info" sx={{ bgcolor: '#F5F5F5', color: '#231F20', px: 1.5, py: 2, fontSize: '0.8rem' }}>{ugcCredits ?? 0} UGC Videos</Label>
+                  <Label color="info">{ugcCredits ?? 0} UGC Videos</Label>
                 </Typography>
-              </Box>
-              
-              {/* Social Media Box */}
-              <Box sx={{ ...BoxStyle, flex: 1, height: 'auto'}}>
-                <Box className="header">
-                  <Iconify icon="mdi:share-variant-outline" width={20} color="#1340FF" />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: '#221f20',
-                      fontWeight: 600,
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    Social Media
-                  </Typography>
-                </Box>
-
-                <Stack direction="row" spacing={1}>
-                  <Tooltip title={data?.user?.creator?.instagram ? "Instagram account connected" : "Instagram account not connected"}>
-                    <span style={{ display: 'inline-block' }}>
-                      <Button
-                        component={data?.user?.creator?.instagram ? "a" : "button"}
-                        href={data?.user?.creator?.instagram ? `https://instagram.com/${data?.user?.creator?.instagram}` : undefined}
-                        target="_blank"
-                        disabled={!data?.user?.creator?.instagram}
-                        startIcon={<Iconify icon="mdi:instagram" color={data?.user?.creator?.instagram ? "#231F20" : "#8e8e93"} />}
-                        sx={{
-                          px: 1.5,
-                          py: 0.5,
-                          color: data?.user?.creator?.instagram ? '#231F20' : '#8e8e93',
-                          border: '1px solid #e7e7e7',
-                          borderBottom: '3px solid #e7e7e7',
-                          borderRadius: 1,
-                          cursor: data?.user?.creator?.instagram ? 'pointer' : 'not-allowed',
-                          opacity: data?.user?.creator?.instagram ? 1 : 0.6,
-                          '&:hover': {
-                            bgcolor: data?.user?.creator?.instagram ? alpha('#636366', 0.08) : 'transparent',
-                          },
-                          '&.Mui-disabled': {
-                            color: '#8e8e93',
-                            border: '1px solid #e7e7e7',
-                            borderBottom: '3px solid #e7e7e7',
-                          },
-                        }}
-                      >
-                        Instagram
-                      </Button>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title={data?.user?.creator?.tiktok ? "TikTok account connected" : "TikTok account not connected"}>
-                    <span style={{ display: 'inline-block' }}>
-                      <Button
-                        component={data?.user?.creator?.tiktok ? "a" : "button"}
-                        href={data?.user?.creator?.tiktok ? `https://tiktok.com/@${data?.user?.creator?.tiktok}` : undefined}
-                        target="_blank"
-                        disabled={!data?.user?.creator?.tiktok}
-                        startIcon={<Iconify icon="ic:baseline-tiktok" color={data?.user?.creator?.tiktok ? "#231F20" : "#8e8e93"} />}
-                        sx={{
-                          px: 2,
-                          py: 0.5,
-                          color: data?.user?.creator?.tiktok ? '#231F20' : '#8e8e93',
-                          border: '1px solid #e7e7e7',
-                          borderBottom: '3px solid #e7e7e7',
-                          borderRadius: 1,
-                          cursor: data?.user?.creator?.tiktok ? 'pointer' : 'not-allowed',
-                          opacity: data?.user?.creator?.tiktok ? 1 : 0.6,
-                          '&:hover': {
-                            bgcolor: data?.user?.creator?.tiktok ? alpha('#636366', 0.08) : 'transparent',
-                          },
-                          '&.Mui-disabled': {
-                            color: '#8e8e93',
-                            border: '1px solid #e7e7e7',
-                            borderBottom: '3px solid #e7e7e7',
-                          },
-                        }}
-                      >
-                        TikTok
-                      </Button>
-                    </span>
-                  </Tooltip>
-                </Stack>
               </Box>
             </Box>
           </Stack>

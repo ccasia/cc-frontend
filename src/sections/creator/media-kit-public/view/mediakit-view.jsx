@@ -344,7 +344,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                 fontSize: { xs: '2rem', md: '3rem' },
                 fontFamily: 'Aileron, sans-serif',
                 fontWeight: 300,
-                // letterSpacing: '0.05em',
+                letterSpacing: '0.05em',
                 textAlign: 'left',
                 display: 'block',
               }}

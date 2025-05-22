@@ -45,7 +45,6 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
   const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
-  const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
   const mediaKit = useBoolean();
   const theme = useTheme();
 
@@ -69,25 +68,8 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
       );
     }
 
-    // Sort alphabetically by creator name
-    if (filtered?.length) {
-      filtered = [...filtered].sort((a, b) => {
-        const nameA = (a.user?.name || '').toLowerCase();
-        const nameB = (b.user?.name || '').toLowerCase();
-        
-        return sortDirection === 'asc' 
-          ? nameA.localeCompare(nameB) 
-          : nameB.localeCompare(nameA);
-      });
-    }
-
     return filtered;
-  }, [pitches, selectedFilter, search, sortDirection]);
-
-  // Toggle sort direction
-  const handleToggleSort = () => {
-    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-  };
+  }, [pitches, selectedFilter, search]);
 
   const matchCampaignPercentage = (pitch) => {
     if (!pitch) return null;
@@ -282,57 +264,6 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
             }}
           >
             {`Approved (${approvedCount})`}
-          </Button>
-          
-          <Button
-            onClick={handleToggleSort}
-            endIcon={
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {sortDirection === 'asc' ? (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                      A
-                    </Typography>
-                    <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                      Z
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                      Z
-                    </Typography>
-                    <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                      A
-                    </Typography>
-                  </Stack>
-                )}
-                <Iconify 
-                  icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
-                  width={12}
-                />
-              </Stack>
-            }
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              height: '42px',
-              color: '#637381',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: 1,
-              textTransform: 'none',
-              whiteSpace: 'nowrap',
-              boxShadow: 'none',
-              '&:hover': {
-                backgroundColor: 'transparent',
-                color: '#221f20',
-              },
-            }}
-          >
-            Alphabetical
           </Button>
         </Stack>
 

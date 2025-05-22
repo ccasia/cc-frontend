@@ -372,14 +372,14 @@ export default function DashboardLayout({ children }) {
               No registration needed. Just drop your details below!
             </Typography>
           </DialogTitle>
-          <IconButton 
+          <IconButton
             onClick={kwspFormDialog.onFalse}
-            sx={{ 
+            sx={{
               '@media (max-width: 600px)': {
                 mt: 2,
                 mr: 0,
-                ml: -3
-              }
+                ml: -3,
+              },
             }}
           >
             <Iconify icon="charm:cross" width={20} />
@@ -388,16 +388,12 @@ export default function DashboardLayout({ children }) {
         <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 2 } }}>
           <Stack spacing={{ xs: 2, sm: 3 }}>
             <FormField label="Full Name">
-              <RHFTextField 
-                name="fullName" 
-                placeholder="Enter your full name"
-                size="small"
-              />
+              <RHFTextField name="fullName" placeholder="Enter your full name" size="small" />
             </FormField>
 
             <FormField label="NRIC/Passport Number">
-              <RHFTextField 
-                name="nricPassport" 
+              <RHFTextField
+                name="nricPassport"
                 placeholder="Enter your NRIC/Passport No."
                 size="small"
               />
@@ -410,7 +406,8 @@ export default function DashboardLayout({ children }) {
                 mt: 2,
               }}
             >
-              By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan initiative. You will be notified via email once the funds have been transferred!
+              By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan
+              initiative. You will be notified via email once the funds have been transferred!
             </Typography>
           </Stack>
         </DialogContent>
@@ -420,13 +417,15 @@ export default function DashboardLayout({ children }) {
             type="submit"
             loading={isKwspSubmitting}
             sx={{
-              background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+              background:
+                'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
               boxShadow: '0px -3px 0px 0px rgba(68, 68, 77, 0.45) inset',
               '&:hover': {
                 background: '#1340FF',
               },
               '&.Mui-disabled': {
-                background: 'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
+                background:
+                  'linear-gradient(0deg, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.60) 100%), #1340FF',
                 color: 'rgba(255, 255, 255, 0.5)',
               },
             }}

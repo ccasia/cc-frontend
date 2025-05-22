@@ -1,26 +1,15 @@
 import React from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { keyframes } from '@emotion/react';
 import { enqueueSnackbar } from 'notistack';
 
-import {
-  Box,
-  Stack,
-  alpha,
-  Button,
-  useTheme,
-  CardMedia,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Stack, alpha, Button, useTheme, Typography, useMediaQuery } from '@mui/material';
 
 import axiosInstance from 'src/utils/axios';
 import { useSocialMediaData } from 'src/utils/store';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
@@ -37,12 +26,7 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
-const typeAnimation = keyframes`
-  from { width: 0; }
-  to { width: 100%; }
-`;
-
-const TopContentGrid = ({ topContents, mobileCarousel }) => {
+const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // const isMedium = useMediaQuery(theme.breakpoints.down('md'));
@@ -74,89 +58,90 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
           pt: 1,
         }}
       >
-        {displayContents.length > 0 && displayContents.map((content, index) => (
-          <Box
-            key={index}
-            sx={{
-              minWidth: 240,
-              maxWidth: 280,
-              flex: '0 0 auto',
-              scrollSnapAlign: 'center',
-              borderRadius: 0,
-              overflow: 'hidden',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-              bgcolor: 'background.paper',
-              display: 'flex',
-              flexDirection: 'column',
-              mx: 0,
-            }}
-          >
+        {displayContents.length > 0 &&
+          displayContents.map((content, index) => (
             <Box
+              key={index}
               sx={{
-                position: 'relative',
-                height: 400,
-                width: '100%',
+                minWidth: 240,
+                maxWidth: 280,
+                flex: '0 0 auto',
+                scrollSnapAlign: 'center',
+                borderRadius: 0,
                 overflow: 'hidden',
-                borderRadius: 1,
+                boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+                bgcolor: 'background.paper',
+                display: 'flex',
+                flexDirection: 'column',
+                mx: 0,
               }}
             >
-              <iframe
-                src={content?.embed_link}
-                title={`TikTok video ${index + 1}`}
-                style={{ 
-                  height: '100%', 
-                  width: '100%', 
-                  border: 'none',
-                  borderRadius: '4px',
-                }}
-                allowFullScreen
-              />
               <Box
                 sx={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
+                  position: 'relative',
+                  height: 400,
                   width: '100%',
-                  color: 'white',
-                  p: 2,
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+                  overflow: 'hidden',
+                  borderRadius: 1,
                 }}
-                className="media-kit-engagement-icons"
               >
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Iconify icon="material-symbols:favorite-outline" width={20} />
-                    <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
+                <iframe
+                  src={content?.embed_link}
+                  title={`TikTok video ${index + 1}`}
+                  style={{
+                    height: '100%',
+                    width: '100%',
+                    border: 'none',
+                    borderRadius: '4px',
+                  }}
+                  allowFullScreen
+                />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    width: '100%',
+                    color: 'white',
+                    p: 2,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+                  }}
+                  className="media-kit-engagement-icons"
+                >
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Iconify icon="material-symbols:favorite-outline" width={20} />
+                      <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
+                    </Stack>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Iconify icon="iconamoon:comment" width={20} />
+                      <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
+                    </Stack>
                   </Stack>
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Iconify icon="iconamoon:comment" width={20} />
-                    <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
-                  </Stack>
-                </Stack>
+                </Box>
               </Box>
+              <Typography
+                variant="body2"
+                sx={{
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  fontSize: '0.8rem',
+                  mt: 2,
+                  mx: 2,
+                  mb: 2,
+                  color: 'text.primary',
+                  fontWeight: 500,
+                  width: '100%',
+                  maxWidth: '100%',
+                  lineHeight: 1.5,
+                }}
+              >
+                {content.video_description || 'No description available'}
+              </Typography>
             </Box>
-            <Typography
-              variant="body2"
-              sx={{
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                fontSize: '0.8rem',
-                mt: 2,
-                mx: 2,
-                mb: 2,
-                color: 'text.primary',
-                fontWeight: 500,
-                width: '100%',
-                maxWidth: '100%',
-                lineHeight: 1.5,
-              }}
-            >
-              {content.video_description || 'No description available'}
-            </Typography>
-          </Box>
-        ))}
+          ))}
       </Box>
     );
   }
@@ -172,7 +157,7 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
         gap: { xs: 2, md: 4 },
         justifyContent: { xs: 'center', sm: 'flex-start' },
         alignItems: { xs: 'center', sm: 'flex-start' },
-        overflow: 'auto'
+        overflow: 'auto',
       }}
       component={m.div}
       variants={{
@@ -187,93 +172,92 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
       animate="show"
       initial="hidden"
     >
-      {displayContents.length > 0 && displayContents.map((content, index) => (
-        <Box
-          key={index}
-          component={m.div}
-          variants={{
-            hidden: { opacity: 0, y: 50 },
-            show: { opacity: 1, y: 0 },
-          }}
-          sx={{
-            width: { xs: '100%', sm: '30%', md: 350 },
-            minWidth: { xs: '280px', sm: '250px', md: '320px' },
-            maxWidth: { xs: '100%', sm: '350px' },
-          }}
-        >
+      {displayContents.length > 0 &&
+        displayContents.map((content, index) => (
           <Box
+            key={index}
+            component={m.div}
+            variants={{
+              hidden: { opacity: 0, y: 50 },
+              show: { opacity: 1, y: 0 },
+            }}
             sx={{
-              position: 'relative',
-              height: { xs: 400, sm: 450, md: 550 },
-              width: '100%',
-              overflow: 'hidden',
-              borderRadius: 1,
-              cursor: 'pointer',
+              width: { xs: '100%', sm: '30%', md: 350 },
+              minWidth: { xs: '280px', sm: '250px', md: '320px' },
+              maxWidth: { xs: '100%', sm: '350px' },
             }}
           >
-            <iframe
-              src={content?.embed_link}
-              title={`TikTok video ${index + 1}`}
-              style={{ 
-                height: '100%', 
-                width: '100%', 
-                border: 'none',
-                borderRadius: '4px',
-              }}
-              allowFullScreen
-            />
-
             <Box
               sx={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
+                position: 'relative',
+                height: { xs: 400, sm: 450, md: 550 },
                 width: '100%',
-                color: 'white',
-                p: isMobile ? 2 : 1.5,
-                px: 2,
-                mb: 1,
-                borderRadius: '0 0 4px 4px',
-                pointerEvents: 'none', // Allow clicks to pass through to iframe
-                background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+                overflow: 'hidden',
+                borderRadius: 1,
+                cursor: 'pointer',
               }}
-              className="media-kit-engagement-icons"
             >
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Iconify icon="material-symbols:favorite-outline" width={20} />
-                  <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
-                </Stack>
+              <iframe
+                src={content?.embed_link}
+                title={`TikTok video ${index + 1}`}
+                style={{
+                  height: '100%',
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '4px',
+                }}
+                allowFullScreen
+              />
 
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Iconify icon="iconamoon:comment" width={20} />
-                  <Typography variant="subtitle2">
-                    {formatNumber(content?.comment)}
-                  </Typography>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  width: '100%',
+                  color: 'white',
+                  p: isMobile ? 2 : 1.5,
+                  px: 2,
+                  mb: 1,
+                  borderRadius: '0 0 4px 4px',
+                  pointerEvents: 'none', // Allow clicks to pass through to iframe
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+                }}
+                className="media-kit-engagement-icons"
+              >
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="material-symbols:favorite-outline" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.like)}</Typography>
+                  </Stack>
+
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="iconamoon:comment" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.comment)}</Typography>
+                  </Stack>
                 </Stack>
-              </Stack>
+              </Box>
             </Box>
+
+            <Typography
+              variant="body2"
+              className="media-kit-caption"
+              sx={{
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                mt: 1,
+                color: 'text.primary',
+                width: '100%',
+                maxWidth: '100%',
+              }}
+            >
+              {`${content?.video_description?.slice(0, 80)}...`}
+            </Typography>
           </Box>
-          
-          <Typography
-            variant="body2"
-            className="media-kit-caption"
-            sx={{
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              mt: 1,
-              color: 'text.primary',
-              width: '100%',
-              maxWidth: '100%',
-            }}
-          >
-            {`${content?.video_description?.slice(0, 80)}...`}
-          </Typography>
-        </Box>
-      ))}
+        ))}
     </Box>
   );
 };
@@ -293,7 +277,7 @@ TopContentGrid.defaultProps = {
   topContents: [],
 };
 
-const MediaKitSocialContent = ({ tiktok }) => {
+const MediaKitSocialContent = () => {
   const theme = useTheme();
   const { user } = useAuthContext();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -332,8 +316,8 @@ const MediaKitSocialContent = ({ tiktok }) => {
           width: '100%',
           borderRadius: 2,
           mb: 4,
-          bgcolor: (theme) => alpha(theme.palette.background.neutral, 0.4),
-          border: (theme) => `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
+          bgcolor: alpha(theme.palette.background.neutral, 0.4),
+          border: `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
           boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
         }}
       >
@@ -358,7 +342,8 @@ const MediaKitSocialContent = ({ tiktok }) => {
           </Typography>
 
           <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-            Connect your TikTok account to showcase your top content and analytics in your media kit.
+            Connect your TikTok account to showcase your top content and analytics in your media
+            kit.
           </Typography>
 
           <Button
@@ -423,7 +408,9 @@ const MediaKitSocialContent = ({ tiktok }) => {
               pt: 1,
             }}
           >
-            {contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} mobileCarousel />}
+            {contentToShow.length > 0 && (
+              <TopContentGrid topContents={contentToShow} mobileCarousel />
+            )}
           </Box>
         </Box>
       ) : (
@@ -436,5 +423,5 @@ const MediaKitSocialContent = ({ tiktok }) => {
 export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
-  tiktok: PropTypes.object,
+  // tiktok: PropTypes.object,
 };

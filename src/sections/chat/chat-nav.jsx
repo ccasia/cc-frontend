@@ -268,7 +268,7 @@ export default function ChatNav({}) {
         <Tabs
           variant="fullWidth"
           value={selected}
-          onChange={(e, val) => {
+          onChange={(_, val) => {
             setSelected(val);
           }}
           sx={{
@@ -327,9 +327,10 @@ export default function ChatNav({}) {
       </Box>
 
       {(isAdmin || isSuperAdmin) && contacts.length > 0 && (
-        <Box sx={{ px: 1 }}>
+        <Box>
           <Autocomplete
             popupIcon={null}
+            size="small"
             disablePortal
             noOptionsText={
               'No creator found'
@@ -391,9 +392,10 @@ export default function ChatNav({}) {
       {/* {!mdUp && renderToggleBtn} */}
 
       <Stack
+        spacing={1}
         sx={{
           height: '100%',
-          width: NAV_WIDTH,
+          // width: NAV_WIDTH,
           position: 'relative',
           overflow: 'hidden',
           flexShrink: 0,
@@ -402,6 +404,7 @@ export default function ChatNav({}) {
           transition: theme.transitions.create(['width'], {
             duration: theme.transitions.duration.shorter,
           }),
+
           ...(collapseDesktop && {
             width: NAV_COLLAPSE_WIDTH,
           }),

@@ -240,9 +240,6 @@ const StyledNavItem = styled(ListItemButton, {
     arrow: {
       flexShrink: 0,
       marginLeft: theme.spacing(0.75),
-      ...(opened && {
-        color: 'rgba(19, 64, 255, 1)',
-      }),
     },
   };
 
@@ -273,7 +270,14 @@ const StyledNavItem = styled(ListItemButton, {
 
       ...(active && {
         fontWeight: 900,
-        color: 'rgba(19, 64, 255, 1)',
+        // color: 'black',
+        color:
+          theme.palette.mode === 'light'
+            ? 'rgba(19, 64, 255, 1)'
+            : // theme.palette.primary.main
+              theme.palette.primary.light,
+        // backgroundColor: 'black',
+        // backgroundColor: alpha('rgba(19, 64, 255, 1)', 0.08),
         background: alpha('rgba(19, 64, 255, 1)', 0.08),
         // '::before': {
         //   content: '""',
@@ -291,14 +295,8 @@ const StyledNavItem = styled(ListItemButton, {
         },
       }),
       ...(opened && {
-        color: 'rgba(19, 64, 255, 1)',
-        backgroundColor: alpha('rgba(19, 64, 255, 1)', 0.08),
-        '&:hover': {
-          backgroundColor: alpha('#203ff5', 0.2),
-        },
-        '& .arrow': {
-          color: 'rgba(19, 64, 255, 1)',
-        },
+        color: theme.palette.text.primary,
+        backgroundColor: theme.palette.action.hover,
       }),
     }),
 
@@ -345,14 +343,7 @@ const StyledNavItem = styled(ListItemButton, {
         ...baseStyles.arrow,
       },
       ...(active && {
-        color: 'rgba(19, 64, 255, 1)',
-      }),
-      ...(opened && {
-        color: 'rgba(19, 64, 255, 1)',
-        backgroundColor: alpha('rgba(19, 64, 255, 1)', 0.08),
-        '&:hover': {
-          backgroundColor: alpha('#203ff5', 0.2),
-        },
+        color: theme.palette.text.primary,
       }),
     }),
 

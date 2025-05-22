@@ -92,7 +92,7 @@ const PackageCreateDialog = ({ open, onClose, setValue: set, clientId }) => {
       ...data,
       clientId,
     };
-    console.log(updatedData);
+
     try {
       const res = await axiosInstance.patch(
         `${endpoints.company.linkPackage(clientId)}`,

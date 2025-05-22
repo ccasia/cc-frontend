@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -42,7 +42,6 @@ export default function UserCard({
   const loading = useBoolean();
   const confirmationDialog = useBoolean();
   const { user } = useAuthContext();
-  const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
   const isDisabled = useMemo(
     () => user?.admin?.role?.name === 'Finance' && user?.admin?.mode === 'advanced',
@@ -55,11 +54,6 @@ export default function UserCard({
     } else {
       onEditAgreement();
     }
-  };
-
-  // Toggle sort direction
-  const handleToggleSort = () => {
-    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
   const removeCreatorFromCampaign = async (userId, id) => {
@@ -151,58 +145,6 @@ export default function UserCard({
 
           {/* Right Side - Social Links and Label */}
           <Stack alignItems="flex-end" spacing={1} sx={{ ml: 1 }}>
-            {/* Alphabetical Sort Button */}
-            {/* <Button
-              onClick={handleToggleSort}
-              endIcon={
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  {sortDirection === 'asc' ? (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                        A
-                      </Typography>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                        Z
-                      </Typography>
-                    </Stack>
-                  ) : (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                        Z
-                      </Typography>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                        A
-                      </Typography>
-                    </Stack>
-                  )}
-                  <Iconify 
-                    icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
-                    width={12}
-                  />
-                </Stack>
-              }
-              sx={{
-                px: 1.5,
-                py: 0.75,
-                height: '32px',
-                color: '#637381',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: 1,
-                textTransform: 'none',
-                whiteSpace: 'nowrap',
-                boxShadow: 'none',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  color: '#221f20',
-                },
-              }}
-            >
-              Alphabetical
-            </Button> */}
-
             <Stack direction="row" spacing={1}>
               <Tooltip title={creator?.creator?.instagram ? "Instagram account connected" : "Instagram account not connected"}>
                 <span>

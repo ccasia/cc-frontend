@@ -5,7 +5,15 @@ import { format, getTime, formatDistanceToNow } from 'date-fns';
 export function fDate(date, newFormat) {
   const fm = newFormat || 'dd MMM yyyy';
 
-  return date ? format(new Date(date), fm) : '';
+  if (!date) return '';
+
+  // Handle TikTok's numeric timestamp format
+  if (typeof date === 'number' || !Number.isNaN(Number(date))) {
+    // TikTok uses seconds, we need milliseconds
+    return format(new Date(Number(date) * 1000), fm);
+  }
+
+  return format(new Date(date), fm);
 }
 
 export function fTime(date, newFormat) {
@@ -30,7 +38,7 @@ export function fToNow(date) {
   const distance = formatDistanceToNow(new Date(date), {
     includeSeconds: true,
   });
-  
+
   return `${distance} ago`;
 }
 

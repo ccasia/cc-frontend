@@ -1,11 +1,9 @@
 import React from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { keyframes } from '@emotion/react';
 
 import {
   Box,
-  Grid,
   Stack,
   alpha,
   Button,
@@ -19,7 +17,6 @@ import { useSocialMediaData } from 'src/utils/store';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
@@ -36,12 +33,7 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
-const typeAnimation = keyframes`
-  from { width: 0; }
-  to { width: 100%; }
-`;
-
-const TopContentGrid = ({ topContents, mobileCarousel }) => {
+const TopContentGrid = ({ topContents }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // const isMedium = useMediaQuery(theme.breakpoints.down('md'));
@@ -132,7 +124,9 @@ const TopContentGrid = ({ topContents, mobileCarousel }) => {
                   </Stack>
                   <Stack direction="row" alignItems="center" spacing={0.5}>
                     <Iconify icon="iconamoon:comment" width={20} />
-                    <Typography variant="subtitle2">{formatNumber(content?.comments_count)}</Typography>
+                    <Typography variant="subtitle2">
+                      {formatNumber(content?.comments_count)}
+                    </Typography>
                   </Stack>
                 </Stack>
               </Box>
@@ -295,7 +289,7 @@ TopContentGrid.propTypes = {
   ).isRequired,
 };
 
-const MediaKitSocialContent = ({ instagram }) => {
+const MediaKitSocialContent = () => {
   const { user } = useAuthContext();
   const instagramData = useSocialMediaData((state) => state.instagram);
   const theme = useTheme();
@@ -303,7 +297,7 @@ const MediaKitSocialContent = ({ instagram }) => {
 
   // Get the real data from store
   const realTopContent = instagramData?.medias?.sortedVideos;
-  
+
   // Check if we have real content
   const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
   const isConnected = !!user?.creator?.isFacebookConnected;
@@ -324,8 +318,8 @@ const MediaKitSocialContent = ({ instagram }) => {
           width: '100%',
           borderRadius: 2,
           mb: 4,
-          bgcolor: (theme) => alpha(theme.palette.background.neutral, 0.4),
-          border: (theme) => `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
+          bgcolor: alpha(theme.palette.background.neutral, 0.4),
+          border: `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
           boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
         }}
       >
@@ -350,7 +344,7 @@ const MediaKitSocialContent = ({ instagram }) => {
           </Typography>
 
           <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-          Connect your Instagram to showcase your top content and analytics.
+            Connect your Instagram to showcase your top content and analytics.
           </Typography>
 
           <Button
@@ -416,7 +410,9 @@ const MediaKitSocialContent = ({ instagram }) => {
               pt: 1,
             }}
           >
-            {contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} mobileCarousel />}
+            {contentToShow.length > 0 && (
+              <TopContentGrid topContents={contentToShow} mobileCarousel />
+            )}
           </Box>
         </Box>
       ) : (
@@ -429,5 +425,5 @@ const MediaKitSocialContent = ({ instagram }) => {
 export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
-  instagram: PropTypes.object,
+  // instagram: PropTypes.object,
 };

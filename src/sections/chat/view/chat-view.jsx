@@ -177,12 +177,12 @@ export default function ChatView() {
   const renderNav = <ChatNav contacts={[]} selectedConversationId={selectedConversationId} />;
 
   return (
-    <Container 
-      maxWidth={settings.themeStretch ? false : 'xl'} 
-      sx={{ 
+    <Container
+      maxWidth={settings.themeStretch ? false : 'xl'}
+      sx={{
         height: '100%',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
       }}
     >
       {!smDown && (
@@ -245,23 +245,25 @@ export default function ChatView() {
       )}
 
       {!smDown && (
-        <Stack 
-          direction="row" 
-          sx={{ 
+        <Stack
+          direction="row"
+          sx={{
             flex: 1,
-            minHeight: 0
-          }} 
+            minHeight: 0,
+          }}
           gap={2}
         >
-          <Box sx={{ 
-            border: 1, 
-            borderRadius: 2, 
-            borderColor: '#EBEBEB', 
-            p: 2, 
-            overflowY: 'hidden',
-            minWidth: 400,
-            flexShrink: 0
-          }}>
+          <Box
+            sx={{
+              border: 1,
+              borderRadius: 2,
+              borderColor: '#EBEBEB',
+              p: 2,
+              overflowY: 'hidden',
+              minWidth: 400,
+              flexShrink: 0,
+            }}
+          >
             {renderNav}
           </Box>
 
@@ -272,7 +274,7 @@ export default function ChatView() {
               border: 1,
               borderRadius: 2,
               borderColor: '#EBEBEB',
-              flexGrow: 1
+              flexGrow: 1,
             }}
           >
             <Stack

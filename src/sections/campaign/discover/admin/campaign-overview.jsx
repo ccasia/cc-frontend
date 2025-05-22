@@ -8,12 +8,10 @@ import {
   Card,
   Grid,
   Zoom,
-  Chip,
   Stack,
   Dialog,
   Avatar,
   Button,
-  Divider,
   Typography,
   DialogTitle,
   DialogContent,
@@ -36,7 +34,7 @@ const BoxStyle = {
   borderRadius: 2,
   p: 3,
   mt: -1,
-  mb: 1,
+  mb: 3,
   width: '100%',
   '& .header': {
     borderBottom: '1px solid #e0e0e0',
@@ -215,10 +213,6 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
     }));
   };
 
-  const handleProfileClick = (creator) => {
-    navigate(`/dashboard/campaign/discover/detail/${campaign.id}/creator/${creator.user.id}`);
-  };
-
   return (
     <Grid container spacing={{ xs: 1, sm: 2 }}>
       <Grid item xs={12} sm={6} md={3}>
@@ -252,7 +246,6 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Box>
         </Zoom>
       </Grid>
-      
       <Grid item xs={12} sm={6} md={3}>
         <Zoom in>
           <Box component={Card} p={3} flexGrow={1} sx={cardStyle}>
@@ -339,363 +332,281 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
           </Box>
         </Zoom>
       </Grid>
+      <Grid item xs={12} md={6}>
+        <Zoom in>
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Box
+                component="img"
+                src="/assets/icons/overview/lightBulb.svg"
+                sx={{
+                  width: 20,
+                  height: 20,
+                  color: '#203ff5',
+                }}
+              />
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  CREATOR PITCHES
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  (
+                  {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')?.length ||
+                    0}
+                  )
+                </Typography>
+              </Stack>
+            </Box>
 
-      <Grid container spacing={{ xs: 1, sm: 2 }}>
-        <Grid item xs={12} md={6}>
-          <Grid container direction="column" spacing={2}>
-            <Grid item>
-              <Zoom in>
-                <Box sx={BoxStyle}>
-                  <Box className="header">
-                    <Box
-                      component="img"
-                      src="/assets/icons/overview/lightBulb.svg"
+            <Stack spacing={[1]}>
+              {localCampaign?.pitch?.length > 0 ? (
+                localCampaign?.pitch
+                  ?.filter((pitch) => pitch.status === 'undecided')
+                  ?.map((pitch, index) => (
+                    <Stack
+                      key={pitch.id}
+                      direction="row"
+                      alignItems="center"
+                      spacing={2}
                       sx={{
-                        width: 20,
-                        height: 20,
-                        color: '#203ff5',
-                      }}
-                    />
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#221f20',
-                          fontWeight: 600,
-                          fontSize: '0.8rem',
-                        }}
-                      >
-                        CREDITS TRACKING
-                      </Typography>
-                    </Stack>
-                  </Box>
-
-                  <Stack spacing={[1]}>
-                    {campaign?.campaignCredits && latestPackageItem ? (
-                      <Stack spacing={1.5} color="text.secondary">
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography sx={{ mt: 1, fontSize: '16px', fontWeight: 600, color: '#636366' }}>Campaign Credits</Typography>
-                          <Typography sx={{ mt: 1, fontSize: '16px', fontWeight: 600, color: '#636366' }}>
-                            {campaign?.campaignCredits || 0} UGC Credits
-                          </Typography>
-                        </Stack>
-                        <Divider />
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>Credits Utilized</Typography>
-                          <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#636366' }}>
-                            {campaign?.creditsUtilized || 0} UGC Credits
-                          </Typography>
-                        </Stack>
-                        <Divider />
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography sx={{ mb: -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}>Credits Pending</Typography>
-                          <Typography sx={{ mb: -1, fontSize: '16px', fontWeight: 600, color: '#636366' }}>
-                            {campaign?.creditsPending ?? 0} UGC Credits
-                          </Typography>
-                        </Stack>  
-                      </Stack>
-                    ) : (
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}
-                      >
-                        Not connected to any package
-                      </Typography>
-                    )}
-                  </Stack>
-                </Box>
-              </Zoom>
-            </Grid>
-            <Grid item>
-              <Zoom in>
-                <Box sx={BoxStyle}>
-                  <Box className="header">
-                    <Box
-                      component="img"
-                      src="/assets/icons/overview/lightBulb.svg"
-                      sx={{
-                        width: 20,
-                        height: 20,
-                        color: '#203ff5',
-                      }}
-                    />
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#221f20',
-                          fontWeight: 600,
-                          fontSize: '0.8rem',
-                        }}
-                      >
-                        CREATOR PITCHES
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#221f20',
-                          fontWeight: 600,
-                          fontSize: '0.875rem',
-                        }}
-                      >
-                        (
-                        {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')?.length ||
-                          0}
-                        )
-                      </Typography>
-                    </Stack>
-                  </Box>
-
-                  <Stack spacing={[1]}>
-                    {localCampaign?.pitch?.length > 0 ? (
-                      localCampaign?.pitch
-                        ?.filter((pitch) => pitch.status === 'undecided')
-                        ?.map((pitch, index) => (
-                          <Stack
-                            key={pitch.id}
-                            direction="row"
-                            alignItems="center"
-                            spacing={2}
-                            sx={{
-                              pt: 2,
-                              pb:
-                                index !==
-                                localCampaign.pitch.filter((p) => p.status === 'undecided').length - 1
-                                  ? 2
-                                  : 1,
-                              borderBottom:
-                                index !==
-                                localCampaign.pitch.filter((p) => p.status === 'undecided').length - 1
-                                  ? '1px solid #e7e7e7'
-                                  : 'none',
-                            }}
-                          >
-                            <Avatar
-                              src={pitch.user?.photoURL}
-                              sx={{
-                                width: 40,
-                                height: 40,
-                                border: '2px solid',
-                                borderColor: 'background.paper',
-                              }}
-                            />
-                            <Stack sx={{ flex: 1 }}>
-                              <Typography variant="subtitle3" sx={{ fontWeight: 500 }}>
-                                {pitch.user?.name}
-                              </Typography>
-                            </Stack>
-                            <Stack direction="row" spacing={1}>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                onClick={() => handleViewPitch(pitch)}
-                                sx={{
-                                  textTransform: 'none',
-                                  minHeight: 42,
-                                  minWidth: 100,
-                                  bgcolor: '#3a3a3c',
-                                  color: '#fff',
-                                  borderBottom: '3px solid',
-                                  borderBottomColor: '#202021',
-                                  borderRadius: 1.15,
-                                  fontWeight: 600,
-                                  fontSize: '0.875rem',
-                                  '&:hover': {
-                                    bgcolor: '#4a4a4c',
-                                  },
-                                }}
-                              >
-                                View Pitch
-                              </Button>
-                            </Stack>
-                          </Stack>
-                        ))
-                    ) : (
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}
-                      >
-                        No pitches received yet
-                      </Typography>
-                    )}
-                  </Stack>
-                </Box>
-              </Zoom>
-            </Grid>
-          </Grid>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Grid container direction="column" spacing={2}>
-            <Grid item>
-              <Zoom in>
-                <Box sx={BoxStyle}>
-                  <Box className="header">
-                    <Iconify
-                      icon="mdi:cube-outline"
-                      sx={{
-                        color: '#203ff5',
-                        width: 18,
-                        height: 18,
-                      }}
-                    />
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: '#221f20',
-                        fontWeight: 600,
-                        fontSize: '0.8rem',
+                        pt: 2,
+                        pb:
+                          index !==
+                          localCampaign.pitch.filter((p) => p.status === 'undecided').length - 1
+                            ? 2
+                            : 1,
+                        borderBottom:
+                          index !==
+                          localCampaign.pitch.filter((p) => p.status === 'undecided').length - 1
+                            ? '1px solid #e7e7e7'
+                            : 'none',
                       }}
                     >
-                      DELIVERABLES
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mt: 2, mb: -0.4 }}>
-                    {[
-                      { label: 'UGC Videos', value: true },
-                      { label: 'Raw Footage', value: campaign?.rawFootage },
-                      { label: 'Photos', value: campaign?.photos },
-                      { label: 'Ads', value: campaign?.ads },
-                      { label: 'Cross Posting', value: campaign?.crossPosting },
-                    ].map(
-                      (deliverable) =>
-                        deliverable.value && (
-                          <Chip
-                            key={deliverable.label}
-                            label={deliverable.label}
-                            size="small"
-                            sx={{   
-                              bgcolor: '#F5F5F5',
-                              borderRadius: 1,
-                              color: '#231F20',
-                              height: '36px',
-                              '& .MuiChip-label': {
-                                fontWeight: 700,
-                                px: 2,
-                                height: '100%',
-                                fontSize: '0.875rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginTop: '-3px',
-                              },
-                              '&:hover': { bgcolor: '#F5F5F5' },}}
-                          />
-                        )
-                    )}
-                  </Box>
-                </Box>
-              </Zoom>
-            </Grid>
-            <Grid item>
-              <Zoom in>
-                <Box sx={BoxStyle}>
-                  <Box className="header">
-                    <Box
-                      component="img"
-                      src="/assets/icons/overview/group2People.svg"
-                      sx={{
-                        width: 20,
-                        height: 20,
-                        color: '#203ff5',
-                      }}
-                    />
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
-                      <Typography
-                        variant="body2"
+                      <Avatar
+                        src={pitch.user?.photoURL}
                         sx={{
-                          color: '#221f20',
-                          fontWeight: 600,
-                          fontSize: '0.8rem',
+                          width: 40,
+                          height: 40,
+                          border: '2px solid',
+                          borderColor: 'background.paper',
                         }}
-                      >
-                        SHORTLISTED CREATORS
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: '#221f20',
-                          fontWeight: 600,
-                          fontSize: '0.875rem',
-                        }}
-                      >
-                        ({localCampaign?.shortlisted?.length || 0})
-                      </Typography>
-                    </Stack>
-                  </Box>
-
-                  <Stack spacing={[1]}>
-                    {localCampaign?.shortlisted?.length > 0 ? (
-                      localCampaign?.shortlisted?.map((creator, index) => (
-                        <Stack
-                          key={creator.id}
-                          direction="row"
-                          alignItems="center"
-                          spacing={2}
+                      />
+                      <Stack sx={{ flex: 1 }}>
+                        <Typography variant="subtitle3" sx={{ fontWeight: 500 }}>
+                          {pitch.user?.name}
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={() => handleViewPitch(pitch)}
                           sx={{
-                            pt: 2,
-                            pb: index !== localCampaign.shortlisted.length - 1 ? 2 : 1,
-                            borderBottom:
-                              index !== localCampaign.shortlisted.length - 1
-                                ? '1px solid #e7e7e7'
-                                : 'none',
+                            textTransform: 'none',
+                            minHeight: 42,
+                            minWidth: 100,
+                            bgcolor: '#3a3a3c',
+                            color: '#fff',
+                            borderBottom: '3px solid',
+                            borderBottomColor: '#202021',
+                            borderRadius: 1.15,
+                            fontWeight: 600,
+                            fontSize: '0.875rem',
+                            '&:hover': {
+                              bgcolor: '#3a3a3c',
+                            },
                           }}
                         >
-                          <Avatar
-                            src={creator.user?.photoURL}
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              border: '2px solid',
-                              borderColor: 'background.paper',
-                            }}
-                          />
-                          <Stack sx={{ flex: 1 }}>
-                            <Typography variant="subtitle3" sx={{ fontWeight: 500 }}>
-                              {creator.user?.name}
-                            </Typography>
-                          </Stack>
-                          <Button
-                            size="small"
-                            variant="contained"
-                            onClick={() => handleProfileClick(creator)}
-                            sx={{
-                              textTransform: 'none',
-                              minHeight: 38,
-                              minWidth: 150,
-                              bgcolor: '#ffffff',
-                              color: '#231F20',
-                              border: '1.5px solid',
-                              borderColor: '#e7e7e7',
-                              borderBottom: '3px solid',
-                              borderBottomColor: '#e7e7e7',
-                              borderRadius: 1.15,
-                              fontWeight: 600,
-                              fontSize: '0.9rem',
-                              '&:hover': {
-                                bgcolor: '#f0f0f0',
-                              },
-                            }}
-                          >
-                            Shortlisted Profile
-                          </Button>
-                        </Stack>
-                      ))
-                    ) : (
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}
-                      >
-                        No creators shortlisted yet
+                          View Pitch
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  ))
+              ) : (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}
+                >
+                  No pitches received yet
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+        </Zoom>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <Zoom in>
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Box
+                component="img"
+                src="/assets/icons/overview/group2People.svg"
+                sx={{
+                  width: 20,
+                  height: 20,
+                  color: '#203ff5',
+                }}
+              />
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  SHORTLISTED CREATORS
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  ({localCampaign?.shortlisted?.length || 0})
+                </Typography>
+              </Stack>
+            </Box>
+
+            <Stack spacing={[1]}>
+              {localCampaign?.shortlisted?.length > 0 ? (
+                localCampaign?.shortlisted?.map((creator, index) => (
+                  <Stack
+                    key={creator.id}
+                    direction="row"
+                    alignItems="center"
+                    spacing={2}
+                    sx={{
+                      pt: 2,
+                      pb: index !== localCampaign.shortlisted.length - 1 ? 2 : 1,
+                      borderBottom:
+                        index !== localCampaign.shortlisted.length - 1
+                          ? '1px solid #e7e7e7'
+                          : 'none',
+                    }}
+                  >
+                    <Avatar
+                      src={creator.user?.photoURL}
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        border: '2px solid',
+                        borderColor: 'background.paper',
+                      }}
+                    />
+                    <Stack sx={{ flex: 1 }}>
+                      <Typography variant="subtitle3" sx={{ fontWeight: 500 }}>
+                        {creator.user?.name}
                       </Typography>
-                    )}
+                    </Stack>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => handleChatClick(creator)}
+                      sx={{
+                        textTransform: 'none',
+                        minHeight: 42,
+                        minWidth: 100,
+                        bgcolor: '#ffffff',
+                        color: '#203ff5',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: '3px solid',
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1.15,
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        '&:hover': {
+                          bgcolor: '#e7e7e7',
+                        },
+                      }}
+                    >
+                      Message
+                    </Button>
                   </Stack>
-                </Box>
-              </Zoom>
-            </Grid>
-          </Grid>
-        </Grid>
+                ))
+              ) : (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}
+                >
+                  No creators shortlisted yet
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+        </Zoom>
+      </Grid>
+
+      <Grid item xs={12} md={6}>
+        <Zoom in>
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify icon="noto:letter-c" width={20} />
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#221f20',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Credits Tracking
+                </Typography>
+              </Stack>
+            </Box>
+
+            <Stack spacing={[1]}>
+              {campaign?.campaignCredits && latestPackageItem ? (
+                <Stack spacing={1} color="text.secondary">
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2">Campaign Credits</Typography>
+                    <Typography variant="subtitle2">
+                      {campaign?.campaignCredits || 0} UGC Credits
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2">Credits Utilized</Typography>
+                    <Typography variant="subtitle2">
+                      {campaign?.creditsUtilized || 0} UGC Credits
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="subtitle2">Credits Pending</Typography>
+                    <Typography variant="subtitle2">
+                      {campaign?.creditsPending ?? 0} UGC Credits
+                    </Typography>
+                  </Stack>
+                </Stack>
+              ) : (
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'text.secondary', py: 2, textAlign: 'center' }}
+                >
+                  Not connected to any package
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+        </Zoom>
       </Grid>
 
       <Dialog open={dialog.value} onClose={dialog.onFalse}>
