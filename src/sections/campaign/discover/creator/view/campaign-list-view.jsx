@@ -162,12 +162,10 @@ export default function CampaignListView() {
   }, [socket, upload, mutate]);
 
 const shortlistCreator = async (campaignId) => {
-  const res = await fetch(`/api/campaign/shortlistCreator?campaignId=${campaignId}`, {
-    method: 'GET',
+  const res = await fetch(`/api/campaign/shortlistCreator`, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
-  // 
-
 
   const data = await res.json();
   if (res.ok) {
