@@ -6,11 +6,9 @@ export const useShortlistedCreators = create((set) => ({
   popupMessage: '',
 
   addCreators: (item, user) => {
-  const isCreator = user?.role?.toLowerCase() === 'creator';
-  
   return set(() => ({
     shortlistedCreators: Array.isArray(item) ? [...item] : [item],
-    showPopup: isCreator,
+    showPopup: user?.role?.toLowerCase() === 'creator',
     popupMessage: 'Congratulations! You have been shortlisted.',
     
   }));
