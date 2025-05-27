@@ -1,8 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-
-import ReportingView from 'src/sections/report/view/reporting-view';
-
-// import ReportingView from 'src/sections/reporting/view/reporting-view';
+import ReportingList from 'src/sections/report/view/reporting-list';
 
 export default function ReportPage() {
   return (
@@ -11,7 +8,7 @@ export default function ReportPage() {
         <title>Performance Report</title>
       </Helmet>
 
-      <ReportingView />
+      <ReportingList />
     </>
   );
 }
