@@ -80,7 +80,7 @@ const CreateInvoice = lazy(() => import('src/pages/dashboard/finance/createInvoi
 const AdminTaskPage = lazy(() => import('src/pages/dashboard/admin/tasks'));
 
 // Performance report
-const Report = lazy(() => import('src/pages/dashboard/report/report'))
+const Report = lazy(() => import('src/pages/dashboard/report/report'));
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
