@@ -21,6 +21,7 @@ import {
   Typography,
   DialogContent,
   DialogActions,
+  Collapse,
 } from '@mui/material';
 
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
@@ -32,6 +33,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
+import { useResponsive } from 'src/hooks/use-responsive';
 
 const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -41,6 +43,8 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { user } = useAuthContext();
   const [totalUGCVideos, setTotalUGCVideos] = useState(null);
   const { mutate } = useGetCampaignById(campaign.id);
+  const mdDown = useResponsive('down', 'md');
+  const [expended, setExpended] = useState(false);
 
   useEffect(() => {
     setCurrentPitch(pitch);
@@ -199,9 +203,10 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
         onClose={onClose}
         maxWidth="md"
         fullWidth
+        fullScreen={mdDown}
         PaperProps={{
           sx: {
-            borderRadius: 2,
+            borderRadius: !mdDown && 2,
             bgcolor: 'background.paper',
             boxShadow: (theme) => theme.customShadows.dialog,
           },
@@ -233,7 +238,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
             zIndex: 8,
             borderBottom: '1px solid',
             borderColor: 'divider',
-            pt: 3,
+            py: 1,
             px: 3,
           }}
         >
@@ -264,68 +269,71 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                   </Typography>
 
                   {/* Social Media Icons Chip - Mobile */}
-                  <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
-                    <Chip
-                      icon={
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          {currentPitch?.user?.creator?.instagram && (
-                            <Tooltip title="Instagram Profile">
-                              <IconButton
-                                href={`https://instagram.com/${currentPitch.user.creator.instagram}`}
-                                target="_blank"
-                                size="small"
-                                sx={{
-                                  p: 0.8,
-                                  color: '#E1306C',
-                                  '&:hover': {
-                                    bgcolor: 'rgba(225, 48, 108, 0.08)',
-                                  },
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Iconify icon="mdi:instagram" width={24} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          {currentPitch?.user?.creator?.tiktok && (
-                            <Tooltip title="TikTok Profile">
-                              <IconButton
-                                href={`https://tiktok.com/@${currentPitch.user.creator.tiktok}`}
-                                target="_blank"
-                                size="small"
-                                sx={{
-                                  p: 0.8,
-                                  color: '#000000',
-                                  '&:hover': {
-                                    bgcolor: 'rgba(0, 0, 0, 0.08)',
-                                  },
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Iconify icon="ic:baseline-tiktok" width={24} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Stack>
-                      }
-                      sx={{
-                        backgroundColor: (theme) => theme.palette.common.white,
-                        height: '42px',
-                        borderRadius: '10px',
-                        border: '1px solid #ebebeb',
-                        borderBottom: '3px solid #ebebeb',
-                        '& .MuiChip-icon': {
-                          margin: '0 8px',
-                        },
-                        '& .MuiChip-label': {
-                          display: 'none',
-                        },
-                        '&:hover': {
-                          backgroundColor: (theme) => theme.palette.common.white,
-                        },
-                      }}
-                    />
-                  </Box>
+                  {currentPitch?.user?.creator?.instagram ||
+                    (currentPitch?.user?.creator?.tiktok && (
+                      <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
+                        <Chip
+                          icon={
+                            <Stack direction="row" spacing={1.5} alignItems="center">
+                              {currentPitch?.user?.creator?.instagram && (
+                                <Tooltip title="Instagram Profile">
+                                  <IconButton
+                                    href={`https://instagram.com/${currentPitch.user.creator.instagram}`}
+                                    target="_blank"
+                                    size="small"
+                                    sx={{
+                                      p: 0.8,
+                                      color: '#E1306C',
+                                      '&:hover': {
+                                        bgcolor: 'rgba(225, 48, 108, 0.08)',
+                                      },
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Iconify icon="mdi:instagram" width={24} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              {currentPitch?.user?.creator?.tiktok && (
+                                <Tooltip title="TikTok Profile">
+                                  <IconButton
+                                    href={`https://tiktok.com/@${currentPitch.user.creator.tiktok}`}
+                                    target="_blank"
+                                    size="small"
+                                    sx={{
+                                      p: 0.8,
+                                      color: '#000000',
+                                      '&:hover': {
+                                        bgcolor: 'rgba(0, 0, 0, 0.08)',
+                                      },
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Iconify icon="ic:baseline-tiktok" width={24} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          }
+                          sx={{
+                            backgroundColor: (theme) => theme.palette.common.white,
+                            height: '42px',
+                            borderRadius: '10px',
+                            border: '1px solid #ebebeb',
+                            borderBottom: '3px solid #ebebeb',
+                            '& .MuiChip-icon': {
+                              margin: '0 8px',
+                            },
+                            '& .MuiChip-label': {
+                              display: 'none',
+                            },
+                            '&:hover': {
+                              backgroundColor: (theme) => theme.palette.common.white,
+                            },
+                          }}
+                        />
+                      </Box>
+                    ))}
                 </Stack>
               </Stack>
 
@@ -395,20 +403,50 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Box>
             </Stack>
 
-            {/* Languages and Interests Grid */}
-            <Grid container spacing={2} sx={{ pb: 2 }}>
-              {/* Languages Section */}
-              {currentPitch?.user?.creator?.languages?.length > 0 && (
-                <Grid item xs={12} md={4}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                      Languages
-                    </Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1}>
-                      {currentPitch.user.creator.languages.map((language, index) => (
+            <Collapse in={expended} timeout="auto" unmountOnExit>
+              {/* Languages and Interests Grid */}
+              <Grid container spacing={2} sx={{ pb: 2 }}>
+                {/* Languages Section */}
+                {currentPitch?.user?.creator?.languages?.length > 0 && (
+                  <Grid item xs={12} md={4}>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                        Languages
+                      </Typography>
+                      <Stack direction="row" flexWrap="wrap" gap={1}>
+                        {currentPitch.user.creator.languages.map((language, index) => (
+                          <Chip
+                            key={index}
+                            label={language}
+                            size="small"
+                            sx={{
+                              bgcolor: 'background.neutral',
+                              color: 'text.primary',
+                              cursor: 'default',
+                              '& .MuiChip-label': {
+                                fontWeight: 500,
+                              },
+                              '&:hover': {
+                                bgcolor: 'background.neutral',
+                              },
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    </Box>
+                  </Grid>
+                )}
+
+                {/* Country Section */}
+                {currentPitch?.user?.country && (
+                  <Grid item xs={12} md={4}>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                        Country
+                      </Typography>
+                      <Stack direction="row" flexWrap="wrap" gap={1}>
                         <Chip
-                          key={index}
-                          label={language}
+                          label={currentPitch.user.country}
                           size="small"
                           sx={{
                             bgcolor: 'background.neutral',
@@ -422,71 +460,46 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
                             },
                           }}
                         />
-                      ))}
-                    </Stack>
-                  </Box>
-                </Grid>
-              )}
+                      </Stack>
+                    </Box>
+                  </Grid>
+                )}
 
-              {/* Country Section */}
-              {currentPitch?.user?.country && (
-                <Grid item xs={12} md={4}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                      Country
-                    </Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1}>
-                      <Chip
-                        label={currentPitch.user.country}
-                        size="small"
-                        sx={{
-                          bgcolor: 'background.neutral',
-                          color: 'text.primary',
-                          cursor: 'default',
-                          '& .MuiChip-label': {
-                            fontWeight: 500,
-                          },
-                          '&:hover': {
-                            bgcolor: 'background.neutral',
-                          },
-                        }}
-                      />
-                    </Stack>
-                  </Box>
-                </Grid>
-              )}
-
-              {/* Interests Section */}
-              {currentPitch?.user?.creator?.interests?.length > 0 && (
-                <Grid item xs={12} md={4}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                      Interests
-                    </Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1}>
-                      {currentPitch.user.creator.interests.map((interest, index) => (
-                        <Chip
-                          key={index}
-                          label={typeof interest === 'string' ? interest : interest.name}
-                          size="small"
-                          sx={{
-                            bgcolor: 'background.neutral',
-                            color: 'text.primary',
-                            cursor: 'default',
-                            '& .MuiChip-label': {
-                              fontWeight: 500,
-                            },
-                            '&:hover': {
+                {/* Interests Section */}
+                {currentPitch?.user?.creator?.interests?.length > 0 && (
+                  <Grid item xs={12} md={4}>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                        Interests
+                      </Typography>
+                      <Stack direction="row" flexWrap="wrap" gap={1}>
+                        {currentPitch.user.creator.interests.map((interest, index) => (
+                          <Chip
+                            key={index}
+                            label={typeof interest === 'string' ? interest : interest.name}
+                            size="small"
+                            sx={{
                               bgcolor: 'background.neutral',
-                            },
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Box>
-                </Grid>
-              )}
-            </Grid>
+                              color: 'text.primary',
+                              cursor: 'default',
+                              '& .MuiChip-label': {
+                                fontWeight: 500,
+                              },
+                              '&:hover': {
+                                bgcolor: 'background.neutral',
+                              },
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    </Box>
+                  </Grid>
+                )}
+              </Grid>
+            </Collapse>
+            <Button onClick={() => setExpended(!expended)} size="small" variant="outlined">
+              See {expended ? 'less' : 'more'}
+            </Button>
           </Stack>
         </Box>
 
@@ -630,6 +643,7 @@ const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
               </Grid>
             </Box>
             <Divider />
+
             {/* Pitch Content Section */}
             <Box>
               {currentPitch?.type === 'video' &&

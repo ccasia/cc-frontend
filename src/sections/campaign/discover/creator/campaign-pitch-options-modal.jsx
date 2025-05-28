@@ -42,10 +42,10 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
 
   return (
     <>
-      <Dialog 
+      <Dialog
         open={open && !text.value && !video.value}
-        fullScreen={smUp} 
-        maxWidth="md" 
+        fullScreen={smUp}
+        maxWidth="md"
         fullWidth
         PaperProps={{
           sx: {
@@ -56,9 +56,9 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
           },
         }}
       >
-        <IconButton 
+        <IconButton
           onClick={handleClose}
-          sx={{ 
+          sx={{
             position: 'absolute',
             right: 8,
             top: 4,
@@ -73,17 +73,17 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
 
         <DialogTitle sx={{ pt: 8, pb: 0 }}>
           <Box sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mb: 3 }} />
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontFamily: 'Instrument Serif', 
-              fontWeight: 440, 
-              fontSize: { 
-                xs: '1.5rem', 
+          <Typography
+            variant="h4"
+            sx={{
+              fontFamily: 'Instrument Serif',
+              fontWeight: 440,
+              fontSize: {
+                xs: '1.5rem',
                 sm: '1.75rem',
                 md: '2rem',
-              }, 
-              mb: 2
+              },
+              mb: 2,
             }}
           >
             How would you like to pitch yourself? 👀
@@ -193,20 +193,16 @@ const CampaignPitchOptionsModal = ({ open, handleClose, campaign, text, video })
           </Stack>
         </DialogContent>
       </Dialog>
-      
-      <CampaignPitchTextModal 
-        open={text.value} 
-        handleClose={text.onFalse} 
-        campaign={campaign} 
+
+      <CampaignPitchTextModal
+        open={text.value}
+        handleClose={text.onFalse}
+        campaign={campaign}
         onBack={() => {
           text.onFalse();
         }}
       />
-      <CampaignPitchVideoModal 
-        open={video.value} 
-        handleClose={video.onFalse} 
-        campaign={campaign} 
-      />
+      <CampaignPitchVideoModal open={video.value} handleClose={video.onFalse} campaign={campaign} />
     </>
   );
 };
