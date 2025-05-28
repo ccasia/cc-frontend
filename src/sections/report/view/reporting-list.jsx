@@ -22,6 +22,7 @@ const ReportingList = () => {
 			>
 				Content Performance Report
 			</Typography>
+			
 			<CampaignPerformanceTable />
 
 			<ReportLanding />

@@ -1,48 +1,54 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Avatar,
   Button,
   Typography,
   Box,
+  CircularProgress
 } from '@mui/material';
+import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 
 const CampaignPerformanceTable = () => {
-  // Sample data - replace with actual data from backend
-  const campaignData = [
-    {
-      id: 1,
-      creatorName: 'Shermaine Wong',
-      creatorEmail: 'shermaine@cultcreative.asia',
-      campaignName: 'GrabUnlimited Deals',
-      creatorAvatar: null, // Will show placeholder
-    },
-    // Add more sample data as needed
-    {
-      id: 2,
-      creatorName: 'John Doe',
-      creatorEmail: 'john.doe@cultcreative.asia',
-      campaignName: 'Summer Collection 2024',
-      creatorAvatar: null,
-    },
-    {
-      id: 3,
-      creatorName: 'Sarah Johnson',
-      creatorEmail: 'sarah.johnson@cultcreative.asia',
-      campaignName: 'Tech Product Launch',
-      creatorAvatar: null,
-    },
-  ];
 
-  const handleViewReport = (campaignId) => {
+  const { data: submissionData, isLoading } = useGetAllSubmissions();
+  
+  const reportList = React.useMemo(() => {
+    if (!submissionData) return [];
+    
+    return submissionData?.submissions
+      ?.filter((submission) => {
+        if (!submission.content) return false;
+        
+        // Regex to match Instagram or TikTok URLs
+        const socialMediaRegex = /(instagram\.com|tiktok\.com)/i;
+        return socialMediaRegex.test(submission.content);
+      })
+      ?.map((submission) => ({
+        id: submission.id,
+        creatorName: submission.user?.name || 'N/A',
+        creatorEmail: submission.user?.email || 'N/A',
+        campaignName: submission.campaign?.name || 'N/A',
+        creatorAvatar: submission.user?.photoURL || null,
+        content: submission.content,
+      }));
+
+  }, [submissionData]);
+
+  console.log('Submission data: ', submissionData)
+
+  console.log('Data transformed: ', reportList)
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const handleViewReport = (content) => {
     // Handle view performance report action
-    console.log('View performance report for campaign:', campaignId);
+    console.log('View performance report for campaign:', content);
   };
 
   return (
@@ -54,173 +60,232 @@ const CampaignPerformanceTable = () => {
           fontSize: { xs: 18, md: 24 },
           fontWeight: 600,
           mb: 2,
-          color: '#231F20',
+          color: '#333',
         }}
       >
         Your Campaigns
       </Typography>
 
-      {/* Custom Table Header */}
+      {/* Scrollable Container */}
       <Box
         sx={{
           width: '100%',
-          height: 35,
-          backgroundColor: '#F5F5F5',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          px: 3,
-          mb: 0,
+          overflowX: 'auto',
+          // Hide scrollbar on WebKit browsers but keep functionality
+          '&::-webkit-scrollbar': {
+            height: 3,
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: '#f1f1f1',
+            borderRadius: 3,
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: '#c1c1c1',
+            borderRadius: 3,
+            '&:hover': {
+              backgroundColor: '#a8a8a8',
+            },
+          },
         }}
       >
-        <Box sx={{ flex: '0 0 25%' }}>
-          <Typography
-            sx={{
-              fontWeight: 600,
-              fontSize: 14,
-              color: '#231F20',
-            }}
-          >
-            Creator
-          </Typography>
-        </Box>
-        <Box sx={{ flex: '0 0 30%' }}>
-          <Typography
-            sx={{
-              fontWeight: 600,
-              fontSize: 14,
-              color: '#231F20',
-            }}
-          >
-            Creator's Email
-          </Typography>
-        </Box>
-        <Box sx={{ flex: '0 0 25%' }}>
-          <Typography
-            sx={{
-              fontWeight: 600,
-              fontSize: 14,
-              color: '#231F20',
-            }}
-          >
-            Campaign Name
-          </Typography>
-        </Box>
-        <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
-          {/* Empty space for action column */}
-        </Box>
-      </Box>
-
-      {/* Table Body */}
-      <Box sx={{ width: '100%' }}>
-        {campaignData.map((row, index) => (
+        {/* Table Container with minimum width */}
+        <Box sx={{ minWidth: { xs: 1000, md: '100%' } }}>
+          {/* Custom Table Header */}
           <Box
-            key={row.id}
             sx={{
+              width: '100%',
+              height: 32,
+              backgroundColor: '#F5F5F5',
+              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
               px: 3,
-              py: 2.5,
-              borderBottom: '1px solid #f0f0f0',
+              mb: 0,
             }}
           >
-            <Box sx={{ flex: '0 0 25%', display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar
-                src={row.creatorAvatar}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  backgroundColor: '#e0e0e0',
-                  color: '#666',
-                  fontSize: 14,
-                }}
-              >
-                {row.creatorName.charAt(0)}
-              </Avatar>
+            <Box sx={{ flex: '0 0 20%' }}>
               <Typography
                 sx={{
-                  fontWeight: 500,
+                  fontWeight: 600,
                   fontSize: 14,
-                  color: '#333',
+                  color: '#666',
                 }}
               >
-                {row.creatorName}
+                Creator
               </Typography>
             </Box>
             <Box sx={{ flex: '0 0 30%' }}>
               <Typography
                 sx={{
+                  fontWeight: 600,
                   fontSize: 14,
                   color: '#666',
                 }}
               >
-                {row.creatorEmail}
+                Creator's Email
               </Typography>
             </Box>
-            <Box sx={{ flex: '0 0 25%' }}>
+            <Box sx={{ flex: '0 0 30%' }}>
               <Typography
                 sx={{
+                  fontWeight: 600,
                   fontSize: 14,
-                  color: '#333',
-                  fontWeight: 500,
+                  color: '#666',
                 }}
               >
-                {row.campaignName}
+                Campaign Name
               </Typography>
             </Box>
             <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
-              <Button
-                variant="text"
-                onClick={() => handleViewReport(row.id)}
+              {/* Empty space for action column */}
+            </Box>
+          </Box>
+
+          {/* Table Body */}
+          <Box sx={{ width: '100%' }}>
+            {reportList.map((row, index) => (
+              <Box
+                key={row.id}
                 sx={{
-                  color: '#2196F3',
-                  fontSize: 14,
-                  fontWeight: 500,
-                  textTransform: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  px: 3,
+                  py: 2.5,
+                  borderBottom: '1px solid #f0f0f0',
                   '&:hover': {
-                    backgroundColor: 'rgba(33, 150, 243, 0.04)',
+                    backgroundColor: '#f8f9fa',
                   },
                 }}
               >
-                View Performance Report
-              </Button>
-            </Box>
+                <Box sx={{ 
+                  flex: '0 0 20%', 
+                  minWidth: 200, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 2 
+                }}>
+                  <Avatar
+                    src={row.creatorAvatar}
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      backgroundColor: '#e0e0e0',
+                      color: '#666',
+                      fontSize: 14,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {row.creatorName.charAt(0)}
+                  </Avatar>
+                  <Typography
+                    sx={{
+                      fontWeight: 400,
+                      fontSize: 14,
+                      color: '#333',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {row.creatorName}
+                  </Typography>
+                </Box>
+                <Box sx={{ flex: '0 0 30%', pr: 2 }}>
+                  <Typography
+                    sx={{
+                      fontWeight: 400,
+                      fontSize: 14,
+                      color: '#666',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {row.creatorEmail}
+                  </Typography>
+                </Box>
+                <Box sx={{ flex: '0 0 30%', pr: 2 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 14,
+                      color: '#333',
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {row.campaignName}
+                  </Typography>
+                </Box>
+                <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
+                  <Button
+                    variant="text"
+                    onClick={() => handleViewReport(row.content)}
+                    sx={{
+                      width: 192,
+                      height: 38,
+                      padding: '8px 12px 11px 12px',
+                      gap: '4px',
+                      borderRadius: '8px',
+                      border: '1px solid #E7E7E7',
+                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      backgroundColor: '#FFFFFF',
+                      color: '#1340FF',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      flexShrink: 0,
+                      '&:hover': {
+                        backgroundColor: '#F8F9FA',
+                        border: '1px solid #E7E7E7',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                      },
+                      '&:active': {
+                        boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                        transform: 'translateY(1px)',
+                      }
+                    }}
+                  >
+                    View Performance Report
+                  </Button>
+                </Box>
+              </Box>
+            ))}
           </Box>
-        ))}
-      </Box>
 
-      {/* Empty state - show when no data */}
-      {campaignData.length === 0 && (
-        <Box
-          sx={{
-            p: 6,
-            textAlign: 'center',
-            mt: 2,
-            backgroundColor: '#f8f9fa',
-            borderRadius: 2,
-            width: '100%',
-            maxWidth: 1088,
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: 16,
-              color: '#666',
-              mb: 1,
-            }}
-          >
-            No campaigns found
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: 14,
-              color: '#999',
-            }}
-          >
-            Campaigns with completed submissions will appear here
-          </Typography>
+          {/* Empty state - show when no data */}
+          {reportList.length === 0 && (
+            <Box
+              sx={{
+                p: 6,
+                textAlign: 'center',
+                mt: 2,
+                backgroundColor: '#f8f9fa',
+                borderRadius: 2,
+                width: '100%',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: 16,
+                  color: '#666',
+                  mb: 1,
+                }}
+              >
+                No campaigns found
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 14,
+                  color: '#999',
+                }}
+              >
+                Campaigns with completed submissions will appear here
+              </Typography>
+            </Box>
+          )}
         </Box>
-      )}
+      </Box>
     </Box>
   );
 };
