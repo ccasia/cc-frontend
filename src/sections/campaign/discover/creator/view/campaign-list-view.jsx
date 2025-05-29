@@ -3,7 +3,6 @@ import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
 import { orderBy, debounce, throttle } from 'lodash';
 import { useMemo, useState, useEffect, useCallback } from 'react';
-
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -37,6 +36,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CampaignLists from '../campaign-list';
 import ShortlistedCreatorPopUp from '../../admin/campaign-detail-creator/hooks/shortlisted-creator-popup';
 import { useShortlistedCreators } from '../../admin/campaign-detail-creator/hooks/shortlisted-creator';
+import { AuthContext } from 'src/auth/context/jwt';
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
@@ -52,6 +52,7 @@ export default function CampaignListView() {
   const lgUp = useResponsive('up', 'lg');
 
   const { addCreators } = useShortlistedCreators(); 
+  
 
   const [search, setSearch] = useState({
     query: '',
@@ -161,23 +162,28 @@ export default function CampaignListView() {
     };
   }, [socket, upload, mutate]);
 
-const shortlistCreator = async (campaignId) => {
-  const res = await fetch(`/api/campaign/shortlistCreator`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
+  // useEffect(() => {
+  //   socket?.on('shortlisted', (data) => {
+  //     const creatorData = {
+  //       id: data.creatorData.id,
+  //       name: data.creatorData.name,
+  //       email: data.creatorData.email,
+  //       image: data.creatorData.image,
+  //       campaignId: data.campaignId,
+  //       campaignName: data.campaignName,
+  //     };
+      
+  //     // Call addCreators with BOTH parameters: (item, user)
+  //     useShortlistedCreators.getState().addCreators(creatorData, user);
 
-  const data = await res.json();
-  if (res.ok) {
-    handleShortlistSuccess(data);
-  } else {
-    console.error(data.message);
-  }
-};
+  //   });
+    
+  //   return () => {
+  //     socket?.off('shortlisted');
+  //   };
+  // }, []);
 
-const handleShortlistSuccess = (shortlistedItem) => {
-  addCreators(shortlistedItem, user);
-};
+
 
 
   const renderUploadProgress = (
@@ -921,7 +927,11 @@ const handleShortlistSuccess = (shortlistedItem) => {
           <Iconify icon="mdi:arrow-up" />
         </Fab>
       )}
-      <ShortlistedCreatorPopUp/>
+           {/* <ShortlistedCreatorPopup
+              open={showPopup}
+              message={popupMessage}
+              onClose={hidePopup}
+            /> */}
     </Container>
   );
 }
