@@ -16,9 +16,23 @@ import { countriesCities } from 'src/contants/countries';
 
 import { RHFAutocomplete } from 'src/components/hook-form';
 
+// Add error icon component
+const ErrorIcon = () => (
+  <Box
+    component="img"
+    src="/assets/icons/components/ic_fillpaymenterror.svg"
+    sx={{
+      width: 20,
+      height: 20,
+      ml: 1,
+      flexShrink: 0,
+    }}
+  />
+);
+
 const SecondStep = ({ item }) => {
   const loading = useBoolean();
-  const { setValue, watch } = useFormContext();
+  const { setValue, watch, formState: { errors } } = useFormContext();
 
   const countrySelected = watch('Nationality');
 
@@ -100,38 +114,16 @@ const SecondStep = ({ item }) => {
           >
             What is your country of residence?
           </FormLabel>
-          {/* <RHFAutocomplete
-            name="Nationality"
-            type="country"
-            placeholder="Select Country"
-            fullWidth
-            options={countries.map((option) => option.label)}
-            getOptionLabel={(option) => option}
-          /> */}
-          <RHFAutocomplete
-            name="Nationality"
-            placeholder="Select Country"
-            options={Object.keys(countriesCities)}
-            InputLabelProps={{ shrink: false }}
-            // sx={{
-            //   width: '100%',
-            //   '& .MuiTextField-root': {
-            //     bgcolor: 'white',
-            //     borderRadius: 1,
-            //     '& .MuiInputLabel-root': {
-            //       display: 'none',
-            //     },
-            //     '& .MuiInputBase-input::placeholder': {
-            //       color: '#B0B0B0',
-            //       fontSize: { xs: '14px', sm: '16px' },
-            //       opacity: 1,
-            //     },
-            //     '& .MuiOutlinedInput-root': {
-            //       borderRadius: 1,
-            //     },
-            //   },
-            // }}
-          />
+          <Stack direction="row" alignItems="center">
+            <RHFAutocomplete
+              name="Nationality"
+              placeholder="Select Country"
+              options={Object.keys(countriesCities)}
+              InputLabelProps={{ shrink: false }}
+              sx={{ flex: 1 }}
+            />
+            {errors.Nationality && <ErrorIcon />}
+          </Stack>
         </Stack>
 
         <Stack spacing={1}>
@@ -141,54 +133,33 @@ const SecondStep = ({ item }) => {
           >
             Which city are you from?
           </FormLabel>
-          {/* <RHFTextField
-            name="location"
-            placeholder="Select City"
-            multiline
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip title="Get current location">
-                    {!loading.value ? (
-                      <IconButton
-                        onClick={() => {
-                          creatorLocation();
-                        }}
-                      >
-                        <Iconify icon="mdi:location" />
-                      </IconButton>
-                    ) : (
-                      <Iconify icon="eos-icons:bubble-loading" />
-                    )}
-                  </Tooltip>
-                </InputAdornment>
-              ),
-            }}
-          /> */}
-          <RHFAutocomplete
-            name="city"
-            placeholder="City"
-            options={[...new Set(countriesCities[countrySelected])]}
-            InputLabelProps={{ shrink: false }}
-            sx={{
-              width: '100%',
-              '& .MuiTextField-root': {
-                bgcolor: 'white',
-                borderRadius: 1,
-                '& .MuiInputLabel-root': {
-                  display: 'none',
-                },
-                '& .MuiInputBase-input::placeholder': {
-                  color: '#B0B0B0',
-                  fontSize: { xs: '14px', sm: '16px' },
-                  opacity: 1,
-                },
-                '& .MuiOutlinedInput-root': {
+          <Stack direction="row" alignItems="center">
+            <RHFAutocomplete
+              name="city"
+              placeholder="City"
+              options={[...new Set(countriesCities[countrySelected])]}
+              InputLabelProps={{ shrink: false }}
+              sx={{
+                flex: 1,
+                '& .MuiTextField-root': {
+                  bgcolor: 'white',
                   borderRadius: 1,
+                  '& .MuiInputLabel-root': {
+                    display: 'none',
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: '#B0B0B0',
+                    fontSize: { xs: '14px', sm: '16px' },
+                    opacity: 1,
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                  },
                 },
-              },
-            }}
-          />
+              }}
+            />
+            {errors.city && <ErrorIcon />}
+          </Stack>
         </Stack>
       </Stack>
     </Box>
