@@ -7,8 +7,10 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
+import { useNavigate } from 'react-router';
 
 const CampaignPerformanceTable = () => {
+  const navigate = useNavigate();
 
   const { data: submissionData, isLoading } = useGetAllSubmissions();
   
@@ -30,13 +32,12 @@ const CampaignPerformanceTable = () => {
         campaignName: submission.campaign?.name || 'N/A',
         creatorAvatar: submission.user?.photoURL || null,
         content: submission.content,
+        submissionId: submission.id,
+        campaignId: submission.campaignId,
+        userId: submission.user?.id,
       }));
 
   }, [submissionData]);
-
-  console.log('Submission data: ', submissionData)
-
-  console.log('Data transformed: ', reportList)
 
   if (isLoading) {
     return (
@@ -46,9 +47,18 @@ const CampaignPerformanceTable = () => {
     );
   }
 
-  const handleViewReport = (content) => {
-    // Handle view performance report action
-    console.log('View performance report for campaign:', content);
+  const handleViewReport = (row) => {
+    // Navigate to reporting view with URL parameters
+    const params = new URLSearchParams({
+      url: row.content,
+      submissionId: row.submissionId,
+      campaignId: row.campaignId,
+      userId: row.userId,
+      creatorName: row.creatorName,
+      campaignName: row.campaignName
+    });
+    
+    navigate(`/dashboard/report/view?${params.toString()}`);
   };
 
   return (
@@ -221,7 +231,7 @@ const CampaignPerformanceTable = () => {
                 <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
                   <Button
                     variant="text"
-                    onClick={() => handleViewReport(row.content)}
+                    onClick={() => handleViewReport(row)}
                     sx={{
                       width: 192,
                       height: 38,
