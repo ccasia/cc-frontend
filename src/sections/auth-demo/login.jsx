@@ -203,6 +203,12 @@ const Login = () => {
           type: 'manual',
           message: 'User not registered.',
         });
+      } else if (err.message === 'Account pending.') {
+        // error message for creators that haven't verified their email yet
+        methods.setError('email', {
+          type: 'manual',
+          message: 'Please check your email to verify your account.',
+        });
       } else {
         // error message for incorrect password
         methods.setError('password', {
