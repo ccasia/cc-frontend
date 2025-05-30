@@ -7,7 +7,7 @@ import MediaKitSocialContentTiktok from '../view-tiktok';
 import MediaKitPartnership from '../medit-kit-partnerships';
 import MediaKitSocialContentInstagram from '../view-instagram';
 
-const MediaKitSocial = ({ currentTab, data }) => (
+const MediaKitSocial = ({ currentTab, data, sx, className }) => (
   <Box
     sx={{
       borderRadius: 2,
@@ -15,7 +15,11 @@ const MediaKitSocial = ({ currentTab, data }) => (
         bgcolor: (theme) => theme.palette.background.paper,
         borderRadius: 1.5,
       },
+      mb: 8,
+      pb: 4,
+      ...sx,
     }}
+    className={className}
   >
     {currentTab === 'instagram' && (
       <MediaKitSocialContentInstagram
@@ -34,4 +38,6 @@ export default MediaKitSocial;
 MediaKitSocial.propTypes = {
   currentTab: PropTypes.string.isRequired,
   data: PropTypes.object,
+  sx: PropTypes.object,
+  className: PropTypes.string,
 };
