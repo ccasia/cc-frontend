@@ -36,16 +36,140 @@ const typeAnimation = keyframes`
   to { width: 100%; }
 `;
 
-const TopContentGrid = ({ topContents }) => {
+const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const topFiveContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 5);
+  const topThreeContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 3);
 
+  // Carousel layout for mobile
+  if (isMobile) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'nowrap',
+          width: '100%',
+          gap: 0.5,
+          justifyContent: 'flex-start',
+          alignItems: 'stretch',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { height: 0, display: 'none' },
+          pb: 2,
+          scrollSnapType: 'x mandatory',
+          px: 0,
+          pt: 1,
+        }}
+      >
+        {topThreeContents.map((content, index) => (
+          <Box
+            key={index}
+            sx={{
+              minWidth: 200,
+              maxWidth: 240,
+              flex: '0 0 auto',
+              scrollSnapAlign: 'center',
+              borderRadius: 0,
+              overflow: 'hidden',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+              bgcolor: 'background.paper',
+              display: 'flex',
+              flexDirection: 'column',
+              mx: 0,
+            }}
+            onClick={() => {
+              const a = document.createElement('a');
+              a.href = content?.permalink;
+              a.target = '_blank';
+              a.click();
+            }}
+          >
+            <Box
+              component="div"
+              sx={{
+                position: 'relative',
+                height: 400,
+                width: '100%',
+                overflow: 'hidden',
+              }}
+            >
+              <CardMedia
+                component="div"
+                className="image"
+                alt={`Top content ${index + 1}`}
+                sx={{
+                  height: '100%',
+                  width: '100%',
+                  transition: 'all .3s ease',
+                  objectFit: 'cover',
+                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.media_url}) center/cover no-repeat`,
+                }}
+              />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  width: '100%',
+                  color: 'white',
+                  p: 2,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="material-symbols:favorite-outline" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.like_count)}</Typography>
+                  </Stack>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="iconamoon:comment" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.comments_count)}</Typography>
+                  </Stack>
+                </Stack>
+              </Box>
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                fontSize: '0.8rem',
+                mt: 2,
+                mx: 2,
+                mb: 2,
+                color: 'text.primary',
+                fontWeight: 500,
+                width: '100%',
+                maxWidth: '100%',
+                lineHeight: 1.5,
+              }}
+            >
+              {`${content.caption.slice(0, 100)}...`}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
+  // Desktop layout
   return (
-    <Grid
-      container
-      spacing={isMobile ? 1 : 2}
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        flexWrap: { xs: 'nowrap', md: 'nowrap' },
+        width: '100%',
+        gap: { xs: 2, md: 4 },
+        justifyContent: { xs: 'center', sm: 'flex-start' },
+        alignItems: { xs: 'center', sm: 'flex-start' },
+        overflow: 'auto',
+      }}
       component={m.div}
       variants={{
         hidden: { opacity: 0 },
@@ -59,11 +183,8 @@ const TopContentGrid = ({ topContents }) => {
       animate="show"
       initial="hidden"
     >
-      {topFiveContents.map((content, index) => (
-        <Grid
-          item
-          xs={12}
-          sm={4}
+      {topThreeContents.map((content, index) => (
+        <Box
           key={index}
           component={m.div}
           variants={{
@@ -75,16 +196,20 @@ const TopContentGrid = ({ topContents }) => {
             a.href = content?.permalink;
             a.target = '_blank';
             a.click();
-            document.body.removeChild(a);
+          }}
+          sx={{
+            width: { xs: '100%', sm: '30%', md: 350 },
+            minWidth: { xs: '280px', sm: '250px', md: '320px' },
+            maxWidth: { xs: '100%', sm: '350px' },
           }}
         >
           <Box
             component="div"
             sx={{
               position: 'relative',
-              height: 600,
+              height: { xs: 400, sm: 450, md: 550 },
+              width: '100%',
               overflow: 'hidden',
-              // borderRadius: 3,
               cursor: 'pointer',
               '&:hover .image': {
                 scale: 1.05,
@@ -111,25 +236,12 @@ const TopContentGrid = ({ topContents }) => {
                 width: '100%',
                 color: 'white',
                 p: isMobile ? 2 : 1.5,
-                px: 3,
+                px: 2,
+                mb: 1,
                 borderRadius: '0 0 24px 24px',
               }}
+              className="media-kit-engagement-icons"
             >
-              <Typography
-                variant="body2"
-                sx={{
-                  overflow: 'hidden',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 5,
-                  WebkitBoxOrient: 'vertical',
-                  animation: `${typeAnimation} 0.5s steps(40, end)`,
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  mb: 1,
-                }}
-              >
-                {`${content?.caption?.slice(0, 50)}...`}
-              </Typography>
-
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="material-symbols:favorite-outline" width={20} />
@@ -138,16 +250,32 @@ const TopContentGrid = ({ topContents }) => {
 
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="iconamoon:comment" width={20} />
-                  <Typography variant="subtitle2">
-                    {formatNumber(content?.comments_count)}
-                  </Typography>
+                  <Typography variant="subtitle2">{formatNumber(content?.comments_count)}</Typography>
                 </Stack>
               </Stack>
             </Box>
           </Box>
-        </Grid>
+
+          <Typography
+            variant="body2"
+            className="media-kit-caption"
+            sx={{
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              mt: 1,
+              color: 'text.primary',
+              width: '100%',
+              maxWidth: '100%',
+            }}
+          >
+            {`${content?.caption?.slice(0, 80)}...`}
+          </Typography>
+        </Box>
       ))}
-    </Grid>
+    </Box>
   );
 };
 
@@ -157,9 +285,13 @@ TopContentGrid.propTypes = {
       image_url: PropTypes.string.isRequired,
     })
   ).isRequired,
+  mobileCarousel: PropTypes.bool,
 };
 
 const MediaKitSocialContent = ({ instagramVideos }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   if (!instagramVideos?.length)
     return (
       <Label
@@ -168,9 +300,9 @@ const MediaKitSocialContent = ({ instagramVideos }) => {
           height: 250,
           textAlign: 'center',
           borderStyle: 'dashed',
-          borderColor: (theme) => theme.palette.divider,
+          borderColor: theme.palette.divider,
           borderWidth: 1.5,
-          bgcolor: (theme) => alpha(theme.palette.warning.main, 0.16),
+          bgcolor: alpha(theme.palette.warning.main, 0.16),
           width: 1,
         }}
       >
@@ -182,7 +314,41 @@ const MediaKitSocialContent = ({ instagramVideos }) => {
 
   return (
     <Box>
-      <TopContentGrid topContents={instagramVideos} />
+      {isMobile ? (
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            px: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            id="instagram-mobile-connected"
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              flexWrap: 'nowrap',
+              width: '100%',
+              gap: 0.5,
+              justifyContent: 'flex-start',
+              alignItems: 'stretch',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { height: 0, display: 'none' },
+              pb: 2,
+              scrollSnapType: 'x mandatory',
+              px: 0,
+              pt: 1,
+            }}
+          >
+            {instagramVideos?.length > 0 && <TopContentGrid topContents={instagramVideos} mobileCarousel />}
+          </Box>
+        </Box>
+      ) : (
+        instagramVideos?.length > 0 && <TopContentGrid topContents={instagramVideos} />
+      )}
     </Box>
   );
 };
