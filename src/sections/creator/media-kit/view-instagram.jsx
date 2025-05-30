@@ -24,6 +24,8 @@ import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
 export const formatNumber = (num) => {
+  if (!num && num !== 0) return '0';
+  
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }

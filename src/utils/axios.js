@@ -108,6 +108,12 @@ export const endpoints = {
       tiktok: (id) => `/api/social/tiktok/${id}`,
       instagram: (id) => `/api/social/instagram/overview/${id}`,
       instagramV2: (id) => `/api/social/v2/instagramOverview/${id}`,
+      instagramContent: (contentId) => `/api/social/instagram/content/${contentId}`,
+      getCreatorByInstagramContent: (contentId) => `/api/social/instagram/creator/${contentId}`,
+      tiktokContent: (contentId) => `/api/social/tiktok/content/${contentId}`,
+      getCreatorByTiktokContent: (contentId) => `/api/social/tiktok/creator/${contentId}`,
+      getInstagramMediaInsight: (userId, postUrl) => 
+        `/api/social/v2/mediaInsight/${userId}?url=${postUrl}`,
     },
     updatePreference: (id) => `/api/creator/updatePreference/${id}`,
     exportCreators: '/api/creator/exportCreators',
