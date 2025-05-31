@@ -3,7 +3,6 @@ import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
 import { orderBy, debounce, throttle } from 'lodash';
 import { useMemo, useState, useEffect, useCallback } from 'react';
-
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -35,7 +34,9 @@ import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
 import CampaignLists from '../campaign-list';
-
+import ShortlistedCreatorPopUp from '../../admin/campaign-detail-creator/hooks/shortlisted-creator-popup';
+import { useShortlistedCreators } from '../../admin/campaign-detail-creator/hooks/shortlisted-creator';
+import { AuthContext } from 'src/auth/context/jwt';
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
@@ -49,6 +50,9 @@ export default function CampaignListView() {
   const { mainRef } = useMainContext();
 
   const lgUp = useResponsive('up', 'lg');
+
+  const { addCreators } = useShortlistedCreators(); 
+  
 
   const [search, setSearch] = useState({
     query: '',
@@ -157,6 +161,30 @@ export default function CampaignListView() {
       socket?.off('pitch-uploaded', handlePitchSuccess);
     };
   }, [socket, upload, mutate]);
+
+  // useEffect(() => {
+  //   socket?.on('shortlisted', (data) => {
+  //     const creatorData = {
+  //       id: data.creatorData.id,
+  //       name: data.creatorData.name,
+  //       email: data.creatorData.email,
+  //       image: data.creatorData.image,
+  //       campaignId: data.campaignId,
+  //       campaignName: data.campaignName,
+  //     };
+      
+  //     // Call addCreators with BOTH parameters: (item, user)
+  //     useShortlistedCreators.getState().addCreators(creatorData, user);
+
+  //   });
+    
+  //   return () => {
+  //     socket?.off('shortlisted');
+  //   };
+  // }, []);
+
+
+
 
   const renderUploadProgress = (
     <Box
@@ -899,6 +927,11 @@ export default function CampaignListView() {
           <Iconify icon="mdi:arrow-up" />
         </Fab>
       )}
+           {/* <ShortlistedCreatorPopup
+              open={showPopup}
+              message={popupMessage}
+              onClose={hidePopup}
+            /> */}
     </Container>
   );
 }
