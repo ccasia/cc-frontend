@@ -17,9 +17,9 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 import { RECAPTCHA_SITEKEY } from 'src/config-global';
-import { countries } from 'src/assets/data';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';

@@ -29,7 +29,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const Posting = ({ campaign, submission, creator }) => {
