@@ -11,6 +11,7 @@ import {
   Alert,
   Avatar,
   Button,
+  Dialog,
   useTheme,
   Snackbar,
   MenuItem,
@@ -18,7 +19,6 @@ import {
   Container,
   Typography,
   CircularProgress,
-  Dialog,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';

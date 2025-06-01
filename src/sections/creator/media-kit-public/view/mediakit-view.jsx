@@ -11,15 +11,15 @@ import {
   Alert,
   Avatar,
   Button,
+  Dialog,
   useTheme,
-  Container,
-  Typography,
-  IconButton,
   MenuItem,
   Backdrop,
   Snackbar,
+  Container,
+  Typography,
+  IconButton,
   CircularProgress,
-  Dialog,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';

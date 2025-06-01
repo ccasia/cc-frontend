@@ -5,7 +5,6 @@ import { keyframes } from '@emotion/react';
 
 import {
   Box,
-  Grid,
   Stack,
   alpha,
   useTheme,
