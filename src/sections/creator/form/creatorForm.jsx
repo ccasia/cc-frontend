@@ -17,6 +17,7 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 import { RECAPTCHA_SITEKEY } from 'src/config-global';
 
@@ -97,14 +98,28 @@ export const interestsList = [
 const stepSchemas = Yup.object({
   // location: Yup.string().required('City/Area is required'),
   Nationality: Yup.string().required('Nationality is required'),
+  city: Yup.string().required('City is required'),
   phone: Yup.string().required('Phone number is required'),
   pronounce: Yup.string().required('Pronouns are required'),
-  employment: Yup.string().required('Employment status is required'),
+  // employment: Yup.string().required('Employment status is required'),
   birthDate: Yup.mixed().nullable().required('Please enter your birth date'),
   interests: Yup.array().min(3, 'Choose at least three option'),
   languages: Yup.array().min(1, 'Choose at least one option'),
   recaptcha: Yup.string().required('Please complete the reCAPTCHA'),
 });
+
+// Add error icon component
+const ErrorIcon = () => (
+  <Box
+    component="img"
+    src="/assets/icons/components/ic_fillpaymenterror.svg"
+    sx={{
+      width: 20,
+      height: 20,
+      ml: 1,
+    }}
+  />
+);
 
 export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
   const [activeStep, setActiveStep] = useState(0);
@@ -114,6 +129,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedSteps, setCompletedSteps] = useState({});
   const [countryCode, setCountryCode] = useState('');
+  const [stepErrors, setStepErrors] = useState({});
 
   const { logout, initialize } = useAuthContext();
   const smDown = useResponsive('down', 'sm');
@@ -152,7 +168,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
       interests: [],
       languages: [],
       instagram: '',
-      employment: '',
+      // employment: '',
       birthDate: null,
       Nationality: '',
       city: '',
@@ -180,7 +196,90 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
   const pronounce = watch('pronounce');
   const otherPronounce = watch('otherPronounce');
 
+  // Auto-select country code based on nationality
+  useEffect(() => {
+    if (nationality) {
+      // First try exact match
+      let selectedCountry = countries.find(country => country.label === nationality);
+      
+      // If no exact match, try some common variations
+      if (!selectedCountry) {
+        const countryMappings = {
+          'Republic of Korea': 'Korea, Republic of',
+          'South Korea': 'Korea, Republic of',
+          'North Korea': "Korea, Democratic People's Republic of",
+          'United States': 'United States',
+          'United Kingdom': 'United Kingdom',
+          'Russia': 'Russian Federation',
+          'Iran': 'Iran, Islamic Republic of',
+          'Syria': 'Syrian Arab Republic',
+          'Venezuela': 'Venezuela, Bolivarian Republic of',
+          'Bolivia': 'Bolivia, Plurinational State of',
+          'Moldova': 'Moldova, Republic of',
+          'Macedonia': 'Macedonia, the Former Yugoslav Republic of',
+          'Congo': 'Congo, Republic of the',
+          'Democratic Republic of the Congo': 'Congo, Democratic Republic of the',
+          'Tanzania': 'United Republic of Tanzania',
+          'Vietnam': 'Viet Nam',
+          'Laos': "Lao People's Democratic Republic",
+          'Brunei': 'Brunei Darussalam',
+          'Cape Verde': 'Cape Verde',
+          'Ivory Coast': "Cote d'Ivoire",
+          'Swaziland': 'Swaziland',
+          'East Timor': 'Timor-Leste',
+          'Palestine': 'Palestine, State of',
+          'Vatican City': 'Holy See (Vatican City State)',
+          'Micronesia': 'Micronesia, Federated States of',
+        };
+        
+        const mappedName = countryMappings[nationality];
+        if (mappedName) {
+          selectedCountry = countries.find(country => country.label === mappedName);
+        }
+      }
+      
+      if (selectedCountry && selectedCountry.phone) {
+        setCountryCode(selectedCountry.phone);
+      } else {
+        // If no matching country found, keep the current country code
+        console.warn(`No phone code found for country: ${nationality}`);
+      }
+    } else {
+      // Clear country code if no nationality is selected
+      setCountryCode('');
+    }
+  }, [nationality]);
+
   const handleNext = () => {
+    const currentValues = getValues();
+    const newStepErrors = { ...stepErrors };
+
+    // Check all steps for errors to show proper indicators
+    // Location step validation
+    if (!currentValues.Nationality || !currentValues.city) {
+      newStepErrors[0] = true;
+    } else {
+      delete newStepErrors[0];
+    }
+
+    // Personal step validation
+    if (!currentValues.phone || !currentValues.pronounce || !currentValues.birthDate) {
+      newStepErrors[1] = true;
+    } else {
+      delete newStepErrors[1];
+    }
+
+    // Additional step validation
+    if (!currentValues.languages?.length || currentValues.languages.length < 1 || 
+        !currentValues.interests?.length || currentValues.interests.length < 3) {
+      newStepErrors[2] = true;
+    } else {
+      delete newStepErrors[2];
+    }
+
+    setStepErrors(newStepErrors);
+
+    // Always allow navigation to next step
     setCompletedSteps((prev) => ({
       ...prev,
       [activeStep]: true,
@@ -189,6 +288,34 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
   };
 
   const handleBack = () => {
+    const currentValues = getValues();
+    const newStepErrors = { ...stepErrors };
+
+    // Check all steps for errors to show proper indicators
+    // Location step validation
+    if (!currentValues.Nationality || !currentValues.city) {
+      newStepErrors[0] = true;
+    } else {
+      delete newStepErrors[0];
+    }
+
+    // Personal step validation
+    if (!currentValues.phone || !currentValues.pronounce || !currentValues.birthDate) {
+      newStepErrors[1] = true;
+    } else {
+      delete newStepErrors[1];
+    }
+
+    // Additional step validation
+    if (!currentValues.languages?.length || currentValues.languages.length < 1 || 
+        !currentValues.interests?.length || currentValues.interests.length < 3) {
+      newStepErrors[2] = true;
+    } else {
+      delete newStepErrors[2];
+    }
+
+    setStepErrors(newStepErrors);
+
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
@@ -370,19 +497,37 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               borderRadius: 1.5,
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
               fontWeight: activeStep === 0 || (completedSteps[0] && activeStep > 0) ? 600 : 400,
-              bgcolor:
-                activeStep === 0 || (completedSteps[0] && activeStep > 0) ? '#1340FF' : '#fff',
-              color: activeStep === 0 || (completedSteps[0] && activeStep > 0) ? '#fff' : '#636366',
+              bgcolor: (() => {
+                if (activeStep === 0) return '#1340FF';
+                if (stepErrors[0]) return '#fff';
+                if (completedSteps[0] && activeStep > 0) return '#1340FF';
+                return '#fff';
+              })(),
+              color: (() => {
+                if (activeStep === 0) return '#fff';
+                if (stepErrors[0]) return '#636366';
+                if (completedSteps[0] && activeStep > 0) return '#fff';
+                return '#636366';
+              })(),
               border: '1px solid',
-              borderColor: activeStep >= 0 ? '#1340FF' : '#636366',
+              borderColor: (() => {
+                if (activeStep === 0) return '#1340FF';
+                if (stepErrors[0]) return '#D4321C';
+                if (activeStep >= 0) return '#1340FF';
+                return '#636366';
+              })(),
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               '&:hover': {
                 opacity: activeStep > 0 ? 0.85 : 1,
               },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            Location
+            <Box component="span">Location</Box>
+            {stepErrors[0] && activeStep !== 0 && <ErrorIcon />}
           </Box>
 
           {/* Connector Line */}
@@ -406,19 +551,37 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               borderRadius: 1.5,
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
               fontWeight: activeStep === 1 || (completedSteps[1] && activeStep > 1) ? 600 : 400,
-              bgcolor:
-                activeStep === 1 || (completedSteps[1] && activeStep > 1) ? '#1340FF' : '#fff',
-              color: activeStep === 1 || (completedSteps[1] && activeStep > 1) ? '#fff' : '#636366',
+              bgcolor: (() => {
+                if (activeStep === 1) return '#1340FF';
+                if (stepErrors[1]) return '#fff';
+                if (completedSteps[1] && activeStep > 1) return '#1340FF';
+                return '#fff';
+              })(),
+              color: (() => {
+                if (activeStep === 1) return '#fff';
+                if (stepErrors[1]) return '#636366';
+                if (completedSteps[1] && activeStep > 1) return '#fff';
+                return '#636366';
+              })(),
               border: '1px solid',
-              borderColor: activeStep >= 1 ? '#1340FF' : '#636366',
+              borderColor: (() => {
+                if (activeStep === 1) return '#1340FF';
+                if (stepErrors[1]) return '#D4321C';
+                if (activeStep >= 1) return '#1340FF';
+                return '#636366';
+              })(),
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               '&:hover': {
                 opacity: activeStep > 1 ? 0.85 : 1,
               },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            Personal
+            <Box component="span">Personal</Box>
+            {stepErrors[1] && activeStep !== 1 && <ErrorIcon />}
           </Box>
 
           {/* Connector Line */}
@@ -441,15 +604,33 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser }) {
               borderRadius: 1.5,
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
               fontWeight: activeStep === 2 || (completedSteps[2] && activeStep > 2) ? 600 : 400,
-              bgcolor:
-                activeStep === 2 || (completedSteps[2] && activeStep > 2) ? '#1340FF' : '#fff',
-              color: activeStep === 2 || (completedSteps[2] && activeStep > 2) ? '#fff' : '#636366',
+              bgcolor: (() => {
+                if (activeStep === 2) return '#1340FF';
+                if (stepErrors[2]) return '#fff';
+                if (completedSteps[2] && activeStep > 2) return '#1340FF';
+                return '#fff';
+              })(),
+              color: (() => {
+                if (activeStep === 2) return '#fff';
+                if (stepErrors[2]) return '#636366';
+                if (completedSteps[2] && activeStep > 2) return '#fff';
+                return '#636366';
+              })(),
               border: '1px solid',
-              borderColor: activeStep >= 2 ? '#1340FF' : '#636366',
+              borderColor: (() => {
+                if (activeStep === 2) return '#1340FF';
+                if (stepErrors[2]) return '#D4321C';
+                if (activeStep >= 2) return '#1340FF';
+                return '#636366';
+              })(),
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            Additional
+            <Box component="span">Additional</Box>
+            {stepErrors[2] && activeStep !== 2 && <ErrorIcon />}
           </Box>
         </Stack>
       </Box>

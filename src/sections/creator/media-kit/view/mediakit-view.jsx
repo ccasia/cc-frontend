@@ -11,6 +11,7 @@ import {
   Alert,
   Avatar,
   Button,
+  Dialog,
   useTheme,
   Snackbar,
   MenuItem,
@@ -18,7 +19,6 @@ import {
   Container,
   Typography,
   CircularProgress,
-  Dialog,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -69,12 +69,21 @@ const MediaKitCreator = () => {
 
   const desktopLayoutRef = useRef(null);
 
-  // Formatter for 1000+ numbers (e.g., 1000 => 1K)
-  const formatNumber = useCallback((value) => {
-    if (!value) return '0';
-    const numValue = parseInt(value, 10);
-    return numValue >= 1000 ? `${Math.floor(numValue / 1000)}K` : numValue.toString();
-  }, []);
+// Utility function to format numbers
+  const formatNumber = (num) => {
+    if (!num && num !== 0) return '0';
+    
+    if (num >= 1000000000) {
+      return `${(num / 1000000000).toFixed(1)}G`;
+    }
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M`;
+    }
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K`;
+    }
+    return num.toString();
+  };
 
   const getInstagram = useCallback(async () => {
     try {
@@ -996,6 +1005,7 @@ const MediaKitCreator = () => {
               width: '100%',
             }}
           >
+            
             {/* Divider for mobile screens only */}
             <Box
               sx={{
@@ -1026,7 +1036,7 @@ const MediaKitCreator = () => {
                 align="left"
                 sx={{ fontSize: { xs: '3rem', md: '4rem' } }}
               >
-                0 {/* Change to actual number later */}
+                300,400 {/* Change to actual number later */}
               </Typography>
               <Box
                 component="span"
@@ -1094,7 +1104,7 @@ const MediaKitCreator = () => {
                 }}
                 onClick={() => setCurrentTab('tiktok')}
               >
-                Tiktok
+                TikTok
               </Button>
             </Stack>
 
@@ -1383,7 +1393,7 @@ const MediaKitCreator = () => {
         {/* <Divider sx={{ my: 3 }} /> */}
         {/* Bottom View */}
 
-        <Typography fontWeight={600} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1} mt={3}>
+        <Typography fontWeight={700} fontFamily="Aileron, sans-serif" fontSize="24px" mb={1} mt={3}>
           Top Content{' '}
           {/* {socialMediaAnalytics?.username && `of ${socialMediaAnalytics?.username}`} */}
         </Typography>
@@ -1434,7 +1444,7 @@ const MediaKitCreator = () => {
               }}
               onClick={() => setCurrentTab('tiktok')}
             >
-              Tiktok
+              TikTok
             </Button>
             <Button
               variant="outlined"
@@ -1649,7 +1659,7 @@ const MediaKitCreator = () => {
                   }),
                 }}
               >
-                Tiktok
+                TikTok
               </Button>
             </Stack>
 

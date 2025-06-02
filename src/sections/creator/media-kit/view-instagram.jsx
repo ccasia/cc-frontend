@@ -5,7 +5,6 @@ import { keyframes } from '@emotion/react';
 
 import {
   Box,
-  Grid,
   Stack,
   alpha,
   Button,
@@ -19,11 +18,12 @@ import { useSocialMediaData } from 'src/utils/store';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
 export const formatNumber = (num) => {
+  if (!num && num !== 0) return '0';
+  
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -293,6 +293,7 @@ TopContentGrid.propTypes = {
       image_url: PropTypes.string.isRequired,
     })
   ).isRequired,
+  mobileCarousel: PropTypes.bool,
 };
 
 const MediaKitSocialContent = ({ instagram }) => {
@@ -324,8 +325,8 @@ const MediaKitSocialContent = ({ instagram }) => {
           width: '100%',
           borderRadius: 2,
           mb: 4,
-          bgcolor: (theme) => alpha(theme.palette.background.neutral, 0.4),
-          border: (theme) => `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
+          bgcolor: alpha(theme.palette.background.neutral, 0.4),
+          border: `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
           boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
         }}
       >
