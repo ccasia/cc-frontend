@@ -172,12 +172,14 @@ const CampaignFinalDraft = ({
         index === self.findIndex((f) => f.id === feedback.id)
       );
 
-    // Only process feedbacks that have actual changes
+    // Only process feedbacks that have actual changes (type === 'REQUEST', not 'COMMENT')
     return uniqueFeedbacks
       .filter(item => 
-        item?.photosToUpdate?.length > 0 || 
-        item?.videosToUpdate?.length > 0 || 
-        item?.rawFootageToUpdate?.length > 0
+        item?.type === 'REQUEST' && (
+          item?.photosToUpdate?.length > 0 || 
+          item?.videosToUpdate?.length > 0 || 
+          item?.rawFootageToUpdate?.length > 0
+        )
       )
       .map((item) => {
         const changes = [];

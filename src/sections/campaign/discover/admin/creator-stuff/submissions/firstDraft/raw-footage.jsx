@@ -16,6 +16,9 @@ import {
   Button,
   Typography,
   CardContent,
+  IconButton,
+  Avatar,
+  Chip,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -34,9 +37,13 @@ const VideoCard = ({
   handleApprove, 
   handleRequestChange,
   selectedVideosForChange,
-  handleVideoSelection 
+  handleVideoSelection,
+  // V2 individual handlers
+  onIndividualApprove,
+  onIndividualRequestChange,
 }) => {
   const [cardType, setCardType] = useState('approve');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -66,14 +73,71 @@ const VideoCard = ({
   const hasRevisionRequested = videoItem.status === 'REVISION_REQUESTED';
   const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isVideoApproved;
 
+  // Get feedback for this specific raw footage
+  const getRawFootageFeedback = () => {
+    // Check for individual feedback first
+    if (videoItem.individualFeedback && videoItem.individualFeedback.length > 0) {
+      return videoItem.individualFeedback;
+    }
+    
+    // Fallback to submission-level feedback
+    const allFeedbacks = [
+      ...(submission?.feedback || [])
+    ];
+
+    return allFeedbacks
+      .filter(feedback => feedback.rawFootageToUpdate?.includes(videoItem.id))
+      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+  };
+
+  const rawFootageFeedback = getRawFootageFeedback();
+
+  // V2 Individual handlers
+  const handleIndividualApproveClick = async () => {
+    if (!onIndividualApprove) return;
+    
+    setIsProcessing(true);
+    try {
+      const values = formMethods.getValues();
+      await onIndividualApprove(videoItem.id, values.feedback);
+    } catch (error) {
+      console.error('Error approving raw footage:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleIndividualRequestClick = async () => {
+    if (!onIndividualRequestChange) return;
+    
+    setIsProcessing(true);
+    try {
+      const values = formMethods.getValues();
+      await onIndividualRequestChange(videoItem.id, values.feedback);
+    } catch (error) {
+      console.error('Error requesting raw footage changes:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Fallback to original handlers if v2 handlers not provided
   const handleApproveClick = async () => {
-    const values = formMethods.getValues();
-    await handleApprove(videoItem.id, values);
+    if (onIndividualApprove) {
+      await handleIndividualApproveClick();
+    } else {
+      const values = formMethods.getValues();
+      await handleApprove(videoItem.id, values);
+    }
   };
 
   const handleRequestClick = async () => {
-    const values = formMethods.getValues();
-    await handleRequestChange(videoItem.id, values);
+    if (onIndividualRequestChange) {
+      await handleIndividualRequestClick();
+    } else {
+      const values = formMethods.getValues();
+      await handleRequestChange(videoItem.id, values);
+    }
   };
 
   const renderFormContent = () => {
@@ -82,20 +146,69 @@ const VideoCard = ({
         return (
           <Box
             sx={{
-              p: 2,
-              borderRadius: 1,
-              bgcolor: 'success.lighter',
-              border: '1px solid',
-              borderColor: 'success.light',
               display: 'flex',
+              justifyContent: 'center',
               alignItems: 'center',
-              gap: 1,
+              p: 2,
             }}
           >
-            <Iconify icon="solar:check-circle-bold" color="success.main" />
-            <Typography color="success.darker" variant="body2">
-              Raw footage approved
-            </Typography>
+            <Box
+              sx={{
+                bgcolor: '#FFFFFF',
+                color: '#1ABF66',
+                border: '1.5px solid',
+                borderColor: '#1ABF66',
+                borderBottom: 3,
+                borderBottomColor: '#1ABF66',
+                borderRadius: 1,
+                py: 0.8,
+                px: 1.5,
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+              }}
+            >
+              APPROVED
+            </Box>
+          </Box>
+        );
+      }
+      if (hasRevisionRequested) {
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              p: 2,
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: '#FFFFFF',
+                color: '#D4321C',
+                border: '1.5px solid',
+                borderColor: '#D4321C',
+                borderBottom: 3,
+                borderBottomColor: '#D4321C',
+                borderRadius: 1,
+                py: 0.8,
+                px: 1.5,
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+              }}
+            >
+              CHANGES REQUESTED
+            </Box>
           </Box>
         );
       }
@@ -129,6 +242,7 @@ const VideoCard = ({
                   }}
                   size="small"
                   variant="contained"
+                  disabled={isProcessing}
                   sx={{
                     bgcolor: '#FFFFFF',
                     border: 1.5,
@@ -156,7 +270,7 @@ const VideoCard = ({
                   onClick={handleApproveClick}
                   variant="contained"
                   size="small"
-                  loading={isSubmitting}
+                  loading={isSubmitting || isProcessing}
                   sx={{
                     bgcolor: '#FFFFFF',
                     color: '#1ABF66',
@@ -203,36 +317,39 @@ const VideoCard = ({
                     setCardType('approve');
                   }}
                   size="small"
+                  variant="contained"
+                  disabled={isProcessing}
                   sx={{
-                    bgcolor: 'white',
+                    bgcolor: '#FFFFFF',
                     border: 1.5,
                     borderRadius: 1.15,
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
                     borderBottomColor: '#e7e7e7',
-                    color: 'text.primary',
+                    color: '#1ABF66',
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#231F20',
+                      borderColor: '#1ABF66',
                     },
                     textTransform: 'none',
                     py: 1.2,
                     fontSize: '0.9rem',
+                    fontWeight: 600,
                     height: '40px',
                     flex: 1,
                   }}
                 >
-                  Back
+                  Approve
                 </Button>
 
                 <LoadingButton
+                  onClick={handleRequestClick}
                   variant="contained"
                   size="small"
-                  onClick={handleRequestClick}
-                  loading={isSubmitting}
+                  loading={isSubmitting || isProcessing}
                   sx={{
                     bgcolor: '#FFFFFF',
-                    color: '#1ABF66',
+                    color: '#D4321C',
                     border: '1.5px solid',
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
@@ -242,15 +359,15 @@ const VideoCard = ({
                     fontWeight: 600,
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#1ABF66',
+                      borderColor: '#D4321C',
                     },
                     fontSize: '0.9rem',
                     height: '40px',
                     textTransform: 'none',
-                    flex: 1,
+                    flex: 2,
                   }}
                 >
-                  Submit
+                  Request Changes
                 </LoadingButton>
               </Stack>
             </Stack>
@@ -268,7 +385,7 @@ const VideoCard = ({
         flexDirection: 'column',
         borderRadius: 2,
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: isVideoApproved ? '#1ABF66' : hasRevisionRequested ? '#D4321C' : 'divider',
       }}
     >
       {/* Video Section */}
@@ -385,6 +502,90 @@ const VideoCard = ({
       <CardContent sx={{ pt: 0 }}>
         {renderFormContent()}
       </CardContent>
+
+      {/* Feedback History */}
+      {rawFootageFeedback.length > 0 && (
+        <Box sx={{ px: 2, pb: 2 }}>
+          {/* <Typography variant="subtitle2" sx={{ mb: 1.5, color: 'text.primary' }}>
+            Feedback History
+          </Typography> */}
+          <Stack spacing={1.5}>
+            {rawFootageFeedback.map((feedback, feedbackIndex) => (
+              <Box
+                key={feedbackIndex}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1,
+                  bgcolor: '#FFFFFF',
+                  border: '1px solid',
+                  borderColor: '#e0e0e0',
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                  <Avatar
+                    src={feedback.admin?.photoURL}
+                    sx={{ width: 20, height: 20 }}
+                  />
+                  <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                    {feedback.admin?.name || 'Admin'}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {dayjs(feedback.createdAt).format('MMM D, YYYY h:mm A')}
+                  </Typography>
+                  {feedback.type === 'REQUEST' && (
+                    <Chip
+                      label="Change Request"
+                      size="small"
+                      sx={{
+                        bgcolor: 'warning.lighter',
+                        color: 'warning.darker',
+                        fontSize: '0.7rem',
+                        height: '20px',
+                      }}
+                    />
+                  )}
+                </Stack>
+                
+                <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
+                  {feedback.content}
+                </Typography>
+
+                {feedback.reasons && feedback.reasons.length > 0 && (
+                  <Box>
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                      {feedback.reasons.map((reason, reasonIndex) => (
+                        <Box
+                          key={reasonIndex}
+                          sx={{
+                            bgcolor: '#FFFFFF',
+                            color: '#666666',
+                            border: '1.5px solid',
+                            borderColor: '#e0e0e0',
+                            borderBottom: 3,
+                            borderBottomColor: '#e0e0e0',
+                            borderRadius: 1,
+                            py: 0.4,
+                            px: 1,
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textTransform: 'none',
+                          }}
+                        >
+                          {reason}
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+      )}
     </Card>
   );
 };
@@ -403,6 +604,9 @@ VideoCard.propTypes = {
   handleRequestChange: PropTypes.func.isRequired,
   selectedVideosForChange: PropTypes.array.isRequired,
   handleVideoSelection: PropTypes.func.isRequired,
+  // V2 props
+  onIndividualApprove: PropTypes.func,
+  onIndividualRequestChange: PropTypes.func,
 };
 
 const RawFootages = ({
@@ -412,6 +616,9 @@ const RawFootages = ({
   onVideoClick,
   onSubmit,
   isDisabled,
+  // V2 individual handlers
+  onIndividualApprove,
+  onIndividualRequestChange,
 }) => {
   const [selectedRawFootagesForChange, setSelectedRawFootagesForChange] = useState([]);
   const approve = useBoolean();
@@ -466,29 +673,134 @@ const RawFootages = ({
 
   return (
     <>
-      {/* Raw Footage Grid */}
+      {/* Raw Footage Horizontal Scroll */}
       {deliverables?.rawFootages?.length > 0 ? (
-        <Grid container spacing={2}>
-          {deliverables.rawFootages.map((footage, index) => (
-            <Grid 
-              item 
-              xs={12} 
-              md={deliverables.rawFootages.length === 1 ? 7 : 6} 
-              key={footage.id || index}
-            >
-              <VideoCard 
-                videoItem={footage} 
-                index={index}
-                submission={submission}
-                onVideoClick={onVideoClick}
-                handleApprove={handleApprove}
-                handleRequestChange={handleRequestChange}
-                selectedVideosForChange={selectedRawFootagesForChange}
-                handleVideoSelection={handleVideoSelection}
-              />
-            </Grid>
-          ))}
-        </Grid>
+        deliverables.rawFootages.length > 2 ? (
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              pb: 1,
+              maxWidth: '100%',
+              '&::-webkit-scrollbar': {
+                height: 8,
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: '#f1f1f1',
+                borderRadius: 4,
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: '#c1c1c1',
+                borderRadius: 4,
+                '&:hover': {
+                  backgroundColor: '#a8a8a8',
+                },
+              },
+            }}
+          >
+            {deliverables.rawFootages.map((footage, index) => {
+              const isRawFootageApproved = footage.status === 'APPROVED';
+              const hasRevisionRequested = footage.status === 'REVISION_REQUESTED';
+              const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isRawFootageApproved;
+
+              // Get feedback for this specific raw footage
+              const getRawFootageFeedback = () => {
+                // Check for individual feedback first
+                if (footage.individualFeedback && footage.individualFeedback.length > 0) {
+                  return footage.individualFeedback;
+                }
+                
+                // Fallback to submission-level feedback
+                const allFeedbacks = [
+                  ...(submission?.feedback || [])
+                ];
+
+                return allFeedbacks
+                  .filter(feedback => feedback.rawFootageToUpdate?.includes(footage.id))
+                  .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+              };
+
+              const rawFootageFeedback = getRawFootageFeedback();
+
+              return (
+                <Box
+                  key={footage.id || index}
+                  sx={{
+                    width: 'calc(50% - 8px)',
+                    minWidth: 'calc(50% - 8px)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <VideoCard 
+                    videoItem={footage} 
+                    index={index}
+                    submission={submission}
+                    onVideoClick={onVideoClick}
+                    handleApprove={handleApprove}
+                    handleRequestChange={handleRequestChange}
+                    selectedVideosForChange={selectedRawFootagesForChange}
+                    handleVideoSelection={handleVideoSelection}
+                    // V2 individual handlers
+                    onIndividualApprove={onIndividualApprove}
+                    onIndividualRequestChange={onIndividualRequestChange}
+                  />
+                </Box>
+              );
+            })}
+          </Box>
+        ) : (
+          <Grid container spacing={2}>
+            {deliverables.rawFootages.map((footage, index) => {
+              const isRawFootageApproved = footage.status === 'APPROVED';
+              const hasRevisionRequested = footage.status === 'REVISION_REQUESTED';
+              const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isRawFootageApproved;
+
+              // Get feedback for this specific raw footage
+              const getRawFootageFeedback = () => {
+                // Check for individual feedback first
+                if (footage.individualFeedback && footage.individualFeedback.length > 0) {
+                  return footage.individualFeedback;
+                }
+                
+                // Fallback to submission-level feedback
+                const allFeedbacks = [
+                  ...(submission?.feedback || [])
+                ];
+
+                return allFeedbacks
+                  .filter(feedback => feedback.rawFootageToUpdate?.includes(footage.id))
+                  .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+              };
+
+              const rawFootageFeedback = getRawFootageFeedback();
+
+              return (
+                <Grid 
+                  item 
+                  xs={12} 
+                  md={deliverables.rawFootages.length === 1 ? 7 : 6} 
+                  key={footage.id || index}
+                >
+                  <VideoCard 
+                    videoItem={footage} 
+                    index={index}
+                    submission={submission}
+                    onVideoClick={onVideoClick}
+                    handleApprove={handleApprove}
+                    handleRequestChange={handleRequestChange}
+                    selectedVideosForChange={selectedRawFootagesForChange}
+                    handleVideoSelection={handleVideoSelection}
+                    // V2 individual handlers
+                    onIndividualApprove={onIndividualApprove}
+                    onIndividualRequestChange={onIndividualRequestChange}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+        )
       ) : (
         <Typography>No raw footage uploaded yet.</Typography>
       )}
@@ -635,6 +947,9 @@ RawFootages.propTypes = {
   onVideoClick: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   isDisabled: PropTypes.bool,
+  // V2 props
+  onIndividualApprove: PropTypes.func,
+  onIndividualRequestChange: PropTypes.func,
 };
 
 export default RawFootages; 

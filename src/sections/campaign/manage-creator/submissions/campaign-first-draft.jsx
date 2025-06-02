@@ -949,65 +949,291 @@ const CampaignFirstDraft = ({
             )}
 
             {submission?.status === 'CHANGES_REQUIRED' && (
-              <Stack justifyContent="center" alignItems="center" spacing={2}>
-                <Box
-                  sx={{
-                    width: 100,
-                    height: 100,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '50%',
-                    bgcolor: '#f4b84a',
-                    fontSize: '50px',
-                    mb: -2,
-                  }}
-                >
-                  ✏️
-                </Box>
+              <Box sx={{ mt: 3 }}>
+                {/* Header */}
+                <Stack justifyContent="center" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+                  <Box
+                    sx={{
+                      width: 100,
+                      height: 100,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      bgcolor: '#f4b84a',
+                      fontSize: '50px',
+                      mb: -2,
+                    }}
+                  >
+                    ✏️
+                  </Box>
 
-                <Stack spacing={1} alignItems="center">
-                  <Typography
-                    variant="h6"
+                  <Stack spacing={1} alignItems="center">
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontFamily: 'Instrument Serif, serif',
+                        fontSize: { xs: '1.5rem', sm: '2.5rem' },
+                        fontWeight: 550,
+                      }}
+                    >
+                      Needs Revision
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: '#636366',
+                        mt: -1,
+                      }}
+                    >
+                      Your first draft needs some changes.
+                    </Typography>
+                  </Stack>
+                  <Button
+                    onClick={display.onTrue}
+                    variant="contained"
+                    startIcon={<Iconify icon="solar:document-bold" width={24} />}
                     sx={{
-                      fontFamily: 'Instrument Serif, serif',
-                      fontSize: { xs: '1.5rem', sm: '2.5rem' },
-                      fontWeight: 550,
-                    }}
-                  >
-                    Needs Revision
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: '#636366',
-                      mt: -1,
-                    }}
-                  >
-                    Your first draft needs some changes.
-                  </Typography>
-                </Stack>
-                <Button
-                  onClick={display.onTrue}
-                  variant="contained"
-                  startIcon={<Iconify icon="solar:document-bold" width={24} />}
-                  sx={{
-                    bgcolor: '#203ff5',
-                    color: 'white',
-                    borderBottom: 3.5,
-                    borderBottomColor: '#112286',
-                    borderRadius: 1.5,
-                    px: 2.5,
-                    py: 1,
-                    '&:hover': {
                       bgcolor: '#203ff5',
-                      opacity: 0.9,
-                    },
-                  }}
-                >
-                  Preview First Draft
-                </Button>
-              </Stack>
+                      color: 'white',
+                      borderBottom: 3.5,
+                      borderBottomColor: '#112286',
+                      borderRadius: 1.5,
+                      px: 2.5,
+                      py: 1,
+                      '&:hover': {
+                        bgcolor: '#203ff5',
+                        opacity: 0.9,
+                      },
+                    }}
+                  >
+                    Preview First Draft
+                  </Button>
+                </Stack>
+
+                {/* Detailed Feedback Display - Show specific content that needs changes */}
+                {submission?.feedback && submission.feedback.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                      Content Requiring Changes
+                    </Typography>
+                    
+                    {submission.feedback
+                      .filter(feedback => 
+                        feedback.type === 'REQUEST' && (
+                          feedback.videosToUpdate?.length > 0 || 
+                          feedback.photosToUpdate?.length > 0 || 
+                          feedback.rawFootageToUpdate?.length > 0
+                        )
+                      )
+                      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                      .map((feedback, feedbackIndex) => (
+                        <Box
+                          key={feedbackIndex}
+                          mb={2}
+                          p={2}
+                          border={1}
+                          borderColor="warning.main"
+                          borderRadius={2}
+                          sx={{ bgcolor: 'warning.lighter' }}
+                        >
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                              {feedback.admin?.name || 'Admin'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {feedback.admin?.role || 'Admin'} • {dayjs(feedback.createdAt).format('MMM DD, YYYY')}
+                            </Typography>
+                          </Box>
+
+                          {feedback.content && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                Feedback:
+                              </Typography>
+                              {feedback.content.split('\n').map((line, i) => (
+                                <Typography key={i} variant="body2" sx={{ mb: 0.5 }}>
+                                  {line}
+                                </Typography>
+                              ))}
+                            </Box>
+                          )}
+
+                          {feedback.reasons && feedback.reasons.length > 0 && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                Reasons for changes:
+                              </Typography>
+                              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                                {feedback.reasons.map((reason, idx) => (
+                                  <Chip
+                                    key={idx}
+                                    label={reason}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: 'warning.main',
+                                      color: 'warning.contrastText',
+                                      fontWeight: 500
+                                    }}
+                                  />
+                                ))}
+                              </Stack>
+                            </Box>
+                          )}
+
+                          {/* Show specific videos that need changes */}
+                          {feedback.videosToUpdate && feedback.videosToUpdate.length > 0 && deliverables?.videos && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                Videos requiring changes:
+                              </Typography>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                                {deliverables.videos
+                                  .filter(video => feedback.videosToUpdate.includes(video.id))
+                                  .map((video, index) => (
+                                    <Box
+                                      key={video.id}
+                                      sx={{
+                                        p: 2,
+                                        border: '2px solid',
+                                        borderColor: 'warning.main',
+                                        borderRadius: 1,
+                                        bgcolor: 'background.paper'
+                                      }}
+                                    >
+                                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                                        Video {index + 1}
+                                      </Typography>
+                                      <Box
+                                        sx={{
+                                          position: 'relative',
+                                          width: '100%',
+                                          paddingTop: '56.25%',
+                                          borderRadius: 1,
+                                          overflow: 'hidden',
+                                          bgcolor: 'black',
+                                        }}
+                                      >
+                                        <Box
+                                          component="video"
+                                          src={video.url}
+                                          controls
+                                          sx={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'contain',
+                                          }}
+                                        />
+                                      </Box>
+                                    </Box>
+                                  ))}
+                              </Box>
+                            </Box>
+                          )}
+
+                          {/* Show specific photos that need changes */}
+                          {feedback.photosToUpdate && feedback.photosToUpdate.length > 0 && deliverables?.photos && (
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                Photos requiring changes:
+                              </Typography>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
+                                {deliverables.photos
+                                  .filter(photo => feedback.photosToUpdate.includes(photo.id))
+                                  .map((photo, index) => (
+                                    <Box
+                                      key={photo.id}
+                                      sx={{
+                                        border: '2px solid',
+                                        borderColor: 'warning.main',
+                                        borderRadius: 1,
+                                        overflow: 'hidden',
+                                        bgcolor: 'background.paper'
+                                      }}
+                                    >
+                                      <Box
+                                        component="img"
+                                        src={photo.url}
+                                        alt={`Photo ${index + 1}`}
+                                        sx={{
+                                          width: '100%',
+                                          height: 150,
+                                          objectFit: 'cover',
+                                          cursor: 'pointer'
+                                        }}
+                                        onClick={() => handleImageClick(index)}
+                                      />
+                                      <Box sx={{ p: 1 }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                          Photo {index + 1}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                  ))}
+                              </Box>
+                            </Box>
+                          )}
+
+                          {/* Show specific raw footage that needs changes */}
+                          {feedback.rawFootageToUpdate && feedback.rawFootageToUpdate.length > 0 && deliverables?.rawFootages && (
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                                Raw footage requiring changes:
+                              </Typography>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                                {deliverables.rawFootages
+                                  .filter(footage => feedback.rawFootageToUpdate.includes(footage.id))
+                                  .map((footage, index) => (
+                                    <Box
+                                      key={footage.id}
+                                      sx={{
+                                        p: 2,
+                                        border: '2px solid',
+                                        borderColor: 'warning.main',
+                                        borderRadius: 1,
+                                        bgcolor: 'background.paper'
+                                      }}
+                                    >
+                                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                                        Raw Footage {index + 1}
+                                      </Typography>
+                                      <Box
+                                        sx={{
+                                          position: 'relative',
+                                          width: '100%',
+                                          paddingTop: '56.25%',
+                                          borderRadius: 1,
+                                          overflow: 'hidden',
+                                          bgcolor: 'black',
+                                        }}
+                                      >
+                                        <Box
+                                          component="video"
+                                          src={footage.url}
+                                          controls
+                                          sx={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'contain',
+                                          }}
+                                        />
+                                      </Box>
+                                    </Box>
+                                  ))}
+                              </Box>
+                            </Box>
+                          )}
+                        </Box>
+                      ))}
+                  </Box>
+                )}
+              </Box>
             )}
 
             {submission?.status === 'APPROVED' && (

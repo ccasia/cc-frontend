@@ -37,13 +37,13 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   }, [shortlistedCreators, sortDirection]);
 
   // Get submissions for selected creator
-  const { data: submissions, isLoading: loadingSubmissions } = useGetSubmissions(
+  const { data: submissions, isLoading: loadingSubmissions, mutate: submissionMutate } = useGetSubmissions(
     selectedCreator?.userId,
     campaign?.id
   );
 
   // Get deliverables for selected creator
-  const { data: deliverablesData, isLoading: loadingDeliverables } = useGetDeliverables(
+  const { data: deliverablesData, isLoading: loadingDeliverables, mutate: deliverableMutate } = useGetDeliverables(
     selectedCreator?.userId,
     campaign?.id
   );
@@ -426,7 +426,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                         creator={selectedCreator}
                         deliverablesData={{
                           deliverables: deliverablesData,
-                          deliverableMutate: () => {},
+                          deliverableMutate,
+                          submissionMutate,
                         }}
                       />
                     ) : (
@@ -514,7 +515,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                         firstDraftSubmission={firstDraftSubmission}
                         deliverablesData={{
                           deliverables: deliverablesData,
-                          deliverableMutate: () => {},
+                          deliverableMutate,
+                          submissionMutate,
                         }}
                       />
                     ) : (
