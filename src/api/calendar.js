@@ -42,6 +42,7 @@ export async function createEvent(eventData) {
    */
   const data = { eventData };
   await axiosInstance.post(endpoints.event.create, data);
+  
   /**
    * Work in local
    */

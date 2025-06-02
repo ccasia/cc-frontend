@@ -29,7 +29,7 @@ import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
 const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraftSubmission }) => {
-  const { deliverables, deliverableMutate } = deliverablesData;
+  const { deliverables, deliverableMutate, submissionMutate } = deliverablesData;
   const { user } = useAuthContext();
 
   // Modal states
@@ -113,10 +113,236 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
   const onSectionUpdated = async () => {
     try {
-                  await deliverableMutate();
+      await deliverableMutate();
       await checkSubmissionReadiness();
-            } catch (error) {
+    } catch (error) {
       console.error('Error updating section:', error);
+    }
+  };
+
+  // Individual media update function that refreshes both deliverables and submissions
+  const onIndividualMediaUpdated = async () => {
+    try {
+      await Promise.all([
+        deliverableMutate(),
+        submissionMutate && submissionMutate()
+      ].filter(Boolean));
+    } catch (error) {
+      console.error('Error updating individual media:', error);
+    }
+  };
+
+  // Check if all sections are approved and activate posting if needed
+  const checkAndActivatePosting = async (selectedDueDate) => {
+    try {
+      console.log('🔍 Checking if all sections are approved...');
+      
+      // Wait a moment for the data to be refreshed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Re-fetch the latest deliverables to check current status
+      await deliverableMutate();
+      
+      // Fetch fresh deliverables data directly from API
+      const freshDeliverablesResponse = await axiosInstance.get(
+        `/api/submission/deliverables/${creator?.user?.id}/${campaign?.id}`
+      );
+      const currentDeliverables = freshDeliverablesResponse.data;
+      
+      console.log('📊 Current deliverables status:', {
+        videos: currentDeliverables?.videos?.map(v => ({ id: v.id, status: v.status })),
+        photos: currentDeliverables?.photos?.map(p => ({ id: p.id, status: p.status })),
+        rawFootages: currentDeliverables?.rawFootages?.map(r => ({ id: r.id, status: r.status }))
+      });
+      
+      // Check if all sections are approved
+      const videosApproved = !currentDeliverables?.videos?.length || 
+        currentDeliverables.videos.every(video => video.status === 'APPROVED');
+      const rawFootagesApproved = !currentDeliverables?.rawFootages?.length || 
+        currentDeliverables.rawFootages.every(footage => footage.status === 'APPROVED');
+      const photosApproved = !currentDeliverables?.photos?.length || 
+        currentDeliverables.photos.every(photo => photo.status === 'APPROVED');
+
+      const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
+
+      console.log('✅ Section approval status:', {
+        videosApproved,
+        rawFootagesApproved,
+        photosApproved,
+        allSectionsApproved,
+        submissionType: submission.submissionType?.type,
+        currentStatus: submission.status
+      });
+
+      if (allSectionsApproved && submission.submissionType?.type === 'FINAL_DRAFT') {
+        console.log('🚀 All sections approved, updating submission status and activating posting...');
+        
+        // Use the selected due date if provided, otherwise default to 7 days from now
+        const dueDate = selectedDueDate 
+          ? new Date(selectedDueDate).toISOString()
+          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        
+        console.log('📅 Using due date:', dueDate);
+        
+        // Update submission to APPROVED using the correct endpoint
+        const response = await axiosInstance.patch('/api/submission/status', {
+          submissionId: submission.id,
+          status: 'APPROVED',
+          updatePosting: true, // This flag tells the backend to activate posting
+          dueDate: dueDate,
+        });
+
+        console.log('📝 Submission status update response:', response.data);
+
+        // Refresh data
+        await Promise.all([
+          deliverableMutate(),
+          submissionMutate && submissionMutate()
+        ].filter(Boolean));
+
+        console.log('🎉 Successfully activated posting submission!');
+        enqueueSnackbar('All sections approved!', { 
+          variant: 'success' 
+        });
+      } else {
+        console.log('⏳ Not all sections approved yet or not a final draft submission');
+      }
+    } catch (error) {
+      console.error('❌ Error checking and activating posting:', error);
+      enqueueSnackbar('Error activating posting submission', { variant: 'error' });
+    }
+  };
+
+  // V2 Individual Media Management Functions
+  const handleIndividualPhotoApprove = async (mediaId, feedback) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
+        mediaId,
+        status: 'APPROVED',
+        feedback,
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      await checkAndActivatePosting(null);
+      enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
+      return response.data;
+    } catch (error) {
+      console.error('Error approving photo:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving photo', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualPhotoRequestChange = async (mediaId, feedback, reasons) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
+        mediaId,
+        status: 'CHANGES_REQUIRED',
+        feedback,
+        reasons: reasons || [],
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      enqueueSnackbar('Changes requested for photo', { variant: 'warning' });
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting photo changes:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualVideoApprove = async (mediaId, feedback, dueDate) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
+        mediaId,
+        status: 'APPROVED',
+        feedback,
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      await checkAndActivatePosting(dueDate);
+      enqueueSnackbar('Video approved successfully!', { variant: 'success' });
+      return response.data;
+    } catch (error) {
+      console.error('Error approving video:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving video', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualVideoRequestChange = async (mediaId, feedback, reasons) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
+        mediaId,
+        status: 'CHANGES_REQUIRED',
+        feedback,
+        reasons: reasons || [],
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      enqueueSnackbar('Changes requested for video', { variant: 'warning' });
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting video changes:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualRawFootageApprove = async (mediaId, feedback) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
+        mediaId,
+        status: 'APPROVED',
+        feedback,
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      await checkAndActivatePosting(null);
+      enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
+      return response.data;
+    } catch (error) {
+      console.error('Error approving raw footage:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving raw footage', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualRawFootageRequestChange = async (mediaId, feedback, reasons) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
+        mediaId,
+        status: 'CHANGES_REQUIRED',
+        feedback,
+        reasons: reasons || [],
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      enqueueSnackbar('Changes requested for raw footage', { variant: 'warning' });
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting raw footage changes:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
+        variant: 'error' 
+      });
+      throw error;
     }
   };
 
@@ -132,17 +358,15 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
   const handlePrevImage = (event) => {
     event.stopPropagation();
-    const filteredPhotos = deliverables?.photos?.filter(photo => photo.status === 'REVISION_REQUESTED') || [];
     setCurrentImageIndex((prev) => 
-      prev === 0 ? filteredPhotos.length - 1 : prev - 1
+      prev === 0 ? deliverables.photos.length - 1 : prev - 1
     );
   };
 
   const handleNextImage = (event) => {
     event.stopPropagation();
-    const filteredPhotos = deliverables?.photos?.filter(photo => photo.status === 'REVISION_REQUESTED') || [];
     setCurrentImageIndex((prev) => 
-      prev === filteredPhotos.length - 1 ? 0 : prev + 1
+      prev === deliverables.photos.length - 1 ? 0 : prev + 1
     );
   };
 
@@ -160,42 +384,43 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
   const availableTabs = useMemo(() => {
     const tabs = [];
     
-    // Only show content if firstDraft has changes required
-    const shouldShowContent = firstDraftSubmission?.status === 'CHANGES_REQUIRED';
+    // Show content if firstDraft has changes required OR if final draft is pending review
+    const shouldShowContent = firstDraftSubmission?.status === 'CHANGES_REQUIRED' || 
+                             submission?.status === 'PENDING_REVIEW';
     
     if (!shouldShowContent) {
-      return tabs; // Return empty tabs if firstDraft is not in CHANGES_REQUIRED status
+      return tabs; // Return empty tabs if conditions are not met
     }
     
-    // Only show videos that need revision
-    const videosNeedingRevision = deliverables?.videos?.filter(video => video.status === 'REVISION_REQUESTED') || [];
-    if (videosNeedingRevision.length > 0 || submission?.content) {
+    // Show all videos in final draft (not just those needing revision)
+    if (deliverables?.videos?.length > 0 || submission?.content) {
       tabs.push({ 
         value: 'videos', 
-        count: videosNeedingRevision.length || (submission?.content ? 1 : 0),
+        count: deliverables?.videos?.length || (submission?.content ? 1 : 0),
+        // label: 'Draft Videos'
       });
     }
     
-    // Only show raw footages that need revision
-    const rawFootagesNeedingRevision = deliverables?.rawFootages?.filter(footage => footage.status === 'REVISION_REQUESTED') || [];
-    if (campaign?.rawFootage && rawFootagesNeedingRevision.length > 0) {
+    // Show all raw footages in final draft
+    if (campaign?.rawFootage && deliverables?.rawFootages?.length > 0) {
       tabs.push({ 
         value: 'rawFootages', 
-        count: rawFootagesNeedingRevision.length,
+        count: deliverables.rawFootages.length,
+        // label: 'Raw Footages'
       });
     }
     
-    // Only show photos that need revision
-    const photosNeedingRevision = deliverables?.photos?.filter(photo => photo.status === 'REVISION_REQUESTED') || [];
-    if (campaign?.photos && photosNeedingRevision.length > 0) {
+    // Show all photos in final draft
+    if (campaign?.photos && deliverables?.photos?.length > 0) {
       tabs.push({ 
         value: 'photos', 
-        count: photosNeedingRevision.length,
+        count: deliverables.photos.length,
+        // label: 'Photos'
       });
     }
     
     return tabs;
-  }, [deliverables?.videos, deliverables?.rawFootages, deliverables?.photos, submission?.content, campaign?.rawFootage, campaign?.photos, firstDraftSubmission?.status]);
+  }, [deliverables?.videos, deliverables?.rawFootages, deliverables?.photos, submission?.content, submission?.status, campaign?.rawFootage, campaign?.photos, firstDraftSubmission?.status]);
 
   // Set initial tab if current tab is not available
   useEffect(() => {
@@ -204,12 +429,57 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
     }
   }, [availableTabs, selectedTab]);
 
+  // Helper functions to check approval status
+  const isVideosApproved = () => 
+    deliverables?.videos?.length > 0 && 
+    deliverables.videos.every(video => video.status === 'APPROVED');
+
+  const isRawFootagesApproved = () => 
+    deliverables?.rawFootages?.length > 0 && 
+    deliverables.rawFootages.every(footage => footage.status === 'APPROVED');
+
+  const isPhotosApproved = () => 
+    deliverables?.photos?.length > 0 && 
+    deliverables.photos.every(photo => photo.status === 'APPROVED');
+
+  // Helper functions to check if any item has changes required
+  const hasVideosChangesRequired = () => 
+    deliverables?.videos?.length > 0 && 
+    deliverables.videos.some(video => video.status === 'REVISION_REQUESTED');
+
+  const hasRawFootagesChangesRequired = () => 
+    deliverables?.rawFootages?.length > 0 && 
+    deliverables.rawFootages.some(footage => footage.status === 'REVISION_REQUESTED');
+
+  const hasPhotosChangesRequired = () => 
+    deliverables?.photos?.length > 0 && 
+    deliverables.photos.some(photo => photo.status === 'REVISION_REQUESTED');
+
+  const getTabBorderColor = (tabType) => {
+    if (submission?.status === 'PENDING_REVIEW') return '#FFC702';
+    
+    switch (tabType) {
+      case 'videos':
+        if (hasVideosChangesRequired()) return '#D4321C'; // Red for changes required
+        return isVideosApproved() ? '#1ABF66' : 'divider'; // Green for all approved, gray for pending
+      case 'rawFootages':
+        if (hasRawFootagesChangesRequired()) return '#D4321C'; // Red for changes required
+        return isRawFootagesApproved() ? '#1ABF66' : 'divider'; // Green for all approved, gray for pending
+      case 'photos':
+        if (hasPhotosChangesRequired()) return '#D4321C'; // Red for changes required
+        return isPhotosApproved() ? '#1ABF66' : 'divider'; // Green for all approved, gray for pending
+      default:
+        return 'divider';
+    }
+  };
+
   const renderTabContent = () => {
-    // Filter deliverables to only show items that need revision
+    // For Final Draft, show all deliverables regardless of status
+    // since creators may have uploaded new content that needs review
     const filteredDeliverables = {
-      videos: deliverables?.videos?.filter(video => video.status === 'REVISION_REQUESTED') || [],
-      rawFootages: deliverables?.rawFootages?.filter(footage => footage.status === 'REVISION_REQUESTED') || [],
-      photos: deliverables?.photos?.filter(photo => photo.status === 'REVISION_REQUESTED') || [],
+      videos: deliverables?.videos || [],
+      rawFootages: deliverables?.rawFootages || [],
+      photos: deliverables?.photos || [],
     };
 
     switch (selectedTab) {
@@ -222,6 +492,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
             onVideoClick={handleDraftVideoClick}
             onSubmit={onSubmitDraftVideo}
             isDisabled={isDisabled}
+            // V2 individual handlers
+            onIndividualApprove={handleIndividualVideoApprove}
+            onIndividualRequestChange={handleIndividualVideoRequestChange}
           />
         );
       case 'rawFootages':
@@ -233,6 +506,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
             onVideoClick={handleVideoClick}
             onSubmit={onSubmitRawFootage}
             isDisabled={isDisabled}
+            // V2 individual handlers
+            onIndividualApprove={handleIndividualRawFootageApprove}
+            onIndividualRequestChange={handleIndividualRawFootageRequestChange}
           />
         );
       case 'photos':
@@ -244,6 +520,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
             onImageClick={handleImageClick}
             onSubmit={onSubmitPhotos}
             isDisabled={isDisabled}
+            // V2 individual handlers
+            onIndividualApprove={handleIndividualPhotoApprove}
+            onIndividualRequestChange={handleIndividualPhotoRequestChange}
           />
         );
       default:
@@ -361,118 +640,123 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />
-                  </Box>
+      </Box>
     );
   }
 
   return (
     <Box sx={{ p: 3 }}>
       <Stack spacing={3}>
-                      {/* Media Selection Navigation */}
+
+        {/* Media Selection Navigation */}
         {availableTabs.length > 0 && (
           <Box sx={{ mb: -7, mt: -2 }}>
-                          <Stack
-                            direction={{ xs: 'column', sm: 'row' }}
-                            spacing={2}
-                            sx={{
-                              p: { xs: 1.5, sm: 2 },
-                              bgcolor: 'background.paper',
-                              borderRadius: 1,
-                            }}
-                          >
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              sx={{
+                p: { xs: 1.5, sm: 2 },
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+                // boxShadow: '0 0 12px rgba(0,0,0,0.05)',
+              }}
+            >
               {/* Draft Videos Tab */}
-              {availableTabs.some(tab => tab.value === 'videos') && (
-                            <Button
+              {deliverables?.videos?.length > 0 && (
+                <Button
                   onClick={() => setSelectedTab('videos')}
-                              fullWidth
-                              sx={{
-                                p: 1.5,
+                  // startIcon={<Iconify icon="solar:video-frame-bold" />}
+                  fullWidth
+                  sx={{
+                    p: 1.5,
                     color: selectedTab === 'videos' ? '#1844fc' : 'text.secondary',
                     bgcolor: selectedTab === 'videos' ? '#e6ebff' : 'transparent',
-                                borderRadius: 1,
+                    borderRadius: 1,
                     border: '1px solid',
-                    borderColor: submission?.status === 'PENDING_REVIEW' ? '#FFC702' : 'divider',
-                                '&:hover': {
+                    borderColor: getTabBorderColor('videos'),
+                    '&:hover': {
                       bgcolor: selectedTab === 'videos' ? '#e6ebff' : 'action.hover',
-                                },
-                              }}
-                            >
-                              <Stack alignItems="center">
-                                <Typography variant="subtitle2">Draft Videos</Typography>
-                                <Typography variant="caption">
-                      {availableTabs.find(tab => tab.value === 'videos')?.count || 0} {
-                        (availableTabs.find(tab => tab.value === 'videos')?.count || 0) === 1 ? 'video' : 'videos'
-                      }
-                                </Typography>
-                              </Stack>
-                            </Button>
+                    },
+                  }}
+                >
+                  <Stack alignItems="center">
+                    <Typography variant="subtitle2">Draft Videos</Typography>
+                    <Typography variant="caption">
+                      {deliverables.videos.length} {deliverables.videos.length === 1 ? 'video' : 'videos'}
+                    </Typography>
+                  </Stack>
+                </Button>
               )}
 
               {/* Raw Footages Tab */}
-              {campaign?.rawFootage && availableTabs.some(tab => tab.value === 'rawFootages') && (
-                              <Button
-                                onClick={() => setSelectedTab('rawFootages')}
-                                fullWidth
-                                sx={{
-                                  p: 1.5,
+              {campaign?.rawFootage && deliverables?.rawFootages?.length > 0 && (
+                <Button
+                  onClick={() => setSelectedTab('rawFootages')}
+                  // startIcon={<Iconify icon="solar:gallery-wide-bold" />}
+                  fullWidth
+                  sx={{
+                    p: 1.5,
                     color: selectedTab === 'rawFootages' ? '#1844fc' : 'text.secondary',
                     bgcolor: selectedTab === 'rawFootages' ? '#e6ebff' : 'transparent',
-                                  borderRadius: 1,
+                    borderRadius: 1,
                     border: '1px solid',
-                    borderColor: submission?.status === 'PENDING_REVIEW' ? '#FFC702' : 'divider',
-                                  '&:hover': {
+                    borderColor: getTabBorderColor('rawFootages'),
+                    '&:hover': {
                       bgcolor: selectedTab === 'rawFootages' ? '#e6ebff' : 'action.hover',
-                                  },
-                                }}
-                              >
-                                <Stack alignItems="center">
-                                  <Typography variant="subtitle2">Raw Footages</Typography>
-                                  <Typography variant="caption">
-                      {availableTabs.find(tab => tab.value === 'rawFootages')?.count || 0} files
-                                  </Typography>
-                                </Stack>
-                              </Button>
-                            )}
+                    },
+                  }}
+                >
+                  <Stack alignItems="center">
+                    <Typography variant="subtitle2">Raw Footages</Typography>
+                    <Typography variant="caption">
+                      {deliverables.rawFootages.length} files
+                    </Typography>
+                  </Stack>
+                </Button>
+              )}
 
               {/* Photos Tab */}
-              {campaign?.photos && availableTabs.some(tab => tab.value === 'photos') && (
-                              <Button
-                                onClick={() => setSelectedTab('photos')}
-                                fullWidth
-                                sx={{
-                                  p: 1.5,
-                                  color: selectedTab === 'photos' ? '#1844fc' : 'text.secondary',
-                                  bgcolor: selectedTab === 'photos' ? '#e6ebff' : 'transparent',
-                                  borderRadius: 1,
+              {campaign?.photos && deliverables?.photos?.length > 0 && (
+                <Button
+                  onClick={() => setSelectedTab('photos')}
+                  // startIcon={<Iconify icon="solar:camera-bold" />}
+                  fullWidth
+                  sx={{
+                    p: 1.5,
+                    color: selectedTab === 'photos' ? '#1844fc' : 'text.secondary',
+                    bgcolor: selectedTab === 'photos' ? '#e6ebff' : 'transparent',
+                    borderRadius: 1,
                     border: '1px solid',
-                    borderColor: submission?.status === 'PENDING_REVIEW' ? '#FFC702' : 'divider',
-                                  '&:hover': {
-                                    bgcolor: selectedTab === 'photos' ? '#e6ebff' : 'action.hover',
-                                  },
-                                }}
-                              >
-                                <Stack alignItems="center">
-                                  <Typography variant="subtitle2">Photos</Typography>
-                                  <Typography variant="caption">
-                      {availableTabs.find(tab => tab.value === 'photos')?.count || 0} images
-                                  </Typography>
-                                </Stack>
-                              </Button>
-                            )}
-                          </Stack>
-                        </Box>
-                      )}
+                    borderColor: getTabBorderColor('photos'),
+                    '&:hover': {
+                      bgcolor: selectedTab === 'photos' ? '#e6ebff' : 'action.hover',
+                    },
+                  }}
+                >
+                  <Stack alignItems="center">
+                    <Typography variant="subtitle2">Photos</Typography>
+                    <Typography variant="caption">
+                      {deliverables.photos.length} images
+                    </Typography>
+                  </Stack>
+                </Button>
+              )}
+            </Stack>
+          </Box>
+        )}
 
         {/* Tabbed Content */}
         {availableTabs.length > 0 ? (
-          <Stack spacing={2} p={2}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="h6">
-                {availableTabs.find(tab => tab.value === selectedTab)?.label}
-                                    </Typography>
-                                              </Stack>
-            {renderTabContent()}
-                                    </Stack>
+          // <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 0 12px rgba(0,0,0,0.05)', mb: 3, mt: 2 }}>
+            <Stack spacing={2} p={2}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography variant="h6">
+                  {availableTabs.find(tab => tab.value === selectedTab)?.label}
+                </Typography>
+              </Stack>
+              {renderTabContent()}
+            </Stack>
+          // </Paper>
         ) : (
           /* Empty State */
           <EmptyContent
@@ -493,55 +777,47 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           firstDraftSubmission={firstDraftSubmission}
           deliverables={deliverables}
         />
-                                              </Stack>
+      </Stack>
                                               
       {/* Modals */}
       <VideoModal
         open={videoModalOpen}
         onClose={() => setVideoModalOpen(false)}
-        videos={deliverables?.rawFootages?.filter(footage => footage.status === 'REVISION_REQUESTED') || []}
+        videos={deliverables?.rawFootages || []}
         currentIndex={currentVideoIndex}
         setCurrentIndex={setCurrentVideoIndex}
         creator={creator}
-        onPrev={() => {
-          const filteredRawFootages = deliverables?.rawFootages?.filter(footage => footage.status === 'REVISION_REQUESTED') || [];
-          setCurrentVideoIndex(prev => 
-            prev === 0 ? filteredRawFootages.length - 1 : prev - 1
-          );
-        }}
-        onNext={() => {
-          const filteredRawFootages = deliverables?.rawFootages?.filter(footage => footage.status === 'REVISION_REQUESTED') || [];
-          setCurrentVideoIndex(prev => 
-            prev === filteredRawFootages.length - 1 ? 0 : prev + 1
-          );
-        }}
+        submission={submission}
+        showCaption={false}
+        onPrev={() => setCurrentVideoIndex(prev => 
+          prev === 0 ? deliverables.rawFootages.length - 1 : prev - 1
+        )}
+        onNext={() => setCurrentVideoIndex(prev => 
+          prev === deliverables.rawFootages.length - 1 ? 0 : prev + 1
+        )}
       />
 
       <VideoModal
         open={draftVideoModalOpen}
         onClose={() => setDraftVideoModalOpen(false)}
-        videos={deliverables?.videos?.filter(video => video.status === 'REVISION_REQUESTED') || []}
+        videos={deliverables?.videos || []}
         currentIndex={currentDraftVideoIndex}
         setCurrentIndex={setCurrentDraftVideoIndex}
         creator={creator}
-        onPrev={() => {
-          const filteredVideos = deliverables?.videos?.filter(video => video.status === 'REVISION_REQUESTED') || [];
-          setCurrentDraftVideoIndex(prev => 
-            prev === 0 ? filteredVideos.length - 1 : prev - 1
-          );
-        }}
-        onNext={() => {
-          const filteredVideos = deliverables?.videos?.filter(video => video.status === 'REVISION_REQUESTED') || [];
-          setCurrentDraftVideoIndex(prev => 
-            prev === filteredVideos.length - 1 ? 0 : prev + 1
-          );
-        }}
+        submission={submission}
+        showCaption
+        onPrev={() => setCurrentDraftVideoIndex(prev => 
+          prev === 0 ? deliverables.videos.length - 1 : prev - 1
+        )}
+        onNext={() => setCurrentDraftVideoIndex(prev => 
+          prev === deliverables.videos.length - 1 ? 0 : prev + 1
+        )}
       />
 
       <PhotoModal
         open={fullImageOpen}
         onClose={handleFullImageClose}
-        photos={deliverables?.photos?.filter(photo => photo.status === 'REVISION_REQUESTED') || []}
+        photos={deliverables?.photos || []}
         currentIndex={currentImageIndex}
         setCurrentIndex={setCurrentImageIndex}
         creator={creator}

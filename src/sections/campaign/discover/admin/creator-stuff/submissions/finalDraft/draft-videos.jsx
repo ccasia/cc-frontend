@@ -11,8 +11,10 @@ import {
   Box,
   Grid,
   Card,
+  Chip,
   Stack,
   Button,
+  Avatar,
   Tooltip,
   Typography,
   CardContent,
@@ -35,9 +37,13 @@ const VideoCard = ({
   handleApprove, 
   handleRequestChange,
   selectedVideosForChange,
-  handleVideoSelection 
+  handleVideoSelection,
+  // V2 individual handlers
+  onIndividualApprove,
+  onIndividualRequestChange,
 }) => {
   const [cardType, setCardType] = useState('approve');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -46,26 +52,26 @@ const VideoCard = ({
 
   const approveSchema = Yup.object().shape({
     feedback: Yup.string().required('Comment is required.'),
-    dueDate: Yup.string().required('Due Date is required.'),
+    dueDate: Yup.string().required('Due date is required'),
   });
 
   const formMethods = useForm({
     resolver: cardType === 'request' ? yupResolver(requestSchema) : yupResolver(approveSchema),
     defaultValues: {
       feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
-      reasons: [],
       dueDate: null,
+      reasons: [],
     },
   });
 
-  const { formState: { isSubmitting }, setValue, reset } = formMethods;
+  const { formState: { isSubmitting }, reset } = formMethods;
 
   // Reset form when cardType changes
   useEffect(() => {
     reset({
       feedback: cardType === 'approve' ? 'Thank you for submitting!' : '',
-      reasons: [],
       dueDate: null,
+      reasons: [],
     });
   }, [cardType, reset]);
 
@@ -73,14 +79,82 @@ const VideoCard = ({
   const hasRevisionRequested = videoItem.status === 'REVISION_REQUESTED';
   const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isVideoApproved;
 
+  const getVideoFeedback = () => {
+    // Check for individual feedback first
+    if (videoItem.individualFeedback && videoItem.individualFeedback.length > 0) {
+      return videoItem.individualFeedback;
+    }
+    
+    // Fallback to submission-level feedback
+    const allFeedbacks = [
+      ...(submission?.feedback || [])
+    ];
+
+    return allFeedbacks
+      .filter(feedback => feedback.videosToUpdate?.includes(videoItem.id))
+      .sort((a, b) => dayjs(b.createdAt).diff(dayjs(a.createdAt)));
+  };
+
+  const videoFeedback = getVideoFeedback();
+
+  // V2 Individual handlers
+  const handleIndividualApproveClick = async () => {
+    if (!onIndividualApprove) return;
+    
+    setIsProcessing(true);
+    try {
+      const values = formMethods.getValues();
+      await onIndividualApprove(videoItem.id, values.feedback, values.dueDate);
+    } catch (error) {
+      console.error('Error approving video:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleIndividualRequestClick = async () => {
+    if (!onIndividualRequestChange) return;
+    
+    setIsProcessing(true);
+    try {
+      // Validate the form first
+      const isValid = await formMethods.trigger();
+      if (!isValid) {
+        setIsProcessing(false);
+        return;
+      }
+      
+      const values = formMethods.getValues();
+      // Clean the reasons array to remove any null/undefined values
+      const cleanReasons = Array.isArray(values.reasons) 
+        ? values.reasons.filter(reason => reason !== null && reason !== undefined && reason !== '')
+        : [];
+      
+      await onIndividualRequestChange(videoItem.id, values.feedback, cleanReasons);
+    } catch (error) {
+      console.error('Error requesting video changes:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Fallback to original handlers if v2 handlers not provided
   const handleApproveClick = async () => {
-    const values = formMethods.getValues();
-    await handleApprove(videoItem.id, values);
+    if (onIndividualApprove) {
+      await handleIndividualApproveClick();
+    } else {
+      const values = formMethods.getValues();
+      await handleApprove(videoItem.id, values);
+    }
   };
 
   const handleRequestClick = async () => {
-    const values = formMethods.getValues();
-    await handleRequestChange(videoItem.id, values);
+    if (onIndividualRequestChange) {
+      await handleIndividualRequestClick();
+    } else {
+      const values = formMethods.getValues();
+      await handleRequestChange(videoItem.id, values);
+    }
   };
 
   const renderFormContent = () => {
@@ -89,20 +163,69 @@ const VideoCard = ({
         return (
           <Box
             sx={{
-              p: 2,
-              borderRadius: 1,
-              bgcolor: 'success.lighter',
-              border: '1px solid',
-              borderColor: 'success.light',
               display: 'flex',
+              justifyContent: 'center',
               alignItems: 'center',
-              gap: 1,
+              p: 2,
             }}
           >
-            <Iconify icon="solar:check-circle-bold" color="success.main" />
-            <Typography color="success.darker" variant="body2">
-              Video approved
-            </Typography>
+            <Box
+              sx={{
+                bgcolor: '#FFFFFF',
+                color: '#1ABF66',
+                border: '1.5px solid',
+                borderColor: '#1ABF66',
+                borderBottom: 3,
+                borderBottomColor: '#1ABF66',
+                borderRadius: 1,
+                py: 0.8,
+                px: 1.5,
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+              }}
+            >
+              APPROVED
+            </Box>
+          </Box>
+        );
+      }
+      if (hasRevisionRequested) {
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              p: 2,
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: '#FFFFFF',
+                color: '#D4321C',
+                border: '1.5px solid',
+                borderColor: '#D4321C',
+                borderBottom: 3,
+                borderBottomColor: '#D4321C',
+                borderRadius: 1,
+                py: 0.8,
+                px: 1.5,
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textTransform: 'none',
+              }}
+            >
+              CHANGES REQUESTED
+            </Box>
           </Box>
         );
       }
@@ -146,6 +269,7 @@ const VideoCard = ({
                   }}
                   size="small"
                   variant="contained"
+                  disabled={isProcessing}
                   sx={{
                     bgcolor: '#FFFFFF',
                     border: 1.5,
@@ -173,7 +297,7 @@ const VideoCard = ({
                   onClick={handleApproveClick}
                   variant="contained"
                   size="small"
-                  loading={isSubmitting}
+                  loading={isSubmitting || isProcessing}
                   sx={{
                     bgcolor: '#FFFFFF',
                     color: '#1ABF66',
@@ -232,36 +356,39 @@ const VideoCard = ({
                     setCardType('approve');
                   }}
                   size="small"
+                  variant="contained"
+                  disabled={isProcessing}
                   sx={{
-                    bgcolor: 'white',
+                    bgcolor: '#FFFFFF',
                     border: 1.5,
                     borderRadius: 1.15,
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
                     borderBottomColor: '#e7e7e7',
-                    color: 'text.primary',
+                    color: '#1ABF66',
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#231F20',
+                      borderColor: '#1ABF66',
                     },
                     textTransform: 'none',
                     py: 1.2,
                     fontSize: '0.9rem',
+                    fontWeight: 600,
                     height: '40px',
                     flex: 1,
                   }}
                 >
-                  Back
+                  Approve
                 </Button>
 
                 <LoadingButton
+                  onClick={handleRequestClick}
                   variant="contained"
                   size="small"
-                  onClick={handleRequestClick}
-                  loading={isSubmitting}
+                  loading={isSubmitting || isProcessing}
                   sx={{
                     bgcolor: '#FFFFFF',
-                    color: '#1ABF66',
+                    color: '#D4321C',
                     border: '1.5px solid',
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
@@ -271,15 +398,15 @@ const VideoCard = ({
                     fontWeight: 600,
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#1ABF66',
+                      borderColor: '#D4321C',
                     },
                     fontSize: '0.9rem',
                     height: '40px',
                     textTransform: 'none',
-                    flex: 1,
+                    flex: 2,
                   }}
                 >
-                  Submit
+                  Request Changes
                 </LoadingButton>
               </Stack>
             </Stack>
@@ -297,11 +424,37 @@ const VideoCard = ({
         flexDirection: 'column',
         borderRadius: 2,
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: isVideoApproved ? '#1ABF66' : hasRevisionRequested ? '#D4321C' : 'divider',
       }}
     >
       {/* Video Section */}
       <Box sx={{ p: 2, pb: 1 }}>
+        {/* Submission Date */}
+        {videoItem.createdAt && (
+          <Box sx={{ mb: 1.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontSize: '0.7rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+              }}
+            >
+              <Iconify
+                icon="eva:calendar-outline"
+                sx={{
+                  width: 12,
+                  height: 12,
+                  color: 'text.secondary',
+                }}
+              />
+              {dayjs(videoItem.createdAt).format('MMM D, YYYY h:mm A')}
+            </Typography>
+          </Box>
+        )}
+
         <Box
           sx={{
             position: 'relative',
@@ -333,11 +486,7 @@ const VideoCard = ({
               }}
             >
               <Tooltip title="Changes required">
-                <Iconify
-                  icon="si:warning-fill"
-                  width={20}
-                  color="warning.main"
-                />
+                <Iconify icon="si:warning-fill" width={20} color="warning.main" />
               </Tooltip>
             </Box>
           )}
@@ -352,11 +501,7 @@ const VideoCard = ({
               }}
             >
               <Tooltip title="Approved">
-                <Iconify
-                  icon="lets-icons:check-fill"
-                  width={20}
-                  color="success.main"
-                />
+                <Iconify icon="lets-icons:check-fill" width={20} color="success.main" />
               </Tooltip>
             </Box>
           )}
@@ -392,19 +537,112 @@ const VideoCard = ({
       <CardContent sx={{ pt: 0 }}>
         {renderFormContent()}
       </CardContent>
+
+      {/* Feedback History */}
+      {videoFeedback.length > 0 && (
+        <Box sx={{ px: 2, pb: 2 }}>
+          {/* <Typography variant="subtitle2" sx={{ mb: 1.5, color: 'text.primary' }}>
+            Feedback History
+          </Typography> */}
+          <Stack spacing={1.5}>
+            {videoFeedback.map((feedback, feedbackIndex) => (
+              <Box
+                key={feedbackIndex}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1,
+                  bgcolor: '#FFFFFF',
+                  border: '1px solid',
+                  borderColor: '#e0e0e0',
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                  <Avatar
+                    src={feedback.admin?.photoURL}
+                    sx={{ width: 20, height: 20 }}
+                  />
+                  <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                    {feedback.admin?.name || 'Admin'}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {dayjs(feedback.createdAt).format('MMM D, YYYY h:mm A')}
+                  </Typography>
+                  {feedback.type === 'REQUEST' && (
+                    <Chip
+                      label="Change Request"
+                      size="small"
+                      sx={{
+                        bgcolor: 'warning.lighter',
+                        color: 'warning.darker',
+                        fontSize: '0.7rem',
+                        height: '20px',
+                      }}
+                    />
+                  )}
+                </Stack>
+                
+                <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
+                  {feedback.content}
+                </Typography>
+
+                {feedback.reasons && feedback.reasons.length > 0 && (
+                  <Box>
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                      {feedback.reasons.map((reason, reasonIndex) => (
+                        <Box
+                          key={reasonIndex}
+                          sx={{
+                            bgcolor: '#FFFFFF',
+                            color: '#666666',
+                            border: '1.5px solid',
+                            borderColor: '#e0e0e0',
+                            borderBottom: 3,
+                            borderBottomColor: '#e0e0e0',
+                            borderRadius: 1,
+                            py: 0.4,
+                            px: 1,
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textTransform: 'none',
+                          }}
+                        >
+                          {reason}
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+      )}
     </Card>
   );
 };
 
 VideoCard.propTypes = {
-  videoItem: PropTypes.object.isRequired,
+  videoItem: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    url: PropTypes.string.isRequired,
+    status: PropTypes.string,
+    createdAt: PropTypes.string,
+    caption: PropTypes.string,
+  }).isRequired,
   index: PropTypes.number.isRequired,
-  submission: PropTypes.object.isRequired,
+  submission: PropTypes.object,
   onVideoClick: PropTypes.func.isRequired,
   handleApprove: PropTypes.func.isRequired,
   handleRequestChange: PropTypes.func.isRequired,
-  selectedVideosForChange: PropTypes.array,
-  handleVideoSelection: PropTypes.func,
+  selectedVideosForChange: PropTypes.array.isRequired,
+  handleVideoSelection: PropTypes.func.isRequired,
+  // V2 props
+  onIndividualApprove: PropTypes.func,
+  onIndividualRequestChange: PropTypes.func,
 };
 
 const DraftVideos = ({
@@ -414,12 +652,13 @@ const DraftVideos = ({
   onVideoClick,
   onSubmit,
   isDisabled,
+  // V2 individual handlers
+  onIndividualApprove,
+  onIndividualRequestChange,
 }) => {
   const [selectedVideosForChange, setSelectedVideosForChange] = useState([]);
   const approve = useBoolean();
   const request = useBoolean();
-  const [currentVideoId, setCurrentVideoId] = useState(null);
-  const [currentAction, setCurrentAction] = useState(null);
 
   const handleVideoSelection = (id) => {
     setSelectedVideosForChange((prev) => {
@@ -432,23 +671,16 @@ const DraftVideos = ({
 
   const handleApprove = async (videoId, formValues) => {
     try {
-      setCurrentVideoId(videoId);
-      setCurrentAction('approve');
-
       const payload = {
         type: 'approve',
         feedback: formValues.feedback,
-        reasons: formValues.reasons || [],
-        dueDate: formValues.dueDate,
+        dueDate: dayjs(formValues.dueDate).format('YYYY-MM-DD'),
         selectedVideos: [videoId],
       };
 
       await onSubmit(payload);
-      approve.onFalse();
-      setCurrentVideoId(null);
-      setCurrentAction(null);
     } catch (error) {
-      console.error('Error submitting draft video review:', error);
+      console.error('Error submitting video review:', error);
       enqueueSnackbar(error?.message || 'Error submitting review', {
         variant: 'error',
       });
@@ -457,23 +689,16 @@ const DraftVideos = ({
 
   const handleRequestChange = async (videoId, formValues) => {
     try {
-      setCurrentVideoId(videoId);
-      setCurrentAction('request');
-
       const payload = {
         type: 'request',
         feedback: formValues.feedback,
-        reasons: formValues.reasons || [],
-        dueDate: null,
+        reasons: formValues.reasons,
         selectedVideos: [videoId],
       };
 
       await onSubmit(payload);
-      request.onFalse();
-      setCurrentVideoId(null);
-      setCurrentAction(null);
     } catch (error) {
-      console.error('Error submitting draft video review:', error);
+      console.error('Error submitting video review:', error);
       enqueueSnackbar(error?.message || 'Error submitting review', {
         variant: 'error',
       });
@@ -481,130 +706,91 @@ const DraftVideos = ({
   };
 
   // Check if all videos are already approved
-  const allVideosApproved = (deliverables?.videos?.length > 0 && 
-    deliverables.videos.every(v => v.status === 'APPROVED')) ||
-   (submission?.content && submission?.status === 'APPROVED');
+  const allVideosApproved = deliverables?.videos?.length > 0 && 
+    deliverables.videos.every(v => v.status === 'APPROVED');
 
   return (
     <>
-      {/* Video Grid */}
-      {campaign?.campaignCredits && !!deliverables?.videos?.length && (
-        <Grid container spacing={2}>
-          {deliverables.videos.map((videoItem, index) => (
-            <Grid 
-              item 
-              xs={12} 
-              md={deliverables.videos.length === 1 ? 7 : 6} 
-              key={videoItem.id || index}
-            >
-              <VideoCard 
-                videoItem={videoItem} 
-                index={index}
-                submission={submission}
-                onVideoClick={onVideoClick}
-                handleApprove={handleApprove}
-                handleRequestChange={handleRequestChange}
-                selectedVideosForChange={selectedVideosForChange}
-                handleVideoSelection={handleVideoSelection}
-              />
-            </Grid>
-          ))}
-        </Grid>
-      )}
-
-      {/* Single video content - Legacy support */}
-      {!!submission?.content && (
-        <Box
-          sx={{
-            position: 'relative',
-            borderRadius: 1,
-            overflow: 'hidden',
-            aspectRatio: '16/9',
-            cursor: 'pointer',
-            mb: 3,
-          }}
-          onClick={() => onVideoClick()}
-        >
-          <Box
-            component="video"
-            src={submission?.content}
-            sx={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-          />
-        </Box>
-      )}
-
-      {/* Caption Section for legacy support */}
-      {submission?.caption && !submission?.videos?.length && (
-        <Box
-          sx={{
-            mt: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1.5,
-            overflow: 'hidden',
-            bgcolor: 'background.paper',
-          }}
-        >
+      {/* Videos Horizontal Scroll */}
+      {deliverables?.videos?.length ? (
+        deliverables.videos.length > 2 ? (
           <Box
             sx={{
-              px: 2.5,
-              py: 1.5,
-              bgcolor: 'grey.50',
-              borderBottom: '1px solid',
-              borderColor: 'divider',
               display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
+              gap: 2,
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              pb: 1,
+              maxWidth: '100%',
+              '&::-webkit-scrollbar': {
+                height: 8,
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: '#f1f1f1',
+                borderRadius: 4,
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: '#c1c1c1',
+                borderRadius: 4,
+                '&:hover': {
+                  backgroundColor: '#a8a8a8',
+                },
+              },
             }}
           >
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: 1,
-                bgcolor: 'primary.lighter',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Iconify
-                icon="solar:text-bold"
+            {deliverables.videos.map((video, index) => (
+              <Box
+                key={video.id || index}
                 sx={{
-                  width: 16,
-                  height: 16,
-                  color: 'primary.main',
+                  width: 'calc(50% - 8px)',
+                  minWidth: 'calc(50% - 8px)',
+                  flexShrink: 0,
                 }}
-              />
-            </Box>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: 'text.primary',
-                fontWeight: 600,
-              }}
-            >
-              Video Caption
-            </Typography>
+              >
+                <VideoCard 
+                  videoItem={video} 
+                  index={index}
+                  submission={submission}
+                  onVideoClick={onVideoClick}
+                  handleApprove={handleApprove}
+                  handleRequestChange={handleRequestChange}
+                  selectedVideosForChange={selectedVideosForChange}
+                  handleVideoSelection={handleVideoSelection}
+                  // V2 individual handlers
+                  onIndividualApprove={onIndividualApprove}
+                  onIndividualRequestChange={onIndividualRequestChange}
+                />
+              </Box>
+            ))}
           </Box>
-
-          <Box sx={{ p: 2.5 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.primary',
-                lineHeight: 1.6,
-                whiteSpace: 'pre-wrap',
-              }}
-            >
-              {submission.caption}
-            </Typography>
-          </Box>
-        </Box>
+        ) : (
+          <Grid container spacing={2}>
+            {deliverables.videos.map((video, index) => (
+              <Grid 
+                item 
+                xs={12} 
+                md={deliverables.videos.length === 1 ? 7 : 6} 
+                key={video.id || index}
+              >
+                <VideoCard 
+                  videoItem={video} 
+                  index={index}
+                  submission={submission}
+                  onVideoClick={onVideoClick}
+                  handleApprove={handleApprove}
+                  handleRequestChange={handleRequestChange}
+                  selectedVideosForChange={selectedVideosForChange}
+                  handleVideoSelection={handleVideoSelection}
+                  // V2 individual handlers
+                  onIndividualApprove={onIndividualApprove}
+                  onIndividualRequestChange={onIndividualRequestChange}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        )
+      ) : (
+        <Typography>No videos uploaded yet.</Typography>
       )}
 
       {/* All Videos Approved Message */}
@@ -624,7 +810,7 @@ const DraftVideos = ({
         >
           <Iconify icon="solar:check-circle-bold" color="success.main" />
           <Typography color="success.darker">
-            All draft videos have been approved
+            All videos have been approved
           </Typography>
         </Box>
       )}
@@ -633,7 +819,7 @@ const DraftVideos = ({
       <ConfirmationApproveModal
         open={approve.value}
         onClose={approve.onFalse}
-        sectionType="video"
+        sectionType="videos"
         onConfirm={() => {}}
         isSubmitting={false}
         isDisabled={isDisabled}
@@ -643,7 +829,7 @@ const DraftVideos = ({
       <ConfirmationRequestModal
         open={request.value}
         onClose={request.onFalse}
-        sectionType="video"
+        sectionType="videos"
         onConfirm={() => {}}
         watchData={{}}
         isDisabled={false}
@@ -657,9 +843,12 @@ DraftVideos.propTypes = {
   campaign: PropTypes.object,
   submission: PropTypes.object,
   deliverables: PropTypes.object,
-  onVideoClick: PropTypes.func,
-  onSubmit: PropTypes.func,
+  onVideoClick: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
   isDisabled: PropTypes.bool,
+  // V2 props
+  onIndividualApprove: PropTypes.func,
+  onIndividualRequestChange: PropTypes.func,
 };
 
 export default DraftVideos; 
