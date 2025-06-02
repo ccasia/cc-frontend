@@ -258,6 +258,11 @@ export const endpoints = {
       agreement: '/api/submission/adminManageAgreementSubmission',
       draft: '/api/submission/adminManageDraft',
       posting: '/api/submission/adminManagePosting',
+      v2: {
+        photos: '/api/submission/v2/managePhotos',
+        videos: '/api/submission/v2/manageDraftVideos',
+        rawFootages: '/api/submission/v2/manageRawFootages'
+      }
     },
   },
   notification: {

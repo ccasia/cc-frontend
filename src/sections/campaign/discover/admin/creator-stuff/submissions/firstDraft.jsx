@@ -28,7 +28,7 @@ import { VideoModal, PhotoModal } from './firstDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './firstDraft/confirmation-modals';
 
 const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
-  const { deliverables, deliverableMutate } = deliverablesData;
+  const { deliverables, deliverableMutate, submissionMutate } = deliverablesData;
   const { user } = useAuthContext();
 
   // Modal states
@@ -91,6 +91,232 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       await checkSubmissionReadiness();
     } catch (error) {
       console.error('Error updating section:', error);
+    }
+  };
+
+  // Individual media update function that refreshes both deliverables and submissions
+  const onIndividualMediaUpdated = async () => {
+    try {
+      await Promise.all([
+        deliverableMutate(),
+        submissionMutate && submissionMutate()
+      ].filter(Boolean));
+    } catch (error) {
+      console.error('Error updating individual media:', error);
+    }
+  };
+
+  // Check if all sections are approved and activate posting if needed
+  const checkAndActivatePosting = async (selectedDueDate) => {
+    try {
+      console.log('🔍 Checking if all sections are approved...');
+      
+      // Wait a moment for the data to be refreshed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Re-fetch the latest deliverables to check current status
+      await deliverableMutate();
+      
+      // Fetch fresh deliverables data directly from API
+      const freshDeliverablesResponse = await axiosInstance.get(
+        `/api/submission/deliverables/${creator?.user?.id}/${campaign?.id}`
+      );
+      const currentDeliverables = freshDeliverablesResponse.data;
+      
+      console.log('📊 Current deliverables status:', {
+        videos: currentDeliverables?.videos?.map(v => ({ id: v.id, status: v.status })),
+        photos: currentDeliverables?.photos?.map(p => ({ id: p.id, status: p.status })),
+        rawFootages: currentDeliverables?.rawFootages?.map(r => ({ id: r.id, status: r.status }))
+      });
+      
+      // Check if all sections are approved
+      const videosApproved = !currentDeliverables?.videos?.length || 
+        currentDeliverables.videos.every(video => video.status === 'APPROVED');
+      const rawFootagesApproved = !currentDeliverables?.rawFootages?.length || 
+        currentDeliverables.rawFootages.every(footage => footage.status === 'APPROVED');
+      const photosApproved = !currentDeliverables?.photos?.length || 
+        currentDeliverables.photos.every(photo => photo.status === 'APPROVED');
+
+      const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
+
+      console.log('✅ Section approval status:', {
+        videosApproved,
+        rawFootagesApproved,
+        photosApproved,
+        allSectionsApproved,
+        submissionType: submission.submissionType?.type,
+        currentStatus: submission.status
+      });
+
+      if (allSectionsApproved && submission.submissionType?.type === 'FIRST_DRAFT') {
+        console.log('🚀 All sections approved, updating submission status and activating posting...');
+        
+        // Use the selected due date if provided, otherwise default to 7 days from now
+        const dueDate = selectedDueDate 
+          ? new Date(selectedDueDate).toISOString()
+          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        
+        console.log('📅 Using due date:', dueDate);
+        
+        // Update submission to APPROVED using the correct endpoint
+        const response = await axiosInstance.patch('/api/submission/status', {
+          submissionId: submission.id,
+          status: 'APPROVED',
+          updatePosting: true, // This flag tells the backend to activate posting
+          dueDate: dueDate,
+        });
+
+        console.log('📝 Submission status update response:', response.data);
+
+        // Refresh data
+        await Promise.all([
+          deliverableMutate(),
+          submissionMutate && submissionMutate()
+        ].filter(Boolean));
+
+        console.log('🎉 Successfully activated posting submission!');
+        enqueueSnackbar('All sections approved!', { 
+          variant: 'success' 
+        });
+      } else {
+        console.log('⏳ Not all sections approved yet or not a first draft submission');
+      }
+    } catch (error) {
+      console.error('❌ Error checking and activating posting:', error);
+      enqueueSnackbar('Error activating posting submission', { variant: 'error' });
+    }
+  };
+
+  // V2 Individual Media Management Functions
+  const handleIndividualPhotoApprove = async (mediaId, feedback) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
+        mediaId,
+        status: 'APPROVED',
+        feedback,
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      await checkAndActivatePosting(null);
+      enqueueSnackbar('Photo approved successfully!', { variant: 'success' });
+      return response.data;
+    } catch (error) {
+      console.error('Error approving photo:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving photo', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualPhotoRequestChange = async (mediaId, feedback, reasons) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.photos, {
+        mediaId,
+        status: 'CHANGES_REQUIRED',
+        feedback,
+        reasons: reasons || [],
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      enqueueSnackbar('Changes requested for photo', { variant: 'warning' });
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting photo changes:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualVideoApprove = async (mediaId, feedback, dueDate) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
+        mediaId,
+        status: 'APPROVED',
+        feedback,
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      await checkAndActivatePosting(dueDate);
+      enqueueSnackbar('Video approved successfully!', { variant: 'success' });
+      return response.data;
+    } catch (error) {
+      console.error('Error approving video:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving video', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualVideoRequestChange = async (mediaId, feedback, reasons) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.videos, {
+        mediaId,
+        status: 'CHANGES_REQUIRED',
+        feedback,
+        reasons: reasons || [],
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      enqueueSnackbar('Changes requested for video', { variant: 'warning' });
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting video changes:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualRawFootageApprove = async (mediaId, feedback) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
+        mediaId,
+        status: 'APPROVED',
+        feedback,
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      await checkAndActivatePosting(null);
+      enqueueSnackbar('Raw footage approved successfully!', { variant: 'success' });
+      return response.data;
+    } catch (error) {
+      console.error('Error approving raw footage:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving raw footage', { 
+        variant: 'error' 
+      });
+      throw error;
+    }
+  };
+
+  const handleIndividualRawFootageRequestChange = async (mediaId, feedback, reasons) => {
+    try {
+      const response = await axiosInstance.patch(endpoints.submission.admin.v2.rawFootages, {
+        mediaId,
+        status: 'CHANGES_REQUIRED',
+        feedback,
+        reasons: reasons || [],
+        preventStatusChange: true,
+      });
+
+      await onIndividualMediaUpdated();
+      enqueueSnackbar('Changes requested for raw footage', { variant: 'warning' });
+      return response.data;
+    } catch (error) {
+      console.error('Error requesting raw footage changes:', error);
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
+        variant: 'error' 
+      });
+      throw error;
     }
   };
 
@@ -163,16 +389,32 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
     deliverables?.photos?.length > 0 && 
     deliverables.photos.every(photo => photo.status === 'APPROVED');
 
+  // Helper functions to check if any item has changes required
+  const hasVideosChangesRequired = () => 
+    deliverables?.videos?.length > 0 && 
+    deliverables.videos.some(video => video.status === 'REVISION_REQUESTED');
+
+  const hasRawFootagesChangesRequired = () => 
+    deliverables?.rawFootages?.length > 0 && 
+    deliverables.rawFootages.some(footage => footage.status === 'REVISION_REQUESTED');
+
+  const hasPhotosChangesRequired = () => 
+    deliverables?.photos?.length > 0 && 
+    deliverables.photos.some(photo => photo.status === 'REVISION_REQUESTED');
+
   const getTabBorderColor = (tabType) => {
     if (submission?.status === 'PENDING_REVIEW') return '#FFC702';
     
     switch (tabType) {
       case 'videos':
-        return isVideosApproved() ? '#1ABF66' : 'divider';
+        if (hasVideosChangesRequired()) return '#D4321C'; // Red for changes required
+        return isVideosApproved() ? '#1ABF66' : 'divider'; // Green for all approved, gray for pending
       case 'rawFootages':
-        return isRawFootagesApproved() ? '#1ABF66' : 'divider';
+        if (hasRawFootagesChangesRequired()) return '#D4321C'; // Red for changes required
+        return isRawFootagesApproved() ? '#1ABF66' : 'divider'; // Green for all approved, gray for pending
       case 'photos':
-        return isPhotosApproved() ? '#1ABF66' : 'divider';
+        if (hasPhotosChangesRequired()) return '#D4321C'; // Red for changes required
+        return isPhotosApproved() ? '#1ABF66' : 'divider'; // Green for all approved, gray for pending
       default:
         return 'divider';
     }
@@ -189,6 +431,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             onVideoClick={handleDraftVideoClick}
             onSubmit={onSubmitDraftVideo}
             isDisabled={isDisabled}
+            // V2 individual handlers
+            onIndividualApprove={handleIndividualVideoApprove}
+            onIndividualRequestChange={handleIndividualVideoRequestChange}
           />
         );
       case 'rawFootages':
@@ -200,6 +445,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             onVideoClick={handleVideoClick}
             onSubmit={onSubmitRawFootage}
             isDisabled={isDisabled}
+            // V2 individual handlers
+            onIndividualApprove={handleIndividualRawFootageApprove}
+            onIndividualRequestChange={handleIndividualRawFootageRequestChange}
           />
         );
       case 'photos':
@@ -211,6 +459,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
             onImageClick={handleImageClick}
             onSubmit={onSubmitPhotos}
             isDisabled={isDisabled}
+            // V2 individual handlers
+            onIndividualApprove={handleIndividualPhotoApprove}
+            onIndividualRequestChange={handleIndividualPhotoRequestChange}
           />
         );
       default:
