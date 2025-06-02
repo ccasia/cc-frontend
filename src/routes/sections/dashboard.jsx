@@ -8,6 +8,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 
 import { ChatView } from 'src/sections/chat/view';
 import { CalendarView } from 'src/sections/calendar/view';
+import ReportingView from 'src/sections/report/view/reporting-view';
 
 // ----------------------------------------------------------------------
 
@@ -81,6 +82,7 @@ const AdminTaskPage = lazy(() => import('src/pages/dashboard/admin/tasks'));
 
 // Performance report
 const Report = lazy(() => import('src/pages/dashboard/report/report'));
+const ReportView = lazy(() => import('src/sections/report/view/reporting-view'));
 
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
@@ -197,12 +199,17 @@ export const dashboardRoutes = [
         ),
       },
       {
-        path: 'report', // The URL path for the new page
-        element: (
-          <RoleBasedGuard roles={['superadmin']} hasContent>
-            <Report />
-          </RoleBasedGuard>
-        ),
+        path: 'report',
+        children: [
+          {
+            element: <Report />,
+            index: true,
+          },
+          {
+            path: 'view',
+            element: <ReportingView />,
+          },
+        ],
       },
       // For Finance
       {
