@@ -71,6 +71,7 @@ const ICONS = {
   creator: icon('ic_creators'),
   clients: icon('ic_clients'),
   roles: icon('ic_roles'),
+  bugreport: <Iconify icon="solar:bug-line-duotone" width={24} />,
 };
 
 // ----------------------------------------------------------------------
@@ -441,6 +442,15 @@ export function useNavData() {
             ),
             path: paths.dashboard.user.profile,
             icon: ICONS.settings,
+          },
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Bug Report
+              </span>
+            ),
+            path: '#bug-report',
+            icon: ICONS.bugreport,
           },
         ],
       },

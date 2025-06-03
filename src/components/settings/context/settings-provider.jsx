@@ -26,10 +26,6 @@ export function SettingsProvider({ children, defaultSettings }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isArabic]);
 
-  useEffect(() => {
-    reset();
-  }, [reset]);
-
   // Direction by lang
   const onChangeDirectionByLang = useCallback(
     (lang) => {

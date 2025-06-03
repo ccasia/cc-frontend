@@ -20,8 +20,8 @@ import { useAuthContext } from 'src/auth/hooks';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import Photos from './firstDraft/photos';
-import DraftVideos from './firstDraft/draft-videos';
 import RawFootages from './firstDraft/raw-footage';
+import DraftVideos from './firstDraft/draft-videos';
 // import StatusBanner from './firstDraft/status-banner';
 // import FeedbackDisplay from './firstDraft/feedback-display';
 import { VideoModal, PhotoModal } from './firstDraft/media-modals';

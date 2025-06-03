@@ -61,15 +61,20 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     event.stopPropagation();
     
     const campaignName = campaign?.name || 'Campaign Details';
+    const campaignImage = campaign?.campaignBrief?.images?.[0] || null;
     
     // Check if this campaign is already in campaignTabs
     const tabExists = window.campaignTabs.some(tab => tab.id === campaign.id);
     
     if (tabExists) {
-      // If tab already exists, update the name to ensure it's current
+      // If tab already exists, update the name and image to ensure they're current
       window.campaignTabs = window.campaignTabs.map(tab => {
         if (tab.id === campaign.id) {
-          return { ...tab, name: campaignName };
+          return { 
+            ...tab, 
+            name: campaignName,
+            image: campaignImage 
+          };
         }
         return tab;
       });
@@ -84,19 +89,9 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       // If tab doesn't exist yet, add it to campaignTabs
       window.campaignTabs.push({
         id: campaign.id,
-        name: campaignName
+        name: campaignName,
+        image: campaignImage
       });
-      
-      // Update status tracking for tabs
-      if (typeof window !== 'undefined') {
-        if (!window.campaignTabsStatus) {
-          window.campaignTabsStatus = {};
-        }
-        
-        window.campaignTabsStatus[campaign.id] = {
-          status: campaign.status
-        };
-      }
       
       // Save to localStorage
       try {
@@ -106,8 +101,19 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       }
     }
     
-    // Navigate to the campaign detail page - commented out for now in case CC wants this feature
-    // router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
+    // Update status tracking for tabs
+    if (typeof window !== 'undefined') {
+      if (!window.campaignTabsStatus) {
+        window.campaignTabsStatus = {};
+      }
+      
+      window.campaignTabsStatus[campaign.id] = {
+        status: campaign.status
+      };
+    }
+    
+    // Navigate to the campaign detail page with a parameter indicating it's opened as a tab
+    // router.push(`${paths.dashboard.campaign.adminCampaignDetail(campaign.id)}?openAsTab=true`);
     
     handleClose();
   };
@@ -122,7 +128,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       <Image
         alt={campaign?.name}
         src={campaign?.campaignBrief?.images[0]}
-        sx={{
+        sx={{ 
           height: '100%',
           width: '100%',
           objectFit: 'cover',

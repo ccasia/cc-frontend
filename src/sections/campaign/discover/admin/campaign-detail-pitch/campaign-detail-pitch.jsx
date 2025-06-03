@@ -182,42 +182,71 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
 
   return pitches?.length > 0 ? (
     <>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        alignItems={{ xs: 'stretch', md: 'center' }}
-        justifyContent="space-between"
-        spacing={2}
-        sx={{ mb: 2 }}
+      {/* Main Controls Container */}
+      <Box
+        sx={{
+          border: '1px solid #e7e7e7',
+          borderRadius: 1,
+          p: 1,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          justifyContent: 'space-between',
+          gap: { xs: 1.5, md: 1.5 },
+          bgcolor: 'background.paper',
+          mb: 2.5,
+        }}
       >
+        {/* Filter Buttons */}
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
+          direction="row"
           spacing={1}
-          sx={{ width: { xs: '100%', md: 'auto' } }}
+          sx={{
+            flex: { xs: 'none', md: '0 0 auto' },
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
+          }}
         >
           <Button
-            fullWidth={!mdUp}
             onClick={() => setSelectedFilter('all')}
             sx={{
-              px: 1.5,
-              py: 2.5,
-              height: '42px',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              borderRadius: 1,
-              fontSize: '0.85rem',
+              px: 2,
+              py: 1,
+              minHeight: '38px',
+              height: '38px',
+              minWidth: 'fit-content',
+              color: selectedFilter === 'all' ? '#ffffff' : '#666666',
+              bgcolor: selectedFilter === 'all' ? '#1340ff' : 'transparent',
+              fontSize: '0.95rem',
               fontWeight: 600,
+              borderRadius: 0.75,
               textTransform: 'none',
-              ...(selectedFilter === 'all'
-                ? {
-                    color: '#203ff5',
-                    bgcolor: 'rgba(32, 63, 245, 0.04)',
-                  }
-                : {
-                    color: '#637381',
-                    bgcolor: 'transparent',
-                  }),
+              position: 'relative',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '1px',
+                left: '1px',
+                right: '1px',
+                bottom: '1px',
+                borderRadius: 0.75,
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor: selectedFilter === 'all' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
+              },
               '&:hover': {
-                bgcolor: selectedFilter === 'all' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                bgcolor: selectedFilter === 'all' ? '#1340ff' : 'transparent',
+                color: selectedFilter === 'all' ? '#ffffff' : '#1340ff',
+                transform: 'scale(0.98)',
+              },
+              '&:focus': {
+                outline: 'none',
               },
             }}
           >
@@ -225,65 +254,201 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
           </Button>
 
           <Button
-            fullWidth={!mdUp}
             onClick={() => setSelectedFilter('undecided')}
             sx={{
-              px: 1.5,
-              py: 2.5,
-              height: '42px',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              borderRadius: 1,
-              fontSize: '0.85rem',
+              px: 2,
+              py: 1,
+              minHeight: '38px',
+              height: '38px',
+              minWidth: 'fit-content',
+              color: selectedFilter === 'undecided' ? '#ffffff' : '#666666',
+              bgcolor: selectedFilter === 'undecided' ? '#1340ff' : 'transparent',
+              fontSize: '0.95rem',
               fontWeight: 600,
+              borderRadius: 0.75,
               textTransform: 'none',
-              ...(selectedFilter === 'undecided'
-                ? {
-                    color: '#203ff5',
-                    bgcolor: 'rgba(32, 63, 245, 0.04)',
-                  }
-                : {
-                    color: '#637381',
-                    bgcolor: 'transparent',
-                  }),
+              position: 'relative',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '1px',
+                left: '1px',
+                right: '1px',
+                bottom: '1px',
+                borderRadius: 0.75,
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor: selectedFilter === 'undecided' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
+              },
               '&:hover': {
-                bgcolor: selectedFilter === 'undecided' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                bgcolor: selectedFilter === 'undecided' ? '#1340ff' : 'transparent',
+                color: selectedFilter === 'undecided' ? '#ffffff' : '#1340ff',
+                transform: 'scale(0.98)',
+              },
+              '&:focus': {
+                outline: 'none',
               },
             }}
           >
-            {`Undecided (${undecidedCount})`}
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <span>Undecided</span>
+              <Box
+                sx={{
+                  px: 0.75,
+                  py: 0.25,
+                  borderRadius: 0.5,
+                  bgcolor: selectedFilter === 'undecided' ? 'rgba(255, 255, 255, 0.25)' : '#f5f5f5',
+                  color: selectedFilter === 'undecided' ? '#ffffff' : '#666666',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  minWidth: 20,
+                  textAlign: 'center',
+                  lineHeight: 1,
+                }}
+              >
+                {undecidedCount}
+              </Box>
+            </Stack>
           </Button>
 
           <Button
-            fullWidth={!mdUp}
             onClick={() => setSelectedFilter('approved')}
             sx={{
-              px: 1.5,
-              py: 2.5,
-              height: '42px',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              borderRadius: 1,
-              fontSize: '0.85rem',
+              px: 2,
+              py: 1,
+              minHeight: '38px',
+              height: '38px',
+              minWidth: 'fit-content',
+              color: selectedFilter === 'approved' ? '#ffffff' : '#666666',
+              bgcolor: selectedFilter === 'approved' ? '#1340ff' : 'transparent',
+              fontSize: '0.95rem',
               fontWeight: 600,
+              borderRadius: 0.75,
               textTransform: 'none',
-              ...(selectedFilter === 'approved'
-                ? {
-                    color: '#203ff5',
-                    bgcolor: 'rgba(32, 63, 245, 0.04)',
-                  }
-                : {
-                    color: '#637381',
-                    bgcolor: 'transparent',
-                  }),
+              position: 'relative',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '1px',
+                left: '1px',
+                right: '1px',
+                bottom: '1px',
+                borderRadius: 0.75,
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor: selectedFilter === 'approved' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
+              },
               '&:hover': {
-                bgcolor: selectedFilter === 'approved' ? 'rgba(32, 63, 245, 0.04)' : 'transparent',
+                bgcolor: selectedFilter === 'approved' ? '#1340ff' : 'transparent',
+                color: selectedFilter === 'approved' ? '#ffffff' : '#1340ff',
+                transform: 'scale(0.98)',
+              },
+              '&:focus': {
+                outline: 'none',
               },
             }}
           >
-            {`Approved (${approvedCount})`}
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <span>Approved</span>
+              <Box
+                sx={{
+                  px: 0.75,
+                  py: 0.25,
+                  borderRadius: 0.5,
+                  bgcolor: selectedFilter === 'approved' ? 'rgba(255, 255, 255, 0.25)' : '#f5f5f5',
+                  color: selectedFilter === 'approved' ? '#ffffff' : '#666666',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  minWidth: 20,
+                  textAlign: 'center',
+                  lineHeight: 1,
+                }}
+              >
+                {approvedCount}
+              </Box>
+            </Stack>
           </Button>
-          
+        </Stack>
+
+        {/* Search and Sort Controls */}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5}
+          sx={{
+            flex: { xs: 'none', md: '1 1 auto' },
+            justifyContent: { xs: 'stretch', md: 'flex-end' },
+            alignItems: { xs: 'stretch', sm: 'center' },
+          }}
+        >
+          {/* Search Box */}
+          <TextField
+            placeholder="Search by Creator Name"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify 
+                    icon="eva:search-fill" 
+                    sx={{
+                      width: 18,
+                      height: 18,
+                      color: 'text.disabled',
+                      transition: 'color 0.2s ease',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: { xs: '100%', sm: '240px', md: '280px' },
+              '& .MuiOutlinedInput-root': {
+                height: '38px',
+                border: '1px solid #e7e7e7',
+                borderRadius: 0.75,
+                bgcolor: 'background.paper',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  borderColor: '#1340ff',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 2px 8px rgba(19, 64, 255, 0.1)',
+                },
+                '&.Mui-focused': {
+                  borderColor: '#1340ff',
+                  boxShadow: '0 0 0 3px rgba(19, 64, 255, 0.1)',
+                  transform: 'translateY(-1px)',
+                },
+                '& fieldset': {
+                  border: 'none',
+                },
+              },
+              '& .MuiInputBase-input': {
+                py: 1,
+                px: 1,
+                fontSize: '0.95rem',
+                '&::placeholder': {
+                  color: '#999999',
+                  opacity: 1,
+                  transition: 'color 0.2s ease',
+                },
+                '&:focus::placeholder': {
+                  color: '#cccccc',
+                },
+              },
+            }}
+          />
+
+          {/* Sort Button */}
           <Button
             onClick={handleToggleSort}
             endIcon={
@@ -314,58 +479,33 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
               </Stack>
             }
             sx={{
-              px: 1.5,
-              py: 0.75,
-              height: '42px',
-              color: '#637381',
+              px: 2,
+              py: 1,
+              height: '38px',
+              minWidth: { xs: '100%', sm: '140px' },
+              color: '#666666',
               fontWeight: 600,
-              fontSize: '0.875rem',
+              fontSize: '0.95rem',
               backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: 1,
+              border: '1px solid #e7e7e7',
+              borderRadius: 0.75,
               textTransform: 'none',
               whiteSpace: 'nowrap',
-              boxShadow: 'none',
+              transition: 'all 0.2s ease',
               '&:hover': {
-                backgroundColor: 'transparent',
-                color: '#221f20',
+                backgroundColor: 'rgba(19, 64, 255, 0.04)',
+                borderColor: '#1340ff',
+                color: '#1340ff',
+              },
+              '&:focus': {
+                outline: 'none',
               },
             }}
           >
             Alphabetical
           </Button>
         </Stack>
-
-        <TextField
-          placeholder="Search by Creator Name"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          fullWidth={!mdUp}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Iconify icon="material-symbols:search" />
-              </InputAdornment>
-            ),
-            sx: {
-              height: '42px',
-              '& input': {
-                py: 3,
-                height: '42px',
-              },
-            },
-          }}
-          sx={{
-            width: { xs: '100%', md: 260 },
-            '& .MuiOutlinedInput-root': {
-              height: '42px',
-              border: '1px solid #e7e7e7',
-              borderBottom: '3px solid #e7e7e7',
-              borderRadius: 1,
-            },
-          }}
-        />
-      </Stack>
+      </Box>
 
       <Box>
         <Scrollbar>
