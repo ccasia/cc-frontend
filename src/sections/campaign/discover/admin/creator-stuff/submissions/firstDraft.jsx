@@ -162,8 +162,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         const response = await axiosInstance.patch('/api/submission/status', {
           submissionId: submission.id,
           status: 'APPROVED',
-          updatePosting: true, // This flag tells the backend to activate posting
-          dueDate: dueDate,
+          dueDate,
         });
 
         console.log('📝 Submission status update response:', response.data);

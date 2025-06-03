@@ -189,7 +189,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           submissionId: submission.id,
           status: 'APPROVED',
           updatePosting: true, // This flag tells the backend to activate posting
-          dueDate: dueDate,
+          dueDate,
         });
 
         console.log('📝 Submission status update response:', response.data);
