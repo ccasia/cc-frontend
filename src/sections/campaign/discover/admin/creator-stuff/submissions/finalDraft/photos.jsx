@@ -45,6 +45,7 @@ const PhotoCard = ({
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [localStatus, setLocalStatus] = useState(null);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -70,9 +71,16 @@ const PhotoCard = ({
     });
   }, [cardType, reset]);
 
-  const isPhotoApproved = photoItem.status === 'APPROVED';
-  const hasRevisionRequested = photoItem.status === 'REVISION_REQUESTED';
-  const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isPhotoApproved;
+  // Reset local status when photoItem status changes (server update)
+  useEffect(() => {
+    setLocalStatus(null);
+  }, [photoItem.status]);
+
+  // Use local status if available, otherwise use prop status
+  const currentStatus = localStatus || photoItem.status;
+  const isPhotoApproved = currentStatus === 'APPROVED';
+  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED';
+  const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isPhotoApproved && !hasRevisionRequested;
 
   // Get feedback for this specific photo
   const getPhotoFeedback = () => {
@@ -108,6 +116,8 @@ const PhotoCard = ({
     try {
       const values = formMethods.getValues();
       await onIndividualApprove(photoItem.id, values.feedback);
+      // Optimistically update local status
+      setLocalStatus('APPROVED');
     } catch (error) {
       console.error('Error approving photo:', error);
     } finally {
@@ -122,6 +132,8 @@ const PhotoCard = ({
     try {
       const values = formMethods.getValues();
       await onIndividualRequestChange(photoItem.id, values.feedback);
+      // Optimistically update local status
+      setLocalStatus('CHANGES_REQUIRED');
     } finally {
       setIsProcessing(false);
     }
@@ -132,8 +144,14 @@ const PhotoCard = ({
     if (onIndividualApprove) {
       await handleIndividualApproveClick();
     } else {
-      const values = formMethods.getValues();
-      await handleApprove(photoItem.id, values);
+      try {
+        const values = formMethods.getValues();
+        await handleApprove(photoItem.id, values);
+        // Optimistically update local status for fallback handler
+        setLocalStatus('APPROVED');
+      } catch (error) {
+        console.error('Error in fallback approve handler:', error);
+      }
     }
   };
 
@@ -141,8 +159,14 @@ const PhotoCard = ({
     if (onIndividualRequestChange) {
       await handleIndividualRequestClick();
     } else {
-      const values = formMethods.getValues();
-      await handleRequestChange(photoItem.id, values);
+      try {
+        const values = formMethods.getValues();
+        await handleRequestChange(photoItem.id, values);
+        // Optimistically update local status for fallback handler
+        setLocalStatus('CHANGES_REQUIRED');
+      } catch (error) {
+        console.error('Error in fallback request handler:', error);
+      }
     }
   };
 

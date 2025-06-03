@@ -771,12 +771,12 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
         )}
 
         {/* Feedback Display */}
-        <FeedbackDisplay 
+        {/* <FeedbackDisplay 
           submission={submission} 
           campaign={campaign} 
           firstDraftSubmission={firstDraftSubmission}
           deliverables={deliverables}
-        />
+        /> */}
       </Stack>
                                               
       {/* Modals */}
