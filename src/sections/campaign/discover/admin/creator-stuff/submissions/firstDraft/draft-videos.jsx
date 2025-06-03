@@ -374,10 +374,10 @@ const VideoCard = ({
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
                     borderBottomColor: '#e7e7e7',
-                    color: '#1ABF66',
+                    color: '#231F20',
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#1ABF66',
+                      borderColor: '#231F20',
                     },
                     textTransform: 'none',
                     py: 1.2,
@@ -387,7 +387,7 @@ const VideoCard = ({
                     flex: 1,
                   }}
                 >
-                  Approve
+                  Back
                 </Button>
 
                 <LoadingButton
@@ -397,7 +397,7 @@ const VideoCard = ({
                   loading={isSubmitting || isProcessing}
                   sx={{
                     bgcolor: '#FFFFFF',
-                    color: '#D4321C',
+                    color: '#1ABF66',
                     border: '1.5px solid',
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
@@ -407,7 +407,7 @@ const VideoCard = ({
                     fontWeight: 600,
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#D4321C',
+                      borderColor: '#1ABF66',
                     },
                     fontSize: '0.9rem',
                     height: '40px',
@@ -415,7 +415,7 @@ const VideoCard = ({
                     flex: 2,
                   }}
                 >
-                  Request Changes
+                  Submit Feedback
                 </LoadingButton>
               </Stack>
             </Stack>
@@ -718,31 +718,19 @@ const DraftVideos = ({
   const allVideosApproved = deliverables?.videos?.length > 0 && 
     deliverables.videos.every(v => v.status === 'APPROVED');
 
-  // Helper function to render video items
-  const renderVideoItems = (video, index) => (
-    <VideoCard 
-      videoItem={video} 
-      index={index}
-      submission={submission}
-      onVideoClick={onVideoClick}
-      handleApprove={handleApprove}
-      handleRequestChange={handleRequestChange}
-      selectedVideosForChange={selectedVideosForChange}
-      handleVideoSelection={handleVideoSelection}
-      // V2 individual handlers
-      onIndividualApprove={onIndividualApprove}
-      onIndividualRequestChange={onIndividualRequestChange}
-    />
-  );
+  // Determine layout type
+  const hasVideos = deliverables?.videos?.length > 0;
+  const shouldUseHorizontalScroll = hasVideos && deliverables.videos.length > 1;
+  const shouldUseGrid = hasVideos && deliverables.videos.length === 1;
 
-  // Helper function to render video content
-  const renderVideoContent = () => {
-    if (deliverables?.videos?.length === 0) {
-      return <Typography>No draft videos uploaded yet.</Typography>;
-    }
+  return (
+    <>
+      {/* Draft Videos Horizontal Scroll */}
+      {!hasVideos && (
+        <Typography>No draft videos uploaded yet.</Typography>
+      )}
 
-    if (deliverables.videos.length > 2) {
-      return (
+      {shouldUseHorizontalScroll && (
         <Box
           sx={{
             display: 'flex',
@@ -771,38 +759,55 @@ const DraftVideos = ({
             <Box
               key={video.id || index}
               sx={{
-                width: 'calc(50% - 8px)',
-                minWidth: 'calc(50% - 8px)',
+                width: { xs: '280px', sm: '300px', md: '300px' },
+                minWidth: { xs: '280px', sm: '300px', md: '300px' },
                 flexShrink: 0,
               }}
             >
-              {renderVideoItems(video, index)}
+              <VideoCard 
+                videoItem={video} 
+                index={index}
+                submission={submission}
+                onVideoClick={onVideoClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedVideosForChange={selectedVideosForChange}
+                handleVideoSelection={handleVideoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
             </Box>
           ))}
         </Box>
-      );
-    }
+      )}
 
-    return (
-      <Grid container spacing={2}>
-        {deliverables.videos.map((video, index) => (
-          <Grid 
-            item 
-            xs={12} 
-            md={deliverables.videos.length === 1 ? 7 : 6} 
-            key={video.id || index}
-          >
-            {renderVideoItems(video, index)}
-          </Grid>
-        ))}
-      </Grid>
-    );
-  };
-
-  return (
-    <>
-      {/* Draft Videos Horizontal Scroll */}
-      {renderVideoContent()}
+      {shouldUseGrid && (
+        <Grid container spacing={2}>
+          {deliverables.videos.map((video, index) => (
+            <Grid 
+              item 
+              xs={12} 
+              md={7} 
+              key={video.id || index}
+            >
+              <VideoCard 
+                videoItem={video} 
+                index={index}
+                submission={submission}
+                onVideoClick={onVideoClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedVideosForChange={selectedVideosForChange}
+                handleVideoSelection={handleVideoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* All Videos Approved Message */}
       {allVideosApproved && (
