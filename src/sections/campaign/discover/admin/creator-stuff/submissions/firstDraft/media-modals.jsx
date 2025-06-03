@@ -137,6 +137,28 @@ const VideoModal = ({
     });
   };
 
+  // Debug logging for caption issue
+  React.useEffect(() => {
+    if (open && showCaption) {
+      console.log('🎬 VideoModal Debug - Caption Info:', {
+        showCaption,
+        submissionExists: !!submission,
+        submissionCaption: submission?.caption,
+        submissionFirstDraftCaption: submission?.firstDraft?.caption,
+        submissionFinalDraftCaption: submission?.finalDraft?.caption,
+        fullSubmission: submission
+      });
+    }
+  }, [open, showCaption, submission]);
+
+  // Helper function to get the caption from various possible locations
+  const getCaption = () => {
+    return submission?.caption || 
+           submission?.firstDraft?.caption || 
+           submission?.finalDraft?.caption || 
+           null;
+  };
+
   return (
     <Dialog
       open={open}
@@ -166,32 +188,29 @@ const VideoModal = ({
       <Box
         sx={{
           position: 'fixed',
-          top: 20,
-          left: 20,
+          top: { xs: 10, md: 20 },
+          left: { xs: 10, md: 20 },
           zIndex: 10000,
           display: 'flex',
           alignItems: 'center',
-          gap: 2,
-          bgcolor: '#FFFFFF',
-          border: '1px solid #E7E7E7',
-          borderBottom: '3px solid #E7E7E7',
+          gap: { xs: 1, md: 1.5 },
           borderRadius: '8px',
-          p: 2,
-          height: '64px',
-          minWidth: '200px',
+          p: { xs: 1.5, md: 2 },
+          height: { xs: '56px', md: '64px' },
+          minWidth: { xs: '180px', md: '200px' },
         }}
       >
         <Avatar
           src={creator?.photoURL || creator?.user?.photoURL}
-          sx={{ width: 36, height: 36 }}
+          sx={{ width: { xs: 36, md: 40 }, height: { xs: 36, md: 40 } }}
         />
         <Stack spacing={0.5}>
           <Typography
             variant="subtitle2"
             sx={{
               fontWeight: 600,
-              color: '#000',
-              fontSize: '14px',
+              color: '#e7e7e7',
+              fontSize: { xs: '13px', md: '14px' },
               lineHeight: 1.3,
             }}
           >
@@ -200,8 +219,8 @@ const VideoModal = ({
           <Typography
             variant="caption"
             sx={{
-              color: '#666',
-              fontSize: '12px',
+              color: '#85868E',
+              fontSize: { xs: '11px', md: '12px' },
               lineHeight: 1.3,
             }}
           >
@@ -213,11 +232,11 @@ const VideoModal = ({
       {/* Action Buttons - Top Right */}
       <Stack
         direction="row"
-        spacing={1}
+        spacing={{ xs: 0.5, md: 1 }}
         sx={{
           position: 'fixed',
-          top: 20,
-          right: 20,
+          top: { xs: 10, md: 20 },
+          right: { xs: 10, md: 20 },
           zIndex: 10000,
         }}
       >
@@ -225,9 +244,7 @@ const VideoModal = ({
         <Box
           sx={{
             display: 'flex',
-            bgcolor: '#FFFFFF',
-            border: '1px solid #E7E7E7',
-            borderBottom: '3px solid #E7E7E7',
+            border: '1px solid #28292C',
             borderRadius: '8px',
             overflow: 'hidden',
           }}
@@ -246,7 +263,7 @@ const VideoModal = ({
                 sx: {
                   bgcolor: 'rgba(0, 0, 0, 0.9)',
                   color: 'white',
-                  fontSize: '12px',
+                  fontSize: { xs: '11px', md: '12px' },
                   fontWeight: 500,
                 },
               },
@@ -260,22 +277,37 @@ const VideoModal = ({
             <Button
               onClick={handleCopyLink}
               sx={{
-                minWidth: '40px',
-                width: '40px',
-                height: '40px',
+                minWidth: { xs: '40px', md: '44px' },
+                width: { xs: '40px', md: '44px' },
+                height: { xs: '40px', md: '44px' },
                 p: 0,
                 bgcolor: 'transparent',
-                color: '#000000',
+                color: '#ffffff',
                 border: 'none',
-                borderRadius: 0,
-                borderRight: '1px solid #E7E7E7',
+                borderRadius: '8px',
                 fontWeight: 650,
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: { xs: '3px', md: '4px' },
+                  left: { xs: '3px', md: '4px' },
+                  right: { xs: '3px', md: '4px' },
+                  bottom: { xs: '3px', md: '4px' },
+                  borderRadius: '4px',
+                  backgroundColor: 'transparent',
+                  transition: 'background-color 0.2s ease',
+                  zIndex: -1,
+                },
+                '&:hover::before': {
+                  backgroundColor: '#5A5A5C',
+                },
                 '&:hover': {
-                  bgcolor: '#F0F0F0',
+                  bgcolor: 'transparent',
                 },
               }}
             >
-              <Iconify icon="eva:link-2-fill" width={18} />
+              <Iconify icon="eva:link-2-fill" width={{ xs: 16, md: 18 }} />
             </Button>
           </Tooltip>
 
@@ -293,7 +325,7 @@ const VideoModal = ({
                 sx: {
                   bgcolor: 'rgba(0, 0, 0, 0.9)',
                   color: 'white',
-                  fontSize: '12px',
+                  fontSize: { xs: '11px', md: '12px' },
                   fontWeight: 500,
                 },
               },
@@ -307,22 +339,37 @@ const VideoModal = ({
             <Button
               onClick={handleDownloadClick}
               sx={{
-                minWidth: '40px',
-                width: '40px',
-                height: '40px',
+                minWidth: { xs: '40px', md: '44px' },
+                width: { xs: '40px', md: '44px' },
+                height: { xs: '40px', md: '44px' },
                 p: 0,
                 bgcolor: 'transparent',
-                color: '#000000',
+                color: '#ffffff',
                 border: 'none',
-                borderRadius: 0,
-                borderRight: '1px solid #E7E7E7',
+                borderRadius: '8px',
                 fontWeight: 650,
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: { xs: '3px', md: '4px' },
+                  left: { xs: '3px', md: '4px' },
+                  right: { xs: '3px', md: '4px' },
+                  bottom: { xs: '3px', md: '4px' },
+                  borderRadius: '4px',
+                  backgroundColor: 'transparent',
+                  transition: 'background-color 0.2s ease',
+                  zIndex: -1,
+                },
+                '&:hover::before': {
+                  backgroundColor: '#5A5A5C',
+                },
                 '&:hover': {
-                  bgcolor: '#F0F0F0',
+                  bgcolor: 'transparent',
                 },
               }}
             >
-              <Iconify icon="eva:download-fill" width={18} />
+              <Iconify icon="eva:download-fill" width={{ xs: 16, md: 18 }} />
             </Button>
           </Tooltip>
 
@@ -340,7 +387,7 @@ const VideoModal = ({
                 sx: {
                   bgcolor: 'rgba(0, 0, 0, 0.9)',
                   color: 'white',
-                  fontSize: '12px',
+                  fontSize: { xs: '11px', md: '12px' },
                   fontWeight: 500,
                 },
               },
@@ -354,21 +401,37 @@ const VideoModal = ({
             <Button
               onClick={handleFileDetailsClick}
               sx={{
-                minWidth: '40px',
-                width: '40px',
-                height: '40px',
+                minWidth: { xs: '40px', md: '44px' },
+                width: { xs: '40px', md: '44px' },
+                height: { xs: '40px', md: '44px' },
                 p: 0,
                 bgcolor: 'transparent',
-                color: '#000000',
+                color: '#ffffff',
                 border: 'none',
-                borderRadius: 0,
+                borderRadius: '8px',
                 fontWeight: 650,
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: { xs: '3px', md: '4px' },
+                  left: { xs: '3px', md: '4px' },
+                  right: { xs: '3px', md: '4px' },
+                  bottom: { xs: '3px', md: '4px' },
+                  borderRadius: '4px',
+                  backgroundColor: 'transparent',
+                  transition: 'background-color 0.2s ease',
+                  zIndex: -1,
+                },
+                '&:hover::before': {
+                  backgroundColor: '#5A5A5C',
+                },
                 '&:hover': {
-                  bgcolor: '#F0F0F0',
+                  bgcolor: 'transparent',
                 },
               }}
             >
-              <Iconify icon="eva:info-outline" width={18} />
+              <Iconify icon="eva:info-outline" width={{ xs: 16, md: 18 }} />
             </Button>
           </Tooltip>
         </Box>
@@ -388,7 +451,7 @@ const VideoModal = ({
               sx: {
                 bgcolor: 'rgba(0, 0, 0, 0.9)',
                 color: 'white',
-                fontSize: '12px',
+                fontSize: { xs: '11px', md: '12px' },
                 fontWeight: 500,
               },
             },
@@ -402,40 +465,52 @@ const VideoModal = ({
           <Button
             onClick={onClose}
             sx={{
-              minWidth: '44px',
-              width: '44px',
-              height: '44px',
+              minWidth: { xs: '40px', md: '44px' },
+              width: { xs: '40px', md: '44px' },
+              height: { xs: '40px', md: '44px' },
               p: 0,
-              bgcolor: '#FFFFFF',
-              color: '#000000',
-              border: '1px solid #E7E7E7',
-              borderBottom: '3px solid #E7E7E7',
+              color: '#ffffff',
+              border: '1px solid #28292C',
               borderRadius: '8px',
               fontWeight: 650,
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: { xs: '3px', md: '4px' },
+                left: { xs: '3px', md: '4px' },
+                right: { xs: '3px', md: '4px' },
+                bottom: { xs: '3px', md: '4px' },
+                borderRadius: '4px',
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor: '#5A5A5C',
+              },
               '&:hover': {
-                bgcolor: '#F0F0F0',
-                borderColor: '#D0D0D0',
-                borderBottomColor: '#D0D0D0',
+                bgcolor: 'transparent',
               },
             }}
           >
-            <Iconify icon="eva:close-fill" width={22} />
+            <Iconify icon="eva:close-fill" width={{ xs: 20, md: 22 }} />
           </Button>
         </Tooltip>
-        </Stack>
+      </Stack>
 
       {/* Link Copied Indicator */}
       <Box
         sx={{
           position: 'fixed',
-          top: 76,
-          right: 20,
+          top: { xs: 56, md: 76 },
+          right: { xs: 10, md: 20 },
           zIndex: 10002,
           opacity: showLinkCopied ? 1 : 0,
           transform: showLinkCopied ? 'translateY(0)' : 'translateY(-10px)',
           transition: 'all 0.3s ease-in-out',
           pointerEvents: 'none',
-          width: '172px', 
+          width: { xs: '150px', md: '172px' },
         }}
       >
         <Box
@@ -445,20 +520,20 @@ const VideoModal = ({
             borderBottom: '3px solid #45A049',
             borderRadius: '8px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            p: 1.5,
+            p: { xs: 1, md: 1.5 },
             display: 'flex',
             alignItems: 'start',
             justifyContent: 'start',
             gap: 1,
           }}
         >
-          <Iconify icon="eva:checkmark-circle-2-fill" width={16} color="white" />
+          <Iconify icon="eva:checkmark-circle-2-fill" width={{ xs: 14, md: 16 }} color="white" />
           <Typography
             sx={{
               fontFamily: 'Inter',
               fontWeight: 600,
               color: 'white',
-              fontSize: '12px',
+              fontSize: { xs: '11px', md: '12px' },
             }}
           >
             Link Copied
@@ -587,28 +662,48 @@ const VideoModal = ({
         </Box>
       </Popover>
 
-      {/* Centered Video */}
+      {/* Video Layout */}
       <Box
         sx={{
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: { xs: 'column', md: 'row' },
           alignItems: 'center',
           justifyContent: 'center',
           width: '100%',
-          height: '100%',
-          p: 4,
-          gap: 2,
+          height: '100vh',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          pt: { xs: '80px', md: '100px' }, // Account for top controls
+          pb: { xs: 2, md: 3 },
+          px: { xs: 2, md: 4 },
+          gap: { xs: 2, md: 3 },
+          overflow: 'hidden', // Prevent any scrolling
         }}
       >
+        {/* Video Container */}
         <Box
           sx={{
             position: 'relative',
-            width: '90%',
-            maxWidth: '1200px',
-            aspectRatio: '16/9',
+            width: { 
+              xs: '100%', 
+              md: showCaption && getCaption() ? '60%' : '90%' 
+            },
+            height: { 
+              xs: showCaption && getCaption() ? 'calc(60vh - 80px)' : 'calc(100vh - 120px)', 
+              md: showCaption && getCaption() ? 'calc(100vh - 120px)' : 'calc(100vh - 120px)'
+            },
+            maxWidth: { 
+              xs: '100%', 
+              md: showCaption && getCaption() ? '800px' : '1200px' 
+            },
             bgcolor: 'black',
             borderRadius: 2,
             overflow: 'hidden',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Box
@@ -621,56 +716,87 @@ const VideoModal = ({
               width: '100%',
               height: '100%',
               objectFit: 'contain',
+              maxWidth: '100%',
+              maxHeight: '100%',
             }}
           />
         </Box>
 
-        {/* Video Caption */}
-        {showCaption && submission?.caption && (
+        {/* Video Caption - Right Side on Desktop, Bottom on Mobile */}
+        {showCaption && getCaption() && (
           <Box
             sx={{
-              width: '90%',
-              maxWidth: '1200px',
-              bgcolor: '#FFFFFF',
-              border: '1px solid #E7E7E7',
-              borderBottom: '3px solid #E7E7E7',
+              width: { xs: '100%', md: '35%' },
+              maxWidth: { xs: '100%', md: '400px' },
+              height: { 
+                xs: 'calc(40vh - 80px)', 
+                md: 'calc(100vh - 120px)' 
+              },
+              minHeight: { xs: '150px', md: 'auto' },
+              bgcolor: 'transparent',
+              border: '1px solid #28292C',
               borderRadius: '8px',
-              p: 3,
+              p: { xs: 2, md: 3 },
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              flexShrink: 0,
             }}
           >
             <Typography
               variant="subtitle2"
               sx={{
                 fontWeight: 600,
-                color: '#000',
-                fontSize: '14px',
-                mb: 1.5,
+                color: '#ffffff',
+                fontSize: { xs: '13px', md: '14px' },
+                mb: { xs: 1.5, md: 2 },
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
+                flexShrink: 0,
               }}
             >
               <Iconify
                 icon="solar:text-bold"
                 sx={{
-                  width: 16,
-                  height: 16,
-                  color: '#1340FF',
+                  width: { xs: 14, md: 16 },
+                  height: { xs: 14, md: 16 },
+                  color: '#ffffff',
                 }}
               />
               Video Caption
             </Typography>
-            <Typography
-              variant="body2"
+            <Box
               sx={{
-                color: '#333',
-                fontSize: '14px',
-                lineHeight: 1.6,
-                whiteSpace: 'pre-wrap',
+                flex: 1,
+                overflow: 'auto',
+                '&::-webkit-scrollbar': {
+                  width: { xs: '4px', md: '6px' },
+                },
+                '&::-webkit-scrollbar-track': {
+                  background: 'transparent',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  background: '#5A5A5C',
+                  borderRadius: '3px',
+                },
+                '&::-webkit-scrollbar-thumb:hover': {
+                  background: '#6A6A6C',
+                },
               }}
             >
-              {submission.caption}
-            </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#e7e7e7',
+                  fontSize: { xs: '13px', md: '14px' },
+                  lineHeight: 1.6,
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {getCaption()}
+              </Typography>
+            </Box>
           </Box>
         )}
       </Box>
@@ -849,32 +975,29 @@ const PhotoModal = ({
       <Box
         sx={{
           position: 'fixed',
-          top: 20,
-          left: 20,
+          top: { xs: 10, md: 20 },
+          left: { xs: 10, md: 20 },
           zIndex: 10000,
           display: 'flex',
           alignItems: 'center',
-          gap: 2,
-          bgcolor: '#FFFFFF',
-          border: '1px solid #E7E7E7',
-          borderBottom: '3px solid #E7E7E7',
+          gap: { xs: 1, md: 1.5 },
           borderRadius: '8px',
-          p: 2,
-          height: '64px',
-          minWidth: '200px',
+          p: { xs: 1.5, md: 2 },
+          height: { xs: '56px', md: '64px' },
+          minWidth: { xs: '180px', md: '200px' },
         }}
       >
         <Avatar
           src={creator?.photoURL || creator?.user?.photoURL}
-          sx={{ width: 36, height: 36 }}
+          sx={{ width: { xs: 36, md: 40 }, height: { xs: 36, md: 40 } }}
         />
         <Stack spacing={0.5}>
           <Typography
             variant="subtitle2"
             sx={{
               fontWeight: 600,
-              color: '#000',
-              fontSize: '14px',
+              color: '#e7e7e7',
+              fontSize: { xs: '13px', md: '14px' },
               lineHeight: 1.3,
             }}
           >
@@ -883,8 +1006,8 @@ const PhotoModal = ({
           <Typography
             variant="caption"
             sx={{
-              color: '#666',
-              fontSize: '12px',
+              color: '#85868E',
+              fontSize: { xs: '11px', md: '12px' },
               lineHeight: 1.3,
             }}
           >
@@ -896,11 +1019,11 @@ const PhotoModal = ({
       {/* Action Buttons - Top Right */}
       <Stack
         direction="row"
-        spacing={1}
+        spacing={{ xs: 0.5, md: 1 }}
         sx={{
           position: 'fixed',
-          top: 20,
-          right: 20,
+          top: { xs: 10, md: 20 },
+          right: { xs: 10, md: 20 },
           zIndex: 10000,
         }}
       >
@@ -908,9 +1031,7 @@ const PhotoModal = ({
         <Box
           sx={{
             display: 'flex',
-            bgcolor: '#FFFFFF',
-            border: '1px solid #E7E7E7',
-            borderBottom: '3px solid #E7E7E7',
+            border: '1px solid #28292C',
             borderRadius: '8px',
             overflow: 'hidden',
           }}
@@ -929,7 +1050,7 @@ const PhotoModal = ({
                 sx: {
                   bgcolor: 'rgba(0, 0, 0, 0.9)',
                   color: 'white',
-                  fontSize: '12px',
+                  fontSize: { xs: '11px', md: '12px' },
                   fontWeight: 500,
                 },
               },
@@ -943,22 +1064,37 @@ const PhotoModal = ({
             <Button
               onClick={handleCopyLink}
               sx={{
-                minWidth: '40px',
-                width: '40px',
-                height: '40px',
+                minWidth: { xs: '40px', md: '44px' },
+                width: { xs: '40px', md: '44px' },
+                height: { xs: '40px', md: '44px' },
                 p: 0,
                 bgcolor: 'transparent',
-                color: '#000000',
+                color: '#ffffff',
                 border: 'none',
-                borderRadius: 0,
-                borderRight: '1px solid #E7E7E7',
+                borderRadius: '8px',
                 fontWeight: 650,
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: { xs: '3px', md: '4px' },
+                  left: { xs: '3px', md: '4px' },
+                  right: { xs: '3px', md: '4px' },
+                  bottom: { xs: '3px', md: '4px' },
+                  borderRadius: '4px',
+                  backgroundColor: 'transparent',
+                  transition: 'background-color 0.2s ease',
+                  zIndex: -1,
+                },
+                '&:hover::before': {
+                  backgroundColor: '#5A5A5C',
+                },
                 '&:hover': {
-                  bgcolor: '#F5F5F5',
+                  bgcolor: 'transparent',
                 },
               }}
             >
-              <Iconify icon="eva:link-2-fill" width={18} />
+              <Iconify icon="eva:link-2-fill" width={{ xs: 16, md: 18 }} />
             </Button>
           </Tooltip>
 
@@ -976,7 +1112,7 @@ const PhotoModal = ({
                 sx: {
                   bgcolor: 'rgba(0, 0, 0, 0.9)',
                   color: 'white',
-                  fontSize: '12px',
+                  fontSize: { xs: '11px', md: '12px' },
                   fontWeight: 500,
                 },
               },
@@ -990,22 +1126,37 @@ const PhotoModal = ({
             <Button
               onClick={handleDownloadClick}
               sx={{
-                minWidth: '40px',
-                width: '40px',
-                height: '40px',
+                minWidth: { xs: '40px', md: '44px' },
+                width: { xs: '40px', md: '44px' },
+                height: { xs: '40px', md: '44px' },
                 p: 0,
                 bgcolor: 'transparent',
-                color: '#000000',
+                color: '#ffffff',
                 border: 'none',
-                borderRadius: 0,
-                borderRight: '1px solid #E7E7E7',
+                borderRadius: '8px',
                 fontWeight: 650,
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: { xs: '3px', md: '4px' },
+                  left: { xs: '3px', md: '4px' },
+                  right: { xs: '3px', md: '4px' },
+                  bottom: { xs: '3px', md: '4px' },
+                  borderRadius: '4px',
+                  backgroundColor: 'transparent',
+                  transition: 'background-color 0.2s ease',
+                  zIndex: -1,
+                },
+                '&:hover::before': {
+                  backgroundColor: '#5A5A5C',
+                },
                 '&:hover': {
-                  bgcolor: '#F5F5F5',
+                  bgcolor: 'transparent',
                 },
               }}
             >
-              <Iconify icon="eva:download-fill" width={18} />
+              <Iconify icon="eva:download-fill" width={{ xs: 16, md: 18 }} />
             </Button>
           </Tooltip>
 
@@ -1023,7 +1174,7 @@ const PhotoModal = ({
                 sx: {
                   bgcolor: 'rgba(0, 0, 0, 0.9)',
                   color: 'white',
-                  fontSize: '12px',
+                  fontSize: { xs: '11px', md: '12px' },
                   fontWeight: 500,
                 },
               },
@@ -1037,21 +1188,37 @@ const PhotoModal = ({
             <Button
               onClick={handleFileDetailsClick}
               sx={{
-                minWidth: '40px',
-                width: '40px',
-                height: '40px',
+                minWidth: { xs: '40px', md: '44px' },
+                width: { xs: '40px', md: '44px' },
+                height: { xs: '40px', md: '44px' },
                 p: 0,
                 bgcolor: 'transparent',
-                color: '#000000',
+                color: '#ffffff',
                 border: 'none',
-                borderRadius: 0,
+                borderRadius: '8px',
                 fontWeight: 650,
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: { xs: '3px', md: '4px' },
+                  left: { xs: '3px', md: '4px' },
+                  right: { xs: '3px', md: '4px' },
+                  bottom: { xs: '3px', md: '4px' },
+                  borderRadius: '4px',
+                  backgroundColor: 'transparent',
+                  transition: 'background-color 0.2s ease',
+                  zIndex: -1,
+                },
+                '&:hover::before': {
+                  backgroundColor: '#5A5A5C',
+                },
                 '&:hover': {
-                  bgcolor: '#F5F5F5',
+                  bgcolor: 'transparent',
                 },
               }}
             >
-              <Iconify icon="eva:info-outline" width={18} />
+              <Iconify icon="eva:info-outline" width={{ xs: 16, md: 18 }} />
             </Button>
           </Tooltip>
         </Box>
@@ -1071,7 +1238,7 @@ const PhotoModal = ({
               sx: {
                 bgcolor: 'rgba(0, 0, 0, 0.9)',
                 color: 'white',
-                fontSize: '12px',
+                fontSize: { xs: '11px', md: '12px' },
                 fontWeight: 500,
               },
             },
@@ -1083,24 +1250,38 @@ const PhotoModal = ({
           }}
         >
           <Button
-          onClick={onClose}
+            onClick={onClose}
             sx={{
-              minWidth: '44px',
-              width: '44px',
-              height: '44px',
+              minWidth: { xs: '40px', md: '44px' },
+              width: { xs: '40px', md: '44px' },
+              height: { xs: '40px', md: '44px' },
               p: 0,
-              bgcolor: '#FFFFFF',
-              color: '#000000',
-              border: '1px solid #E7E7E7',
-              borderBottom: '3px solid #E7E7E7',
+              color: '#ffffff',
+              border: '1px solid #28292C',
               borderRadius: '8px',
               fontWeight: 650,
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: { xs: '3px', md: '4px' },
+                left: { xs: '3px', md: '4px' },
+                right: { xs: '3px', md: '4px' },
+                bottom: { xs: '3px', md: '4px' },
+                borderRadius: '4px',
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor: '#5A5A5C',
+              },
               '&:hover': {
-                bgcolor: '#F0F0F0',
+                bgcolor: 'transparent',
               },
             }}
           >
-            <Iconify icon="eva:close-fill" width={22} />
+            <Iconify icon="eva:close-fill" width={{ xs: 20, md: 22 }} />
           </Button>
         </Tooltip>
       </Stack>
@@ -1109,14 +1290,14 @@ const PhotoModal = ({
       <Box
         sx={{
           position: 'fixed',
-          top: 76, 
-          right: 20,
+          top: { xs: 56, md: 76 },
+          right: { xs: 10, md: 20 },
           zIndex: 10002,
           opacity: showLinkCopied ? 1 : 0,
           transform: showLinkCopied ? 'translateY(0)' : 'translateY(-10px)',
           transition: 'all 0.3s ease-in-out',
           pointerEvents: 'none',
-          width: '172px', 
+          width: { xs: '150px', md: '172px' },
         }}
       >
         <Box
@@ -1126,20 +1307,20 @@ const PhotoModal = ({
             borderBottom: '3px solid #45A049',
             borderRadius: '8px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            p: 1.5,
+            p: { xs: 1, md: 1.5 },
             display: 'flex',
             alignItems: 'start',
             justifyContent: 'start',
             gap: 1,
           }}
         >
-          <Iconify icon="eva:checkmark-circle-2-fill" width={16} color="white" />
+          <Iconify icon="eva:checkmark-circle-2-fill" width={{ xs: 14, md: 16 }} color="white" />
           <Typography
             sx={{
               fontFamily: 'Inter',
               fontWeight: 600,
               color: 'white',
-              fontSize: '12px',
+              fontSize: { xs: '11px', md: '12px' },
             }}
           >
             Link Copied

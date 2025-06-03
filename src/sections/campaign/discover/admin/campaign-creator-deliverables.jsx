@@ -224,7 +224,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
         {/* Left Column - Creator Navigation */}
         <Box
           sx={{
-            width: { xs: '100%', md: '50%' },
+            width: { xs: '100%', md: '35%' },
             minWidth: { xs: '100%', md: '320px' },
             maxWidth: { xs: '100%', md: '600px' },
             boxShadow: 'none',

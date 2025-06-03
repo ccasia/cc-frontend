@@ -44,6 +44,8 @@ const VideoCard = ({
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
+  // Add local state to track status optimistically
+  const [localStatus, setLocalStatus] = useState(null);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -75,9 +77,16 @@ const VideoCard = ({
     });
   }, [cardType, reset]);
 
-  const isVideoApproved = videoItem.status === 'APPROVED';
-  const hasRevisionRequested = videoItem.status === 'REVISION_REQUESTED';
-  const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isVideoApproved;
+  // Reset local status when videoItem status changes (server update)
+  useEffect(() => {
+    setLocalStatus(null);
+  }, [videoItem.status]);
+
+  // Use local status if available, otherwise use prop status
+  const currentStatus = localStatus || videoItem.status;
+  const isVideoApproved = currentStatus === 'APPROVED';
+  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED';
+  const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isVideoApproved && !hasRevisionRequested;
 
   const getVideoFeedback = () => {
     // Check for individual feedback first
@@ -112,6 +121,8 @@ const VideoCard = ({
     try {
       const values = formMethods.getValues();
       await onIndividualApprove(videoItem.id, values.feedback, values.dueDate);
+      // Optimistically update local status
+      setLocalStatus('APPROVED');
     } catch (error) {
       console.error('Error approving video:', error);
     } finally {
@@ -138,6 +149,8 @@ const VideoCard = ({
         : [];
       
       await onIndividualRequestChange(videoItem.id, values.feedback, cleanReasons);
+      // Optimistically update local status
+      setLocalStatus('CHANGES_REQUIRED');
     } catch (error) {
       console.error('Error requesting video changes:', error);
     } finally {
@@ -150,8 +163,14 @@ const VideoCard = ({
     if (onIndividualApprove) {
       await handleIndividualApproveClick();
     } else {
-      const values = formMethods.getValues();
-      await handleApprove(videoItem.id, values);
+      try {
+        const values = formMethods.getValues();
+        await handleApprove(videoItem.id, values);
+        // Optimistically update local status for fallback handler
+        setLocalStatus('APPROVED');
+      } catch (error) {
+        console.error('Error in fallback approve handler:', error);
+      }
     }
   };
 
@@ -159,8 +178,14 @@ const VideoCard = ({
     if (onIndividualRequestChange) {
       await handleIndividualRequestClick();
     } else {
-      const values = formMethods.getValues();
-      await handleRequestChange(videoItem.id, values);
+      try {
+        const values = formMethods.getValues();
+        await handleRequestChange(videoItem.id, values);
+        // Optimistically update local status for fallback handler
+        setLocalStatus('CHANGES_REQUIRED');
+      } catch (error) {
+        console.error('Error in fallback request handler:', error);
+      }
     }
   };
 
@@ -808,23 +833,81 @@ const DraftVideos = ({
         </Grid>
       )}
 
+      {/* Caption Section */}
+      {hasVideos && deliverables.videos.some(video => 
+        video?.caption || submission?.caption || submission?.finalDraft?.caption
+      ) && (
+        <Box sx={{ mt: 3, mb: -2 }}>
+          {(() => {
+            // Get the first available caption from any source
+            const caption = deliverables.videos.find(video => video?.caption)?.caption || 
+                           submission?.caption || 
+                           submission?.finalDraft?.caption;
+            
+            if (!caption) return null;
+            
+            return (
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: '8px',
+                  bgcolor: '#f5f5f5',
+                  border: '1px solid #e0e0e0',
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#666',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    display: 'block',
+                    mb: 1,
+                  }}
+                >
+                  Caption
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#333',
+                    fontSize: '13px',
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {caption}
+                </Typography>
+              </Box>
+            );
+          })()}
+        </Box>
+      )}
+
       {/* All Videos Approved Message */}
       {allVideosApproved && (
         <Box
           sx={{
             p: 2,
-            borderRadius: 1,
-            bgcolor: 'success.lighter',
-            border: '1px solid',
-            borderColor: 'success.light',
+            borderRadius: '8px',
+            bgcolor: '#E6F7EF',
+            border: '1px solid #1ABF66',
             display: 'flex',
             alignItems: 'center',
-            gap: 1,
+            gap: 1.5,
             mt: 3,
           }}
         >
-          <Iconify icon="solar:check-circle-bold" color="success.main" />
-          <Typography color="success.darker">
+          <Iconify icon="solar:check-circle-bold" width={16} color="#1ABF66" />
+          <Typography
+            sx={{
+              color: '#1ABF66',
+              fontSize: '13px',
+              fontWeight: 600,
+            }}
+          >
             All videos have been approved
           </Typography>
         </Box>
