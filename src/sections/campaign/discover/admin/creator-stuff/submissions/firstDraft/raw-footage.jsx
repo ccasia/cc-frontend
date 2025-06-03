@@ -44,6 +44,8 @@ const VideoCard = ({
 }) => {
   const [cardType, setCardType] = useState('approve');
   const [isProcessing, setIsProcessing] = useState(false);
+  // Add local state to track status optimistically
+  const [localStatus, setLocalStatus] = useState(null);
 
   const requestSchema = Yup.object().shape({
     feedback: Yup.string().required('This field is required'),
@@ -69,9 +71,16 @@ const VideoCard = ({
     });
   }, [cardType, reset]);
 
-  const isVideoApproved = videoItem.status === 'APPROVED';
-  const hasRevisionRequested = videoItem.status === 'REVISION_REQUESTED';
-  const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isVideoApproved;
+  // Reset local status when videoItem status changes (server update)
+  useEffect(() => {
+    setLocalStatus(null);
+  }, [videoItem.status]);
+
+  // Use local status if available, otherwise use prop status
+  const currentStatus = localStatus || videoItem.status;
+  const isVideoApproved = currentStatus === 'APPROVED';
+  const hasRevisionRequested = currentStatus === 'REVISION_REQUESTED' || currentStatus === 'CHANGES_REQUIRED';
+  const isPendingReview = submission?.status === 'PENDING_REVIEW' && !isVideoApproved && !hasRevisionRequested;
 
   // Get feedback for this specific raw footage
   const getRawFootageFeedback = () => {
@@ -107,6 +116,8 @@ const VideoCard = ({
     try {
       const values = formMethods.getValues();
       await onIndividualApprove(videoItem.id, values.feedback);
+      // Optimistically update local status
+      setLocalStatus('APPROVED');
     } catch (error) {
       console.error('Error approving raw footage:', error);
     } finally {
@@ -121,6 +132,8 @@ const VideoCard = ({
     try {
       const values = formMethods.getValues();
       await onIndividualRequestChange(videoItem.id, values.feedback);
+      // Optimistically update local status
+      setLocalStatus('CHANGES_REQUIRED');
     } catch (error) {
       console.error('Error requesting raw footage changes:', error);
     } finally {
@@ -133,8 +146,14 @@ const VideoCard = ({
     if (onIndividualApprove) {
       await handleIndividualApproveClick();
     } else {
-      const values = formMethods.getValues();
-      await handleApprove(videoItem.id, values);
+      try {
+        const values = formMethods.getValues();
+        await handleApprove(videoItem.id, values);
+        // Optimistically update local status for fallback handler
+        setLocalStatus('APPROVED');
+      } catch (error) {
+        console.error('Error in fallback approve handler:', error);
+      }
     }
   };
 
@@ -142,8 +161,14 @@ const VideoCard = ({
     if (onIndividualRequestChange) {
       await handleIndividualRequestClick();
     } else {
-      const values = formMethods.getValues();
-      await handleRequestChange(videoItem.id, values);
+      try {
+        const values = formMethods.getValues();
+        await handleRequestChange(videoItem.id, values);
+        // Optimistically update local status for fallback handler
+        setLocalStatus('CHANGES_REQUIRED');
+      } catch (error) {
+        console.error('Error in fallback request handler:', error);
+      }
     }
   };
 
