@@ -176,9 +176,9 @@ const CampaignFinalDraft = ({
     return uniqueFeedbacks
       .filter(item => 
         item?.type === 'REQUEST' && (
-          item?.photosToUpdate?.length > 0 || 
-          item?.videosToUpdate?.length > 0 || 
-          item?.rawFootageToUpdate?.length > 0
+        item?.photosToUpdate?.length > 0 || 
+        item?.videosToUpdate?.length > 0 || 
+        item?.rawFootageToUpdate?.length > 0
         )
       )
       .map((item) => {

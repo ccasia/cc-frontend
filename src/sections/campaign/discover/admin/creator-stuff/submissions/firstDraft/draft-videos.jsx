@@ -99,6 +99,13 @@ const VideoCard = ({
 
   const videoFeedback = getVideoFeedback();
 
+  // Helper function to determine border color
+  const getBorderColor = () => {
+    if (isVideoApproved) return '#1ABF66';
+    if (hasRevisionRequested) return '#D4321C';
+    return 'divider';
+  };
+
   // V2 Individual handlers
   const handleIndividualApproveClick = async () => {
     if (!onIndividualApprove) return;
@@ -426,7 +433,7 @@ const VideoCard = ({
         flexDirection: 'column',
         borderRadius: 2,
         border: '1px solid',
-        borderColor: isVideoApproved ? '#1ABF66' : hasRevisionRequested ? '#D4321C' : 'divider',
+        borderColor: getBorderColor(),
       }}
     >
       {/* Video Section */}
@@ -633,6 +640,7 @@ VideoCard.propTypes = {
     url: PropTypes.string.isRequired,
     status: PropTypes.string,
     createdAt: PropTypes.string,
+    individualFeedback: PropTypes.array,
   }).isRequired,
   index: PropTypes.number.isRequired,
   submission: PropTypes.object,
@@ -710,89 +718,91 @@ const DraftVideos = ({
   const allVideosApproved = deliverables?.videos?.length > 0 && 
     deliverables.videos.every(v => v.status === 'APPROVED');
 
+  // Helper function to render video items
+  const renderVideoItems = (video, index) => (
+    <VideoCard 
+      videoItem={video} 
+      index={index}
+      submission={submission}
+      onVideoClick={onVideoClick}
+      handleApprove={handleApprove}
+      handleRequestChange={handleRequestChange}
+      selectedVideosForChange={selectedVideosForChange}
+      handleVideoSelection={handleVideoSelection}
+      // V2 individual handlers
+      onIndividualApprove={onIndividualApprove}
+      onIndividualRequestChange={onIndividualRequestChange}
+    />
+  );
+
+  // Helper function to render video content
+  const renderVideoContent = () => {
+    if (deliverables?.videos?.length === 0) {
+      return <Typography>No draft videos uploaded yet.</Typography>;
+    }
+
+    if (deliverables.videos.length > 2) {
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            pb: 1,
+            maxWidth: '100%',
+            '&::-webkit-scrollbar': {
+              height: 8,
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: '#f1f1f1',
+              borderRadius: 4,
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#c1c1c1',
+              borderRadius: 4,
+              '&:hover': {
+                backgroundColor: '#a8a8a8',
+              },
+            },
+          }}
+        >
+          {deliverables.videos.map((video, index) => (
+            <Box
+              key={video.id || index}
+              sx={{
+                width: 'calc(50% - 8px)',
+                minWidth: 'calc(50% - 8px)',
+                flexShrink: 0,
+              }}
+            >
+              {renderVideoItems(video, index)}
+            </Box>
+          ))}
+        </Box>
+      );
+    }
+
+    return (
+      <Grid container spacing={2}>
+        {deliverables.videos.map((video, index) => (
+          <Grid 
+            item 
+            xs={12} 
+            md={deliverables.videos.length === 1 ? 7 : 6} 
+            key={video.id || index}
+          >
+            {renderVideoItems(video, index)}
+          </Grid>
+        ))}
+      </Grid>
+    );
+  };
+
   return (
     <>
       {/* Draft Videos Horizontal Scroll */}
-      {deliverables?.videos?.length > 0 ? (
-        deliverables.videos.length > 2 ? (
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 2,
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              pb: 1,
-              maxWidth: '100%',
-              '&::-webkit-scrollbar': {
-                height: 8,
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: '#f1f1f1',
-                borderRadius: 4,
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: '#c1c1c1',
-                borderRadius: 4,
-                '&:hover': {
-                  backgroundColor: '#a8a8a8',
-                },
-              },
-            }}
-          >
-            {deliverables.videos.map((video, index) => (
-              <Box
-                key={video.id || index}
-                sx={{
-                  width: 'calc(50% - 8px)',
-                  minWidth: 'calc(50% - 8px)',
-                  flexShrink: 0,
-                }}
-              >
-                <VideoCard 
-                  videoItem={video} 
-                  index={index}
-                  submission={submission}
-                  onVideoClick={onVideoClick}
-                  handleApprove={handleApprove}
-                  handleRequestChange={handleRequestChange}
-                  selectedVideosForChange={selectedVideosForChange}
-                  handleVideoSelection={handleVideoSelection}
-                  // V2 individual handlers
-                  onIndividualApprove={onIndividualApprove}
-                  onIndividualRequestChange={onIndividualRequestChange}
-                />
-              </Box>
-            ))}
-          </Box>
-        ) : (
-          <Grid container spacing={2}>
-            {deliverables.videos.map((video, index) => (
-              <Grid 
-                item 
-                xs={12} 
-                md={deliverables.videos.length === 1 ? 7 : 6} 
-                key={video.id || index}
-              >
-                <VideoCard 
-                  videoItem={video} 
-                  index={index}
-                  submission={submission}
-                  onVideoClick={onVideoClick}
-                  handleApprove={handleApprove}
-                  handleRequestChange={handleRequestChange}
-                  selectedVideosForChange={selectedVideosForChange}
-                  handleVideoSelection={handleVideoSelection}
-                  // V2 individual handlers
-                  onIndividualApprove={onIndividualApprove}
-                  onIndividualRequestChange={onIndividualRequestChange}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        )
-      ) : (
-        <Typography>No draft videos uploaded yet.</Typography>
-      )}
+      {renderVideoContent()}
 
       {/* All Videos Approved Message */}
       {allVideosApproved && (

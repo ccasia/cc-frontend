@@ -69,7 +69,7 @@ const ReportingView = () => {
         fetchContentData(urlParam, userId);
       }
     }
-  }, [searchParams]);
+  }, [searchParams, fetchContentData]);
 
   const parseContentUrl = (inputUrl) => {
     try {
@@ -134,7 +134,7 @@ const ReportingView = () => {
     
     return {
       value: `${Math.round(absChange)}%`,
-      isPositive: isPositive,
+      isPositive,
     };
   };
 
@@ -258,10 +258,7 @@ const ReportingView = () => {
 
     // Calculate progress values based on the highest possible value among all metrics
     // This ensures the bar length accurately reflects the value proportionally
-    const getProgressValue = (val) => {
-      // Use the maximum value from your current data set as 100%
-      return maxValue > 0 ? (val / maxValue) * 100 : 0;
-    };
+    const getProgressValue = (val) => maxValue > 0 ? (val / maxValue) * 100 : 0;
 
     return (
       <Box sx={{ width: '80%' }}>
@@ -378,9 +375,11 @@ const ReportingView = () => {
             <Typography
               sx={{
                 fontSize: 12,
-                color: hasPreviousData ? 
-                  (actualChange === 0 ? '#666' : (changeIsPositive ? '#4CAF50' : '#F44336')) : 
-                  '#999',
+                color: (() => {
+                  if (!hasPreviousData) return '#999';
+                  if (actualChange === 0) return '#666';
+                  return changeIsPositive ? '#4CAF50' : '#F44336';
+                })(),
                 ml: hasPreviousData && actualChange !== 0 ? 0.5 : 0,
               }}
             >
@@ -550,25 +549,25 @@ const ReportingView = () => {
               {renderStatBar({
                 label: 'Profile Visits',
                 value: content.metrics?.profile_visits || 0,
-                maxValue: maxValue
+                maxValue
               })}
 
               {renderStatBar({
                 label: 'Shares',
                 value: content.metrics?.shares || 0,
-                maxValue: maxValue
+                maxValue
               })}
 
               {renderStatBar({
                 label: 'Interactions',
                 value: content.metrics?.total_interactions || 0,
-                maxValue: maxValue
+                maxValue
               })}
 
               {renderStatBar({
                 label: 'Reach',
                 value: content.metrics?.reach || 0,
-                maxValue: maxValue
+                maxValue
               })}
             </Box>
           </Grid>
