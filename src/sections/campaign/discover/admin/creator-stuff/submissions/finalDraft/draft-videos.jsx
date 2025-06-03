@@ -717,31 +717,19 @@ const DraftVideos = ({
   const allVideosApproved = deliverables?.videos?.length > 0 && 
     deliverables.videos.every(v => v.status === 'APPROVED');
 
-  // Helper function to render video items
-  const renderVideoItems = (video, index) => (
-    <VideoCard 
-      videoItem={video} 
-      index={index}
-      submission={submission}
-      onVideoClick={onVideoClick}
-      handleApprove={handleApprove}
-      handleRequestChange={handleRequestChange}
-      selectedVideosForChange={selectedVideosForChange}
-      handleVideoSelection={handleVideoSelection}
-      // V2 individual handlers
-      onIndividualApprove={onIndividualApprove}
-      onIndividualRequestChange={onIndividualRequestChange}
-    />
-  );
+  // Determine layout type
+  const hasVideos = deliverables?.videos?.length > 0;
+  const shouldUseHorizontalScroll = hasVideos && deliverables.videos.length > 1;
+  const shouldUseGrid = hasVideos && deliverables.videos.length === 1;
 
-  // Helper function to render video content
-  const renderVideoContent = () => {
-    if (!deliverables?.videos?.length) {
-      return <Typography>No videos uploaded yet.</Typography>;
-    }
+  return (
+    <>
+      {/* Videos Horizontal Scroll */}
+      {!hasVideos && (
+        <Typography>No videos uploaded yet.</Typography>
+      )}
 
-    if (deliverables.videos.length > 2) {
-      return (
+      {shouldUseHorizontalScroll && (
         <Box
           sx={{
             display: 'flex',
@@ -770,38 +758,55 @@ const DraftVideos = ({
             <Box
               key={video.id || index}
               sx={{
-                width: 'calc(50% - 8px)',
-                minWidth: 'calc(50% - 8px)',
+                width: { xs: '280px', sm: '300px', md: '300px' },
+                minWidth: { xs: '280px', sm: '300px', md: '300px' },
                 flexShrink: 0,
               }}
             >
-              {renderVideoItems(video, index)}
+              <VideoCard 
+                videoItem={video} 
+                index={index}
+                submission={submission}
+                onVideoClick={onVideoClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedVideosForChange={selectedVideosForChange}
+                handleVideoSelection={handleVideoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
             </Box>
           ))}
         </Box>
-      );
-    }
+      )}
 
-    return (
-      <Grid container spacing={2}>
-        {deliverables.videos.map((video, index) => (
-          <Grid 
-            item 
-            xs={12} 
-            md={deliverables.videos.length === 1 ? 7 : 6} 
-            key={video.id || index}
-          >
-            {renderVideoItems(video, index)}
-          </Grid>
-        ))}
-      </Grid>
-    );
-  };
-
-  return (
-    <>
-      {/* Videos Horizontal Scroll */}
-      {renderVideoContent()}
+      {shouldUseGrid && (
+        <Grid container spacing={2}>
+          {deliverables.videos.map((video, index) => (
+            <Grid 
+              item 
+              xs={12} 
+              md={7} 
+              key={video.id || index}
+            >
+              <VideoCard 
+                videoItem={video} 
+                index={index}
+                submission={submission}
+                onVideoClick={onVideoClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedVideosForChange={selectedVideosForChange}
+                handleVideoSelection={handleVideoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* All Videos Approved Message */}
       {allVideosApproved && (

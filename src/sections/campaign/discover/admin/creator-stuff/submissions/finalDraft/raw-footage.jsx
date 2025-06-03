@@ -643,31 +643,19 @@ const RawFootages = ({
   const allRawFootagesApproved = deliverables?.rawFootages?.length > 0 && 
     deliverables.rawFootages.every(r => r.status === 'APPROVED');
 
-  // Helper function to render raw footage items
-  const renderRawFootageItems = (video, index) => (
-    <VideoCard 
-      videoItem={video} 
-      index={index}
-      submission={submission}
-      onVideoClick={onVideoClick}
-      handleApprove={handleApprove}
-      handleRequestChange={handleRequestChange}
-      selectedVideosForChange={selectedVideosForChange}
-      handleVideoSelection={handleVideoSelection}
-      // V2 individual handlers
-      onIndividualApprove={onIndividualApprove}
-      onIndividualRequestChange={onIndividualRequestChange}
-    />
-  );
+  // Determine layout type
+  const hasRawFootages = deliverables?.rawFootages?.length > 0;
+  const shouldUseHorizontalScroll = hasRawFootages && deliverables.rawFootages.length > 1;
+  const shouldUseGrid = hasRawFootages && deliverables.rawFootages.length === 1;
 
-  // Helper function to render raw footage content
-  const renderRawFootageContent = () => {
-    if (!deliverables?.rawFootages?.length) {
-      return <Typography>No raw footages uploaded yet.</Typography>;
-    }
+  return (
+    <>
+      {/* Raw Footages Horizontal Scroll */}
+      {!hasRawFootages && (
+        <Typography>No raw footages uploaded yet.</Typography>
+      )}
 
-    if (deliverables.rawFootages.length > 2) {
-      return (
+      {shouldUseHorizontalScroll && (
         <Box
           sx={{
             display: 'flex',
@@ -696,38 +684,55 @@ const RawFootages = ({
             <Box
               key={video.id || index}
               sx={{
-                width: 'calc(50% - 8px)',
-                minWidth: 'calc(50% - 8px)',
+                width: { xs: '280px', sm: '300px', md: '300px' },
+                minWidth: { xs: '280px', sm: '300px', md: '300px' },
                 flexShrink: 0,
               }}
             >
-              {renderRawFootageItems(video, index)}
+              <VideoCard 
+                videoItem={video} 
+                index={index}
+                submission={submission}
+                onVideoClick={onVideoClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedVideosForChange={selectedVideosForChange}
+                handleVideoSelection={handleVideoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
             </Box>
           ))}
         </Box>
-      );
-    }
+      )}
 
-    return (
-      <Grid container spacing={2}>
-        {deliverables.rawFootages.map((video, index) => (
-          <Grid 
-            item 
-            xs={12} 
-            md={deliverables.rawFootages.length === 1 ? 7 : 6} 
-            key={video.id || index}
-          >
-            {renderRawFootageItems(video, index)}
-          </Grid>
-        ))}
-      </Grid>
-    );
-  };
-
-  return (
-    <>
-      {/* Raw Footages Horizontal Scroll */}
-      {renderRawFootageContent()}
+      {shouldUseGrid && (
+        <Grid container spacing={2}>
+          {deliverables.rawFootages.map((video, index) => (
+            <Grid 
+              item 
+              xs={12} 
+              md={7} 
+              key={video.id || index}
+            >
+              <VideoCard 
+                videoItem={video} 
+                index={index}
+                submission={submission}
+                onVideoClick={onVideoClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedVideosForChange={selectedVideosForChange}
+                handleVideoSelection={handleVideoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* Raw Footage Google Drive link */}
       {submission?.rawFootagesDriveLink && (

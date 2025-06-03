@@ -633,31 +633,19 @@ const Photos = ({
   const allPhotosApproved = deliverables?.photos?.length > 0 && 
     deliverables.photos.every(p => p.status === 'APPROVED');
 
-  // Helper function to render photo items
-  const renderPhotoItems = (photo, index) => (
-    <PhotoCard 
-      photoItem={photo} 
-      index={index}
-      submission={submission}
-      onImageClick={onImageClick}
-      handleApprove={handleApprove}
-      handleRequestChange={handleRequestChange}
-      selectedPhotosForChange={selectedPhotosForChange}
-      handlePhotoSelection={handlePhotoSelection}
-      // V2 individual handlers
-      onIndividualApprove={onIndividualApprove}
-      onIndividualRequestChange={onIndividualRequestChange}
-    />
-  );
+  // Determine layout type
+  const hasPhotos = deliverables?.photos?.length > 0;
+  const shouldUseHorizontalScroll = hasPhotos && deliverables.photos.length > 1;
+  const shouldUseGrid = hasPhotos && deliverables.photos.length === 1;
 
-  // Helper function to render photo content
-  const renderPhotoContent = () => {
-    if (!deliverables?.photos?.length) {
-      return <Typography>No photos uploaded yet.</Typography>;
-    }
+  return (
+    <>
+      {/* Photos Horizontal Scroll */}
+      {!hasPhotos && (
+        <Typography>No photos uploaded yet.</Typography>
+      )}
 
-    if (deliverables.photos.length > 2) {
-      return (
+      {shouldUseHorizontalScroll && (
         <Box
           sx={{
             display: 'flex',
@@ -686,38 +674,55 @@ const Photos = ({
             <Box
               key={photo.id || index}
               sx={{
-                width: 'calc(50% - 8px)',
-                minWidth: 'calc(50% - 8px)',
+                width: { xs: '280px', sm: '300px', md: '300px' },
+                minWidth: { xs: '280px', sm: '300px', md: '300px' },
                 flexShrink: 0,
               }}
             >
-              {renderPhotoItems(photo, index)}
+              <PhotoCard 
+                photoItem={photo} 
+                index={index}
+                submission={submission}
+                onImageClick={onImageClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedPhotosForChange={selectedPhotosForChange}
+                handlePhotoSelection={handlePhotoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
             </Box>
           ))}
         </Box>
-      );
-    }
+      )}
 
-    return (
-      <Grid container spacing={2}>
-        {deliverables.photos.map((photo, index) => (
-          <Grid 
-            item 
-            xs={12} 
-            md={deliverables.photos.length === 1 ? 7 : 6} 
-            key={photo.id || index}
-          >
-            {renderPhotoItems(photo, index)}
-          </Grid>
-        ))}
-      </Grid>
-    );
-  };
-
-  return (
-    <>
-      {/* Photos Horizontal Scroll */}
-      {renderPhotoContent()}
+      {shouldUseGrid && (
+        <Grid container spacing={2}>
+          {deliverables.photos.map((photo, index) => (
+            <Grid 
+              item 
+              xs={12} 
+              md={7} 
+              key={photo.id || index}
+            >
+              <PhotoCard 
+                photoItem={photo} 
+                index={index}
+                submission={submission}
+                onImageClick={onImageClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedPhotosForChange={selectedPhotosForChange}
+                handlePhotoSelection={handlePhotoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* Photos Google Drive link */}
       {submission?.photosDriveLink && (

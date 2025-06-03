@@ -334,10 +334,10 @@ const PhotoCard = ({
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
                     borderBottomColor: '#e7e7e7',
-                    color: '#1ABF66',
+                    color: '#231F20',
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#1ABF66',
+                      borderColor: '#231F20',
                     },
                     textTransform: 'none',
                     py: 1.2,
@@ -347,7 +347,7 @@ const PhotoCard = ({
                     flex: 1,
                   }}
                 >
-                  Approve
+                  Back
                 </Button>
 
                 <LoadingButton
@@ -357,7 +357,7 @@ const PhotoCard = ({
                   loading={isSubmitting || isProcessing}
                   sx={{
                     bgcolor: '#FFFFFF',
-                    color: '#D4321C',
+                    color: '#1ABF66',
                     border: '1.5px solid',
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
@@ -367,7 +367,7 @@ const PhotoCard = ({
                     fontWeight: 600,
                     '&:hover': {
                       bgcolor: '#f5f5f5',
-                      borderColor: '#D4321C',
+                      borderColor: '#1ABF66',
                     },
                     fontSize: '0.9rem',
                     height: '40px',
@@ -375,7 +375,7 @@ const PhotoCard = ({
                     flex: 2,
                   }}
                 >
-                  Request Changes
+                  Submit Feedback
                 </LoadingButton>
               </Stack>
             </Stack>
@@ -667,31 +667,19 @@ const Photos = ({
   const allPhotosApproved = deliverables?.photos?.length > 0 && 
     deliverables.photos.every(p => p.status === 'APPROVED');
 
-  // Helper function to render photo items
-  const renderPhotoItems = (photo, index) => (
-    <PhotoCard 
-      photoItem={photo} 
-      index={index}
-      submission={submission}
-      onImageClick={onImageClick}
-      handleApprove={handleApprove}
-      handleRequestChange={handleRequestChange}
-      selectedPhotosForChange={selectedPhotosForChange}
-      handlePhotoSelection={handlePhotoSelection}
-      // V2 individual handlers
-      onIndividualApprove={onIndividualApprove}
-      onIndividualRequestChange={onIndividualRequestChange}
-    />
-  );
+  // Determine layout type
+  const hasPhotos = deliverables?.photos?.length > 0;
+  const shouldUseHorizontalScroll = hasPhotos && deliverables.photos.length > 1;
+  const shouldUseGrid = hasPhotos && deliverables.photos.length === 1;
 
-  // Helper function to render photo content
-  const renderPhotoContent = () => {
-    if (!deliverables?.photos?.length) {
-      return <Typography>No photos uploaded yet.</Typography>;
-    }
+  return (
+    <>
+      {/* Photos Horizontal Scroll */}
+      {!hasPhotos && (
+        <Typography>No photos uploaded yet.</Typography>
+      )}
 
-    if (deliverables.photos.length > 2) {
-      return (
+      {shouldUseHorizontalScroll && (
         <Box
           sx={{
             display: 'flex',
@@ -720,38 +708,55 @@ const Photos = ({
             <Box
               key={photo.id || index}
               sx={{
-                width: 'calc(50% - 8px)',
-                minWidth: 'calc(50% - 8px)',
+                width: { xs: '280px', sm: '300px', md: '300px' },
+                minWidth: { xs: '280px', sm: '300px', md: '300px' },
                 flexShrink: 0,
               }}
             >
-              {renderPhotoItems(photo, index)}
+              <PhotoCard 
+                photoItem={photo} 
+                index={index}
+                submission={submission}
+                onImageClick={onImageClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedPhotosForChange={selectedPhotosForChange}
+                handlePhotoSelection={handlePhotoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
             </Box>
           ))}
         </Box>
-      );
-    }
+      )}
 
-    return (
-      <Grid container spacing={2}>
-        {deliverables.photos.map((photo, index) => (
-          <Grid 
-            item 
-            xs={12} 
-            md={deliverables.photos.length === 1 ? 7 : 6} 
-            key={photo.id || index}
-          >
-            {renderPhotoItems(photo, index)}
-          </Grid>
-        ))}
-      </Grid>
-    );
-  };
-
-  return (
-    <>
-      {/* Photos Horizontal Scroll */}
-      {renderPhotoContent()}
+      {shouldUseGrid && (
+        <Grid container spacing={2}>
+          {deliverables.photos.map((photo, index) => (
+            <Grid 
+              item 
+              xs={12} 
+              md={7} 
+              key={photo.id || index}
+            >
+              <PhotoCard 
+                photoItem={photo} 
+                index={index}
+                submission={submission}
+                onImageClick={onImageClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedPhotosForChange={selectedPhotosForChange}
+                handlePhotoSelection={handlePhotoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* Photos Google Drive link */}
       {submission?.photosDriveLink && (
