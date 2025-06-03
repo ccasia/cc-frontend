@@ -109,8 +109,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   // Check if all sections are approved and activate posting if needed
   const checkAndActivatePosting = async (selectedDueDate) => {
     try {
-      console.log('🔍 Checking if all sections are approved...');
-      
       // Wait a moment for the data to be refreshed
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -123,12 +121,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       );
       const currentDeliverables = freshDeliverablesResponse.data;
       
-      console.log('📊 Current deliverables status:', {
-        videos: currentDeliverables?.videos?.map(v => ({ id: v.id, status: v.status })),
-        photos: currentDeliverables?.photos?.map(p => ({ id: p.id, status: p.status })),
-        rawFootages: currentDeliverables?.rawFootages?.map(r => ({ id: r.id, status: r.status }))
-      });
-      
       // Check if all sections are approved
       const videosApproved = !currentDeliverables?.videos?.length || 
         currentDeliverables.videos.every(video => video.status === 'APPROVED');
@@ -139,33 +131,19 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
 
       const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
 
-      console.log('✅ Section approval status:', {
-        videosApproved,
-        rawFootagesApproved,
-        photosApproved,
-        allSectionsApproved,
-        submissionType: submission.submissionType?.type,
-        currentStatus: submission.status
-      });
-
       if (allSectionsApproved && submission.submissionType?.type === 'FIRST_DRAFT') {
-        console.log('🚀 All sections approved, updating submission status and activating posting...');
-        
         // Use the selected due date if provided, otherwise default to 7 days from now
         const dueDate = selectedDueDate 
           ? new Date(selectedDueDate).toISOString()
           : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
         
-        console.log('📅 Using due date:', dueDate);
-        
         // Update submission to APPROVED using the correct endpoint
         const response = await axiosInstance.patch('/api/submission/status', {
           submissionId: submission.id,
           status: 'APPROVED',
+          updatePosting: true, 
           dueDate,
         });
-
-        console.log('📝 Submission status update response:', response.data);
 
         // Refresh data
         await Promise.all([
@@ -173,12 +151,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           submissionMutate && submissionMutate()
         ].filter(Boolean));
 
-        console.log('🎉 Successfully activated posting submission!');
         enqueueSnackbar('All sections approved!', { 
           variant: 'success' 
         });
-      } else {
-        console.log('⏳ Not all sections approved yet or not a first draft submission');
       }
     } catch (error) {
       console.error('❌ Error checking and activating posting:', error);
