@@ -93,6 +93,13 @@ const PhotoCard = ({
 
   const photoFeedback = getPhotoFeedback();
 
+  // Helper function to determine border color
+  const getBorderColor = () => {
+    if (isPhotoApproved) return '#1ABF66';
+    if (hasRevisionRequested) return '#D4321C';
+    return 'divider';
+  };
+
   // V2 Individual handlers
   const handleIndividualApproveClick = async () => {
     if (!onIndividualApprove) return;
@@ -384,7 +391,7 @@ const PhotoCard = ({
         flexDirection: 'column',
         borderRadius: 2,
         border: '1px solid',
-        borderColor: isPhotoApproved ? '#1ABF66' : hasRevisionRequested ? '#D4321C' : 'divider',
+        borderColor: getBorderColor(),
       }}
     >
       {/* Photo Section */}
@@ -550,6 +557,7 @@ PhotoCard.propTypes = {
     url: PropTypes.string.isRequired,
     status: PropTypes.string,
     createdAt: PropTypes.string,
+    individualFeedback: PropTypes.array,
   }).isRequired,
   index: PropTypes.number.isRequired,
   submission: PropTypes.object,
@@ -625,88 +633,95 @@ const Photos = ({
   const allPhotosApproved = deliverables?.photos?.length > 0 && 
     deliverables.photos.every(p => p.status === 'APPROVED');
 
+  // Determine layout type
+  const hasPhotos = deliverables?.photos?.length > 0;
+  const shouldUseHorizontalScroll = hasPhotos && deliverables.photos.length > 1;
+  const shouldUseGrid = hasPhotos && deliverables.photos.length === 1;
+
   return (
     <>
       {/* Photos Horizontal Scroll */}
-      {deliverables?.photos?.length ? (
-        deliverables.photos.length > 2 ? (
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 2,
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              pb: 1,
-              maxWidth: '100%',
-              '&::-webkit-scrollbar': {
-                height: 8,
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: '#f1f1f1',
-                borderRadius: 4,
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: '#c1c1c1',
-                borderRadius: 4,
-                '&:hover': {
-                  backgroundColor: '#a8a8a8',
-                },
-              },
-            }}
-          >
-            {deliverables.photos.map((photo, index) => (
-              <Box
-                key={photo.id || index}
-                sx={{
-                  width: 'calc(50% - 8px)',
-                  minWidth: 'calc(50% - 8px)',
-                  flexShrink: 0,
-                }}
-              >
-                <PhotoCard 
-                  photoItem={photo} 
-                  index={index}
-                  submission={submission}
-                  onImageClick={onImageClick}
-                  handleApprove={handleApprove}
-                  handleRequestChange={handleRequestChange}
-                  selectedPhotosForChange={selectedPhotosForChange}
-                  handlePhotoSelection={handlePhotoSelection}
-                  // V2 individual handlers
-                  onIndividualApprove={onIndividualApprove}
-                  onIndividualRequestChange={onIndividualRequestChange}
-                />
-              </Box>
-            ))}
-          </Box>
-        ) : (
-          <Grid container spacing={2}>
-            {deliverables.photos.map((photo, index) => (
-              <Grid 
-                item 
-                xs={12} 
-                md={deliverables.photos.length === 1 ? 7 : 6} 
-                key={photo.id || index}
-              >
-                <PhotoCard 
-                  photoItem={photo} 
-                  index={index}
-                  submission={submission}
-                  onImageClick={onImageClick}
-                  handleApprove={handleApprove}
-                  handleRequestChange={handleRequestChange}
-                  selectedPhotosForChange={selectedPhotosForChange}
-                  handlePhotoSelection={handlePhotoSelection}
-                  // V2 individual handlers
-                  onIndividualApprove={onIndividualApprove}
-                  onIndividualRequestChange={onIndividualRequestChange}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        )
-      ) : (
+      {!hasPhotos && (
         <Typography>No photos uploaded yet.</Typography>
+      )}
+
+      {shouldUseHorizontalScroll && (
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            pb: 1,
+            maxWidth: '100%',
+            '&::-webkit-scrollbar': {
+              height: 8,
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: '#f1f1f1',
+              borderRadius: 4,
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#c1c1c1',
+              borderRadius: 4,
+              '&:hover': {
+                backgroundColor: '#a8a8a8',
+              },
+            },
+          }}
+        >
+          {deliverables.photos.map((photo, index) => (
+            <Box
+              key={photo.id || index}
+              sx={{
+                width: { xs: '280px', sm: '300px', md: '300px' },
+                minWidth: { xs: '280px', sm: '300px', md: '300px' },
+                flexShrink: 0,
+              }}
+            >
+              <PhotoCard 
+                photoItem={photo} 
+                index={index}
+                submission={submission}
+                onImageClick={onImageClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedPhotosForChange={selectedPhotosForChange}
+                handlePhotoSelection={handlePhotoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      {shouldUseGrid && (
+        <Grid container spacing={2}>
+          {deliverables.photos.map((photo, index) => (
+            <Grid 
+              item 
+              xs={12} 
+              md={7} 
+              key={photo.id || index}
+            >
+              <PhotoCard 
+                photoItem={photo} 
+                index={index}
+                submission={submission}
+                onImageClick={onImageClick}
+                handleApprove={handleApprove}
+                handleRequestChange={handleRequestChange}
+                selectedPhotosForChange={selectedPhotosForChange}
+                handlePhotoSelection={handlePhotoSelection}
+                // V2 individual handlers
+                onIndividualApprove={onIndividualApprove}
+                onIndividualRequestChange={onIndividualRequestChange}
+              />
+            </Grid>
+          ))}
+        </Grid>
       )}
 
       {/* Photos Google Drive link */}
