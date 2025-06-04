@@ -36,8 +36,8 @@ import Main from './main';
 import Header from './header';
 import NavMini from './nav-mini';
 import NavVertical from './nav-vertical';
-
-// ----------------------------------------------------------------------
+import ShortlistedCreatorPopUp from 'src/sections/campaign/discover/admin/campaign-detail-creator/hooks/shortlisted-creator-popup.jsx';
+import { useShortlistedCreators } from 'src/sections/campaign/discover/admin/campaign-detail-creator/hooks/shortlisted-creator';// ----------------------------------------------------------------------
 
 // eslint-disable-next-line react/prop-types
 const FormField = ({ label, children, ...others }) => (
@@ -476,7 +476,26 @@ export default function DashboardLayout({ children }) {
     );
   }
 
+  const addCreators = useShortlistedCreators((state) => state.addCreators)
+
+  useEffect(() => {
+      console.log('Setting up socket listener for shortlisted event');
+      // Listen for the shortlisted event from your socket
+      socket.on('shortlisted', (data) => {
+        console.log('Shortlisted event received:', data);
+        console.log('Current user:', user);
+        // data contains: campaignId, campaignName, message, creatorData
+        addCreators(data.creatorData, user);
+      });
+
+      return () => {
+        console.log('Cleaning up socket listener');
+        socket.off('shortlisted');}
+    }, [addCreators, user]);
+
+
   return (
+    
     <Box
       sx={{
         minHeight: 1,
@@ -485,8 +504,12 @@ export default function DashboardLayout({ children }) {
         pr: lgUp && 2,
       }}
     >
+      <div>
+      {/* Your component content */}
+      <ShortlistedCreatorPopUp />
+    </div>
       {renderNavVertical}
-
+      
       <Box
         sx={{
           // ...(lgUp && {
