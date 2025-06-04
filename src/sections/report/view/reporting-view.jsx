@@ -41,104 +41,7 @@ const ReportingView = () => {
     error: null,
   });
 
-  // Get URL parameters on component mount
-  useEffect(() => {
-    const urlParam = searchParams.get('url');
-    const creatorName = searchParams.get('creatorName');
-    const campaignName = searchParams.get('campaignName');
-    const userId = searchParams.get('userId');
-
-    console.log('url param: ', urlParam);
-    console.log('user id: ', userId);
-    console.log('creatorName: ', creatorName);
-    console.log('campaignName: ', campaignName);
-
-    if (urlParam && userId) {
-      setUrl(urlParam);
-      // Store additional parameters for context
-      setContent(prev => ({
-        ...prev,
-        creatorName: creatorName || '',
-        campaignName: campaignName || '',
-        creatorId: userId || '',
-      }));
-
-      // Parse the URL and fetch data
-      const parsedUrl = parseContentUrl(urlParam);
-      if (parsedUrl) {
-        fetchContentData(urlParam, userId);
-      }
-    }
-  }, [searchParams, fetchContentData]);
-
-  const parseContentUrl = (inputUrl) => {
-    try {
-      const urlObj = new URL(inputUrl);
-
-      // Instagram
-      if (urlObj.hostname.includes('instagram.com')) {
-        // Get the shortcode from Instagram URL
-        let shortcode = '';
-
-        if (urlObj.pathname.includes('/reel/')) {
-          shortcode = urlObj.pathname.split('/reel/')[1].split('/')[0];
-          return {
-            platform: 'Instagram',
-            type: 'Reel',
-            id: shortcode,
-          };
-        }
-        if (urlObj.pathname.includes('/p/')) {
-          shortcode = urlObj.pathname.split('/p/')[1].split('/')[0];
-          return {
-            platform: 'Instagram',
-            type: 'Post',
-            id: shortcode,
-          };
-        }
-      }
-
-      // TikTok
-      if (urlObj.hostname.includes('tiktok.com')) {
-        // TikTok URL can be in different formats
-        if (urlObj.pathname.includes('/video/')) {
-          const videoId = urlObj.pathname.split('/video/')[1].split('?')[0];
-          return {
-            platform: 'TikTok',
-            type: 'Video',
-            id: videoId,
-          };
-        }
-        if (urlObj.pathname.match(/\/@[^/]+\/[^/]+/)) {
-          // Handle format like /@username/video/1234567890
-          const videoId = urlObj.pathname.split('/').pop().split('?')[0];
-          return {
-            platform: 'TikTok',
-            type: 'Video',
-            id: videoId,
-          };
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Invalid URL:', error);
-      return null;
-    }
-  };
-
-  // Helper function to format percentage change for display
-  const formatPercentageChange = (percentageChange) => {
-    const absChange = Math.abs(percentageChange);
-    const isPositive = percentageChange >= 0;
-    
-    return {
-      value: `${Math.round(absChange)}%`,
-      isPositive,
-    };
-  };
-
-  // Fetch content data using the media insight endpoint
+    // Fetch content data using the media insight endpoint
   const fetchContentData = useCallback(async (postUrl, userId) => {
     setLoading(true);
     setContent(prev => ({ ...prev, error: null }));
@@ -246,6 +149,103 @@ const ReportingView = () => {
       setLoading(false);
     }
   }, []);
+
+  // Get URL parameters on component mount
+  useEffect(() => {
+    const urlParam = searchParams.get('url');
+    const creatorName = searchParams.get('creatorName');
+    const campaignName = searchParams.get('campaignName');
+    const userId = searchParams.get('userId');
+
+    console.log('url param: ', urlParam);
+    console.log('user id: ', userId);
+    console.log('creatorName: ', creatorName);
+    console.log('campaignName: ', campaignName);
+
+    if (urlParam && userId) {
+      setUrl(urlParam);
+      // Store additional parameters for context
+      setContent(prev => ({
+        ...prev,
+        creatorName: creatorName || '',
+        campaignName: campaignName || '',
+        creatorId: userId || '',
+      }));
+
+      // Parse the URL and fetch data
+      const parsedUrl = parseContentUrl(urlParam);
+      if (parsedUrl) {
+        fetchContentData(urlParam, userId);
+      }
+    }
+  }, [searchParams, fetchContentData]);
+
+  const parseContentUrl = (inputUrl) => {
+    try {
+      const urlObj = new URL(inputUrl);
+
+      // Instagram
+      if (urlObj.hostname.includes('instagram.com')) {
+        // Get the shortcode from Instagram URL
+        let shortcode = '';
+
+        if (urlObj.pathname.includes('/reel/')) {
+          shortcode = urlObj.pathname.split('/reel/')[1].split('/')[0];
+          return {
+            platform: 'Instagram',
+            type: 'Reel',
+            id: shortcode,
+          };
+        }
+        if (urlObj.pathname.includes('/p/')) {
+          shortcode = urlObj.pathname.split('/p/')[1].split('/')[0];
+          return {
+            platform: 'Instagram',
+            type: 'Post',
+            id: shortcode,
+          };
+        }
+      }
+
+      // TikTok
+      if (urlObj.hostname.includes('tiktok.com')) {
+        // TikTok URL can be in different formats
+        if (urlObj.pathname.includes('/video/')) {
+          const videoId = urlObj.pathname.split('/video/')[1].split('?')[0];
+          return {
+            platform: 'TikTok',
+            type: 'Video',
+            id: videoId,
+          };
+        }
+        if (urlObj.pathname.match(/\/@[^/]+\/[^/]+/)) {
+          // Handle format like /@username/video/1234567890
+          const videoId = urlObj.pathname.split('/').pop().split('?')[0];
+          return {
+            platform: 'TikTok',
+            type: 'Video',
+            id: videoId,
+          };
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Invalid URL:', error);
+      return null;
+    }
+  };
+
+  // Helper function to format percentage change for display
+  const formatPercentageChange = (percentageChange) => {
+    const absChange = Math.abs(percentageChange);
+    const isPositive = percentageChange >= 0;
+    
+    return {
+      value: `${Math.round(absChange)}%`,
+      isPositive,
+    };
+  };
 
   const handleBack = () => {
     // Navigate back to the report list page
