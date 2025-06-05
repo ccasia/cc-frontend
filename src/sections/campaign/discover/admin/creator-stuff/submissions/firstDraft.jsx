@@ -109,8 +109,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   // Check if all sections are approved and activate posting if needed
   const checkAndActivatePosting = async (selectedDueDate) => {
     try {
-      console.log('🔍 Checking if all sections are approved...');
-      
       // Wait a moment for the data to be refreshed
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -134,8 +132,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
 
       if (allSectionsApproved && submission.submissionType?.type === 'FIRST_DRAFT') {
-        console.log('🚀 All sections approved, updating submission status and activating posting...');
-        
         // Use the selected due date if provided, otherwise default to 3 days from today
         const dueDate = selectedDueDate 
           ? new Date(selectedDueDate).toISOString()
@@ -146,8 +142,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               return threeDaysFromToday.toISOString();
             })();
         
-        console.log('📅 Using due date:', dueDate);
-        
         // Update submission to APPROVED using the correct endpoint
         const response = await axiosInstance.patch('/api/submission/status', {
           submissionId: submission.id,
@@ -155,8 +149,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           updatePosting: true, // This flag tells the backend to activate posting
           dueDate,
         });
-
-        console.log('📝 Submission status update response:', response.data);
 
         // Wait for backend to complete all updates
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -175,12 +167,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
           ].filter(Boolean));
         }, 1000);
 
-        console.log('🎉 Successfully activated posting submission!');
         enqueueSnackbar('All sections approved!', { 
           variant: 'success' 
         });
-      } else {
-        console.log('⏳ Not all sections approved yet or not a first draft submission');
       }
     } catch (error) {
       console.error('❌ Error checking and activating posting:', error);
