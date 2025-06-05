@@ -48,6 +48,7 @@ import UserCard from './user-card';
 import CampaignAgreementEdit from '../campaign-agreement-edit';
 import AssignUGCVideoModal from './dialog/assign-ugc-videos-modal';
 import { useShortlistedCreators } from './hooks/shortlisted-creator';
+import ShortlistedCreatorPopUp from './hooks/shortlisted-creator-popup';
 
 const LISTBOX_PADDING = 8;
 const OuterElementContext = React.createContext({});
@@ -279,7 +280,8 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
               <Autocomplete
                 value={creators}
                 onChange={(e, val) => {
-                  addCreators(val);
+                  addCreators(val, user);
+
                 }}
                 ListboxComponent={ListboxComponent}
                 disableListWrap
@@ -803,6 +805,9 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
         agreement={selectedAgreement}
         campaign={campaign}
       />
+      <ShortlistedCreatorPopUp/>
+    
+
     </>
   );
 };
