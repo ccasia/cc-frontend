@@ -6,7 +6,6 @@ import React, { useRef, useMemo, useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
 import { useTheme } from '@mui/material/styles';
-import CloseIcon from '@mui/icons-material/Close';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import DialogContent from '@mui/material/DialogContent';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -24,7 +23,6 @@ import {
   Tooltip,
   Popover,
   Typography,
-  IconButton,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';

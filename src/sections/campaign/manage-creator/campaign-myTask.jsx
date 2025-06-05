@@ -210,7 +210,7 @@ const CampaignMyTasks = ({ campaign, openLogisticTab, setCurrentTab }) => {
               boxShadow: 'none',
               ml: { xs: 0, md: -2 },
               mr: { xs: 0, md: -1.5 },
-              mt: { xs: 0, md: -3.9 },
+              mt: { xs: 0, md: -3 },
               mb: { xs: 2, md: 0 },
             }}
           >

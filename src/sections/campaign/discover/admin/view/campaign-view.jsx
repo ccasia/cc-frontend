@@ -1,25 +1,27 @@
 import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { mutate } from 'swr';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Stack,
   Button,
   Dialog,
+  // MenuItem,
+  Tooltip,
   Container,
   InputBase,
   Typography,
   IconButton,
+  // Tab,
+  // Tabs,
+  // Menu,
   CircularProgress,
-  Tab,
-  Tabs,
-  Tooltip,
 } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -32,8 +34,6 @@ import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import CampaignTabsMobile from 'src/components/campaign/CampaignTabsMobile';
 
@@ -43,6 +43,7 @@ import CampaignLists from '../campaign-list';
 
 const CampaignView = () => {
   const settings = useSettingsContext();
+  const router = useRouter();
 
   const [search, setSearch] = useState({
     query: '',
@@ -84,9 +85,9 @@ const CampaignView = () => {
 
   const theme = useTheme();
 
-  const [anchorEl, setAnchorEl] = useState(null);
+  // const [anchorEl, setAnchorEl] = useState(null);
 
-  const open = Boolean(anchorEl);
+  // const open = Boolean(anchorEl);
 
   const { user } = useAuthContext();
 
@@ -115,17 +116,17 @@ const CampaignView = () => {
 
   const smDown = useResponsive('down', 'sm');
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+  // const handleClick = (event) => {
+  //   setAnchorEl(event.currentTarget);
+  // };
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  // const handleClose = () => {
+  //   setAnchorEl(null);
+  // };
 
   const handleNewCampaign = () => {
     create.onTrue();
-    handleClose();
+    // handleClose();
   };
 
   const activeCampaigns = useMemo(
@@ -462,10 +463,9 @@ const CampaignView = () => {
           </Box>
 
           {/* New Campaign Button - Desktop */}
-          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+          <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1 }}>
             <Button
-              onClick={handleClick}
-              endIcon={<Iconify icon="eva:chevron-down-fill" width={16} height={16} />}
+              onClick={handleNewCampaign}
               disabled={isDisabled}
               sx={{
                 bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
@@ -489,6 +489,51 @@ const CampaignView = () => {
             >
               New Campaign
             </Button>
+
+            {/* Settings Button */}
+            <Tooltip 
+              title="Campaign Settings" 
+              arrow 
+              placement="bottom"
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: 'rgba(0, 0, 0, 0.9)',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                  },
+                },
+                arrow: {
+                  sx: {
+                    color: 'rgba(0, 0, 0, 0.9)',
+                  },
+                },
+              }}
+            >
+              <Button
+                onClick={() => router.push(paths.dashboard.campaign.settings)}
+                sx={{
+                  minWidth: '38px',
+                  width: '38px',
+                  height: '38px',
+                  p: 0,
+                  color: '#666666',
+                  border: '1px solid #e7e7e7',
+                  borderRadius: '8px',
+                  fontWeight: 650,
+                  position: 'relative',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: '#f5f5f5',
+                    borderColor: '#d0d0d0',
+                    color: '#333333',
+                  },
+                }}
+              >
+                <Iconify icon="eva:settings-outline" width={16} />
+              </Button>
+            </Tooltip>
           </Box>
         </Stack>
       </Box>
@@ -500,7 +545,8 @@ const CampaignView = () => {
 
       {/* Mobile FAB */}
       <IconButton
-        onClick={handleClick}
+        onClick={handleNewCampaign}
+        disabled={isDisabled}
         sx={{
           display: { xs: 'flex', sm: 'none' },
           position: 'fixed',
@@ -508,20 +554,21 @@ const CampaignView = () => {
           bottom: 20,
           width: 56,
           height: 56,
-          bgcolor: '#203ff5',
-          color: 'white',
+          bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+          color: isDisabled ? '#9e9e9e' : 'white',
           zIndex: 1100,
-          boxShadow: '0 2px 12px rgba(32, 63, 245, 0.3)',
+          boxShadow: isDisabled ? 'none' : '0 2px 12px rgba(32, 63, 245, 0.3)',
+          cursor: isDisabled ? 'not-allowed' : 'pointer',
           '&:hover': {
-            bgcolor: '#203ff5',
-            opacity: 0.9,
+            bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+            opacity: isDisabled ? 1 : 0.9,
           },
         }}
       >
         <Iconify icon="eva:plus-fill" width={24} height={24} />
       </IconButton>
 
-      <Menu
+      {/* <Menu
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
@@ -577,7 +624,7 @@ const CampaignView = () => {
           <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2 }} />
           New Campaign
         </MenuItem>
-      </Menu>
+      </Menu> */}
 
       {isLoading && (
         <Box sx={{ position: 'relative', top: 200, textAlign: 'center' }}>

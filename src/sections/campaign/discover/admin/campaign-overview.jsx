@@ -2,12 +2,18 @@ import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 import React, { useMemo, useState, useEffect } from 'react';
-import { Container, Grid, Box, Stack, Chip, Button, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Avatar } from '@mui/material';
+
+import { Box, Grid, Chip, Stack, Button, Dialog, Avatar, Container, Typography, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
 import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
+
 import PitchModal from './pitch-modal';
 
 const BoxStyle = {

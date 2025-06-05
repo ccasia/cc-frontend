@@ -1,10 +1,10 @@
 import axios from 'axios';
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 
 import CloseIcon from '@mui/icons-material/Close';
-import { Box, Stack, Button, IconButton, Typography, Tooltip } from '@mui/material';
+import { Box, Stack, Button, Tooltip, IconButton, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -17,6 +17,7 @@ export default function CampaignTabsMobile({ filter = 'active' }) {
   const [tabs, setTabs] = useState([]);
   const [activeTabId, setActiveTabId] = useState(null);
   const [filteredTabs, setFilteredTabs] = useState([]);
+  const [isOnCampaignDetailPage, setIsOnCampaignDetailPage] = useState(false);
   
   const router = useRouter();
   const location = useLocation();
@@ -95,11 +96,14 @@ export default function CampaignTabsMobile({ filter = 'active' }) {
   // Check the current URL to determine which campaign tab is active
   useEffect(() => {
     const { pathname } = location;
+    // Match campaign detail pages including sub-routes like pitch and creator pages
     const match = pathname.match(/\/campaign\/discover\/detail\/([^/]+)/);
     if (match?.[1]) {
       setActiveTabId(match[1]);
+      setIsOnCampaignDetailPage(true);
     } else {
       setActiveTabId(null);
+      setIsOnCampaignDetailPage(false);
     }
   }, [location]);
   
@@ -292,32 +296,34 @@ export default function CampaignTabsMobile({ filter = 'active' }) {
       </Box>
 
       {/* Breadcrumb */}
-      <Box sx={{ px: 0.5 }}>
-        <Typography 
-          variant="caption" 
-          onClick={() => router.push(paths.dashboard.campaign.root)}
-          sx={{ 
-            color: '#1340FF', 
-            fontSize: '0.8rem', 
-            fontWeight: 600, 
-            display: 'flex', 
-            alignItems: 'center',
-            cursor: 'pointer',
-            letterSpacing: '0.01em',
-            '&:hover': {
-              textDecoration: 'underline',
-              color: '#0F2DB8',
-            }
-          }}
-        >
-          <Iconify 
-            icon="solar:arrow-left-linear" 
-            width={12} 
-            sx={{ mr: 0.5 }} 
-          />
-          Back to {getCampaignTypeText()}
-        </Typography>
-      </Box>
+      {isOnCampaignDetailPage && (
+        <Box sx={{ px: 0.5 }}>
+          <Typography 
+            variant="caption" 
+            onClick={() => router.push(paths.dashboard.campaign.root)}
+            sx={{ 
+              color: '#1340FF', 
+              fontSize: '0.8rem', 
+              fontWeight: 600, 
+              display: 'flex', 
+              alignItems: 'center',
+              cursor: 'pointer',
+              letterSpacing: '0.01em',
+              '&:hover': {
+                textDecoration: 'underline',
+                color: '#0F2DB8',
+              }
+            }}
+          >
+            <Iconify 
+              icon="solar:arrow-left-linear" 
+              width={12} 
+              sx={{ mr: 0.5 }} 
+            />
+            Back to {getCampaignTypeText()}
+          </Typography>
+        </Box>
+      )}
 
       {/* Campaign Tabs - Horizontal Scrollable */}
       <Box

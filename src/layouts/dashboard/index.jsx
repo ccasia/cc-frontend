@@ -7,15 +7,12 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import { LoadingButton } from '@mui/lab';
 import {
   Stack,
   Button,
   Dialog,
   FormLabel,
-  IconButton,
   Typography,
-  DialogTitle,
   DialogContent,
   DialogActions,
 } from '@mui/material';
@@ -36,7 +33,6 @@ import CampaignTabsNavigation from 'src/components/campaign/CampaignTabsNavigati
 import Main from './main';
 import Header from './header';
 import NavVertical from './nav-vertical';
-import { NAV } from '../config-layout';
 
 // ----------------------------------------------------------------------
 
@@ -284,7 +280,7 @@ export default function DashboardLayout({ children }) {
         position: 'absolute',
         transform: 'rotate(-90deg)',
         transformOrigin: 'bottom right',
-        top: { xs: 200, sm: 180, md: 120 },
+        top: { xs: 100, sm: 180, md: 120 },
         right: { xs: 4, sm: 4, md: 2 },
         // zIndex: 9999,
       }}

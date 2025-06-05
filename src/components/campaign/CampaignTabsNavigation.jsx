@@ -1,12 +1,11 @@
 import axios from 'axios';
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 
-import CloseIcon from '@mui/icons-material/Close';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { Box, Stack, Button, IconButton, Typography, Tooltip } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import CloseIcon from '@mui/icons-material/Close';
+import { Box, Stack, Button, Tooltip, IconButton, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -323,6 +322,7 @@ export default function CampaignTabsNavigation({ filter = 'active' }) {
   const [activeTabId, setActiveTabId] = useState(null);
   const [filteredTabs, setFilteredTabs] = useState([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOnCampaignDetailPage, setIsOnCampaignDetailPage] = useState(false);
   
   const router = useRouter();
   const location = useLocation();
@@ -416,11 +416,14 @@ export default function CampaignTabsNavigation({ filter = 'active' }) {
   // Check the current URL to determine which campaign tab is active
   useEffect(() => {
     const { pathname } = location;
+    // Match campaign detail pages including sub-routes like pitch and creator pages
     const match = pathname.match(/\/campaign\/discover\/detail\/([^/]+)/);
     if (match?.[1]) {
       setActiveTabId(match[1]);
+      setIsOnCampaignDetailPage(true);
     } else {
       setActiveTabId(null);
+      setIsOnCampaignDetailPage(false);
     }
   }, [location]);
   
@@ -684,46 +687,48 @@ export default function CampaignTabsNavigation({ filter = 'active' }) {
         {!isCollapsed && (
           <>
             {/* Breadcrumb */}
-            <Box sx={{ mb: 2, px: 0.5 }}>
-              <Typography 
-                variant="caption" 
-                onClick={() => router.push(paths.dashboard.campaign.root)}
-                sx={{ 
-                  color: '#1340FF', 
-                  fontSize: '0.8rem', 
-                  fontWeight: 600, 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  letterSpacing: '0.01em',
-                  '@media (max-width: 960px)': {
-                    fontSize: '0.75rem',
-                  },
-                  '@media (max-width: 600px)': {
-                    fontSize: '0.7rem',
-                  },
-                  '&:hover': {
-                    textDecoration: 'underline',
-                    color: '#0F2DB8',
-                  }
-                }}
-              >
-                <Iconify 
-                  icon="solar:arrow-left-linear" 
-                  width={12} 
+            {isOnCampaignDetailPage && (
+              <Box sx={{ mb: 2, px: 0.5 }}>
+                <Typography 
+                  variant="caption" 
+                  onClick={() => router.push(paths.dashboard.campaign.root)}
                   sx={{ 
-                    mr: 0.5,
+                    color: '#1340FF', 
+                    fontSize: '0.8rem', 
+                    fontWeight: 600, 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    letterSpacing: '0.01em',
                     '@media (max-width: 960px)': {
-                      width: 11,
+                      fontSize: '0.75rem',
                     },
                     '@media (max-width: 600px)': {
-                      width: 10,
+                      fontSize: '0.7rem',
                     },
-                  }} 
-                />
-                Back to {getCampaignTypeText()}
-              </Typography>
-            </Box>
+                    '&:hover': {
+                      textDecoration: 'underline',
+                      color: '#0F2DB8',
+                    }
+                  }}
+                >
+                  <Iconify 
+                    icon="solar:arrow-left-linear" 
+                    width={12} 
+                    sx={{ 
+                      mr: 0.5,
+                      '@media (max-width: 960px)': {
+                        width: 11,
+                      },
+                      '@media (max-width: 600px)': {
+                        width: 10,
+                      },
+                    }} 
+                  />
+                  Back to {getCampaignTypeText()}
+                </Typography>
+              </Box>
+            )}
           </>
         )}
 

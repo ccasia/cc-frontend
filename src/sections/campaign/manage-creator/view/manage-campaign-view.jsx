@@ -1,5 +1,5 @@
 import { orderBy } from 'lodash';
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -7,7 +7,6 @@ import {
   Stack,
   Button,
   Select,
-  Divider,
   MenuItem,
   Container,
   InputBase,

@@ -25,7 +25,6 @@ import {
   DialogTitle,
   DialogActions,
   DialogContent,
-  Tooltip,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';

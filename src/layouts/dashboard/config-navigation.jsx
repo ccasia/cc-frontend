@@ -129,46 +129,46 @@ export function useNavData() {
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD'],
             title: 'Campaigns',
-            path: paths.dashboard.campaign.root,
+            path: paths.dashboard.campaign.view,
             icon: ICONS.mycampaigns,
-            children: [
-              // {
-              //   roles: ['superadmin', 'CSM'],
-              //   title: 'Create',
-              //   path: paths.dashboard.campaign.create,
-              // },
-              // {
-              //   roles: ['superadmin', 'CSM'],
-              //   title: 'Edit',
-              //   path: paths.dashboard.campaign.manage,
-              // },
-              {
-                // title: 'Manage Campaign',
-                title: 'Lists',
-                path: paths.dashboard.campaign.view,
-              },
-              {
-                roles: ['superadmin'],
-                title: 'Settings',
-                path: paths.dashboard.campaign.settings,
-              },
-            ],
+            // children: [
+            //   // {
+            //   //   roles: ['superadmin', 'CSM'],
+            //   //   title: 'Create',
+            //   //   path: paths.dashboard.campaign.create,
+            //   // },
+            //   // {
+            //   //   roles: ['superadmin', 'CSM'],
+            //   //   title: 'Edit',
+            //   //   path: paths.dashboard.campaign.manage,
+            //   // },
+            //   {
+            //     // title: 'Manage Campaign',
+            //     title: 'Lists',
+            //     path: paths.dashboard.campaign.view,
+            //   },
+            //   {
+            //     roles: ['superadmin'],
+            //     title: 'Settings',
+            //     path: paths.dashboard.campaign.settings,
+            //   },
+            // ],
           },
           {
             roles: ['superadmin', 'CSM'],
-            title: 'Admin',
+            title: 'Admins',
             path: paths.dashboard.admins,
             icon: ICONS.admin,
-            children: [
-              {
-                title: 'Lists',
-                path: paths.dashboard.admins,
-              },
-            ],
+            // children: [
+            //   {
+            //     title: 'Lists',
+            //     path: paths.dashboard.admins,
+            //   },
+            // ],
           },
           {
             roles: ['superadmin', 'CSM'],
-            title: 'Creator',
+            title: 'Creators',
             path: paths.dashboard.creator.root,
             icon: ICONS.creator,
             children: [

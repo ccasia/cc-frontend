@@ -15,6 +15,7 @@ import { formatText } from 'src/utils/format-test';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
+import { useSettingsContext } from 'src/components/settings';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
 
@@ -38,6 +39,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   const theme = useTheme();
   const { user } = useAuthContext();
   const router = useRouter();
+  const settings = useSettingsContext();
   
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -63,8 +65,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     const campaignName = campaign?.name || 'Campaign Details';
     const campaignImage = campaign?.campaignBrief?.images?.[0] || null;
     
+    // Check if this is the first campaign tab being opened
+    const isFirstTab = !window.campaignTabs || window.campaignTabs.length === 0;
+    
     // Check if this campaign is already in campaignTabs
-    const tabExists = window.campaignTabs.some(tab => tab.id === campaign.id);
+    const tabExists = window.campaignTabs && window.campaignTabs.some(tab => tab.id === campaign.id);
     
     if (tabExists) {
       // If tab already exists, update the name and image to ensure they're current
@@ -87,6 +92,10 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       }
     } else {
       // If tab doesn't exist yet, add it to campaignTabs
+      if (!window.campaignTabs) {
+        window.campaignTabs = [];
+      }
+      
       window.campaignTabs.push({
         id: campaign.id,
         name: campaignName,
@@ -98,6 +107,11 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
       } catch (error) {
         console.error('Error saving campaign tabs to localStorage:', error);
+      }
+      
+      // Auto-collapse main navigation only when opening the first campaign tab
+      if (isFirstTab && settings.themeLayout === 'vertical') {
+        settings.onUpdate('themeLayout', 'mini');
       }
     }
     

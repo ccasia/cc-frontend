@@ -588,7 +588,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               {campaign?.rawFootage && deliverables?.rawFootages?.length > 0 && (
                 <Button
                   onClick={() => setSelectedTab('rawFootages')}
-                  // startIcon={<Iconify icon="solar:gallery-wide-bold" />}
+                  // startIcon={<Iconify icon="eva:image-outline" />}
                   fullWidth
                   sx={{
                     p: 1.5,
@@ -615,7 +615,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               {campaign?.photos && deliverables?.photos?.length > 0 && (
                 <Button
                   onClick={() => setSelectedTab('photos')}
-                  // startIcon={<Iconify icon="solar:camera-bold" />}
+                  // startIcon={<Iconify icon="eva:film-outline" />}
                   fullWidth
                   sx={{
                     p: 1.5,
