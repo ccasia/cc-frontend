@@ -78,7 +78,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
         submissionId: submission.id,
           status: 'APPROVED',
           feedback: 'All sections have been approved',
-          dueDate: dayjs().add(7, 'day').format('YYYY-MM-DD'),
+          dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
         });
 
         // Update posting status to allow creator to submit links
@@ -94,7 +94,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           await axiosInstance.patch(`/api/submission/status`, {
             submissionId: postingSubmission.id,
             status: 'IN_PROGRESS',
-          dueDate: dayjs().add(7, 'day').format('YYYY-MM-DD'),
+          dueDate: dayjs().add(3, 'day').format('YYYY-MM-DD'),
             sectionOnly: true
           });
         }
@@ -177,10 +177,15 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       if (allSectionsApproved && submission.submissionType?.type === 'FINAL_DRAFT') {
         console.log('🚀 All sections approved, updating submission status and activating posting...');
         
-        // Use the selected due date if provided, otherwise default to 7 days from now
+        // Use the selected due date if provided, otherwise default to 3 days from today
         const dueDate = selectedDueDate 
           ? new Date(selectedDueDate).toISOString()
-          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          : (() => {
+              const threeDaysFromToday = new Date();
+              threeDaysFromToday.setDate(threeDaysFromToday.getDate() + 3);
+              threeDaysFromToday.setHours(23, 59, 59, 999);
+              return threeDaysFromToday.toISOString();
+            })();
         
         console.log('📅 Using due date:', dueDate);
         
@@ -194,11 +199,22 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
         console.log('📝 Submission status update response:', response.data);
 
-        // Refresh data
+        // Wait for backend to complete all updates
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Refresh data multiple times to ensure consistency
         await Promise.all([
           deliverableMutate(),
           submissionMutate && submissionMutate()
         ].filter(Boolean));
+
+        // Additional refresh after a short delay to catch any delayed updates
+        setTimeout(async () => {
+          await Promise.all([
+            deliverableMutate(),
+            submissionMutate && submissionMutate()
+          ].filter(Boolean));
+        }, 1000);
 
         console.log('🎉 Successfully activated posting submission!');
         enqueueSnackbar('All sections approved!', { 

@@ -109,6 +109,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   // Check if all sections are approved and activate posting if needed
   const checkAndActivatePosting = async (selectedDueDate) => {
     try {
+      console.log('🔍 Checking if all sections are approved...');
+      
       // Wait a moment for the data to be refreshed
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -132,28 +134,53 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
 
       if (allSectionsApproved && submission.submissionType?.type === 'FIRST_DRAFT') {
-        // Use the selected due date if provided, otherwise default to 7 days from now
+        console.log('🚀 All sections approved, updating submission status and activating posting...');
+        
+        // Use the selected due date if provided, otherwise default to 3 days from today
         const dueDate = selectedDueDate 
           ? new Date(selectedDueDate).toISOString()
-          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          : (() => {
+              const threeDaysFromToday = new Date();
+              threeDaysFromToday.setDate(threeDaysFromToday.getDate() + 3);
+              threeDaysFromToday.setHours(23, 59, 59, 999);
+              return threeDaysFromToday.toISOString();
+            })();
+        
+        console.log('📅 Using due date:', dueDate);
         
         // Update submission to APPROVED using the correct endpoint
         const response = await axiosInstance.patch('/api/submission/status', {
           submissionId: submission.id,
           status: 'APPROVED',
-          updatePosting: true, 
+          updatePosting: true, // This flag tells the backend to activate posting
           dueDate,
         });
 
-        // Refresh data
+        console.log('📝 Submission status update response:', response.data);
+
+        // Wait for backend to complete all updates
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Refresh data multiple times to ensure consistency
         await Promise.all([
           deliverableMutate(),
           submissionMutate && submissionMutate()
         ].filter(Boolean));
 
+        // Additional refresh after a short delay to catch any delayed updates
+        setTimeout(async () => {
+          await Promise.all([
+            deliverableMutate(),
+            submissionMutate && submissionMutate()
+          ].filter(Boolean));
+        }, 1000);
+
+        console.log('🎉 Successfully activated posting submission!');
         enqueueSnackbar('All sections approved!', { 
           variant: 'success' 
         });
+      } else {
+        console.log('⏳ Not all sections approved yet or not a first draft submission');
       }
     } catch (error) {
       console.error('❌ Error checking and activating posting:', error);

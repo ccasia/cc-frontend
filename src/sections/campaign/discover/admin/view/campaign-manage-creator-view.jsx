@@ -163,9 +163,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         >
           {[
             { label: 'Overview', value: 'profile' },
-            { label: 'Submissions', value: 'submission' },
-            { label: 'Invoice', value: 'invoice' },
-            { label: 'Logistics', value: 'logistics' },
+            // { label: 'Submissions', value: 'submission' },
+            // { label: 'Invoice', value: 'invoice' },
+            // { label: 'Logistics', value: 'logistics' },
             // { label: 'Timeline', value: 'timeline' }, // Add timeline when backend is ready
           ].map((tab) => (
             <Button
