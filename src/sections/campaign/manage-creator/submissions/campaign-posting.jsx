@@ -89,6 +89,25 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     return finalDraftSubmission;
   }, [fullSubmission, dependency]);
 
+  // Helper function to get the due date with fallback
+  const getDueDate = useMemo(() => {
+    // Try multiple date fields in order of preference
+    const dateOptions = [
+      submission?.dueDate,
+      submission?.endDate,
+      submission?.startDate
+    ].filter(Boolean);
+
+    // Return the first valid date, or null if none are valid
+    for (const date of dateOptions) {
+      if (date && dayjs(date).isValid()) {
+        return dayjs(date);
+      }
+    }
+    
+    return null;
+  }, [submission?.dueDate, submission?.endDate, submission?.startDate]);
+
   const schema = yup.object().shape({
     postingLink: yup.string().required('Posting Link is required.'),
   });
@@ -275,7 +294,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
               Posting Link Submission 🔗
             </Typography>
             <Typography variant="subtitle2" color="text.secondary">
-              Due: {dayjs(submission?.endDate).format('MMM DD, YYYY')}
+              Due: {getDueDate ? getDueDate.format('MMM DD, YYYY') : 'TBD'}
             </Typography>
           </Box>
 
