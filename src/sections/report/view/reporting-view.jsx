@@ -1,3 +1,4 @@
+// reporting-view.jsx
 import { debounce } from 'lodash';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -7,13 +8,10 @@ import {
   Grid,
   Card,
   Stack,
-  Paper,
   Button,
   Divider,
   Container,
-  TextField,
   Typography,
-  LinearProgress,
   CircularProgress,
 } from '@mui/material';
 
@@ -22,6 +20,10 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+
+// Import platform-specific layout components
+import InstagramLayout from '../components/InstagramLayout';
+import TikTokLayout from '../components/TikTokLayout';
 
 const ReportingView = () => {
   const settings = useSettingsContext();
@@ -41,152 +43,12 @@ const ReportingView = () => {
     error: null,
   });
 
-    // Fetch content data using the media insight endpoint
-  const fetchContentData = useCallback(async (postUrl, userId) => {
-    setLoading(true);
-    setContent(prev => ({ ...prev, error: null }));
-
-    try {
-      const parsedUrl = parseContentUrl(postUrl);
-
-      if (!parsedUrl) {
-        throw new Error('Invalid or unsupported URL format');
-      }
-
-      if (parsedUrl.platform === 'Instagram') {
-        // Use your existing getInstagramMediaInsight function
-        const response = await axiosInstance.get(
-          endpoints.creators.social.getInstagramMediaInsight(userId, encodeURIComponent(postUrl))
-        );
-
-        if (response.data?.video && response.data?.insight) {
-          // NEW: Extract the additional data from the simplified backend response
-          const { video, insight, previousPost, changes, hasPreviousPost } = response.data;
-
-          // Extract current metrics
-          const currentMetricsMap = {};
-          insight.forEach(item => {
-            currentMetricsMap[item.name] = item.value;
-          });
-
-          const currentMetrics = {
-            views: currentMetricsMap.views || 0,
-            likes: video.like_count || currentMetricsMap.likes || 0,
-            comments: video.comments_count || currentMetricsMap.comments || 0,
-            saved: currentMetricsMap.saved || 0,
-            shares: currentMetricsMap.shares || 0,
-            reach: currentMetricsMap.reach || 0,
-            total_interactions: currentMetricsMap.total_interactions || 0,
-            profile_visits: currentMetricsMap.profile_visits || 0
-          };
-
-          setContent(prev => ({
-            ...prev,
-            account: 'Instagram',
-            contentType: parsedUrl.type,
-            datePosted: fDate(video.timestamp),
-            mediaUrl: video.media_url,
-            metrics: currentMetrics,
-            // NEW: Add the previous post data and changes
-            previousMetrics: previousPost || {},
-            changes: changes || {},
-            hasPreviousPost: hasPreviousPost || false,
-            videoData: video,
-            insightData: insight,
-          }));
-        } else {
-          throw new Error('No video data found for this URL');
-        }
-      } else if (parsedUrl.platform === 'TikTok') {
-        // Keep your existing TikTok logic without previous post comparison for now
-        const response = await axiosInstance.get(
-          endpoints.creators.social.getTikTokMediaInsight(userId, encodeURIComponent(postUrl))
-        );
-
-        if (response.data?.video && response.data?.insight) {
-          const { video, insight } = response.data;
-
-          const metricsMap = {};
-          insight.forEach(item => {
-            metricsMap[item.name] = item.value;
-          });
-
-          setContent(prev => ({
-            ...prev,
-            account: 'TikTok',
-            contentType: parsedUrl.type,
-            datePosted: fDate(video.timestamp),
-            mediaUrl: video.cover_image_url,
-            metrics: {
-              likes: video.like_count || metricsMap.likes || 0,
-              comments: video.comment_count || metricsMap.comments || 0,
-              views: video.view_count || metricsMap.views || 0,
-              saved: 0,
-              shares: video.share_count || metricsMap.shares || 0,
-              reach: 0,
-              total_interactions: metricsMap.total_interactions || 0,
-              profile_visits: 0
-            },
-            // No previous post comparison for TikTok yet
-            hasPreviousPost: false,
-            changes: {},
-            videoData: video,
-            insightData: insight,
-          }));
-        } else {
-          throw new Error('No TikTok video data found for this URL');
-        }
-      } else {
-        throw new Error('Unsupported platform');
-      }
-    } catch (error) {
-      console.error('Error fetching content:', error);
-      setContent(prev => ({
-        ...prev,
-        error: error.response?.data?.message || error.message || 'Failed to fetch content data. Please try again.',
-      }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Get URL parameters on component mount
-  useEffect(() => {
-    const urlParam = searchParams.get('url');
-    const creatorName = searchParams.get('creatorName');
-    const campaignName = searchParams.get('campaignName');
-    const userId = searchParams.get('userId');
-
-    console.log('url param: ', urlParam);
-    console.log('user id: ', userId);
-    console.log('creatorName: ', creatorName);
-    console.log('campaignName: ', campaignName);
-
-    if (urlParam && userId) {
-      setUrl(urlParam);
-      // Store additional parameters for context
-      setContent(prev => ({
-        ...prev,
-        creatorName: creatorName || '',
-        campaignName: campaignName || '',
-        creatorId: userId || '',
-      }));
-
-      // Parse the URL and fetch data
-      const parsedUrl = parseContentUrl(urlParam);
-      if (parsedUrl) {
-        fetchContentData(urlParam, userId);
-      }
-    }
-  }, [searchParams, fetchContentData]);
-
   const parseContentUrl = (inputUrl) => {
     try {
       const urlObj = new URL(inputUrl);
 
       // Instagram
       if (urlObj.hostname.includes('instagram.com')) {
-        // Get the shortcode from Instagram URL
         let shortcode = '';
 
         if (urlObj.pathname.includes('/reel/')) {
@@ -209,7 +71,6 @@ const ReportingView = () => {
 
       // TikTok
       if (urlObj.hostname.includes('tiktok.com')) {
-        // TikTok URL can be in different formats
         if (urlObj.pathname.includes('/video/')) {
           const videoId = urlObj.pathname.split('/video/')[1].split('?')[0];
           return {
@@ -219,7 +80,6 @@ const ReportingView = () => {
           };
         }
         if (urlObj.pathname.match(/\/@[^/]+\/[^/]+/)) {
-          // Handle format like /@username/video/1234567890
           const videoId = urlObj.pathname.split('/').pop().split('?')[0];
           return {
             platform: 'TikTok',
@@ -247,72 +107,248 @@ const ReportingView = () => {
     };
   };
 
+  // Fetch content data using the media insight endpoint
+  const fetchContentData = useCallback(async (postUrl, userId) => {
+    setLoading(true);
+    setContent(prev => ({ ...prev, error: null }));
+
+    try {
+      const parsedUrl = parseContentUrl(postUrl);
+
+      if (!parsedUrl) {
+        throw new Error('Invalid or unsupported URL format');
+      }
+
+      if (parsedUrl.platform === 'Instagram') {
+        const response = await axiosInstance.get(
+          endpoints.creators.social.getInstagramMediaInsight(userId, encodeURIComponent(postUrl))
+        );
+
+        if (response.data?.video && response.data?.insight) {
+          const { video, insight, previousPost, changes, hasPreviousPost } = response.data;
+
+          const currentMetricsMap = {};
+          insight.forEach(item => {
+            currentMetricsMap[item.name] = item.value;
+          });
+
+          const currentMetrics = {
+            views: currentMetricsMap.views || 0,
+            likes: video.like_count || currentMetricsMap.likes || 0,
+            comments: video.comments_count || currentMetricsMap.comments || 0,
+            saved: currentMetricsMap.saved || 0,
+            shares: currentMetricsMap.shares || 0,
+            reach: currentMetricsMap.reach || 0,
+            total_interactions: currentMetricsMap.total_interactions || 0,
+          };
+
+          setContent(prev => ({
+            ...prev,
+            account: 'Instagram',
+            contentType: parsedUrl.type,
+            datePosted: fDate(video.timestamp),
+            mediaUrl: video.thumbnail_url,
+            metrics: currentMetrics,
+            previousMetrics: previousPost || {},
+            changes: changes || {},
+            hasPreviousPost: hasPreviousPost || false,
+            videoData: video,
+            insightData: insight,
+          }));
+        } else {
+          throw new Error('No video data found for this URL');
+        }
+      } else if (parsedUrl.platform === 'TikTok') {
+        const response = await axiosInstance.get(
+          endpoints.creators.social.getTikTokMediaInsight(userId, encodeURIComponent(postUrl))
+        );
+
+        if (response.data?.video && response.data?.insight) {
+          const { video, insight } = response.data;
+
+          const metricsMap = {};
+          insight.forEach(item => {
+            metricsMap[item.name] = item.value;
+          });
+
+          setContent(prev => ({
+            ...prev,
+            account: 'TikTok',
+            contentType: parsedUrl.type,
+            datePosted: fDate(video.timestamp),
+            mediaUrl: video.cover_image_url,
+            metrics: {
+              likes: video.like_count || metricsMap.likes || 0,
+              comments: video.comment_count || metricsMap.comments || 0,
+              views: video.view_count || metricsMap.views || 0,
+              shares: video.share_count || metricsMap.shares || 0,
+              total_interactions: metricsMap.total_interactions || 0,
+            },
+            hasPreviousPost: false,
+            changes: {},
+            videoData: video,
+            insightData: insight,
+          }));
+        } else {
+          throw new Error('No TikTok video data found for this URL');
+        }
+      } else {
+        throw new Error('Unsupported platform');
+      }
+    } catch (error) {
+      console.error('Error fetching content:', error);
+      setContent(prev => ({
+        ...prev,
+        error: error.response?.data?.message || error.message || 'Failed to fetch content data. Please try again.',
+      }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const urlParam = searchParams.get('url');
+    const creatorName = searchParams.get('creatorName');
+    const campaignName = searchParams.get('campaignName');
+    const userId = searchParams.get('userId');
+
+    if (urlParam && userId) {
+      setUrl(urlParam);
+      setContent(prev => ({
+        ...prev,
+        creatorName: creatorName || '',
+        campaignName: campaignName || '',
+        creatorId: userId || '',
+      }));
+
+      const parsedUrl = parseContentUrl(urlParam);
+      if (parsedUrl) {
+        fetchContentData(urlParam, userId);
+      }
+    }
+  }, [searchParams, fetchContentData]);
+
   const handleBack = () => {
-    // Navigate back to the report list page
     navigate('/dashboard/report');
   };
 
-  const renderStatBar = ({ label, value, maxValue }) => {
-    // Default to 0 if value is undefined or null
+  const renderCircularStat = ({ width, label, value, averageValue, isAboveAverage, percentageDiff }) => {
     const displayValue = value || 0;
-
-    // Calculate progress values based on the highest possible value among all metrics
-    // This ensures the bar length accurately reflects the value proportionally
-    const getProgressValue = (val) => maxValue > 0 ? (val / maxValue) * 100 : 0;
+    const avgValue = averageValue || 0;
+    
+    const maxVal = Math.max(displayValue, avgValue) * 1.2;
+    const currentProgress = maxVal > 0 ? (displayValue / maxVal) * 100 : 0;
+    const averageProgress = maxVal > 0 ? (avgValue / maxVal) * 100 : 0;
 
     return (
-      <Box sx={{ width: '80%' }}>
-        {/* Label in gray, large italic font */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', sm: 'center', md: 'center' }, width: '100%' }}>
         <Typography
           sx={{
-            fontSize: 32,
-            fontStyle: 'italic',
-            color: '#777',
-            fontFamily: 'Aileron',
+            width: width ? width : '50%',
+            fontSize: 24,
+            fontWeight: 600,
+            color: '#000',
+            mb: 2,
+            alignSelf: 'center'
           }}
         >
           {label}
         </Typography>
 
-        <Box sx={{ position: 'relative', width: '100%' }}>
-          {/* Blue progress bar */}
-          <LinearProgress
+        <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2, width: 157, height: 157 }}>
+          <CircularProgress
             variant="determinate"
-            value={getProgressValue(displayValue)}
+            value={100}
+            size={157}
+            thickness={6}
             sx={{
-              width: '100%',
-              height: 45,
-              borderRadius: 50,
-              backgroundColor: '#e0e0e0',
-              '& .MuiLinearProgress-bar': {
-                backgroundColor: '#0066FF',
-                borderRadius: 50,
-              },
+              color: '#e0e0e0',
+              position: 'absolute',
             }}
           />
-
-          {/* Number positioned to the right of the bar */}
-          <Typography
+          
+          <CircularProgress
+            variant="determinate"
+            value={averageProgress}
+            size={157}
+            thickness={6}
             sx={{
+              color: '#bbb',
               position: 'absolute',
-              right: -70, // Adjust this value to position the number correctly
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: 24,
-              fontWeight: 400,
-              color: '#555',
-              ml: 2,
+            }}
+          />
+          
+          <CircularProgress
+            variant="determinate"
+            value={currentProgress}
+            size={157}
+            thickness={6}
+            sx={{
+              color: '#0066FF',
+            }}
+          />
+          
+          <Box
+            sx={{
+              top: 0,
+              left: 0,
+              bottom: 0,
+              right: 0,
+              position: 'absolute',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {displayValue}
-          </Typography>
+            <Typography
+              sx={{
+                fontFamily: '"Instrument Serif", serif',
+                fontWeight: 400,
+                fontSize: 36,
+                lineHeight: '28px',
+                letterSpacing: '0%',
+                textAlign: 'center',
+                color: '#0066FF',
+              }}
+            >
+              {displayValue}
+            </Typography>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+              <Iconify
+                icon={isAboveAverage ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+                color={isAboveAverage ? '#4CAF50' : '#F44336'}
+                width={16}
+                height={16}
+              />
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: isAboveAverage ? '#4CAF50' : '#F44336',
+                  ml: 0.5,
+                }}
+              >
+                {percentageDiff}% from
+              </Typography>
+            </Box>
+            
+            <Typography
+              sx={{
+                fontSize: 12,
+                color: '#666',
+                textAlign: 'center',
+              }}
+            >
+              average creator
+            </Typography>
+          </Box>
         </Box>
       </Box>
     );
   };
 
-  const renderEngagementCard = ({ icon, title, value }) => {
-    // For Instagram posts with previous post data
+  const renderEngagementCard = ({ height, icon, title, value }) => {
     const metricKey = title.toLowerCase();
     const actualChange = content.changes?.[metricKey];
     const hasPreviousData = content.hasPreviousPost && actualChange !== undefined;
@@ -332,77 +368,127 @@ const ReportingView = () => {
     }
 
     return (
-      <Grid item xs={6} sm={3}>
-        <Paper
-          elevation={0}
+      <Box
+        elevation={0}
+        sx={{
+          height: height ? height : 116,
+          backgroundColor: '#f0f0f0',
+          borderRadius: '20px',
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr',
+          gridTemplateRows: '1fr 1fr',
+          p: 2,
+        }}
+      >
+        <Box
           sx={{
-            backgroundColor: '#f0f0f0',
-            borderRadius: 2,
-            padding: 2,
+            display: 'flex',
+            ml: 10
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <Box
-              sx={{
-                backgroundColor: '#0066FF',
-                borderRadius: 1,
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mr: 1,
-              }}
-            >
-              <Iconify icon={icon} color="#fff" width={18} height={18} />
-            </Box>
-            <Typography sx={{ fontSize: 14, color: '#666' }}>{title}</Typography>
+          <Box
+            sx={{
+              backgroundColor: '#0066FF',
+              borderRadius: 1,
+              width: 44,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Iconify 
+              icon={icon} 
+              color="#fff" 
+              width={24} 
+              height={24} 
+            />
           </Box>
+        </Box>
 
-          <Typography sx={{ fontSize: 20, fontWeight: 600, color: '#000' }}>
-            {typeof value === 'number' ? value.toLocaleString() : value}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <Typography 
+            sx={{ 
+              fontSize: 24,
+              color: '#666',
+              textAlign: 'right',
+            }}
+          >
+            {title}
           </Typography>
+        </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            pr: { xs: 1, sm: 2 },
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >            
             {hasPreviousData && actualChange !== 0 && (
               <Iconify
                 icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
                 color={changeIsPositive ? '#4CAF50' : '#F44336'}
-                width={14}
-                height={14}
+                width={{ xs: 12, sm: 18 }}
+                height={{ xs: 12, sm: 18 }}
               />
             )}
             <Typography
               sx={{
-                fontSize: 12,
+                fontSize: 18,
                 color: (() => {
                   if (!hasPreviousData) return '#999';
                   if (actualChange === 0) return '#666';
                   return changeIsPositive ? '#4CAF50' : '#F44336';
                 })(),
                 ml: hasPreviousData && actualChange !== 0 ? 0.5 : 0,
+                lineHeight: 1.2,
+                whiteSpace: { xs: 'normal', sm: 'nowrap' },
               }}
             >
               {changeDisplay} from last post
             </Typography>
           </Box>
-        </Paper>
-      </Grid>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <Typography 
+            sx={{ 
+              fontSize: 24,
+              fontWeight: 600, 
+              color: '#000',
+              textAlign: 'right',
+            }}
+          >
+            {typeof value === 'number' ? value.toLocaleString() : value}
+          </Typography>
+        </Box>
+      </Box>
     );
   };
 
   const renderContentDetails = () => {
     if (!content.account) return null;
-
-    // Calculate the maximum value from all three metrics for proportional scaling
-    const statsData = [
-      { label: 'Profile Visits', value: content.metrics?.shares || 0 },
-      { label: 'Shares', value: content.metrics?.shares || 0 },
-      { label: 'Interactions', value: content.metrics?.total_interactions || 0 },
-      { label: 'Reach', value: content.metrics?.reach || 0 }
-    ];
-    
-    const maxValue = 100
 
     return (
       <Box sx={{ mt: 4 }}>
@@ -417,201 +503,20 @@ const ReportingView = () => {
           Selected Content
         </Typography>
 
-        <Grid container spacing={3}>
-          {/* Content Image and Caption */}
-          <Grid item xs={12} md={5}>
-            <Card
-              sx={{
-                borderRadius: 0, // Sharp corners
-                overflow: 'hidden',
-                height: 'auto', // Changed from 100% to auto
-                boxShadow: 'none',
-                border: '1px solid #eee',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <Box
-                component="img"
-                src={content.videoData.media_url}
-                alt={content.videoData.caption || 'Content'}
-                sx={{
-                  width: '100%',
-                  objectFit: 'cover',
-                  display: 'block', // Removes any extra spacing
-                }}
-              />
-              <Box
-                sx={{
-                  p: 2,
-                  borderTop: '1px solid #eee', // Add a subtle separator
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontSize: 14,
-                    color: '#333',
-                    mb: 0,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {content.videoData.caption} || {}
-                </Typography>
-              </Box>
-            </Card>
-          </Grid>
-
-          {/* Content Stats */}
-          <Grid item xs={12} md={7}>
-            {/* Account, Content Type, Date Posted Row */}
-            <Box
-              sx={{
-                display: 'flex',
-                mb: 3,
-                pb: 2,
-              }}
-            >
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <Typography sx={{ fontSize: 20, color: '#666', mb: 1 }}>Account</Typography>
-                <Typography
-                  sx={{
-                    fontSize: 36,
-                    color: '#0066FF',
-                    fontWeight: 400,
-                    fontFamily: '"Instrument Serif", serif',
-                  }}
-                >
-                  {content.account}
-                </Typography>
-              </Box>
-
-              <Divider
-                orientation="vertical"
-                flexItem
-                sx={{ mx: 2, borderColor: '#0066FF', borderWidth: 0.5 }}
-              />
-
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <Typography sx={{ fontSize: 20, color: '#666', mb: 1 }}>Content Type</Typography>
-                <Typography
-                  sx={{
-                    fontSize: 36,
-                    color: '#0066FF',
-                    fontWeight: 400,
-                    fontFamily: '"Instrument Serif", serif',
-                  }}
-                >
-                  {content.contentType}
-                </Typography>
-              </Box>
-
-              <Divider
-                orientation="vertical"
-                flexItem
-                sx={{ mx: 2, borderColor: '#0066FF', borderWidth: 0.5 }}
-              />
-
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <Typography sx={{ fontSize: 20, color: '#666', mb: 1 }}>Date Posted</Typography>
-                <Typography
-                  sx={{
-                    fontSize: 36,
-                    color: '#0066FF',
-                    fontWeight: 400,
-                    fontFamily: '"Instrument Serif", serif',
-                  }}
-                >
-                  {content.datePosted}
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Stats bars section */}
-            <Typography
-              variant="h5"
-              sx={{
-                fontSize: 24,
-                fontWeight: 600,
-              }}
-            >
-              Content Statistics
-            </Typography>
-
-            {/* Stats bars */}
-            <Box
-              sx={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 3,
-                py: 2,
-              }}
-            >
-              {renderStatBar({
-                label: 'Profile Visits',
-                value: content.metrics?.profile_visits || 0,
-                maxValue
-              })}
-
-              {renderStatBar({
-                label: 'Shares',
-                value: content.metrics?.shares || 0,
-                maxValue
-              })}
-
-              {renderStatBar({
-                label: 'Interactions',
-                value: content.metrics?.total_interactions || 0,
-                maxValue
-              })}
-
-              {renderStatBar({
-                label: 'Reach',
-                value: content.metrics?.reach || 0,
-                maxValue
-              })}
-            </Box>
-          </Grid>
-        </Grid>
-
-        {/* Content Engagement Section */}
-        <Box sx={{ mt: 6, mb: 4 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontSize: 20,
-              fontWeight: 600,
-              mb: 3,
-            }}
-          >
-            Content Engagement
-          </Typography>
-
-          <Grid container spacing={2}>
-            {renderEngagementCard({
-              icon: 'mdi:eye',
-              title: 'Views',
-              value: content.metrics?.views || 0,
-            })}
-
-            {renderEngagementCard({
-              icon: 'mdi:heart',
-              title: 'Likes',
-              value: content.metrics?.likes || 0,
-            })}
-
-            {renderEngagementCard({
-              icon: 'mdi:comment',
-              title: 'Comments',
-              value: content.metrics?.comments || 0,
-            })}
-
-            {renderEngagementCard({
-              icon: 'mdi:bookmark',
-              title: 'Saved',
-              value: content.metrics?.saved || 0,
-            })}
-          </Grid>
-        </Box>
+        {/* Conditionally render platform-specific layouts */}
+        {content.account === 'Instagram' ? (
+          <InstagramLayout
+            content={content}
+            renderEngagementCard={renderEngagementCard}
+            renderCircularStat={renderCircularStat}
+          />
+        ) : content.account === 'TikTok' ? (
+          <TikTokLayout
+            content={content}
+            renderEngagementCard={renderEngagementCard}
+            renderCircularStat={renderCircularStat}
+          />
+        ) : null}
       </Box>
     );
   };
@@ -680,7 +585,6 @@ const ReportingView = () => {
               alignSelf: { xs: 'flex-start', md: 'center' },
             }}
           />
-
         </Stack>
       </Stack>
 
