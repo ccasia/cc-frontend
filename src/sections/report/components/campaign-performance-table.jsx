@@ -35,7 +35,13 @@ const CampaignPerformanceTable = () => {
         submissionId: submission.id,
         campaignId: submission.campaignId,
         userId: submission.user?.id,
-      }));
+      }))
+      .sort((a, b) => {
+        // First sort by campaign name
+        const campaignCompare = a.campaignName.localeCompare(b.campaignName);
+        // If campaign names are the same, sort by creator name
+        return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
+      });
 
   }, [submissionData]);
 
