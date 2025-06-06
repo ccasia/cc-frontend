@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router';
+
 import {
+  Box,
   Avatar,
   Button,
   Typography,
-  Box,
   CircularProgress
 } from '@mui/material';
+
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
-import { useNavigate } from 'react-router';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
@@ -132,7 +134,7 @@ const CampaignPerformanceTable = () => {
                   color: '#666',
                 }}
               >
-                Creator's Email
+                Creator&apos;s Email
               </Typography>
             </Box>
             <Box sx={{ flex: '0 0 30%' }}>

@@ -44,8 +44,8 @@ import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
-import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
+import CampaignTabsMobile from 'src/components/campaign/CampaignTabsMobile';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 
@@ -103,42 +103,79 @@ const CampaignDetailView = ({ id }) => {
 
   const open = Boolean(anchorEl);
 
-  console.log('campaignid', campaign);
+  // console.log('campaignid', campaign);
 
-  // Add this campaign to tabs and save to localStorage
-  // useEffect(() => {
-  //   if (id && window.campaignTabs) {
-  //     if (!window.campaignTabs.some(tab => tab.id === id)) {
-  //       // Wait for campaign data to get the name if available
-  //       const tabName = campaign ? campaign.name || 'Campaign Details' : 'Campaign Details';
+  // Add this campaign to tabs only when opened via "Open in New Tab"
+  useEffect(() => {
+    if (id && campaign) {
+      // Check if this campaign was opened as a tab (via "Open in New Tab")
+      const urlParams = new URLSearchParams(location.search);
+      const openAsTab = urlParams.get('openAsTab');
+      
+      // Only add to tabs if explicitly opened as a tab
+      if (openAsTab === 'true') {
+        // Ensure campaignTabs exists
+        if (!window.campaignTabs) {
+          window.campaignTabs = [];
+        }
         
-  //       window.campaignTabs.push({
-  //         id,
-  //         name: tabName
-  //       });
+        const campaignName = campaign.name || 'Campaign Details';
         
-  //       // Add status information to the global campaignTabsStatus
-  //       if (campaign && campaign.status) {
-  //         // Initialize campaignTabsStatus if it doesn't exist
-  //         if (!window.campaignTabsStatus) {
-  //           window.campaignTabsStatus = {};
-  //         }
+        // Check if this campaign is already in campaignTabs
+        const tabExists = window.campaignTabs.some(tab => tab.id === id);
+        
+        if (!tabExists) {
+          // Add to campaignTabs
+          window.campaignTabs.push({
+            id,
+            name: campaignName
+          });
           
-  //         // Store the campaign status
-  //         window.campaignTabsStatus[id] = {
-  //           status: campaign.status
-  //         };
-  //       }
+          // Update status tracking for tabs
+          if (!window.campaignTabsStatus) {
+            window.campaignTabsStatus = {};
+          }
+          
+          window.campaignTabsStatus[id] = {
+            status: campaign.status
+          };
+          
+          // Save to localStorage
+          try {
+            localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
+          } catch (error) {
+            console.error('Error saving campaign tabs to localStorage:', error);
+          }
+        } else {
+          // Update existing tab with current campaign name and status
+          window.campaignTabs = window.campaignTabs.map(tab => {
+            if (tab.id === id) {
+              return { ...tab, name: campaignName };
+            }
+            return tab;
+          });
+          
+          if (window.campaignTabsStatus) {
+            window.campaignTabsStatus[id] = {
+              status: campaign.status
+            };
+          }
+          
+          // Save to localStorage
+          try {
+            localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
+          } catch (error) {
+            console.error('Error saving campaign tabs to localStorage:', error);
+          }
+        }
         
-  //       // Save to localStorage
-  //       try {
-  //         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
-  //       } catch (error) {
-  //         console.error('Error saving campaign tabs to localStorage:', error);
-  //       }
-  //     }
-  //   }
-  // }, [id, campaign]);
+        // Clean up the URL parameter after processing
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.delete('openAsTab');
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [id, campaign, location.search]);
 
   useEffect(() => {
     if (!campaignLoading && campaign) {
@@ -212,44 +249,40 @@ const CampaignDetailView = ({ id }) => {
 
   const renderTabs = (
     <Box sx={{ mt: 2, mb: 2.5 }}>
-      <Stack
-        direction="row"
-        spacing={0.5}
+      {/* Main Controls Container */}
+      <Box
         sx={{
-          position: 'relative',
-          width: '100%',
-          overflowX: 'auto',
-          '&::-webkit-scrollbar': { display: 'none' },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '1px',
-            bgcolor: 'divider',
-          },
+          border: '1px solid #e7e7e7',
+          borderRadius: 1,
+          p: 1,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          justifyContent: 'space-between',
+          gap: { xs: 1.5, md: 1.5 },
+          bgcolor: 'background.paper',
         }}
       >
+        {/* Tab Buttons */}
         <Stack
           direction="row"
           spacing={1}
           sx={{
-            width: { xs: '100%', sm: 'auto' },
+            flex: { xs: 'none', md: '1 1 auto' },
             overflowX: 'auto',
             scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
           }}
         >
           {[
             { label: 'Overview', value: 'overview' },
             { label: 'Campaign Details', value: 'campaign-content' },
-            // { label: 'Client Info', value: 'client' },
             {
               label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
               value: 'pitch',
             },
             {
-              label: `Shortlisted Creators (${campaign?.shortlisted?.length || 0})`,
+              label: `Shortlisted (${campaign?.shortlisted?.length || 0})`,
               value: 'creator',
             },
             {
@@ -257,7 +290,7 @@ const CampaignDetailView = ({ id }) => {
               value: 'agreement',
             },
             {
-              label: `Creator Deliverables`,
+              label: `Deliverables`,
               value: 'deliverables',
             },
             {
@@ -271,57 +304,52 @@ const CampaignDetailView = ({ id }) => {
           ].map((tab) => (
             <Button
               key={tab.value}
-              disableRipple
-              size="large"
               onClick={() => handleChangeTab(null, tab.value)}
               sx={{
-                px: { xs: 1, sm: 1.5 },
-                py: 0.5,
-                pb: 1,
+                px: 2,
+                py: 1,
+                minHeight: '38px',
+                height: '38px',
                 minWidth: 'fit-content',
-                color: currentTab === tab.value ? '#221f20' : '#8e8e93',
+                color: currentTab === tab.value ? '#ffffff' : '#666666',
+                bgcolor: currentTab === tab.value ? '#1340ff' : 'transparent',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                borderRadius: 0.75,
+                textTransform: 'none',
                 position: 'relative',
-                fontSize: { xs: '0.9rem', sm: '1.05rem' },
-                fontWeight: 650,
+                transition: 'all 0.2s ease',
                 whiteSpace: 'nowrap',
-                mr: { xs: 1, sm: 2 },
-                transition: 'transform 0.1s ease-in-out',
-                '&:focus': {
-                  outline: 'none',
-                  bgcolor: 'transparent',
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                  bgcolor: 'transparent',
-                },
-                '&::after': {
+                '&::before': {
                   content: '""',
                   position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: '2px',
-                  width: currentTab === tab.value ? '100%' : '0%',
-                  bgcolor: '#1340ff',
-                  transition: 'all 0.3s ease-in-out',
-                  transform: 'scaleX(1)',
-                  transformOrigin: 'left',
+                  top: '1px',
+                  left: '1px',
+                  right: '1px',
+                  bottom: '1px',
+                  borderRadius: 0.75,
+                  backgroundColor: 'transparent',
+                  transition: 'background-color 0.2s ease',
+                  zIndex: -1,
+                },
+                '&:hover::before': {
+                  backgroundColor: currentTab === tab.value ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
                 },
                 '&:hover': {
-                  bgcolor: 'transparent',
-                  '&::after': {
-                    width: '100%',
-                    opacity: currentTab === tab.value ? 1 : 0.5,
-                  },
+                  bgcolor: currentTab === tab.value ? '#1340ff' : 'transparent',
+                  color: currentTab === tab.value ? '#ffffff' : '#1340ff',
+                  transform: 'scale(0.98)',
                 },
-                // mr: 2,
+                '&:focus': {
+                  outline: 'none',
+                },
               }}
             >
               {tab.label}
             </Button>
           ))}
         </Stack>
-      </Stack>
+      </Box>
     </Box>
   );
 
@@ -379,7 +407,7 @@ const CampaignDetailView = ({ id }) => {
   }, [loading, copyDialog, campaignMutate, campaign]);
 
   const renderTabContent = {
-    overview: <CampaignOverview campaign={campaign} />,
+    overview: <CampaignOverview campaign={campaign} onUpdate={campaignMutate} />,
     'campaign-content': <CampaignDetailContent campaign={campaign} />,
     creator: <CampaignDetailCreator campaign={campaign} campaignMutate={campaignMutate} />,
     agreement: <CampaignAgreements campaign={campaign} campaignMutate={campaignMutate} />,
@@ -560,168 +588,274 @@ const CampaignDetailView = ({ id }) => {
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
       sx={{
-        px: { xs: 2, sm: 5 },
+        px: { xs: 2, sm: 3, md: 4 },
       }}
     >
+      {/* Mobile Campaign Tabs - Only show on smaller screens */}
+      <Box sx={{ display: { xs: 'block', lg: 'none' }, mb: 2 }}>
+        <CampaignTabsMobile filter={campaign?.status?.toLowerCase() || 'active'} />
+      </Box>
+
       <Stack spacing={1}>
-        <Button
-          color="inherit"
-          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-          onClick={() => router.push(paths.dashboard.campaign.root)}
+        {/* Campaign Header */}
+        <Box
           sx={{
-            alignSelf: 'flex-start',
-            color: '#636366',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
+            // border: '1px solid #e7e7e7',
+            borderRadius: 1,
+            p: { xs: 2, sm: 2.5 },
+            bgcolor: 'background.paper',
           }}
         >
-          Back
-        </Button>
-
-        {/* Campaign Tabs */}
-        <CampaignTabs filter={campaign?.status?.toLowerCase()} />
-
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          alignItems="center"
-          justifyContent="space-between"
-          spacing={2}
-          width="100%"
-          sx={{ mt: -1 }}
-        >
-          <Stack direction="row" alignItems="center" spacing={2}>
-            {campaign?.campaignBrief?.images?.[0] && (
-              <img
-                src={campaign?.campaignBrief.images[0]}
-                alt={campaign?.name}
-                style={{
-                  width: '100%',
-                  maxWidth: 80,
-                  height: 'auto',
-                  borderRadius: '12px',
-                  border: '1px solid #e0e0e0',
-                  objectFit: 'cover',
-                }}
-              />
-            )}
-            <Typography
-              variant="h5"
+          {/* Back Button - Positioned above the main header */}
+          <Box sx={{ mb: 1.5 }}>
+            <Button
+              onClick={() => router.push(paths.dashboard.campaign.root)}
+              startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={16} />}
               sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.5rem', sm: '2rem', md: '2.4rem' },
-                fontWeight: 550,
+                color: '#636366',
+                bgcolor: 'transparent',
+                border: 'none',
+                px: 0,
+                py: 0.5,
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                textTransform: 'none',
+                minHeight: 'auto',
+                '&:hover': {
+                  bgcolor: 'transparent',
+                  color: '#1340ff',
+                  '& .MuiButton-startIcon': {
+                    transform: 'translateX(-2px)',
+                  },
+                },
+                '& .MuiButton-startIcon': {
+                  marginRight: 0.5,
+                  transition: 'transform 0.2s ease',
+                },
+                transition: 'color 0.2s ease',
               }}
             >
-              {campaign?.name || 'Campaign Detail'}
-            </Typography>
-          </Stack>
+              Back to Campaigns
+            </Button>
+          </Box>
 
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
-            alignItems={{ xs: 'stretch', sm: 'center' }}
-            spacing={{ xs: 1, sm: 0 }}
-            width={{ xs: '100%', sm: 'auto' }}
-            justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            justifyContent="space-between"
+            spacing={{ xs: 1.5, sm: 2 }}
+            width="100%"
           >
-            <Stack
-              alignItems={{ xs: 'flex-start', sm: 'flex-end' }}
-              spacing={0}
-              justifyContent="center"
-              sx={{ minHeight: { sm: '76px' } }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  color: '#8e8e93',
-                  fontWeight: 500,
-                  fontSize: { xs: '0.75rem', sm: '0.9rem' },
-                  letterSpacing: '0.5px',
-                }}
-              >
-                CAMPAIGN PERIOD:
-              </Typography>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 500,
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                }}
-              >
-                {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
-                {formatDate(campaign?.campaignBrief?.endDate)}
-              </Typography>
+            {/* Left Section - Campaign Image and Info */}
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ flex: 1 }}>
+              {/* Campaign Image */}
+              {campaign?.campaignBrief?.images?.[0] && (
+                <Box
+                  component="img"
+                  src={campaign?.campaignBrief.images[0]}
+                  alt={campaign?.name}
+                  sx={{
+                    width: { xs: 70, sm: 80 },
+                    height: { xs: 70, sm: 80 },
+                    borderRadius: 1.5,
+                    border: '1px solid #e0e0e0',
+                    objectFit: 'cover',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                  }}
+                />
+              )}
+
+              {/* Campaign Title and Basic Info */}
+              <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontFamily: 'Instrument Serif, serif',
+                    fontSize: { xs: '1.625rem', sm: '2rem', md: '2.125rem' },
+                    fontWeight: 500,
+                    color: '#1a1a1a',
+                    lineHeight: 1.1,
+                    wordBreak: 'break-word',
+                    mb: 0.125,
+                  }}
+                >
+                  {campaign?.name || 'Campaign Detail'}
+                </Typography>
+                
+                {/* Company Info */}
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.125 }}>
+                  {campaign?.company?.logo && (
+                    <Box
+                      component="img"
+                      src={campaign?.company?.logo}
+                      alt={campaign?.company?.name}
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: 0.5,
+                        objectFit: 'cover',
+                      }}
+                    />
+                  )}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#666666',
+                      fontWeight: 500,
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    {campaign?.company?.name || campaign?.brand?.name}
+                  </Typography>
+                </Stack>
+
+                {/* Compact Campaign Period */}
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Stack direction="row" alignItems="center" spacing={0.75}>
+                    <Box
+                      component="img"
+                      src="/assets/icons/navbar/ic_calendar_new.svg"
+                      alt="calendar"
+                      sx={{ 
+                        width: 16,
+                        height: 16,
+                        mb: 0.25,
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#221f20',
+                        fontWeight: 500,
+                        fontSize: '0.85rem',
+                      }}
+                    >
+                      {formatDate(campaign?.campaignBrief?.startDate)} - {formatDate(campaign?.campaignBrief?.endDate)}
+                    </Typography>
+                  </Stack>
+                  
+                  {/* Compact Status Badge */}
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 0.75,
+                      bgcolor: campaign?.status === 'ACTIVE' ? '#ecfdf5' : '#fef3c7',
+                      border: '1px solid',
+                      borderColor: campaign?.status === 'ACTIVE' ? '#d1fae5' : '#fde68a',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: '50%',
+                        bgcolor: campaign?.status === 'ACTIVE' ? '#10b981' : '#f59e0b',
+                        mr: 0.5,
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: campaign?.status === 'ACTIVE' ? '#065f46' : '#92400e',
+                        fontWeight: 600,
+                        fontSize: '0.7rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.3px',
+                      }}
+                    >
+                      {campaign?.status || 'Active'}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Stack>
             </Stack>
 
-            <Box
+            {/* Right Section - Action Buttons - Centered with content */}
+            <Stack
+              direction="row"
+              spacing={1}
               sx={{
-                height: '42px',
-                width: '1px',
-                backgroundColor: '#e7e7e7',
-                mx: 2,
-                display: { xs: 'none', sm: 'block' },
+                width: { xs: '100%', sm: 'auto' },
+                justifyContent: { xs: 'flex-end', sm: 'center' },
+                alignSelf: 'center',
               }}
-            />
-
-            <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+            >
               <Button
                 variant="outlined"
-                size="small"
                 startIcon={
-                  <img
-                    src="/assets/icons/overview/editButton.svg"
-                    alt="edit"
-                    style={{
-                      width: 20,
-                      height: 20,
-                      opacity: isDisabled ? 0.3 : 1,
-                    }}
+                  <Iconify 
+                    icon="solar:pen-bold" 
+                    width={15} 
+                    sx={{ 
+                      color: isDisabled ? '#9e9e9e' : '#1340ff',
+                    }} 
                   />
                 }
                 onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
                 disabled={isDisabled}
                 sx={{
-                  height: 42,
-                  borderRadius: 1,
-                  color: '#221f20',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid #e7e7e7',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
+                  bgcolor: isDisabled ? '#f5f5f5' : '#ffffff',
+                  color: isDisabled ? '#9e9e9e' : '#1340ff',
+                  border: '1px solid',
+                  borderColor: isDisabled ? '#e0e0e0' : '#1340ff',
+                  borderBottom: '2px solid',
+                  borderBottomColor: isDisabled ? '#e0e0e0' : '#1340ff',
+                  borderRadius: 0.75,
                   px: 2,
-                  whiteSpace: 'nowrap',
+                  py: 0.75,
+                  height: '36px',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                  }, 
+                    bgcolor: isDisabled ? '#f5f5f5' : '#f8f9ff',
+                    borderColor: isDisabled ? '#e0e0e0' : '#0f2db8',
+                    borderBottomColor: isDisabled ? '#e0e0e0' : '#0f2db8',
+                    transform: isDisabled ? 'none' : 'translateY(-1px)',
+                    boxShadow: isDisabled ? 'none' : '0 2px 8px rgba(19, 64, 255, 0.15)',
+                  },
+                  '&:focus': {
+                    outline: 'none',
+                  },
                 }}
               >
                 Edit Details
               </Button>
 
-              <Box
+              <Button
                 onClick={handleMenuOpen}
-                component="button"
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: 42,
-                  width: 42,
-                  borderRadius: 1,
-                  color: '#221f20',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '4px solid #e7e7e7',
-                  padding: 0,
-                  backgroundColor: 'transparent',
+                  bgcolor: '#ffffff',
+                  color: '#1340ff',
+                  border: '1px solid #1340ff',
+                  borderBottom: '2px solid #1340ff',
+                  borderRadius: 0.75,
+                  minWidth: 36,
+                  width: 36,
+                  height: 36,
+                  p: 0,
                   cursor: 'pointer',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                    border: '1px solid #231F20',
-                    borderBottom: '4px solid #231F20',
+                    bgcolor: '#f8f9ff',
+                    borderColor: '#0f2db8',
+                    borderBottomColor: '#0f2db8',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 8px rgba(19, 64, 255, 0.15)',
+                  },
+                  '&:focus': {
+                    outline: 'none',
                   },
                 }}
               >
-                <Iconify icon="eva:more-horizontal-fill" width={24} />
-              </Box>
+                <Iconify icon="eva:more-horizontal-fill" width={16} />
+              </Button>
 
               <Menu
                 anchorEl={menuAnchorEl}
@@ -729,12 +863,33 @@ const CampaignDetailView = ({ id }) => {
                 onClose={handleMenuClose}
                 PaperProps={{
                   sx: { 
-                    minWidth: 200,
-                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.1)'
+                    minWidth: 180,
+                    bgcolor: '#FFFFFF !important',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '2px solid #e7e7e7',
+                    borderRadius: 1,
+                    mt: 0.5,
+                    overflow: 'visible',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                    '& .MuiMenuItem-root': {
+                      backgroundColor: '#FFFFFF !important',
+                      '&:hover': {
+                        backgroundColor: '#FFFFFF !important',
+                      },
+                      '&.Mui-disabled': {
+                        backgroundColor: '#FFFFFF !important',
+                      },
+                    },
                   },
                 }}
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                MenuListProps={{
+                  sx: {
+                    p: 0.75,
+                    bgcolor: '#FFFFFF !important',
+                  },
+                }}
               >
                 {!isCampaignHasSpreadSheet ? (
                   <MenuItem
@@ -743,9 +898,44 @@ const CampaignDetailView = ({ id }) => {
                       handleMenuClose();
                     }}
                     disabled={isDisabled || loading.value}
-                    sx={{ py: 1 }}
+                    sx={{ 
+                      borderRadius: 0.75,
+                      mx: 0,
+                      my: 0.25,
+                      px: 1.5,
+                      py: 1,
+                      minHeight: 40,
+                      backgroundColor: '#FFFFFF !important',
+                      color: (isDisabled || loading.value) ? '#9e9e9e' : '#374151',
+                      fontWeight: 500,
+                      fontSize: '0.875rem',
+                      transition: 'all 0.2s ease',
+                      border: '1px solid transparent',
+                      '&:hover': {
+                        backgroundColor: '#FFFFFF !important',
+                        color: (isDisabled || loading.value) ? '#9e9e9e' : '#1340ff',
+                        border: '1px solid #e5e7eb',
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                      },
+                      '&.Mui-disabled': {
+                        opacity: 0.5,
+                        backgroundColor: '#FFFFFF !important',
+                      },
+                      '&.Mui-focusVisible': {
+                        backgroundColor: '#FFFFFF !important',
+                      },
+                    }}
                   >
-                    <Iconify icon="lucide:file-spreadsheet" width={16} sx={{ mr: 1.5 }} />
+                    <Iconify 
+                      icon="lucide:file-spreadsheet" 
+                      width={18} 
+                      height={18} 
+                      sx={{ 
+                        mr: 1.5,
+                        color: (isDisabled || loading.value) ? '#9e9e9e' : '#6b7280',
+                      }} 
+                    />
                     Generate Spreadsheet
                   </MenuItem>
                 ) : (
@@ -758,9 +948,44 @@ const CampaignDetailView = ({ id }) => {
                       handleMenuClose();
                     }}
                     disabled={!campaign?.spreadSheetURL}
-                    sx={{ py: 1 }}
+                    sx={{ 
+                      borderRadius: 0.75,
+                      mx: 0,
+                      my: 0.25,
+                      px: 1.5,
+                      py: 1,
+                      minHeight: 40,
+                      backgroundColor: '#FFFFFF !important',
+                      color: !campaign?.spreadSheetURL ? '#9e9e9e' : '#374151',
+                      fontWeight: 500,
+                      fontSize: '0.875rem',
+                      transition: 'all 0.2s ease',
+                      border: '1px solid transparent',
+                      '&:hover': {
+                        backgroundColor: '#FFFFFF !important',
+                        color: !campaign?.spreadSheetURL ? '#9e9e9e' : '#1340ff',
+                        border: '1px solid #e5e7eb',
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                      },
+                      '&.Mui-disabled': {
+                        opacity: 0.5,
+                        backgroundColor: '#FFFFFF !important',
+                      },
+                      '&.Mui-focusVisible': {
+                        backgroundColor: '#FFFFFF !important',
+                      },
+                    }}
                   >
-                    <Iconify icon="tabler:external-link" width={16} sx={{ mr: 1.5 }} />
+                    <Iconify 
+                      icon="eva:google-outline" 
+                      width={18} 
+                      height={18} 
+                      sx={{ 
+                        mr: 1.5,
+                        color: !campaign?.spreadSheetURL ? '#9e9e9e' : '#6b7280',
+                      }} 
+                    />
                     Google Spreadsheet
                   </MenuItem>
                 )}
@@ -769,12 +994,39 @@ const CampaignDetailView = ({ id }) => {
                     generatePublicUrl();
                     handleMenuClose();
                   }}
-                  sx={{ py: 1 }}
+                  sx={{ 
+                    borderRadius: 0.75,
+                    mx: 0,
+                    my: 0.25,
+                    px: 1.5,
+                    py: 1,
+                    minHeight: 40,
+                    backgroundColor: '#FFFFFF !important',
+                    color: '#374151',
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                    transition: 'all 0.2s ease',
+                    border: '1px solid transparent',
+                    '&:hover': {
+                      backgroundColor: '#FFFFFF !important',
+                      color: '#1340ff',
+                      border: '1px solid #e5e7eb',
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                    },
+                    '&.Mui-focusVisible': {
+                      backgroundColor: '#FFFFFF !important',
+                    },
+                  }}
                 >
-                  <img
-                    src="/assets/icons/overview/generateIcon.svg"
-                    alt="generate icon"
-                    style={{ width: 16, height: 16, marginRight: 12 }}
+                  <Iconify 
+                    icon="eva:link-2-outline" 
+                    width={18} 
+                    height={18} 
+                    sx={{ 
+                      mr: 1.5,
+                      color: '#6b7280',
+                    }} 
                   />
                   Generate URL
                 </MenuItem>
@@ -783,15 +1035,46 @@ const CampaignDetailView = ({ id }) => {
                     setCampaignLogIsOpen(true);
                     handleMenuClose();
                   }}
-                  sx={{ py: 1 }}
+                  sx={{ 
+                    borderRadius: 0.75,
+                    mx: 0,
+                    my: 0.25,
+                    px: 1.5,
+                    py: 1,
+                    minHeight: 40,
+                    backgroundColor: '#FFFFFF !important',
+                    color: '#374151',
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                    transition: 'all 0.2s ease',
+                    border: '1px solid transparent',
+                    '&:hover': {
+                      backgroundColor: '#FFFFFF !important',
+                      color: '#1340ff',
+                      border: '1px solid #e5e7eb',
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                    },
+                    '&.Mui-focusVisible': {
+                      backgroundColor: '#FFFFFF !important',
+                    },
+                  }}
                 >
-                  <Iconify icon="material-symbols:note-rounded" width={16} sx={{ mr: 1.5 }} />
+                  <Iconify 
+                    icon="eva:file-text-outline" 
+                    width={18} 
+                    height={18} 
+                    sx={{ 
+                      mr: 1.5,
+                      color: '#6b7280',
+                    }} 
+                  />
                   View Log
                 </MenuItem>
               </Menu>
             </Stack>
           </Stack>
-        </Stack>
+        </Box>
       </Stack>
 
       {renderTabs}

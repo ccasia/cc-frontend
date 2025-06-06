@@ -15,6 +15,7 @@ import {
   Dialog,
   Button,
   Avatar,
+  Tooltip,
   ListItem,
   TextField,
   Typography,
@@ -36,6 +37,8 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
+
+
 
 const guideSteps = [
   'Log in to Instagram.',
@@ -127,6 +130,13 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
+
+  // Preview approved submissions state
+  const previewApproved = useBoolean();
+  const [tabIndex, setTabIndex] = useState(0);
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [selectedRawFootageIndex, setSelectedRawFootageIndex] = useState(0);
 
   const renderGuide = (
     <Dialog open={dialog.value} onClose={dialog.onFalse}>
@@ -274,6 +284,53 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     setSubmitStatus('');
   };
 
+  // Get approved media from all submissions
+  const getApprovedSubmissions = useMemo(() => {
+    if (!fullSubmission || !Array.isArray(fullSubmission)) return { videos: [], photos: [], rawFootages: [], caption: '' };
+
+    let allVideos = [];
+    let allPhotos = [];
+    let allRawFootages = [];
+    let caption = '';
+
+    // Look through ALL submissions, not just approved ones
+    fullSubmission.forEach(sub => {
+      // Get approved videos from any submission
+      if (sub.video && Array.isArray(sub.video)) {
+        const approvedVideosFromSub = sub.video.filter(v => v.status === 'APPROVED');
+        allVideos = [...allVideos, ...approvedVideosFromSub];
+      }
+      
+      // Get approved photos from any submission
+      if (sub.photos && Array.isArray(sub.photos)) {
+        const approvedPhotosFromSub = sub.photos.filter(p => p.status === 'APPROVED');
+        allPhotos = [...allPhotos, ...approvedPhotosFromSub];
+      }
+
+      // Get approved raw footages from any submission
+      if (sub.rawFootages && Array.isArray(sub.rawFootages)) {
+        const approvedRawFootagesFromSub = sub.rawFootages.filter(rf => rf.status === 'APPROVED');
+        allRawFootages = [...allRawFootages, ...approvedRawFootagesFromSub];
+      }
+
+      // Get caption from any submission that has approved content
+      if (sub.caption && !caption && (
+        (sub.video && sub.video.some(v => v.status === 'APPROVED')) ||
+        (sub.photos && sub.photos.some(p => p.status === 'APPROVED')) ||
+        (sub.rawFootages && sub.rawFootages.some(rf => rf.status === 'APPROVED'))
+      )) {
+        ({ caption } = sub);
+      }
+    });
+
+    return { videos: allVideos, photos: allPhotos, rawFootages: allRawFootages, caption };
+  }, [fullSubmission]);
+
+  // Handlers for preview functionality
+  const handlePreviewApprovedSubmissions = () => {
+    previewApproved.onTrue();
+  };
+
   return (
     <>
       {previewSubmission?.status === 'APPROVED' && (
@@ -380,7 +437,29 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   mx: -1.5,
                 }}
               />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                {(getApprovedSubmissions.videos.length > 0 || getApprovedSubmissions.photos.length > 0 || getApprovedSubmissions.rawFootages.length > 0) && (
+                  <Button
+                    variant="outlined"
+                    onClick={handlePreviewApprovedSubmissions}
+                    sx={{
+                      color: '#1DBF66',
+                      borderColor: '#1DBF66',
+                      borderBottom: 3.5,
+                      borderBottomColor: '#1DBF66',
+                      borderRadius: 1.5,
+                      px: 2.5,
+                      py: 1.2,
+                      '&:hover': {
+                        bgcolor: 'rgba(29, 191, 102, 0.04)',
+                        borderColor: '#1DBF66',
+                        borderBottomColor: '#1DBF66',
+                      },
+                    }}
+                  >
+                    See Approved Submissions
+                  </Button>
+                )}
                 <Button
                   variant="contained"
                   onClick={() => setOpenPostingModal(true)}
@@ -477,7 +556,29 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     mx: -1.5,
                   }}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                  {(getApprovedSubmissions.videos.length > 0 || getApprovedSubmissions.photos.length > 0 || getApprovedSubmissions.rawFootages.length > 0) && (
+                    <Button
+                      variant="outlined"
+                      onClick={handlePreviewApprovedSubmissions}
+                      sx={{
+                        color: '#203ff5',
+                        borderColor: '#203ff5',
+                        borderBottom: 3.5,
+                        borderBottomColor: '#203ff5',
+                        borderRadius: 1.5,
+                        px: 2.5,
+                        py: 1.2,
+                        '&:hover': {
+                          bgcolor: 'rgba(32, 63, 245, 0.04)',
+                          borderColor: '#203ff5',
+                          borderBottomColor: '#203ff5',
+                        },
+                      }}
+                    >
+                      Preview Approved Submissions
+                    </Button>
+                  )}
                   <Button
                     variant="contained"
                     onClick={() => setOpenPostingModal(true)}
@@ -755,7 +856,799 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         )}
       </Dialog>
 
-      {renderGuide}
+            {renderGuide}
+
+      {/* Preview Approved Submissions Fullscreen Dialog */}
+      <Dialog
+        open={previewApproved.value}
+        onClose={previewApproved.onFalse}
+        fullScreen
+        PaperProps={{
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            overflow: 'hidden',
+            position: 'relative',
+          },
+        }}
+        sx={{
+          zIndex: 9999,
+          '& .MuiDialog-container': {
+            alignItems: 'center',
+            justifyContent: 'center',
+          },
+          '& .MuiDialog-paper': {
+            m: 0,
+            width: '100%',
+            height: '100%',
+          },
+        }}
+      >
+        {/* Header Info - Top Left */}
+        <Box
+          sx={{
+            position: 'fixed',
+            top: { xs: 10, md: 20 },
+            left: { xs: 10, md: 20 },
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: { xs: 1, md: 1.5 },
+            borderRadius: '8px',
+            p: { xs: 1.5, md: 2 },
+            height: { xs: '56px', md: '64px' },
+            minWidth: { xs: '200px', md: '240px' },
+          }}
+        >
+          <Box
+            sx={{
+              width: { xs: 36, md: 40 },
+              height: { xs: 36, md: 40 },
+              borderRadius: 1,
+              bgcolor: '#1DBF66',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Iconify
+              icon="eva:checkmark-circle-2-outline"
+              sx={{
+                color: 'white',
+                width: { xs: 18, md: 20 },
+                height: { xs: 18, md: 20 },
+              }}
+            />
+          </Box>
+          <Stack spacing={0.5}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: 600,
+                color: '#e7e7e7',
+                fontSize: { xs: '13px', md: '14px' },
+                lineHeight: 1.3,
+              }}
+            >
+              Approved Submissions
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#85868E',
+                fontSize: { xs: '11px', md: '12px' },
+                lineHeight: 1.3,
+              }}
+            >
+              {campaign?.name}
+            </Typography>
+          </Stack>
+        </Box>
+
+        {/* Content Type Navigation - Top Center */}
+        <Stack
+          direction="row"
+          spacing={{ xs: 0.5, md: 1 }}
+          sx={{
+            position: 'fixed',
+            top: { xs: 10, md: 20 },
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 10000,
+          }}
+        >
+          {/* Videos Button */}
+          {getApprovedSubmissions.videos.length > 0 && (
+            <Tooltip 
+              title={`Approved Videos${getApprovedSubmissions.videos.length > 1 ? ` (${selectedVideoIndex + 1}/${getApprovedSubmissions.videos.length})` : ''}`}
+              arrow 
+              placement="bottom"
+              PopperProps={{
+                sx: {
+                  zIndex: 10001,
+                },
+              }}
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: 'rgba(0, 0, 0, 0.9)',
+                    color: 'white',
+                    fontSize: { xs: '11px', md: '12px' },
+                    fontWeight: 500,
+                  },
+                },
+                arrow: {
+                  sx: {
+                    color: 'rgba(0, 0, 0, 0.9)',
+                  },
+                },
+              }}
+            >
+              <Button
+                onClick={() => setTabIndex(0)}
+                sx={{
+                  minWidth: { xs: '40px', md: '44px' },
+                  width: { xs: '40px', md: '44px' },
+                  height: { xs: '40px', md: '44px' },
+                  p: 0,
+                  bgcolor: tabIndex === 0 ? '#1DBF66' : 'transparent',
+                  color: '#ffffff',
+                  border: '1px solid #28292C',
+                  borderRadius: '8px',
+                  fontWeight: 650,
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: { xs: '3px', md: '4px' },
+                    left: { xs: '3px', md: '4px' },
+                    right: { xs: '3px', md: '4px' },
+                    bottom: { xs: '3px', md: '4px' },
+                    borderRadius: '4px',
+                    backgroundColor: 'transparent',
+                    transition: 'background-color 0.2s ease',
+                    zIndex: -1,
+                  },
+                  '&:hover::before': {
+                    backgroundColor: tabIndex === 0 ? 'transparent' : '#5A5A5C',
+                  },
+                  '&:hover': {
+                    bgcolor: tabIndex === 0 ? '#1DBF66' : 'transparent',
+                  },
+                }}
+              >
+                <Iconify icon="eva:video-outline" width={{ xs: 16, md: 18 }} />
+              </Button>
+            </Tooltip>
+          )}
+
+          {/* Photos Button */}
+          {getApprovedSubmissions.photos.length > 0 && (
+            <Tooltip 
+              title={`Approved Photos${getApprovedSubmissions.photos.length > 1 ? ` (${selectedPhotoIndex + 1}/${getApprovedSubmissions.photos.length})` : ''}`}
+              arrow 
+              placement="bottom"
+              PopperProps={{
+                sx: {
+                  zIndex: 10001,
+                },
+              }}
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: 'rgba(0, 0, 0, 0.9)',
+                    color: 'white',
+                    fontSize: { xs: '11px', md: '12px' },
+                    fontWeight: 500,
+                  },
+                },
+                arrow: {
+                  sx: {
+                    color: 'rgba(0, 0, 0, 0.9)',
+                  },
+                },
+              }}
+            >
+              <Button
+                onClick={() => {
+                  let photoTabIndex = 0;
+                  if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
+                  setTabIndex(photoTabIndex);
+                }}
+                sx={{
+                  minWidth: { xs: '40px', md: '44px' },
+                  width: { xs: '40px', md: '44px' },
+                  height: { xs: '40px', md: '44px' },
+                  p: 0,
+                  bgcolor: tabIndex === (getApprovedSubmissions.videos.length > 0 ? 1 : 0) ? '#1DBF66' : 'transparent',
+                  color: '#ffffff',
+                  border: '1px solid #28292C',
+                  borderRadius: '8px',
+                  fontWeight: 650,
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: { xs: '3px', md: '4px' },
+                    left: { xs: '3px', md: '4px' },
+                    right: { xs: '3px', md: '4px' },
+                    bottom: { xs: '3px', md: '4px' },
+                    borderRadius: '4px',
+                    backgroundColor: 'transparent',
+                    transition: 'background-color 0.2s ease',
+                    zIndex: -1,
+                  },
+                  '&:hover::before': {
+                    backgroundColor: tabIndex === (getApprovedSubmissions.videos.length > 0 ? 1 : 0) ? 'transparent' : '#5A5A5C',
+                  },
+                  '&:hover': {
+                    bgcolor: tabIndex === (getApprovedSubmissions.videos.length > 0 ? 1 : 0) ? '#1DBF66' : 'transparent',
+                  },
+                }}
+              >
+                <Iconify icon="eva:image-outline" width={{ xs: 16, md: 18 }} />
+              </Button>
+            </Tooltip>
+          )}
+
+          {/* Raw Footages Button */}
+          {getApprovedSubmissions.rawFootages.length > 0 && (
+            <Tooltip 
+              title={`Approved Raw Footages${getApprovedSubmissions.rawFootages.length > 1 ? ` (${selectedRawFootageIndex + 1}/${getApprovedSubmissions.rawFootages.length})` : ''}`}
+              arrow 
+              placement="bottom"
+              PopperProps={{
+                sx: {
+                  zIndex: 10001,
+                },
+              }}
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: 'rgba(0, 0, 0, 0.9)',
+                    color: 'white',
+                    fontSize: { xs: '11px', md: '12px' },
+                    fontWeight: 500,
+                  },
+                },
+                arrow: {
+                  sx: {
+                    color: 'rgba(0, 0, 0, 0.9)',
+                  },
+                },
+              }}
+            >
+              <Button
+                onClick={() => {
+                  let rawFootageTabIndex = 0;
+                  if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
+                  if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
+                  setTabIndex(rawFootageTabIndex);
+                }}
+                sx={{
+                  minWidth: { xs: '40px', md: '44px' },
+                  width: { xs: '40px', md: '44px' },
+                  height: { xs: '40px', md: '44px' },
+                  p: 0,
+                  bgcolor: (() => {
+                    let rawFootageTabIndex = 0;
+                    if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
+                    if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
+                    return tabIndex === rawFootageTabIndex ? '#1DBF66' : 'transparent';
+                  })(),
+                  color: '#ffffff',
+                  border: '1px solid #28292C',
+                  borderRadius: '8px',
+                  fontWeight: 650,
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: { xs: '3px', md: '4px' },
+                    left: { xs: '3px', md: '4px' },
+                    right: { xs: '3px', md: '4px' },
+                    bottom: { xs: '3px', md: '4px' },
+                    borderRadius: '4px',
+                    backgroundColor: 'transparent',
+                    transition: 'background-color 0.2s ease',
+                    zIndex: -1,
+                  },
+                  '&:hover::before': {
+                    backgroundColor: (() => {
+                      let rawFootageTabIndex = 0;
+                      if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
+                      if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
+                      return tabIndex === rawFootageTabIndex ? 'transparent' : '#5A5A5C';
+                    })(),
+                  },
+                  '&:hover': {
+                    bgcolor: (() => {
+                      let rawFootageTabIndex = 0;
+                      if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
+                      if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
+                      return tabIndex === rawFootageTabIndex ? '#1DBF66' : 'transparent';
+                    })(),
+                  },
+                }}
+              >
+                <Iconify icon="eva:film-outline" width={{ xs: 16, md: 18 }} />
+              </Button>
+            </Tooltip>
+          )}
+        </Stack>
+
+        {/* Close Button - Top Right */}
+        <Tooltip 
+          title="Close" 
+          arrow 
+          placement="bottom"
+          PopperProps={{
+            sx: {
+              zIndex: 10001,
+            },
+          }}
+          slotProps={{
+            tooltip: {
+              sx: {
+                bgcolor: 'rgba(0, 0, 0, 0.9)',
+                color: 'white',
+                fontSize: { xs: '11px', md: '12px' },
+                fontWeight: 500,
+              },
+            },
+            arrow: {
+              sx: {
+                color: 'rgba(0, 0, 0, 0.9)',
+              },
+            },
+          }}
+        >
+          <Button
+            onClick={previewApproved.onFalse}
+            sx={{
+              position: 'fixed',
+              top: { xs: 10, md: 20 },
+              right: { xs: 10, md: 20 },
+              zIndex: 10000,
+              minWidth: { xs: '40px', md: '44px' },
+              width: { xs: '40px', md: '44px' },
+              height: { xs: '40px', md: '44px' },
+              p: 0,
+              color: '#ffffff',
+              border: '1px solid #28292C',
+              borderRadius: '8px',
+              fontWeight: 650,
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: { xs: '3px', md: '4px' },
+                left: { xs: '3px', md: '4px' },
+                right: { xs: '3px', md: '4px' },
+                bottom: { xs: '3px', md: '4px' },
+                borderRadius: '4px',
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor: '#5A5A5C',
+              },
+              '&:hover': {
+                bgcolor: 'transparent',
+              },
+            }}
+          >
+            <Iconify icon="eva:close-fill" width={{ xs: 20, md: 22 }} />
+          </Button>
+        </Tooltip>
+
+        {/* Main Content Area */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100vh',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            pt: { xs: '80px', md: '100px' },
+            pb: { xs: 2, md: 3 },
+            px: { xs: 2, md: 4 },
+            gap: { xs: 2, md: 3 },
+            overflow: 'hidden',
+          }}
+        >
+          {/* Videos Content */}
+          {tabIndex === 0 && getApprovedSubmissions.videos.length > 0 && (
+            <>
+              {/* Video Container */}
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: { 
+                    xs: '100%', 
+                    md: getApprovedSubmissions.caption ? '60%' : '90%' 
+                  },
+                  height: { 
+                    xs: getApprovedSubmissions.caption ? 'calc(60vh - 80px)' : 'calc(100vh - 120px)', 
+                    md: 'calc(100vh - 120px)'
+                  },
+                  maxWidth: { 
+                    xs: '100%', 
+                    md: getApprovedSubmissions.caption ? '800px' : '1200px' 
+                  },
+                  bgcolor: 'black',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {getApprovedSubmissions.videos.map((video, index) => (
+                  index === selectedVideoIndex && (
+                    <Box
+                      key={`large-${video.id || index}`}
+                      component="video"
+                      src={video.url}
+                      controls
+                      autoPlay
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                      }}
+                    />
+                  )
+                ))}
+
+
+              </Box>
+
+              {/* Caption Panel - Right Side on Desktop, Bottom on Mobile */}
+              {getApprovedSubmissions.caption && (
+                <Box
+                  sx={{
+                    width: { xs: '100%', md: '35%' },
+                    maxWidth: { xs: '100%', md: '400px' },
+                    height: { 
+                      xs: 'calc(40vh - 80px)', 
+                      md: 'calc(100vh - 120px)' 
+                    },
+                    minHeight: { xs: '150px', md: 'auto' },
+                    bgcolor: 'transparent',
+                    border: '1px solid #28292C',
+                    borderRadius: '8px',
+                    p: { xs: 2, md: 3 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: 600,
+                      color: '#ffffff',
+                      fontSize: { xs: '13px', md: '14px' },
+                      mb: { xs: 1.5, md: 2 },
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Iconify
+                      icon="solar:text-bold"
+                      sx={{
+                        width: { xs: 14, md: 16 },
+                        height: { xs: 14, md: 16 },
+                        color: '#ffffff',
+                      }}
+                    />
+                    Video Caption
+                  </Typography>
+                  <Box
+                    sx={{
+                      flex: 1,
+                      overflow: 'auto',
+                      '&::-webkit-scrollbar': {
+                        width: { xs: '4px', md: '6px' },
+                      },
+                      '&::-webkit-scrollbar-track': {
+                        background: 'transparent',
+                      },
+                      '&::-webkit-scrollbar-thumb': {
+                        background: '#5A5A5C',
+                        borderRadius: '3px',
+                      },
+                      '&::-webkit-scrollbar-thumb:hover': {
+                        background: '#6A6A6C',
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#e7e7e7',
+                        fontSize: { xs: '13px', md: '14px' },
+                        lineHeight: 1.6,
+                        whiteSpace: 'pre-wrap',
+                      }}
+                    >
+                      {getApprovedSubmissions.caption}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+            </>
+          )}
+
+          {/* Photos Content */}
+          {(() => {
+            let photoTabIndex = 0;
+            if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
+            return tabIndex === photoTabIndex && getApprovedSubmissions.photos.length > 0;
+          })() && (
+            <Box
+              sx={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '90%',
+                height: 'calc(100vh - 120px)',
+                maxWidth: '1200px',
+              }}
+            >
+              {getApprovedSubmissions.photos.map((photo, index) => (
+                index === selectedPhotoIndex && (
+                  <Box
+                    key={`large-photo-${photo.id || index}`}
+                    component="img"
+                    src={photo.url}
+                    alt={`Photo ${index + 1}`}
+                    sx={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'contain',
+                      borderRadius: 2,
+                    }}
+                  />
+                )
+              ))}
+
+
+            </Box>
+          )}
+
+          {/* Raw Footages Content */}
+          {(() => {
+            let rawFootageTabIndex = 0;
+            if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
+            if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
+            return tabIndex === rawFootageTabIndex && getApprovedSubmissions.rawFootages.length > 0;
+          })() && (
+            <Box
+              sx={{
+                position: 'relative',
+                width: { 
+                  xs: '100%', 
+                  md: getApprovedSubmissions.caption ? '60%' : '90%' 
+                },
+                height: { 
+                  xs: getApprovedSubmissions.caption ? 'calc(60vh - 80px)' : 'calc(100vh - 120px)', 
+                  md: 'calc(100vh - 120px)'
+                },
+                maxWidth: { 
+                  xs: '100%', 
+                  md: getApprovedSubmissions.caption ? '800px' : '1200px' 
+                },
+                bgcolor: 'black',
+                borderRadius: 2,
+                overflow: 'hidden',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {getApprovedSubmissions.rawFootages.map((rawFootage, index) => (
+                index === selectedRawFootageIndex && (
+                  <Box
+                    key={`large-rawfootage-${rawFootage.id || index}`}
+                    component="video"
+                    src={rawFootage.url}
+                    controls
+                    autoPlay
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                    }}
+                  />
+                )
+              ))}
+
+
+            </Box>
+          )}
+        </Box>
+
+        {/* Screen Edge Navigation Arrows */}
+        {/* Left Arrow - Previous */}
+        {((tabIndex === 0 && getApprovedSubmissions.videos.length > 1) ||
+          ((() => {
+            let photoTabIndex = 0;
+            if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
+            return tabIndex === photoTabIndex && getApprovedSubmissions.photos.length > 1;
+          })()) ||
+          ((() => {
+            let rawFootageTabIndex = 0;
+            if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
+            if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
+            return tabIndex === rawFootageTabIndex && getApprovedSubmissions.rawFootages.length > 1;
+          })())) && (
+          <Tooltip 
+            title="Previous" 
+            arrow 
+            placement="right"
+            PopperProps={{
+              sx: {
+                zIndex: 10001,
+              },
+            }}
+            slotProps={{
+              tooltip: {
+                sx: {
+                  bgcolor: 'rgba(0, 0, 0, 0.9)',
+                  color: 'white',
+                  fontSize: { xs: '11px', md: '12px' },
+                  fontWeight: 500,
+                },
+              },
+              arrow: {
+                sx: {
+                  color: 'rgba(0, 0, 0, 0.9)',
+                },
+              },
+            }}
+          >
+            <Button
+              onClick={() => {
+                if (tabIndex === 0 && getApprovedSubmissions.videos.length > 1) {
+                  setSelectedVideoIndex((prev) => (prev - 1 + getApprovedSubmissions.videos.length) % getApprovedSubmissions.videos.length);
+                } else {
+                  let photoTabIndex = 0;
+                  if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
+                  if (tabIndex === photoTabIndex && getApprovedSubmissions.photos.length > 1) {
+                    setSelectedPhotoIndex((prev) => (prev - 1 + getApprovedSubmissions.photos.length) % getApprovedSubmissions.photos.length);
+                  } else {
+                    let rawFootageTabIndex = 0;
+                    if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
+                    if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
+                    if (tabIndex === rawFootageTabIndex && getApprovedSubmissions.rawFootages.length > 1) {
+                      setSelectedRawFootageIndex((prev) => (prev - 1 + getApprovedSubmissions.rawFootages.length) % getApprovedSubmissions.rawFootages.length);
+                    }
+                  }
+                }
+              }}
+              sx={{
+                position: 'fixed',
+                left: { xs: 10, md: 20 },
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 10000,
+                minWidth: { xs: '36px', md: '48px' },
+                width: { xs: '36px', md: '48px' },
+                height: { xs: '36px', md: '48px' },
+                p: 0,
+                color: '#ffffff',
+                bgcolor: 'rgba(40, 41, 44, 0.9)',
+                border: '1px solid #28292C',
+                borderRadius: '12px',
+                backdropFilter: 'blur(10px)',
+                '&:hover': {
+                  bgcolor: 'rgba(40, 41, 44, 1)',
+                  transform: 'translateY(-50%) scale(1.05)',
+                },
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Iconify icon="eva:arrow-ios-back-fill" width={{ xs: 24, md: 28 }} />
+            </Button>
+          </Tooltip>
+        )}
+
+        {/* Right Arrow - Next */}
+        {((tabIndex === 0 && getApprovedSubmissions.videos.length > 1) ||
+          ((() => {
+            let photoTabIndex = 0;
+            if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
+            return tabIndex === photoTabIndex && getApprovedSubmissions.photos.length > 1;
+          })()) ||
+          ((() => {
+            let rawFootageTabIndex = 0;
+            if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
+            if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
+            return tabIndex === rawFootageTabIndex && getApprovedSubmissions.rawFootages.length > 1;
+          })())) && (
+          <Tooltip 
+            title="Next" 
+            arrow 
+            placement="left"
+            PopperProps={{
+              sx: {
+                zIndex: 10001,
+              },
+            }}
+            slotProps={{
+              tooltip: {
+                sx: {
+                  bgcolor: 'rgba(0, 0, 0, 0.9)',
+                  color: 'white',
+                  fontSize: { xs: '11px', md: '12px' },
+                  fontWeight: 500,
+                },
+              },
+              arrow: {
+                sx: {
+                  color: 'rgba(0, 0, 0, 0.9)',
+                },
+              },
+            }}
+          >
+            <Button
+              onClick={() => {
+                if (tabIndex === 0 && getApprovedSubmissions.videos.length > 1) {
+                  setSelectedVideoIndex((prev) => (prev + 1) % getApprovedSubmissions.videos.length);
+                } else {
+                  let photoTabIndex = 0;
+                  if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
+                  if (tabIndex === photoTabIndex && getApprovedSubmissions.photos.length > 1) {
+                    setSelectedPhotoIndex((prev) => (prev + 1) % getApprovedSubmissions.photos.length);
+                  } else {
+                    let rawFootageTabIndex = 0;
+                    if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
+                    if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
+                    if (tabIndex === rawFootageTabIndex && getApprovedSubmissions.rawFootages.length > 1) {
+                      setSelectedRawFootageIndex((prev) => (prev + 1) % getApprovedSubmissions.rawFootages.length);
+                    }
+                  }
+                }
+              }}
+              sx={{
+                position: 'fixed',
+                right: { xs: 10, md: 20 },
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 10000,
+                minWidth: { xs: '36px', md: '48px' },
+                width: { xs: '36px', md: '48px' },
+                height: { xs: '36px', md: '48px' },
+                p: 0,
+                color: '#ffffff',
+                bgcolor: 'rgba(40, 41, 44, 0.9)',
+                border: '1px solid #28292C',
+                borderRadius: '12px',
+                backdropFilter: 'blur(10px)',
+                '&:hover': {
+                  bgcolor: 'rgba(40, 41, 44, 1)',
+                  transform: 'translateY(-50%) scale(1.05)',
+                },
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Iconify icon="eva:arrow-ios-forward-fill" width={{ xs: 24, md: 28 }} />
+            </Button>
+          </Tooltip>
+        )}
+      </Dialog>
     </>
   );
 };

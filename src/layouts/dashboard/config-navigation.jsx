@@ -23,10 +23,8 @@ const icon = (name) => (
   <SvgColor
     src={`/assets/icons/navbar/${name}.svg`}
     sx={{
-      width: name === 'ic_overview' ? 20 : 24,
-      height: name === 'ic_overview' ? 20 : 24,
-      position: name === 'ic_overview' ? 'relative' : 'static',
-      top: name === 'ic_overview' ? '2px' : 0,
+      width: 24,
+      height: 24,
     }}
   />
   // OR
@@ -71,6 +69,7 @@ const ICONS = {
   creator: icon('ic_creators'),
   clients: icon('ic_clients'),
   roles: icon('ic_roles'),
+  bugreport: <Iconify icon="solar:bug-line-duotone" width={24} />,
 };
 
 // ----------------------------------------------------------------------
@@ -128,46 +127,46 @@ export function useNavData() {
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD'],
             title: 'Campaigns',
-            path: paths.dashboard.campaign.root,
+            path: paths.dashboard.campaign.view,
             icon: ICONS.mycampaigns,
-            children: [
-              // {
-              //   roles: ['superadmin', 'CSM'],
-              //   title: 'Create',
-              //   path: paths.dashboard.campaign.create,
-              // },
-              // {
-              //   roles: ['superadmin', 'CSM'],
-              //   title: 'Edit',
-              //   path: paths.dashboard.campaign.manage,
-              // },
-              {
-                // title: 'Manage Campaign',
-                title: 'Lists',
-                path: paths.dashboard.campaign.view,
-              },
-              {
-                roles: ['superadmin'],
-                title: 'Settings',
-                path: paths.dashboard.campaign.settings,
-              },
-            ],
+            // children: [
+            //   // {
+            //   //   roles: ['superadmin', 'CSM'],
+            //   //   title: 'Create',
+            //   //   path: paths.dashboard.campaign.create,
+            //   // },
+            //   // {
+            //   //   roles: ['superadmin', 'CSM'],
+            //   //   title: 'Edit',
+            //   //   path: paths.dashboard.campaign.manage,
+            //   // },
+            //   {
+            //     // title: 'Manage Campaign',
+            //     title: 'Lists',
+            //     path: paths.dashboard.campaign.view,
+            //   },
+            //   {
+            //     roles: ['superadmin'],
+            //     title: 'Settings',
+            //     path: paths.dashboard.campaign.settings,
+            //   },
+            // ],
           },
           {
             roles: ['superadmin', 'CSM'],
-            title: 'Admin',
+            title: 'Admins',
             path: paths.dashboard.admins,
             icon: ICONS.admin,
-            children: [
-              {
-                title: 'Lists',
-                path: paths.dashboard.admins,
-              },
-            ],
+            // children: [
+            //   {
+            //     title: 'Lists',
+            //     path: paths.dashboard.admins,
+            //   },
+            // ],
           },
           {
             roles: ['superadmin', 'CSM'],
-            title: 'Creator',
+            title: 'Creators',
             path: paths.dashboard.creator.root,
             icon: ICONS.creator,
             children: [
@@ -441,6 +440,15 @@ export function useNavData() {
             ),
             path: paths.dashboard.user.profile,
             icon: ICONS.settings,
+          },
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Bug Report
+              </span>
+            ),
+            path: '#bug-report',
+            icon: ICONS.bugreport,
           },
         ],
       },
