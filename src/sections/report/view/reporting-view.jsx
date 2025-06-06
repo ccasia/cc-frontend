@@ -1,15 +1,12 @@
 // reporting-view.jsx
-import { debounce } from 'lodash';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import {
   Box,
-  Grid,
   Card,
   Stack,
   Button,
-  Divider,
   Container,
   Typography,
   CircularProgress,
@@ -36,10 +33,14 @@ const ReportingView = () => {
     account: '',
     contentType: '',
     datePosted: '',
-    creatorName: '',
-    campaignName: '',
     creatorId: '',
+    creatorName: '',
+    campaignId: '',
+    campaignName: '',    
     metrics: null,
+    campaignAverages: null,
+    campaignComparison: null,
+    hasCampaignData: false,
     error: null,
   });
 
@@ -108,7 +109,7 @@ const ReportingView = () => {
   };
 
   // Fetch content data using the media insight endpoint
-  const fetchContentData = useCallback(async (postUrl, userId) => {
+  const fetchContentData = useCallback(async (postUrl, userId, campaignId) => {
     setLoading(true);
     setContent(prev => ({ ...prev, error: null }));
 
@@ -120,12 +121,19 @@ const ReportingView = () => {
       }
 
       if (parsedUrl.platform === 'Instagram') {
-        const response = await axiosInstance.get(
-          endpoints.creators.social.getInstagramMediaInsight(userId, encodeURIComponent(postUrl))
-        );
+        // Build URL with campaignId if provided
+        let apiUrl = endpoints.creators.social.getInstagramMediaInsight(userId, encodeURIComponent(postUrl), campaignId);
+
+        const response = await axiosInstance.get(apiUrl);
 
         if (response.data?.video && response.data?.insight) {
-          const { video, insight, previousPost, changes, hasPreviousPost } = response.data;
+          const { 
+            video, 
+            insight, 
+            campaignAverages, 
+            campaignComparison, 
+            hasCampaignData 
+          } = response.data;
 
           const currentMetricsMap = {};
           insight.forEach(item => {
@@ -149,9 +157,9 @@ const ReportingView = () => {
             datePosted: fDate(video.timestamp),
             mediaUrl: video.thumbnail_url,
             metrics: currentMetrics,
-            previousMetrics: previousPost || {},
-            changes: changes || {},
-            hasPreviousPost: hasPreviousPost || false,
+            campaignAverages: campaignAverages,
+            campaignComparison: campaignComparison,
+            hasCampaignData: hasCampaignData,
             videoData: video,
             insightData: insight,
           }));
@@ -184,8 +192,7 @@ const ReportingView = () => {
               shares: video.share_count || metricsMap.shares || 0,
               total_interactions: metricsMap.total_interactions || 0,
             },
-            hasPreviousPost: false,
-            changes: {},
+            hasCampaignData: false,
             videoData: video,
             insightData: insight,
           }));
@@ -209,6 +216,7 @@ const ReportingView = () => {
   useEffect(() => {
     const urlParam = searchParams.get('url');
     const creatorName = searchParams.get('creatorName');
+    const campaignId = searchParams.get('campaignId');
     const campaignName = searchParams.get('campaignName');
     const userId = searchParams.get('userId');
 
@@ -216,14 +224,15 @@ const ReportingView = () => {
       setUrl(urlParam);
       setContent(prev => ({
         ...prev,
-        creatorName: creatorName || '',
-        campaignName: campaignName || '',
         creatorId: userId || '',
+        creatorName: creatorName || '',
+        campaignId: campaignId || '',
+        campaignName: campaignName || '',
       }));
 
       const parsedUrl = parseContentUrl(urlParam);
       if (parsedUrl) {
-        fetchContentData(urlParam, userId);
+        fetchContentData(urlParam, userId, campaignId);
       }
     }
   }, [searchParams, fetchContentData]);
@@ -232,13 +241,36 @@ const ReportingView = () => {
     navigate('/dashboard/report');
   };
 
-  const renderCircularStat = ({ width, label, value, averageValue, isAboveAverage, percentageDiff }) => {
+  const renderCircularStat = ({ width, label, value, metricKey }) => {
     const displayValue = value || 0;
-    const avgValue = averageValue || 0;
+    
+    // Use campaign averages if available, otherwise fallback to hardcoded values
+    let avgValue = 0;
+    let percentageDiff = 0;
+    let isAboveAverage = false;
+
+    if (content.hasCampaignData && content.campaignComparison && content.campaignComparison[metricKey]) {
+      const comparison = content.campaignComparison[metricKey];
+      avgValue = comparison.average;
+      percentageDiff = Math.abs(comparison.change);
+      isAboveAverage = comparison.isAboveAverage;
+    } else {
+      // Fallback values if no campaign data
+      const fallbackAverages = {
+        'total_interactions': 300,
+        'reach': 8000,
+        'shares': 100
+      };
+      avgValue = fallbackAverages[metricKey] || 0;
+      isAboveAverage = displayValue > avgValue;
+      percentageDiff = avgValue > 0 ? Math.abs(((displayValue - avgValue) / avgValue) * 100) : 0;
+    }
     
     const maxVal = Math.max(displayValue, avgValue) * 1.2;
     const currentProgress = maxVal > 0 ? (displayValue / maxVal) * 100 : 0;
     const averageProgress = maxVal > 0 ? (avgValue / maxVal) * 100 : 0;
+
+    const comparisonText = content.hasCampaignData ? 'campaign average' : 'average creator';
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', sm: 'center', md: 'center' }, width: '100%' }}>
@@ -255,11 +287,11 @@ const ReportingView = () => {
           {label}
         </Typography>
 
-        <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2, width: 157, height: 157 }}>
+        <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2, width: 165, height: 165 }}>
           <CircularProgress
             variant="determinate"
             value={100}
-            size={157}
+            size={165}
             thickness={6}
             sx={{
               color: '#e0e0e0',
@@ -270,7 +302,7 @@ const ReportingView = () => {
           <CircularProgress
             variant="determinate"
             value={averageProgress}
-            size={157}
+            size={165}
             thickness={6}
             sx={{
               color: '#bbb',
@@ -281,7 +313,7 @@ const ReportingView = () => {
           <CircularProgress
             variant="determinate"
             value={currentProgress}
-            size={157}
+            size={165}
             thickness={6}
             sx={{
               color: '#0066FF',
@@ -312,15 +344,15 @@ const ReportingView = () => {
                 color: '#0066FF',
               }}
             >
-              {displayValue}
+              {displayValue.toLocaleString()}
             </Typography>
             
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
               <Iconify
                 icon={isAboveAverage ? 'mdi:arrow-up' : 'mdi:arrow-down'}
                 color={isAboveAverage ? '#4CAF50' : '#F44336'}
-                width={16}
-                height={16}
+                width={15}
+                height={15}
               />
               <Typography
                 sx={{
@@ -329,7 +361,7 @@ const ReportingView = () => {
                   ml: 0.5,
                 }}
               >
-                {percentageDiff}% from
+                {Math.round(percentageDiff)}% from
               </Typography>
             </Box>
             
@@ -340,7 +372,7 @@ const ReportingView = () => {
                 textAlign: 'center',
               }}
             >
-              average creator
+              {comparisonText}
             </Typography>
           </Box>
         </Box>
@@ -348,42 +380,42 @@ const ReportingView = () => {
     );
   };
 
-  const renderEngagementCard = ({ height, icon, title, value }) => {
-    const metricKey = title.toLowerCase();
-    const actualChange = content.changes?.[metricKey];
-    const hasPreviousData = content.hasPreviousPost && actualChange !== undefined;
-    
+  const renderEngagementCard = ({ height, icon, title, value, metricKey }) => {
     let changeDisplay = '--';
     let changeIsPositive = false;
-    
-    if (hasPreviousData) {
-      if (actualChange === 0) {
-        changeDisplay = '0%';
-        changeIsPositive = true;
-      } else {
-        const formatted = formatPercentageChange(actualChange);
-        changeDisplay = formatted.value;
-        changeIsPositive = formatted.isPositive;
-      }
+    let comparisonText = 'from campaign avg';
+
+    // Use campaign comparison data if available
+    if (content.hasCampaignData && content.campaignComparison && content.campaignComparison[metricKey]) {
+      const comparison = content.campaignComparison[metricKey];
+      changeDisplay = comparison.changeText;
+      changeIsPositive = comparison.isAboveAverage;
+    } else {
+      comparisonText = 'no campaign data';
+      changeDisplay = '--';
     }
 
     return (
       <Box
-        elevation={0}
         sx={{
           height: height ? height : 116,
           backgroundColor: '#f0f0f0',
           borderRadius: '20px',
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr',
+          gridTemplateColumns: '1fr 1fr 2fr 1fr', // 4 columns: icon, title, comparison, value
           gridTemplateRows: '1fr 1fr',
           p: 2,
+          alignItems: 'center',
         }}
       >
+        {/* Top Row - Icon */}
         <Box
           sx={{
+            gridColumn: '1 / 3',
+            gridRow: '1',
             display: 'flex',
-            ml: 10
+            ml: 8,
+            justifyContent: 'center',
           }}
         >
           <Box
@@ -406,10 +438,13 @@ const ReportingView = () => {
           </Box>
         </Box>
 
+        {/* Top Row - Title */}
         <Box
           sx={{
+            gridColumn: '3 / -1', // Spans from column 3 to the end
+            gridRow: '1',
             display: 'flex',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             justifyContent: 'flex-end',
           }}
         >
@@ -417,58 +452,58 @@ const ReportingView = () => {
             sx={{ 
               fontSize: 24,
               color: '#666',
-              textAlign: 'right',
+              fontWeight: 500,
             }}
           >
             {title}
           </Typography>
         </Box>
 
+        {/* Bottom Row - Comparison Change */}
         <Box
           sx={{
+            gridColumn: '1 / 4', // Spans columns 1-3
+            gridRow: '2',
             display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            pr: { xs: 1, sm: 2 },
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            mt: 1,
           }}
         >
-          <Box
+          {content.hasCampaignData && changeDisplay !== '--' && !changeDisplay.startsWith('0%') && (
+            <Iconify
+              icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+              color={changeIsPositive ? '#4CAF50' : '#F44336'}
+              width={18}
+              height={18}
+              sx={{ mr: 0.5 }}
+            />
+          )}
+          <Typography
             sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
+              fontSize: 18,
+              color: (() => {
+                if (!content.hasCampaignData) return '#999';
+                if (changeDisplay.startsWith('0%')) return '#666';
+                return changeIsPositive ? '#4CAF50' : '#F44336';
+              })(),
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
             }}
-          >            
-            {hasPreviousData && actualChange !== 0 && (
-              <Iconify
-                icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
-                color={changeIsPositive ? '#4CAF50' : '#F44336'}
-                width={{ xs: 12, sm: 18 }}
-                height={{ xs: 12, sm: 18 }}
-              />
-            )}
-            <Typography
-              sx={{
-                fontSize: 18,
-                color: (() => {
-                  if (!hasPreviousData) return '#999';
-                  if (actualChange === 0) return '#666';
-                  return changeIsPositive ? '#4CAF50' : '#F44336';
-                })(),
-                ml: hasPreviousData && actualChange !== 0 ? 0.5 : 0,
-                lineHeight: 1.2,
-                whiteSpace: { xs: 'normal', sm: 'nowrap' },
-              }}
-            >
-              {changeDisplay} from last post
-            </Typography>
-          </Box>
+          >
+            {changeDisplay} {comparisonText}
+          </Typography>
         </Box>
 
+        {/* Bottom Row - Value */}
         <Box
           sx={{
+            mt: 1,
+            gridColumn: '3 / -1', // Spans from column 3 to the end
+            gridRow: '2',
             display: 'flex',
-            alignItems: 'flex-end',
+            alignItems: 'center',
             justifyContent: 'flex-end',
           }}
         >
@@ -477,7 +512,6 @@ const ReportingView = () => {
               fontSize: 24,
               fontWeight: 600, 
               color: '#000',
-              textAlign: 'right',
             }}
           >
             {typeof value === 'number' ? value.toLocaleString() : value}
@@ -502,6 +536,18 @@ const ReportingView = () => {
         >
           Selected Content
         </Typography>
+
+        {/* Campaign Info Banner */}
+        {content.hasCampaignData && (
+          <Card sx={{ p: 2, mb: 3, backgroundColor: '#f8f9fa', border: '1px solid #e3f2fd' }}>
+            <Typography variant="h6" sx={{ color: '#1976d2', mb: 1 }}>
+              📊 Campaign Analysis Active
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#666' }}>
+              Comparing with <strong>{content.campaignName || 'campaign'}</strong> averages from {content.campaignAverages?.postCount || 0} posts
+            </Typography>
+          </Card>
+        )}
 
         {/* Conditionally render platform-specific layouts */}
         {content.account === 'Instagram' ? (

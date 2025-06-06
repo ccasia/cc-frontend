@@ -1,6 +1,4 @@
-import { Box, Grid, Card, Typography, Divider, CircularProgress } from '@mui/material';
-import { width } from '@mui/system';
-import Iconify from 'src/components/iconify';
+import { Box, Grid, Card, Typography } from '@mui/material';
 import { ContentInfoHeader, StatsLegend } from './shared-components';
 
 const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) => {
@@ -56,12 +54,12 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
         <ContentInfoHeader content={content} />
 
         {/* Content Engagement Section */}
-        <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 3 }}>
           <Typography
             sx={{
               fontSize: { xs: 20, sm: 24 },
               fontWeight: 600,
-              mb: 3,
+              mb: 2,
             }}
           >
             Content Engagement
@@ -70,7 +68,6 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
           <Box
             sx={{
               height: 'auto',
-              width: '95%',
               display: 'grid',
               gridTemplateColumns: {
                 xs: '1fr',
@@ -82,45 +79,47 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
                 sm: '1fr 1fr',
                 md: '1fr 1fr',
               },
-              gap: { xs: '16px', sm: '28px' },
+              gap: '28px',
             }}
           >
             {renderEngagementCard({
               icon: 'mdi:eye-outline',
               title: 'Views',
               value: content.metrics?.views || 0,
+              metricKey: 'views'
             })}
 
             {renderEngagementCard({
               icon: 'mdi:heart-outline',
               title: 'Likes',
               value: content.metrics?.likes || 0,
+              metricKey: 'likes'
             })}
 
             {renderEngagementCard({
               icon: 'mdi:comment-outline',
               title: 'Comments',
               value: content.metrics?.comments || 0,
+              metricKey: 'comments'
             })}
 
             {renderEngagementCard({
               icon: 'mdi:bookmark-outline',
               title: 'Saved',
               value: content.metrics?.saved || 0,
+              metricKey: 'saved'
             })}
           </Box>
         </Box>
 
-        {/* Circular Stats */}
-        <Grid container spacing={4} sx={{ py: 2 }}>
+        {/* Circular Stats with Campaign Averages */}
+        <Grid container spacing={4} sx={{ py: 1 }}>
           <Grid item xs={12} md={4}>
             {renderCircularStat({
               width: '75%',
               label: 'Interactions',
               value: content.metrics?.total_interactions || 0,
-              averageValue: 300,
-              isAboveAverage: (content.metrics?.total_interactions || 0) > 110,
-              percentageDiff: 24,
+              metricKey: 'totalInteractions'
             })}
           </Grid>
           
@@ -129,9 +128,7 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
               width: '75%',
               label: 'Reach',
               value: content.metrics?.reach || 0,
-              averageValue: 8000,
-              isAboveAverage: (content.metrics?.reach || 0) > 100,
-              percentageDiff: 11,
+              metricKey: 'reach'
             })}
           </Grid>
 
@@ -140,14 +137,11 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
               width: '75%',
               label: 'Shares',
               value: content.metrics?.shares || 0,
-              averageValue: 100,
-              isAboveAverage: (content.metrics?.shares || 0) > 30,
-              percentageDiff: 85,
+              metricKey: 'shares'
             })}
           </Grid>
         </Grid>
 
-        {/* Legend */}
         <StatsLegend />
       </Grid>
     </Grid>
