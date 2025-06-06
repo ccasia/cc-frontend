@@ -36,8 +36,8 @@ export default function LoadingScreen({ sx, ...other }) {
         component="img"
         src="/logo/newlogo.svg"
         sx={{
-          width: 60,
-          height: 60,
+          width: 48,
+          height: 48,
           filter: 'invert(1)',
           animation: `${pulse} 0.5s ease-in-out infinite, ${rotate} 0.5s linear infinite`,
         }}

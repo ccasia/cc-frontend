@@ -98,17 +98,26 @@ const ManageCampaignDetailView = ({ id }) => {
     <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3 } }}>
       <Stack spacing={1}>
         <Button
-          color="inherit"
-          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-          onClick={() => router.push(paths.dashboard.campaign.creator.manage)}
+          size="small"
+          startIcon={<Iconify icon="ic:round-arrow-back-ios-new" />}
           sx={{
+            color: 'rgba(99, 99, 102, 1)',
+            minWidth: 'auto',
+            px: { xs: 0.75, sm: 1 },
+            py: { xs: 0.25, sm: 0.5 },
+            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+            borderRadius: 1,
+            transition: 'all 0.2s ease',
             alignSelf: 'flex-start',
-            color: '#636366',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            mb: { xs: 1, sm: 0 },
-            ml: { xs: -1, sm: 0 },
-            fontWeight: 550,
+            mb: { xs: 1, sm: 0, md: 1 },
+            ml: { xs: 0, sm: 0 },
+            mt: { xs: 1, sm: 0, md: 1 },
+            '&:hover': {
+              bgcolor: 'rgba(99, 99, 102, 0.08)',
+              transform: 'translateX(-2px)',
+            },
           }}
+          onClick={() => router.push(paths.dashboard.campaign.creator.manage)}
         >
           Back
         </Button>

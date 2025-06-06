@@ -23,10 +23,8 @@ const icon = (name) => (
   <SvgColor
     src={`/assets/icons/navbar/${name}.svg`}
     sx={{
-      width: name === 'ic_overview' ? 20 : 24,
-      height: name === 'ic_overview' ? 20 : 24,
-      position: name === 'ic_overview' ? 'relative' : 'static',
-      top: name === 'ic_overview' ? '2px' : 0,
+      width: 24,
+      height: 24,
     }}
   />
   // OR

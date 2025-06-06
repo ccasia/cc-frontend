@@ -7,7 +7,7 @@ import { useReactToPrint } from 'react-to-print';
 import { Page, pdfjs, Document } from 'react-pdf';
 import React, { useRef, useState, useEffect } from 'react';
 
-import { Box, Stack, Button, Typography, CircularProgress, Divider, Dialog, Tooltip } from '@mui/material';
+import { Box, Stack, Button, Dialog, Tooltip, Typography, CircularProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -157,8 +157,50 @@ const InvoiceDetail = ({ invoiceId }) => {
 
             {/* Right side with action buttons */}
             <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1.5 }}>
+            <Button
+                startIcon={<Iconify icon="eva:eye-outline" />}
+                sx={{
+                  px: { xs: 1.5, sm: 2 },
+                  py: { xs: 0.75, sm: 1 },
+                  minHeight: { xs: '32px', sm: '38px' },
+                  height: { xs: '32px', sm: '38px' },
+                  minWidth: 'fit-content',
+                  color: '#666666',
+                  bgcolor: '#ffffff',
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  fontWeight: 600,
+                  borderRadius: 0.75,
+                  textTransform: 'none',
+                  position: 'relative',
+                  border: '1px solid #e0e0e0',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '1px',
+                    left: '1px',
+                    right: '1px',
+                    bottom: '1px',
+                    borderRadius: 0.75,
+                    backgroundColor: 'transparent',
+                  },
+                  '&:hover::before': {
+                    backgroundColor: 'rgba(102, 102, 102, 0.08)',
+                  },
+                  '&:hover': {
+                    bgcolor: '#eeeeee',
+                    color: '#555555',
+                    borderColor: '#d0d0d0',
+                  },
+                  '&:focus': {
+                    outline: 'none',
+                  },
+                }}
+                onClick={() => setPdfModalOpen(true)}
+              >
+                View
+              </Button>
               <Button
-                startIcon={<Iconify icon="material-symbols:print-outline" />}
+                startIcon={<Iconify icon="eva:printer-outline" />}
                 sx={{
                   px: { xs: 1.5, sm: 2 },
                   py: { xs: 0.75, sm: 1 },
@@ -183,8 +225,6 @@ const InvoiceDetail = ({ invoiceId }) => {
                     bottom: '1px',
                     borderRadius: 0.75,
                     backgroundColor: 'transparent',
-                    transition: 'background-color 0.2s ease',
-                    zIndex: -1,
                   },
                   '&:hover::before': {
                     backgroundColor: 'rgba(102, 102, 102, 0.08)',
@@ -192,7 +232,6 @@ const InvoiceDetail = ({ invoiceId }) => {
                   '&:hover': {
                     bgcolor: '#eeeeee',
                     color: '#555555',
-                    transform: 'scale(0.98)',
                     borderColor: '#d0d0d0',
                   },
                   '&:focus': {
@@ -204,53 +243,7 @@ const InvoiceDetail = ({ invoiceId }) => {
                 Print
               </Button>
               <Button
-                startIcon={<Iconify icon="solar:eye-bold" />}
-                sx={{
-                  px: { xs: 1.5, sm: 2 },
-                  py: { xs: 0.75, sm: 1 },
-                  minHeight: { xs: '32px', sm: '38px' },
-                  height: { xs: '32px', sm: '38px' },
-                  minWidth: 'fit-content',
-                  color: '#666666',
-                  bgcolor: '#f5f5f5',
-                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  fontWeight: 600,
-                  borderRadius: 0.75,
-                  textTransform: 'none',
-                  position: 'relative',
-                  transition: 'all 0.2s ease',
-                  border: '1px solid #e0e0e0',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: '1px',
-                    left: '1px',
-                    right: '1px',
-                    bottom: '1px',
-                    borderRadius: 0.75,
-                    backgroundColor: 'transparent',
-                    transition: 'background-color 0.2s ease',
-                    zIndex: -1,
-                  },
-                  '&:hover::before': {
-                    backgroundColor: 'rgba(102, 102, 102, 0.08)',
-                  },
-                  '&:hover': {
-                    bgcolor: '#eeeeee',
-                    color: '#555555',
-                    transform: 'scale(0.98)',
-                    borderColor: '#d0d0d0',
-                  },
-                  '&:focus': {
-                    outline: 'none',
-                  },
-                }}
-                onClick={() => setPdfModalOpen(true)}
-              >
-                View PDF
-              </Button>
-              <Button
-                startIcon={<Iconify icon="material-symbols:download" />}
+                startIcon={<Iconify icon="eva:download-outline" />}
                 sx={{
                   px: { xs: 1.5, sm: 2 },
                   py: { xs: 0.75, sm: 1 },
@@ -274,8 +267,6 @@ const InvoiceDetail = ({ invoiceId }) => {
                     bottom: '1px',
                     borderRadius: 0.75,
                     backgroundColor: 'transparent',
-                    transition: 'background-color 0.2s ease',
-                    zIndex: -1,
                   },
                   '&:hover::before': {
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -283,7 +274,6 @@ const InvoiceDetail = ({ invoiceId }) => {
                   '&:hover': {
                     bgcolor: '#1340ff',
                     color: '#ffffff',
-                    transform: 'scale(0.98)',
                   },
                   '&:focus': {
                     outline: 'none',
@@ -477,70 +467,141 @@ const InvoiceDetail = ({ invoiceId }) => {
             zIndex: 10000,
           }}
         >
-          {/* Download Button */}
-          <Tooltip 
-            title="Download PDF" 
-            arrow 
-            placement="bottom"
-            PopperProps={{
-              sx: {
-                zIndex: 10001,
-              },
-            }}
-            slotProps={{
-              tooltip: {
-                sx: {
-                  bgcolor: 'rgba(0, 0, 0, 0.9)',
-                  color: 'white',
-                  fontSize: { xs: '11px', md: '12px' },
-                  fontWeight: 500,
-                },
-              },
-              arrow: {
-                sx: {
-                  color: 'rgba(0, 0, 0, 0.9)',
-                },
-              },
+          {/* Grouped Action Buttons */}
+          <Box
+            sx={{
+              display: 'flex',
+              border: '1px solid #28292C',
+              borderRadius: '8px',
+              overflow: 'hidden',
             }}
           >
-            <Button
-              onClick={handleDownload}
-              sx={{
-                minWidth: { xs: '40px', md: '44px' },
-                width: { xs: '40px', md: '44px' },
-                height: { xs: '40px', md: '44px' },
-                p: 0,
-                bgcolor: 'transparent',
-                color: '#ffffff',
-                border: '1px solid #28292C',
-                borderRadius: '8px',
-                fontWeight: 650,
-                position: 'relative',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: { xs: '3px', md: '4px' },
-                  left: { xs: '3px', md: '4px' },
-                  right: { xs: '3px', md: '4px' },
-                  bottom: { xs: '3px', md: '4px' },
-                  borderRadius: '4px',
-                  backgroundColor: 'transparent',
-                  transition: 'background-color 0.2s ease',
-                  zIndex: -1,
+            <Tooltip 
+              title="Print PDF" 
+              arrow 
+              placement="bottom"
+              PopperProps={{
+                sx: {
+                  zIndex: 10001,
                 },
-                '&:hover::before': {
-                  backgroundColor: '#5A5A5C',
+              }}
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: 'rgba(0, 0, 0, 0.9)',
+                    color: 'white',
+                    fontSize: { xs: '11px', md: '12px' },
+                    fontWeight: 500,
+                  },
                 },
-                '&:hover': {
-                  bgcolor: 'transparent',
+                arrow: {
+                  sx: {
+                    color: 'rgba(0, 0, 0, 0.9)',
+                  },
                 },
               }}
             >
-              <Iconify icon="eva:download-fill" width={{ xs: 16, md: 18 }} />
-            </Button>
-          </Tooltip>
+              <Button
+                onClick={handlePrint}
+                sx={{
+                  minWidth: { xs: '40px', md: '44px' },
+                  width: { xs: '40px', md: '44px' },
+                  height: { xs: '40px', md: '44px' },
+                  p: 0,
+                  bgcolor: 'transparent',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 650,
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: { xs: '3px', md: '4px' },
+                    left: { xs: '3px', md: '4px' },
+                    right: { xs: '3px', md: '4px' },
+                    bottom: { xs: '3px', md: '4px' },
+                    borderRadius: '4px',
+                    backgroundColor: 'transparent',
+                    transition: 'background-color 0.2s ease',
+                    zIndex: -1,
+                  },
+                  '&:hover::before': {
+                    backgroundColor: '#5A5A5C',
+                  },
+                  '&:hover': {
+                    bgcolor: 'transparent',
+                  },
+                }}
+              >
+                <Iconify icon="material-symbols:print-outline" width={{ xs: 16, md: 18 }} />
+              </Button>
+            </Tooltip>
 
-          {/* Close Button */}
+            <Tooltip 
+              title="Download PDF" 
+              arrow 
+              placement="bottom"
+              PopperProps={{
+                sx: {
+                  zIndex: 10001,
+                },
+              }}
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: 'rgba(0, 0, 0, 0.9)',
+                    color: 'white',
+                    fontSize: { xs: '11px', md: '12px' },
+                    fontWeight: 500,
+                  },
+                },
+                arrow: {
+                  sx: {
+                    color: 'rgba(0, 0, 0, 0.9)',
+                  },
+                },
+              }}
+            >
+              <Button
+                onClick={handleDownload}
+                sx={{
+                  minWidth: { xs: '40px', md: '44px' },
+                  width: { xs: '40px', md: '44px' },
+                  height: { xs: '40px', md: '44px' },
+                  p: 0,
+                  bgcolor: 'transparent',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 650,
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: { xs: '3px', md: '4px' },
+                    left: { xs: '3px', md: '4px' },
+                    right: { xs: '3px', md: '4px' },
+                    bottom: { xs: '3px', md: '4px' },
+                    borderRadius: '4px',
+                    backgroundColor: 'transparent',
+                    transition: 'background-color 0.2s ease',
+                    zIndex: -1,
+                  },
+                  '&:hover::before': {
+                    backgroundColor: '#5A5A5C',
+                  },
+                  '&:hover': {
+                    bgcolor: 'transparent',
+                  },
+                }}
+              >
+                <Iconify icon="eva:download-fill" width={{ xs: 16, md: 18 }} />
+              </Button>
+            </Tooltip>
+          </Box>
+
+          {/* Close Button - Separate */}
           <Tooltip 
             title="Close" 
             arrow 
