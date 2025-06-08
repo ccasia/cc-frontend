@@ -755,7 +755,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         </Stack>
                         <Button
                           size="small"
-                          onClick={() => handleProfileClick(creator)}
+                          onClick={() => navigate(`/dashboard/creator/${creator.user.id}`)}
                           sx={{
                             bgcolor: '#ffffff',
                             color: '#1340ff',
