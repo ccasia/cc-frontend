@@ -172,13 +172,9 @@ export default function DashboardLayout({ children }) {
 
   const isCollapsed = settings.themeLayout === 'mini';
 
-  const renderNavVertical = (
-    <NavVertical openNav={nav.value} onCloseNav={nav.onFalse} />
-  );
+  const renderNavVertical = <NavVertical openNav={nav.value} onCloseNav={nav.onFalse} />;
 
-  const renderCampaignTabsNavigation = (
-    <CampaignTabsNavigation filter="active" />
-  );
+  const renderCampaignTabsNavigation = <CampaignTabsNavigation filter="active" />;
 
   const onDrop = useCallback(
     (e) => {
@@ -298,9 +294,6 @@ export default function DashboardLayout({ children }) {
           py: { xs: 0.5, sm: 0.75, md: 1 },
           px: { xs: 1, sm: 1.5, md: 2 },
           minWidth: { xs: 100, sm: 160, md: 220 },
-          '&:hover': {
-            backgroundColor: '#4D73FF',
-          },
         }}
       >
         Earn RM100 with KWSP i-Saraan!
@@ -432,8 +425,8 @@ export default function DashboardLayout({ children }) {
             </FormField>
 
             <FormField label="Campaign name (optional)">
-              <RHFTextField 
-                name="campaignName" 
+              <RHFTextField
+                name="campaignName"
                 placeholder="Enter campaign name if issue is related to a specific campaign"
                 size="small"
                 sx={{
@@ -497,7 +490,8 @@ export default function DashboardLayout({ children }) {
                   💡
                 </Box>
                 <Box>
-                  <strong>Tip:</strong> Include screenshots or screen recordings to help us understand the issue better
+                  <strong>Tip:</strong> Include screenshots or screen recordings to help us
+                  understand the issue better
                 </Box>
               </Typography>
             </Box>
@@ -575,7 +569,8 @@ export default function DashboardLayout({ children }) {
                   boxShadow: 'none',
                 },
                 '&:hover::before': {
-                  backgroundColor: isDirty && !isSubmitting ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  backgroundColor:
+                    isDirty && !isSubmitting ? 'rgba(255,255,255,0.1)' : 'transparent',
                 },
                 '&.Mui-disabled': {
                   background: '#E7E7E7',
@@ -715,8 +710,8 @@ export default function DashboardLayout({ children }) {
         <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 0 }}>
           <Stack spacing={{ xs: 2.5, sm: 3 }}>
             <FormField label="Full Name">
-              <RHFTextField 
-                name="fullName" 
+              <RHFTextField
+                name="fullName"
                 placeholder="Enter your full name"
                 size="small"
                 sx={{
@@ -738,8 +733,8 @@ export default function DashboardLayout({ children }) {
             </FormField>
 
             <FormField label="NRIC/Passport Number">
-              <RHFTextField 
-                name="nricPassport" 
+              <RHFTextField
+                name="nricPassport"
                 placeholder="Enter your NRIC/Passport No."
                 size="small"
                 sx={{
@@ -788,7 +783,9 @@ export default function DashboardLayout({ children }) {
                   💰
                 </Box>
                 <Box>
-                  <strong>Benefit:</strong> By submitting, you will receive RM100 in your EPF account from the KWSP i-Saraan initiative. You will be notified via email once the funds have been transferred!
+                  <strong>Benefit:</strong> By submitting, you will receive RM100 in your EPF
+                  account from the KWSP i-Saraan initiative. You will be notified via email once the
+                  funds have been transferred!
                 </Box>
               </Typography>
             </Box>
@@ -920,7 +917,7 @@ export default function DashboardLayout({ children }) {
       >
         {/* Always show collapsed main nav */}
         {renderNavVertical}
-        
+
         {/* Show campaign tabs navigation beside the collapsed nav if tabs exist */}
         {hasCampaignTabs && renderCampaignTabsNavigation}
 
@@ -936,10 +933,11 @@ export default function DashboardLayout({ children }) {
             bgcolor: (theme) => theme.palette.background.paper,
             border: (theme) => `1px solid ${theme.palette.divider}`,
             boxShadow: (theme) => theme.shadows[1],
-            transition: (theme) => theme.transitions.create(['margin-left'], {
-              duration: theme.transitions.duration.standard,
-              easing: theme.transitions.easing.easeInOut,
-            }),
+            transition: (theme) =>
+              theme.transitions.create(['margin-left'], {
+                duration: theme.transitions.duration.standard,
+                easing: theme.transitions.easing.easeInOut,
+              }),
           }}
         >
           <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
@@ -966,7 +964,7 @@ export default function DashboardLayout({ children }) {
     >
       {/* Show main nav (will auto-collapse when campaign tabs exist) */}
       {renderNavVertical}
-      
+
       {/* Show campaign tabs navigation beside the main nav if tabs exist */}
       {hasCampaignTabs && renderCampaignTabsNavigation}
 
@@ -982,17 +980,18 @@ export default function DashboardLayout({ children }) {
           bgcolor: (theme) => theme.palette.background.paper,
           border: (theme) => `1px solid ${theme.palette.divider}`,
           boxShadow: (theme) => theme.shadows[1],
-          transition: (theme) => theme.transitions.create(['margin-left'], {
-            duration: theme.transitions.duration.standard,
-            easing: theme.transitions.easing.easeInOut,
-          }),
+          transition: (theme) =>
+            theme.transitions.create(['margin-left'], {
+              duration: theme.transitions.duration.standard,
+              easing: theme.transitions.easing.easeInOut,
+            }),
         }}
       >
         <Header onOpenNav={nav.onTrue} isOnline={isOnline} />
 
         <Main>{children}</Main>
 
-      {/* {feedbackButton}   */}
+        {/* {feedbackButton}   */}
         {kwspButton}
         {feedbackForm}
         {kwspForm}

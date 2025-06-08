@@ -2,7 +2,16 @@
 import PropTypes from 'prop-types';
 import { useMemo, useState, useEffect } from 'react';
 
-import { Box, Stack, Avatar, Button, Accordion, Typography, AccordionSummary, AccordionDetails } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Avatar,
+  Button,
+  Accordion,
+  Typography,
+  AccordionSummary,
+  AccordionDetails,
+} from '@mui/material';
 
 import { useGetSubmissions } from 'src/hooks/use-get-submission';
 import { useGetDeliverables } from 'src/hooks/use-get-deliverables';
@@ -16,7 +25,7 @@ import Posting from './creator-stuff/submissions/posting/posting';
 
 const CampaignCreatorDeliverables = ({ campaign }) => {
   const [selectedCreator, setSelectedCreator] = useState(null);
-  const [expandedAccordion, setExpandedAccordion] = useState(null); 
+  const [expandedAccordion, setExpandedAccordion] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
   // Get shortlisted creators from campaign
@@ -25,28 +34,28 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
   // Sort creators alphabetically
   const sortedCreators = useMemo(() => {
     if (!shortlistedCreators.length) return [];
-    
+
     return [...shortlistedCreators].sort((a, b) => {
       const nameA = (a.user?.name || '').toLowerCase();
       const nameB = (b.user?.name || '').toLowerCase();
-      
-      return sortDirection === 'asc' 
-        ? nameA.localeCompare(nameB) 
-        : nameB.localeCompare(nameA);
+
+      return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
     });
   }, [shortlistedCreators, sortDirection]);
 
   // Get submissions for selected creator
-  const { data: submissions, isLoading: loadingSubmissions, mutate: submissionMutate } = useGetSubmissions(
-    selectedCreator?.userId,
-    campaign?.id
-  );
+  const {
+    data: submissions,
+    isLoading: loadingSubmissions,
+    mutate: submissionMutate,
+  } = useGetSubmissions(selectedCreator?.userId, campaign?.id);
 
   // Get deliverables for selected creator
-  const { data: deliverablesData, isLoading: loadingDeliverables, mutate: deliverableMutate } = useGetDeliverables(
-    selectedCreator?.userId,
-    campaign?.id
-  );
+  const {
+    data: deliverablesData,
+    isLoading: loadingDeliverables,
+    mutate: deliverableMutate,
+  } = useGetDeliverables(selectedCreator?.userId, campaign?.id);
 
   // Find submissions by type
   const firstDraftSubmission = useMemo(
@@ -75,7 +84,7 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       setSelectedCreator(sortedCreators[0]);
     }
   }, [sortedCreators, selectedCreator]);
-  
+
   // Handle creator selection
   const handleCreatorSelect = (creator) => {
     setSelectedCreator(creator);
@@ -155,8 +164,8 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
       }}
     >
       {/* Sort Button */}
-      <Box 
-        sx={{ 
+      <Box
+        sx={{
           display: 'flex',
           justifyContent: 'flex-start',
         }}
@@ -167,25 +176,37 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
             <Stack direction="row" alignItems="center" spacing={0.5}>
               {sortDirection === 'asc' ? (
                 <Stack direction="column" alignItems="center" spacing={0}>
-                  <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                  >
                     A
                   </Typography>
-                  <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                  >
                     Z
                   </Typography>
                 </Stack>
               ) : (
                 <Stack direction="column" alignItems="center" spacing={0}>
-                  <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                  >
                     Z
                   </Typography>
-                  <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                  >
                     A
                   </Typography>
                 </Stack>
               )}
-              <Iconify 
-                icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
+              <Iconify
+                icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'}
                 width={12}
               />
             </Stack>
@@ -272,7 +293,9 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                     />
 
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography sx={{ mb: 0.2, fontWeight: 400, fontSize: '1rem', color: '#231F20' }}>
+                      <Typography
+                        sx={{ mb: 0.2, fontWeight: 400, fontSize: '1rem', color: '#231F20' }}
+                      >
                         {creator.user?.name}
                       </Typography>
                       {/* <Typography variant="body2" color="text.secondary">
@@ -349,12 +372,11 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
               }}
             >
               <Stack spacing={1.5}>
-
                 {/* First Draft Accordion */}
-                <Accordion 
-                  expanded={expandedAccordion === 'firstDraft'} 
+                <Accordion
+                  expanded={expandedAccordion === 'firstDraft'}
                   onChange={handleAccordionChange('firstDraft')}
-                  sx={{ 
+                  sx={{
                     boxShadow: 'none',
                     border: '1px solid',
                     borderColor: 'divider',
@@ -371,21 +393,34 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                 >
                   <AccordionSummary
                     expandIcon={
-                      expandedAccordion === 'firstDraft' 
-                        ? <Iconify icon="eva:arrow-ios-upward-fill" width={24} height={24} color="#8E8E93" /> 
-                        : <Iconify icon="eva:arrow-ios-forward-fill" width={24} height={24} color="#8E8E93" />
+                      expandedAccordion === 'firstDraft' ? (
+                        <Iconify
+                          icon="eva:arrow-ios-upward-fill"
+                          width={24}
+                          height={24}
+                          color="#8E8E93"
+                        />
+                      ) : (
+                        <Iconify
+                          icon="eva:arrow-ios-forward-fill"
+                          width={24}
+                          height={24}
+                          color="#8E8E93"
+                        />
+                      )
                     }
-                    sx={{ 
+                    sx={{
                       borderBottom: expandedAccordion === 'firstDraft' ? '1px solid' : 'none',
                       borderColor: 'divider',
                       p: { xs: 1, md: 1.5 },
                       minHeight: { xs: 48, md: 54 },
-                      bgcolor: expandedAccordion === 'firstDraft' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                      bgcolor:
+                        expandedAccordion === 'firstDraft' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
                       borderTopLeftRadius: 16,
                       borderTopRightRadius: 16,
                     }}
                   >
-                    <Stack 
+                    <Stack
                       direction={{ xs: 'column', sm: 'row' }}
                       alignItems={{ xs: 'flex-start', sm: 'center' }}
                       justifyContent="flex-start"
@@ -410,15 +445,17 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                       </Box>
                     </Stack>
                   </AccordionSummary>
-                  <AccordionDetails sx={{ 
-                    p: 0,
-                    '& > *': { 
-                      px: { xs: 2, md: 2.5 }, 
-                      py: { xs: 1.5, md: 2 } 
-                    },
-                    borderBottomLeftRadius: 16,
-                    borderBottomRightRadius: 16,
-                  }}>
+                  <AccordionDetails
+                    sx={{
+                      p: 0,
+                      '& > *': {
+                        px: { xs: 2, md: 2.5 },
+                        py: { xs: 1.5, md: 2 },
+                      },
+                      borderBottomLeftRadius: 16,
+                      borderBottomRightRadius: 16,
+                    }}
+                  >
                     {firstDraftSubmission ? (
                       <FirstDraft
                         submission={firstDraftSubmission}
@@ -439,10 +476,10 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                 </Accordion>
 
                 {/* Final Draft Accordion */}
-                <Accordion 
-                  expanded={expandedAccordion === 'finalDraft'} 
+                <Accordion
+                  expanded={expandedAccordion === 'finalDraft'}
                   onChange={handleAccordionChange('finalDraft')}
-                  sx={{ 
+                  sx={{
                     boxShadow: 'none',
                     border: '1px solid',
                     borderColor: 'divider',
@@ -459,21 +496,34 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                 >
                   <AccordionSummary
                     expandIcon={
-                      expandedAccordion === 'finalDraft' 
-                        ? <Iconify icon="eva:arrow-ios-upward-fill" width={24} height={24} color="#8E8E93" /> 
-                        : <Iconify icon="eva:arrow-ios-forward-fill" width={24} height={24} color="#8E8E93" />
+                      expandedAccordion === 'finalDraft' ? (
+                        <Iconify
+                          icon="eva:arrow-ios-upward-fill"
+                          width={24}
+                          height={24}
+                          color="#8E8E93"
+                        />
+                      ) : (
+                        <Iconify
+                          icon="eva:arrow-ios-forward-fill"
+                          width={24}
+                          height={24}
+                          color="#8E8E93"
+                        />
+                      )
                     }
-                    sx={{ 
+                    sx={{
                       borderBottom: expandedAccordion === 'finalDraft' ? '1px solid' : 'none',
                       borderColor: 'divider',
                       p: { xs: 1, md: 1.5 },
                       minHeight: { xs: 48, md: 54 },
-                      bgcolor: expandedAccordion === 'finalDraft' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                      bgcolor:
+                        expandedAccordion === 'finalDraft' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
                       borderTopLeftRadius: 16,
                       borderTopRightRadius: 16,
                     }}
                   >
-                    <Stack 
+                    <Stack
                       direction={{ xs: 'column', sm: 'row' }}
                       alignItems={{ xs: 'flex-start', sm: 'center' }}
                       justifyContent="flex-start"
@@ -498,15 +548,17 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                       </Box>
                     </Stack>
                   </AccordionSummary>
-                  <AccordionDetails sx={{ 
-                    p: 0,
-                    '& > *': { 
-                      px: { xs: 2, md: 2.5 }, 
-                      py: { xs: 1.5, md: 2 } 
-                    },
-                    borderBottomLeftRadius: 16,
-                    borderBottomRightRadius: 16,
-                  }}>
+                  <AccordionDetails
+                    sx={{
+                      p: 0,
+                      '& > *': {
+                        px: { xs: 2, md: 2.5 },
+                        py: { xs: 1.5, md: 2 },
+                      },
+                      borderBottomLeftRadius: 16,
+                      borderBottomRightRadius: 16,
+                    }}
+                  >
                     {finalDraftSubmission ? (
                       <FinalDraft
                         submission={finalDraftSubmission}
@@ -528,10 +580,10 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                 </Accordion>
 
                 {/* Posting Link Accordion */}
-                <Accordion 
-                  expanded={expandedAccordion === 'posting'} 
+                <Accordion
+                  expanded={expandedAccordion === 'posting'}
                   onChange={handleAccordionChange('posting')}
-                  sx={{ 
+                  sx={{
                     boxShadow: 'none',
                     border: '1px solid',
                     borderColor: 'divider',
@@ -548,21 +600,34 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                 >
                   <AccordionSummary
                     expandIcon={
-                      expandedAccordion === 'posting' 
-                        ? <Iconify icon="eva:arrow-ios-upward-fill" width={24} height={24} color="#8E8E93" /> 
-                        : <Iconify icon="eva:arrow-ios-forward-fill" width={24} height={24} color="#8E8E93" />
+                      expandedAccordion === 'posting' ? (
+                        <Iconify
+                          icon="eva:arrow-ios-upward-fill"
+                          width={24}
+                          height={24}
+                          color="#8E8E93"
+                        />
+                      ) : (
+                        <Iconify
+                          icon="eva:arrow-ios-forward-fill"
+                          width={24}
+                          height={24}
+                          color="#8E8E93"
+                        />
+                      )
                     }
-                    sx={{ 
+                    sx={{
                       borderBottom: expandedAccordion === 'posting' ? '1px solid' : 'none',
                       borderColor: 'divider',
                       p: { xs: 1, md: 1.5 },
                       minHeight: { xs: 48, md: 54 },
-                      bgcolor: expandedAccordion === 'posting' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                      bgcolor:
+                        expandedAccordion === 'posting' ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
                       borderTopLeftRadius: 16,
                       borderTopRightRadius: 16,
                     }}
                   >
-                    <Stack 
+                    <Stack
                       direction={{ xs: 'column', sm: 'row' }}
                       alignItems={{ xs: 'flex-start', sm: 'center' }}
                       justifyContent="flex-start"
@@ -587,15 +652,17 @@ const CampaignCreatorDeliverables = ({ campaign }) => {
                       </Box>
                     </Stack>
                   </AccordionSummary>
-                  <AccordionDetails sx={{ 
-                    p: 0,
-                    '& > *': { 
-                      px: { xs: 2, md: 2.5 }, 
-                      py: { xs: 1.5, md: 2 } 
-                    },
-                    borderBottomLeftRadius: 16,
-                    borderBottomRightRadius: 16,
-                  }}>
+                  <AccordionDetails
+                    sx={{
+                      p: 0,
+                      '& > *': {
+                        px: { xs: 2, md: 2.5 },
+                        py: { xs: 1.5, md: 2 },
+                      },
+                      borderBottomLeftRadius: 16,
+                      borderBottomRightRadius: 16,
+                    }}
+                  >
                     {postingSubmission ? (
                       <Posting
                         submission={postingSubmission}

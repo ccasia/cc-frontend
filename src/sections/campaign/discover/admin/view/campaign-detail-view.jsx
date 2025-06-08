@@ -57,9 +57,9 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
-import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
+import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -77,7 +77,6 @@ if (typeof window !== 'undefined') {
 const CampaignDetailView = ({ id }) => {
   const settings = useSettingsContext();
   const router = useRouter();
-  const location = useLocation();
   // const { campaigns, isLoading, mutate: campaignMutate } = useGetCampaigns();
   const { campaign, campaignLoading, mutate: campaignMutate } = useGetCampaignById(id);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -97,11 +96,23 @@ const CampaignDetailView = ({ id }) => {
   const lgUp = useResponsive('up', 'lg');
   const templateModal = useBoolean();
   const linking = useBoolean();
-  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
-  const menuOpen = Boolean(menuAnchorEl);
+  const location = useLocation();
+
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
 
   const open = Boolean(anchorEl);
+
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+
+  const handleMenuOpen = (event) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
+
+  const menuOpen = useBoolean(menuAnchorEl);
 
   // console.log('campaignid', campaign);
 
@@ -111,35 +122,35 @@ const CampaignDetailView = ({ id }) => {
       // Check if this campaign was opened as a tab (via "Open in New Tab")
       const urlParams = new URLSearchParams(location.search);
       const openAsTab = urlParams.get('openAsTab');
-      
+
       // Only add to tabs if explicitly opened as a tab
       if (openAsTab === 'true') {
         // Ensure campaignTabs exists
         if (!window.campaignTabs) {
           window.campaignTabs = [];
         }
-        
+
         const campaignName = campaign.name || 'Campaign Details';
-        
+
         // Check if this campaign is already in campaignTabs
-        const tabExists = window.campaignTabs.some(tab => tab.id === id);
-        
+        const tabExists = window.campaignTabs.some((tab) => tab.id === id);
+
         if (!tabExists) {
           // Add to campaignTabs
           window.campaignTabs.push({
             id,
-            name: campaignName
+            name: campaignName,
           });
-          
+
           // Update status tracking for tabs
           if (!window.campaignTabsStatus) {
             window.campaignTabsStatus = {};
           }
-          
+
           window.campaignTabsStatus[id] = {
-            status: campaign.status
+            status: campaign.status,
           };
-          
+
           // Save to localStorage
           try {
             localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
@@ -148,19 +159,19 @@ const CampaignDetailView = ({ id }) => {
           }
         } else {
           // Update existing tab with current campaign name and status
-          window.campaignTabs = window.campaignTabs.map(tab => {
+          window.campaignTabs = window.campaignTabs.map((tab) => {
             if (tab.id === id) {
               return { ...tab, name: campaignName };
             }
             return tab;
           });
-          
+
           if (window.campaignTabsStatus) {
             window.campaignTabsStatus[id] = {
-              status: campaign.status
+              status: campaign.status,
             };
           }
-          
+
           // Save to localStorage
           try {
             localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
@@ -168,7 +179,7 @@ const CampaignDetailView = ({ id }) => {
             console.error('Error saving campaign tabs to localStorage:', error);
           }
         }
-        
+
         // Clean up the URL parameter after processing
         const newUrl = new URL(window.location);
         newUrl.searchParams.delete('openAsTab');
@@ -333,7 +344,10 @@ const CampaignDetailView = ({ id }) => {
                   zIndex: -1,
                 },
                 '&:hover::before': {
-                  backgroundColor: currentTab === tab.value ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
+                  backgroundColor:
+                    currentTab === tab.value
+                      ? 'rgba(255, 255, 255, 0.1)'
+                      : 'rgba(19, 64, 255, 0.08)',
                 },
                 '&:hover': {
                   bgcolor: currentTab === tab.value ? '#1340ff' : 'transparent',
@@ -428,8 +442,8 @@ const CampaignDetailView = ({ id }) => {
         campaign={campaign}
       />
     ),
-    deliverables: <CampaignCreatorDeliverables campaign={campaign} />,
     submission: <CampaignDraftSubmissions campaign={campaign} campaignMutate={campaignMutate} />,
+    deliverables: <CampaignCreatorDeliverables campaign={campaign} />,
   };
 
   const formatDate = (dateString) => {
@@ -574,16 +588,6 @@ const CampaignDetailView = ({ id }) => {
     [user]
   );
 
-  const handleMenuOpen = (event) => {
-    setMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-  };
-
-  const onCloseCampaignLog = () => setCampaignLogIsOpen(false);
-
   return (
     <Container
       maxWidth={settings.themeStretch ? false : 'xl'}
@@ -682,7 +686,7 @@ const CampaignDetailView = ({ id }) => {
                 >
                   {campaign?.name || 'Campaign Detail'}
                 </Typography>
-                
+
                 {/* Company Info */}
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.125 }}>
                   {campaign?.company?.logo && (
@@ -717,7 +721,7 @@ const CampaignDetailView = ({ id }) => {
                       component="img"
                       src="/assets/icons/navbar/ic_calendar_new.svg"
                       alt="calendar"
-                      sx={{ 
+                      sx={{
                         width: 16,
                         height: 16,
                         mb: 0.25,
@@ -731,10 +735,11 @@ const CampaignDetailView = ({ id }) => {
                         fontSize: '0.85rem',
                       }}
                     >
-                      {formatDate(campaign?.campaignBrief?.startDate)} - {formatDate(campaign?.campaignBrief?.endDate)}
+                      {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
+                      {formatDate(campaign?.campaignBrief?.endDate)}
                     </Typography>
                   </Stack>
-                  
+
                   {/* Compact Status Badge */}
                   <Box
                     sx={{
@@ -787,12 +792,12 @@ const CampaignDetailView = ({ id }) => {
               <Button
                 variant="outlined"
                 startIcon={
-                  <Iconify 
-                    icon="solar:pen-bold" 
-                    width={15} 
-                    sx={{ 
+                  <Iconify
+                    icon="solar:pen-bold"
+                    width={15}
+                    sx={{
                       color: isDisabled ? '#9e9e9e' : '#1340ff',
-                    }} 
+                    }}
                   />
                 }
                 onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
@@ -859,10 +864,10 @@ const CampaignDetailView = ({ id }) => {
 
               <Menu
                 anchorEl={menuAnchorEl}
-                open={menuOpen}
+                open={menuOpen.value}
                 onClose={handleMenuClose}
                 PaperProps={{
-                  sx: { 
+                  sx: {
                     minWidth: 180,
                     bgcolor: '#FFFFFF !important',
                     border: '1px solid #e7e7e7',
@@ -898,7 +903,7 @@ const CampaignDetailView = ({ id }) => {
                       handleMenuClose();
                     }}
                     disabled={isDisabled || loading.value}
-                    sx={{ 
+                    sx={{
                       borderRadius: 0.75,
                       mx: 0,
                       my: 0.25,
@@ -906,14 +911,14 @@ const CampaignDetailView = ({ id }) => {
                       py: 1,
                       minHeight: 40,
                       backgroundColor: '#FFFFFF !important',
-                      color: (isDisabled || loading.value) ? '#9e9e9e' : '#374151',
+                      color: isDisabled || loading.value ? '#9e9e9e' : '#374151',
                       fontWeight: 500,
                       fontSize: '0.875rem',
                       transition: 'all 0.2s ease',
                       border: '1px solid transparent',
                       '&:hover': {
                         backgroundColor: '#FFFFFF !important',
-                        color: (isDisabled || loading.value) ? '#9e9e9e' : '#1340ff',
+                        color: isDisabled || loading.value ? '#9e9e9e' : '#1340ff',
                         border: '1px solid #e5e7eb',
                         transform: 'translateY(-1px)',
                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
@@ -927,14 +932,14 @@ const CampaignDetailView = ({ id }) => {
                       },
                     }}
                   >
-                    <Iconify 
-                      icon="lucide:file-spreadsheet" 
-                      width={18} 
-                      height={18} 
-                      sx={{ 
+                    <Iconify
+                      icon="lucide:file-spreadsheet"
+                      width={18}
+                      height={18}
+                      sx={{
                         mr: 1.5,
-                        color: (isDisabled || loading.value) ? '#9e9e9e' : '#6b7280',
-                      }} 
+                        color: isDisabled || loading.value ? '#9e9e9e' : '#6b7280',
+                      }}
                     />
                     Generate Spreadsheet
                   </MenuItem>
@@ -948,7 +953,7 @@ const CampaignDetailView = ({ id }) => {
                       handleMenuClose();
                     }}
                     disabled={!campaign?.spreadSheetURL}
-                    sx={{ 
+                    sx={{
                       borderRadius: 0.75,
                       mx: 0,
                       my: 0.25,
@@ -977,14 +982,14 @@ const CampaignDetailView = ({ id }) => {
                       },
                     }}
                   >
-                    <Iconify 
-                      icon="eva:google-outline" 
-                      width={18} 
-                      height={18} 
-                      sx={{ 
+                    <Iconify
+                      icon="eva:google-outline"
+                      width={18}
+                      height={18}
+                      sx={{
                         mr: 1.5,
                         color: !campaign?.spreadSheetURL ? '#9e9e9e' : '#6b7280',
-                      }} 
+                      }}
                     />
                     Google Spreadsheet
                   </MenuItem>
@@ -994,7 +999,7 @@ const CampaignDetailView = ({ id }) => {
                     generatePublicUrl();
                     handleMenuClose();
                   }}
-                  sx={{ 
+                  sx={{
                     borderRadius: 0.75,
                     mx: 0,
                     my: 0.25,
@@ -1019,14 +1024,14 @@ const CampaignDetailView = ({ id }) => {
                     },
                   }}
                 >
-                  <Iconify 
-                    icon="eva:link-2-outline" 
-                    width={18} 
-                    height={18} 
-                    sx={{ 
+                  <Iconify
+                    icon="eva:link-2-outline"
+                    width={18}
+                    height={18}
+                    sx={{
                       mr: 1.5,
                       color: '#6b7280',
-                    }} 
+                    }}
                   />
                   Generate URL
                 </MenuItem>
@@ -1035,7 +1040,7 @@ const CampaignDetailView = ({ id }) => {
                     setCampaignLogIsOpen(true);
                     handleMenuClose();
                   }}
-                  sx={{ 
+                  sx={{
                     borderRadius: 0.75,
                     mx: 0,
                     my: 0.25,
@@ -1060,14 +1065,14 @@ const CampaignDetailView = ({ id }) => {
                     },
                   }}
                 >
-                  <Iconify 
-                    icon="eva:file-text-outline" 
-                    width={18} 
-                    height={18} 
-                    sx={{ 
+                  <Iconify
+                    icon="eva:file-text-outline"
+                    width={18}
+                    height={18}
+                    sx={{
                       mr: 1.5,
                       color: '#6b7280',
-                    }} 
+                    }}
                   />
                   View Log
                 </MenuItem>
@@ -1098,8 +1103,6 @@ const CampaignDetailView = ({ id }) => {
         publicUrl={publicUrl}
         password={password}
       />
-
-      <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
 
       <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>
         <DialogTitle>

@@ -112,7 +112,14 @@ const CampaignView = () => {
     return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${filter.toUpperCase()}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}`;
   };
 
-  const { data, size, setSize, isValidating, mutate: mutateCampaigns, isLoading } = useSWRInfinite(getKey, fetcher);
+  const {
+    data,
+    size,
+    setSize,
+    isValidating,
+    mutate: mutateCampaigns,
+    isLoading,
+  } = useSWRInfinite(getKey, fetcher);
 
   const smDown = useResponsive('down', 'sm');
 
@@ -137,29 +144,9 @@ const CampaignView = () => {
     () => campaigns?.filter((campaign) => campaign?.status === 'COMPLETED') || [],
     [campaigns]
   );
-  const pausedCampaigns = useMemo(
-    () => campaigns?.filter((campaign) => campaign?.status === 'PAUSED') || [],
-    [campaigns]
-  );
 
   const activeCount = activeCampaigns.length;
   const completedCount = completedCampaigns.length;
-  const pausedCount = pausedCampaigns.length;
-
-  // Store campaign status information for each campaign
-  useEffect(() => {
-    if (!campaigns) return;
-    
-    const statusMap = {};
-    campaigns.forEach(campaign => {
-      statusMap[campaign.id] = {
-        status: campaign.status
-      };
-    });
-    
-    // Make this available globally
-    window.campaignTabsStatus = statusMap;
-  }, [campaigns]);
 
   const dataFiltered = useMemo(
     () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
@@ -190,7 +177,7 @@ const CampaignView = () => {
   const tabs = [
     { id: 'active', label: 'Active', count: activeCount },
     { id: 'completed', label: 'Completed', count: completedCount },
-    { id: 'paused', label: 'Paused', count: pausedCount },
+    // { id: 'paused', label: 'Paused', count: pausedCount },
   ];
 
   return (
@@ -491,9 +478,9 @@ const CampaignView = () => {
             </Button>
 
             {/* Settings Button */}
-            <Tooltip 
-              title="Campaign Settings" 
-              arrow 
+            <Tooltip
+              title="Campaign Settings"
+              arrow
               placement="bottom"
               slotProps={{
                 tooltip: {
@@ -580,47 +567,30 @@ const CampaignView = () => {
           vertical: 'top',
           horizontal: 'right',
         }}
-        slotProps={{
-          paper: {
-            sx: {
-              backgroundColor: 'white',
-              backgroundImage: 'none',
-              boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.1)',
-              border: '1px solid #e7e7e7',
-              borderBottom: '2px solid #e7e7e7',
-              borderRadius: 1,
-              mt: { xs: -8, sm: 0 },
-              mb: { xs: 1, sm: 1 },
-              width: 200,
-              overflow: 'visible',
-            },
-          },
-        }}
-        MenuListProps={{
+        PaperProps={{
           sx: {
-            backgroundColor: 'white',
-            p: 0.5,
+            mt: { xs: -8, sm: 0 },
+            mb: { xs: 1, sm: 1 },
+            width: 200,
+            bgcolor: 'white',
+            border: '1px solid #e7e7e7',
+            borderBottom: '2px solid #e7e7e7',
+            borderRadius: 1,
+            '& .MuiMenuItem-root': {
+              px: 2,
+              py: 1.5,
+              borderRadius: 1,
+              color: '#000000',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+            },
           },
         }}
       >
-        <MenuItem 
-          onClick={handleNewCampaign} 
-          disabled={isDisabled}
-          sx={{
-            borderRadius: 1,
-            backgroundColor: 'white',
-            color: isDisabled ? '#9e9e9e' : 'black',
-            fontWeight: 600,
-            fontSize: '0.95rem',
-            p: 1.5,
-            '&:hover': {
-              backgroundColor: isDisabled ? 'white' : '#f5f5f5',
-            },
-            '&.Mui-disabled': {
-              opacity: 0.7,
-            }
-          }}
-        >
+        <MenuItem onClick={handleNewCampaign} disabled={isDisabled}>
           <Iconify icon="ph:sparkle-fill" width={20} height={20} sx={{ mr: 2 }} />
           New Campaign
         </MenuItem>
@@ -658,7 +628,7 @@ const CampaignView = () => {
           </Box>
         ) : (
           <EmptyContent
-            title={`No ${filter} campaigns available`}
+            title={`No ${filter === 'active' ? 'active' : 'completed'} campaigns available`}
           />
         ))}
 

@@ -49,7 +49,7 @@ const ChipStyle = {
     px: 1.5,
     py: 0.5,
   },
-  '&:hover': { 
+  '&:hover': {
     bgcolor: '#bbdefb',
     transform: 'translateY(-1px)',
   },
@@ -265,11 +265,11 @@ const CampaignDetailContent = ({ campaign }) => {
                     },
                   ].map((item) => (
                     <Box key={item.label}>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: '#6c757d', 
-                          mb: 1, 
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#6c757d',
+                          mb: 1,
                           fontWeight: 600,
                           fontSize: '0.875rem',
                         }}
@@ -292,11 +292,11 @@ const CampaignDetailContent = ({ campaign }) => {
                     { label: 'Language', data: requirement?.language },
                   ].map((item) => (
                     <Box key={item.label}>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: '#6c757d', 
-                          mb: 1, 
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#6c757d',
+                          mb: 1,
                           fontWeight: 600,
                           fontSize: '0.875rem',
                         }}
@@ -400,9 +400,9 @@ const CampaignDetailContent = ({ campaign }) => {
                         }}
                       />
                     )}
-                    <Typography 
-                      variant={item?.value ? 'body2' : 'caption'} 
-                      sx={{ 
+                    <Typography
+                      variant={item?.value ? 'body2' : 'caption'}
+                      sx={{
                         color: item?.value ? '#495057' : '#6c757d',
                         lineHeight: 1.6,
                       }}
@@ -459,7 +459,7 @@ const CampaignDetailContent = ({ campaign }) => {
                       )}
                       <Typography
                         variant={item?.value ? 'body2' : 'caption'}
-                        sx={{ 
+                        sx={{
                           color: item?.value ? '#495057' : '#6c757d',
                           lineHeight: 1.6,
                         }}
@@ -579,13 +579,19 @@ const CampaignDetailContent = ({ campaign }) => {
                   </TableHead>
                   <TableBody>
                     <TableRow>
-                      <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}>
+                      <TableCell
+                        sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}
+                      >
                         Campaign Start Date
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}>
+                      <TableCell
+                        sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}
+                      >
                         {dayjs(campaign?.campaignBrief?.startDate).format('ddd, DD MMM YYYY')}
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#6c757d' }}>
+                      <TableCell
+                        sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#6c757d' }}
+                      >
                         -
                       </TableCell>
                     </TableRow>
@@ -593,25 +599,37 @@ const CampaignDetailContent = ({ campaign }) => {
                       ?.sort((a, b) => a.order - b.order)
                       .map((timeline) => (
                         <TableRow key={timeline?.id}>
-                          <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}>
+                          <TableCell
+                            sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}
+                          >
                             {timeline?.name}
                           </TableCell>
-                          <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}>
+                          <TableCell
+                            sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}
+                          >
                             {dayjs(timeline.startDate).format('ddd, DD MMM YYYY')}
                           </TableCell>
-                          <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}>
+                          <TableCell
+                            sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}
+                          >
                             {dayjs(timeline.endDate).format('ddd, DD MMM YYYY')}
                           </TableCell>
                         </TableRow>
                       ))}
                     <TableRow>
-                      <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}>
+                      <TableCell
+                        sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}
+                      >
                         Campaign End Date
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#6c757d' }}>
+                      <TableCell
+                        sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#6c757d' }}
+                      >
                         -
                       </TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}>
+                      <TableCell
+                        sx={{ whiteSpace: 'nowrap', fontSize: '0.875rem', color: '#495057' }}
+                      >
                         {dayjs(campaign?.campaignBrief?.endDate).format('ddd, DD MMM YYYY')}
                       </TableCell>
                     </TableRow>
@@ -660,11 +678,7 @@ const CampaignDetailContent = ({ campaign }) => {
                 ].map(
                   (deliverable) =>
                     deliverable.value && (
-                      <Chip
-                        key={deliverable.label}
-                        label={deliverable.label}
-                        sx={ChipStyle}
-                      />
+                      <Chip key={deliverable.label} label={deliverable.label} sx={ChipStyle} />
                     )
                 )}
               </Box>
@@ -715,19 +729,19 @@ const CampaignDetailContent = ({ campaign }) => {
                       transition: 'all 0.2s ease',
                     }}
                   >
-                    <Avatar 
-                      src={elem.admin.user.photoURL} 
-                      sx={{ 
-                        width: 36, 
+                    <Avatar
+                      src={elem.admin.user.photoURL}
+                      sx={{
+                        width: 36,
                         height: 36,
                         border: '2px solid #e9ecef',
-                      }} 
+                      }}
                     />
                     <Typography
                       variant="body2"
-                      sx={{ 
-                        flex: 1, 
-                        fontSize: '0.875rem', 
+                      sx={{
+                        flex: 1,
+                        fontSize: '0.875rem',
                         fontWeight: 600,
                         color: '#495057',
                       }}
@@ -818,10 +832,10 @@ const CampaignDetailContent = ({ campaign }) => {
                 <Box>
                   <Typography
                     variant="body2"
-                    sx={{ 
-                      color: '#6c757d', 
-                      mb: 1, 
-                      fontWeight: 600, 
+                    sx={{
+                      color: '#6c757d',
+                      mb: 1,
+                      fontWeight: 600,
                       fontSize: '0.875rem',
                     }}
                   >
@@ -837,7 +851,10 @@ const CampaignDetailContent = ({ campaign }) => {
                         border: '2px solid #e9ecef',
                       }}
                     />
-                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#495057' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#495057' }}
+                    >
                       {(campaign?.company?.name ?? campaign?.brand?.name) || 'Company Name'}
                     </Typography>
                   </Stack>
@@ -855,16 +872,19 @@ const CampaignDetailContent = ({ campaign }) => {
                   <Box key={item.label}>
                     <Typography
                       variant="body2"
-                      sx={{ 
-                        color: '#6c757d', 
-                        mb: 1, 
-                        fontWeight: 600, 
+                      sx={{
+                        color: '#6c757d',
+                        mb: 1,
+                        fontWeight: 600,
                         fontSize: '0.875rem',
                       }}
                     >
                       {item.label}
                     </Typography>
-                    <Typography variant="body2" sx={{ fontSize: '0.875rem', color: '#495057', lineHeight: 1.5 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontSize: '0.875rem', color: '#495057', lineHeight: 1.5 }}
+                    >
                       {item.value || 'Not specified'}
                     </Typography>
                   </Box>
@@ -883,7 +903,9 @@ const CampaignDetailContent = ({ campaign }) => {
                     label: 'Website',
                     value: campaign?.company?.website ?? campaign?.brand?.website,
                     isLink: true,
-                    href: (campaign?.company?.website ?? campaign?.brand?.website)?.startsWith('http')
+                    href: (campaign?.company?.website ?? campaign?.brand?.website)?.startsWith(
+                      'http'
+                    )
                       ? (campaign?.company?.website ?? campaign?.brand?.website)
                       : `https://${campaign?.company?.website ?? campaign?.brand?.website}`,
                   },
@@ -896,10 +918,10 @@ const CampaignDetailContent = ({ campaign }) => {
                   <Box key={item.label}>
                     <Typography
                       variant="body2"
-                      sx={{ 
-                        color: '#6c757d', 
-                        mb: 1, 
-                        fontWeight: 600, 
+                      sx={{
+                        color: '#6c757d',
+                        mb: 1,
+                        fontWeight: 600,
                         fontSize: '0.875rem',
                       }}
                     >
@@ -930,6 +952,52 @@ const CampaignDetailContent = ({ campaign }) => {
                   </Box>
                 ))}
               </Stack>
+            </Box>
+          </Box>
+
+          {/* Agreement Form */}
+          <Box sx={BoxStyle}>
+            <Box className="header">
+              <Iconify
+                icon="solar:document-bold"
+                sx={{
+                  color: '#1340ff',
+                  width: 20,
+                  height: 20,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#1a1a1a',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  letterSpacing: '0.25px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                DELIVERABLES
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {[
+                { label: 'UGC Videos', value: true },
+                { label: 'Raw Footage', value: campaign?.rawFootage },
+                { label: 'Photos', value: campaign?.photos },
+                { label: 'Ads', value: campaign?.ads },
+                { label: 'Cross Posting', value: campaign?.crossPosting },
+              ].map(
+                (deliverable) =>
+                  deliverable.value && (
+                    <Chip
+                      key={deliverable.label}
+                      label={deliverable.label}
+                      size="small"
+                      sx={ChipStyle}
+                    />
+                  )
+              )}
             </Box>
           </Box>
 
@@ -1063,17 +1131,17 @@ const CampaignDetailContent = ({ campaign }) => {
                 <Stack spacing={1.5}>
                   {campaign?.campaignBrief?.referencesLinks?.map((link, index) => (
                     <Stack key={index} direction="row" spacing={1.5} alignItems="center">
-                      <Iconify 
-                        icon="solar:link-circle-bold" 
-                        sx={{ 
-                          color: '#1340ff', 
-                          width: 16, 
+                      <Iconify
+                        icon="solar:link-circle-bold"
+                        sx={{
+                          color: '#1340ff',
+                          width: 16,
                           height: 16,
                           flexShrink: 0,
-                        }} 
+                        }}
                       />
-                      <Link 
-                        href={link} 
+                      <Link
+                        href={link}
                         target="_blank"
                         sx={{
                           fontSize: '0.875rem',
@@ -1209,9 +1277,9 @@ const CampaignDetailContent = ({ campaign }) => {
         >
           {/* Download Button */}
           {campaign?.agreementTemplate?.url && (
-            <Tooltip 
-              title="Download PDF" 
-              arrow 
+            <Tooltip
+              title="Download PDF"
+              arrow
               placement="bottom"
               PopperProps={{
                 sx: {
@@ -1278,9 +1346,9 @@ const CampaignDetailContent = ({ campaign }) => {
           )}
 
           {/* Close Button */}
-          <Tooltip 
-            title="Close" 
-            arrow 
+          <Tooltip
+            title="Close"
+            arrow
             placement="bottom"
             PopperProps={{
               sx: {
@@ -1415,9 +1483,9 @@ const CampaignDetailContent = ({ campaign }) => {
                     }}
                   />
                 </Box>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
+                <Typography
+                  variant="h6"
+                  sx={{
                     color: '#e7e7e7',
                     fontWeight: 600,
                     mb: 1,
@@ -1425,9 +1493,9 @@ const CampaignDetailContent = ({ campaign }) => {
                 >
                   No Agreement Form Available
                 </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
+                <Typography
+                  variant="body2"
+                  sx={{
                     color: '#85868E',
                     textAlign: 'center',
                     maxWidth: 300,
@@ -1442,25 +1510,25 @@ const CampaignDetailContent = ({ campaign }) => {
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={onDocumentLoadError}
                 loading={
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
+                  <Box
+                    sx={{
+                      display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      justifyContent: 'center', 
+                      justifyContent: 'center',
                       height: '100%',
                       gap: 2,
                     }}
                   >
-                    <CircularProgress 
-                      size={32} 
-                      sx={{ 
+                    <CircularProgress
+                      size={32}
+                      sx={{
                         color: '#ffffff',
-                      }} 
+                      }}
                     />
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
+                    <Typography
+                      variant="body2"
+                      sx={{
                         color: '#e7e7e7',
                         fontWeight: 500,
                       }}
@@ -1502,9 +1570,9 @@ const CampaignDetailContent = ({ campaign }) => {
                         }}
                       />
                     </Box>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
+                    <Typography
+                      variant="h6"
+                      sx={{
                         color: '#dc3545',
                         fontWeight: 600,
                         mb: 1,
@@ -1512,15 +1580,16 @@ const CampaignDetailContent = ({ campaign }) => {
                     >
                       Error Loading PDF
                     </Typography>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
+                    <Typography
+                      variant="body2"
+                      sx={{
                         color: '#85868E',
                         textAlign: 'center',
                         maxWidth: 400,
                       }}
                     >
-                      {pdfError.message || 'There was an error loading the agreement form. Please try again later.'}
+                      {pdfError.message ||
+                        'There was an error loading the agreement form. Please try again later.'}
                     </Typography>
                   </Box>
                 ) : (
