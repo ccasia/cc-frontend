@@ -94,10 +94,13 @@ const StyledCollapseButton = styled(IconButton)(({ theme, collapsed }) => ({
   top: collapsed ? '50%' : 'auto',
   right: collapsed ? theme.spacing(1) : 'auto',
   transform: collapsed ? 'translateY(-50%)' : 'none',
-  transition: theme.transitions.create(['transform', 'background-color', 'position', 'top', 'right', 'opacity', 'visibility'], {
-    duration: theme.transitions.duration.standard,
-    easing: theme.transitions.easing.easeInOut,
-  }),
+  transition: theme.transitions.create(
+    ['transform', 'background-color', 'position', 'top', 'right', 'opacity', 'visibility'],
+    {
+      duration: theme.transitions.duration.standard,
+      easing: theme.transitions.easing.easeInOut,
+    }
+  ),
   '&:hover': {
     backgroundColor: theme.palette.action.hover,
     transform: collapsed ? 'translateY(-50%) scale(1.05)' : 'scale(1.05)',
@@ -120,6 +123,7 @@ const StyledNavContent = styled(Box)(({ theme, collapsed }) => ({
     duration: theme.transitions.duration.standard,
     easing: theme.transitions.easing.easeInOut,
   }),
+  scrollbarWidth: 'none',
   '&::-webkit-scrollbar': {
     width: 4,
   },
@@ -212,11 +216,11 @@ export default function NavVertical({ openNav, onCloseNav }) {
             }}
           />
         </StyledLogoContainer>
-        
+
         <StyledTextContainer collapsed={isCollapsed}>
-          {(!isCollapsed) && (
+          {!isCollapsed && (
             <>
-              <Typography 
+              <Typography
                 variant="subtitle2"
                 sx={{
                   fontWeight: 700,
@@ -229,7 +233,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
               >
                 CULT CREATIVE
               </Typography>
-              <Typography 
+              <Typography
                 variant="caption"
                 sx={{
                   color: 'text.secondary',
@@ -247,11 +251,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
         </StyledTextContainer>
 
         {!isCollapsed && (
-          <Tooltip 
-            title={!lgUp ? "Close" : "Collapse"} 
-            placement="left" 
-            arrow
-          >
+          <Tooltip title={!lgUp ? 'Close' : 'Collapse'} placement="left" arrow>
             <StyledCollapseButton
               collapsed={isCollapsed}
               onClick={handleToggleCollapse}
@@ -260,13 +260,17 @@ export default function NavVertical({ openNav, onCloseNav }) {
               {!lgUp ? (
                 // Close icon for mobile
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                 </svg>
               ) : (
                 // Collapse/Expand icon for desktop
                 <img
-                  src={isCollapsed ? "/assets/icons/navbar/ic_nav_expand.svg" : "/assets/icons/navbar/ic_nav_collapse.svg"}
-                  alt={isCollapsed ? "Expand" : "Collapse"}
+                  src={
+                    isCollapsed
+                      ? '/assets/icons/navbar/ic_nav_expand.svg'
+                      : '/assets/icons/navbar/ic_nav_collapse.svg'
+                  }
+                  alt={isCollapsed ? 'Expand' : 'Collapse'}
                 />
               )}
             </StyledCollapseButton>
@@ -278,14 +282,8 @@ export default function NavVertical({ openNav, onCloseNav }) {
       {isCollapsed && (
         <Box sx={{ px: 1.5, pt: 1.5, pb: -2 }}>
           <Tooltip title="Expand" placement="right" arrow>
-            <StyledExpandButton
-              onClick={handleToggleCollapse}
-              aria-label="Expand navigation"
-            >
-              <img
-                src="/assets/icons/navbar/ic_nav_expand.svg"
-                alt="Expand"
-              />
+            <StyledExpandButton onClick={handleToggleCollapse} aria-label="Expand navigation">
+              <img src="/assets/icons/navbar/ic_nav_expand.svg" alt="Expand" />
             </StyledExpandButton>
           </Tooltip>
         </Box>
@@ -309,21 +307,18 @@ export default function NavVertical({ openNav, onCloseNav }) {
     <Box
       sx={{
         flexShrink: { lg: 0 },
-        width: { 
-          lg: isCollapsed ? NAV.W_MINI + 24 : NAV.W_VERTICAL + 24 
+        width: {
+          lg: isCollapsed ? NAV.W_MINI + 24 : NAV.W_VERTICAL + 24,
         },
-        transition: (theme) => theme.transitions.create(['width'], {
-          duration: theme.transitions.duration.standard,
-          easing: theme.transitions.easing.easeInOut,
-        }),
+        transition: (theme) =>
+          theme.transitions.create(['width'], {
+            duration: theme.transitions.duration.standard,
+            easing: theme.transitions.easing.easeInOut,
+          }),
       }}
     >
       {lgUp ? (
-        <StyledNavContainer 
-          collapsed={isCollapsed}
-        >
-          {renderContent}
-        </StyledNavContainer>
+        <StyledNavContainer collapsed={isCollapsed}>{renderContent}</StyledNavContainer>
       ) : (
         <Drawer
           open={openNav}
