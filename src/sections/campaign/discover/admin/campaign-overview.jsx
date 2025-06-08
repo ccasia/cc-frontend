@@ -189,6 +189,10 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
     }));
   };
 
+  const handleProfileClick = (creator) => {
+    navigate(`/dashboard/creator/profile/${creator.userId}`);
+  };
+
   return (
     <Container maxWidth={false} disableGutters>
       {/* Stats Cards Row */}
@@ -755,7 +759,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         </Stack>
                         <Button
                           size="small"
-                          onClick={() => navigate(`/dashboard/creator/${creator.user.id}`)}
+                          onClick={() => handleProfileClick(creator)}
                           sx={{
                             bgcolor: '#ffffff',
                             color: '#1340ff',
