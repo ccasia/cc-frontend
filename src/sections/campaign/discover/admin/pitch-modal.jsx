@@ -16,14 +16,15 @@ import {
   Button,
   Divider,
   Tooltip,
+  Collapse,
   TextField,
   IconButton,
   Typography,
   DialogContent,
   DialogActions,
-  Collapse,
 } from '@mui/material';
 
+import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -33,7 +34,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import AvatarIcon from 'src/components/avatar-icon/avatar-icon';
-import { useResponsive } from 'src/hooks/use-responsive';
 
 const PitchModal = ({ pitch, open, onClose, campaign, onUpdate }) => {
   const { enqueueSnackbar } = useSnackbar();

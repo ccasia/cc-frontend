@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useFormContext } from 'react-hook-form';
 
-import { Stack, Select, MenuItem, FormLabel, ListItemText, Box } from '@mui/material';
+import { Box, Stack, Select, MenuItem, FormLabel, ListItemText } from '@mui/material';
 
 import { countries } from 'src/assets/data';
 import { primaryFont } from 'src/theme/typography';
