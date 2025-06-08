@@ -83,7 +83,6 @@ const ListboxComponent = React.forwardRef((props, ref) => {
 
 const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const [query, setQuery] = useState('');
-  const [sortDirection, setSortDirection] = useState('asc');
   const { data, isLoading } = useGetAllCreators();
 
   const { user } = useAuthContext();
@@ -99,6 +98,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
   const settings = useSettingsContext();
   const loading = useBoolean();
   const [selectedAgreement, setSelectedAgreement] = useState(null);
+  // const [selectedCreators, setSelectedCreators] = useState(null);
   const ugcVidesoModal = useBoolean();
   const { addCreators, shortlistedCreators: creators } = useShortlistedCreators();
 
@@ -149,32 +149,14 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     }));
   }, [agreements, campaign]);
 
-  const handleToggleSort = () => {
-    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-  };
-
   const filteredCreators = useMemo(
-    () => {
-      let filtered = query
+    () =>
+      query
         ? creatorsWithAgreements?.filter((elem) =>
             elem?.user?.name?.toLowerCase().includes(query.toLowerCase())
           )
-        : creatorsWithAgreements;
-        
-      if (filtered?.length) {
-        filtered = [...filtered].sort((a, b) => {
-          const nameA = (a?.user?.name || '').toLowerCase();
-          const nameB = (b?.user?.name || '').toLowerCase();
-          
-          return sortDirection === 'asc' 
-            ? nameA.localeCompare(nameB) 
-            : nameB.localeCompare(nameA);
-        });
-      }
-      
-      return filtered;
-    },
-    [creatorsWithAgreements, query, sortDirection]
+        : creatorsWithAgreements,
+    [creatorsWithAgreements, query]
   );
 
   const selectedCreator = watch('creator');
@@ -495,6 +477,7 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
                   options={data?.filter(
                     (item) => item.status === 'active' && item?.creator?.isFormCompleted
                   )}
+                  // options={creators}
                   filterOptions={(option, state) => {
                     const options = option.filter(
                       (item) => !shortlistedCreatorsId.includes(item.id)
@@ -630,89 +613,35 @@ const CampaignDetailCreator = ({ campaign, campaignMutate }) => {
     <>
       <Stack gap={3}>
         <Stack alignItems="center" direction="row" justifyContent="space-between">
-          <Stack direction="row" spacing={1} alignItems="center">
-            <TextField
-              placeholder="Search by Creator Name"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              fullWidth={!smUp}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="material-symbols:search" />
-                  </InputAdornment>
-                ),
-                sx: {
-                  height: '42px',
-                  '& input': {
-                    py: 3,
-                    height: '42px',
-                  },
-                },
-              }}
-              sx={{
-                width: { xs: '100%', md: 260 },
-                '& .MuiOutlinedInput-root': {
-                  height: '42px',
-                  border: '1px solid #e7e7e7',
-                  borderBottom: '3px solid #e7e7e7',
-                  borderRadius: 1,
-                },
-              }}
-            />
-            
-            <Button
-              onClick={handleToggleSort}
-              endIcon={
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  {sortDirection === 'asc' ? (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                        A
-                      </Typography>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                        Z
-                      </Typography>
-                    </Stack>
-                  ) : (
-                    <Stack direction="column" alignItems="center" spacing={0}>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                        Z
-                      </Typography>
-                      <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                        A
-                      </Typography>
-                    </Stack>
-                  )}
-                  <Iconify 
-                    icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
-                    width={12}
-                  />
-                </Stack>
-              }
-              sx={{
-                px: 1.5,
-                py: 0.75,
+          <TextField
+            placeholder="Search by Creator Name"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            fullWidth={!smUp}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify icon="material-symbols:search" />
+                </InputAdornment>
+              ),
+              sx: {
                 height: '42px',
-                color: '#637381',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderRadius: 1,
-                textTransform: 'none',
-                whiteSpace: 'nowrap',
-                boxShadow: 'none',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  color: '#221f20',
+                '& input': {
+                  py: 3,
+                  height: '42px',
                 },
-              }}
-            >
-              Alphabetical
-            </Button>
-          </Stack>
-          
+              },
+            }}
+            sx={{
+              width: { xs: '100%', md: 260 },
+              '& .MuiOutlinedInput-root': {
+                height: '42px',
+                border: '1px solid #e7e7e7',
+                borderBottom: '3px solid #e7e7e7',
+                borderRadius: 1,
+              },
+            }}
+          />
           {!smUp ? (
             <IconButton
               sx={{ bgcolor: (theme) => theme.palette.background.paper, borderRadius: 1 }}

@@ -28,7 +28,6 @@ import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useResponsive } from 'src/hooks/use-responsive';
 import { useCreator } from 'src/hooks/zustands/useCreator';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -104,8 +103,6 @@ const socialLogins = [
 
 const Register = () => {
   const password = useBoolean();
-
-  const mdDown = useResponsive('down', 'lg');
 
   const { register } = useAuthContext();
 
@@ -186,8 +183,7 @@ const Register = () => {
   const {
     handleSubmit,
     control,
-    formState: { isSubmitting, errors, isValid },
-    setValue,
+    formState: { isSubmitting, isValid },
     watch,
   } = methods;
 
@@ -199,10 +195,6 @@ const Register = () => {
   // const errorRecaptcha = errors?.recaptcha;
 
   const curPassword = watch('password');
-
-  const open = Boolean(anchorEl);
-
-  const id = open ? 'popper' : undefined;
 
   useEffect(() => {
     const handleClose = (event) => {

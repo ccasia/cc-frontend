@@ -1,4 +1,3 @@
-import useSWR from 'swr';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { useMemo, useState, useEffect } from 'react';

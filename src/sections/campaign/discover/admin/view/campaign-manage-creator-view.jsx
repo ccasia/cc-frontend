@@ -350,7 +350,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
         {currentTab === 'profile' && (
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} px={{ md: 3 }}>
             {/* Left Column - Creator Info and Payment Info */}
-            <Box sx={{ width: { xs: '100%', md: '80%' }, display: 'flex', flexDirection: 'column' }}>
+            <Box
+              sx={{ width: { xs: '100%', md: '80%' }, display: 'flex', flexDirection: 'column' }}
+            >
               {/* Creator Information Box */}
               <Box sx={{ ...BoxStyle, mb: 2, flex: 1 }}>
                 <Box className="header">
@@ -414,7 +416,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                           maxWidth: '100%',
                           whiteSpace: 'normal',
                           display: 'block',
-                          mt: 0.5
+                          mt: 0.5,
                         }}
                       >
                         {item.value || item.fallback}
@@ -422,7 +424,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                     </Box>
                   ))}
                 </Box>
-                
+
                 <Box sx={{ mt: 3 }}>
                   <Typography
                     variant="subtitle2"
@@ -432,8 +434,12 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                     Interests
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {data?.user?.creator?.interests?.length > 0 ? 
-                      [...new Set(data?.user?.creator?.interests?.map((interest) => interest.name))].map((name) => (
+                    {data?.user?.creator?.interests?.length > 0 ? (
+                      [
+                        ...new Set(
+                          data?.user?.creator?.interests?.map((interest) => interest.name)
+                        ),
+                      ].map((name) => (
                         <Box
                           key={name}
                           component="span"
@@ -454,9 +460,10 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                         >
                           {name}
                         </Box>
-                      )) : 
+                      ))
+                    ) : (
                       <Typography variant="body2">Not specified</Typography>
-                    }
+                    )}
                   </Box>
                 </Box>
               </Box>
@@ -520,7 +527,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                           maxWidth: '100%',
                           whiteSpace: 'normal',
                           display: 'block',
-                          mt: 0.5
+                          mt: 0.5,
                         }}
                       >
                         {item.value}
@@ -532,7 +539,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
             </Box>
 
             {/* Right Column - Submission Status and Credits */}
-            <Box sx={{ width: { xs: '100%', md: '65%' }, display: 'flex', flexDirection: 'column' }}>
+            <Box
+              sx={{ width: { xs: '100%', md: '65%' }, display: 'flex', flexDirection: 'column' }}
+            >
               {/* Submission Status Box */}
               <Box sx={{ ...BoxStyle, mb: 2, height: 'auto', minHeight: 'auto' }}>
                 <Box className="header">
@@ -556,7 +565,13 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                   </Typography>
                 </Box>
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+                    gap: 2,
+                  }}
+                >
                   {[
                     { type: 'AGREEMENT_FORM', label: 'Agreement' },
                     { type: 'FIRST_DRAFT', label: 'First Draft' },
@@ -567,7 +582,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                       (sub) => sub.submissionType?.type === item.type
                     );
                     const status = submission?.status || 'NOT_STARTED';
-                    
+
                     return (
                       <Box key={item.type}>
                         <Typography
@@ -577,12 +592,14 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                         >
                           {item.label}
                         </Typography>
-                        <Box sx={{ 
-                          mt: 0.5,
-                          display: 'flex',
-                          justifyContent: 'center',
-                          width: '100%'
-                        }}>
+                        <Box
+                          sx={{
+                            mt: 0.5,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%',
+                          }}
+                        >
                           <Typography
                             variant="caption"
                             noWrap
@@ -648,7 +665,7 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
               </Box>
 
               {/* Credits Assigned Box */}
-              <Box sx={{ ...BoxStyle, flex: 1, height: 'auto', mb: 2}}>
+              <Box sx={{ ...BoxStyle, flex: 1, height: 'auto', mb: 2 }}>
                 <Box className="header">
                   <Iconify icon="ri:coin-line" width={20} color="#1340FF" />
                   <Typography
@@ -664,12 +681,23 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                 </Box>
 
                 <Typography variant="subtitle2">
-                  <Label color="info" sx={{ bgcolor: '#F5F5F5', color: '#231F20', px: 1.5, py: 2, fontSize: '0.8rem' }}>{ugcCredits ?? 0} UGC Videos</Label>
+                  <Label
+                    color="info"
+                    sx={{
+                      bgcolor: '#F5F5F5',
+                      color: '#231F20',
+                      px: 1.5,
+                      py: 2,
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    {ugcCredits ?? 0} UGC Videos
+                  </Label>
                 </Typography>
               </Box>
-              
+
               {/* Social Media Box */}
-              <Box sx={{ ...BoxStyle, flex: 1, height: 'auto'}}>
+              <Box sx={{ ...BoxStyle, flex: 1, height: 'auto' }}>
                 <Box className="header">
                   <Iconify icon="mdi:share-variant-outline" width={20} color="#1340FF" />
                   <Typography
@@ -685,14 +713,29 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                 </Box>
 
                 <Stack direction="row" spacing={1}>
-                  <Tooltip title={data?.user?.creator?.instagram ? "Instagram account connected" : "Instagram account not connected"}>
+                  <Tooltip
+                    title={
+                      data?.user?.creator?.instagram
+                        ? 'Instagram account connected'
+                        : 'Instagram account not connected'
+                    }
+                  >
                     <span style={{ display: 'inline-block' }}>
                       <Button
-                        component={data?.user?.creator?.instagram ? "a" : "button"}
-                        href={data?.user?.creator?.instagram ? `https://instagram.com/${data?.user?.creator?.instagram}` : undefined}
+                        component={data?.user?.creator?.instagram ? 'a' : 'button'}
+                        href={
+                          data?.user?.creator?.instagram
+                            ? `https://instagram.com/${data?.user?.creator?.instagram}`
+                            : undefined
+                        }
                         target="_blank"
                         disabled={!data?.user?.creator?.instagram}
-                        startIcon={<Iconify icon="mdi:instagram" color={data?.user?.creator?.instagram ? "#231F20" : "#8e8e93"} />}
+                        startIcon={
+                          <Iconify
+                            icon="mdi:instagram"
+                            color={data?.user?.creator?.instagram ? '#231F20' : '#8e8e93'}
+                          />
+                        }
                         sx={{
                           px: 1.5,
                           py: 0.5,
@@ -703,7 +746,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                           cursor: data?.user?.creator?.instagram ? 'pointer' : 'not-allowed',
                           opacity: data?.user?.creator?.instagram ? 1 : 0.6,
                           '&:hover': {
-                            bgcolor: data?.user?.creator?.instagram ? alpha('#636366', 0.08) : 'transparent',
+                            bgcolor: data?.user?.creator?.instagram
+                              ? alpha('#636366', 0.08)
+                              : 'transparent',
                           },
                           '&.Mui-disabled': {
                             color: '#8e8e93',
@@ -716,14 +761,29 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                       </Button>
                     </span>
                   </Tooltip>
-                  <Tooltip title={data?.user?.creator?.tiktok ? "TikTok account connected" : "TikTok account not connected"}>
+                  <Tooltip
+                    title={
+                      data?.user?.creator?.tiktok
+                        ? 'TikTok account connected'
+                        : 'TikTok account not connected'
+                    }
+                  >
                     <span style={{ display: 'inline-block' }}>
                       <Button
-                        component={data?.user?.creator?.tiktok ? "a" : "button"}
-                        href={data?.user?.creator?.tiktok ? `https://tiktok.com/@${data?.user?.creator?.tiktok}` : undefined}
+                        component={data?.user?.creator?.tiktok ? 'a' : 'button'}
+                        href={
+                          data?.user?.creator?.tiktok
+                            ? `https://tiktok.com/@${data?.user?.creator?.tiktok}`
+                            : undefined
+                        }
                         target="_blank"
                         disabled={!data?.user?.creator?.tiktok}
-                        startIcon={<Iconify icon="ic:baseline-tiktok" color={data?.user?.creator?.tiktok ? "#231F20" : "#8e8e93"} />}
+                        startIcon={
+                          <Iconify
+                            icon="ic:baseline-tiktok"
+                            color={data?.user?.creator?.tiktok ? '#231F20' : '#8e8e93'}
+                          />
+                        }
                         sx={{
                           px: 2,
                           py: 0.5,
@@ -734,7 +794,9 @@ const CampaignManageCreatorView = ({ id, campaignId }) => {
                           cursor: data?.user?.creator?.tiktok ? 'pointer' : 'not-allowed',
                           opacity: data?.user?.creator?.tiktok ? 1 : 0.6,
                           '&:hover': {
-                            bgcolor: data?.user?.creator?.tiktok ? alpha('#636366', 0.08) : 'transparent',
+                            bgcolor: data?.user?.creator?.tiktok
+                              ? alpha('#636366', 0.08)
+                              : 'transparent',
                           },
                           '&.Mui-disabled': {
                             color: '#8e8e93',

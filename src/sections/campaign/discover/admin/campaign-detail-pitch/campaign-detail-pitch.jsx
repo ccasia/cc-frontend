@@ -45,7 +45,6 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
   const [search, setSearch] = useState('');
   const [selectedPitch, setSelectedPitch] = useState(null);
   const [openPitchModal, setOpenPitchModal] = useState(false);
-  const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
   const mediaKit = useBoolean();
   const theme = useTheme();
 
@@ -69,25 +68,8 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
       );
     }
 
-    // Sort alphabetically by creator name
-    if (filtered?.length) {
-      filtered = [...filtered].sort((a, b) => {
-        const nameA = (a.user?.name || '').toLowerCase();
-        const nameB = (b.user?.name || '').toLowerCase();
-        
-        return sortDirection === 'asc' 
-          ? nameA.localeCompare(nameB) 
-          : nameB.localeCompare(nameA);
-      });
-    }
-
     return filtered;
-  }, [pitches, selectedFilter, search, sortDirection]);
-
-  // Toggle sort direction
-  const handleToggleSort = () => {
-    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-  };
+  }, [pitches, selectedFilter, search]);
 
   const matchCampaignPercentage = (pitch) => {
     if (!pitch) return null;
@@ -238,7 +220,8 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                 zIndex: -1,
               },
               '&:hover::before': {
-                backgroundColor: selectedFilter === 'all' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
+                backgroundColor:
+                  selectedFilter === 'all' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
               },
               '&:hover': {
                 bgcolor: selectedFilter === 'all' ? '#1340ff' : 'transparent',
@@ -283,7 +266,10 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                 zIndex: -1,
               },
               '&:hover::before': {
-                backgroundColor: selectedFilter === 'undecided' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
+                backgroundColor:
+                  selectedFilter === 'undecided'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(19, 64, 255, 0.08)',
               },
               '&:hover': {
                 bgcolor: selectedFilter === 'undecided' ? '#1340ff' : 'transparent',
@@ -346,7 +332,10 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                 zIndex: -1,
               },
               '&:hover::before': {
-                backgroundColor: selectedFilter === 'approved' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
+                backgroundColor:
+                  selectedFilter === 'approved'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(19, 64, 255, 0.08)',
               },
               '&:hover': {
                 bgcolor: selectedFilter === 'approved' ? '#1340ff' : 'transparent',
@@ -398,8 +387,8 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Iconify 
-                    icon="eva:search-fill" 
+                  <Iconify
+                    icon="eva:search-fill"
                     sx={{
                       width: 18,
                       height: 18,
@@ -450,34 +439,48 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
 
           {/* Sort Button */}
           <Button
-            onClick={handleToggleSort}
-            endIcon={
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {sortDirection === 'asc' ? (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                      A
-                    </Typography>
-                    <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                      Z
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}>
-                      Z
-                    </Typography>
-                    <Typography variant="caption" sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}>
-                      A
-                    </Typography>
-                  </Stack>
-                )}
-                <Iconify 
-                  icon={sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'} 
-                  width={12}
-                />
-              </Stack>
-            }
+            // onClick={handleToggleSort}
+            // endIcon={
+            //   <Stack direction="row" alignItems="center" spacing={0.5}>
+            //     {sortDirection === 'asc' ? (
+            //       <Stack direction="column" alignItems="center" spacing={0}>
+            //         <Typography
+            //           variant="caption"
+            //           sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+            //         >
+            //           A
+            //         </Typography>
+            //         <Typography
+            //           variant="caption"
+            //           sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+            //         >
+            //           Z
+            //         </Typography>
+            //       </Stack>
+            //     ) : (
+            //       <Stack direction="column" alignItems="center" spacing={0}>
+            //         <Typography
+            //           variant="caption"
+            //           sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+            //         >
+            //           Z
+            //         </Typography>
+            //         <Typography
+            //           variant="caption"
+            //           sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+            //         >
+            //           A
+            //         </Typography>
+            //       </Stack>
+            //     )}
+            //     <Iconify
+            //       icon={
+            //         sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+            //       }
+            //       width={12}
+            //     />
+            //   </Stack>
+            // }
             sx={{
               px: 2,
               py: 1,
@@ -697,7 +700,9 @@ const CampaignDetailPitch = ({ pitches, timelines, campaign, onUpdate }) => {
                           }),
                         }}
                       >
-                        {pitch.status === 'undecided' ? 'PENDING REVIEW' : pitch.status?.toUpperCase() || 'PENDING'}
+                        {pitch.status === 'undecided'
+                          ? 'PENDING REVIEW'
+                          : pitch.status?.toUpperCase() || 'PENDING'}
                       </Typography>
                     </TableCell>
                     <TableCell>

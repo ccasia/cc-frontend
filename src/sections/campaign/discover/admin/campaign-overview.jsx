@@ -189,10 +189,6 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
     }));
   };
 
-  const handleProfileClick = (creator) => {
-    navigate(`/dashboard/campaign/discover/detail/${campaign.id}/creator/${creator.user.id}`);
-  };
-
   return (
     <Container maxWidth={false} disableGutters>
       {/* Stats Cards Row */}

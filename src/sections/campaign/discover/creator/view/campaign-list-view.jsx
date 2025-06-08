@@ -34,6 +34,8 @@ import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
 
+import CreatorForm from 'src/sections/creator/form/creatorForm';
+
 import CampaignLists from '../campaign-list';
 
 // ----------------------------------------------------------------------
@@ -99,7 +101,7 @@ export default function CampaignListView() {
   });
 
   const { user } = useAuthContext();
-  const dialog = useBoolean(!user?.creator?.isFormCompleted || !user?.paymentForm?.bankAccountName);
+  const dialog = useBoolean(!user?.creator?.isOnBoardingFormCompleted);
   const backdrop = useBoolean(!user?.creator?.isFormCompleted);
 
   const load = useBoolean();
@@ -902,6 +904,8 @@ export default function CampaignListView() {
           <Iconify icon="mdi:arrow-up" />
         </Fab>
       )}
+
+      <CreatorForm open={dialog.value} onClose={dialog.onFalse} />
     </Container>
   );
 }

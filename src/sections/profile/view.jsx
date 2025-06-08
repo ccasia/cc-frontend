@@ -565,234 +565,247 @@ const Profile = () => {
             }
           }}
         >
-        <Button
-          component={Link}
-          to={paths.dashboard.user.profileTabs.account}
-          sx={{
-            px: 2,
-            py: 1,
-            minHeight: '38px',
-            height: '38px',
-            minWidth: 'fit-content',
-            color: currentTab === 'general' ? '#ffffff' : '#666666',
-            bgcolor: currentTab === 'general' ? '#1340ff' : 'transparent',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            borderRadius: 0.75,
-            textTransform: 'none',
-            position: 'relative',
-            transition: 'all 0.2s ease',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: '1px',
-              left: '1px',
-              right: '1px',
-              bottom: '1px',
-              borderRadius: 0.75,
-              backgroundColor: 'transparent',
-              transition: 'background-color 0.2s ease',
-              zIndex: -1,
-            },
-            '&:hover::before': {
-              backgroundColor: currentTab === 'general' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
-            },
-            '&:hover': {
+          <Button
+            component={Link}
+            to={paths.dashboard.user.profileTabs.account}
+            sx={{
+              px: 2,
+              py: 1,
+              minHeight: '38px',
+              height: '38px',
+              minWidth: 'fit-content',
+              color: currentTab === 'general' ? '#ffffff' : '#666666',
               bgcolor: currentTab === 'general' ? '#1340ff' : 'transparent',
-              color: currentTab === 'general' ? '#ffffff' : '#1340ff',
-              transform: 'scale(0.98)',
-            },
-            '&:focus': {
-              outline: 'none',
-            },
-          }}
-        >
-          Accounts
-        </Button>
-
-        <Button
-          component={Link}
-          to={paths.dashboard.user.profileTabs.preference}
-          sx={{
-            px: 2,
-            py: 1,
-            minHeight: '38px',
-            height: '38px',
-            ml: 1,
-            minWidth: 'fit-content',
-            color: currentTab === 'preference' ? '#ffffff' : '#666666',
-            bgcolor: currentTab === 'preference' ? '#1340ff' : 'transparent',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            borderRadius: 0.75,
-            textTransform: 'none',
-            position: 'relative',
-            transition: 'all 0.2s ease',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: '1px',
-              left: '1px',
-              right: '1px',
-              bottom: '1px',
+              fontSize: '0.95rem',
+              fontWeight: 600,
               borderRadius: 0.75,
-              backgroundColor: 'transparent',
-              transition: 'background-color 0.2s ease',
-              zIndex: -1,
-            },
-            '&:hover::before': {
-              backgroundColor: currentTab === 'preference' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
-            },
-            '&:hover': {
+              textTransform: 'none',
+              position: 'relative',
+              transition: 'all 0.2s ease',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '1px',
+                left: '1px',
+                right: '1px',
+                bottom: '1px',
+                borderRadius: 0.75,
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor:
+                  currentTab === 'general' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
+              },
+              '&:hover': {
+                bgcolor: currentTab === 'general' ? '#1340ff' : 'transparent',
+                color: currentTab === 'general' ? '#ffffff' : '#1340ff',
+                transform: 'scale(0.98)',
+              },
+              '&:focus': {
+                outline: 'none',
+              },
+            }}
+          >
+            Accounts
+          </Button>
+
+          <Button
+            component={Link}
+            to={paths.dashboard.user.profileTabs.preference}
+            sx={{
+              px: 2,
+              py: 1,
+              minHeight: '38px',
+              height: '38px',
+              ml: 1,
+              minWidth: 'fit-content',
+              color: currentTab === 'preference' ? '#ffffff' : '#666666',
               bgcolor: currentTab === 'preference' ? '#1340ff' : 'transparent',
-              color: currentTab === 'preference' ? '#ffffff' : '#1340ff',
-              transform: 'scale(0.98)',
-            },
-            '&:focus': {
-              outline: 'none',
-            },
-          }}
-        >
-          Preferences
-        </Button>
-
-        <Button
-          component={Link}
-          to={paths.dashboard.user.profileTabs.security}
-          sx={{
-            px: 2,
-            py: 1,
-            minHeight: '38px',
-            height: '38px',
-            ml: 1,
-            minWidth: 'fit-content',
-            color: currentTab === 'security' ? '#ffffff' : '#666666',
-            bgcolor: currentTab === 'security' ? '#1340ff' : 'transparent',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            borderRadius: 0.75,
-            textTransform: 'none',
-            position: 'relative',
-            transition: 'all 0.2s ease',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: '1px',
-              left: '1px',
-              right: '1px',
-              bottom: '1px',
+              fontSize: '0.95rem',
+              fontWeight: 600,
               borderRadius: 0.75,
-              backgroundColor: 'transparent',
-              transition: 'background-color 0.2s ease',
-              zIndex: -1,
-            },
-            '&:hover::before': {
-              backgroundColor: currentTab === 'security' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
-            },
-            '&:hover': {
+              textTransform: 'none',
+              position: 'relative',
+              transition: 'all 0.2s ease',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '1px',
+                left: '1px',
+                right: '1px',
+                bottom: '1px',
+                borderRadius: 0.75,
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor:
+                  currentTab === 'preference'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(19, 64, 255, 0.08)',
+              },
+              '&:hover': {
+                bgcolor: currentTab === 'preference' ? '#1340ff' : 'transparent',
+                color: currentTab === 'preference' ? '#ffffff' : '#1340ff',
+                transform: 'scale(0.98)',
+              },
+              '&:focus': {
+                outline: 'none',
+              },
+            }}
+          >
+            Preferences
+          </Button>
+
+          <Button
+            component={Link}
+            to={paths.dashboard.user.profileTabs.security}
+            sx={{
+              px: 2,
+              py: 1,
+              minHeight: '38px',
+              height: '38px',
+              ml: 1,
+              minWidth: 'fit-content',
+              color: currentTab === 'security' ? '#ffffff' : '#666666',
               bgcolor: currentTab === 'security' ? '#1340ff' : 'transparent',
-              color: currentTab === 'security' ? '#ffffff' : '#1340ff',
-              transform: 'scale(0.98)',
-            },
-            '&:focus': {
-              outline: 'none',
-            },
-          }}
-        >
-          Security
-        </Button>
-
-        <Button
-          component={Link}
-          to={paths.dashboard.user.profileTabs.socials}
-          sx={{
-            px: 2,
-            py: 1,
-            minHeight: '38px',
-            height: '38px',
-            ml: 1,
-            minWidth: 'fit-content',
-            color: currentTab === 'Social Links' ? '#ffffff' : '#666666',
-            bgcolor: currentTab === 'Social Links' ? '#1340ff' : 'transparent',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            borderRadius: 0.75,
-            textTransform: 'none',
-            position: 'relative',
-            transition: 'all 0.2s ease',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: '1px',
-              left: '1px',
-              right: '1px',
-              bottom: '1px',
+              fontSize: '0.95rem',
+              fontWeight: 600,
               borderRadius: 0.75,
-              backgroundColor: 'transparent',
-              transition: 'background-color 0.2s ease',
-              zIndex: -1,
-            },
-            '&:hover::before': {
-              backgroundColor: currentTab === 'Social Links' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
-            },
-            '&:hover': {
+              textTransform: 'none',
+              position: 'relative',
+              transition: 'all 0.2s ease',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '1px',
+                left: '1px',
+                right: '1px',
+                bottom: '1px',
+                borderRadius: 0.75,
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor:
+                  currentTab === 'security'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(19, 64, 255, 0.08)',
+              },
+              '&:hover': {
+                bgcolor: currentTab === 'security' ? '#1340ff' : 'transparent',
+                color: currentTab === 'security' ? '#ffffff' : '#1340ff',
+                transform: 'scale(0.98)',
+              },
+              '&:focus': {
+                outline: 'none',
+              },
+            }}
+          >
+            Security
+          </Button>
+
+          <Button
+            component={Link}
+            to={paths.dashboard.user.profileTabs.socials}
+            sx={{
+              px: 2,
+              py: 1,
+              minHeight: '38px',
+              height: '38px',
+              ml: 1,
+              minWidth: 'fit-content',
+              color: currentTab === 'Social Links' ? '#ffffff' : '#666666',
               bgcolor: currentTab === 'Social Links' ? '#1340ff' : 'transparent',
-              color: currentTab === 'Social Links' ? '#ffffff' : '#1340ff',
-              transform: 'scale(0.98)',
-            },
-            '&:focus': {
-              outline: 'none',
-            },
-          }}
-        >
-          Socials
-        </Button>
-
-        <Button
-          component={Link}
-          to={paths.dashboard.user.profileTabs.payment}
-          sx={{
-            px: 2,
-            py: 1,
-            minHeight: '38px',
-            height: '38px',
-            ml: 1,
-            minWidth: 'fit-content',
-            color: currentTab === 'paymentForm' ? '#ffffff' : '#666666',
-            bgcolor: currentTab === 'paymentForm' ? '#1340ff' : 'transparent',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            borderRadius: 0.75,
-            textTransform: 'none',
-            position: 'relative',
-            transition: 'all 0.2s ease',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: '1px',
-              left: '1px',
-              right: '1px',
-              bottom: '1px',
+              fontSize: '0.95rem',
+              fontWeight: 600,
               borderRadius: 0.75,
-              backgroundColor: 'transparent',
-              transition: 'background-color 0.2s ease',
-              zIndex: -1,
-            },
-            '&:hover::before': {
-              backgroundColor: currentTab === 'paymentForm' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
-            },
-            '&:hover': {
+              textTransform: 'none',
+              position: 'relative',
+              transition: 'all 0.2s ease',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '1px',
+                left: '1px',
+                right: '1px',
+                bottom: '1px',
+                borderRadius: 0.75,
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor:
+                  currentTab === 'Social Links'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(19, 64, 255, 0.08)',
+              },
+              '&:hover': {
+                bgcolor: currentTab === 'Social Links' ? '#1340ff' : 'transparent',
+                color: currentTab === 'Social Links' ? '#ffffff' : '#1340ff',
+                transform: 'scale(0.98)',
+              },
+              '&:focus': {
+                outline: 'none',
+              },
+            }}
+          >
+            Socials
+          </Button>
+
+          <Button
+            component={Link}
+            to={paths.dashboard.user.profileTabs.payment}
+            sx={{
+              px: 2,
+              py: 1,
+              minHeight: '38px',
+              height: '38px',
+              ml: 1,
+              minWidth: 'fit-content',
+              color: currentTab === 'paymentForm' ? '#ffffff' : '#666666',
               bgcolor: currentTab === 'paymentForm' ? '#1340ff' : 'transparent',
-              color: currentTab === 'paymentForm' ? '#ffffff' : '#1340ff',
-              transform: 'scale(0.98)',
-            },
-            '&:focus': {
-              outline: 'none',
-            },
-          }}
-        >
-          {user?.paymentForm?.status === 'rejected' && `⚠️`} Payment
-        </Button>
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              borderRadius: 0.75,
+              textTransform: 'none',
+              position: 'relative',
+              transition: 'all 0.2s ease',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '1px',
+                left: '1px',
+                right: '1px',
+                bottom: '1px',
+                borderRadius: 0.75,
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.2s ease',
+                zIndex: -1,
+              },
+              '&:hover::before': {
+                backgroundColor:
+                  currentTab === 'paymentForm'
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(19, 64, 255, 0.08)',
+              },
+              '&:hover': {
+                bgcolor: currentTab === 'paymentForm' ? '#1340ff' : 'transparent',
+                color: currentTab === 'paymentForm' ? '#ffffff' : '#1340ff',
+                transform: 'scale(0.98)',
+              },
+              '&:focus': {
+                outline: 'none',
+              },
+            }}
+          >
+            Payment
+          </Button>
         </Stack>
 
         {/* Left arrow indicator */}

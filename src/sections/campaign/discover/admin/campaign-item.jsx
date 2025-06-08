@@ -21,69 +21,57 @@ import { CampaignLog } from '../../manage/list/CampaignLog';
 
 // ----------------------------------------------------------------------
 
-// store open campaign tabs in localStorage
-if (typeof window !== 'undefined') {
-  if (!window.campaignTabs) {
-    // load from localStorage
-    try {
-      const storedTabs = localStorage.getItem('campaignTabs');
-      window.campaignTabs = storedTabs ? JSON.parse(storedTabs) : [];
-    } catch (error) {
-      console.error('Error loading campaign tabs from localStorage:', error);
-      window.campaignTabs = [];
-    }
-  }
-}
-
 export default function CampaignItem({ campaign, onView, onEdit, onDelete, status, pitchStatus }) {
   const theme = useTheme();
   const { user } = useAuthContext();
+
   const router = useRouter();
   const settings = useSettingsContext();
-  
+
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
-  
+
   // Handle menu open
   const handleClick = (event) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
-  
+
   // Handle menu close
   const handleClose = (event) => {
     if (event) event.stopPropagation();
     setAnchorEl(null);
   };
-  
+
   // Handle open in new tab
   const handleOpenInNewTab = (event) => {
     event.stopPropagation();
-    
+
     const campaignName = campaign?.name || 'Campaign Details';
     const campaignImage = campaign?.campaignBrief?.images?.[0] || null;
-    
+
     // Check if this is the first campaign tab being opened
     const isFirstTab = !window.campaignTabs || window.campaignTabs.length === 0;
-    
+
     // Check if this campaign is already in campaignTabs
-    const tabExists = window.campaignTabs && window.campaignTabs.some(tab => tab.id === campaign.id);
-    
+    const tabExists =
+      window.campaignTabs && window.campaignTabs.some((tab) => tab.id === campaign.id);
+
     if (tabExists) {
       // If tab already exists, update the name and image to ensure they're current
-      window.campaignTabs = window.campaignTabs.map(tab => {
+      window.campaignTabs = window.campaignTabs.map((tab) => {
         if (tab.id === campaign.id) {
-          return { 
-            ...tab, 
+          return {
+            ...tab,
             name: campaignName,
-            image: campaignImage 
+            image: campaignImage,
           };
         }
         return tab;
       });
-      
+
       // Save updated tabs to localStorage
       try {
         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
@@ -95,40 +83,40 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       if (!window.campaignTabs) {
         window.campaignTabs = [];
       }
-      
+
       window.campaignTabs.push({
         id: campaign.id,
         name: campaignName,
-        image: campaignImage
+        image: campaignImage,
       });
-      
+
       // Save to localStorage
       try {
         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
       } catch (error) {
         console.error('Error saving campaign tabs to localStorage:', error);
       }
-      
+
       // Auto-collapse main navigation only when opening the first campaign tab
       if (isFirstTab && settings.themeLayout === 'vertical') {
         settings.onUpdate('themeLayout', 'mini');
       }
     }
-    
+
     // Update status tracking for tabs
     if (typeof window !== 'undefined') {
       if (!window.campaignTabsStatus) {
         window.campaignTabsStatus = {};
       }
-      
+
       window.campaignTabsStatus[campaign.id] = {
-        status: campaign.status
+        status: campaign.status,
       };
     }
-    
+
     // Navigate to the campaign detail page with a parameter indicating it's opened as a tab
     // router.push(`${paths.dashboard.campaign.adminCampaignDetail(campaign.id)}?openAsTab=true`);
-    
+
     handleClose();
   };
 
@@ -142,7 +130,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       <Image
         alt={campaign?.name}
         src={campaign?.campaignBrief?.images[0]}
-        sx={{ 
+        sx={{
           height: '100%',
           width: '100%',
           objectFit: 'cover',
@@ -279,19 +267,19 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               ).format('D MMM YYYY')}`}
             </Typography>
           </Stack>
-          
-          <IconButton 
-            size="small" 
+
+          <IconButton
+            size="small"
             onClick={handleClick}
-            sx={{ 
+            sx={{
               ml: 1,
               p: 0.5,
-              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
             }}
           >
             <MoreHorizIcon fontSize="small" />
           </IconButton>
-          
+
           <Menu
             anchorEl={anchorEl}
             open={open}

@@ -287,7 +287,7 @@ export default function NotificationsPopover() {
               fontFamily: (theme) => theme.typography.fontPrimaryFamily,
             }}
           >
-            Woohoo! You have a clean inbox
+            Woohoo! You have a clean inbox 
           </Typography>
           <Typography
             variant="body2"
@@ -318,7 +318,6 @@ export default function NotificationsPopover() {
                 key={notification.id}
                 notification={notification}
                 markAsRead={handleMarkAsRead}
-                onClose={drawer.onFalse}
               />
             ))}
         </List>
@@ -371,9 +370,9 @@ export default function NotificationsPopover() {
           drawer.onTrue(); // Original function
           window.dataLayer = window.dataLayer || [];
           window.dataLayer.push({
-            event: 'notification_button_click',
-            buttonName: 'Notification Bell',
-            buttonId: 'notificationBtn',
+            event: "notification_button_click",
+            buttonName: "Notification Bell",
+            buttonId: "notificationBtn",
           });
         }}
       >

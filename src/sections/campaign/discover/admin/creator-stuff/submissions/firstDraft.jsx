@@ -5,13 +5,7 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import React, { useMemo, useState, useEffect } from 'react';
 
-import {
-  Box,
-  Stack,
-  Button,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Stack, Button, Typography, CircularProgress } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -25,7 +19,10 @@ import DraftVideos from './firstDraft/draft-videos';
 // import StatusBanner from './firstDraft/status-banner';
 // import FeedbackDisplay from './firstDraft/feedback-display';
 import { VideoModal, PhotoModal } from './firstDraft/media-modals';
-import { ConfirmationApproveModal, ConfirmationRequestModal } from './firstDraft/confirmation-modals';
+import {
+  ConfirmationApproveModal,
+  ConfirmationRequestModal,
+} from './firstDraft/confirmation-modals';
 
 const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   const { deliverables, deliverableMutate, submissionMutate } = deliverablesData;
@@ -61,22 +58,22 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       const response = await axiosInstance.get(
         endpoints.submission.admin.checkSubmissionReadiness(submission.id)
       );
-      
+
       if (response.data.isReady) {
         console.log('Submission is ready for final review');
-        
+
         // Update submission status to PENDING_REVIEW if it's currently IN_PROGRESS
         if (submission.status === 'IN_PROGRESS') {
           await axiosInstance.patch(endpoints.submission.admin.updateSubmissionStatus, {
             submissionId: submission.id,
             status: 'PENDING_REVIEW',
           });
-          
+
           // Refresh the data
           await deliverableMutate();
-          
-          enqueueSnackbar('Submission is now ready for final review!', { 
-            variant: 'success' 
+
+          enqueueSnackbar('Submission is now ready for final review!', {
+            variant: 'success',
           });
         }
       }
@@ -97,10 +94,9 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   // Individual media update function that refreshes both deliverables and submissions
   const onIndividualMediaUpdated = async () => {
     try {
-      await Promise.all([
-        deliverableMutate(),
-        submissionMutate && submissionMutate()
-      ].filter(Boolean));
+      await Promise.all(
+        [deliverableMutate(), submissionMutate && submissionMutate()].filter(Boolean)
+      );
     } catch (error) {
       console.error('Error updating individual media:', error);
     }
@@ -110,30 +106,33 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   const checkAndActivatePosting = async (selectedDueDate) => {
     try {
       // Wait a moment for the data to be refreshed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Re-fetch the latest deliverables to check current status
       await deliverableMutate();
-      
+
       // Fetch fresh deliverables data directly from API
       const freshDeliverablesResponse = await axiosInstance.get(
         `/api/submission/deliverables/${creator?.user?.id}/${campaign?.id}`
       );
       const currentDeliverables = freshDeliverablesResponse.data;
-      
+
       // Check if all sections are approved
-      const videosApproved = !currentDeliverables?.videos?.length || 
-        currentDeliverables.videos.every(video => video.status === 'APPROVED');
-      const rawFootagesApproved = !currentDeliverables?.rawFootages?.length || 
-        currentDeliverables.rawFootages.every(footage => footage.status === 'APPROVED');
-      const photosApproved = !currentDeliverables?.photos?.length || 
-        currentDeliverables.photos.every(photo => photo.status === 'APPROVED');
+      const videosApproved =
+        !currentDeliverables?.videos?.length ||
+        currentDeliverables.videos.every((video) => video.status === 'APPROVED');
+      const rawFootagesApproved =
+        !currentDeliverables?.rawFootages?.length ||
+        currentDeliverables.rawFootages.every((footage) => footage.status === 'APPROVED');
+      const photosApproved =
+        !currentDeliverables?.photos?.length ||
+        currentDeliverables.photos.every((photo) => photo.status === 'APPROVED');
 
       const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
 
       if (allSectionsApproved && submission.submissionType?.type === 'FIRST_DRAFT') {
         // Use the selected due date if provided, otherwise default to 3 days from today
-        const dueDate = selectedDueDate 
+        const dueDate = selectedDueDate
           ? new Date(selectedDueDate).toISOString()
           : (() => {
               const threeDaysFromToday = new Date();
@@ -141,7 +140,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               threeDaysFromToday.setHours(23, 59, 59, 999);
               return threeDaysFromToday.toISOString();
             })();
-        
+
         // Update submission to APPROVED using the correct endpoint
         const response = await axiosInstance.patch('/api/submission/status', {
           submissionId: submission.id,
@@ -151,24 +150,22 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         });
 
         // Wait for backend to complete all updates
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // Refresh data multiple times to ensure consistency
-        await Promise.all([
-          deliverableMutate(),
-          submissionMutate && submissionMutate()
-        ].filter(Boolean));
+        await Promise.all(
+          [deliverableMutate(), submissionMutate && submissionMutate()].filter(Boolean)
+        );
 
         // Additional refresh after a short delay to catch any delayed updates
         setTimeout(async () => {
-          await Promise.all([
-            deliverableMutate(),
-            submissionMutate && submissionMutate()
-          ].filter(Boolean));
+          await Promise.all(
+            [deliverableMutate(), submissionMutate && submissionMutate()].filter(Boolean)
+          );
         }, 1000);
 
-        enqueueSnackbar('All sections approved!', { 
-          variant: 'success' 
+        enqueueSnackbar('All sections approved!', {
+          variant: 'success',
         });
       }
     } catch (error) {
@@ -193,8 +190,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       return response.data;
     } catch (error) {
       console.error('Error approving photo:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error approving photo', { 
-        variant: 'error' 
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving photo', {
+        variant: 'error',
       });
       throw error;
     }
@@ -215,8 +212,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       return response.data;
     } catch (error) {
       console.error('Error requesting photo changes:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
-        variant: 'error' 
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', {
+        variant: 'error',
       });
       throw error;
     }
@@ -237,8 +234,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       return response.data;
     } catch (error) {
       console.error('Error approving video:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error approving video', { 
-        variant: 'error' 
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving video', {
+        variant: 'error',
       });
       throw error;
     }
@@ -259,8 +256,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       return response.data;
     } catch (error) {
       console.error('Error requesting video changes:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
-        variant: 'error' 
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', {
+        variant: 'error',
       });
       throw error;
     }
@@ -281,8 +278,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       return response.data;
     } catch (error) {
       console.error('Error approving raw footage:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error approving raw footage', { 
-        variant: 'error' 
+      enqueueSnackbar(error?.response?.data?.message || 'Error approving raw footage', {
+        variant: 'error',
       });
       throw error;
     }
@@ -303,8 +300,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
       return response.data;
     } catch (error) {
       console.error('Error requesting raw footage changes:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', { 
-        variant: 'error' 
+      enqueueSnackbar(error?.response?.data?.message || 'Error requesting changes', {
+        variant: 'error',
       });
       throw error;
     }
@@ -322,16 +319,12 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
 
   const handlePrevImage = (event) => {
     event.stopPropagation();
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? deliverables.photos.length - 1 : prev - 1
-    );
+    setCurrentImageIndex((prev) => (prev === 0 ? deliverables.photos.length - 1 : prev - 1));
   };
 
   const handleNextImage = (event) => {
     event.stopPropagation();
-    setCurrentImageIndex((prev) => 
-      prev === deliverables.photos.length - 1 ? 0 : prev + 1
-    );
+    setCurrentImageIndex((prev) => (prev === deliverables.photos.length - 1 ? 0 : prev + 1));
   };
 
   const handleVideoClick = (index) => {
@@ -347,54 +340,58 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   // Determine available tabs based on deliverables
   const availableTabs = useMemo(() => {
     const tabs = [];
-  if (deliverables?.videos?.length > 0) {
+    if (deliverables?.videos?.length > 0) {
       tabs.push({ value: 'videos', count: deliverables.videos.length });
-  }
-  if (deliverables?.rawFootages?.length > 0) {
+    }
+    if (deliverables?.rawFootages?.length > 0) {
       tabs.push({ value: 'rawFootages', count: deliverables.rawFootages.length });
-  }
-  if (deliverables?.photos?.length > 0) {
+    }
+    if (deliverables?.photos?.length > 0) {
       tabs.push({ value: 'photos', count: deliverables.photos.length });
-  }
+    }
     return tabs;
-  }, [deliverables?.videos?.length, deliverables?.rawFootages?.length, deliverables?.photos?.length]);
+  }, [
+    deliverables?.videos?.length,
+    deliverables?.rawFootages?.length,
+    deliverables?.photos?.length,
+  ]);
 
   // Set initial tab if current tab is not available
   useEffect(() => {
-    if (availableTabs.length > 0 && !availableTabs.some(tab => tab.value === selectedTab)) {
+    if (availableTabs.length > 0 && !availableTabs.some((tab) => tab.value === selectedTab)) {
       setSelectedTab(availableTabs[0].value);
     }
   }, [availableTabs, selectedTab]);
 
   // Helper functions to check approval status
-  const isVideosApproved = () => 
-    deliverables?.videos?.length > 0 && 
-    deliverables.videos.every(video => video.status === 'APPROVED');
+  const isVideosApproved = () =>
+    deliverables?.videos?.length > 0 &&
+    deliverables.videos.every((video) => video.status === 'APPROVED');
 
-  const isRawFootagesApproved = () => 
-    deliverables?.rawFootages?.length > 0 && 
-    deliverables.rawFootages.every(footage => footage.status === 'APPROVED');
+  const isRawFootagesApproved = () =>
+    deliverables?.rawFootages?.length > 0 &&
+    deliverables.rawFootages.every((footage) => footage.status === 'APPROVED');
 
-  const isPhotosApproved = () => 
-    deliverables?.photos?.length > 0 && 
-    deliverables.photos.every(photo => photo.status === 'APPROVED');
+  const isPhotosApproved = () =>
+    deliverables?.photos?.length > 0 &&
+    deliverables.photos.every((photo) => photo.status === 'APPROVED');
 
   // Helper functions to check if any item has changes required
-  const hasVideosChangesRequired = () => 
-    deliverables?.videos?.length > 0 && 
-    deliverables.videos.some(video => video.status === 'REVISION_REQUESTED');
+  const hasVideosChangesRequired = () =>
+    deliverables?.videos?.length > 0 &&
+    deliverables.videos.some((video) => video.status === 'REVISION_REQUESTED');
 
-  const hasRawFootagesChangesRequired = () => 
-    deliverables?.rawFootages?.length > 0 && 
-    deliverables.rawFootages.some(footage => footage.status === 'REVISION_REQUESTED');
+  const hasRawFootagesChangesRequired = () =>
+    deliverables?.rawFootages?.length > 0 &&
+    deliverables.rawFootages.some((footage) => footage.status === 'REVISION_REQUESTED');
 
-  const hasPhotosChangesRequired = () => 
-    deliverables?.photos?.length > 0 && 
-    deliverables.photos.some(photo => photo.status === 'REVISION_REQUESTED');
+  const hasPhotosChangesRequired = () =>
+    deliverables?.photos?.length > 0 &&
+    deliverables.photos.some((photo) => photo.status === 'REVISION_REQUESTED');
 
   const getTabBorderColor = (tabType) => {
     if (submission?.status === 'PENDING_REVIEW') return '#FFC702';
-    
+
     switch (tabType) {
       case 'videos':
         if (hasVideosChangesRequired()) return '#D4321C'; // Red for changes required
@@ -473,9 +470,10 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   // Draft Video submission handler
   const onSubmitDraftVideo = async (payload) => {
     try {
-      const endpoint = payload.type === 'approve' 
-        ? endpoints.submission.admin.approveDraftVideo
-        : endpoints.submission.admin.requestDraftVideoChanges;
+      const endpoint =
+        payload.type === 'approve'
+          ? endpoints.submission.admin.approveDraftVideo
+          : endpoints.submission.admin.requestDraftVideoChanges;
 
       await axiosInstance.patch(endpoint, {
         submissionId: submission.id,
@@ -484,8 +482,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
 
       await onSectionUpdated();
       enqueueSnackbar(
-        payload.type === 'approve' 
-          ? 'Draft videos approved successfully' 
+        payload.type === 'approve'
+          ? 'Draft videos approved successfully'
           : 'Change request submitted successfully',
         { variant: 'success' }
       );
@@ -498,9 +496,10 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   // Raw Footage submission handler
   const onSubmitRawFootage = async (payload) => {
     try {
-      const endpoint = payload.type === 'approve'
-        ? endpoints.submission.admin.approveRawFootage
-        : endpoints.submission.admin.requestRawFootageChanges;
+      const endpoint =
+        payload.type === 'approve'
+          ? endpoints.submission.admin.approveRawFootage
+          : endpoints.submission.admin.requestRawFootageChanges;
 
       await axiosInstance.patch(endpoint, {
         submissionId: submission.id,
@@ -523,9 +522,10 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   // Photos submission handler
   const onSubmitPhotos = async (payload) => {
     try {
-      const endpoint = payload.type === 'approve'
-        ? endpoints.submission.admin.approvePhotos
-        : endpoints.submission.admin.requestPhotoChanges;
+      const endpoint =
+        payload.type === 'approve'
+          ? endpoints.submission.admin.approvePhotos
+          : endpoints.submission.admin.requestPhotoChanges;
 
       await axiosInstance.patch(endpoint, {
         submissionId: submission.id,
@@ -556,7 +556,6 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
   return (
     <Box sx={{ p: 3 }}>
       <Stack spacing={3}>
-
         {/* Status Banner */}
         {/* <StatusBanner status={submission?.status} /> */}
 
@@ -594,7 +593,8 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                   <Stack alignItems="center">
                     <Typography variant="subtitle2">Draft Videos</Typography>
                     <Typography variant="caption">
-                      {deliverables.videos.length} {deliverables.videos.length === 1 ? 'video' : 'videos'}
+                      {deliverables.videos.length}{' '}
+                      {deliverables.videos.length === 1 ? 'video' : 'videos'}
                     </Typography>
                   </Stack>
                 </Button>
@@ -647,9 +647,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
                 >
                   <Stack alignItems="center">
                     <Typography variant="subtitle2">Photos</Typography>
-                    <Typography variant="caption">
-                      {deliverables.photos.length} images
-                    </Typography>
+                    <Typography variant="caption">{deliverables.photos.length} images</Typography>
                   </Stack>
                 </Button>
               )}
@@ -660,16 +658,16 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         {/* Tabbed Content */}
         {availableTabs.length > 0 ? (
           // <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 0 12px rgba(0,0,0,0.05)', mb: 3, mt: 2 }}>
-            <Stack spacing={2} p={2}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="h6">
-                  {availableTabs.find(tab => tab.value === selectedTab)?.label}
-                </Typography>
-              </Stack>
-              {renderTabContent()}
+          <Stack spacing={2} p={2}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography variant="h6">
+                {availableTabs.find((tab) => tab.value === selectedTab)?.label}
+              </Typography>
             </Stack>
-          // </Paper>
+            {renderTabContent()}
+          </Stack>
         ) : (
+          // </Paper>
           /* Empty State */
           <EmptyContent
             title="No deliverables found"
@@ -692,12 +690,16 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         creator={creator}
         submission={submission}
         showCaption={false}
-        onPrev={() => setCurrentVideoIndex(prev => 
-          prev === 0 ? deliverables.rawFootages.length - 1 : prev - 1
-        )}
-        onNext={() => setCurrentVideoIndex(prev => 
-          prev === deliverables.rawFootages.length - 1 ? 0 : prev + 1
-        )}
+        onPrev={() =>
+          setCurrentVideoIndex((prev) =>
+            prev === 0 ? deliverables.rawFootages.length - 1 : prev - 1
+          )
+        }
+        onNext={() =>
+          setCurrentVideoIndex((prev) =>
+            prev === deliverables.rawFootages.length - 1 ? 0 : prev + 1
+          )
+        }
       />
 
       <VideoModal
@@ -709,12 +711,16 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
         creator={creator}
         submission={submission}
         showCaption
-        onPrev={() => setCurrentDraftVideoIndex(prev => 
-          prev === 0 ? deliverables.videos.length - 1 : prev - 1
-        )}
-        onNext={() => setCurrentDraftVideoIndex(prev => 
-          prev === deliverables.videos.length - 1 ? 0 : prev + 1
-        )}
+        onPrev={() =>
+          setCurrentDraftVideoIndex((prev) =>
+            prev === 0 ? deliverables.videos.length - 1 : prev - 1
+          )
+        }
+        onNext={() =>
+          setCurrentDraftVideoIndex((prev) =>
+            prev === deliverables.videos.length - 1 ? 0 : prev + 1
+          )
+        }
       />
 
       <PhotoModal
