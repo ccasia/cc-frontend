@@ -5,11 +5,11 @@ import React, { useMemo } from 'react';
 import {
   Avatar,
   Button,
-  Tooltip,
   Checkbox,
   TableRow,
   TableCell,
   Typography,
+  IconButton,
   ListItemText,
 } from '@mui/material';
 
@@ -77,15 +77,39 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
     return null;
   }, [packageItem]);
 
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'active':
+        return 'success';
+      case 'inactive':
+        return 'error';
+      case 'expired':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
+
+  const getValidityColor = (validityText) => {
+    if (!validityText) return 'default';
+    if (validityText.includes('overdue')) return 'error';
+    if (validityText.includes('days left')) {
+      const days = parseInt(validityText.split(' ')[0], 10);
+      if (days <= 7) return 'warning';
+      if (days <= 30) return 'info';
+    }
+    return 'success';
+  };
+
   const renderPackageContents = packageItem ? (
     <>
       <TableCell>
-        <Label color={packageItem?.status === 'active' ? 'error' : 'success'}>
-          {packageItem?.status}
+        <Label color={getStatusColor(packageItem.status)}>
+          {packageItem.status}
         </Label>
       </TableCell>
       <TableCell>
-        <Label color={validity?.includes('overdue') ? 'error' : 'default'}>{validity}</Label>
+        <Label color={getValidityColor(validity)}>{validity}</Label>
       </TableCell>
     </>
   ) : (
@@ -109,67 +133,194 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
 
   return (
     <>
-      <TableRow key={id} hover selected={selected}>
+      <TableRow 
+        key={id} 
+        hover 
+        selected={selected}
+        sx={{
+          '&:hover': {
+            backgroundColor: '#f8f9fa',
+          },
+          '& .MuiTableCell-root': {
+            borderBottom: '1px solid #f0f0f0',
+            padding: '12px 16px',
+          },
+        }}
+      >
         <TableCell padding="checkbox">
-          <Checkbox checked={selected} onClick={onSelectRow} />
+          <Checkbox 
+            checked={selected} 
+            onClick={onSelectRow}
+            sx={{
+              '&.Mui-checked': {
+                color: '#1340ff',
+              },
+            }}
+          />
         </TableCell>
 
         <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar src={logo} alt={name} sx={{ mr: 2 }} />
-
+          <Avatar 
+            src={logo} 
+            alt={name} 
+            sx={{ 
+              mr: 2, 
+              width: 38, 
+              height: 38,
+              border: '1px solid #f0f0f0',
+            }} 
+          />
           <ListItemText
-            primary={name || 'null'}
-            primaryTypographyProps={{ typography: 'body2' }}
+            primary={name || 'Unnamed Client'}
+            primaryTypographyProps={{ 
+              typography: 'body2',
+              fontWeight: 500,
+              color: '#374151',
+            }}
             secondaryTypographyProps={{
               component: 'span',
-              color: 'text.disabled',
+              color: '#6b7280',
+              fontSize: '0.75rem',
             }}
           />
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          <Label>{brand?.length || '0'}</Label>
+          <Label 
+            sx={{
+              bgcolor: '#f0f9ff',
+              color: '#1340ff',
+              border: '1px solid rgba(19, 64, 255, 0.2)',
+              fontWeight: 600,
+            }}
+          >
+            {brand?.length || '0'}
+          </Label>
         </TableCell>
 
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          <Label>{campaign?.length || '0'}</Label>
+          <Label 
+            sx={{
+              bgcolor: '#f0f9ff',
+              color: '#1340ff',
+              border: '1px solid rgba(19, 64, 255, 0.2)',
+              fontWeight: 600,
+            }}
+          >
+            {campaign?.length || '0'}
+          </Label>
         </TableCell>
 
-        {renderPackageContents}
+        {/* Package Type Column */}
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          {packageItem ? (
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#374151',
+                fontWeight: 500,
+                textTransform: 'capitalize',
+              }}
+            >
+              {packageItem.package?.name || packageItem.customPackage?.customName || 'Standard Package'}
+            </Typography>
+          ) : (
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: '#9ca3af',
+                fontStyle: 'italic',
+              }}
+            >
+              No package linked
+            </Typography>
+          )}
+        </TableCell>
+
+        {/* Status Column */}
+        <TableCell>
+          {packageItem ? (
+            <Label 
+              color={getStatusColor(packageItem.status)}
+              sx={{
+                textTransform: 'capitalize',
+                fontWeight: 600,
+                borderRadius: '6px',
+                px: 1,
+                py: 0.5,
+              }}
+            >
+              {packageItem.status}
+            </Label>
+          ) : (
+            <Label 
+              color="default"
+              sx={{
+                fontWeight: 600,
+                borderRadius: '6px',
+                px: 1,
+                py: 0.5,
+                bgcolor: '#f3f4f6',
+                color: '#6b7280',
+              }}
+            >
+              No package linked
+            </Label>
+          )}
+        </TableCell>
+
+        {/* Validity Column */}
+        <TableCell>
+          {validity ? (
+            <Label 
+              color={getValidityColor(validity)}
+              sx={{
+                fontWeight: 600,
+                borderRadius: '6px',
+                px: 1,
+                py: 0.5,
+              }}
+            >
+              {validity}
+            </Label>
+          ) : (
+            <Label 
+              color="default"
+              sx={{
+                fontWeight: 600,
+                borderRadius: '6px',
+                px: 1,
+                py: 0.5,
+                bgcolor: '#f3f4f6',
+                color: '#6b7280',
+              }}
+            >
+              No package linked
+            </Label>
+          )}
+        </TableCell>
 
         <TableCell sx={{ px: 1, whiteSpace: 'nowrap' }}>
-          <Tooltip title="Edit" placement="top" arrow>
-            {/* <IconButton onClick={() => router.push(paths.dashboard.company.companyEdit(id))}>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton> */}
-            <Button
-              startIcon={<Iconify icon="solar:pen-bold" />}
-              sx={{
-                border: 1,
-                borderColor: '#EBEBEB',
-                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-              }}
-              variant="contained"
-              onClick={() => router.push(paths.dashboard.company.companyEdit(id))}
-            >
-              Edit
-            </Button>
-          </Tooltip>
-          {/* <Tooltip title="Delete" placement="top" arrow>
-            <IconButton
-              onClick={() => {
-                confirm.onTrue();
-                popover.onClose();
-              }}
-              sx={{ color: 'error.main' }}
-            >
-              <Iconify icon="solar:trash-bin-trash-bold" />
-            </IconButton>
-          </Tooltip> */}
+          <IconButton
+            onClick={() => router.push(paths.dashboard.company.companyEdit(id))}
+            sx={{
+              width: 30,
+              height: 30,
+              bgcolor: '#ffffff',
+              border: '1px solid #d1d5db',
+              borderRadius: 0.75,
+              color: '#374151',
+              '&:hover': {
+                bgcolor: '#f9fafb',
+                borderColor: '#9ca3af',
+                color: '#1340ff',
+              },
+            }}
+          >
+            <Iconify icon="heroicons:pencil-square-20-solid" width={15} height={15} />
+          </IconButton>
         </TableCell>
       </TableRow>
-
-      {/* <UserQuickEditForm currentUser={row} open={quickEdit.value} onClose={quickEdit.onFalse} /> */}
 
       <ConfirmDialog
         open={confirm.value}

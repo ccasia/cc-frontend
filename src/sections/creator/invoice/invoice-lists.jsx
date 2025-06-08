@@ -10,15 +10,15 @@ import {
   styled,
   Button,
   Avatar,
+  Divider,
   TableRow,
+  useTheme,
   TableCell,
   TableHead,
   TableBody,
-  TableContainer,
   Typography,
-  useTheme,
   useMediaQuery,
-  Divider,
+  TableContainer,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';

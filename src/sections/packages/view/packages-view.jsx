@@ -1,15 +1,21 @@
 import { isEqual } from 'lodash';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
+import { useTheme } from '@mui/material/styles';
 import {
   Box,
   Card,
+  Chip,
   Table,
+  Stack,
   Button,
+  styled,
   Tooltip,
   Container,
   TableBody,
+  InputBase,
   IconButton,
+  Typography,
   TableContainer,
   CircularProgress,
 } from '@mui/material';
@@ -35,8 +41,6 @@ import {
 import PackageEdit from '../package-edit';
 import PackageCreate from '../package-create';
 import PackageTableRow from '../package-table-row';
-import PackageTableToolbar from '../package-table-toolbar';
-import PackageTableFiltersResult from '../package-table-filters-result';
 
 const pakcagesArray = [
   {
@@ -92,12 +96,19 @@ const TABLE_HEAD = [
   { id: '', width: 88 },
 ];
 
+// Styled components for improved UI
+const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
+  backgroundColor: '#ffffff',
+  borderRadius: '8px',
+  border: '1px solid #f0f0f0',
+  overflow: 'hidden',
+}));
+
 const Packages = () => {
   const { data, isLoading } = useGetPackages();
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
-
-  console.log(data);
+  const theme = useTheme();
 
   const [tableData, setTableData] = useState([]);
 
@@ -105,16 +116,30 @@ const Packages = () => {
 
   const [filters, setFilters] = useState(defaultFilters);
 
+  // Search input ref for keyboard shortcut focus
+  const searchInputRef = useRef(null);
+
+  // Keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Check for CMD+K (Mac) or Ctrl+K (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const dataFiltered = applyFilter({
     inputData: tableData,
     comparator: getComparator(table.order, table.orderBy),
     filters,
   });
-
-  const dataInPage = dataFiltered?.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
 
   const denseHeight = table.dense ? 56 : 56 + 20;
 
@@ -137,14 +162,33 @@ const Packages = () => {
     setFilters(defaultFilters);
   }, []);
 
+  const handleFilterName = useCallback(
+    (event) => {
+      handleFilters('name', event.target.value);
+    },
+    [handleFilters]
+  );
+
   useEffect(() => {
     if (!isLoading) {
-      setTableData(data);
+      setTableData(data || []);
     }
   }, [data, isLoading]);
 
   if (isLoading) {
     return (
+      <Container maxWidth="lg">
+        <CustomBreadcrumbs
+          heading="Packages Information"
+          links={[
+            { name: 'Dashboard', href: paths.dashboard.root },
+            { name: 'Packages' },
+            { name: 'Lists' },
+          ]}
+          sx={{
+            mb: { xs: 3, md: 5 },
+          }}
+        />
       <Box
         sx={{
           position: 'relative',
@@ -156,11 +200,12 @@ const Packages = () => {
           thickness={7}
           size={25}
           sx={{
-            color: (theme) => theme.palette.common.black,
+              color: theme.palette.common.black,
             strokeLinecap: 'round',
           }}
         />
       </Box>
+      </Container>
     );
   }
 
@@ -178,35 +223,257 @@ const Packages = () => {
             size="small"
             variant="contained"
             onClick={() => setOpen(true)}
-            startIcon={<Iconify icon="mingcute:add-fill" />}
+            startIcon={<Iconify icon="heroicons:plus-20-solid" width={18} />}
             sx={{
-              borderRadius: 0.5,
+              bgcolor: '#1340ff',
+              color: '#ffffff',
+              borderRadius: 1,
+              px: 2,
+              py: 1,
+              fontWeight: 600,
+              textTransform: 'none',
+              '&:hover': {
+                bgcolor: '#0f35d1',
+              },
             }}
           >
-            Create new Package
+            Create Package
           </Button>
         }
         sx={{
-          mb: 2,
+          mb: { xs: 3, md: 5 },
         }}
       />
 
-      <Card>
-        <PackageTableToolbar filters={filters} onFilters={handleFilters} />
+      {/* Search Controls */}
+      <Box sx={{ mb: 2.5 }}>
+        <Box
+          sx={{
+            border: '1px solid #e7e7e7',
+            borderRadius: 1,
+            p: 2,
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              alignItems: { xs: 'stretch', md: 'center' },
+              justifyContent: 'space-between',
+              gap: { xs: 1.5, md: 1.5 },
+            }}
+          >
+            {/* Search Box */}
+            <Box
+              sx={{
+                width: { xs: '100%', sm: '240px', md: '320px' },
+                border: '1px solid #e7e7e7',
+                borderRadius: 0.75,
+                bgcolor: 'background.paper',
+                display: 'flex',
+                alignItems: 'center',
+                height: '38px',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                '&:hover': {
+                  borderColor: '#1340ff',
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 2px 8px rgba(19, 64, 255, 0.1)',
+                },
+                '&:focus-within': {
+                  borderColor: '#1340ff',
+                  boxShadow: '0 0 0 3px rgba(19, 64, 255, 0.1)',
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              <InputBase
+                inputRef={searchInputRef}
+                value={filters.name}
+                onChange={handleFilterName}
+                placeholder="Search packages..."
+                startAdornment={
+                  <Iconify
+                    icon="heroicons:magnifying-glass-20-solid"
+                    sx={{
+                      width: 18,
+                      height: 18,
+                      color: 'text.disabled',
+                      ml: 1.5,
+                      mr: 1,
+                      transition: 'color 0.2s ease',
+                    }}
+                  />
+                }
+                endAdornment={
+                  <Box
+                    sx={{
+                      display: { xs: 'none', md: 'flex' },
+                      alignItems: 'center',
+                      gap: 0.25,
+                      mr: 1.5,
+                      ml: 1,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        px: 1,
+                        py: 0.5,
+                        bgcolor: '#f5f5f5',
+                        borderRadius: 0.5,
+                        border: '1px solid #e0e0e0',
+                        minHeight: '22px',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          bgcolor: '#eeeeee',
+                          borderColor: '#d0d0d0',
+                          transform: 'scale(1.05)',
+                        },
+                        '&:active': {
+                          transform: 'scale(0.95)',
+                        },
+                      }}
+                      onClick={() => searchInputRef.current?.focus()}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#666666',
+                          lineHeight: 1,
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl'}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#666666',
+                          lineHeight: 1,
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        K
+                      </Typography>
+                    </Box>
+                  </Box>
+                }
+                sx={{
+                  width: '100%',
+                  color: 'text.primary',
+                  fontSize: '0.95rem',
+                  '& input': {
+                    py: 1,
+                    px: 1,
+                    height: '100%',
+                    transition: 'all 0.2s ease',
+                    '&::placeholder': {
+                      color: '#999999',
+                      opacity: 1,
+                      transition: 'color 0.2s ease',
+                    },
+                    '&:focus::placeholder': {
+                      color: '#cccccc',
+                    },
+                  },
+                }}
+              />
+            </Box>
 
+            {/* Right Side Controls */}
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: 'wrap', gap: 1 }}>
+              {/* Results Count - Only show when filters are active */}
+              {canReset && (
+                <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 'fit-content' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#6b7280',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <strong style={{ color: '#374151' }}>{dataFiltered?.length || 0}</strong> results
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
+          </Box>
+
+          {/* Active Filters Display */}
         {canReset && (
-          <PackageTableFiltersResult
-            filters={filters}
-            onFilters={handleFilters}
-            //
-            onResetFilters={handleResetFilters}
-            //
-            results={dataFiltered.length}
-            sx={{ p: 2.5, pt: 0 }}
-          />
-        )}
+            <Box sx={{ mt: 1.5 }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap', gap: 1 }}>
+                {/* Search Term Chip */}
+                {filters.name && (
+                  <Chip
+                    label={`Keyword: "${filters.name}"`}
+                    size="small"
+                    onDelete={() => handleFilters('name', '')}
+                    sx={{
+                      bgcolor: '#f0f9ff',
+                      color: '#1340ff',
+                      border: '1px solid rgba(19, 64, 255, 0.2)',
+                      height: '32px',
+                      '& .MuiChip-deleteIcon': {
+                        color: '#1340ff',
+                        '&:hover': {
+                          color: '#0f35d1',
+                        },
+                      },
+                    }}
+                  />
+                )}
 
-        <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                {/* Clear All Button */}
+                <Button
+                  size="small"
+                  onClick={handleResetFilters}
+                  startIcon={<Iconify icon="heroicons:trash-20-solid" width={14} height={14} />}
+                  sx={{
+                    color: '#dc3545',
+                    bgcolor: 'rgba(220, 53, 69, 0.08)',
+                    border: '1px solid rgba(220, 53, 69, 0.2)',
+                    borderRadius: 0.75,
+                    px: 1.5,
+                    py: 0.5,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    height: '32px',
+                    '&:hover': {
+                      bgcolor: 'rgba(220, 53, 69, 0.12)',
+                      borderColor: 'rgba(220, 53, 69, 0.3)',
+                    },
+                  }}
+                >
+                  Clear
+                </Button>
+              </Stack>
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      <Card
+        sx={{
+          backgroundColor: '#ffffff',
+          border: '1px solid #f0f0f0',
+          borderRadius: '8px',
+          overflow: 'hidden',
+        }}
+      >
+        <StyledTableContainer sx={{ position: 'relative', overflow: 'unset' }}>
           <TableSelectedAction
             dense={table.dense}
             numSelected={table.selected.length}
@@ -220,7 +487,7 @@ const Packages = () => {
             action={
               <Tooltip title="Delete">
                 <IconButton color="primary">
-                  <Iconify icon="solar:trash-bin-trash-bold" />
+                  <Iconify icon="heroicons:trash-20-solid" />
                 </IconButton>
               </Tooltip>
             }
@@ -241,6 +508,18 @@ const Packages = () => {
                     dataFiltered.map((row) => row.id)
                   )
                 }
+                sx={{
+                  '& .MuiTableCell-head': {
+                    backgroundColor: '#fafafa',
+                    color: '#666666',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    textTransform: 'none',
+                    borderBottom: '1px solid #f0f0f0',
+                    padding: '12px 16px',
+                    height: '44px',
+                  },
+                }}
               />
 
               <TableBody>
@@ -269,7 +548,7 @@ const Packages = () => {
               </TableBody>
             </Table>
           </Scrollbar>
-        </TableContainer>
+        </StyledTableContainer>
 
         <TablePaginationCustom
           count={dataFiltered.length}
@@ -277,13 +556,11 @@ const Packages = () => {
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}
           onRowsPerPageChange={table.onChangeRowsPerPage}
-          //
           dense={table.dense}
           onChangeDense={table.onChangeDense}
         />
       </Card>
 
-      {/* <PackageLists packages={data} /> */}
       <PackageCreate open={open} onClose={() => setOpen(false)} />
       <PackageEdit open={edit} onClose={() => setEdit(false)} />
     </Container>
@@ -307,16 +584,16 @@ function applyFilter({ inputData, comparator, filters }) {
 
   if (name) {
     inputData = inputData.filter(
-      (user) => user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
+      (pkg) => pkg?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((user) => user.status === status);
+    inputData = inputData.filter((pkg) => pkg.status === status);
   }
 
   if (role.length) {
-    inputData = inputData.filter((user) => role.includes(user?.admin?.role?.name));
+    inputData = inputData.filter((pkg) => role.includes(pkg?.admin?.role?.name));
   }
 
   return inputData;

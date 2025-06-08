@@ -327,7 +327,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               },
             }}
           >
-            <MenuItem 
+            {/* <MenuItem 
               onClick={handleOpenInNewTab}
               sx={{
                 borderRadius: 1,
@@ -342,7 +342,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               }}
             >
               Open in New Tab
-            </MenuItem>
+            </MenuItem> */}
             <MenuItem 
               onClick={(event) => {
                 event.stopPropagation();
