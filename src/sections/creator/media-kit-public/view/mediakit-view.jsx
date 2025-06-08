@@ -83,7 +83,7 @@ const MediaKit = ({ id, noBigScreen }) => {
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress 
+        <CircularProgress
           thickness={7}
           size={25}
           sx={{
@@ -104,7 +104,7 @@ const MediaKit = ({ id, noBigScreen }) => {
       <Box sx={{ mb: 2, mt: 2 }}>
         <IconButton
           onClick={() => router.push(paths.dashboard.creator.mediaKitLists)}
-          sx={{ 
+          sx={{
             backgroundColor: 'white',
             boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
             '&:hover': {
@@ -115,7 +115,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           <Iconify icon="eva:arrow-back-fill" width={24} />
         </IconButton>
       </Box>
-      
+
       {/* Desktop View */}
       <Box
         sx={{
@@ -259,15 +259,15 @@ const MediaKit = ({ id, noBigScreen }) => {
             src={data?.photoURL}
           />
 
-          <Typography 
-            sx={{ 
-              fontSize: 14, 
-              color: '#231F20', 
-              fontWeight: 400, 
-              fontFamily: 'Aileron, sans-serif' 
-            }} 
-            my={1} 
-            mt={2} 
+          <Typography
+            sx={{
+              fontSize: 14,
+              color: '#231F20',
+              fontWeight: 400,
+              fontFamily: 'Aileron, sans-serif',
+            }}
+            my={1}
+            mt={2}
             mb={2}
           >
             {data?.creator?.mediaKit?.about}

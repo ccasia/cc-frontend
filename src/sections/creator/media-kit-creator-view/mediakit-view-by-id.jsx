@@ -320,7 +320,7 @@ const MediaKitCreator = ({ creatorId, open, onClose }) => {
                   primary="ENGAGEMENT RATE"
                   secondary={
                     socialMediaAnalytics.engagement_rate
-                      ? `${Number(socialMediaAnalytics.engagement_rate).toFixed(2)}%`
+                      ? `${Number(socialMediaAnalytics.engagement_rate)?.toFixed(2)}%`
                       : 'No data'
                   }
                   primaryTypographyProps={{

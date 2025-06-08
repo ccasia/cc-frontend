@@ -4,7 +4,7 @@ import { forwardRef } from 'react';
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
-import { alpha, styled } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import ListItemButton from '@mui/material/ListItemButton';
 
 import { RouterLink } from 'src/routes/components';
@@ -32,6 +32,7 @@ const NavItem = forwardRef(
       open,
       depth,
       active,
+      collapsed,
       hasChild,
       externalLink,
       currentRole = 'superadmin',
@@ -50,7 +51,9 @@ const NavItem = forwardRef(
         open={open}
         depth={depth}
         active={active}
+        collapsed={collapsed}
         disabled={disabled}
+        data-nav-item="true"
         {...other}
       >
         {!subItem && icon && (
@@ -67,7 +70,7 @@ const NavItem = forwardRef(
           <Box component="span" className="sub-icon" />
         )}
 
-        {title && (
+        {title && !collapsed && (
           <Box component="span" sx={{ flex: '1 1 auto', minWidth: 0 }}>
             <Box component="span" className="label">
               {title}
@@ -83,13 +86,13 @@ const NavItem = forwardRef(
           </Box>
         )}
 
-        {info && (
+        {info && !collapsed && (
           <Box component="span" className="info">
             {info}
           </Box>
         )}
 
-        {msgcounter && (
+        {msgcounter && !collapsed && (
           <Label
             sx={{
               color: 'white',
@@ -106,7 +109,22 @@ const NavItem = forwardRef(
           </Label>
         )}
 
-        {hasChild && (
+        {msgcounter && collapsed && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 4,
+              right: 4,
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: '#de5243',
+              border: '2px solid white',
+            }}
+          />
+        )}
+
+        {hasChild && !collapsed && (
           <Iconify
             width={16}
             className="arrow"
@@ -171,6 +189,7 @@ NavItem.propTypes = {
   active: PropTypes.bool,
   path: PropTypes.string,
   depth: PropTypes.number,
+  collapsed: PropTypes.bool,
   msgcounter: PropTypes.number,
   icon: PropTypes.element,
   info: PropTypes.element,
@@ -188,8 +207,8 @@ export default NavItem;
 // ----------------------------------------------------------------------
 
 const StyledNavItem = styled(ListItemButton, {
-  shouldForwardProp: (prop) => prop !== 'active',
-})(({ active, open, depth, theme }) => {
+  shouldForwardProp: (prop) => prop !== 'active' && prop !== 'collapsed',
+})(({ active, open, depth, collapsed, theme }) => {
   const subItem = depth !== 1;
 
   const opened = open && !active;
@@ -207,19 +226,31 @@ const StyledNavItem = styled(ListItemButton, {
 
   const baseStyles = {
     item: {
-      marginBottom: 4,
-      borderRadius: 12,
+      borderRadius: 8,
       color: theme.palette.text.secondary,
-      padding: theme.spacing(0.5, 1, 0.5, 1.5),
+      minHeight: collapsed ? 40 : 42,
+      transition: theme.transitions.create(['padding', 'background-color', 'color', 'min-height'], {
+        duration: theme.transitions.duration.standard,
+        easing: theme.transitions.easing.easeInOut,
+      }),
+      '&:hover': {
+        backgroundColor: theme.palette.action.hover,
+      },
     },
     icon: {
-      width: 24,
-      height: 24,
+      width: 20,
+      height: 20,
       flexShrink: 0,
-      marginRight: theme.spacing(1),
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: collapsed ? 0 : theme.spacing(1.25),
+      transition: theme.transitions.create(['margin-right', 'margin-left'], {
+        duration: theme.transitions.duration.standard,
+        easing: theme.transitions.easing.easeInOut,
+      }),
       ...(active && {
-        color:
-          theme.palette.mode === 'light' ? 'rgba(19, 64, 255, 1)' : theme.palette.primary.light,
+        color: '#1340FF',
       }),
     },
     label: {
@@ -227,6 +258,7 @@ const StyledNavItem = styled(ListItemButton, {
       ...theme.typography.body2,
       textTransform: 'capitalize',
       fontWeight: theme.typography[active ? 'fontWeightSemiBold' : 'fontWeightMedium'],
+      fontSize: '14px',
     },
     caption: {
       ...noWrapStyles,
@@ -240,6 +272,9 @@ const StyledNavItem = styled(ListItemButton, {
     arrow: {
       flexShrink: 0,
       marginLeft: theme.spacing(0.75),
+      ...(opened && {
+        color: '#1340FF',
+      }),
     },
   };
 
@@ -248,15 +283,30 @@ const StyledNavItem = styled(ListItemButton, {
     ...(!subItem && {
       ...baseStyles.item,
       position: 'relative',
-      minHeight: 44,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: collapsed ? 'center' : 'flex-start',
+      padding: collapsed 
+        ? theme.spacing(0.875) 
+        : theme.spacing(0.625, 1.25),
+      width: collapsed ? 40 : 'auto',
+      margin: collapsed ? '0 auto' : '0',
       '& .icon': {
         ...baseStyles.icon,
+        marginLeft: 0,
+        marginRight: collapsed ? 0 : theme.spacing(1.25),
       },
       '& .sub-icon': {
         display: 'none',
       },
       '& .label': {
         ...baseStyles.label,
+        opacity: collapsed ? 0 : 1,
+        transition: theme.transitions.create(['opacity'], {
+          duration: theme.transitions.duration.standard,
+          easing: theme.transitions.easing.easeInOut,
+          delay: collapsed ? 0 : theme.transitions.duration.shorter,
+        }),
       },
       '& .caption': {
         ...baseStyles.caption,
@@ -269,34 +319,22 @@ const StyledNavItem = styled(ListItemButton, {
       },
 
       ...(active && {
-        fontWeight: 900,
-        // color: 'black',
-        color:
-          theme.palette.mode === 'light'
-            ? 'rgba(19, 64, 255, 1)'
-            : // theme.palette.primary.main
-              theme.palette.primary.light,
-        // backgroundColor: 'black',
-        // backgroundColor: alpha('rgba(19, 64, 255, 1)', 0.08),
-        background: alpha('rgba(19, 64, 255, 1)', 0.08),
-        // '::before': {
-        //   content: '""',
-        //   width: 8,
-        //   height: 20,
-        //   backgroundColor: 'blue',
-        //   position: 'absolute',
-        //   left: -20,
-        //   top: '50%',
-        //   transform: 'translateY(-50%)',
-        //   borderRadius: 10,
-        // },
+        fontWeight: 600,
+        color: '#1340FF',
+        backgroundColor: 'rgba(19, 64, 255, 0.08)',
         '&:hover': {
-          backgroundColor: alpha('#203ff5', 0.2),
+          backgroundColor: 'rgba(19, 64, 255, 0.12)',
         },
       }),
       ...(opened && {
-        color: theme.palette.text.primary,
-        backgroundColor: theme.palette.action.hover,
+        color: '#1340FF',
+        backgroundColor: 'rgba(19, 64, 255, 0.04)',
+        '&:hover': {
+          backgroundColor: 'rgba(19, 64, 255, 0.08)',
+        },
+        '& .arrow': {
+          color: '#1340FF',
+        },
       }),
     }),
 
@@ -304,6 +342,8 @@ const StyledNavItem = styled(ListItemButton, {
     ...(subItem && {
       ...baseStyles.item,
       minHeight: 36,
+      display: 'flex',
+      alignItems: 'center',
       '& .icon': {
         ...baseStyles.icon,
       },
@@ -323,7 +363,10 @@ const StyledNavItem = styled(ListItemButton, {
           }),
           ...(active && {
             transform: 'scale(2)',
-            backgroundColor: theme.palette.primary.main,
+            backgroundColor: '#10b981',
+          }),
+          ...(opened && {
+            backgroundColor: '#10b981',
           }),
         },
       },
@@ -340,7 +383,15 @@ const StyledNavItem = styled(ListItemButton, {
         ...baseStyles.arrow,
       },
       ...(active && {
-        color: theme.palette.text.primary,
+        color: '#1340FF',
+        fontWeight: 600,
+      }),
+      ...(opened && {
+        color: '#1340FF',
+        backgroundColor: 'rgba(19, 64, 255, 0.04)',
+        '&:hover': {
+          backgroundColor: 'rgba(19, 64, 255, 0.08)',
+        },
       }),
     }),
 

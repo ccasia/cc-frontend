@@ -107,6 +107,11 @@ export const endpoints = {
     social: {
       tiktok: (id) => `/api/social/tiktok/${id}`,
       instagram: (id) => `/api/social/instagram/overview/${id}`,
+      instagramV2: (id) => `/api/social/v2/instagramOverview/${id}`,
+      getInstagramMediaInsight: (userId, postUrl) => 
+        `/api/social/v2/mediaInsight/${userId}?url=${postUrl}`,
+      getTikTokMediaInsight: (userId, postUrl) => 
+      `/api/social/v2/tiktokMediaInsight/${userId}?url=${postUrl}`,
     },
     updatePreference: (id) => `/api/creator/updatePreference/${id}`,
     exportCreators: '/api/creator/exportCreators',
@@ -253,6 +258,11 @@ export const endpoints = {
       agreement: '/api/submission/adminManageAgreementSubmission',
       draft: '/api/submission/adminManageDraft',
       posting: '/api/submission/adminManagePosting',
+      v2: {
+        photos: '/api/submission/v2/managePhotos',
+        videos: '/api/submission/v2/manageDraftVideos',
+        rawFootages: '/api/submission/v2/manageRawFootages'
+      }
     },
   },
   notification: {

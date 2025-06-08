@@ -3,15 +3,7 @@ import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { keyframes } from '@emotion/react';
 
-import {
-  Box,
-  Grid,
-  Stack,
-  alpha,
-  useTheme,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Box, Grid, Stack, alpha, useTheme, Typography, useMediaQuery } from '@mui/material';
 
 import Label from 'src/components/label';
 

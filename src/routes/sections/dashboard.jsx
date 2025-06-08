@@ -8,6 +8,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 
 import { ChatView } from 'src/sections/chat/view';
 import { CalendarView } from 'src/sections/calendar/view';
+import ReportingView from 'src/sections/report/view/reporting-view';
 
 // ----------------------------------------------------------------------
 
@@ -79,6 +80,10 @@ const CreateInvoice = lazy(() => import('src/pages/dashboard/finance/createInvoi
 
 const AdminTaskPage = lazy(() => import('src/pages/dashboard/admin/tasks'));
 
+// Performance report
+const Report = lazy(() => import('src/pages/dashboard/report/report'));
+const ReportView = lazy(() => import('src/sections/report/view/reporting-view'));
+
 // Roles
 const Roles = lazy(() => import('src/pages/dashboard/roles/roles'));
 const ManageRole = lazy(() => import('src/pages/dashboard/roles/manage-role'));
@@ -97,6 +102,23 @@ const Packages = lazy(() => import('src/pages/dashboard/packages/packages'));
 const MobileModalView = lazy(
   () => import('src/sections/campaign/discover/creator/mobile-modal-view')
 );
+
+// Mobile Campaign Stage Pages
+const MobileAgreementPage = lazy(
+  () => import('src/pages/dashboard/campaign/creator/mobile-agreement-page')
+);
+const MobileFirstDraftPage = lazy(
+  () => import('src/pages/dashboard/campaign/creator/mobile-first-draft-page')
+);
+const MobileFinalDraftPage = lazy(
+  () => import('src/pages/dashboard/campaign/creator/mobile-final-draft-page')
+);
+const MobilePostingPage = lazy(
+  () => import('src/pages/dashboard/campaign/creator/mobile-posting-page')
+);
+
+// Creator Profile
+const CreatorProfile = lazy(() => import('src/pages/dashboard/creator/profile'));
 
 // ----------------------------------------------------------------------
 
@@ -172,6 +194,14 @@ export const dashboardRoutes = [
               },
             ],
           },
+          {
+            path: 'profile/:id',
+            element: (
+              <RoleBasedGuard roles={['superadmin', 'admin']} hasContent>
+                <CreatorProfile />
+              </RoleBasedGuard>
+            ),
+          },
         ],
       },
       {
@@ -181,6 +211,19 @@ export const dashboardRoutes = [
             <AdminTaskPage />
           </RoleBasedGuard>
         ),
+      },
+      {
+        path: 'report',
+        children: [
+          {
+            element: <Report />,
+            index: true,
+          },
+          {
+            path: 'view',
+            element: <ReportingView />,
+          },
+        ],
       },
       // For Finance
       {
@@ -439,11 +482,48 @@ export const dashboardRoutes = [
               },
               {
                 path: 'detail/:id',
-                element: (
-                  <RoleBasedGuard hasContent roles={['creator']}>
-                    <ManageCampaignDetailView />
-                  </RoleBasedGuard>
-                ),
+                children: [
+                  {
+                    index: true,
+                    element: (
+                      <RoleBasedGuard hasContent roles={['creator']}>
+                        <ManageCampaignDetailView />
+                      </RoleBasedGuard>
+                    ),
+                  },
+                  {
+                    path: 'agreement',
+                    element: (
+                      <RoleBasedGuard hasContent roles={['creator']}>
+                        <MobileAgreementPage />
+                      </RoleBasedGuard>
+                    ),
+                  },
+                  {
+                    path: 'first-draft',
+                    element: (
+                      <RoleBasedGuard hasContent roles={['creator']}>
+                        <MobileFirstDraftPage />
+                      </RoleBasedGuard>
+                    ),
+                  },
+                  {
+                    path: 'final-draft',
+                    element: (
+                      <RoleBasedGuard hasContent roles={['creator']}>
+                        <MobileFinalDraftPage />
+                      </RoleBasedGuard>
+                    ),
+                  },
+                  {
+                    path: 'posting',
+                    element: (
+                      <RoleBasedGuard hasContent roles={['creator']}>
+                        <MobilePostingPage />
+                      </RoleBasedGuard>
+                    ),
+                  },
+                ],
               },
             ],
           },

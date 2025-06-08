@@ -172,6 +172,29 @@ const UploadDraftVideoModal = ({
           </Box>
         )}
 
+        {totalUGCVideos && (
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                display: 'block',
+                color: 'info.main',
+                bgcolor: 'info.lighter',
+                p: 1.5,
+                borderRadius: 1,
+                fontWeight: 500,
+              }}
+            >
+              <Iconify
+                icon="solar:info-circle-bold-duotone"
+                width={16}
+                sx={{ mr: 0.5, verticalAlign: 'text-bottom' }}
+              />
+              You are required to upload <span style={{ color: 'info.main', fontWeight: 600 }}>{totalUGCVideos} UGC {totalUGCVideos === 1 ? 'Video' : 'Videos'}.</span>
+            </Typography>
+          </Box>
+        )}
+
         {previousSubmission?.status === 'CHANGES_REQUIRED' && (
           <Typography variant="body2" sx={{ color: 'warning.main', mb: 2 }}>
             Please upload exactly {videosToUpdateCount} video{videosToUpdateCount > 1 ? 's' : ''} as

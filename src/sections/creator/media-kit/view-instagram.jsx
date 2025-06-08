@@ -5,7 +5,6 @@ import { keyframes } from '@emotion/react';
 
 import {
   Box,
-  Grid,
   Stack,
   alpha,
   Button,
@@ -19,11 +18,12 @@ import { useSocialMediaData } from 'src/utils/store';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 // Utility function to format numbers
 export const formatNumber = (num) => {
+  if (!num && num !== 0) return '0';
+
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -41,28 +41,143 @@ const typeAnimation = keyframes`
   to { width: 100%; }
 `;
 
-const TopContentGrid = ({ topContents }) => {
+const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
-  const topFiveContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 5);
+  const topThreeContents = topContents.sort((a, b) => a?.like_count > b?.like_count).slice(0, 3);
 
-  // const topFiveContents = [
-  //   {
-  //     comments_count: 3,
-  //     like_count: 296,
-  //     media_type: 'CAROUSEL_ALBUM',
-  //     media_url:
-  //       'https://scontent-sin11-2.cdninstagram.com/v/t51.2885-15/56823609_640283589752143_7817209799144819910_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=108&ccb=1-7&_nc_sid=18de74&_nc_ohc=TRZLf_DlxtkQ7kNvgHEP8nj&_nc_zt=23&_nc_ht=scontent-sin11-2.cdninstagram.com&edm=AEQ6tj4EAAAA&oh=00_AYD2QD6m6DWJ2Kd9TTepGnGeWWNwQPrSkCKjt4qZeOidLQ&oe=67A94A96',
-  //     id: '18056628766068743',
-  //     caption: 'Asd',
-  //   },
-  // ];
+  // Carousel layout for mobile
+  if (isMobile) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'nowrap',
+          width: '100%',
+          gap: 0.5,
+          justifyContent: 'flex-start',
+          alignItems: 'stretch',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { height: 0, display: 'none' },
+          pb: 2,
+          scrollSnapType: 'x mandatory',
+          px: 0,
+          pt: 1,
+        }}
+      >
+        {topThreeContents.map((content, index) => (
+          <Box
+            key={index}
+            sx={{
+              minWidth: 200,
+              maxWidth: 240,
+              flex: '0 0 auto',
+              scrollSnapAlign: 'center',
+              borderRadius: 0,
+              overflow: 'hidden',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+              bgcolor: 'background.paper',
+              display: 'flex',
+              flexDirection: 'column',
+              mx: 0,
+            }}
+            onClick={() => {
+              const a = document.createElement('a');
+              a.href = content?.permalink;
+              a.target = '_blank';
+              a.click();
+            }}
+          >
+            <Box
+              component="div"
+              sx={{
+                position: 'relative',
+                height: 400,
+                width: '100%',
+                overflow: 'hidden',
+              }}
+            >
+              <CardMedia
+                component="div"
+                className="image"
+                alt={`Top content ${index + 1}`}
+                sx={{
+                  height: '100%',
+                  width: '100%',
+                  transition: 'all .3s ease',
+                  objectFit: 'cover',
+                  background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.media_url}) center/cover no-repeat`,
+                }}
+              />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  width: '100%',
+                  color: 'white',
+                  p: 2,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="material-symbols:favorite-outline" width={20} />
+                    <Typography variant="subtitle2">{formatNumber(content?.like_count)}</Typography>
+                  </Stack>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="iconamoon:comment" width={20} />
+                    <Typography variant="subtitle2">
+                      {formatNumber(content?.comments_count)}
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </Box>
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                fontSize: '0.8rem',
+                mt: 2,
+                mx: 2,
+                mb: 2,
+                color: 'text.primary',
+                fontWeight: 500,
+                width: '100%',
+                maxWidth: '100%',
+                lineHeight: 1.5,
+              }}
+            >
+              {`${content.caption.slice(0, 100)}...`}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    );
+  }
 
+  // Desktop layout (unchanged)
   return (
-    <Grid
-      container
-      spacing={isMobile ? 1 : 2}
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        flexWrap: { xs: 'nowrap', md: 'nowrap' },
+        width: '100%',
+        gap: { xs: 2, md: 4 },
+        justifyContent: { xs: 'center', sm: 'flex-start' },
+        alignItems: { xs: 'center', sm: 'flex-start' },
+        overflow: 'auto',
+      }}
       component={m.div}
       variants={{
         hidden: { opacity: 0 },
@@ -76,11 +191,8 @@ const TopContentGrid = ({ topContents }) => {
       animate="show"
       initial="hidden"
     >
-      {topFiveContents.map((content, index) => (
-        <Grid
-          item
-          xs={12}
-          sm={4}
+      {topThreeContents.map((content, index) => (
+        <Box
           key={index}
           component={m.div}
           variants={{
@@ -92,14 +204,19 @@ const TopContentGrid = ({ topContents }) => {
             a.href = content?.permalink;
             a.target = '_blank';
             a.click();
-            document.body.removeChild(a);
+          }}
+          sx={{
+            width: { xs: '100%', sm: '30%', md: 350 },
+            minWidth: { xs: '280px', sm: '250px', md: '320px' },
+            maxWidth: { xs: '100%', sm: '350px' },
           }}
         >
           <Box
             component="div"
             sx={{
               position: 'relative',
-              height: 600,
+              height: { xs: 400, sm: 450, md: 550 },
+              width: '100%',
               overflow: 'hidden',
               borderRadius: 3,
               cursor: 'pointer',
@@ -116,7 +233,7 @@ const TopContentGrid = ({ topContents }) => {
                 height: 1,
                 transition: 'all .2s linear',
                 objectFit: 'cover',
-                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content.media_url}) lightgray 50% / cover no-repeat`,
+                background: `linear-gradient(180deg, rgba(0, 0, 0, 0.00) 45%, rgba(0, 0, 0, 0.70) 80%), url(${content?.media_type === 'VIDEO' ? content?.thumbnail_url : content?.media_url}) lightgray 50% / cover no-repeat`,
               }}
             />
 
@@ -128,25 +245,12 @@ const TopContentGrid = ({ topContents }) => {
                 width: '100%',
                 color: 'white',
                 p: isMobile ? 2 : 1.5,
-                px: 3,
+                px: 2,
+                mb: 1,
                 borderRadius: '0 0 24px 24px',
               }}
+              className="media-kit-engagement-icons"
             >
-              <Typography
-                variant="body2"
-                sx={{
-                  overflow: 'hidden',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 5,
-                  WebkitBoxOrient: 'vertical',
-                  animation: `${typeAnimation} 0.5s steps(40, end)`,
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  mb: 1,
-                }}
-              >
-                {`${content?.caption?.slice(0, 50)}...`}
-              </Typography>
-
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify icon="material-symbols:favorite-outline" width={20} />
@@ -162,9 +266,27 @@ const TopContentGrid = ({ topContents }) => {
               </Stack>
             </Box>
           </Box>
-        </Grid>
+
+          <Typography
+            variant="body2"
+            className="media-kit-caption"
+            sx={{
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              mt: 1,
+              color: 'text.primary',
+              width: '100%',
+              maxWidth: '100%',
+            }}
+          >
+            {`${content?.caption?.slice(0, 80)}...`}
+          </Typography>
+        </Box>
       ))}
-    </Grid>
+    </Box>
   );
 };
 
@@ -174,53 +296,137 @@ TopContentGrid.propTypes = {
       image_url: PropTypes.string.isRequired,
     })
   ).isRequired,
+  mobileCarousel: PropTypes.bool,
 };
 
 const MediaKitSocialContent = ({ instagram }) => {
   const { user } = useAuthContext();
-
   const instagramData = useSocialMediaData((state) => state.instagram);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  if (!user?.creator?.isFacebookConnected)
+  // Get the real data from store
+  const realTopContent = instagramData?.medias?.sortedVideos;
+
+  // Check if we have real content
+  const hasContent = Array.isArray(realTopContent) && realTopContent.length > 0;
+  const isConnected = !!user?.creator?.isFacebookConnected;
+
+  if (!isConnected) {
+    // Show connect Instagram prompt
     return (
-      <Label
-        color="info"
+      <Box
+        component={m.div}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
         sx={{
-          height: 250,
-          textAlign: 'center',
-          borderStyle: 'dashed',
-          borderColor: (theme) => theme.palette.divider,
-          borderWidth: 1.5,
-          bgcolor: (theme) => alpha(theme.palette.warning.main, 0.16),
-          width: 1,
+          height: { xs: 450, sm: 500, md: 550 },
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100%',
+          borderRadius: 2,
+          mb: 4,
+          bgcolor: alpha(theme.palette.background.neutral, 0.4),
+          border: `1px dashed ${alpha(theme.palette.divider, 0.8)}`,
+          boxShadow: '0px 0px 15px rgba(0, 0, 0, 0.05)',
         }}
       >
-        <Stack spacing={1} alignItems="center">
-          <Typography variant="subtitle2">Your instagram account is not connected.</Typography>
+        <Stack spacing={3} alignItems="center" sx={{ maxWidth: 320, textAlign: 'center', p: 3 }}>
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: 2,
+              bgcolor: '#FFFFFF',
+              boxShadow: '0px 0px 15px 0px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Iconify icon="skill-icons:instagram" width={42} sx={{ color: '#E1306C' }} />
+          </Box>
+
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+            Connect Instagram
+          </Typography>
+
+          <Typography sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+            Connect your Instagram to showcase your top content and analytics.
+          </Typography>
+
           <Button
-            variant="outlined"
-            size="medium"
-            sx={{ borderRadius: 0.5 }}
-            startIcon={<Iconify icon="skill-icons:instagram" width={20} />}
+            variant="contained"
+            size="large"
+            sx={{
+              borderRadius: 1.5,
+              px: 3,
+              py: 1.5,
+              mt: 2,
+              backgroundColor: '#E1306C',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(225, 48, 108, 0.3)',
+              '&:hover': {
+                backgroundColor: '#C13584',
+                boxShadow: '0 6px 15px rgba(225, 48, 108, 0.4)',
+              },
+            }}
+            startIcon={<Iconify icon="mingcute:link-line" width={22} />}
             LinkComponent="a"
-            // Later need to change
             href="https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=945958120199185&redirect_uri=https://app.cultcreativeasia.com/api/social/auth/instagram/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
             target="_blank"
           >
             Connect Instagram
           </Button>
         </Stack>
-      </Label>
+      </Box>
     );
+  }
+
+  // Only show grid if connected and has content
+  const contentToShow = hasContent ? realTopContent : [];
 
   return (
     <Box>
-      {instagramData?.instagramUser?.instagramVideo?.length ? (
-        <TopContentGrid topContents={instagramData?.instagramUser?.instagramVideo} />
+      {isMobile ? (
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            px: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            id="instagram-mobile-connected"
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              flexWrap: 'nowrap',
+              width: '100%',
+              gap: 0.5,
+              justifyContent: 'flex-start',
+              alignItems: 'stretch',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { height: 0, display: 'none' },
+              pb: 2,
+              scrollSnapType: 'x mandatory',
+              px: 0,
+              pt: 1,
+            }}
+          >
+            {contentToShow.length > 0 && (
+              <TopContentGrid topContents={contentToShow} mobileCarousel />
+            )}
+          </Box>
+        </Box>
       ) : (
-        <Typography variant="subtitle1" color="text.secondary" textAlign="center">
-          No top content data available
-        </Typography>
+        contentToShow.length > 0 && <TopContentGrid topContents={contentToShow} />
       )}
     </Box>
   );

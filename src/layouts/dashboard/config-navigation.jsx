@@ -20,14 +20,12 @@ import SvgColor from 'src/components/svg-color';
 // add finance user here as well
 
 const icon = (name) => (
-  <SvgColor 
-    src={`/assets/icons/navbar/${name}.svg`} 
-    sx={{ 
-      width: name === 'ic_overview' ? 20 : 24,
-      height: name === 'ic_overview' ? 20 : 24,
-      position: name === 'ic_overview' ? 'relative' : 'static',
-      top: name === 'ic_overview' ? '2px' : 0,
-    }} 
+  <SvgColor
+    src={`/assets/icons/navbar/${name}.svg`}
+    sx={{
+      width: 24,
+      height: 24,
+    }}
   />
   // OR
   // <Iconify icon="fluent:mail-24-filled" />
@@ -66,7 +64,12 @@ const ICONS = {
   mytasks: icon('ic_mytasks'),
   mediakit: icon('ic_mediakit'),
   settings: icon('ic_settings'),
-  // calendar: icon('lets-icons:calendar-duotone'),
+  report: icon('ic_fund'),
+  admin: icon('ic_admins'),
+  creator: icon('ic_creators'),
+  clients: icon('ic_clients'),
+  roles: icon('ic_roles'),
+  bugreport: <Iconify icon="solar:bug-line-duotone" width={24} />,
 };
 
 // ----------------------------------------------------------------------
@@ -123,47 +126,47 @@ export function useNavData() {
         items: [
           {
             roles: ['superadmin', 'CSM', 'Growth', 'BD'],
-            title: 'Campaign',
-            path: paths.dashboard.campaign.root,
-            icon: <Iconify icon="material-symbols:explore-outline" width={25} />,
-            children: [
-              // {
-              //   roles: ['superadmin', 'CSM'],
-              //   title: 'Create',
-              //   path: paths.dashboard.campaign.create,
-              // },
-              {
-                roles: ['superadmin', 'CSM'],
-                title: 'Edit',
-                path: paths.dashboard.campaign.manage,
-              },
-              {
-                // title: 'Manage Campaign',
-                title: 'Lists',
-                path: paths.dashboard.campaign.view,
-              },
-              {
-                roles: ['superadmin'],
-                title: 'Settings',
-                path: paths.dashboard.campaign.settings,
-              },
-            ],
+            title: 'Campaigns',
+            path: paths.dashboard.campaign.view,
+            icon: ICONS.mycampaigns,
+            // children: [
+            //   // {
+            //   //   roles: ['superadmin', 'CSM'],
+            //   //   title: 'Create',
+            //   //   path: paths.dashboard.campaign.create,
+            //   // },
+            //   // {
+            //   //   roles: ['superadmin', 'CSM'],
+            //   //   title: 'Edit',
+            //   //   path: paths.dashboard.campaign.manage,
+            //   // },
+            //   {
+            //     // title: 'Manage Campaign',
+            //     title: 'Lists',
+            //     path: paths.dashboard.campaign.view,
+            //   },
+            //   {
+            //     roles: ['superadmin'],
+            //     title: 'Settings',
+            //     path: paths.dashboard.campaign.settings,
+            //   },
+            // ],
           },
           {
             roles: ['superadmin', 'CSM'],
-            title: 'Admin',
+            title: 'Admins',
             path: paths.dashboard.admins,
-            icon: ICONS.user,
-            children: [
-              {
-                title: 'Lists',
-                path: paths.dashboard.admins,
-              },
-            ],
+            icon: ICONS.admin,
+            // children: [
+            //   {
+            //     title: 'Lists',
+            //     path: paths.dashboard.admins,
+            //   },
+            // ],
           },
           {
             roles: ['superadmin', 'CSM'],
-            title: 'Creator',
+            title: 'Creators',
             path: paths.dashboard.creator.root,
             icon: <Iconify icon="solar:users-group-rounded-bold" width={25} />,
             children: [
@@ -216,6 +219,18 @@ export function useNavData() {
           },
           {
             roles: ['superadmin'],
+            title: 'Content Performance Report',
+            path: paths.dashboard.report.root,
+            icon: ICONS.report,
+          },
+          {
+            roles: ['superadmin'],
+            title: 'Content Performance Report',
+            path: paths.dashboard.report.root,
+            icon: ICONS.report,
+          },
+          {
+            roles: ['superadmin'],
             title: 'Roles',
             path: paths.dashboard.roles.root,
             icon: <Iconify icon="oui:app-users-roles" width={25} />,
@@ -262,7 +277,7 @@ export function useNavData() {
         items: [
           {
             title: (
-              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px'}}>
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
                 Discover
               </span>
             ),
@@ -431,6 +446,15 @@ export function useNavData() {
             ),
             path: paths.dashboard.user.profile,
             icon: ICONS.settings,
+          },
+          {
+            title: (
+              <span style={{ fontSize: '15px', fontWeight: 500, letterSpacing: '0px' }}>
+                Bug Report
+              </span>
+            ),
+            path: '#bug-report',
+            icon: ICONS.bugreport,
           },
         ],
       },

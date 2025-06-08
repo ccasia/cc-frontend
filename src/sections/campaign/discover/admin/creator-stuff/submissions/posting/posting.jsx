@@ -29,7 +29,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 const Posting = ({ campaign, submission, creator }) => {
@@ -40,12 +39,11 @@ const Posting = ({ campaign, submission, creator }) => {
   const loading = useBoolean();
   const postingDate = useBoolean();
   const [date, setDate] = useState({
-    startDate: submission?.startDate,
-    endDate: submission?.endDate,
+    dueDate: submission?.endDate,
   });
   const loadingDate = useBoolean();
 
-  const [dateError, setDateError] = useState({ startDate: null, endDate: null });
+  const [dateError, setDateError] = useState({ dueDate: null });
 
   const onSubmit = async (type) => {
     let res;
@@ -70,9 +68,20 @@ const Posting = ({ campaign, submission, creator }) => {
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
       );
       setFeedback('');
-      enqueueSnackbar(res?.data?.message);
+      
+      // Better success message handling
+      const successMessage = res?.data?.message || 'Operation completed successfully';
+      enqueueSnackbar(successMessage);
     } catch (error) {
-      enqueueSnackbar(error?.message, {
+      console.error('Error in admin posting submission:', error);
+      
+      // Better error message handling
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Error processing submission';
+      
+      enqueueSnackbar(errorMessage, {
         variant: 'error',
       });
     } finally {
@@ -84,7 +93,7 @@ const Posting = ({ campaign, submission, creator }) => {
     try {
       loadingDate.onTrue();
       const res = await axiosInstance.patch('/api/submission/posting', {
-        ...data,
+        endDate: data.dueDate,
         submissionId: submission.id,
       });
 
@@ -92,9 +101,20 @@ const Posting = ({ campaign, submission, creator }) => {
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
       );
       postingDate.onFalse();
-      enqueueSnackbar(res?.data?.message);
+      
+      // Better success message handling
+      const successMessage = res?.data?.message || 'Posting date updated successfully';
+      enqueueSnackbar(successMessage);
     } catch (error) {
-      enqueueSnackbar(error?.message, {
+      console.error('Error changing posting date:', error);
+      
+      // Better error message handling
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Error updating posting date';
+      
+      enqueueSnackbar(errorMessage, {
         variant: 'error',
       });
     } finally {
@@ -103,16 +123,10 @@ const Posting = ({ campaign, submission, creator }) => {
   };
 
   useEffect(() => {
-    if (dayjs(date.startDate).isAfter(dayjs(date.endDate), 'date')) {
-      setDateError((prev) => ({ ...prev, startDate: 'Start Date cannot be after end date' }));
+    if (dayjs(date.dueDate).isBefore(dayjs(), 'date')) {
+      setDateError((prev) => ({ ...prev, dueDate: 'Due Date cannot be in the past' }));
     } else {
-      setDateError((prev) => ({ ...prev, startDate: null }));
-    }
-
-    if (dayjs(date.endDate).isBefore(dayjs(date.startDate), 'date')) {
-      setDateError((prev) => ({ ...prev, endDate: 'End Date cannot be before start date' }));
-    } else {
-      setDateError((prev) => ({ ...prev, endDate: null }));
+      setDateError((prev) => ({ ...prev, dueDate: null }));
     }
   }, [date]);
 
@@ -296,26 +310,24 @@ const Posting = ({ campaign, submission, creator }) => {
                   disabled={isDisabled}
                   size="small"
                   variant="contained"
-                  startIcon={<Iconify icon="solar:close-circle-bold" />}
+                  // startIcon={<Iconify icon="solar:close-circle-bold" />}
                   sx={{
-                    bgcolor: 'white',
-                    border: 1,
-                    borderRadius: 0.8,
+                    bgcolor: '#FFFFFF',
+                    border: 1.5,
+                    borderRadius: 1.15,
                     borderColor: '#e7e7e7',
                     borderBottom: 3,
                     borderBottomColor: '#e7e7e7',
-                    color: 'error.main',
+                    color: '#D4321C',
                     '&:hover': {
-                      bgcolor: 'error.lighter',
-                      borderColor: '#e7e7e7',
-                    },
-                    '&:disabled': {
-                      display: 'none',
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#D4321C',
                     },
                     textTransform: 'none',
                     px: 2.5,
                     py: 1.2,
-                    fontSize: '0.875rem',
+                    fontSize: '1rem',
+                    fontWeight: 600,
                     minWidth: '80px',
                     height: '45px',
                   }}
@@ -327,26 +339,27 @@ const Posting = ({ campaign, submission, creator }) => {
                   onClick={dialogApprove.onTrue}
                   disabled={isDisabled}
                   variant="contained"
-                  startIcon={<Iconify icon="solar:check-circle-bold" />}
+                  // startIcon={<Iconify icon="solar:check-circle-bold" />}
                   loading={loading.value}
                   sx={{
-                    bgcolor: '#2e6c56',
-                    color: 'white',
+                    bgcolor: '#FFFFFF',
+                    color: '#1ABF66',
+                    border: '1.5px solid',
+                    borderColor: '#e7e7e7',
                     borderBottom: 3,
-                    borderBottomColor: '#1a3b2f',
-                    borderRadius: 0.8,
+                    borderBottomColor: '#e7e7e7',
+                    borderRadius: 1.15,
                     px: 2.5,
                     py: 1.2,
+                    fontWeight: 600,
                     '&:hover': {
-                      bgcolor: '#2e6c56',
-                      opacity: 0.9,
+                      bgcolor: '#f5f5f5',
+                      borderColor: '#1ABF66',
                     },
-                    '&:disabled': {
-                      display: 'none',
-                    },
-                    fontSize: '0.875rem',
+                    fontSize: '1rem',
                     minWidth: '80px',
                     height: '45px',
+                    textTransform: 'none',
                   }}
                 >
                   Approve
@@ -483,20 +496,20 @@ const Posting = ({ campaign, submission, creator }) => {
             size="small"
             sx={{
               bgcolor: 'white',
-              border: 1,
-              borderRadius: 0.8,
+              border: 1.5,
+              borderRadius: 1.15,
               borderColor: '#e7e7e7',
               borderBottom: 3,
               borderBottomColor: '#e7e7e7',
               color: 'text.primary',
               '&:hover': {
                 bgcolor: '#f5f5f5',
-                borderColor: '#e7e7e7',
+                borderColor: '#231F20',
               },
               textTransform: 'none',
               px: 2.5,
               py: 1.2,
-              fontSize: '0.875rem',
+              fontSize: '0.9rem',
               minWidth: '80px',
               height: '45px',
             }}
@@ -511,18 +524,21 @@ const Posting = ({ campaign, submission, creator }) => {
             variant="contained"
             loading={loading.value}
             sx={{
-              bgcolor: '#2e6c56',
-              color: 'white',
+              bgcolor: '#FFFFFF',
+              color: '#1ABF66',
+              border: '1.5px solid',
+              borderColor: '#e7e7e7',
               borderBottom: 3,
-              borderBottomColor: '#1a3b2f',
-              borderRadius: 0.8,
+              borderBottomColor: '#e7e7e7',
+              borderRadius: 1.15,
               px: 2.5,
               py: 1.2,
+              fontWeight: 600,
               '&:hover': {
-                bgcolor: '#2e6c56',
-                opacity: 0.9,
+                bgcolor: '#f5f5f5',
+                borderColor: '#1ABF66',
               },
-              fontSize: '0.875rem',
+              fontSize: '0.9rem',
               minWidth: '80px',
               height: '45px',
               textTransform: 'none',
@@ -576,20 +592,20 @@ const Posting = ({ campaign, submission, creator }) => {
             size="small"
             sx={{
               bgcolor: 'white',
-              border: 1,
-              borderRadius: 0.8,
+              border: 1.5,
+              borderRadius: 1.15,
               borderColor: '#e7e7e7',
               borderBottom: 3,
               borderBottomColor: '#e7e7e7',
               color: 'text.primary',
               '&:hover': {
                 bgcolor: '#f5f5f5',
-                borderColor: '#e7e7e7',
+                borderColor: '#231F20',
               },
               textTransform: 'none',
               px: 2.5,
               py: 1.2,
-              fontSize: '0.875rem',
+              fontSize: '0.9rem',
               minWidth: '80px',
               height: '45px',
             }}
@@ -604,18 +620,21 @@ const Posting = ({ campaign, submission, creator }) => {
             variant="contained"
             loading={loading.value}
             sx={{
-              bgcolor: '#2e6c56',
-              color: 'white',
+              bgcolor: '#FFFFFF',
+              color: '#1ABF66',
+              border: '1.5px solid',
+              borderColor: '#e7e7e7',
               borderBottom: 3,
-              borderBottomColor: '#1a3b2f',
-              borderRadius: 0.8,
+              borderBottomColor: '#e7e7e7',
+              borderRadius: 1.15,
               px: 2.5,
               py: 1.2,
+              fontWeight: 600,
               '&:hover': {
-                bgcolor: '#2e6c56',
-                opacity: 0.9,
+                bgcolor: '#f5f5f5',
+                borderColor: '#1ABF66',
               },
-              fontSize: '0.875rem',
+              fontSize: '0.9rem',
               minWidth: '80px',
               height: '45px',
               textTransform: 'none',
@@ -641,36 +660,22 @@ const Posting = ({ campaign, submission, creator }) => {
             sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
             variant="h4"
           >
-            Change Posting Date
+            Change Due Date
           </Typography>
         </DialogTitle>
         <DialogContent>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Stack direction={{ sm: 'row' }} gap={2} py={1}>
               <DatePicker
-                value={dayjs(date.startDate)}
-                onChange={(val) => setDate((prev) => ({ ...prev, startDate: val }))}
-                label="Start Date"
+                label="Due Date"
+                value={dayjs(date.dueDate)}
+                onChange={(val) => setDate((prev) => ({ ...prev, dueDate: val }))}
                 format="DD/MM/YYYY"
                 slotProps={{
                   textField: {
                     fullWidth: true,
-                    error: !!dateError.startDate,
-                    helperText: dateError.startDate,
-                  },
-                }}
-                minDate={dayjs()}
-              />
-              <DatePicker
-                label="End Date"
-                value={dayjs(date.endDate)}
-                onChange={(val) => setDate((prev) => ({ ...prev, endDate: val }))}
-                format="DD/MM/YYYY"
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    error: !!dateError.endDate,
-                    helperText: dateError.endDate,
+                    error: !!dateError.dueDate,
+                    helperText: dateError.dueDate,
                   },
                 }}
                 minDate={dayjs()}
@@ -683,7 +688,7 @@ const Posting = ({ campaign, submission, creator }) => {
           <LoadingButton
             variant="contained"
             onClick={() => handleChangeDate(date)}
-            disabled={!!dateError.startDate || !!dateError.endDate}
+            disabled={!!dateError.dueDate}
             loading={loadingDate.value}
           >
             Change
