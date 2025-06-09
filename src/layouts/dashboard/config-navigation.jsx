@@ -168,7 +168,7 @@ export function useNavData() {
             roles: ['superadmin', 'CSM'],
             title: 'Creators',
             path: paths.dashboard.creator.root,
-            icon: <Iconify icon="solar:users-group-rounded-bold" width={25} />,
+            icon: ICONS.creator,
             children: [
               {
                 title: 'List',
@@ -200,7 +200,7 @@ export function useNavData() {
             roles: ['superadmin', 'CSM', 'god'],
             title: 'Clients',
             path: paths.dashboard.company.root,
-            icon: <Iconify icon="mdi:company" width={25} />,
+            icon: ICONS.clients,
             children: [
               {
                 title: 'List',
@@ -215,13 +215,7 @@ export function useNavData() {
           {
             title: 'My Tasks',
             path: paths.dashboard.kanban,
-            icon: ICONS.kanban,
-          },
-          {
-            roles: ['superadmin'],
-            title: 'Content Performance Report',
-            path: paths.dashboard.report.root,
-            icon: ICONS.report,
+            icon: ICONS.mytasks,
           },
           {
             roles: ['superadmin'],
@@ -233,7 +227,7 @@ export function useNavData() {
             roles: ['superadmin'],
             title: 'Roles',
             path: paths.dashboard.roles.root,
-            icon: <Iconify icon="oui:app-users-roles" width={25} />,
+            icon: ICONS.roles,
           },
           {
             roles: ['superadmin'],
