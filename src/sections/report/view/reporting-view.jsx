@@ -97,17 +97,6 @@ const ReportingView = () => {
     }
   };
 
-  // Helper function to format percentage change for display
-  const formatPercentageChange = (percentageChange) => {
-    const absChange = Math.abs(percentageChange);
-    const isPositive = percentageChange >= 0;
-    
-    return {
-      value: `${Math.round(absChange)}%`,
-      isPositive,
-    };
-  };
-
   // Fetch content data using the media insight endpoint
   const fetchContentData = useCallback(async (postUrl, userId, campaignId) => {
     setLoading(true);
