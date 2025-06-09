@@ -105,7 +105,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
       });
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      
+
       console.log('Submitting text pitch with status:', 'undecided');
       enqueueSnackbar(res?.data?.message);
       mutate(endpoints.auth.me);
@@ -155,13 +155,15 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
         },
       }}
     >
-      <DialogContent sx={{ 
-        flexGrow: 1, 
-        display: 'flex', 
-        alignItems: 'center',
-        justifyContent: 'center',
-        py: { xs: 3, sm: 4 }
-      }}>
+      <DialogContent
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: { xs: 3, sm: 4 },
+        }}
+      >
         <Stack alignItems="center" spacing={3} width="100%">
           <Box
             sx={{
@@ -213,7 +215,7 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
             sx={{
               mb: -1,
               backgroundColor: '#3a3a3c',
-              color: 'white', 
+              color: 'white',
               borderBottom: '3px solid',
               borderBottomColor: isSubmitting ? 'rgba(0, 0, 0, 0.12)' : '#202021',
               '&:hover': {
@@ -451,13 +453,13 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
                   variant="outlined"
                   fullWidth
                   sx={{
-                 fontSize: '1rem',
-                padding: '12px 24px',
-                height: '48px',
-                border: '1px solid #e7e7e7',
-                borderBottom: '4px solid',
-                borderBottomColor: '#e7e7e7',
-                backgroundColor: '#FFFFFF',
+                    fontSize: '1rem',
+                    padding: '12px 24px',
+                    height: '48px',
+                    border: '1px solid #e7e7e7',
+                    borderBottom: '4px solid',
+                    borderBottomColor: '#e7e7e7',
+                    backgroundColor: '#FFFFFF',
                   }}
                 >
                   Close
@@ -498,11 +500,11 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
       open={open}
       fullWidth
       maxWidth={false}
-      PaperProps={{ 
-        sx: { 
+      PaperProps={{
+        sx: {
           width: '750px',
-          bgcolor: '#F4F4F4'
-        } 
+          bgcolor: '#F4F4F4',
+        },
       }}
       fullScreen={smUp}
     >
@@ -557,15 +559,15 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
           </Stack>
         </DialogTitle>
         <DialogContent sx={{ p: 2 }}>
-          <RHFEditor 
-            simple 
-            name="content" 
-            sx={{ 
+          <RHFEditor
+            simple
+            name="content"
+            sx={{
               '& .ql-container, & .ql-editor': {
                 bgcolor: '#FFFFFF',
-                backgroundColor: '#FFFFFF'
-              }
-            }} 
+                backgroundColor: '#FFFFFF',
+              },
+            }}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
@@ -578,9 +580,10 @@ const CampaignPitchTextModal = ({ open, handleClose, campaign, onBack }) => {
               sx={{
                 mb: -1,
                 backgroundColor: '#3a3a3c',
-                color: 'white', 
+                color: 'white',
                 borderBottom: '3px solid',
-                borderBottomColor: (!value || value === pitch?.content) ? 'rgba(0, 0, 0, 0.12)' : '#202021',
+                borderBottomColor:
+                  !value || value === pitch?.content ? 'rgba(0, 0, 0, 0.12)' : '#202021',
                 '&:hover': {
                   backgroundColor: '#202021',
                 },

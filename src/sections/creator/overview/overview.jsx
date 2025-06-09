@@ -224,8 +224,9 @@ const Overview = () => {
           </Stack>
         </Box>
       </Grid>
+
       <Grid item xs={12} md={6}>
-        <Box height={1}>
+        <Box>
           <Stack
             direction="row"
             alignItems="center"
@@ -259,7 +260,9 @@ const Overview = () => {
               }}
             />
           </Stack>
+
           {/* <Divider /> */}
+
           <Stack
             spacing={1}
             sx={{
@@ -347,11 +350,10 @@ const Overview = () => {
               </>
             )}
           </Stack>
-          {user?.paymentForm?.status === 'rejected' && (
-            <Label width={1} sx={{ height: 50 }} color="warning">
-              <Typography variant="subtitle1">⚠️ {user?.paymentForm?.reason || ''}</Typography>
-            </Label>
-          )}
+
+          {/* <Typography textAlign="center" py={2}>
+            In development...
+          </Typography> */}
         </Box>
       </Grid>
     </Grid>

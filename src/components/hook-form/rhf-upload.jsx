@@ -85,6 +85,7 @@ export function RHFUpload({
     doc: {
       'application/msword': ['.doc'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/pdf': [],
     },
     pdf: { 'application/pdf': [] },
   }[type];
