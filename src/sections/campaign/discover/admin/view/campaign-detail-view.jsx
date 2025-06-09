@@ -104,6 +104,7 @@ const CampaignDetailView = ({ id }) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
 
   const handleMenuOpen = (event) => {
+    console.log(event);
     setMenuAnchorEl(event.currentTarget);
   };
 
@@ -111,7 +112,7 @@ const CampaignDetailView = ({ id }) => {
     setMenuAnchorEl(null);
   };
 
-  const menuOpen = useBoolean(menuAnchorEl);
+  const menuOpen = Boolean(menuAnchorEl);
 
   // console.log('campaignid', campaign);
 
@@ -863,7 +864,7 @@ const CampaignDetailView = ({ id }) => {
 
               <Menu
                 anchorEl={menuAnchorEl}
-                open={menuOpen.value}
+                open={menuOpen}
                 onClose={handleMenuClose}
                 PaperProps={{
                   sx: {
