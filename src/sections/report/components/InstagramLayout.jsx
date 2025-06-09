@@ -86,28 +86,32 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
               icon: 'mdi:eye-outline',
               title: 'Views',
               value: content.metrics?.views || 0,
-              metricKey: 'views'
+              metricKey: 'views',
+              color: '#D3D3D3'
             })}
 
             {renderEngagementCard({
               icon: 'mdi:heart-outline',
               title: 'Likes',
               value: content.metrics?.likes || 0,
-              metricKey: 'likes'
+              metricKey: 'likes',
+              color: '#E7E7E7'
             })}
 
             {renderEngagementCard({
               icon: 'mdi:comment-outline',
               title: 'Comments',
               value: content.metrics?.comments || 0,
-              metricKey: 'comments'
+              metricKey: 'comments',
+              color: '#F5F5F5'
             })}
 
             {renderEngagementCard({
               icon: 'mdi:bookmark-outline',
               title: 'Saved',
               value: content.metrics?.saved || 0,
-              metricKey: 'saved'
+              metricKey: 'saved',
+              color: '#FFFFFF'
             })}
           </Box>
         </Box>
