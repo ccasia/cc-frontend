@@ -3,7 +3,20 @@ import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 import React, { useMemo, useState, useEffect } from 'react';
 
-import { Box, Grid, Chip, Stack, Button, Dialog, Avatar, Container, Typography, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Chip,
+  Stack,
+  Button,
+  Dialog,
+  Avatar,
+  Container,
+  Typography,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
@@ -210,9 +223,9 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   />
                 </Box>
                 <Stack spacing={0.5}>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
+                  <Typography
+                    variant="caption"
+                    sx={{
                       color: '#8e8e93',
                       fontWeight: 600,
                       fontSize: '0.75rem',
@@ -222,7 +235,10 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   >
                     CREATOR PITCHES
                   </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.75rem' }}>
+                  <Typography
+                    variant="h4"
+                    sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.75rem' }}
+                  >
                     {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')
                       ?.length || 0}
                   </Typography>
@@ -231,7 +247,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
             </Box>
           </Box>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <Box sx={cardStyle}>
             <Box sx={{ p: 2.5 }}>
@@ -249,9 +265,9 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   />
                 </Box>
                 <Stack spacing={0.5}>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
+                  <Typography
+                    variant="caption"
+                    sx={{
                       color: '#8e8e93',
                       fontWeight: 600,
                       fontSize: '0.75rem',
@@ -261,7 +277,10 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   >
                     SHORTLISTED CREATORS
                   </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.75rem' }}>
+                  <Typography
+                    variant="h4"
+                    sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.75rem' }}
+                  >
                     {localCampaign?.shortlisted?.length || 0}
                   </Typography>
                 </Stack>
@@ -269,7 +288,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
             </Box>
           </Box>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <Box sx={cardStyle}>
             <Box sx={{ p: 2.5 }}>
@@ -287,9 +306,9 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   />
                 </Box>
                 <Stack spacing={0.5}>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
+                  <Typography
+                    variant="caption"
+                    sx={{
                       color: '#8e8e93',
                       fontWeight: 600,
                       fontSize: '0.75rem',
@@ -299,7 +318,10 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   >
                     PENDING AGREEMENTS
                   </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.75rem' }}>
+                  <Typography
+                    variant="h4"
+                    sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.75rem' }}
+                  >
                     {localCampaign?.creatorAgreement?.filter((a) => !a.isSent)?.length || 0}
                   </Typography>
                 </Stack>
@@ -307,7 +329,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
             </Box>
           </Box>
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <Box sx={cardStyle}>
             <Box sx={{ p: 2.5 }}>
@@ -325,9 +347,9 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   />
                 </Box>
                 <Stack spacing={0.5}>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
+                  <Typography
+                    variant="caption"
+                    sx={{
                       color: '#8e8e93',
                       fontWeight: 600,
                       fontSize: '0.75rem',
@@ -337,7 +359,10 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   >
                     INVOICES
                   </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.75rem' }}>
+                  <Typography
+                    variant="h4"
+                    sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '1.75rem' }}
+                  >
                     {campaignInvoices?.length || 0}
                   </Typography>
                 </Stack>
@@ -379,9 +404,9 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
               <Box className="content">
                 {campaign?.campaignCredits && latestPackageItem ? (
                   <Stack spacing={1}>
-                    <Stack 
-                      direction="row" 
-                      justifyContent="space-between" 
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
                       alignItems="center"
                       sx={{
                         py: 1.5,
@@ -398,10 +423,10 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         {campaign?.campaignCredits || 0}
                       </Typography>
                     </Stack>
-                    
-                    <Stack 
-                      direction="row" 
-                      justifyContent="space-between" 
+
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
                       alignItems="center"
                       sx={{
                         py: 1.5,
@@ -418,10 +443,10 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         {campaign?.creditsUtilized || 0}
                       </Typography>
                     </Stack>
-                    
-                    <Stack 
-                      direction="row" 
-                      justifyContent="space-between" 
+
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
                       alignItems="center"
                       sx={{
                         py: 1.5,
@@ -449,10 +474,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                       border: '1px dashed #dee2e6',
                     }}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{ color: '#6c757d', fontWeight: 500 }}
-                    >
+                    <Typography variant="body2" sx={{ color: '#6c757d', fontWeight: 500 }}>
                       Not connected to any package
                     </Typography>
                   </Box>
@@ -484,7 +506,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                   >
                     CREATOR PITCHES
                   </Typography>
-                  {(localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')?.length || 0) > 0 && (
+                  {(localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')?.length ||
+                    0) > 0 && (
                     <Box
                       sx={{
                         bgcolor: '#1340ff',
@@ -498,7 +521,8 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         textAlign: 'center',
                       }}
                     >
-                      {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')?.length || 0}
+                      {localCampaign?.pitch?.filter((pitch) => pitch.status === 'undecided')
+                        ?.length || 0}
                     </Box>
                   )}
                 </Stack>
@@ -540,9 +564,9 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                             }}
                           />
                           <Stack sx={{ flex: 1 }}>
-                            <Typography 
-                              variant="subtitle2" 
-                              sx={{ 
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
                                 fontWeight: 600,
                                 color: '#1a1a1a',
                                 fontSize: '0.875rem',
@@ -590,10 +614,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                       border: '1px dashed #dee2e6',
                     }}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{ color: '#6c757d', fontWeight: 500 }}
-                    >
+                    <Typography variant="body2" sx={{ color: '#6c757d', fontWeight: 500 }}>
                       No pitches received yet
                     </Typography>
                   </Box>
@@ -644,7 +665,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         <Chip
                           key={deliverable.label}
                           label={deliverable.label}
-                          sx={{   
+                          sx={{
                             bgcolor: '#e3f2fd',
                             color: '#1565c0',
                             border: '1px solid #bbdefb',
@@ -652,7 +673,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                             height: '28px',
                             fontWeight: 600,
                             fontSize: '0.75rem',
-                            '&:hover': { 
+                            '&:hover': {
                               bgcolor: '#bbdefb',
                               transform: 'translateY(-1px)',
                             },
@@ -742,9 +763,9 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                           }}
                         />
                         <Stack sx={{ flex: 1 }}>
-                          <Typography 
-                            variant="subtitle2" 
-                            sx={{ 
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
                               fontWeight: 600,
                               color: '#1a1a1a',
                               fontSize: '0.875rem',
@@ -755,7 +776,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                         </Stack>
                         <Button
                           size="small"
-                          onClick={() => handleProfileClick(creator)}
+                          // onClick={() => handleProfileClick(creator)}
                           sx={{
                             bgcolor: '#ffffff',
                             color: '#1340ff',
@@ -792,10 +813,7 @@ const CampaignOverview = ({ campaign, onUpdate }) => {
                       border: '1px dashed #dee2e6',
                     }}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{ color: '#6c757d', fontWeight: 500 }}
-                    >
+                    <Typography variant="body2" sx={{ color: '#6c757d', fontWeight: 500 }}>
                       No creators shortlisted yet
                     </Typography>
                   </Box>

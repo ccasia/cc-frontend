@@ -3,7 +3,6 @@
 /* eslint-disable no-plusplus */
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useNavigate } from 'react-router-dom';
 import { useMemo, useState, useEffect } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
