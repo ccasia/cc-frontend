@@ -102,11 +102,7 @@ export default function NavMini() {
               )
             }
           >
-            <img
-              src="/assets/icons/navbar/ic_nav_expand.svg"
-              alt="Collapse"
-              style={{ width: '22px', color: 'black' }}
-            />
+            <img src="/assets/icons/navbar/ic_nav_expand.svg" alt="Collapse" style={{ width: '22px', color: 'black' }} />
           </IconButton>
         </Stack>
 
