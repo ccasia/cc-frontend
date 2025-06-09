@@ -111,25 +111,25 @@ const CampaignDetailView = ({ id }) => {
   //     if (!window.campaignTabs.some(tab => tab.id === id)) {
   //       // Wait for campaign data to get the name if available
   //       const tabName = campaign ? campaign.name || 'Campaign Details' : 'Campaign Details';
-        
+
   //       window.campaignTabs.push({
   //         id,
   //         name: tabName
   //       });
-        
+
   //       // Add status information to the global campaignTabsStatus
   //       if (campaign && campaign.status) {
   //         // Initialize campaignTabsStatus if it doesn't exist
   //         if (!window.campaignTabsStatus) {
   //           window.campaignTabsStatus = {};
   //         }
-          
+
   //         // Store the campaign status
   //         window.campaignTabsStatus[id] = {
   //           status: campaign.status
   //         };
   //       }
-        
+
   //       // Save to localStorage
   //       try {
   //         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
@@ -691,7 +691,7 @@ const CampaignDetailView = ({ id }) => {
                   whiteSpace: 'nowrap',
                   '&:hover': {
                     backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                  }, 
+                  },
                 }}
               >
                 Edit Details
@@ -728,9 +728,9 @@ const CampaignDetailView = ({ id }) => {
                 open={menuOpen}
                 onClose={handleMenuClose}
                 PaperProps={{
-                  sx: { 
+                  sx: {
                     minWidth: 200,
-                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.1)',
                   },
                 }}
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
