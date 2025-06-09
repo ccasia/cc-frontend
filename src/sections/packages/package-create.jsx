@@ -16,8 +16,6 @@ import {
   TextField,
   Typography,
   IconButton,
-  DialogTitle,
-  DialogContent,
 } from '@mui/material';
 
 import useGetPackages from 'src/hooks/use-get-packges';
@@ -29,11 +27,8 @@ import FormProvider, { RHFTextField } from 'src/components/hook-form';
 
 const packageSchema = Yup.object().shape({
   packageName: Yup.string().required('Package Name is required'),
-  // packageType: Yup.string().required('Package Type is required'),
   priceMYR: Yup.string().required('Price in MYR is required'),
-  // .positive('Value must be a positive number'),
   priceSGD: Yup.string().required('Price in SGD is required'),
-  // .positive('Value must be a positive number'),
   totalUGCCredits: Yup.number()
     .required('Total UGC Credits is required')
     .positive('Total UGC Credits must be a positive number')
@@ -46,18 +41,27 @@ const packageSchema = Yup.object().shape({
 
 const defaultValues = {
   packageName: '',
-  // packageType: '',
   priceMYR: '',
   priceSGD: '',
   totalUGCCredits: '',
   validityPeriod: '',
-  // invoiceDate: null,
 };
 
 // eslint-disable-next-line react/prop-types
-const FormField = ({ label, children, ...others }) => (
-  <Stack spacing={0.5} alignItems="start" width={1}>
-    <FormLabel required sx={{ fontWeight: 500, color: '#636366', fontSize: '12px' }} {...others}>
+const FormField = ({ label, children, required = true, ...others }) => (
+  <Stack spacing={1} alignItems="start" width={1}>
+    <FormLabel 
+      required={required}
+      sx={{ 
+        fontWeight: 600, 
+        color: '#374151', 
+        fontSize: '0.875rem',
+        '& .MuiFormLabel-asterisk': {
+          color: '#dc2626',
+        },
+      }} 
+      {...others}
+    >
       {label}
     </FormLabel>
     {children}
@@ -74,65 +78,132 @@ const PackageCreate = ({ open, onClose }) => {
 
   const {
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     setValue,
+    reset,
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       const res = await axiosInstance.post(endpoints.package.create, data);
-
-      enqueueSnackbar(res?.data?.message);
+      enqueueSnackbar(res?.data?.message || 'Package created successfully!');
       mutate();
+      reset();
       onClose();
     } catch (error) {
-      enqueueSnackbar(error?.message, { variant: 'error' });
+      enqueueSnackbar(error?.message || 'Failed to create package', { variant: 'error' });
     }
   });
+
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
 
   return (
     <Dialog
       fullWidth
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
+      maxWidth="md"
       PaperProps={{
-        sx: { maxWidth: 720, borderRadius: 0.8 },
+        sx: {
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+          border: '1px solid #f0f0f0',
+        },
       }}
     >
-      <DialogTitle>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Iconify icon="mdi:package-variant-closed" width={28} />
-          <Typography
-            sx={{
-              fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-              flexGrow: 1,
-            }}
-            fontSize={30}
-          >
-            Create a new package
-          </Typography>
-          <IconButton size="small" sx={{ borderRadius: 1 }} onClick={onClose}>
-            <Iconify icon="material-symbols:close-rounded" width={24} />
-          </IconButton>
-        </Stack>
-      </DialogTitle>
+      <FormProvider methods={methods} onSubmit={onSubmit}>
+        <Box sx={{ p: 3 }}>
+          {/* Header */}
+          <Box sx={{ mb: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1.5,
+                    bgcolor: '#f0f9ff',
+                    border: '1px solid rgba(19, 64, 255, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Iconify icon="heroicons:cube-20-solid" width={20} height={20} sx={{ color: '#1340ff' }} />
+                </Box>
+                <Box>
+                  <Typography 
+                    variant="h5" 
+                    sx={{ 
+                      fontWeight: 600, 
+                      color: '#111827',
+                      fontSize: '1.25rem',
+                      mb: 0.5,
+                    }}
+                  >
+                    Create New Package
+                  </Typography>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#6b7280', 
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    Set up a new package with pricing and credits
+                  </Typography>
+                </Box>
+              </Stack>
+              <IconButton
+                onClick={handleClose}
+                sx={{
+                  color: '#6b7280',
+                  '&:hover': {
+                    bgcolor: '#f3f4f6',
+                    color: '#374151',
+                  },
+                }}
+              >
+                <Iconify icon="heroicons:x-mark-20-solid" width={20} height={20} />
+              </IconButton>
+            </Stack>
+          </Box>
 
-      <DialogContent>
-        <FormProvider methods={methods} onSubmit={onSubmit}>
+          {/* Form Content */}
           <Box
-            rowGap={2}
-            columnGap={3}
-            display="grid"
-            mt={1}
-            mb={2}
-            gridTemplateColumns={{
-              xs: 'repeat(1, 1fr)',
-              sm: 'repeat(2, 1fr)',
+            sx={{
+              display: 'grid',
+              gap: 3,
+              gridTemplateColumns: {
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+              },
+              mb: 4,
             }}
           >
-            <FormField label="Package Name">
-              <RHFTextField name="packageName" placeholder="Package Name" />
-            </FormField>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
+              <FormField label="Package Name">
+                <RHFTextField 
+                  name="packageName" 
+                  placeholder="Enter package name"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1,
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1340ff',
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#1340ff',
+                        borderWidth: 2,
+                      },
+                    },
+                  }}
+                />
+              </FormField>
+            </Box>
 
             <FormField label="Price in MYR">
               <NumericFormat
@@ -143,11 +214,23 @@ const PackageCreate = ({ open, onClose }) => {
                 fixedDecimalScale
                 allowNegative={false}
                 onValueChange={(values) => setValue('priceMYR', values.value)}
-                placeholder="Price in MYR"
+                placeholder="0.00"
                 variant="outlined"
                 fullWidth
-                error={errors.priceMYR}
-                helperText={errors.priceMYR && errors.priceMYR.message}
+                error={!!errors.priceMYR}
+                helperText={errors.priceMYR?.message}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                      borderWidth: 2,
+                    },
+                  },
+                }}
               />
             </FormField>
 
@@ -160,55 +243,146 @@ const PackageCreate = ({ open, onClose }) => {
                 fixedDecimalScale
                 allowNegative={false}
                 onValueChange={(values) => setValue('priceSGD', values.value)}
-                placeholder="Price in SGD"
+                placeholder="0.00"
                 variant="outlined"
                 fullWidth
-                error={errors.priceSGD}
-                helperText={errors.priceSGD && errors.priceSGD.message}
+                error={!!errors.priceSGD}
+                helperText={errors.priceSGD?.message}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                      borderWidth: 2,
+                    },
+                  },
+                }}
               />
             </FormField>
+
             <FormField label="Total UGC Credits">
               <RHFTextField
                 name="totalUGCCredits"
-                placeholder="Total UGC Credits"
+                placeholder="Enter number of credits"
                 type="number"
                 onKeyDown={(e) => {
-                  if (e.key === '-' || e.key === 'e') {
+                  if (e.key === '-' || e.key === 'e' || e.key === '+') {
                     e.preventDefault();
                   }
                 }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                      borderWidth: 2,
+                    },
+                  },
+                }}
               />
             </FormField>
-            <FormField label="Validity Period ( in months )">
+
+            <FormField label="Validity Period">
               <RHFTextField
                 name="validityPeriod"
-                placeholder="Validity Period"
+                placeholder="Enter months"
                 type="number"
                 onKeyDown={(e) => {
-                  if (e.key === '-' || e.key === 'e') {
+                  if (e.key === '-' || e.key === 'e' || e.key === '+') {
                     e.preventDefault();
                   }
                 }}
+                InputProps={{
+                  endAdornment: (
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#6b7280',
+                        fontSize: '0.875rem',
+                        mr: 1,
+                      }}
+                    >
+                      months
+                    </Typography>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                      borderWidth: 2,
+                    },
+                  },
+                }}
               />
             </FormField>
-
-            {/* <FormField label="Invoice Date">
-              <RHFDatePicker name="invoiceDate" />
-            </FormField> */}
           </Box>
 
-          <Box mt={2} mb={2} display="flex" justifyContent="flex-end">
-            <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 0.8 }}>
-              Cancel
-            </Button>
-            <Box mr={1} />
+          {/* Action Buttons */}
+          <Box sx={{ pt: 3, borderTop: '1px solid #f0f0f0' }}>
+            <Stack direction="row" spacing={2} justifyContent="flex-end">
+              <Button
+                variant="outlined"
+                onClick={handleClose}
+                disabled={isSubmitting}
+                sx={{
+                  borderColor: '#d1d5db',
+                  color: '#6b7280',
+                  borderRadius: 1,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: '#9ca3af',
+                    bgcolor: '#f9fafb',
+                  },
+                  '&:disabled': {
+                    borderColor: '#e5e7eb',
+                    color: '#9ca3af',
+                  },
+                }}
+              >
+                Cancel
+              </Button>
 
-            <LoadingButton type="submit" variant="contained" sx={{ borderRadius: 0.8 }}>
-              Create
-            </LoadingButton>
+              <LoadingButton 
+                type="submit" 
+                variant="contained"
+                loading={isSubmitting}
+                sx={{
+                  bgcolor: '#1340ff',
+                  color: '#ffffff',
+                  borderRadius: 1,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  '&:hover': {
+                    bgcolor: '#0f35d1',
+                  },
+                  '&:disabled': {
+                    bgcolor: '#e5e7eb',
+                    color: '#9ca3af',
+                  },
+                }}
+              >
+                Create Package
+              </LoadingButton>
+            </Stack>
           </Box>
-        </FormProvider>
-      </DialogContent>
+        </Box>
+      </FormProvider>
     </Dialog>
   );
 };

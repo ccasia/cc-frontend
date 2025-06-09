@@ -98,14 +98,9 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     );
 
     // Return the first valid date, or null if none are valid
-    // eslint-disable-next-line no-restricted-syntax
-    for (const date of dateOptions) {
-      if (date && dayjs(date).isValid()) {
-        return dayjs(date);
-      }
-    }
+    const validDate = dateOptions.find(date => date && dayjs(date).isValid());
+    return validDate ? dayjs(validDate) : null;
 
-    return null;
   }, [submission?.dueDate, submission?.endDate, submission?.startDate]);
 
   const schema = yup.object().shape({
