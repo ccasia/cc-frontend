@@ -50,6 +50,7 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 								icon: 'mdi:eye-outline',
 								title: 'Views',
 								value: content.metrics?.views || 0,
+								metricKey: 'views'
 							})}
 
 							{renderEngagementCard({
@@ -57,6 +58,7 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 								icon: 'mdi:heart-outline',
 								title: 'Likes',
 								value: content.metrics?.likes || 0,
+								metricKey: 'likes'
 							})}
 
 							{renderEngagementCard({
@@ -64,6 +66,7 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 								icon: 'mdi:comment-outline',
 								title: 'Comments',
 								value: content.metrics?.comments || 0,
+								metricKey: 'comments'
 							})}
 						</Box>
 
@@ -79,17 +82,13 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 							{renderCircularStat({
 								label: 'Interactions',
 								value: content.metrics?.total_interactions || 0,
-								averageValue: 300,
-								isAboveAverage: (content.metrics?.total_interactions || 0) > 110,
-								percentageDiff: 24,
+								metricKey: 'totalInteractions'
 							})}
 
 							{renderCircularStat({
 								label: 'Shares',
 								value: content.metrics?.shares || 0,
-								averageValue: 100,
-								isAboveAverage: (content.metrics?.shares || 0) > 30,
-								percentageDiff: 85,
+								metricKey: 'shares'
 							})}
 
 							<StatsLegend />

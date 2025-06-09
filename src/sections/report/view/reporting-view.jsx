@@ -167,12 +167,18 @@ const ReportingView = () => {
           throw new Error('No video data found for this URL');
         }
       } else if (parsedUrl.platform === 'TikTok') {
-        const response = await axiosInstance.get(
-          endpoints.creators.social.getTikTokMediaInsight(userId, encodeURIComponent(postUrl))
-        );
+        let apiUrl = endpoints.creators.social.getTikTokMediaInsight(userId, encodeURIComponent(postUrl), campaignId);
+
+        const response = await axiosInstance.get(apiUrl);
 
         if (response.data?.video && response.data?.insight) {
-          const { video, insight } = response.data;
+          const { 
+            video, 
+            insight, 
+            campaignAverages, 
+            campaignComparison, 
+            hasCampaignData
+          } = response.data;
 
           const metricsMap = {};
           insight.forEach(item => {
@@ -192,7 +198,9 @@ const ReportingView = () => {
               shares: video.share_count || metricsMap.shares || 0,
               total_interactions: metricsMap.total_interactions || 0,
             },
-            hasCampaignData: false,
+            campaignAverages: campaignAverages,
+            campaignComparison: campaignComparison,
+            hasCampaignData: hasCampaignData || false,
             videoData: video,
             insightData: insight,
           }));
@@ -266,11 +274,12 @@ const ReportingView = () => {
       percentageDiff = avgValue > 0 ? Math.abs(((displayValue - avgValue) / avgValue) * 100) : 0;
     }
     
-    const maxVal = Math.max(displayValue, avgValue) * 1.2;
-    const currentProgress = maxVal > 0 ? (displayValue / maxVal) * 100 : 0;
-    const averageProgress = maxVal > 0 ? (avgValue / maxVal) * 100 : 0;
+    // Calculate current progress as percentage of average
+    // If current is above average, show full circle (100%)
+    // If current is below average, show partial circle based on ratio
+    const currentProgress = isAboveAverage ? 100 : avgValue > 0 ? (displayValue / avgValue) * 100 : 0;
 
-    const comparisonText = content.hasCampaignData ? 'campaign average' : 'average creator';
+    const comparisonText = content.hasCampaignData ? 'campaign avg' : 'average creator';
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', sm: 'center', md: 'center' }, width: '100%' }}>
@@ -288,20 +297,10 @@ const ReportingView = () => {
         </Typography>
 
         <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2, width: 165, height: 165 }}>
+          {/* Average circle - always full (100%) */}
           <CircularProgress
             variant="determinate"
             value={100}
-            size={165}
-            thickness={6}
-            sx={{
-              color: '#e0e0e0',
-              position: 'absolute',
-            }}
-          />
-          
-          <CircularProgress
-            variant="determinate"
-            value={averageProgress}
             size={165}
             thickness={6}
             sx={{
@@ -310,13 +309,14 @@ const ReportingView = () => {
             }}
           />
           
+          {/* Current value circle - partial based on performance vs average */}
           <CircularProgress
             variant="determinate"
             value={currentProgress}
             size={165}
             thickness={6}
             sx={{
-              color: '#0066FF',
+              color: '#1340FF',
             }}
           />
           
@@ -341,7 +341,7 @@ const ReportingView = () => {
                 lineHeight: '28px',
                 letterSpacing: '0%',
                 textAlign: 'center',
-                color: '#0066FF',
+                color: '#1340FF',
               }}
             >
               {displayValue.toLocaleString()}
@@ -380,7 +380,7 @@ const ReportingView = () => {
     );
   };
 
-  const renderEngagementCard = ({ height, icon, title, value, metricKey }) => {
+  const renderEngagementCard = ({ color, height, icon, title, value, metricKey }) => {
     let changeDisplay = '--';
     let changeIsPositive = false;
     let comparisonText = 'from campaign avg';
@@ -399,13 +399,14 @@ const ReportingView = () => {
       <Box
         sx={{
           height: height ? height : 116,
-          backgroundColor: '#f0f0f0',
+          backgroundColor: color,
           borderRadius: '20px',
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 2fr 1fr', // 4 columns: icon, title, comparison, value
           gridTemplateRows: '1fr 1fr',
           p: 2,
           alignItems: 'center',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.08)',
         }}
       >
         {/* Top Row - Icon */}
@@ -420,7 +421,7 @@ const ReportingView = () => {
         >
           <Box
             sx={{
-              backgroundColor: '#0066FF',
+              backgroundColor: '#1340FF',
               borderRadius: 1,
               width: 44,
               height: 44,
