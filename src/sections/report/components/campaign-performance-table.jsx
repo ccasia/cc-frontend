@@ -23,9 +23,11 @@ const CampaignPerformanceTable = () => {
       ?.filter((submission) => {
         if (!submission.content) return false;
         
-        // Regex to match Instagram or TikTok URLs
-        const socialMediaRegex = /(instagram\.com|tiktok\.com)/i;
-        return socialMediaRegex.test(submission.content);
+        // More specific regex patterns for actual post links
+        const instagramPostRegex = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
+        const tiktokPostRegex = /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/video\/\d+/i;
+        
+        return instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
       })
       ?.map((submission) => ({
         id: submission.id,
