@@ -112,8 +112,6 @@ const CampaignDetailView = ({ id }) => {
     setMenuAnchorEl(null);
   };
 
-  const menuOpen = useBoolean(menuAnchorEl);
-
   // console.log('campaignid', campaign);
 
   // Add this campaign to tabs only when opened via "Open in New Tab"
@@ -864,7 +862,7 @@ const CampaignDetailView = ({ id }) => {
 
               <Menu
                 anchorEl={menuAnchorEl}
-                open={menuOpen.value}
+                open={Boolean(menuAnchorEl)}
                 onClose={handleMenuClose}
                 PaperProps={{
                   sx: {
