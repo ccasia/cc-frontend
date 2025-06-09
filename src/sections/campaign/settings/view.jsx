@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useTheme } from '@emotion/react';
 
-import { Box, Tab, Tabs, Container, useMediaQuery } from '@mui/material';
+import { Box, Tab, Tabs, Button, Container, Typography, useMediaQuery } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetTimelineType } from 'src/hooks/use-get-timelinetype';
 
+import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import CustomBreadcrumbs from 'src/components/custom-breadcrumbs/custom-breadcrumbs';
 
 import Timeline from './timeline';
 import AgreementTemplates from './agreements/agreement-template';
@@ -18,6 +19,7 @@ const CampaignSetting = () => {
   // eslint-disable-next-line no-unused-vars
   const [tab, setTabs] = useState('timeline');
   const settings = useSettingsContext();
+  const router = useRouter();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const { timelineType } = useGetTimelineType();
@@ -29,14 +31,49 @@ const CampaignSetting = () => {
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
-      <CustomBreadcrumbs
-        heading="Campaign Settings"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Campaign', href: paths.dashboard.campaign.view },
-          { name: 'Settings' },
-        ]}
-      />
+      {/* Back Button */}
+      <Box sx={{ mb: 2 }}>
+        <Button
+          onClick={() => router.push(paths.dashboard.campaign.view)}
+          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={16} />}
+          sx={{
+            color: '#636366',
+            bgcolor: 'transparent',
+            border: 'none',
+            px: 0,
+            py: 0.5,
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            textTransform: 'none',
+            minHeight: 'auto',
+            '&:hover': {
+              bgcolor: 'transparent',
+              color: '#1340ff',
+              '& .MuiButton-startIcon': {
+                transform: 'translateX(-2px)',
+              },
+            },
+            '& .MuiButton-startIcon': {
+              marginRight: 0.5,
+              transition: 'transform 0.2s ease',
+            },
+            transition: 'color 0.2s ease',
+          }}
+        >
+          Back to Campaigns
+        </Button>
+      </Box>
+
+      <Typography
+        variant="h2"
+        sx={{
+          mb: 3,
+          fontFamily: 'fontSecondaryFamily',
+          fontWeight: 'normal',
+        }}
+      >
+        Campaign Settings ⚙️
+      </Typography>
 
       {/* Left Sections */}
       <Box

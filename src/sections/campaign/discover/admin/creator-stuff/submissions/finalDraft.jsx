@@ -18,13 +18,11 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import Photos from './finalDraft/photos';
-import DraftVideos from './finalDraft/draft-videos';
 import RawFootages from './finalDraft/raw-footage';
-import FeedbackDisplay from './finalDraft/feedback-display';
+import DraftVideos from './finalDraft/draft-videos';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
@@ -135,8 +133,6 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
   // Check if all sections are approved and activate posting if needed
   const checkAndActivatePosting = async (selectedDueDate) => {
     try {
-      console.log('🔍 Checking if all sections are approved...');
-      
       // Wait a moment for the data to be refreshed
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -149,12 +145,6 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
       );
       const currentDeliverables = freshDeliverablesResponse.data;
       
-      console.log('📊 Current deliverables status:', {
-        videos: currentDeliverables?.videos?.map(v => ({ id: v.id, status: v.status })),
-        photos: currentDeliverables?.photos?.map(p => ({ id: p.id, status: p.status })),
-        rawFootages: currentDeliverables?.rawFootages?.map(r => ({ id: r.id, status: r.status }))
-      });
-      
       // Check if all sections are approved
       const videosApproved = !currentDeliverables?.videos?.length || 
         currentDeliverables.videos.every(video => video.status === 'APPROVED');
@@ -165,18 +155,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
 
       const allSectionsApproved = videosApproved && rawFootagesApproved && photosApproved;
 
-      console.log('✅ Section approval status:', {
-        videosApproved,
-        rawFootagesApproved,
-        photosApproved,
-        allSectionsApproved,
-        submissionType: submission.submissionType?.type,
-        currentStatus: submission.status
-      });
-
       if (allSectionsApproved && submission.submissionType?.type === 'FINAL_DRAFT') {
-        console.log('🚀 All sections approved, updating submission status and activating posting...');
-        
         // Use the selected due date if provided, otherwise default to 3 days from today
         const dueDate = selectedDueDate 
           ? new Date(selectedDueDate).toISOString()
@@ -187,8 +166,6 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
               return threeDaysFromToday.toISOString();
             })();
         
-        console.log('📅 Using due date:', dueDate);
-        
         // Update submission to APPROVED using the correct endpoint
         const response = await axiosInstance.patch('/api/submission/status', {
           submissionId: submission.id,
@@ -196,8 +173,6 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           updatePosting: true, // This flag tells the backend to activate posting
           dueDate,
         });
-
-        console.log('📝 Submission status update response:', response.data);
 
         // Wait for backend to complete all updates
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -216,12 +191,9 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
           ].filter(Boolean));
         }, 1000);
 
-        console.log('🎉 Successfully activated posting submission!');
         enqueueSnackbar('All sections approved!', { 
           variant: 'success' 
         });
-      } else {
-        console.log('⏳ Not all sections approved yet or not a final draft submission');
       }
     } catch (error) {
       console.error('❌ Error checking and activating posting:', error);
@@ -708,7 +680,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
               {campaign?.rawFootage && deliverables?.rawFootages?.length > 0 && (
                 <Button
                   onClick={() => setSelectedTab('rawFootages')}
-                  // startIcon={<Iconify icon="solar:gallery-wide-bold" />}
+                  // startIcon={<Iconify icon="eva:image-outline" />}
                   fullWidth
                   sx={{
                     p: 1.5,
@@ -735,7 +707,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
               {campaign?.photos && deliverables?.photos?.length > 0 && (
                 <Button
                   onClick={() => setSelectedTab('photos')}
-                  // startIcon={<Iconify icon="solar:camera-bold" />}
+                  // startIcon={<Iconify icon="eva:film-outline" />}
                   fullWidth
                   sx={{
                     p: 1.5,

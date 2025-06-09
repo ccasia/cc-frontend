@@ -51,7 +51,7 @@ export default function AccountGeneral() {
   const [openImageDialog, setOpenImageDialog] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const mdDown = useResponsive('down', 'lg');
-  const [countryCode, setCountryCode] = useState(user?.phoneNumber.split(' ')[0] || null);
+  const [countryCode, setCountryCode] = useState(user?.phoneNumber?.split(' ')[0] || null);
 
   const UpdateUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -73,7 +73,7 @@ export default function AccountGeneral() {
     photoURL: user?.photoURL || null,
     photoBackgroundURL: user?.photoBackgroundURL || null,
     employment: user?.creator?.employment || '',
-    phoneNumber: user?.phoneNumber.split(' ')[1] || '',
+    phoneNumber: user?.phoneNumber?.split(' ')[1] || '',
     birthDate: dayjs(user?.creator?.birthDate) || '',
     country: user?.country || '',
     address: user?.creator?.address || '',

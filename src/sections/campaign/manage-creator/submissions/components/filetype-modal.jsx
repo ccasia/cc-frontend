@@ -37,7 +37,7 @@ const FirstDraftFileTypeModal = ({ submission, campaign, open, handleClose, onSe
   const fileTypes = [
     {
       type: 'video',
-      icon: 'solar:video-library-bold',
+      icon: 'eva:video-outline',
       title: 'Draft Video',
       description: 'Upload your main draft video for the campaign',
       isUploaded: hasVideo,
@@ -45,7 +45,7 @@ const FirstDraftFileTypeModal = ({ submission, campaign, open, handleClose, onSe
     },
     {
       type: 'rawFootage',
-      icon: 'solar:camera-bold',
+      icon: 'eva:film-outline',
       title: 'Raw Footage',
       description: 'Upload raw, unedited footage from your shoot',
       isUploaded: hasRawFootage,
@@ -53,7 +53,7 @@ const FirstDraftFileTypeModal = ({ submission, campaign, open, handleClose, onSe
     },
     {
       type: 'photos',
-      icon: 'solar:gallery-wide-bold',
+      icon: 'eva:image-outline',
       title: 'Photos',
       description: 'Upload photos from your campaign shoot',
       isUploaded: hasPhotos,
@@ -292,7 +292,7 @@ const FinalDraftFileTypeModal = ({
   const fileTypes = [
     {
       type: 'video',
-      icon: 'solar:video-library-bold',
+      icon: 'eva:video-outline',
       title: 'Draft Video',
       description:
         deliverablesToUpdate.videosToUpdate.length > 0
@@ -314,7 +314,7 @@ const FinalDraftFileTypeModal = ({
     },
     {
       type: 'rawFootage',
-      icon: 'solar:camera-bold',
+      icon: 'eva:film-outline',
       title: 'Raw Footage',
       description:
         deliverablesToUpdate.rawFootageToUpdate.length > 0
@@ -327,7 +327,7 @@ const FinalDraftFileTypeModal = ({
     },
     {
       type: 'photos',
-      icon: 'solar:gallery-wide-bold',
+      icon: 'eva:image-outline',
       title: 'Photos',
       description:
         deliverablesToUpdate.photosToUpdate.length > 0

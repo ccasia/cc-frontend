@@ -1,19 +1,16 @@
 import * as Yup from 'yup';
+import { useMemo } from 'react';
 import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useMemo, useState, useCallback } from 'react';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import MenuItem from '@mui/material/MenuItem';
 import LoadingButton from '@mui/lab/LoadingButton';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import { Tab, Tabs, Stack, Select, InputLabel, FormControl, InputAdornment } from '@mui/material';
+import { Chip, Stack, Typography, IconButton, InputAdornment } from '@mui/material';
 
 import useGetRoles from 'src/hooks/use-get-roles';
 import { editAdmin } from 'src/hooks/use-get-admins-for-superadmin';
@@ -24,7 +21,6 @@ import Iconify from 'src/components/iconify';
 import FormProvider, { RHFSelect, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 // eslint-disable-next-line import/no-cycle
-import { MODULE_ITEMS } from './view/user-list-view';
 
 // ----------------------------------------------------------------------
 
@@ -32,24 +28,25 @@ const ADMIN_STATUS = [
   {
     label: 'Banned',
     value: 'banned',
-    color: 'error',
+    color: '#dc3545',
+    bgColor: 'rgba(220, 53, 69, 0.08)',
   },
   {
     label: 'Active',
     value: 'active',
-    color: 'success',
+    color: '#1DBF66',
+    bgColor: 'rgba(29, 191, 102, 0.08)',
   },
   {
     label: 'Pending',
     value: 'pending',
-    color: 'warning',
+    color: '#FFC704',
+    bgColor: 'rgba(255, 199, 4, 0.08)',
   },
 ];
 
 function UserQuickEditForm({ currentUser, open, onClose }) {
   const { data: roles, isLoading } = useGetRoles();
-
-  const [currentTab, setCurrentTab] = useState('profile');
 
   const NewUserSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
@@ -69,13 +66,6 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
       status: currentUser?.status,
       role: currentUser?.admin?.role?.id,
       mode: currentUser?.admin?.mode || '',
-      // permission: (admin?.adminPermissionModule &&
-      //   Object.values(flattenData(admin?.adminPermissionModule))) || [
-      //   {
-      //     module: '',
-      //     permissions: [],
-      //   },
-      // ],
     }),
     [currentUser]
   );
@@ -96,12 +86,11 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
   const onSubmit = handleSubmit(async (data) => {
     try {
       editAdmin({ ...data, userId: currentUser?.id });
-      // await new Promise((resolve) => setTimeout(resolve, 500));
-      // mutate(endpoints.users.admins);
       reset();
       onClose();
 
-      enqueueSnackbar('Success', {
+      enqueueSnackbar('Admin updated successfully', {
+        variant: 'success',
         anchorOrigin: {
           horizontal: 'center',
           vertical: 'top',
@@ -114,219 +103,401 @@ function UserQuickEditForm({ currentUser, open, onClose }) {
     }
   });
 
-  const { fields, append } = useFieldArray({
-    control,
-    name: 'permission',
-  });
-
-  const handleChangeTab = useCallback((event, newValue) => {
-    setCurrentTab(newValue);
-  }, []);
-
   const countryValue = watch('country');
+  const statusValue = watch('status');
+
+  const getStatusConfig = (status) => ADMIN_STATUS.find(s => s.value === status) || ADMIN_STATUS[1];
 
   return (
     <Dialog
       fullWidth
-      maxWidth={false}
+      maxWidth="md"
       open={open}
       onClose={onClose}
       PaperProps={{
-        sx: { maxWidth: 720, position: 'relative' },
+        sx: {
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+          border: '1px solid #f0f0f0',
+        },
       }}
     >
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>Quick Update</DialogTitle>
+        <Box sx={{ p: 3 }}>
+          {/* Header */}
+          <Box sx={{ mb: 3 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Box>
+                <Typography 
+                  variant="h5" 
+                  sx={{ 
+                    fontWeight: 600, 
+                    color: '#111827',
+                    fontSize: '1.25rem',
+                    mb: 0.5,
+                  }}
+                >
+                  Quick Update
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: '#6b7280', 
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Update admin information and permissions
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={1} alignItems="center">
+                {statusValue && (
+                  <Chip
+                    label={getStatusConfig(statusValue).label}
+                    sx={{
+                      bgcolor: getStatusConfig(statusValue).bgColor,
+                      color: getStatusConfig(statusValue).color,
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      height: '28px',
+                      border: `1px solid ${getStatusConfig(statusValue).color}`,
+                    }}
+                  />
+                )}
+                <IconButton
+                  onClick={onClose}
+                  sx={{
+                    color: '#6b7280',
+                    '&:hover': {
+                      bgcolor: '#f3f4f6',
+                      color: '#374151',
+                    },
+                  }}
+                >
+                  <Iconify icon="heroicons:x-mark-20-solid" width={20} height={20} />
+                </IconButton>
+              </Stack>
+            </Stack>
+          </Box>
 
-        <DialogContent>
-          <Tabs
-            value={currentTab}
-            onChange={handleChangeTab}
+          {/* Form Content */}
+          <Box
             sx={{
-              mb: 3,
-            }}
-          >
-            <Tab value="profile" label="Profile" />
-            {/* <Tab value="permission" label="Permissions" /> */}
-          </Tabs>
-          {currentTab === 'profile' && (
-            <Box
-              rowGap={3}
-              columnGap={2}
-              display="grid"
-              mt={2}
-              gridTemplateColumns={{
+              display: 'grid',
+              gap: 3,
+              gridTemplateColumns: {
                 xs: 'repeat(1, 1fr)',
                 sm: 'repeat(2, 1fr)',
-              }}
-            >
+              },
+            }}
+          >
+            {/* Status Field - Full Width */}
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
               <RHFSelect
                 name="status"
                 label="Status"
-                size="small"
                 sx={{
-                  position: 'absolute',
-                  top: 20,
-                  right: 20,
-                  minWidth: 150,
-                  width: 150,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1,
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#1340ff',
+                      borderWidth: 2,
+                    },
+                  },
                 }}
               >
                 {ADMIN_STATUS.map((status) => (
-                  <MenuItem key={status.id} value={status.value}>
+                  <MenuItem 
+                    key={status.value} 
+                    value={status.value}
+                    sx={{
+                      borderRadius: 0.75,
+                      mx: 0.5,
+                      my: 0.25,
+                      '&:hover': {
+                        bgcolor: 'rgba(19, 64, 255, 0.04)',
+                      },
+                      '&.Mui-selected': {
+                        bgcolor: 'rgba(19, 64, 255, 0.08)',
+                        '&:hover': {
+                          bgcolor: 'rgba(19, 64, 255, 0.12)',
+                        },
+                      },
+                    }}
+                  >
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Iconify icon="octicon:dot-16" color={`${status.color}.main`} />
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          bgcolor: status.color,
+                        }}
+                      />
                       {status.label}
                     </Stack>
                   </MenuItem>
                 ))}
               </RHFSelect>
-
-              <RHFTextField name="name" label="Full Name" />
-              <RHFTextField name="email" label="Email Address" />
-              <RHFTextField
-                name="phoneNumber"
-                label="Phone Number"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      +{countries.filter((elem) => elem.label === countryValue).map((e) => e.phone)}
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <RHFAutocomplete
-                name="country"
-                type="country"
-                label="Country"
-                placeholder="Choose a country"
-                fullWidth
-                options={countries.map((option) => option.label)}
-                getOptionLabel={(option) => option}
-              />
-
-              {/* <RHFSelect name="designation" label="Designation">
-                <MenuItem value="Finance">Finance</MenuItem>
-                <MenuItem value="CSM">CSM</MenuItem>
-                <MenuItem value="BD">BD</MenuItem>
-                <MenuItem value="Growth">Growth</MenuItem>
-              </RHFSelect> */}
-
-              <RHFSelect name="role" label="Role">
-                {!isLoading &&
-                  roles.map((role) => <MenuItem value={role?.id}>{role?.name}</MenuItem>)}
-              </RHFSelect>
-
-              <RHFSelect name="mode" label="Mode">
-                <MenuItem value="normal">Normal</MenuItem>
-                <MenuItem value="advanced">Advanced</MenuItem>
-                <MenuItem value="god">God</MenuItem>
-              </RHFSelect>
             </Box>
-          )}
 
-          {currentTab === 'permission' && (
-            <Box
-              display="grid"
-              rowGap={2}
-              gridTemplateAreas={{
-                xs: 'repeat(1, 1fr)',
+            {/* Name Field */}
+            <RHFTextField 
+              name="name" 
+              label="Full Name"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                    borderWidth: 2,
+                  },
+                },
+              }}
+            />
+
+            {/* Email Field */}
+            <RHFTextField 
+              name="email" 
+              label="Email Address"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                    borderWidth: 2,
+                  },
+                },
+              }}
+            />
+
+            {/* Phone Number Field */}
+            <RHFTextField
+              name="phoneNumber"
+              label="Phone Number"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                      +{countries.filter((elem) => elem.label === countryValue).map((e) => e.phone)}
+                    </Typography>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                    borderWidth: 2,
+                  },
+                },
+              }}
+            />
+
+            {/* Country Field */}
+            <RHFAutocomplete
+              name="country"
+              type="country"
+              label="Country"
+              placeholder="Choose a country"
+              fullWidth
+              options={countries.map((option) => option.label)}
+              getOptionLabel={(option) => option}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                    borderWidth: 2,
+                  },
+                },
+              }}
+            />
+
+            {/* Role Field */}
+            <RHFSelect 
+              name="role" 
+              label="Role"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                    borderWidth: 2,
+                  },
+                },
               }}
             >
-              {fields.map((elem, index) => (
-                <Box key={elem.id} display="flex" gap={2} my={2} alignItems="center">
-                  <Controller
-                    name={`permission.${index}.module`}
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field }) => (
-                      <FormControl
-                        fullWidth
-                        error={
-                          errors.permission &&
-                          errors.permission[index] &&
-                          errors.permission[index].module
-                        }
-                      >
-                        <InputLabel id="module">Module</InputLabel>
-                        <Select labelId="module" label="Module" {...field}>
-                          {MODULE_ITEMS.map((item, a) => (
-                            <MenuItem value={item.value} key={a}>
-                              {item.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    )}
-                  />
+              {!isLoading &&
+                roles.map((role) => (
+                  <MenuItem 
+                    key={role.id} 
+                    value={role?.id}
+                    sx={{
+                      borderRadius: 0.75,
+                      mx: 0.5,
+                      my: 0.25,
+                      '&:hover': {
+                        bgcolor: 'rgba(19, 64, 255, 0.04)',
+                      },
+                      '&.Mui-selected': {
+                        bgcolor: 'rgba(19, 64, 255, 0.08)',
+                        '&:hover': {
+                          bgcolor: 'rgba(19, 64, 255, 0.12)',
+                        },
+                      },
+                    }}
+                  >
+                    {role?.name}
+                  </MenuItem>
+                ))}
+            </RHFSelect>
 
-                  <Controller
-                    name={`permission.${index}.permissions`}
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field }) => (
-                      <FormControl
-                        fullWidth
-                        error={
-                          errors.permission &&
-                          errors.permission[index] &&
-                          errors.permission[index].permission
-                        }
-                      >
-                        <InputLabel id="permissions">Permission</InputLabel>
-                        <Select
-                          labelId="permissions"
-                          label="Permission"
-                          multiple
-                          {...field}
-                          required
-                        >
-                          <MenuItem value="create">Create</MenuItem>
-                          <MenuItem value="read">Read</MenuItem>
-                          <MenuItem value="update">Update</MenuItem>
-                          <MenuItem value="delete">Delete</MenuItem>
-                        </Select>
-                      </FormControl>
-                    )}
-                  />
-                  {/* <IconButton color="error" onClick={() => remove(index)}>
-                    <Iconify icon="mdi:trash" />
-                  </IconButton> */}
-                </Box>
-              ))}
+            {/* Mode Field */}
+            <RHFSelect 
+              name="mode" 
+              label="Mode"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1340ff',
+                    borderWidth: 2,
+                  },
+                },
+              }}
+            >
+              <MenuItem 
+                value="normal"
+                sx={{
+                  borderRadius: 0.75,
+                  mx: 0.5,
+                  my: 0.25,
+                  '&:hover': {
+                    bgcolor: 'rgba(19, 64, 255, 0.04)',
+                  },
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(19, 64, 255, 0.08)',
+                    '&:hover': {
+                      bgcolor: 'rgba(19, 64, 255, 0.12)',
+                    },
+                  },
+                }}
+              >
+                Normal
+              </MenuItem>
+              <MenuItem 
+                value="advanced"
+                sx={{
+                  borderRadius: 0.75,
+                  mx: 0.5,
+                  my: 0.25,
+                  '&:hover': {
+                    bgcolor: 'rgba(19, 64, 255, 0.04)',
+                  },
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(19, 64, 255, 0.08)',
+                    '&:hover': {
+                      bgcolor: 'rgba(19, 64, 255, 0.12)',
+                    },
+                  },
+                }}
+              >
+                Advanced
+              </MenuItem>
+              <MenuItem 
+                value="god"
+                sx={{
+                  borderRadius: 0.75,
+                  mx: 0.5,
+                  my: 0.25,
+                  '&:hover': {
+                    bgcolor: 'rgba(19, 64, 255, 0.04)',
+                  },
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(19, 64, 255, 0.08)',
+                    '&:hover': {
+                      bgcolor: 'rgba(19, 64, 255, 0.12)',
+                    },
+                  },
+                }}
+              >
+                God
+              </MenuItem>
+            </RHFSelect>
+          </Box>
 
-              {fields.length < 5 && (
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  // onClick={() => permissionLength < 5 && setPermissionLength((prev) => prev + 1)}
-                  onClick={() => append({ module: '', permissions: [] })}
-                  sx={{
-                    my: 2,
-                  }}
-                >
-                  +
-                </Button>
-              )}
-            </Box>
-          )}
-        </DialogContent>
+          {/* Actions */}
+          <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid #f0f0f0' }}>
+            <Stack direction="row" spacing={2} justifyContent="flex-end">
+              <Button
+                variant="outlined"
+                onClick={onClose}
+                sx={{
+                  borderColor: '#d1d5db',
+                  color: '#6b7280',
+                  borderRadius: 1,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: '#9ca3af',
+                    bgcolor: '#f9fafb',
+                  },
+                }}
+              >
+                Cancel
+              </Button>
 
-        <DialogActions>
-          <Button variant="outlined" onClick={onClose}>
-            Cancel
-          </Button>
-
-          <LoadingButton
-            type="submit"
-            variant="contained"
-            loading={isSubmitting}
-            disabled={!isDirty}
-          >
-            Update
-          </LoadingButton>
-        </DialogActions>
+              <LoadingButton
+                type="submit"
+                variant="contained"
+                loading={isSubmitting}
+                disabled={!isDirty}
+                sx={{
+                  bgcolor: '#1340ff',
+                  color: '#ffffff',
+                  borderRadius: 1,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  '&:hover': {
+                    bgcolor: '#0f35d1',
+                  },
+                  '&:disabled': {
+                    bgcolor: '#e5e7eb',
+                    color: '#9ca3af',
+                  },
+                }}
+              >
+                Update Admin
+              </LoadingButton>
+            </Stack>
+          </Box>
+        </Box>
       </FormProvider>
     </Dialog>
   );

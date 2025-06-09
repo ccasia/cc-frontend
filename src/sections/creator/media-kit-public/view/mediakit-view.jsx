@@ -46,7 +46,7 @@ const calculateEngagementRate = (totalLikes, followers) => {
 // Utility function to format numbers
 const formatNumber = (num) => {
   if (!num && num !== 0) return '0';
-  
+
   if (num >= 1000000000) {
     return `${(num / 1000000000).toFixed(1)}G`;
   }
@@ -66,10 +66,10 @@ const MediaKit = ({ id, noBigScreen }) => {
   const smDown = useResponsive('down', 'sm');
   const mdDown = useResponsive('down', 'md');
   const isDesktop = useResponsive('up', 'md');
-  
+
   const { data, isLoading, isError } = useSWRGetCreatorByID(id);
   const [currentTab, setCurrentTab] = useState('instagram');
-  
+
   // Share functionality
   const containerRef = useRef(null);
   const desktopShareButtonRef = useRef(null);
@@ -84,7 +84,7 @@ const MediaKit = ({ id, noBigScreen }) => {
     message: '',
     severity: 'success',
   });
-  
+
   // Mobile preview state
   const [mobilePreview, setMobilePreview] = useState({
     open: false,
@@ -189,7 +189,7 @@ const MediaKit = ({ id, noBigScreen }) => {
     `,
     []
   );
-  
+
   // Helper function to ensure all content is loaded
   const ensureContentLoaded = useCallback(async (element) => {
     // Ensure images are loaded
@@ -225,171 +225,172 @@ const MediaKit = ({ id, noBigScreen }) => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setCaptureState('capturing');
   }, []);
-  
+
   // Function to capture screenshot
-  const captureScreenshot = useCallback(async (isMobile = false) => {
-    try {
-      setCaptureLoading(true);
-      setCaptureState('preparing');
+  const captureScreenshot = useCallback(
+    async (isMobile = false) => {
+      try {
+        setCaptureLoading(true);
+        setCaptureState('preparing');
 
-      // Choose which element to capture based on screen size
-      const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
+        // Choose which element to capture based on screen size
+        const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
 
-      if (!element) {
+        if (!element) {
+          setSnackbar({
+            open: true,
+            message: 'Could not find media kit element',
+            severity: 'error',
+          });
+          return;
+        }
+
+        if (isDesktop) {
+          // Desktop direct capture method
+          // Save current scroll position
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+          // Hide share buttons during capture
+          let desktopButtonDisplay = null;
+
+          if (desktopShareButtonRef.current) {
+            desktopButtonDisplay = desktopShareButtonRef.current.style.display;
+            desktopShareButtonRef.current.style.display = 'none';
+          }
+
+          // Scroll to top to ensure entire content is visible
+          window.scrollTo(0, 0);
+
+          // Ensure all images and iframes are loaded
+          await ensureContentLoaded(element);
+
+          // Take the screenshot
+          const dataUrl = await toPng(element, {
+            quality: 0.95,
+            pixelRatio: 2,
+            backgroundColor: '#ffffff',
+            height: element.scrollHeight,
+            width: 1200,
+            cacheBust: true,
+          });
+
+          // Restore share button visibility
+          if (desktopShareButtonRef.current) {
+            desktopShareButtonRef.current.style.display = desktopButtonDisplay;
+          }
+
+          // Restore scroll position
+          window.scrollTo(0, scrollTop);
+
+          setCaptureState('processing');
+
+          if (!isMobile) {
+            // Create and trigger download for desktop
+            const link = document.createElement('a');
+            link.download = `${data?.creator?.mediaKit?.displayName || data?.name}_Media_Kit.png`;
+            link.href = dataUrl;
+            link.click();
+          } else {
+            // Open in-page preview for mobile
+            setMobilePreview({
+              open: true,
+              imageUrl: dataUrl,
+            });
+          }
+        } else {
+          // Small screen method using hidden desktop layout
+          // Temporarily apply a style fix to remove extra padding
+          const styleFixForMedia = document.createElement('style');
+          styleFixForMedia.textContent = getScreenshotStyles();
+          document.head.appendChild(styleFixForMedia);
+
+          // Make the desktop layout visible just for the capture
+          const originalVisibility = element.style.visibility;
+          const originalPosition = element.style.position;
+          const originalLeft = element.style.left;
+          const originalZIndex = element.style.zIndex;
+
+          // Add class for CSS override
+          element.classList.add('desktop-screenshot-view');
+
+          // Temporarily make the element visible but off-screen for rendering
+          element.style.visibility = 'visible';
+          element.style.position = 'fixed';
+          element.style.left = '0';
+          element.style.top = '0';
+          element.style.zIndex = '-1';
+
+          // Ensure all images and iframes are loaded
+          await ensureContentLoaded(element);
+
+          // Take the screenshot
+          const dataUrl = await toPng(element, {
+            quality: 0.95,
+            pixelRatio: 2,
+            backgroundColor: '#ffffff',
+            height: element.scrollHeight,
+            width: element.scrollWidth,
+            cacheBust: true,
+          });
+
+          // Restore original styles
+          element.style.visibility = originalVisibility;
+          element.style.position = originalPosition;
+          element.style.left = originalLeft;
+          element.style.zIndex = originalZIndex;
+          element.classList.remove('desktop-screenshot-view');
+
+          // Remove temporary style fix
+          document.head.removeChild(styleFixForMedia);
+
+          setCaptureState('processing');
+
+          if (!isMobile) {
+            // Create and trigger download for desktop
+            const link = document.createElement('a');
+            link.download = `${data?.creator?.mediaKit?.displayName || data?.name}_Media_Kit.png`;
+            link.href = dataUrl;
+            link.click();
+          } else {
+            // Open in-page preview for mobile
+            setMobilePreview({
+              open: true,
+              imageUrl: dataUrl,
+            });
+          }
+        }
+
+        const successMessage = isMobile ? 'Done!' : 'Screenshot saved successfully!';
+
         setSnackbar({
           open: true,
-          message: 'Could not find media kit element',
+          message: successMessage,
+          severity: 'success',
+        });
+        setCaptureState('complete');
+      } catch (error) {
+        console.error('Error capturing screenshot:', error);
+        setSnackbar({
+          open: true,
+          message: 'Failed to capture screenshot',
           severity: 'error',
         });
-        return;
+      } finally {
+        setTimeout(() => {
+          setCaptureLoading(false);
+          setCaptureState('idle');
+        }, 500);
       }
+    },
+    [
+      data?.creator?.mediaKit?.displayName,
+      data?.name,
+      isDesktop,
+      getScreenshotStyles,
+      ensureContentLoaded,
+    ]
+  );
 
-      if (isDesktop) {
-        // Desktop direct capture method
-        // Save current scroll position
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-        // Hide share buttons during capture
-        let desktopButtonDisplay = null;
-
-        if (desktopShareButtonRef.current) {
-          desktopButtonDisplay = desktopShareButtonRef.current.style.display;
-          desktopShareButtonRef.current.style.display = 'none';
-        }
-
-        // Scroll to top to ensure entire content is visible
-        window.scrollTo(0, 0);
-
-        // Ensure all images and iframes are loaded
-        await ensureContentLoaded(element);
-
-        // Take the screenshot
-        const dataUrl = await toPng(element, {
-          quality: 0.95,
-          pixelRatio: 2,
-          backgroundColor: '#ffffff',
-          height: element.scrollHeight,
-          width: 1200,
-          cacheBust: true,
-        });
-
-        // Restore share button visibility
-        if (desktopShareButtonRef.current) {
-          desktopShareButtonRef.current.style.display = desktopButtonDisplay;
-        }
-
-        // Restore scroll position
-        window.scrollTo(0, scrollTop);
-
-        setCaptureState('processing');
-        
-        if (!isMobile) {
-          // Create and trigger download for desktop
-          const link = document.createElement('a');
-          link.download = `${data?.creator?.mediaKit?.displayName || data?.name}_Media_Kit.png`;
-          link.href = dataUrl;
-          link.click();
-        } else {
-          // Open in-page preview for mobile
-          setMobilePreview({
-            open: true,
-            imageUrl: dataUrl,
-          });
-        }
-      } else {
-        // Small screen method using hidden desktop layout
-        // Temporarily apply a style fix to remove extra padding
-        const styleFixForMedia = document.createElement('style');
-        styleFixForMedia.textContent = getScreenshotStyles();
-        document.head.appendChild(styleFixForMedia);
-
-        // Make the desktop layout visible just for the capture
-        const originalVisibility = element.style.visibility;
-        const originalPosition = element.style.position;
-        const originalLeft = element.style.left;
-        const originalZIndex = element.style.zIndex;
-
-        // Add class for CSS override
-        element.classList.add('desktop-screenshot-view');
-
-        // Temporarily make the element visible but off-screen for rendering
-        element.style.visibility = 'visible';
-        element.style.position = 'fixed';
-        element.style.left = '0';
-        element.style.top = '0';
-        element.style.zIndex = '-1';
-
-        // Ensure all images and iframes are loaded
-        await ensureContentLoaded(element);
-
-        // Take the screenshot
-        const dataUrl = await toPng(element, {
-          quality: 0.95,
-          pixelRatio: 2,
-          backgroundColor: '#ffffff',
-          height: element.scrollHeight,
-          width: element.scrollWidth,
-          cacheBust: true,
-        });
-
-        // Restore original styles
-        element.style.visibility = originalVisibility;
-        element.style.position = originalPosition;
-        element.style.left = originalLeft;
-        element.style.zIndex = originalZIndex;
-        element.classList.remove('desktop-screenshot-view');
-
-        // Remove temporary style fix
-        document.head.removeChild(styleFixForMedia);
-
-        setCaptureState('processing');
-        
-        if (!isMobile) {
-          // Create and trigger download for desktop
-          const link = document.createElement('a');
-          link.download = `${data?.creator?.mediaKit?.displayName || data?.name}_Media_Kit.png`;
-          link.href = dataUrl;
-          link.click();
-        } else {
-          // Open in-page preview for mobile
-          setMobilePreview({
-            open: true,
-            imageUrl: dataUrl,
-          });
-        }
-      }
-
-      const successMessage = isMobile 
-        ? 'Done!'
-        : 'Screenshot saved successfully!';
-        
-      setSnackbar({
-        open: true,
-        message: successMessage,
-        severity: 'success',
-      });
-      setCaptureState('complete');
-    } catch (error) {
-      console.error('Error capturing screenshot:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to capture screenshot',
-        severity: 'error',
-      });
-    } finally {
-      setTimeout(() => {
-        setCaptureLoading(false);
-        setCaptureState('idle');
-      }, 500);
-    }
-  }, [
-    data?.creator?.mediaKit?.displayName,
-    data?.name,
-    isDesktop,
-    getScreenshotStyles,
-    ensureContentLoaded,
-  ]);
-  
   // Function to capture PDF
   const capturePdf = useCallback(async () => {
     try {
@@ -541,7 +542,7 @@ const MediaKit = ({ id, noBigScreen }) => {
     getScreenshotStyles,
     ensureContentLoaded,
   ]);
-  
+
   // Helper functions for the menu
   const handleCloseSnackbar = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
@@ -556,7 +557,7 @@ const MediaKit = ({ id, noBigScreen }) => {
     if (event) event.stopPropagation();
     setMenuAnchorEl(null);
   };
-  
+
   // Function to close mobile preview
   const closeMobilePreview = () => {
     setMobilePreview({
@@ -564,7 +565,7 @@ const MediaKit = ({ id, noBigScreen }) => {
       imageUrl: '',
     });
   };
-  
+
   // Helper function to get button text based on loading state
   const getButtonText = useCallback(() => {
     if (!captureLoading) return 'Share';
@@ -602,7 +603,8 @@ const MediaKit = ({ id, noBigScreen }) => {
 
   return (
     <>
-      <Container maxWidth="xl"         
+      <Container
+        maxWidth="xl"
         sx={{
           position: 'relative',
           bgcolor: '#FFFFFF',
@@ -613,10 +615,9 @@ const MediaKit = ({ id, noBigScreen }) => {
           height: 'auto',
           display: 'flex',
           flexDirection: 'column',
-        }} 
+        }}
         ref={containerRef}
-        >
-
+      >
         {/* Back Button */}
         <Box sx={{ mb: 2, mt: 2 }}>
           <IconButton
@@ -949,16 +950,15 @@ const MediaKit = ({ id, noBigScreen }) => {
           </Stack>
 
           {/* Social Media Stats */}
-          <Stack 
-            flex="1" 
-            alignItems={{ xs: 'start', md: 'flex-start' }} 
+          <Stack
+            flex="1"
+            alignItems={{ xs: 'start', md: 'flex-start' }}
             spacing={3}
             sx={{
               mt: { xs: 4, md: 0 },
               width: '100%',
             }}
           >
-
             {/* Divider for mobile screens only */}
             <Box
               sx={{
@@ -1291,7 +1291,6 @@ const MediaKit = ({ id, noBigScreen }) => {
                 </Typography>
               </Stack>
 
-
               {/* Average Comments */}
               <Stack alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
@@ -1357,7 +1356,7 @@ const MediaKit = ({ id, noBigScreen }) => {
       </Container>
 
       {/* ----------------------------------------------------------------------------------------------------------------------------------------------------------*/}
-    
+
       {/* Hidden Desktop-only Layout for Screenshot */}
       <Container
         maxWidth="xl"
@@ -1546,7 +1545,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                   }),
                 }}
               >
-               TikTok 
+                TikTok
               </Button>
             </Stack>
 
@@ -1740,7 +1739,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      
+
       {/* Loading Backdrop */}
       <Backdrop
         sx={{
@@ -1769,7 +1768,7 @@ const MediaKit = ({ id, noBigScreen }) => {
             animation: captureLoading ? 'fadeIn 0.4s ease-out forwards' : 'none',
             '@keyframes fadeIn': {
               from: { opacity: 0, transform: 'scale(0.95)' },
-              to: { opacity: 1, transform: 'scale(1)' }
+              to: { opacity: 1, transform: 'scale(1)' },
             },
           }}
         >
@@ -1785,7 +1784,7 @@ const MediaKit = ({ id, noBigScreen }) => {
               animation: captureLoading ? 'fadeInSpin 0.5s ease-out forwards' : 'none',
               '@keyframes fadeInSpin': {
                 from: { opacity: 0, transform: 'rotate(-20deg)' },
-                to: { opacity: 1, transform: 'rotate(0deg)' }
+                to: { opacity: 1, transform: 'rotate(0deg)' },
               },
             }}
           >
@@ -1804,7 +1803,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                 '@keyframes pulseIn': {
                   '0%': { opacity: 0, transform: 'scale(0.9)' },
                   '70%': { opacity: 1, transform: 'scale(1.05)' },
-                  '100%': { opacity: 1, transform: 'scale(1)' }
+                  '100%': { opacity: 1, transform: 'scale(1)' },
                 },
               }}
             >
@@ -1834,7 +1833,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                 }}
               />
             </Box>
-            
+
             {/* Cult logo in the center */}
             <Box
               component="img"
@@ -1851,18 +1850,18 @@ const MediaKit = ({ id, noBigScreen }) => {
                 '@keyframes popIn': {
                   '0%': { opacity: 0, transform: 'scale(0.8)' },
                   '70%': { opacity: 1, transform: 'scale(1.1)' },
-                  '100%': { opacity: 1, transform: 'scale(1)' }
+                  '100%': { opacity: 1, transform: 'scale(1)' },
                 },
               }}
             />
           </Box>
-          
-          <Typography 
-            sx={{ 
-              mt: 1.5, 
+
+          <Typography
+            sx={{
+              mt: 1.5,
               mb: 0.5,
-              fontWeight: 600, 
-              fontSize: 16, 
+              fontWeight: 600,
+              fontSize: 16,
               color: '#231F20',
               fontFamily: 'Aileron, sans-serif',
               textAlign: 'center',
@@ -1871,7 +1870,7 @@ const MediaKit = ({ id, noBigScreen }) => {
               opacity: 0,
               transform: 'translateY(10px)',
               '@keyframes slideUp': {
-                to: { opacity: 1, transform: 'translateY(0)' }
+                to: { opacity: 1, transform: 'translateY(0)' },
               },
             }}
           >
@@ -1893,7 +1892,7 @@ const MediaKit = ({ id, noBigScreen }) => {
               animation: captureLoading ? 'fadeIn 0.5s 0.4s ease-out forwards' : 'none',
               opacity: 0,
               '@keyframes fadeIn': {
-                to: { opacity: 1 }
+                to: { opacity: 1 },
               },
             }}
           >
@@ -1901,7 +1900,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           </Typography>
         </Box>
       </Backdrop>
-      
+
       {/* Mobile Image Preview Modal */}
       <Dialog
         open={mobilePreview.open}
@@ -1952,7 +1951,7 @@ const MediaKit = ({ id, noBigScreen }) => {
         >
           X
         </Button>
-        
+
         {/* Image */}
         <Box
           sx={{
@@ -1974,7 +1973,7 @@ const MediaKit = ({ id, noBigScreen }) => {
             }}
           />
         </Box>
-        
+
         {/* Instructions */}
         <Box
           className="instructions"
@@ -2000,8 +1999,17 @@ const MediaKit = ({ id, noBigScreen }) => {
             fontWeight: 500,
           }}
         >
-          <svg width="18" height="20" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z" fill="#1340FF"/>
+          <svg
+            width="18"
+            height="20"
+            viewBox="0 0 21 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M20.4159 23.1476C17.8419 24.0328 15.2707 24.3719 12.6612 23.4632C12.1137 23.2722 11.6098 22.9566 11.0851 22.6993C9.16651 21.7591 7.24192 20.8303 5.33006 19.8767C3.9858 19.2066 2.92968 18.186 2.06322 16.9791C-2.48356 10.6471 0.867047 1.96836 8.37175 0.274291C11.2761 -0.381088 14.0035 0.148978 16.5198 1.74655C16.5975 1.79614 16.6833 1.8397 16.7469 1.9047C17.9592 3.13303 19.1688 4.36405 20.4152 5.63192V23.1476H20.4159ZM15.0086 2.41131C11.3203 0.561104 6.39354 1.38602 3.54486 5.14809C0.755807 8.83175 1.13778 14.0105 4.43009 17.2853C7.69894 20.5374 12.3576 20.4718 14.9966 18.9935V13.5916C13.0686 15.9552 9.82524 15.9913 7.88926 14.1338C6.05245 12.372 5.96065 9.42347 7.67348 7.50156C9.29919 5.67749 12.8321 5.12464 15.0086 7.82389V2.41131Z"
+              fill="#1340FF"
+            />
           </svg>
           Long-press the image to save to your gallery
         </Box>
