@@ -23,11 +23,9 @@ const CampaignPerformanceTable = () => {
       ?.filter((submission) => {
         if (!submission.content) return false;
         
-        // More specific regex patterns for actual post links
-        const instagramPostRegex = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
-        const tiktokPostRegex = /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/video\/\d+/i;
-        
-        return instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
+        // Regex to match Instagram or TikTok URLs
+        const socialMediaRegex = /(instagram\.com|tiktok\.com)/i;
+        return socialMediaRegex.test(submission.content);
       })
       ?.map((submission) => ({
         id: submission.id,
@@ -39,13 +37,7 @@ const CampaignPerformanceTable = () => {
         submissionId: submission.id,
         campaignId: submission.campaignId,
         userId: submission.user?.id,
-      }))
-      .sort((a, b) => {
-        // First sort by campaign name
-        const campaignCompare = a.campaignName.localeCompare(b.campaignName);
-        // If campaign names are the same, sort by creator name
-        return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
-      });
+      }));
 
   }, [submissionData]);
 
