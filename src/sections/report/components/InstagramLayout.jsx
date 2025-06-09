@@ -1,51 +1,12 @@
-import { Box, Grid, Card, Typography } from '@mui/material';
-import { ContentInfoHeader, StatsLegend } from './shared-components';
+import { Box, Grid, Typography } from '@mui/material';
+import { ContentInfoHeader, ContentImageCard, StatsLegend } from './shared-components';
 
 const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) => {
   return (
     <Grid container spacing={3}>
       {/* Content Image and Caption */}
       <Grid item xs={12} md={5}>
-        <Card
-          sx={{
-            borderRadius: 0,
-            overflow: 'hidden',
-            height: 'auto',
-            boxShadow: 'none',
-            border: '1px solid #eee',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <Box
-            component="img"
-            src={content.mediaUrl}
-            alt={content.videoData.caption || 'Content'}
-            sx={{
-              width: '100%',
-              height: 623,
-              objectFit: 'cover',
-              display: 'block',
-            }}
-          />
-          <Box
-            sx={{
-              p: 2,
-              borderTop: '1px solid #eee',
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: 14,
-                color: '#333',
-                mb: 0,
-                lineHeight: 1.4,
-              }}
-            >
-              {content.videoData.caption || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna.'}
-            </Typography>
-          </Box>
-        </Card>
+        <ContentImageCard content={content} />
       </Grid>
 
       {/* Right side content */}

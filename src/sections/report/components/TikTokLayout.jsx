@@ -50,7 +50,8 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 								icon: 'mdi:eye-outline',
 								title: 'Views',
 								value: content.metrics?.views || 0,
-								metricKey: 'views'
+								metricKey: 'views',
+								color: '#D3D3D3'
 							})}
 
 							{renderEngagementCard({
@@ -58,7 +59,8 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 								icon: 'mdi:heart-outline',
 								title: 'Likes',
 								value: content.metrics?.likes || 0,
-								metricKey: 'likes'
+								metricKey: 'likes',
+								color: '#E7E7E7'
 							})}
 
 							{renderEngagementCard({
@@ -66,7 +68,8 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 								icon: 'mdi:comment-outline',
 								title: 'Comments',
 								value: content.metrics?.comments || 0,
-								metricKey: 'comments'
+								metricKey: 'comments',
+								color: '#F5F5F5'
 							})}
 						</Box>
 

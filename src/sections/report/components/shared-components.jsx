@@ -1,6 +1,5 @@
 // components/reporting/SharedComponents.jsx
 import { Box, Typography, Divider } from '@mui/material';
-import Iconify from 'src/components/iconify';
 
 export const ContentInfoHeader = ({ content }) => (
   <Box
@@ -69,11 +68,9 @@ export const ContentInfoHeader = ({ content }) => (
 export const ContentImageCard = ({ content }) => (
   <Box
     sx={{
-      borderRadius: 0,
       overflow: 'hidden',
       height: 'auto',
       boxShadow: 'none',
-      border: '1px solid #eee',
       display: 'flex',
       flexDirection: 'column',
     }}
@@ -81,7 +78,7 @@ export const ContentImageCard = ({ content }) => (
     <Box
       component="img"
       src={content.mediaUrl}
-      alt={content.videoData.caption || 'Content'}
+      alt={content.caption || 'Content'}
       sx={{
         width: '100%',
         height: 623,
@@ -92,7 +89,6 @@ export const ContentImageCard = ({ content }) => (
     <Box
       sx={{
         p: 2,
-        borderTop: '1px solid #eee',
       }}
     >
       <Typography
@@ -103,7 +99,7 @@ export const ContentImageCard = ({ content }) => (
           lineHeight: 1.4,
         }}
       >
-        {content.videoData.caption || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna.'}
+        {content.caption || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna.'}
       </Typography>
     </Box>
   </Box>

@@ -156,6 +156,7 @@ const ReportingView = () => {
             contentType: parsedUrl.type,
             datePosted: fDate(video.timestamp),
             mediaUrl: video.thumbnail_url,
+            caption: video.caption,
             metrics: currentMetrics,
             campaignAverages: campaignAverages,
             campaignComparison: campaignComparison,
@@ -191,6 +192,7 @@ const ReportingView = () => {
             contentType: parsedUrl.type,
             datePosted: fDate(video.timestamp),
             mediaUrl: video.cover_image_url,
+            caption: video.description,
             metrics: {
               likes: video.like_count || metricsMap.likes || 0,
               comments: video.comment_count || metricsMap.comments || 0,
@@ -361,7 +363,16 @@ const ReportingView = () => {
                   ml: 0.5,
                 }}
               >
-                {Math.round(percentageDiff)}% from
+                {Math.round(percentageDiff)}% 
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: '#666',
+                  ml: 0.5
+                }}
+              >
+                from
               </Typography>
             </Box>
             
@@ -412,10 +423,9 @@ const ReportingView = () => {
         {/* Top Row - Icon */}
         <Box
           sx={{
-            gridColumn: '1 / 3',
+            gridColumn: { xs: '1 / 3', sm: '2 / 3' },
             gridRow: '1',
             display: 'flex',
-            ml: 8,
             justifyContent: 'center',
           }}
         >
@@ -475,25 +485,35 @@ const ReportingView = () => {
             <Iconify
               icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
               color={changeIsPositive ? '#4CAF50' : '#F44336'}
-              width={18}
-              height={18}
+              width={20}
+              height={20}
               sx={{ mr: 0.5 }}
             />
           )}
           <Typography
             sx={{
               fontSize: 18,
+              mr: 1,
               color: (() => {
                 if (!content.hasCampaignData) return '#999';
                 if (changeDisplay.startsWith('0%')) return '#666';
                 return changeIsPositive ? '#4CAF50' : '#F44336';
               })(),
+            }}
+          >
+            {changeDisplay}
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: 18,
+              mr: 2,
+              color: '#666',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis'
             }}
           >
-            {changeDisplay} {comparisonText}
+            {comparisonText}
           </Typography>
         </Box>
 
@@ -538,8 +558,8 @@ const ReportingView = () => {
           Selected Content
         </Typography>
 
-        {/* Campaign Info Banner */}
-        {content.hasCampaignData && (
+        {/* Campaign Info Banner - for dev testing only */}
+        {/* {content.hasCampaignData && (
           <Card sx={{ p: 2, mb: 3, backgroundColor: '#f8f9fa', border: '1px solid #e3f2fd' }}>
             <Typography variant="h6" sx={{ color: '#1976d2', mb: 1 }}>
               📊 Campaign Analysis Active
@@ -548,7 +568,7 @@ const ReportingView = () => {
               Comparing with <strong>{content.campaignName || 'campaign'}</strong> averages from {content.campaignAverages?.postCount || 0} posts
             </Typography>
           </Card>
-        )}
+        )} */}
 
         {/* Conditionally render platform-specific layouts */}
         {content.account === 'Instagram' ? (
