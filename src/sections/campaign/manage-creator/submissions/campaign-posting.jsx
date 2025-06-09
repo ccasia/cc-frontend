@@ -38,8 +38,6 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
 
-
-
 const guideSteps = [
   'Log in to Instagram.',
   'Create a new post by tapping the "+" icon.',
@@ -95,15 +93,14 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
   // Helper function to get the due date with fallback
   const getDueDate = useMemo(() => {
     // Try multiple date fields in order of preference
-    const dateOptions = [
-      submission?.dueDate,
-      submission?.endDate,
-      submission?.startDate
-    ].filter(Boolean);
+    const dateOptions = [submission?.dueDate, submission?.endDate, submission?.startDate].filter(
+      Boolean
+    );
 
     // Return the first valid date, or null if none are valid
     const validDate = dateOptions.find(date => date && dayjs(date).isValid());
     return validDate ? dayjs(validDate) : null;
+
   }, [submission?.dueDate, submission?.endDate, submission?.startDate]);
 
   const schema = yup.object().shape({
@@ -281,7 +278,8 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
   // Get approved media from all submissions
   const getApprovedSubmissions = useMemo(() => {
-    if (!fullSubmission || !Array.isArray(fullSubmission)) return { videos: [], photos: [], rawFootages: [], caption: '' };
+    if (!fullSubmission || !Array.isArray(fullSubmission))
+      return { videos: [], photos: [], rawFootages: [], caption: '' };
 
     let allVideos = [];
     let allPhotos = [];
@@ -289,31 +287,33 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
     let caption = '';
 
     // Look through ALL submissions, not just approved ones
-    fullSubmission.forEach(sub => {
+    fullSubmission.forEach((sub) => {
       // Get approved videos from any submission
       if (sub.video && Array.isArray(sub.video)) {
-        const approvedVideosFromSub = sub.video.filter(v => v.status === 'APPROVED');
+        const approvedVideosFromSub = sub.video.filter((v) => v.status === 'APPROVED');
         allVideos = [...allVideos, ...approvedVideosFromSub];
       }
-      
+
       // Get approved photos from any submission
       if (sub.photos && Array.isArray(sub.photos)) {
-        const approvedPhotosFromSub = sub.photos.filter(p => p.status === 'APPROVED');
+        const approvedPhotosFromSub = sub.photos.filter((p) => p.status === 'APPROVED');
         allPhotos = [...allPhotos, ...approvedPhotosFromSub];
       }
 
       // Get approved raw footages from any submission
       if (sub.rawFootages && Array.isArray(sub.rawFootages)) {
-        const approvedRawFootagesFromSub = sub.rawFootages.filter(rf => rf.status === 'APPROVED');
+        const approvedRawFootagesFromSub = sub.rawFootages.filter((rf) => rf.status === 'APPROVED');
         allRawFootages = [...allRawFootages, ...approvedRawFootagesFromSub];
       }
 
       // Get caption from any submission that has approved content
-      if (sub.caption && !caption && (
-        (sub.video && sub.video.some(v => v.status === 'APPROVED')) ||
-        (sub.photos && sub.photos.some(p => p.status === 'APPROVED')) ||
-        (sub.rawFootages && sub.rawFootages.some(rf => rf.status === 'APPROVED'))
-      )) {
+      if (
+        sub.caption &&
+        !caption &&
+        ((sub.video && sub.video.some((v) => v.status === 'APPROVED')) ||
+          (sub.photos && sub.photos.some((p) => p.status === 'APPROVED')) ||
+          (sub.rawFootages && sub.rawFootages.some((rf) => rf.status === 'APPROVED')))
+      ) {
         ({ caption } = sub);
       }
     });
@@ -363,9 +363,13 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
             {submission?.status !== 'PENDING_REVIEW' && submission?.status !== 'APPROVED' && (
               <Box>
                 <Typography variant="body1" sx={{ color: '#221f20', mb: 2, ml: -1 }}>
-                  Let&apos;s wrap up this campaign by submitting your posting link on your socials! 🥳
+                  Let&apos;s wrap up this campaign by submitting your posting link on your socials!
+                  🥳
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#221f20', mb: 2, ml: -1, fontWeight: 600 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#221f20', mb: 2, ml: -1, fontWeight: 600 }}
+                >
                   {' '}
                   <Box
                     component="span"
@@ -432,8 +436,17 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   mx: -1.5,
                 }}
               />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                {(getApprovedSubmissions.videos.length > 0 || getApprovedSubmissions.photos.length > 0 || getApprovedSubmissions.rawFootages.length > 0) && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                {(getApprovedSubmissions.videos.length > 0 ||
+                  getApprovedSubmissions.photos.length > 0 ||
+                  getApprovedSubmissions.rawFootages.length > 0) && (
                   <Button
                     variant="outlined"
                     onClick={handlePreviewApprovedSubmissions}
@@ -551,8 +564,17 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     mx: -1.5,
                   }}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                  {(getApprovedSubmissions.videos.length > 0 || getApprovedSubmissions.photos.length > 0 || getApprovedSubmissions.rawFootages.length > 0) && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 2,
+                  }}
+                >
+                  {(getApprovedSubmissions.videos.length > 0 ||
+                    getApprovedSubmissions.photos.length > 0 ||
+                    getApprovedSubmissions.rawFootages.length > 0) && (
                     <Button
                       variant="outlined"
                       onClick={handlePreviewApprovedSubmissions}
@@ -851,7 +873,7 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         )}
       </Dialog>
 
-            {renderGuide}
+      {renderGuide}
 
       {/* Preview Approved Submissions Fullscreen Dialog */}
       <Dialog
@@ -953,9 +975,9 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         >
           {/* Videos Button */}
           {getApprovedSubmissions.videos.length > 0 && (
-            <Tooltip 
+            <Tooltip
               title={`Approved Videos${getApprovedSubmissions.videos.length > 1 ? ` (${selectedVideoIndex + 1}/${getApprovedSubmissions.videos.length})` : ''}`}
-              arrow 
+              arrow
               placement="bottom"
               PopperProps={{
                 sx: {
@@ -1017,9 +1039,9 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
           {/* Photos Button */}
           {getApprovedSubmissions.photos.length > 0 && (
-            <Tooltip 
+            <Tooltip
               title={`Approved Photos${getApprovedSubmissions.photos.length > 1 ? ` (${selectedPhotoIndex + 1}/${getApprovedSubmissions.photos.length})` : ''}`}
-              arrow 
+              arrow
               placement="bottom"
               PopperProps={{
                 sx: {
@@ -1053,7 +1075,10 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   width: { xs: '40px', md: '44px' },
                   height: { xs: '40px', md: '44px' },
                   p: 0,
-                  bgcolor: tabIndex === (getApprovedSubmissions.videos.length > 0 ? 1 : 0) ? '#1DBF66' : 'transparent',
+                  bgcolor:
+                    tabIndex === (getApprovedSubmissions.videos.length > 0 ? 1 : 0)
+                      ? '#1DBF66'
+                      : 'transparent',
                   color: '#ffffff',
                   border: '1px solid #28292C',
                   borderRadius: '8px',
@@ -1071,10 +1096,16 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                     zIndex: -1,
                   },
                   '&:hover::before': {
-                    backgroundColor: tabIndex === (getApprovedSubmissions.videos.length > 0 ? 1 : 0) ? 'transparent' : '#5A5A5C',
+                    backgroundColor:
+                      tabIndex === (getApprovedSubmissions.videos.length > 0 ? 1 : 0)
+                        ? 'transparent'
+                        : '#5A5A5C',
                   },
                   '&:hover': {
-                    bgcolor: tabIndex === (getApprovedSubmissions.videos.length > 0 ? 1 : 0) ? '#1DBF66' : 'transparent',
+                    bgcolor:
+                      tabIndex === (getApprovedSubmissions.videos.length > 0 ? 1 : 0)
+                        ? '#1DBF66'
+                        : 'transparent',
                   },
                 }}
               >
@@ -1085,9 +1116,9 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
           {/* Raw Footages Button */}
           {getApprovedSubmissions.rawFootages.length > 0 && (
-            <Tooltip 
+            <Tooltip
               title={`Approved Raw Footages${getApprovedSubmissions.rawFootages.length > 1 ? ` (${selectedRawFootageIndex + 1}/${getApprovedSubmissions.rawFootages.length})` : ''}`}
-              arrow 
+              arrow
               placement="bottom"
               PopperProps={{
                 sx: {
@@ -1169,9 +1200,9 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         </Stack>
 
         {/* Close Button - Top Right */}
-        <Tooltip 
-          title="Close" 
-          arrow 
+        <Tooltip
+          title="Close"
+          arrow
           placement="bottom"
           PopperProps={{
             sx: {
@@ -1259,17 +1290,19 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
               <Box
                 sx={{
                   position: 'relative',
-                  width: { 
-                    xs: '100%', 
-                    md: getApprovedSubmissions.caption ? '60%' : '90%' 
+                  width: {
+                    xs: '100%',
+                    md: getApprovedSubmissions.caption ? '60%' : '90%',
                   },
-                  height: { 
-                    xs: getApprovedSubmissions.caption ? 'calc(60vh - 80px)' : 'calc(100vh - 120px)', 
-                    md: 'calc(100vh - 120px)'
+                  height: {
+                    xs: getApprovedSubmissions.caption
+                      ? 'calc(60vh - 80px)'
+                      : 'calc(100vh - 120px)',
+                    md: 'calc(100vh - 120px)',
                   },
-                  maxWidth: { 
-                    xs: '100%', 
-                    md: getApprovedSubmissions.caption ? '800px' : '1200px' 
+                  maxWidth: {
+                    xs: '100%',
+                    md: getApprovedSubmissions.caption ? '800px' : '1200px',
                   },
                   bgcolor: 'black',
                   borderRadius: 2,
@@ -1280,26 +1313,25 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   justifyContent: 'center',
                 }}
               >
-                {getApprovedSubmissions.videos.map((video, index) => (
-                  index === selectedVideoIndex && (
-                    <Box
-                      key={`large-${video.id || index}`}
-                      component="video"
-                      src={video.url}
-                      controls
-                      autoPlay
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                      }}
-                    />
-                  )
-                ))}
-
-
+                {getApprovedSubmissions.videos.map(
+                  (video, index) =>
+                    index === selectedVideoIndex && (
+                      <Box
+                        key={`large-${video.id || index}`}
+                        component="video"
+                        src={video.url}
+                        controls
+                        autoPlay
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                        }}
+                      />
+                    )
+                )}
               </Box>
 
               {/* Caption Panel - Right Side on Desktop, Bottom on Mobile */}
@@ -1308,9 +1340,9 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                   sx={{
                     width: { xs: '100%', md: '35%' },
                     maxWidth: { xs: '100%', md: '400px' },
-                    height: { 
-                      xs: 'calc(40vh - 80px)', 
-                      md: 'calc(100vh - 120px)' 
+                    height: {
+                      xs: 'calc(40vh - 80px)',
+                      md: 'calc(100vh - 120px)',
                     },
                     minHeight: { xs: '150px', md: 'auto' },
                     bgcolor: 'transparent',
@@ -1399,24 +1431,23 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                 maxWidth: '1200px',
               }}
             >
-              {getApprovedSubmissions.photos.map((photo, index) => (
-                index === selectedPhotoIndex && (
-                  <Box
-                    key={`large-photo-${photo.id || index}`}
-                    component="img"
-                    src={photo.url}
-                    alt={`Photo ${index + 1}`}
-                    sx={{
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                      objectFit: 'contain',
-                      borderRadius: 2,
-                    }}
-                  />
-                )
-              ))}
-
-
+              {getApprovedSubmissions.photos.map(
+                (photo, index) =>
+                  index === selectedPhotoIndex && (
+                    <Box
+                      key={`large-photo-${photo.id || index}`}
+                      component="img"
+                      src={photo.url}
+                      alt={`Photo ${index + 1}`}
+                      sx={{
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        objectFit: 'contain',
+                        borderRadius: 2,
+                      }}
+                    />
+                  )
+              )}
             </Box>
           )}
 
@@ -1430,17 +1461,17 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
             <Box
               sx={{
                 position: 'relative',
-                width: { 
-                  xs: '100%', 
-                  md: getApprovedSubmissions.caption ? '60%' : '90%' 
+                width: {
+                  xs: '100%',
+                  md: getApprovedSubmissions.caption ? '60%' : '90%',
                 },
-                height: { 
-                  xs: getApprovedSubmissions.caption ? 'calc(60vh - 80px)' : 'calc(100vh - 120px)', 
-                  md: 'calc(100vh - 120px)'
+                height: {
+                  xs: getApprovedSubmissions.caption ? 'calc(60vh - 80px)' : 'calc(100vh - 120px)',
+                  md: 'calc(100vh - 120px)',
                 },
-                maxWidth: { 
-                  xs: '100%', 
-                  md: getApprovedSubmissions.caption ? '800px' : '1200px' 
+                maxWidth: {
+                  xs: '100%',
+                  md: getApprovedSubmissions.caption ? '800px' : '1200px',
                 },
                 bgcolor: 'black',
                 borderRadius: 2,
@@ -1451,26 +1482,25 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
                 justifyContent: 'center',
               }}
             >
-              {getApprovedSubmissions.rawFootages.map((rawFootage, index) => (
-                index === selectedRawFootageIndex && (
-                  <Box
-                    key={`large-rawfootage-${rawFootage.id || index}`}
-                    component="video"
-                    src={rawFootage.url}
-                    controls
-                    autoPlay
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                    }}
-                  />
-                )
-              ))}
-
-
+              {getApprovedSubmissions.rawFootages.map(
+                (rawFootage, index) =>
+                  index === selectedRawFootageIndex && (
+                    <Box
+                      key={`large-rawfootage-${rawFootage.id || index}`}
+                      component="video"
+                      src={rawFootage.url}
+                      controls
+                      autoPlay
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                      }}
+                    />
+                  )
+              )}
             </Box>
           )}
         </Box>
@@ -1478,20 +1508,20 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
         {/* Screen Edge Navigation Arrows */}
         {/* Left Arrow - Previous */}
         {((tabIndex === 0 && getApprovedSubmissions.videos.length > 1) ||
-          ((() => {
+          (() => {
             let photoTabIndex = 0;
             if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
             return tabIndex === photoTabIndex && getApprovedSubmissions.photos.length > 1;
-          })()) ||
-          ((() => {
+          })() ||
+          (() => {
             let rawFootageTabIndex = 0;
             if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
             if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
             return tabIndex === rawFootageTabIndex && getApprovedSubmissions.rawFootages.length > 1;
-          })())) && (
-          <Tooltip 
-            title="Previous" 
-            arrow 
+          })()) && (
+          <Tooltip
+            title="Previous"
+            arrow
             placement="right"
             PopperProps={{
               sx: {
@@ -1517,18 +1547,33 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
             <Button
               onClick={() => {
                 if (tabIndex === 0 && getApprovedSubmissions.videos.length > 1) {
-                  setSelectedVideoIndex((prev) => (prev - 1 + getApprovedSubmissions.videos.length) % getApprovedSubmissions.videos.length);
+                  setSelectedVideoIndex(
+                    (prev) =>
+                      (prev - 1 + getApprovedSubmissions.videos.length) %
+                      getApprovedSubmissions.videos.length
+                  );
                 } else {
                   let photoTabIndex = 0;
                   if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
                   if (tabIndex === photoTabIndex && getApprovedSubmissions.photos.length > 1) {
-                    setSelectedPhotoIndex((prev) => (prev - 1 + getApprovedSubmissions.photos.length) % getApprovedSubmissions.photos.length);
+                    setSelectedPhotoIndex(
+                      (prev) =>
+                        (prev - 1 + getApprovedSubmissions.photos.length) %
+                        getApprovedSubmissions.photos.length
+                    );
                   } else {
                     let rawFootageTabIndex = 0;
                     if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
                     if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
-                    if (tabIndex === rawFootageTabIndex && getApprovedSubmissions.rawFootages.length > 1) {
-                      setSelectedRawFootageIndex((prev) => (prev - 1 + getApprovedSubmissions.rawFootages.length) % getApprovedSubmissions.rawFootages.length);
+                    if (
+                      tabIndex === rawFootageTabIndex &&
+                      getApprovedSubmissions.rawFootages.length > 1
+                    ) {
+                      setSelectedRawFootageIndex(
+                        (prev) =>
+                          (prev - 1 + getApprovedSubmissions.rawFootages.length) %
+                          getApprovedSubmissions.rawFootages.length
+                      );
                     }
                   }
                 }
@@ -1562,20 +1607,20 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
 
         {/* Right Arrow - Next */}
         {((tabIndex === 0 && getApprovedSubmissions.videos.length > 1) ||
-          ((() => {
+          (() => {
             let photoTabIndex = 0;
             if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
             return tabIndex === photoTabIndex && getApprovedSubmissions.photos.length > 1;
-          })()) ||
-          ((() => {
+          })() ||
+          (() => {
             let rawFootageTabIndex = 0;
             if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
             if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
             return tabIndex === rawFootageTabIndex && getApprovedSubmissions.rawFootages.length > 1;
-          })())) && (
-          <Tooltip 
-            title="Next" 
-            arrow 
+          })()) && (
+          <Tooltip
+            title="Next"
+            arrow
             placement="left"
             PopperProps={{
               sx: {
@@ -1601,18 +1646,27 @@ const CampaignPosting = ({ campaign, submission, getDependency, fullSubmission }
             <Button
               onClick={() => {
                 if (tabIndex === 0 && getApprovedSubmissions.videos.length > 1) {
-                  setSelectedVideoIndex((prev) => (prev + 1) % getApprovedSubmissions.videos.length);
+                  setSelectedVideoIndex(
+                    (prev) => (prev + 1) % getApprovedSubmissions.videos.length
+                  );
                 } else {
                   let photoTabIndex = 0;
                   if (getApprovedSubmissions.videos.length > 0) photoTabIndex = 1;
                   if (tabIndex === photoTabIndex && getApprovedSubmissions.photos.length > 1) {
-                    setSelectedPhotoIndex((prev) => (prev + 1) % getApprovedSubmissions.photos.length);
+                    setSelectedPhotoIndex(
+                      (prev) => (prev + 1) % getApprovedSubmissions.photos.length
+                    );
                   } else {
                     let rawFootageTabIndex = 0;
                     if (getApprovedSubmissions.videos.length > 0) rawFootageTabIndex += 1;
                     if (getApprovedSubmissions.photos.length > 0) rawFootageTabIndex += 1;
-                    if (tabIndex === rawFootageTabIndex && getApprovedSubmissions.rawFootages.length > 1) {
-                      setSelectedRawFootageIndex((prev) => (prev + 1) % getApprovedSubmissions.rawFootages.length);
+                    if (
+                      tabIndex === rawFootageTabIndex &&
+                      getApprovedSubmissions.rawFootages.length > 1
+                    ) {
+                      setSelectedRawFootageIndex(
+                        (prev) => (prev + 1) % getApprovedSubmissions.rawFootages.length
+                      );
                     }
                   }
                 }

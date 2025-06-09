@@ -55,11 +55,10 @@ import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
-import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
+import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
-import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
