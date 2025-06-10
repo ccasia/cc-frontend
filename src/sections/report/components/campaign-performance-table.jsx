@@ -1,15 +1,13 @@
-import React from 'react';
-import { useNavigate } from 'react-router';
-
+import React, { useState } from 'react';
 import {
-  Box,
   Avatar,
   Button,
   Typography,
+  Box,
   CircularProgress
 } from '@mui/material';
-
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
+import { useNavigate } from 'react-router';
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
@@ -23,9 +21,11 @@ const CampaignPerformanceTable = () => {
       ?.filter((submission) => {
         if (!submission.content) return false;
         
-        // Regex to match Instagram or TikTok URLs
-        const socialMediaRegex = /(instagram\.com|tiktok\.com)/i;
-        return socialMediaRegex.test(submission.content);
+        // More specific regex patterns for actual post links
+        const instagramPostRegex = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
+        const tiktokPostRegex = /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/video\/\d+/i;
+        
+        return instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
       })
       ?.map((submission) => ({
         id: submission.id,
@@ -37,7 +37,13 @@ const CampaignPerformanceTable = () => {
         submissionId: submission.id,
         campaignId: submission.campaignId,
         userId: submission.user?.id,
-      }));
+      }))
+      .sort((a, b) => {
+        // First sort by campaign name
+        const campaignCompare = a.campaignName.localeCompare(b.campaignName);
+        // If campaign names are the same, sort by creator name
+        return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
+      });
 
   }, [submissionData]);
 
@@ -134,7 +140,7 @@ const CampaignPerformanceTable = () => {
                   color: '#666',
                 }}
               >
-                Creator&apos;s Email
+                Creator's Email
               </Typography>
             </Box>
             <Box sx={{ flex: '0 0 30%' }}>

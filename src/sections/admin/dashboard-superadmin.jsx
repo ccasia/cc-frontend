@@ -1,11 +1,333 @@
+// import dayjs from 'dayjs';
+// import { useTheme } from '@emotion/react';
+// import React, { useState, useEffect } from 'react';
+// import useSWR from 'swr';
+
+// import { grey } from '@mui/material/colors';
+// import {
+//   Box,
+//   Grid,
+//   Card,
+//   alpha,
+//   Stack,
+//   Table,
+//   Paper,
+//   TableRow,
+//   TableHead,
+//   TableCell,
+//   TableBody,
+//   Typography,
+//   TableContainer,
+//   CircularProgress,
+// } from '@mui/material';
+
+// import useGetCreators from 'src/hooks/use-get-creators';
+// import useGetCampaigns from 'src/hooks/use-get-campaigns';
+
+// import { fetcher } from 'src/utils/axios';
+// import { fNumber } from 'src/utils/format-number';
+
+// import { useAuthContext } from 'src/auth/hooks';
+// import useSocketContext from 'src/socket/hooks/useSocketContext';
+
+// import Label from 'src/components/label';
+// import Chart from 'src/components/chart';
+// import { useSettingsContext } from 'src/components/settings';
+// import EmptyContent from 'src/components/empty-content/empty-content';
+
+// const DashboardSuperadmin = () => {
+//   const { campaigns, isLoading } = useGetCampaigns();
+//   const { data: creators, isLoading: creatorLoading } = useGetCreators();
+//   const { socket } = useSocketContext();
+//   const [onlineUsers, setOnlineUsers] = useState(null);
+//   const { user } = useAuthContext();
+//   const { data: clientData, isLoading: isClientLoading } = useSWR('/api/company/', fetcher);
+
+//   const theme = useTheme();
+//   const setting = useSettingsContext();
+
+//   // const loadingDone = !isLoading && !creatorLoading;
+
+//   const taskLists =
+//     !isLoading &&
+//     campaigns
+//       ?.filter((campaign) => campaign.status === 'ACTIVE')
+//       .map((campaign) => {
+//         const campaignTasks = campaign?.campaignTasks.filter(
+//           (item) => item.status === 'IN_PROGRESS'
+//         );
+//         return (
+//           campaignTasks.length &&
+//           campaignTasks.map((task) => ({
+//             campaignName: campaign.name,
+//             campaignTask: task.task,
+//             dueDate: task.dueDate,
+//             status: task.status,
+//           }))
+//         );
+//       })
+//       .flat()
+//       .filter((item) => item !== 0);
+
+//   const chartOptions = {
+//     colors: [theme.palette.primary.light, theme.palette.primary.main].map((colr) => colr[1]),
+//     fill: {
+//       type: 'gradient',
+//       gradient: {
+//         colorStops: [
+//           { offset: 0, color: theme.palette.primary.light, opacity: 1 },
+//           { offset: 100, color: theme.palette.primary.main, opacity: 1 },
+//         ],
+//       },
+//     },
+//     chart: {
+//       sparkline: {
+//         enabled: true,
+//       },
+//     },
+//     xaxis: {
+//       categories: [
+//         'Jan',
+//         'Feb',
+//         'Mar',
+//         'Apr',
+//         'May',
+//         'Jun',
+//         'Jul',
+//         'Aug',
+//         'Sep',
+//         'Oct',
+//         'Nov',
+//         'Dec',
+//       ],
+//     },
+//     plotOptions: {
+//       bar: {
+//         columnWidth: '68%',
+//         borderRadius: 2,
+//       },
+//     },
+//     tooltip: {
+//       theme: setting.themeMode,
+//       x: { show: true },
+//       y: {
+//         formatter: (value) => fNumber(value),
+//         title: {
+//           formatter: () => '',
+//         },
+//       },
+//       marker: { show: false },
+//     },
+//   };
+
+//   const renderCampaignLists = (
+//     <TableContainer component={Paper} sx={{ mt: 2 }}>
+//       <Table size="medium">
+//         <TableHead>
+//           <TableRow>
+//             <TableCell align="center">Campaign Name</TableCell>
+//             <TableCell align="center">Start Date</TableCell>
+//             <TableCell align="center">End Date</TableCell>
+//             <TableCell align="center">Total Shortlisted Creator</TableCell>
+//             <TableCell align="center">Total Pitch</TableCell>
+//           </TableRow>
+//         </TableHead>
+//         <TableBody>
+//           {!isLoading &&
+//             campaigns
+//               ?.filter((item) => item.status === 'ACTIVE')
+//               .map((campaign) => (
+//                 <TableRow key={campaign.id}>
+//                   <TableCell align="center">{campaign?.name}</TableCell>
+//                   <TableCell align="center">
+//                     <Typography variant="caption" color="text.secondary">
+//                       {dayjs(campaign?.campaignBrief?.startDate).format('ddd LL')}
+//                     </Typography>
+//                   </TableCell>
+//                   <TableCell align="center">
+//                     <Typography variant="caption" color="text.secondary">
+//                       {dayjs(campaign?.campaignBrief?.endDate).format('ddd LL')}
+//                     </Typography>
+//                   </TableCell>
+//                   <TableCell align="center">
+//                     <Label color="success">{campaign?.shortlisted.length}</Label>
+//                   </TableCell>
+//                   <TableCell align="center">
+//                     <Label color="success">{campaign?.pitch.length}</Label>
+//                   </TableCell>
+//                 </TableRow>
+//               ))}
+//         </TableBody>
+//       </Table>
+//     </TableContainer>
+//   );
+
+//   useEffect(() => {
+//     socket?.emit('online-user');
+
+//     socket?.on('onlineUsers', (data) => {
+//       setOnlineUsers(data.onlineUsers);
+//     });
+
+//     return () => {
+//       socket?.off('onlineUsers');
+//     };
+//   }, [socket]);
+
+//   if (creatorLoading || isClientLoading) {
+//     return (
+//       <Box
+//         sx={{
+//           position: 'relative',
+//           top: 200,
+//           textAlign: 'center',
+//         }}
+//       >
+//         <CircularProgress
+//           thickness={7}
+//           size={25}
+//           sx={{
+//             color: theme.palette.common.black,
+//             strokeLinecap: 'round',
+//           }}
+//         />
+//       </Box>
+//     );
+//   }
+
+//   return (
+//     <Grid container spacing={3}>
+//       {user?.role === 'superadmin' && (
+//         <Grid item xs={12} justifyItems="end">
+//           <Label>Online Users: {onlineUsers || 0}</Label>
+//         </Grid>
+//       )}
+//       <Grid item xs={12} md={3}>
+//         <Box component={Card} p={2} sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}>
+//           <Stack gap={1}>
+//             <Typography variant="subtitle2" color="text.secondary">
+//               Total Campaign
+//             </Typography>
+//             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
+//               <Typography variant="h2">
+//                 {campaigns?.filter((campaign) => campaign.status === 'ACTIVE')?.length}
+//               </Typography>
+//               <Chart
+//                 dir="ltr"
+//                 type="bar"
+//                 series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
+//                 options={chartOptions}
+//                 width={60}
+//                 height={36}
+//               />
+//             </Stack>
+//           </Stack>
+//         </Box>
+//       </Grid>
+//       <Grid item xs={12} md={3}>
+//         <Box
+//           component={Card}
+//           p="16px 24px"
+//           sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
+//         >
+//           <Stack gap={1}>
+//             <Typography variant="subtitle2" color="text.secondary">
+//               Total Chats
+//             </Typography>
+//             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
+//               <Typography variant="h2">
+//                 {/* {campaigns
+
+//                   ?.filter((campaign) => campaign.status === 'ACTIVE')
+//                   .reduce((acc, campaign) => acc + campaign.pitch.length, 0)} */}
+//                 {user?._count?.UserThread || 0}
+//               </Typography>
+//               <Chart
+//                 dir="ltr"
+//                 type="bar"
+//                 series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
+//                 options={chartOptions}
+//                 width={60}
+//                 height={36}
+//               />
+//             </Stack>
+//           </Stack>
+//         </Box>
+//       </Grid>
+//       <Grid item xs={12} md={3}>
+//         <Box
+//           component={Card}
+//           p="16px 24px"
+//           sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
+//         >
+//           <Stack gap={1}>
+//             <Typography variant="subtitle2" color="text.secondary">
+//               Total Creator
+//             </Typography>
+//             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
+//               <Typography variant="h2">{creators?.length}</Typography>
+//               <Chart
+//                 dir="ltr"
+//                 type="bar"
+//                 series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
+//                 options={chartOptions}
+//                 width={60}
+//                 height={36}
+//               />
+//             </Stack>
+//           </Stack>
+//         </Box>
+//       </Grid>
+//       <Grid item xs={12} md={3}>
+//         <Box
+//           component={Card}
+//           p="16px 24px"
+//           sx={{ boxShadow: `0px 2px 2px 2px ${alpha(grey[400], 0.3)}` }}
+//         >
+//           <Stack gap={1}>
+//             <Typography variant="subtitle2" color="text.secondary">
+//               Total Clients
+//             </Typography>
+//             <Stack gap={1} direction="row" justifyContent="space-between" alignItems="center">
+//               <Typography variant="h2">{clientData || 0}</Typography>
+//               <Chart
+//                 dir="ltr"
+//                 type="bar"
+//                 series={[{ data: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26, 20, 89] }]}
+//                 options={chartOptions}
+//                 width={60}
+//                 height={36}
+//               />
+//             </Stack>
+//           </Stack>
+//         </Box>
+//       </Grid>
+//       <Grid item xs={12} md={12}>
+//         <Box
+//           component={Card}
+//           p="16px 24px"
+//           sx={{ boxShadow: `0px 5px 10px ${alpha(theme.palette.text.primary, 0.1)}` }}
+//         >
+//           <Stack gap={1}>
+//             <Typography variant="subtitle2" color="text.secondary">
+//               Active Campaigns
+//             </Typography>
+//             {campaigns?.length ? renderCampaignLists : <EmptyContent title="No active campaign" />}
+//           </Stack>
+//         </Box>
+//       </Grid>
+//     </Grid>
+//   );
+// };
+
+// export default DashboardSuperadmin;
+
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { useMemo, useState, useEffect } from 'react';
 import useSWR from 'swr';
 
-import {
-  LineChart,
-} from '@mui/x-charts';
+import { LineChart } from '@mui/x-charts';
 import { Image, Person, Schedule, ArrowForward } from '@mui/icons-material';
 import {
   Box,
@@ -48,7 +370,6 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import SvgColor from 'src/components/svg-color';
 
-
 // Extend dayjs with relativeTime plugin
 dayjs.extend(relativeTime);
 
@@ -75,13 +396,13 @@ const DashboardSuperadmin = () => {
   };
 
   // Calculate actual metrics
-  const activeCampaigns = useMemo(() => 
-    campaigns?.filter((campaign) => campaign.status === 'ACTIVE') || [], 
+  const activeCampaigns = useMemo(
+    () => campaigns?.filter((campaign) => campaign.status === 'ACTIVE') || [],
     [campaigns]
   );
-  
-  const completedCampaigns = useMemo(() => 
-    campaigns?.filter((campaign) => campaign.status === 'COMPLETED') || [], 
+
+  const completedCampaigns = useMemo(
+    () => campaigns?.filter((campaign) => campaign.status === 'COMPLETED') || [],
     [campaigns]
   );
 
@@ -95,7 +416,7 @@ const DashboardSuperadmin = () => {
   // Get all pending pitches
   const pendingPitches = useMemo(() => {
     if (!campaigns) return [];
-    
+
     const allPitches = [];
     campaigns.forEach((campaign) => {
       if (campaign?.pitch) {
@@ -103,7 +424,7 @@ const DashboardSuperadmin = () => {
           if (pitch.status === 'undecided') {
             allPitches.push({
               ...pitch,
-            campaignName: campaign.name,
+              campaignName: campaign.name,
               campaignId: campaign.id,
               campaignImage: campaign?.campaignBrief?.images?.[0] || campaign?.brand?.logo,
             });
@@ -111,7 +432,7 @@ const DashboardSuperadmin = () => {
         });
       }
     });
-    
+
     // Sort by creation date (newest first)
     return allPitches.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [campaigns]);
@@ -119,7 +440,7 @@ const DashboardSuperadmin = () => {
   // Filter pitches based on selected campaign
   const filteredPitches = useMemo(() => {
     if (selectedCampaign === 'all') return pendingPitches;
-    return pendingPitches.filter(pitch => pitch.campaignId === selectedCampaign);
+    return pendingPitches.filter((pitch) => pitch.campaignId === selectedCampaign);
   }, [pendingPitches, selectedCampaign]);
 
   const totalChats = user?._count?.UserThread || 0;
@@ -137,9 +458,9 @@ const DashboardSuperadmin = () => {
 
     return months.map((month, index) => ({
       month,
-      campaigns: Math.floor(baseValues.campaigns * (0.8 + (index * 0.1))),
-      creators: Math.floor(baseValues.creators * (0.7 + (index * 0.15))),
-      pitches: Math.floor(baseValues.pitches * (0.6 + (index * 0.2))),
+      campaigns: Math.floor(baseValues.campaigns * (0.8 + index * 0.1)),
+      creators: Math.floor(baseValues.creators * (0.7 + index * 0.15)),
+      pitches: Math.floor(baseValues.pitches * (0.6 + index * 0.2)),
     }));
   }, [activeCampaigns.length, totalCreators, totalPitches]);
 
@@ -210,30 +531,28 @@ const DashboardSuperadmin = () => {
       >
         <Stack spacing={1} height="100%" justifyContent="space-between">
           <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Typography 
-              variant="caption" 
-              sx={{ 
+            <Typography
+              variant="caption"
+              sx={{
                 color: colors.secondary,
                 fontWeight: 500,
                 textTransform: 'uppercase',
                 letterSpacing: 1,
-                fontSize: '0.7rem'
+                fontSize: '0.7rem',
               }}
             >
               {metric.title}
             </Typography>
-            <Box sx={{ color: metric.color, opacity: 0.8 }}>
-              {metric.icon}
-            </Box>
+            <Box sx={{ color: metric.color, opacity: 0.8 }}>{metric.icon}</Box>
           </Stack>
-          
-          <Typography 
-            variant="h3" 
-            sx={{ 
+
+          <Typography
+            variant="h3"
+            sx={{
               color: metric.color,
               fontWeight: 700,
               lineHeight: 1,
-              fontSize: '2rem'
+              fontSize: '2rem',
             }}
           >
             {typeof metric.value === 'number' ? metric.value.toLocaleString() : '0'}
@@ -244,8 +563,8 @@ const DashboardSuperadmin = () => {
   );
 
   const renderPendingPitches = (
-    <Card 
-      sx={{ 
+    <Card
+      sx={{
         bgcolor: colors.background,
         border: `1px solid ${colors.border}`,
         borderRadius: 1,
@@ -258,17 +577,17 @@ const DashboardSuperadmin = () => {
       <Box sx={{ p: 3, borderBottom: `1px solid ${colors.border}`, flexShrink: 0 }}>
         <Stack spacing={2}>
           <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Typography 
-              variant="h6" 
-              sx={{ 
+            <Typography
+              variant="h6"
+              sx={{
                 color: colors.primary,
                 fontWeight: 600,
-                fontSize: '1.1rem'
+                fontSize: '1.1rem',
               }}
             >
               Pending Pitches
             </Typography>
-            
+
             <Chip
               label={`${filteredPitches.length}`}
               size="small"
@@ -285,7 +604,7 @@ const DashboardSuperadmin = () => {
               }}
             />
           </Stack>
-          
+
           <FormControl size="small" sx={{ minWidth: 160, maxWidth: 200 }}>
             <Select
               value={selectedCampaign}
@@ -328,10 +647,10 @@ const DashboardSuperadmin = () => {
                 All Campaigns
               </MenuItem>
               {activeCampaigns.map((campaign) => (
-                <MenuItem 
-                  key={campaign.id} 
-                  value={campaign.id} 
-                  sx={{ 
+                <MenuItem
+                  key={campaign.id}
+                  value={campaign.id}
+                  sx={{
                     fontSize: '0.8rem',
                     maxWidth: 280,
                     whiteSpace: 'nowrap',
@@ -354,7 +673,10 @@ const DashboardSuperadmin = () => {
             <ListItem
               key={`${pitch.campaignId}-${pitch.id}`}
               sx={{
-                borderBottom: index < Math.min(filteredPitches.length, 5) - 1 ? `1px solid ${colors.border}` : 'none',
+                borderBottom:
+                  index < Math.min(filteredPitches.length, 5) - 1
+                    ? `1px solid ${colors.border}`
+                    : 'none',
                 '&:hover': {
                   bgcolor: colors.surface,
                 },
@@ -371,15 +693,17 @@ const DashboardSuperadmin = () => {
                     border: `1px solid ${colors.border}`,
                   }}
                 >
-                  {pitch.user?.name?.charAt(0)?.toUpperCase() || <Person sx={{ fontSize: 20, color: colors.secondary }} />}
+                  {pitch.user?.name?.charAt(0)?.toUpperCase() || (
+                    <Person sx={{ fontSize: 20, color: colors.secondary }} />
+                  )}
                 </Avatar>
               </ListItemAvatar>
-              
+
               <ListItemText
                 primary={
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
+                  <Typography
+                    variant="body2"
+                    sx={{
                       color: colors.primary,
                       fontWeight: 600,
                       fontSize: '0.9rem',
@@ -392,9 +716,9 @@ const DashboardSuperadmin = () => {
                 }
                 secondary={
                   <Stack spacing={0.5}>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
+                    <Typography
+                      variant="caption"
+                      sx={{
                         color: colors.secondary,
                         fontSize: '0.75rem',
                         overflow: 'hidden',
@@ -408,11 +732,11 @@ const DashboardSuperadmin = () => {
                     </Typography>
                     <Stack direction="row" alignItems="center" spacing={1}>
                       <Schedule sx={{ fontSize: 12, color: colors.tertiary }} />
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
+                      <Typography
+                        variant="caption"
+                        sx={{
                           color: colors.tertiary,
-                          fontSize: '0.7rem'
+                          fontSize: '0.7rem',
                         }}
                       >
                         {dayjs(pitch.createdAt).fromNow()}
@@ -421,7 +745,7 @@ const DashboardSuperadmin = () => {
                   </Stack>
                 }
               />
-              
+
               <ListItemSecondaryAction>
                 <Tooltip title="View Campaign Pitches" arrow>
                   <IconButton
@@ -447,7 +771,16 @@ const DashboardSuperadmin = () => {
           ))}
         </List>
       ) : (
-        <Box sx={{ p: 4, textAlign: 'center', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <Typography variant="body2" color={colors.secondary}>
             No pending pitches
           </Typography>
@@ -457,22 +790,22 @@ const DashboardSuperadmin = () => {
   );
 
   const renderCampaignTable = (
-    <Card 
-      sx={{ 
+    <Card
+      sx={{
         bgcolor: colors.background,
         border: `1px solid ${colors.border}`,
         borderRadius: 1,
-        overflow: 'hidden'
+        overflow: 'hidden',
       }}
     >
       <Box sx={{ p: 3, borderBottom: `1px solid ${colors.border}` }}>
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Typography 
-            variant="h6" 
-            sx={{ 
+          <Typography
+            variant="h6"
+            sx={{
               color: colors.primary,
               fontWeight: 600,
-              fontSize: '1.1rem'
+              fontSize: '1.1rem',
             }}
           >
             Active Campaigns
@@ -494,61 +827,75 @@ const DashboardSuperadmin = () => {
       {activeCampaigns.length > 0 ? (
         <TableContainer>
           <Table size="small">
-        <TableHead>
-          <TableRow>
-                <TableCell sx={{ 
-                  fontWeight: 600, 
-                  color: colors.primary, 
-                  border: 'none',
-                  bgcolor: colors.light,
-                  fontSize: '0.8rem',
-                  width: '35%',
-                  pl: 3, // Match the padding of campaign content
-                }}>
+            <TableHead>
+              <TableRow>
+                <TableCell
+                  sx={{
+                    fontWeight: 600,
+                    color: colors.primary,
+                    border: 'none',
+                    bgcolor: colors.light,
+                    fontSize: '0.8rem',
+                    width: '35%',
+                    pl: 3, // Match the padding of campaign content
+                  }}
+                >
                   Campaign
                 </TableCell>
-                <TableCell align="center" sx={{ 
-                  fontWeight: 600, 
-                  color: colors.primary, 
-                  border: 'none',
-                  bgcolor: colors.light,
-                  fontSize: '0.8rem'
-                }}>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontWeight: 600,
+                    color: colors.primary,
+                    border: 'none',
+                    bgcolor: colors.light,
+                    fontSize: '0.8rem',
+                  }}
+                >
                   Duration
                 </TableCell>
-                <TableCell align="center" sx={{ 
-                  fontWeight: 600, 
-                  color: colors.primary, 
-                  border: 'none',
-                  bgcolor: colors.light,
-                  fontSize: '0.8rem'
-                }}>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontWeight: 600,
+                    color: colors.primary,
+                    border: 'none',
+                    bgcolor: colors.light,
+                    fontSize: '0.8rem',
+                  }}
+                >
                   Available Credits
                 </TableCell>
-                <TableCell align="center" sx={{ 
-                  fontWeight: 600, 
-                  color: colors.primary, 
-                  border: 'none',
-                  bgcolor: colors.light,
-                  fontSize: '0.8rem'
-                }}>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontWeight: 600,
+                    color: colors.primary,
+                    border: 'none',
+                    bgcolor: colors.light,
+                    fontSize: '0.8rem',
+                  }}
+                >
                   Shortlisted Creators
                 </TableCell>
-                <TableCell align="center" sx={{ 
-                  fontWeight: 600, 
-                  color: colors.primary, 
-                  border: 'none',
-                  bgcolor: colors.light,
-                  fontSize: '0.8rem'
-                }}>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontWeight: 600,
+                    color: colors.primary,
+                    border: 'none',
+                    bgcolor: colors.light,
+                    fontSize: '0.8rem',
+                  }}
+                >
                   Pitches
                 </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {activeCampaigns.slice(0, 5).map((campaign) => (
                 <Tooltip key={campaign.id} title="Go To Campaign" arrow>
-                  <TableRow 
+                  <TableRow
                     onClick={() => handleViewCampaign(campaign.id)}
                     sx={{
                       cursor: 'pointer',
@@ -572,39 +919,43 @@ const DashboardSuperadmin = () => {
                           <Image sx={{ fontSize: 20, color: colors.secondary }} />
                         </Avatar>
                         <Box>
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
+                          <Typography
+                            variant="body2"
+                            sx={{
                               color: colors.primary,
                               fontWeight: 600,
                               fontSize: '0.85rem',
                               lineHeight: 1.2,
-                              mb: 0.5
+                              mb: 0.5,
                             }}
                           >
                             {campaign?.name}
                           </Typography>
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
+                          <Typography
+                            variant="caption"
+                            sx={{
                               color: colors.secondary,
-                              fontSize: '0.75rem'
+                              fontSize: '0.75rem',
                             }}
                           >
                             {campaign?.brand?.name || 'No brand'}
-                    </Typography>
+                          </Typography>
                         </Box>
                       </Stack>
-                  </TableCell>
+                    </TableCell>
                     <TableCell align="center" sx={{ border: 'none', py: 2 }}>
                       <Stack spacing={0.5} alignItems="center">
-                        <Typography variant="body2" sx={{ 
-                          color: colors.secondary,
-                          fontSize: '0.8rem',
-                          fontWeight: 500,
-                        }}>
-                          {dayjs(campaign?.campaignBrief?.startDate).format('ddd, MMM DD')} - {dayjs(campaign?.campaignBrief?.endDate).format('ddd, MMM DD')}
-                    </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: colors.secondary,
+                            fontSize: '0.8rem',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {dayjs(campaign?.campaignBrief?.startDate).format('ddd, MMM DD')} -{' '}
+                          {dayjs(campaign?.campaignBrief?.endDate).format('ddd, MMM DD')}
+                        </Typography>
                       </Stack>
                     </TableCell>
                     <TableCell align="center" sx={{ border: 'none', py: 2 }}>
@@ -624,7 +975,7 @@ const DashboardSuperadmin = () => {
                           cursor: 'default',
                         }}
                       />
-                  </TableCell>
+                    </TableCell>
                     <TableCell align="center" sx={{ border: 'none', py: 2 }}>
                       <Chip
                         label={campaign?.shortlisted.length}
@@ -642,7 +993,7 @@ const DashboardSuperadmin = () => {
                           cursor: 'default',
                         }}
                       />
-                  </TableCell>
+                    </TableCell>
                     <TableCell align="center" sx={{ border: 'none', py: 2 }}>
                       <Chip
                         label={campaign?.pitch.length}
@@ -660,13 +1011,13 @@ const DashboardSuperadmin = () => {
                           cursor: 'default',
                         }}
                       />
-                  </TableCell>
-                </TableRow>
+                    </TableCell>
+                  </TableRow>
                 </Tooltip>
               ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            </TableBody>
+          </Table>
+        </TableContainer>
       ) : (
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="body2" color={colors.secondary}>
@@ -729,7 +1080,7 @@ const DashboardSuperadmin = () => {
               Platform overview
             </Typography>
           </Stack> */}
-          
+
           {user?.role === 'superadmin' && (
             <Stack direction="row" alignItems="center" spacing={1.5}>
               <Box
@@ -740,66 +1091,70 @@ const DashboardSuperadmin = () => {
                   bgcolor: '#22c55e',
                 }}
               />
-              <Typography 
-                variant="body2" 
-                sx={{ 
+              <Typography
+                variant="body2"
+                sx={{
                   color: colors.primary,
                   fontWeight: 600,
-                  fontSize: '0.9rem'
+                  fontSize: '0.9rem',
                 }}
               >
                 {onlineUsers || 0} users online
-            </Typography>
+              </Typography>
             </Stack>
           )}
-          </Stack>
+        </Stack>
 
         {/* Metrics */}
         <Grid container spacing={2}>
           {metricCards.map((metric, index) => renderMetricCard(metric, index))}
-      </Grid>
+        </Grid>
 
         {/* Charts */}
         <Grid container spacing={3}>
           {/* Activity Trends */}
           <Grid item xs={12} md={8}>
-            <Card 
-              sx={{ 
-                p: 3, 
+            <Card
+              sx={{
+                p: 3,
                 bgcolor: colors.background,
                 border: `1px solid ${colors.border}`,
-                borderRadius: 1
+                borderRadius: 1,
               }}
             >
-              <Typography 
-                variant="h6" 
-                sx={{ 
+              <Typography
+                variant="h6"
+                sx={{
                   color: colors.primary,
                   fontWeight: 600,
                   mb: 2,
-                  fontSize: '1.1rem'
+                  fontSize: '1.1rem',
                 }}
               >
                 Activity Trends
-            </Typography>
+              </Typography>
               <LineChart
                 dataset={monthlyData}
-                xAxis={[{ 
-                  dataKey: 'month', 
-                  scaleType: 'point',
-                  tickLabelStyle: { 
-                    fill: colors.secondary, 
-                    fontSize: 11,
-                    fontWeight: 500
-                  }
-                }]}
-                yAxis={[{
-                  tickLabelStyle: { 
-                    fill: colors.secondary, 
-                    fontSize: 11,
-                    fontWeight: 500
-                  }
-                }]}
+                xAxis={[
+                  {
+                    dataKey: 'month',
+                    scaleType: 'point',
+                    tickLabelStyle: {
+                      fill: colors.secondary,
+                      fontSize: 11,
+                      fontWeight: 500,
+                    },
+                  },
+                ]}
+                yAxis={[
+                  {
+                    tickLabelStyle: {
+                      fill: colors.secondary,
+                      fontSize: 11,
+                      fontWeight: 500,
+                    },
+                  },
+                ]}
                 series={[
                   {
                     dataKey: 'campaigns',
@@ -816,25 +1171,25 @@ const DashboardSuperadmin = () => {
                 ]}
                 height={280}
                 margin={{ left: 50, right: 20, top: 40, bottom: 40 }}
-                grid={{ 
-                  vertical: false, 
+                grid={{
+                  vertical: false,
                   horizontal: true,
-                  horizontalColor: colors.border
+                  horizontalColor: colors.border,
                 }}
                 slotProps={{
                   legend: {
                     direction: 'row',
                     position: { vertical: 'top', horizontal: 'left' },
-                    labelStyle: { 
-                      fill: colors.secondary, 
+                    labelStyle: {
+                      fill: colors.secondary,
                       fontSize: 12,
-                      fontWeight: 500
+                      fontWeight: 500,
                     },
                     itemMarkWidth: 12,
                     itemMarkHeight: 2,
                     markGap: 8,
                     itemGap: 16,
-                  }
+                  },
                 }}
               />
             </Card>
@@ -844,12 +1199,12 @@ const DashboardSuperadmin = () => {
           <Grid item xs={12} md={4}>
             {renderPendingPitches}
           </Grid>
-      </Grid>
+        </Grid>
 
         {/* Campaigns Table */}
         {renderCampaignTable}
-          </Stack>
-        </Box>
+      </Stack>
+    </Box>
   );
 };
 

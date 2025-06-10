@@ -1,11 +1,11 @@
 /* eslint-disable no-nested-ternary */
 import PropTypes from 'prop-types';
 import 'react-quill/dist/quill.snow.css';
-import { enqueueSnackbar } from 'notistack';
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
 import { useTheme } from '@mui/material/styles';
+import CloseIcon from '@mui/icons-material/Close';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import DialogContent from '@mui/material/DialogContent';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -20,9 +20,8 @@ import {
   Button,
   Avatar,
   Divider,
-  Tooltip,
-  Popover,
   Typography,
+  IconButton,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -72,12 +71,6 @@ const CampaignModal = ({
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
-  
-  // New state for improved functionality
-  const [linkCopiedAnchor, setLinkCopiedAnchor] = useState(null);
-  const [showLinkCopied, setShowLinkCopied] = useState(false);
-  const [fileDetailsAnchor, setFileDetailsAnchor] = useState(null);
-
   const dialogContentRef = useRef(null);
   const images = campaign?.campaignBrief?.images || [];
 
@@ -189,88 +182,6 @@ const CampaignModal = ({
     }
   };
 
-  // New handler functions for improved functionality
-  const handleCopyLink = async (event) => {
-    try {
-      await navigator.clipboard.writeText(images[currentImageIndex]);
-      setLinkCopiedAnchor(event.currentTarget);
-      setShowLinkCopied(true);
-      
-      // Hide the indicator after 2 seconds
-      setTimeout(() => {
-        setShowLinkCopied(false);
-        setLinkCopiedAnchor(null);
-      }, 2000);
-      
-      enqueueSnackbar('Link copied to clipboard', { variant: 'success' });
-    } catch (error) {
-      console.error('Failed to copy link:', error);
-      enqueueSnackbar('Failed to copy link', { variant: 'error' });
-    }
-  };
-
-  const handleDownloadClick = async () => {
-    try {
-      const imageUrl = images[currentImageIndex];
-      const fileName = getFileName();
-      
-      // Fetch the image as a blob
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch image');
-      }
-      
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-      
-      enqueueSnackbar('Download started', { variant: 'success' });
-    } catch (error) {
-      console.error('Download failed:', error);
-      enqueueSnackbar('Failed to download image', { variant: 'error' });
-    }
-  };
-
-  const handleFileDetailsClick = (event) => {
-    setFileDetailsAnchor(event.currentTarget);
-  };
-
-  const handleFileDetailsClose = () => {
-    setFileDetailsAnchor(null);
-  };
-
-  const getFileName = () => {
-    const url = images[currentImageIndex];
-    if (!url) return 'Campaign Image';
-    
-    // Extract filename from URL
-    const urlParts = url.split('/');
-    const fileNameWithParams = urlParts[urlParts.length - 1];
-    
-    // Remove query parameters (everything after ?)
-    const fileNameWithoutParams = fileNameWithParams.split('?')[0];
-    
-    // Remove the prefix ID(s) (everything before and including the last underscore)
-    const lastUnderscoreIndex = fileNameWithoutParams.lastIndexOf('_');
-    
-    if (lastUnderscoreIndex !== -1) {
-      const actualFileName = fileNameWithoutParams.substring(lastUnderscoreIndex + 1);
-      return actualFileName || 'Campaign Image';
-    }
-    
-    return fileNameWithoutParams || 'Campaign Image';
-  };
-
   return (
     <Dialog
       open={open}
@@ -317,8 +228,6 @@ const CampaignModal = ({
             width: '100%',
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
-            overflow: 'visible',
-            zIndex: 1,
             '& .hover-controls': {
               opacity: 0,
               transition: 'opacity 0.2s ease-in-out',
@@ -329,70 +238,20 @@ const CampaignModal = ({
           }}
           onClick={handleImageClick}
         >
-          {/* Close Button - Updated styling */}
-          <Tooltip 
-            title="Close" 
-            arrow 
-            placement="bottom"
-            PopperProps={{
-              sx: {
-                zIndex: 10001,
-              },
-            }}
-            slotProps={{
-              tooltip: {
-                sx: {
-                  bgcolor: 'rgba(0, 0, 0, 0.9)',
-                  color: 'white',
-                  fontSize: { xs: '11px', md: '12px' },
-                  fontWeight: 500,
-                },
-              },
-              arrow: {
-                sx: {
-                  color: 'rgba(0, 0, 0, 0.9)',
-                },
-              },
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              color: 'white',
+              '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+              zIndex: 1,
             }}
           >
-            <Button
-              onClick={handleClose}
-              sx={{
-                position: 'absolute',
-                top: { xs: 8, md: 12 },
-                right: { xs: 8, md: 12 },
-                minWidth: { xs: '36px', md: '40px' },
-                width: { xs: '36px', md: '40px' },
-                height: { xs: '36px', md: '40px' },
-                p: 0,
-                color: '#ffffff',
-                border: '1px solid #28292C',
-                borderRadius: '8px',
-                fontWeight: 650,
-                zIndex: 1000,
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: { xs: '3px', md: '4px' },
-                  left: { xs: '3px', md: '4px' },
-                  right: { xs: '3px', md: '4px' },
-                  bottom: { xs: '3px', md: '4px' },
-                  borderRadius: '4px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                  transition: 'background-color 0.2s ease',
-                  zIndex: -1,
-                },
-                '&:hover::before': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                },
-                '&:hover': {
-                  bgcolor: 'transparent',
-                },
-              }}
-            >
-              <Iconify icon="eva:close-fill" width={{ xs: 18, md: 20 }} />
-            </Button>
-          </Tooltip>
+            <CloseIcon />
+          </IconButton>
 
           <Image
             src={images[currentImageIndex]}
@@ -471,184 +330,58 @@ const CampaignModal = ({
           {/* Image navigation buttons */}
           {images.length > 1 && (
             <>
-              <Tooltip 
-                title="Previous Image" 
-                arrow 
-                placement="left"
-                PopperProps={{
-                  sx: {
-                    zIndex: 10001,
-                  },
-                }}
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      bgcolor: 'rgba(0, 0, 0, 0.9)',
-                      color: 'white',
-                      fontSize: { xs: '11px', md: '12px' },
-                      fontWeight: 500,
-                    },
-                  },
-                  arrow: {
-                    sx: {
-                      color: 'rgba(0, 0, 0, 0.9)',
-                    },
+              <IconButton
+                className="hover-controls"
+                onClick={handlePrevImage}
+                sx={{
+                  position: 'absolute',
+                  left: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'rgba(0, 0, 0, 0.7)',
                   },
                 }}
               >
-                <Button
-                  className="hover-controls"
-                  onClick={handlePrevImage}
-                  sx={{
-                    position: 'absolute',
-                    left: 8,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    minWidth: { xs: '36px', md: '40px' },
-                    width: { xs: '36px', md: '40px' },
-                    height: { xs: '36px', md: '40px' },
-                    p: 0,
-                    color: '#ffffff',
-                    border: '1px solid #28292C',
-                    borderRadius: '8px',
-                    fontWeight: 650,
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: { xs: '3px', md: '4px' },
-                      left: { xs: '3px', md: '4px' },
-                      right: { xs: '3px', md: '4px' },
-                      bottom: { xs: '3px', md: '4px' },
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                      transition: 'background-color 0.2s ease',
-                      zIndex: -1,
-                    },
-                    '&:hover::before': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    },
-                    '&:hover': {
-                      bgcolor: 'transparent',
-                    },
-                  }}
-                >
-                  <ArrowBackIosNewIcon sx={{ fontSize: { xs: 16, md: 18 } }} />
-                </Button>
-              </Tooltip>
-              <Tooltip 
-                title="Next Image" 
-                arrow 
-                placement="right"
-                PopperProps={{
-                  sx: {
-                    zIndex: 10001,
-                  },
-                }}
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      bgcolor: 'rgba(0, 0, 0, 0.9)',
-                      color: 'white',
-                      fontSize: { xs: '11px', md: '12px' },
-                      fontWeight: 500,
-                    },
-                  },
-                  arrow: {
-                    sx: {
-                      color: 'rgba(0, 0, 0, 0.9)',
-                    },
+                <ArrowBackIosNewIcon />
+              </IconButton>
+              <IconButton
+                className="hover-controls"
+                onClick={handleNextImage}
+                sx={{
+                  position: 'absolute',
+                  right: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'rgba(0, 0, 0, 0.7)',
                   },
                 }}
               >
-                <Button
-                  className="hover-controls"
-                  onClick={handleNextImage}
-                  sx={{
-                    position: 'absolute',
-                    right: 8,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    minWidth: { xs: '36px', md: '40px' },
-                    width: { xs: '36px', md: '40px' },
-                    height: { xs: '36px', md: '40px' },
-                    p: 0,
-                    color: '#ffffff',
-                    border: '1px solid #28292C',
-                    borderRadius: '8px',
-                    fontWeight: 650,
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: { xs: '3px', md: '4px' },
-                      left: { xs: '3px', md: '4px' },
-                      right: { xs: '3px', md: '4px' },
-                      bottom: { xs: '3px', md: '4px' },
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                      transition: 'background-color 0.2s ease',
-                      zIndex: -1,
-                    },
-                    '&:hover::before': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    },
-                    '&:hover': {
-                      bgcolor: 'transparent',
-                    },
-                  }}
-                >
-                  <ArrowForwardIosIcon sx={{ fontSize: { xs: 16, md: 18 } }} />
-                </Button>
-              </Tooltip>
+                <ArrowForwardIosIcon />
+              </IconButton>
             </>
           )}
-          <Tooltip 
-            title="View Full Size" 
-            arrow 
-            placement="top"
-            PopperProps={{
-              sx: {
-                zIndex: 10001,
-              },
-            }}
-            slotProps={{
-              tooltip: {
-                sx: {
-                  bgcolor: 'rgba(0, 0, 0, 0.9)',
-                  color: 'white',
-                  fontSize: { xs: '11px', md: '12px' },
-                  fontWeight: 500,
-                },
-              },
-              arrow: {
-                sx: {
-                  color: 'rgba(0, 0, 0, 0.9)',
-                },
-              },
+          <Box
+            className="hover-controls"
+            sx={{
+              position: 'absolute',
+              bottom: 8,
+              right: 8,
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              borderRadius: '50%',
+              p: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <Box
-              className="hover-controls"
-              sx={{
-                position: 'absolute',
-                bottom: 8,
-                right: 8,
-                bgcolor: 'rgba(0, 0, 0, 0.5)',
-                border: '1px solid #28292C',
-                borderRadius: '8px',
-                p: 0.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s ease',
-                '&:hover': {
-                  bgcolor: 'rgba(0, 0, 0, 0.7)',
-                },
-              }}
-            >
-              <ZoomInIcon sx={{ color: 'white', fontSize: { xs: 20, md: 24 } }} />
-            </Box>
-          </Tooltip>
+            <ZoomInIcon sx={{ color: 'white', fontSize: 24 }} />
+          </Box>
         </Box>
 
         {/* Campaign info */}
@@ -1300,502 +1033,58 @@ const CampaignModal = ({
       <Dialog
         open={fullImageOpen}
         onClose={handleFullImageClose}
-        fullScreen
+        maxWidth={false}
         PaperProps={{
           sx: {
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            m: 'auto',
+            borderRadius: 2,
             overflow: 'hidden',
-            position: 'relative',
-          },
-        }}
-        sx={{
-          zIndex: 9999,
-          '& .MuiDialog-container': {
-            alignItems: 'center',
-            justifyContent: 'center',
-          },
-          '& .MuiDialog-paper': {
-            m: 0,
-            width: '100%',
-            height: '100%',
+            bgcolor: 'background.paper',
           },
         }}
       >
-        {/* Company Profile Info - Top Left */}
-        <Box
-          sx={{
-            position: 'fixed',
-            top: { xs: 10, md: 20 },
-            left: { xs: 10, md: 20 },
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: { xs: 1, md: 1.5 },
-            borderRadius: '8px',
-            p: { xs: 1.5, md: 2 },
-            height: { xs: '56px', md: '64px' },
-            minWidth: { xs: '180px', md: '200px' },
-          }}
-        >
-          <Avatar
-            src={campaign?.company?.logo}
-            alt={campaign?.company?.name}
-            sx={{ width: { xs: 36, md: 40 }, height: { xs: 36, md: 40 } }}
-          />
-          <Stack spacing={0.5}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                fontWeight: 600,
-                color: '#e7e7e7',
-                fontSize: { xs: '13px', md: '14px' },
-                lineHeight: 1.3,
-              }}
-            >
-              {campaign?.company?.name || 'Company'}
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: '#85868E',
-                fontSize: { xs: '11px', md: '12px' },
-                lineHeight: 1.3,
-              }}
-            >
-              {renderCampaignPeriod()}
-            </Typography>
-          </Stack>
-        </Box>
-
-        {/* Action Buttons - Top Right */}
-        <Stack
-          direction="row"
-          spacing={{ xs: 0.5, md: 1 }}
-          sx={{
-            position: 'fixed',
-            top: { xs: 10, md: 20 },
-            right: { xs: 10, md: 20 },
-            zIndex: 10000,
-          }}
-        >
-          {/* Grouped Action Buttons */}
-          <Box
-            sx={{
-              display: 'flex',
-              border: '1px solid #28292C',
-              borderRadius: '8px',
-              overflow: 'hidden',
-            }}
-          >
-            <Tooltip 
-              title="Copy Link" 
-              arrow 
-              placement="bottom"
-              PopperProps={{
-                sx: {
-                  zIndex: 10001,
-                },
-              }}
-              slotProps={{
-                tooltip: {
-                  sx: {
-                    bgcolor: 'rgba(0, 0, 0, 0.9)',
-                    color: 'white',
-                    fontSize: { xs: '11px', md: '12px' },
-                    fontWeight: 500,
-                  },
-                },
-                arrow: {
-                  sx: {
-                    color: 'rgba(0, 0, 0, 0.9)',
-                  },
-                },
-              }}
-            >
-              <Button
-                onClick={handleCopyLink}
-                sx={{
-                  minWidth: { xs: '40px', md: '44px' },
-                  width: { xs: '40px', md: '44px' },
-                  height: { xs: '40px', md: '44px' },
-                  p: 0,
-                  bgcolor: 'transparent',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 650,
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: { xs: '3px', md: '4px' },
-                    left: { xs: '3px', md: '4px' },
-                    right: { xs: '3px', md: '4px' },
-                    bottom: { xs: '3px', md: '4px' },
-                    borderRadius: '4px',
-                    backgroundColor: 'transparent',
-                    transition: 'background-color 0.2s ease',
-                    zIndex: -1,
-                  },
-                  '&:hover::before': {
-                    backgroundColor: '#5A5A5C',
-                  },
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                  },
-                }}
-              >
-                <Iconify icon="eva:link-2-fill" width={{ xs: 16, md: 18 }} />
-              </Button>
-            </Tooltip>
-
-            <Tooltip 
-              title="Download Image" 
-              arrow 
-              placement="bottom"
-              PopperProps={{
-                sx: {
-                  zIndex: 10001,
-                },
-              }}
-              slotProps={{
-                tooltip: {
-                  sx: {
-                    bgcolor: 'rgba(0, 0, 0, 0.9)',
-                    color: 'white',
-                    fontSize: { xs: '11px', md: '12px' },
-                    fontWeight: 500,
-                  },
-                },
-                arrow: {
-                  sx: {
-                    color: 'rgba(0, 0, 0, 0.9)',
-                  },
-                },
-              }}
-            >
-              <Button
-                onClick={handleDownloadClick}
-                sx={{
-                  minWidth: { xs: '40px', md: '44px' },
-                  width: { xs: '40px', md: '44px' },
-                  height: { xs: '40px', md: '44px' },
-                  p: 0,
-                  bgcolor: 'transparent',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 650,
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: { xs: '3px', md: '4px' },
-                    left: { xs: '3px', md: '4px' },
-                    right: { xs: '3px', md: '4px' },
-                    bottom: { xs: '3px', md: '4px' },
-                    borderRadius: '4px',
-                    backgroundColor: 'transparent',
-                    transition: 'background-color 0.2s ease',
-                    zIndex: -1,
-                  },
-                  '&:hover::before': {
-                    backgroundColor: '#5A5A5C',
-                  },
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                  },
-                }}
-              >
-                <Iconify icon="eva:download-fill" width={{ xs: 16, md: 18 }} />
-              </Button>
-            </Tooltip>
-
-            <Tooltip 
-              title="File Details" 
-              arrow 
-              placement="bottom"
-              PopperProps={{
-                sx: {
-                  zIndex: 10001,
-                },
-              }}
-              slotProps={{
-                tooltip: {
-                  sx: {
-                    bgcolor: 'rgba(0, 0, 0, 0.9)',
-                    color: 'white',
-                    fontSize: { xs: '11px', md: '12px' },
-                    fontWeight: 500,
-                  },
-                },
-                arrow: {
-                  sx: {
-                    color: 'rgba(0, 0, 0, 0.9)',
-                  },
-                },
-              }}
-            >
-              <Button
-                onClick={handleFileDetailsClick}
-                sx={{
-                  minWidth: { xs: '40px', md: '44px' },
-                  width: { xs: '40px', md: '44px' },
-                  height: { xs: '40px', md: '44px' },
-                  p: 0,
-                  bgcolor: 'transparent',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 650,
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: { xs: '3px', md: '4px' },
-                    left: { xs: '3px', md: '4px' },
-                    right: { xs: '3px', md: '4px' },
-                    bottom: { xs: '3px', md: '4px' },
-                    borderRadius: '4px',
-                    backgroundColor: 'transparent',
-                    transition: 'background-color 0.2s ease',
-                    zIndex: -1,
-                  },
-                  '&:hover::before': {
-                    backgroundColor: '#5A5A5C',
-                  },
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                  },
-                }}
-              >
-                <Iconify icon="eva:info-outline" width={{ xs: 16, md: 18 }} />
-              </Button>
-            </Tooltip>
-          </Box>
-
-          {/* Close Button - Separate */}
-          <Tooltip 
-            title="Close" 
-            arrow 
-            placement="bottom"
-            PopperProps={{
-              sx: {
-                zIndex: 10001,
-              },
-            }}
-            slotProps={{
-              tooltip: {
-                sx: {
-                  bgcolor: 'rgba(0, 0, 0, 0.9)',
-                  color: 'white',
-                  fontSize: { xs: '11px', md: '12px' },
-                  fontWeight: 500,
-                },
-              },
-              arrow: {
-                sx: {
-                  color: 'rgba(0, 0, 0, 0.9)',
-                },
-              },
-            }}
-          >
-            <Button
-              onClick={handleFullImageClose}
-              sx={{
-                minWidth: { xs: '40px', md: '44px' },
-                width: { xs: '40px', md: '44px' },
-                height: { xs: '40px', md: '44px' },
-                p: 0,
-                color: '#ffffff',
-                border: '1px solid #28292C',
-                borderRadius: '8px',
-                fontWeight: 650,
-                position: 'relative',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: { xs: '3px', md: '4px' },
-                  left: { xs: '3px', md: '4px' },
-                  right: { xs: '3px', md: '4px' },
-                  bottom: { xs: '3px', md: '4px' },
-                  borderRadius: '4px',
-                  backgroundColor: 'transparent',
-                  transition: 'background-color 0.2s ease',
-                  zIndex: -1,
-                },
-                '&:hover::before': {
-                  backgroundColor: '#5A5A5C',
-                },
-                '&:hover': {
-                  bgcolor: 'transparent',
-                },
-              }}
-            >
-              <Iconify icon="eva:close-fill" width={{ xs: 20, md: 22 }} />
-            </Button>
-          </Tooltip>
-        </Stack>
-
-        {/* Link Copied Indicator */}
-        <Box
-          sx={{
-            position: 'fixed',
-            top: { xs: 56, md: 76 },
-            right: { xs: 10, md: 20 },
-            zIndex: 10002,
-            opacity: showLinkCopied ? 1 : 0,
-            transform: showLinkCopied ? 'translateY(0)' : 'translateY(-10px)',
-            transition: 'all 0.3s ease-in-out',
-            pointerEvents: 'none',
-            width: { xs: '150px', md: '172px' },
-          }}
-        >
-          <Box
-            sx={{
-              bgcolor: '#4CAF50',
-              border: '1px solid #45A049',
-              borderBottom: '3px solid #45A049',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              p: { xs: 1, md: 1.5 },
-              display: 'flex',
-              alignItems: 'start',
-              justifyContent: 'start',
-              gap: 1,
-            }}
-          >
-            <Iconify icon="eva:checkmark-circle-2-fill" width={{ xs: 14, md: 16 }} color="white" />
-            <Typography
-              sx={{
-                fontFamily: 'Inter',
-                fontWeight: 600,
-                color: 'white',
-                fontSize: { xs: '11px', md: '12px' },
-              }}
-            >
-              Link Copied
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* File Details Popover */}
-        <Popover
-          open={Boolean(fileDetailsAnchor)}
-          anchorEl={fileDetailsAnchor}
-          onClose={handleFileDetailsClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'center',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'center',
-          }}
-          sx={{
-            zIndex: 10002,
-            mt: 1,
-          }}
-          PaperProps={{
-            sx: {
-              bgcolor: '#FFFFFF',
-              border: '1px solid #E7E7E7',
-              borderBottom: '3px solid #E7E7E7',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              minWidth: '200px',
-            },
-          }}
-        >
-          <Box sx={{ p: 2 }}>
-            <Typography
-              sx={{
-                fontFamily: 'Inter',
-                fontWeight: 600,
-                color: '#000',
-                fontSize: '14px',
-                mb: 1,
-              }}
-            >
-              File Details
-            </Typography>
-            <Divider sx={{ mb: 1.5 }} />
-            
-            <Stack spacing={1}>
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: '#666',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                  }}
-                >
-                  Filename
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#000',
-                    fontSize: '13px',
-                    wordBreak: 'break-all',
-                  }}
-                >
-                  {getFileName()}
-                </Typography>
-              </Box>
-              
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: '#666',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                  }}
-                >
-                  Campaign
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#000',
-                    fontSize: '13px',
-                  }}
-                >
-                  {campaign?.name || 'Campaign Image'}
-                </Typography>
-              </Box>
-            </Stack>
-          </Box>
-        </Popover>
-
         <DialogContent
           ref={dialogContentRef}
           sx={{
             p: 0,
-            m: 0,
             position: 'relative',
-            overflow: 'hidden',
+            overflow: 'auto',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'transparent',
-            height: '100vh',
+            '&::-webkit-scrollbar': {
+              width: '0.4em',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(0,0,0,.3)',
+              borderRadius: '4px',
+            },
           }}
         >
+          <IconButton
+            onClick={handleFullImageClose}
+            sx={{
+              position: 'fixed',
+              right: 16,
+              top: 16,
+              color: 'white',
+              bgcolor: 'rgba(0, 0, 0, 0.5)',
+              '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+              zIndex: 1,
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
           <Box
             sx={{
               display: 'flex',
               justifyContent: 'center',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               minHeight: '100%',
               width: '100%',
-              py: 0,
+              py: 2,
             }}
           >
             <Image
@@ -1803,145 +1092,42 @@ const CampaignModal = ({
               alt={`Full size campaign image ${currentImageIndex + 1}`}
               onLoad={handleImageLoad}
               sx={{
-                maxWidth: '90%',
-                maxHeight: '90%',
+                maxWidth: '100%',
+                height: 'auto',
                 objectFit: 'contain',
-                borderRadius: 2,
-                border: 'none',
-                display: 'block',
-                margin: 0,
-                padding: 0,
               }}
             />
           </Box>
           {images.length > 1 && (
             <>
-              <Tooltip 
-                title="Previous Image" 
-                arrow 
-                placement="left"
-                PopperProps={{
-                  sx: {
-                    zIndex: 10001,
-                  },
-                }}
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      bgcolor: 'rgba(0, 0, 0, 0.9)',
-                      color: 'white',
-                      fontSize: { xs: '11px', md: '12px' },
-                      fontWeight: 500,
-                    },
-                  },
-                  arrow: {
-                    sx: {
-                      color: 'rgba(0, 0, 0, 0.9)',
-                    },
-                  },
+              <IconButton
+                onClick={handlePrevImage}
+                sx={{
+                  position: 'fixed',
+                  left: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
                 }}
               >
-                <Button
-                  onClick={handlePrevImage}
-                  sx={{
-                    position: 'absolute',
-                    left: 8,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    minWidth: { xs: '36px', md: '40px' },
-                    width: { xs: '36px', md: '40px' },
-                    height: { xs: '36px', md: '40px' },
-                    p: 0,
-                    color: '#ffffff',
-                    border: '1px solid #28292C',
-                    borderRadius: '8px',
-                    fontWeight: 650,
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: { xs: '3px', md: '4px' },
-                      left: { xs: '3px', md: '4px' },
-                      right: { xs: '3px', md: '4px' },
-                      bottom: { xs: '3px', md: '4px' },
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                      transition: 'background-color 0.2s ease',
-                      zIndex: -1,
-                    },
-                    '&:hover::before': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    },
-                    '&:hover': {
-                      bgcolor: 'transparent',
-                    },
-                  }}
-                >
-                  <ArrowBackIosNewIcon sx={{ fontSize: { xs: 16, md: 18 } }} />
-                </Button>
-              </Tooltip>
-              <Tooltip 
-                title="Next Image" 
-                arrow 
-                placement="right"
-                PopperProps={{
-                  sx: {
-                    zIndex: 10001,
-                  },
-                }}
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      bgcolor: 'rgba(0, 0, 0, 0.9)',
-                      color: 'white',
-                      fontSize: { xs: '11px', md: '12px' },
-                      fontWeight: 500,
-                    },
-                  },
-                  arrow: {
-                    sx: {
-                      color: 'rgba(0, 0, 0, 0.9)',
-                    },
-                  },
+                <ArrowBackIosNewIcon />
+              </IconButton>
+              <IconButton
+                onClick={handleNextImage}
+                sx={{
+                  position: 'fixed',
+                  right: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(0, 0, 0, 0.5)',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
                 }}
               >
-                <Button
-                  onClick={handleNextImage}
-                  sx={{
-                    position: 'absolute',
-                    right: 8,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    minWidth: { xs: '36px', md: '40px' },
-                    width: { xs: '36px', md: '40px' },
-                    height: { xs: '36px', md: '40px' },
-                    p: 0,
-                    color: '#ffffff',
-                    border: '1px solid #28292C',
-                    borderRadius: '8px',
-                    fontWeight: 650,
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: { xs: '3px', md: '4px' },
-                      left: { xs: '3px', md: '4px' },
-                      right: { xs: '3px', md: '4px' },
-                      bottom: { xs: '3px', md: '4px' },
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                      transition: 'background-color 0.2s ease',
-                      zIndex: -1,
-                    },
-                    '&:hover::before': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    },
-                    '&:hover': {
-                      bgcolor: 'transparent',
-                    },
-                  }}
-                >
-                  <ArrowForwardIosIcon sx={{ fontSize: { xs: 16, md: 18 } }} />
-                </Button>
-              </Tooltip>
+                <ArrowForwardIosIcon />
+              </IconButton>
             </>
           )}
         </DialogContent>

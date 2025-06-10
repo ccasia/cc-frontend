@@ -103,20 +103,6 @@ const MobileModalView = lazy(
   () => import('src/sections/campaign/discover/creator/mobile-modal-view')
 );
 
-// Mobile Campaign Stage Pages
-const MobileAgreementPage = lazy(
-  () => import('src/pages/dashboard/campaign/creator/mobile-agreement-page')
-);
-const MobileFirstDraftPage = lazy(
-  () => import('src/pages/dashboard/campaign/creator/mobile-first-draft-page')
-);
-const MobileFinalDraftPage = lazy(
-  () => import('src/pages/dashboard/campaign/creator/mobile-final-draft-page')
-);
-const MobilePostingPage = lazy(
-  () => import('src/pages/dashboard/campaign/creator/mobile-posting-page')
-);
-
 // Creator Profile
 const CreatorProfile = lazy(() => import('src/pages/dashboard/creator/profile'));
 
@@ -482,48 +468,11 @@ export const dashboardRoutes = [
               },
               {
                 path: 'detail/:id',
-                children: [
-                  {
-                    index: true,
-                    element: (
-                      <RoleBasedGuard hasContent roles={['creator']}>
-                        <ManageCampaignDetailView />
-                      </RoleBasedGuard>
-                    ),
-                  },
-                  {
-                    path: 'agreement',
-                    element: (
-                      <RoleBasedGuard hasContent roles={['creator']}>
-                        <MobileAgreementPage />
-                      </RoleBasedGuard>
-                    ),
-                  },
-                  {
-                    path: 'first-draft',
-                    element: (
-                      <RoleBasedGuard hasContent roles={['creator']}>
-                        <MobileFirstDraftPage />
-                      </RoleBasedGuard>
-                    ),
-                  },
-                  {
-                    path: 'final-draft',
-                    element: (
-                      <RoleBasedGuard hasContent roles={['creator']}>
-                        <MobileFinalDraftPage />
-                      </RoleBasedGuard>
-                    ),
-                  },
-                  {
-                    path: 'posting',
-                    element: (
-                      <RoleBasedGuard hasContent roles={['creator']}>
-                        <MobilePostingPage />
-                      </RoleBasedGuard>
-                    ),
-                  },
-                ],
+                element: (
+                  <RoleBasedGuard hasContent roles={['creator']}>
+                    <ManageCampaignDetailView />
+                  </RoleBasedGuard>
+                ),
               },
             ],
           },

@@ -1,8 +1,6 @@
 import { Container, Typography } from "@mui/material"
-
-import { useSettingsContext } from "src/components/settings";
-
 import ReportLanding from "../components/report-landing";
+import { useSettingsContext } from "src/components/settings";
 import CampaignPerformanceTable from "../components/campaign-performance-table";
 
 const ReportingList = () => {
