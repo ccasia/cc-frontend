@@ -21,7 +21,6 @@ export default function Main({ children, sx, ...other }) {
   const lgUp = useResponsive('up', 'lg');
 
   const isNavHorizontal = settings.themeLayout === 'horizontal';
-  const isCollapsed = settings.themeLayout === 'mini';
 
   const mainRef = useRef(null);
 
@@ -57,6 +56,7 @@ export default function Main({ children, sx, ...other }) {
         ref={mainRef}
         component="main"
         sx={{
+          // position: 'relative',
           display: 'flex',
           flexGrow: 1,
           height: 1,
@@ -64,12 +64,8 @@ export default function Main({ children, sx, ...other }) {
           flexDirection: 'column',
           py: `${HEADER.H_MOBILE + SPACING}px`,
           ...(lgUp && {
-            px: isCollapsed ? 1.5 : 2,
+            px: 2,
             py: `${HEADER.H_DESKTOP + SPACING}px`,
-            transition: (theme) => theme.transitions.create(['padding-left', 'padding-right'], {
-              duration: theme.transitions.duration.standard,
-              easing: theme.transitions.easing.easeInOut,
-            }),
           }),
           ...sx,
         }}

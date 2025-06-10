@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <>
       <Helmet>
-        <title>Invoices</title>
+        <title>Invoice Creator</title>
       </Helmet>
 
       <CreatorInvoice />

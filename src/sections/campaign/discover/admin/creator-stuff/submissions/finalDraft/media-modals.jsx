@@ -130,10 +130,12 @@ const VideoModal = ({
   };
 
   // Helper function to get the caption from various possible locations
-  const getCaption = () => submission?.caption || 
+  const getCaption = () => {
+    return submission?.caption || 
            submission?.firstDraft?.caption || 
            submission?.finalDraft?.caption || 
            null;
+  };
 
   return (
     <Dialog

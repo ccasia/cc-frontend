@@ -3,7 +3,6 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Popover from '@mui/material/Popover';
-import Collapse from '@mui/material/Collapse';
 
 import { usePathname } from 'src/routes/hooks';
 import { useActiveLink } from 'src/routes/hooks/use-active-link';
@@ -11,26 +10,6 @@ import { useActiveLink } from 'src/routes/hooks/use-active-link';
 import NavItem from './nav-item';
 
 // ----------------------------------------------------------------------
-
-// Helper function to generate unique keys from navigation items
-const getNavItemKey = (item, index) => {
-  if (item.path) {
-    return item.path;
-  }
-  
-  // If title is a React element, try to extract text content
-  if (typeof item.title === 'object' && item.title?.props?.children) {
-    return `nav-${item.title.props.children.replace(/\s+/g, '-').toLowerCase()}-${index}`;
-  }
-  
-  // If title is a string
-  if (typeof item.title === 'string') {
-    return `nav-${item.title.replace(/\s+/g, '-').toLowerCase()}-${index}`;
-  }
-  
-  // Fallback to index
-  return `nav-item-${index}`;
-};
 
 export default function NavList({ data, depth, slotProps }) {
   const navRef = useRef(null);
@@ -115,11 +94,7 @@ export default function NavList({ data, depth, slotProps }) {
             pointerEvents: 'none',
           }}
         >
-          <Collapse in={openMenu} unmountOnExit>
-            <Stack spacing={0.25} sx={{ mt: 0.25 }}>
-              <NavSubList data={data.children} depth={depth} slotProps={slotProps} />
-            </Stack>
-          </Collapse>
+          <NavSubList data={data.children} depth={depth} slotProps={slotProps} />
         </Popover>
       )}
     </>
@@ -137,8 +112,8 @@ NavList.propTypes = {
 function NavSubList({ data, depth, slotProps }) {
   return (
     <Stack spacing={0.5}>
-      {data.map((list, index) => (
-        <NavList key={getNavItemKey(list, index)} data={list} depth={depth + 1} slotProps={slotProps} />
+      {data.map((list) => (
+        <NavList key={list.title} data={list} depth={depth + 1} slotProps={slotProps} />
       ))}
     </Stack>
   );
