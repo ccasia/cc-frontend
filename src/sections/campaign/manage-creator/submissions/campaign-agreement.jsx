@@ -15,7 +15,6 @@ import {
   Dialog,
   Avatar,
   Divider,
-  Tooltip,
   Typography,
   IconButton,
   DialogTitle,
@@ -94,18 +93,15 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
   const [submitStatus, setSubmitStatus] = useState('');
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
-  const [pdfLoading, setPdfLoading] = useState(true);
-  const [pdfError, setPdfError] = useState(null);
+  const [pdfError, setPdfError] = useState(false);
 
   // eslint-disable-next-line no-shadow
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
-    setPdfLoading(false);
   };
 
   const onDocumentLoadError = (error) => {
-    setPdfError(error);
-    setPdfLoading(false);
+    setPdfError(true);
     enqueueSnackbar('Error to load PDF', { variant: 'error' });
     console.error('Error loading PDF:', error);
   };
@@ -208,6 +204,42 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
     setShowSubmitDialog(false);
     setSubmitStatus('');
   };
+
+  // const handleDownload = async (url) => {
+  //   try {
+  //     const response = await fetch(url);
+  //     // const contentType = response.headers.get('content-type');
+  //     const blob = await response.blob();
+  //     const filename = `${campaign?.id}-${campaign?.name}.pdf?v=${dayjs().toISOString()}.pdf`;
+
+  //     // For browsers that support the download attribute
+  //     if ('download' in document.createElement('a')) {
+  //       const link = document.createElement('a');
+  //       link.href = window.URL.createObjectURL(blob);
+  //       link.download = filename;
+  //       link.style.display = 'none';
+  //       document.body.appendChild(link);
+  //       link.click();
+  //       document.body.removeChild(link);
+  //       window.URL.revokeObjectURL(link.href);
+  //     }
+  //     // For IE10+
+  //     else if (navigator.msSaveBlob) {
+  //       navigator.msSaveBlob(blob, filename);
+  //     }
+  //     // Fallback - open in new window
+  //     else {
+  //       const newWindow = window.open(url, '_blank');
+  //       if (!newWindow) {
+  //         enqueueSnackbar('Please allow popups for this website to download the file.', {
+  //           variant: 'warning',
+  //         });
+  //       }
+  //     }
+  //   } catch (error) {
+  //     enqueueSnackbar('Download failed. Please try again.', { variant: 'error' });
+  //   }
+  // };
 
   const handleDownload = async (url) => {
     try {
@@ -1078,446 +1110,67 @@ const CampaignAgreement = ({ campaign, timeline, submission, agreementStatus }) 
         </>
       )}
 
-      <Dialog
-        open={display.value}
-        onClose={display.onFalse}
-        fullScreen
-        PaperProps={{
-          sx: {
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            overflow: 'hidden',
-            position: 'relative',
-          },
-        }}
-        sx={{
-          zIndex: 9999,
-          '& .MuiDialog-container': {
-            alignItems: 'center',
-            justifyContent: 'center',
-          },
-          '& .MuiDialog-paper': {
-            m: 0,
-            width: '100%',
-            height: '100%',
-          },
-        }}
-      >
-        {/* Header Info - Top Left */}
-        <Box
-          sx={{
-            position: 'fixed',
-            top: { xs: 10, md: 20 },
-            left: { xs: 10, md: 20 },
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: { xs: 1, md: 1.5 },
-            borderRadius: '8px',
-            p: { xs: 1.5, md: 2 },
-            height: { xs: '56px', md: '64px' },
-            minWidth: { xs: '200px', md: '240px' },
-          }}
-        >
-          <Box
-            sx={{
-              width: { xs: 36, md: 40 },
-              height: { xs: 36, md: 40 },
-              borderRadius: 1,
-              bgcolor: '#1340ff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Iconify
-              icon="solar:document-bold"
-              sx={{
-                color: 'white',
-                width: { xs: 18, md: 20 },
-                height: { xs: 18, md: 20 },
-              }}
-            />
-          </Box>
-          <Stack spacing={0.5}>
+      <Dialog open={display.value} onClose={display.onFalse} fullWidth maxWidth="md">
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" gap={2}>
+            <Box>
               <Typography
-              variant="subtitle2"
+                variant="h5"
                 sx={{
-                fontWeight: 600,
-                color: '#e7e7e7',
-                fontSize: { xs: '13px', md: '14px' },
-                lineHeight: 1.3,
-              }}
-            >
-              Preview Agreement
+                  fontFamily: 'Instrument Serif, serif',
+                  fontSize: { xs: '2rem', sm: '2.4rem' },
+                  fontWeight: 550,
+                }}
+              >
+                Preview Document
               </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: '#85868E',
-                fontSize: { xs: '11px', md: '12px' },
-                lineHeight: 1.3,
-              }}
-            >
-              {campaign?.name}
-            </Typography>
-          </Stack>
             </Box>
 
-        {/* Action Buttons - Top Right */}
-        <Stack
-          direction="row"
-          spacing={{ xs: 0.5, md: 1 }}
-          sx={{
-            position: 'fixed',
-            top: { xs: 10, md: 20 },
-            right: { xs: 10, md: 20 },
-            zIndex: 10000,
-          }}
-        >
-          {/* Download Button */}
-          {submission?.content && (
-            <Tooltip 
-              title="Download PDF" 
-              arrow 
-              placement="bottom"
-              PopperProps={{
-                sx: {
-                  zIndex: 10001,
-                },
-              }}
-              slotProps={{
-                tooltip: {
-                  sx: {
-                    bgcolor: 'rgba(0, 0, 0, 0.9)',
-                    color: 'white',
-                    fontSize: { xs: '11px', md: '12px' },
-                    fontWeight: 500,
-                  },
-                },
-                arrow: {
-                  sx: {
-                    color: 'rgba(0, 0, 0, 0.9)',
-                  },
-                },
-              }}
-            >
-              <Button
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = submission.content;
-                  link.download = 'agreement-document.pdf';
-                  link.click();
-                }}
-                sx={{
-                  minWidth: { xs: '40px', md: '44px' },
-                  width: { xs: '40px', md: '44px' },
-                  height: { xs: '40px', md: '44px' },
-                  p: 0,
-                  bgcolor: 'transparent',
-                  color: '#ffffff',
-                  border: '1px solid #28292C',
-                  borderRadius: '8px',
-                  fontWeight: 650,
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: { xs: '3px', md: '4px' },
-                    left: { xs: '3px', md: '4px' },
-                    right: { xs: '3px', md: '4px' },
-                    bottom: { xs: '3px', md: '4px' },
-                    borderRadius: '4px',
-                    backgroundColor: 'transparent',
-                    transition: 'background-color 0.2s ease',
-                    zIndex: -1,
-                  },
-                  '&:hover::before': {
-                    backgroundColor: '#5A5A5C',
-                  },
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                  },
-                }}
-              >
-                <Iconify icon="eva:download-fill" width={{ xs: 16, md: 18 }} />
-              </Button>
-            </Tooltip>
-          )}
-
-          {/* Close Button */}
-          <Tooltip 
-            title="Close" 
-            arrow 
-            placement="bottom"
-            PopperProps={{
-              sx: {
-                zIndex: 10001,
-              },
-            }}
-            slotProps={{
-              tooltip: {
-                sx: {
-                  bgcolor: 'rgba(0, 0, 0, 0.9)',
-                  color: 'white',
-                  fontSize: { xs: '11px', md: '12px' },
-                  fontWeight: 500,
-                },
-              },
-              arrow: {
-                sx: {
-                  color: 'rgba(0, 0, 0, 0.9)',
-                },
-              },
-            }}
-          >
-            <Button
+            <IconButton
               onClick={display.onFalse}
               sx={{
-                minWidth: { xs: '40px', md: '44px' },
-                width: { xs: '40px', md: '44px' },
-                height: { xs: '40px', md: '44px' },
-                p: 0,
-                color: '#ffffff',
-                border: '1px solid #28292C',
-                borderRadius: '8px',
-                fontWeight: 650,
-                position: 'relative',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: { xs: '3px', md: '4px' },
-                  left: { xs: '3px', md: '4px' },
-                  right: { xs: '3px', md: '4px' },
-                  bottom: { xs: '3px', md: '4px' },
-                  borderRadius: '4px',
-                  backgroundColor: 'transparent',
-                  transition: 'background-color 0.2s ease',
-                  zIndex: -1,
-                },
-                '&:hover::before': {
-                  backgroundColor: '#5A5A5C',
-                },
-                '&:hover': {
-                  bgcolor: 'transparent',
+                ml: 'auto',
+                '& svg': {
+                  width: 24,
+                  height: 24,
+                  color: '#636366',
                 },
               }}
             >
-              <Iconify icon="eva:close-fill" width={{ xs: 20, md: 22 }} />
-            </Button>
-          </Tooltip>
+              <Iconify icon="hugeicons:cancel-01" width={24} />
+            </IconButton>
           </Stack>
+        </DialogTitle>
 
-        {/* PDF Content */}
+        <Divider sx={{ width: '95%', mx: 'auto' }} />
+
+        <DialogContent sx={{ p: 3 }}>
           <Box
             sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-            height: '100vh',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            pt: { xs: '80px', md: '100px' },
-            pb: { xs: 2, md: 3 },
-            px: { xs: 2, md: 4 },
-            overflow: 'hidden',
-          }}
-        >
-          <Box
-            sx={{
-              width: '90%',
-              height: 'calc(100vh - 120px)',
-              maxWidth: '1000px',
-              bgcolor: 'transparent',
-              borderRadius: 2,
+              height: 600,
               overflow: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
               '&::-webkit-scrollbar': {
-                width: { xs: '4px', md: '6px' },
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'transparent',
+                width: '8px',
               },
               '&::-webkit-scrollbar-thumb': {
-                background: '#5A5A5C',
-                borderRadius: '3px',
-              },
-              '&::-webkit-scrollbar-thumb:hover': {
-                background: '#6A6A6C',
+                backgroundColor: 'rgba(0,0,0,0.1)',
+                borderRadius: '4px',
               },
             }}
           >
-            {!submission?.content ? (
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                  color: '#e7e7e7',
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 2,
-                    border: '2px dashed #5A5A5C',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mb: 3,
-                  }}
-                >
-                  <Iconify
-                    icon="solar:document-text-bold"
-                    sx={{
-                      color: '#85868E',
-                      width: 32,
-                      height: 32,
-                    }}
-                  />
-                </Box>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    color: '#e7e7e7',
-                    fontWeight: 600,
-                    mb: 1,
-                  }}
-                >
-                  No Agreement Available
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: '#85868E',
-                    textAlign: 'center',
-                    maxWidth: 300,
-                  }}
-                >
-                  The agreement document is not available for preview.
-                </Typography>
-              </Box>
-            ) : (
-              <Document
-                file={submission?.content}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
-                loading={
-                  <Box 
-                    sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center', 
-                      height: '100%',
-                      gap: 2,
-                    }}
-                  >
-                    <CircularProgress 
-                      size={32} 
-                      sx={{ 
-                        color: '#ffffff',
-                      }} 
-                    />
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: '#e7e7e7',
-                        fontWeight: 500,
-                      }}
-                    >
-                      Loading agreement document...
-                    </Typography>
-                  </Box>
-                }
-              >
-                {pdfError ? (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '100%',
-                      color: '#e7e7e7',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: 2,
-                        border: '2px dashed #dc3545',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mb: 3,
-                      }}
-                    >
-                      <Iconify
-                        icon="solar:danger-triangle-bold"
-                        sx={{
-                          color: '#dc3545',
-                          width: 32,
-                          height: 32,
-                        }}
-                      />
-                    </Box>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        color: '#dc3545',
-                        fontWeight: 600,
-                        mb: 1,
-                      }}
-                    >
-                      Error Loading PDF
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: '#85868E',
-                        textAlign: 'center',
-                        maxWidth: 400,
-                      }}
-                    >
-                      {pdfError.message || 'There was an error loading the agreement document. Please try again later.'}
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Stack spacing={3} sx={{ py: 2, alignItems: 'center' }}>
+            <Document file={submission?.content} onLoadSuccess={onDocumentLoadSuccess}>
               {Array.from(new Array(numPages), (el, index) => (
-                      <Box
-                        key={`page_${index + 1}`}
-                        sx={{
-                          bgcolor: '#ffffff',
-                          borderRadius: 1,
-                          overflow: 'hidden',
-                          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-                          border: '1px solid #28292C',
-                        }}
-                      >
                 <Page
+                  key={index}
                   pageNumber={index + 1}
                   renderAnnotationLayer={false}
                   renderTextLayer={false}
-                          width={isSmallScreen ? window.innerWidth - 64 : 800}
-                          scale={1}
+                  width={isSmallScreen ? undefined : 800}
                 />
-                      </Box>
               ))}
-                  </Stack>
-                )}
             </Document>
-            )}
           </Box>
-        </Box>
+        </DialogContent>
       </Dialog>
 
       <Dialog open={showSubmitDialog} maxWidth="xs" fullWidth>

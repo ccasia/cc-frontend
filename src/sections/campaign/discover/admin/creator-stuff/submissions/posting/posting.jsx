@@ -68,20 +68,9 @@ const Posting = ({ campaign, submission, creator }) => {
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
       );
       setFeedback('');
-      
-      // Better success message handling
-      const successMessage = res?.data?.message || 'Operation completed successfully';
-      enqueueSnackbar(successMessage);
+      enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      console.error('Error in admin posting submission:', error);
-      
-      // Better error message handling
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Error processing submission';
-      
-      enqueueSnackbar(errorMessage, {
+      enqueueSnackbar(error?.message, {
         variant: 'error',
       });
     } finally {
@@ -101,20 +90,9 @@ const Posting = ({ campaign, submission, creator }) => {
         `${endpoints.submission.root}?creatorId=${creator?.user?.id}&campaignId=${campaign?.id}`
       );
       postingDate.onFalse();
-      
-      // Better success message handling
-      const successMessage = res?.data?.message || 'Posting date updated successfully';
-      enqueueSnackbar(successMessage);
+      enqueueSnackbar(res?.data?.message);
     } catch (error) {
-      console.error('Error changing posting date:', error);
-      
-      // Better error message handling
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.error || 
-                          error?.message || 
-                          'Error updating posting date';
-      
-      enqueueSnackbar(errorMessage, {
+      enqueueSnackbar(error?.message, {
         variant: 'error',
       });
     } finally {

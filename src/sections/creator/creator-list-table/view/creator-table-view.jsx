@@ -4,23 +4,17 @@ import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
 import { useState, useEffect, useCallback } from 'react';
 
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
+import { alpha } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
-import { 
-  Box, 
-  Stack, 
-  styled, 
-  Divider, 
-  TableRow, 
-  TableBody, 
-  TableCell,
-  LinearProgress 
-} from '@mui/material';
+import { TableRow, TableBody, TableCell, LinearProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -34,6 +28,7 @@ import { USER_STATUS_OPTIONS } from 'src/_mock';
 import { useAuthContext } from 'src/auth/hooks';
 import withPermission from 'src/auth/guard/withPermissions';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { useSnackbar } from 'src/components/snackbar';
@@ -53,14 +48,18 @@ import {
 
 import CreatorTableRow from '../creator-table-row';
 import CreatorTableToolbar from '../creator-table-toolbar';
+import CreatorTableFilter from '../creator-table-filters-result';
 
 const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...USER_STATUS_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', width: 180 },
   { id: 'pronounce', label: 'Pronounce', width: 100 },
+  // { id: 'tiktok', label: 'Tiktok', width: 120 },
+  // { id: 'instagram', label: 'Instagram', width: 150 },
   { id: 'country', label: 'Country', width: 100 },
   { id: 'status', label: 'Status', width: 100 },
+  // { id: 'mediaKit', label: 'Media Kit', width: 180 },
   { id: 'paymentFormStatus', label: 'Payment Form Status', width: 180 },
   { id: '', label: '', width: 88 },
 ];
@@ -71,14 +70,6 @@ const defaultFilters = {
   ageRange: [0, 100],
   pronounce: [],
 };
-
-// Styled components for improved UI
-const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  backgroundColor: '#ffffff',
-  borderRadius: '8px',
-  border: '1px solid #f0f0f0',
-  overflow: 'hidden',
-}));
 
 // ----------------------------------------------------------------------
 
@@ -155,12 +146,12 @@ function CreatorTableView() {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(creators || []);
+  const [tableData, setTableData] = useState(creators);
 
   const [filters, setFilters] = useState(defaultFilters);
 
   const dataFiltered = applyFilter({
-    inputData: tableData || [],
+    inputData: tableData,
     comparator: getComparator(table.order, table.orderBy),
     filters,
     ageRange,
@@ -194,8 +185,8 @@ function CreatorTableView() {
   }, []);
 
   const handleFilterStatus = useCallback(
-    (status) => {
-      handleFilters('status', status);
+    (event, newValue) => {
+      handleFilters('status', newValue);
     },
     [handleFilters]
   );
@@ -218,8 +209,10 @@ function CreatorTableView() {
       } catch (error) {
         console.log(error);
         enqueueSnackbar('Error delete Creator', { variant: 'error' });
+        // toast.error('Error delete Creator');
       }
     },
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
@@ -229,6 +222,7 @@ function CreatorTableView() {
 
     enqueueSnackbar('Delete success!');
     mutate(endpoints.creators.getCreators);
+    // setTableData(deleteRows);
 
     table.onUpdatePageDeleteRows({
       totalRowsInPage: dataInPage?.length,
@@ -256,28 +250,24 @@ function CreatorTableView() {
             <Button
               variant="outlined"
               size="small"
-              startIcon={<Iconify icon="heroicons:arrow-top-right-on-square-20-solid" width={16} />}
+              startIcon={<Iconify icon="tabler:external-link" width={16} />}
               onClick={handleExportToSpreadsheet}
               disabled={isExporting}
               sx={{
-                bgcolor: '#ffffff',
-                color: '#374151',
-                border: '1px solid #d1d5db',
+                height: 32,
                 borderRadius: 1,
-                px: 2,
-                py: 1,
-                fontWeight: 600,
+                color: '#221f20',
+                border: '1px solid #e7e7e7',
                 textTransform: 'none',
-                fontSize: '0.875rem',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                px: 1.5,
+                whiteSpace: 'nowrap',
                 '&:hover': {
-                  bgcolor: '#f9fafb',
-                  borderColor: '#9ca3af',
+                  border: '1px solid #e7e7e7',
+                  backgroundColor: 'rgba(34, 31, 32, 0.04)',
                 },
-                '&:disabled': {
-                  bgcolor: '#f3f4f6',
-                  color: '#9ca3af',
-                  borderColor: '#e5e7eb',
-                },
+                boxShadow: (theme) => `0px 2px 1px 1px ${theme.palette.grey[400]}`,
               }}
             >
               {isExporting ? 'Exporting...' : 'Google Spreadsheet'}
@@ -288,126 +278,73 @@ function CreatorTableView() {
           }}
         />
 
-        <Box
-          sx={{
-            mb: 2.5,
-          }}
-        >
-          {/* Combined Controls Container */}
-          <Box
+        <Card>
+          <Tabs
+            value={filters.status}
+            onChange={handleFilterStatus}
             sx={{
-              border: '1px solid #e7e7e7',
-              borderRadius: 1,
-              p: 2,
-              bgcolor: 'background.paper',
+              px: 2.5,
+              boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
             }}
           >
-            {/* Status Filter Buttons */}
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{
-                flexWrap: 'wrap',
-                mb: 2,
-              }}
-            >
-              {STATUS_OPTIONS.map((option) => {
-                const isActive = filters.status === option.value;
-                const count = option.value === 'all'
-                  ? (tableData?.length || 0)
-                  : (tableData?.filter((item) => item.status.toLowerCase() === option.value.toLowerCase()).length || 0);
-
-                return (
-                  <Button
-                    key={option.value}
-                    onClick={() => handleFilterStatus(option.value)}
-                    sx={{
-                      px: 2,
-                      py: 1,
-                      minHeight: '38px',
-                      height: '38px',
-                      minWidth: 'fit-content',
-                      color: isActive ? '#ffffff' : '#666666',
-                      bgcolor: isActive ? '#1340ff' : 'transparent',
-                      fontSize: '0.95rem',
-                      fontWeight: 600,
-                      borderRadius: 0.75,
-                      textTransform: 'none',
-                      position: 'relative',
-                      transition: 'all 0.2s ease',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: '1px',
-                        left: '1px',
-                        right: '1px',
-                        bottom: '1px',
-                        borderRadius: 0.75,
-                        backgroundColor: 'transparent',
-                        transition: 'background-color 0.2s ease',
-                        zIndex: -1,
-                      },
-                      '&:hover::before': {
-                        backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
-                      },
-                      '&:hover': {
-                        bgcolor: isActive ? '#1340ff' : 'transparent',
-                        color: isActive ? '#ffffff' : '#1340ff',
-                        transform: 'scale(0.98)',
-                      },
-                      '&:focus': {
-                        outline: 'none',
-                      },
-                    }}
+            {STATUS_OPTIONS.map((tab) => (
+              <Tab
+                key={tab.value}
+                iconPosition="end"
+                value={tab.value}
+                label={tab.label}
+                icon={
+                  <Label
+                    variant={
+                      ((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'
+                    }
+                    color={
+                      (tab.value === 'active' && 'success') ||
+                      (tab.value === 'pending' && 'warning') ||
+                      (tab.value === 'banned' && 'error') ||
+                      'default'
+                    }
                   >
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <span>{option.label}</span>
-                      <Box
-                        sx={{
-                          px: 0.75,
-                          py: 0.25,
-                          borderRadius: 0.5,
-                          bgcolor: isActive ? 'rgba(255, 255, 255, 0.25)' : '#f5f5f5',
-                          color: isActive ? '#ffffff' : '#666666',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          minWidth: 20,
-                          textAlign: 'center',
-                          lineHeight: 1,
-                        }}
-                      >
-                        {count}
-                      </Box>
-                    </Stack>
-                  </Button>
-                );
-              })}
-            </Stack>
+                    {[
+                      'active',
+                      'pending',
+                      'banned',
+                      'rejected',
+                      'blacklisted',
+                      'suspended',
+                      'spam',
+                    ].includes(tab.value)
+                      ? tableData?.filter(
+                          (user) => user.status.toLowerCase() === tab.value.toLowerCase()
+                        ).length
+                      : tableData?.length}
+                  </Label>
+                }
+              />
+            ))}
+          </Tabs>
 
-            <Divider sx={{ borderColor: '#f0f0f0', mb: 2 }} />
+          <CreatorTableToolbar
+            filters={filters}
+            onFilters={handleFilters}
+            ageRange={ageRange}
+            onAgeRangeChange={handleAgeRangeChange}
+            pronounceOptions={['he/him', 'she/her', 'they/them', 'others']}
+          />
 
-            {/* Toolbar Section */}
-            <CreatorTableToolbar
+          {canReset && (
+            <CreatorTableFilter
               filters={filters}
               onFilters={handleFilters}
+              //
               onResetFilters={handleResetFilters}
-              ageRange={ageRange}
-              onAgeRangeChange={handleAgeRangeChange}
-              pronounceOptions={['he/him', 'she/her', 'they/them', 'others']}
-              results={dataFiltered?.length || 0}
+              //
+              results={dataFiltered.length}
+              sx={{ p: 2.5, pt: 0 }}
             />
-          </Box>
-        </Box>
+          )}
 
-        <Card
-          sx={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #f0f0f0',
-            borderRadius: '8px',
-            overflow: 'hidden',
-          }}
-        >
-          <StyledTableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+          <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
             <TableSelectedAction
               dense={table.dense}
               numSelected={table.selected.length}
@@ -421,7 +358,7 @@ function CreatorTableView() {
               action={
                 <Tooltip title="Delete">
                   <IconButton color="primary" onClick={confirm.onTrue}>
-                    <Iconify icon="heroicons:trash-20-solid" />
+                    <Iconify icon="solar:trash-bin-trash-bold" />
                   </IconButton>
                 </Tooltip>
               }
@@ -443,18 +380,6 @@ function CreatorTableView() {
                       dataFiltered?.map((row) => row.id)
                     )
                   }
-                  sx={{
-                    '& .MuiTableCell-head': {
-                      backgroundColor: '#fafafa',
-                      color: '#666666',
-                      fontWeight: 600,
-                      fontSize: '0.8rem',
-                      textTransform: 'none',
-                      borderBottom: '1px solid #f0f0f0',
-                      padding: '12px 16px',
-                      height: '44px',
-                    },
-                  }}
                 />
 
                 <TableBody>
@@ -491,7 +416,7 @@ function CreatorTableView() {
                 </TableBody>
               </Table>
             </Scrollbar>
-          </StyledTableContainer>
+          </TableContainer>
 
           <TablePaginationCustom
             count={dataFiltered?.length}
@@ -534,37 +459,40 @@ function CreatorTableView() {
 
 export default withPermission(['list:creator'], CreatorTableView);
 
+// export default CreatorTableView;
+
 function applyFilter({ inputData, comparator, filters, ageRange }) {
   const { name, status } = filters;
 
-  // Handle undefined or null inputData
-  if (!inputData || !Array.isArray(inputData)) {
-    return [];
-  }
+  const stabilizedThis = inputData?.map((el, index) => [el, index]);
 
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-
-  stabilizedThis.sort((a, b) => {
+  stabilizedThis?.sort((a, b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     return a[1] - b[1];
   });
 
-  let filteredData = stabilizedThis.map((el) => el[0]);
+  inputData = stabilizedThis?.map((el) => el[0]);
 
   if (name) {
-    filteredData = filteredData.filter(
+    inputData = inputData?.filter(
       (user) => user?.name?.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 
   if (status !== 'all') {
-    filteredData = filteredData.filter((user) => user.status.toLowerCase() === status.toLowerCase());
+    inputData = inputData?.filter((user) => user.status.toLowerCase() === status.toLowerCase());
   }
 
   if (filters.pronounce.length) {
-    filteredData = filteredData.filter((user) => filters.pronounce.includes(user.creator.pronounce));
+    inputData = inputData?.filter((user) => filters.pronounce.includes(user.creator.pronounce));
   }
 
-  return filteredData;
+  // Filter by age range
+  // inputData = inputData?.filter((user) => {
+  //   const age = calculateAge(user.creator.birthDate);
+  //   return age >= ageRange[0] && age <= ageRange[1];
+  // });
+
+  return inputData;
 }
