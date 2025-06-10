@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
-import { useLocation } from 'react-router-dom';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
@@ -57,9 +56,9 @@ import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignDetailContent from '../campaign-detail-content';
 import { CampaignLog } from '../../../manage/list/CampaignLog';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
+import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailPitch from '../campaign-detail-pitch/campaign-detail-pitch';
 import CampaignDetailCreator from '../campaign-detail-creator/campaign-detail-creator';
-import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -110,25 +109,25 @@ const CampaignDetailView = ({ id }) => {
   //     if (!window.campaignTabs.some(tab => tab.id === id)) {
   //       // Wait for campaign data to get the name if available
   //       const tabName = campaign ? campaign.name || 'Campaign Details' : 'Campaign Details';
-        
+
   //       window.campaignTabs.push({
   //         id,
   //         name: tabName
   //       });
-        
+
   //       // Add status information to the global campaignTabsStatus
   //       if (campaign && campaign.status) {
   //         // Initialize campaignTabsStatus if it doesn't exist
   //         if (!window.campaignTabsStatus) {
   //           window.campaignTabsStatus = {};
   //         }
-          
+
   //         // Store the campaign status
   //         window.campaignTabsStatus[id] = {
   //           status: campaign.status
   //         };
   //       }
-        
+
   //       // Save to localStorage
   //       try {
   //         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
@@ -232,7 +231,7 @@ const CampaignDetailView = ({ id }) => {
       >
         <Stack
           direction="row"
-          spacing={1}
+          justifyContent="space-between"
           sx={{
             width: { xs: '100%', sm: 'auto' },
             overflowX: 'auto',
@@ -277,7 +276,7 @@ const CampaignDetailView = ({ id }) => {
                 px: { xs: 1, sm: 1.5 },
                 py: 0.5,
                 pb: 1,
-                minWidth: 'fit-content',
+                minWidth: !lgUp && 'fit-content',
                 color: currentTab === tab.value ? '#221f20' : '#8e8e93',
                 position: 'relative',
                 fontSize: { xs: '0.9rem', sm: '1.05rem' },
@@ -688,7 +687,7 @@ const CampaignDetailView = ({ id }) => {
                   whiteSpace: 'nowrap',
                   '&:hover': {
                     backgroundColor: 'rgba(34, 31, 32, 0.04)',
-                  }, 
+                  },
                 }}
               >
                 Edit Details
@@ -725,9 +724,9 @@ const CampaignDetailView = ({ id }) => {
                 open={menuOpen}
                 onClose={handleMenuClose}
                 PaperProps={{
-                  sx: { 
+                  sx: {
                     minWidth: 200,
-                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.1)',
                   },
                 }}
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
@@ -813,7 +812,11 @@ const CampaignDetailView = ({ id }) => {
         password={password}
       />
 
-      <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={() => setCampaignLogIsOpen(false)} />
+      <CampaignLog
+        open={campaignLogIsOpen}
+        campaign={campaign}
+        onClose={() => setCampaignLogIsOpen(false)}
+      />
 
       <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>
         <DialogTitle>
