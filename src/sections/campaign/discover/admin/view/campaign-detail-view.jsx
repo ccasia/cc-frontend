@@ -722,7 +722,7 @@ const CampaignDetailView = ({ id }) => {
 
               <Menu
                 anchorEl={menuAnchorEl}
-                open={menuOpen.value}
+                open={menuOpen}
                 onClose={handleMenuClose}
                 PaperProps={{
                   sx: { 
@@ -812,6 +812,8 @@ const CampaignDetailView = ({ id }) => {
         publicUrl={publicUrl}
         password={password}
       />
+
+      <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={() => setCampaignLogIsOpen(false)} />
 
       <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>
         <DialogTitle>
