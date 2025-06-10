@@ -18,11 +18,13 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import Photos from './finalDraft/photos';
-import RawFootages from './finalDraft/raw-footage';
 import DraftVideos from './finalDraft/draft-videos';
+import RawFootages from './finalDraft/raw-footage';
+import FeedbackDisplay from './finalDraft/feedback-display';
 import { VideoModal, PhotoModal } from './finalDraft/media-modals';
 import { ConfirmationApproveModal, ConfirmationRequestModal } from './finalDraft/confirmation-modals';
 
@@ -680,7 +682,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
               {campaign?.rawFootage && deliverables?.rawFootages?.length > 0 && (
                 <Button
                   onClick={() => setSelectedTab('rawFootages')}
-                  // startIcon={<Iconify icon="eva:image-outline" />}
+                  // startIcon={<Iconify icon="solar:gallery-wide-bold" />}
                   fullWidth
                   sx={{
                     p: 1.5,
@@ -707,7 +709,7 @@ const FinalDraft = ({ campaign, submission, creator, deliverablesData, firstDraf
               {campaign?.photos && deliverables?.photos?.length > 0 && (
                 <Button
                   onClick={() => setSelectedTab('photos')}
-                  // startIcon={<Iconify icon="eva:film-outline" />}
+                  // startIcon={<Iconify icon="solar:camera-bold" />}
                   fullWidth
                   sx={{
                     p: 1.5,

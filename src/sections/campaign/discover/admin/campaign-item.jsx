@@ -15,7 +15,6 @@ import { formatText } from 'src/utils/format-test';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
-import { useSettingsContext } from 'src/components/settings';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
 
@@ -26,8 +25,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
   const { user } = useAuthContext();
 
   const router = useRouter();
-  const settings = useSettingsContext();
-
+  
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -50,24 +48,15 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
     event.stopPropagation();
 
     const campaignName = campaign?.name || 'Campaign Details';
-    const campaignImage = campaign?.campaignBrief?.images?.[0] || null;
-
-    // Check if this is the first campaign tab being opened
-    const isFirstTab = !window.campaignTabs || window.campaignTabs.length === 0;
-
+    
     // Check if this campaign is already in campaignTabs
-    const tabExists =
-      window.campaignTabs && window.campaignTabs.some((tab) => tab.id === campaign.id);
-
+    const tabExists = window.campaignTabs.some(tab => tab.id === campaign.id);
+    
     if (tabExists) {
-      // If tab already exists, update the name and image to ensure they're current
-      window.campaignTabs = window.campaignTabs.map((tab) => {
+      // If tab already exists, update the name to ensure it's current
+      window.campaignTabs = window.campaignTabs.map(tab => {
         if (tab.id === campaign.id) {
-          return {
-            ...tab,
-            name: campaignName,
-            image: campaignImage,
-          };
+          return { ...tab, name: campaignName };
         }
         return tab;
       });
@@ -80,43 +69,33 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
       }
     } else {
       // If tab doesn't exist yet, add it to campaignTabs
-      if (!window.campaignTabs) {
-        window.campaignTabs = [];
-      }
-
       window.campaignTabs.push({
         id: campaign.id,
-        name: campaignName,
-        image: campaignImage,
+        name: campaignName
       });
-
+      
+      // Update status tracking for tabs
+      if (typeof window !== 'undefined') {
+        if (!window.campaignTabsStatus) {
+          window.campaignTabsStatus = {};
+        }
+        
+        window.campaignTabsStatus[campaign.id] = {
+          status: campaign.status
+        };
+      }
+      
       // Save to localStorage
       try {
         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
       } catch (error) {
         console.error('Error saving campaign tabs to localStorage:', error);
       }
-
-      // Auto-collapse main navigation only when opening the first campaign tab
-      if (isFirstTab && settings.themeLayout === 'vertical') {
-        settings.onUpdate('themeLayout', 'mini');
-      }
     }
-
-    // Update status tracking for tabs
-    if (typeof window !== 'undefined') {
-      if (!window.campaignTabsStatus) {
-        window.campaignTabsStatus = {};
-      }
-
-      window.campaignTabsStatus[campaign.id] = {
-        status: campaign.status,
-      };
-    }
-
-    // Navigate to the campaign detail page with a parameter indicating it's opened as a tab
-    // router.push(`${paths.dashboard.campaign.adminCampaignDetail(campaign.id)}?openAsTab=true`);
-
+    
+    // Navigate to the campaign detail page - commented out for now in case CC wants this feature
+    // router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
+    
     handleClose();
   };
 
@@ -315,7 +294,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               },
             }}
           >
-            {/* <MenuItem 
+            <MenuItem 
               onClick={handleOpenInNewTab}
               sx={{
                 borderRadius: 1,
@@ -330,7 +309,7 @@ export default function CampaignItem({ campaign, onView, onEdit, onDelete, statu
               }}
             >
               Open in New Tab
-            </MenuItem> */}
+            </MenuItem>
             <MenuItem 
               onClick={(event) => {
                 event.stopPropagation();

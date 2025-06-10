@@ -513,377 +513,373 @@ const Profile = () => {
   const CreatorTabs = (
     <Box
       sx={{
-        mb: 2.5,
+        position: 'relative',
+        width: '100%',
+        mb: 3,
+        overflow: 'hidden',
       }}
     >
-      {/* Main Controls Container */}
+      {/* Separate divider positioned below the tabs */}
       <Box
         sx={{
-          border: '1px solid #e7e7e7',
-          borderRadius: 1,
-          p: 1,
-          mt: 1,
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'stretch', md: 'center' },
-          justifyContent: 'flex-start',
-          gap: { xs: 1.5, md: 1.5 },
-          bgcolor: 'background.paper',
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '1px',
+          bgcolor: 'divider',
+          zIndex: 5,
+        }}
+      />
+
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{
           position: 'relative',
-          overflow: 'hidden',
+          width: '100%',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+          msOverflowStyle: 'none',
+          paddingRight: { xs: '80px', sm: '100px', md: 0 },
+          paddingBottom: '1px',
+        }}
+        onScroll={(e) => {
+          if (window.innerWidth >= 900) return;
+
+          const element = e.target;
+          const leftArrow = document.getElementById('creator-tabs-left-arrow');
+          const rightArrow = document.getElementById('creator-tabs-right-arrow');
+
+          // Show left arrow when scrolled right
+          if (leftArrow) {
+            leftArrow.style.display = element.scrollLeft > 20 ? 'flex' : 'none';
+          }
+
+          // Show right arrow when not scrolled to the end
+          if (rightArrow) {
+            const isAtEnd =
+              Math.ceil(element.scrollLeft + element.clientWidth) >= element.scrollWidth - 10;
+            rightArrow.style.display = isAtEnd ? 'none' : 'flex';
+          }
         }}
       >
-        {/* Tab Buttons Container */}
-        <Stack
-          direction="row"
-          spacing={1}
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.account}
+          disableRipple
+          size="large"
           sx={{
-            flex: { xs: 'none', md: '1 1 auto' },
-            overflowX: 'auto',
-            scrollbarWidth: 'none',
-            '&::-webkit-scrollbar': { display: 'none' },
-            msOverflowStyle: 'none',
-            paddingRight: { xs: '80px', sm: '100px', md: 0 },
-          }}
-          onScroll={(e) => {
-            if (window.innerWidth >= 900) return;
-
-            const element = e.target;
-            const leftArrow = document.getElementById('creator-tabs-left-arrow');
-            const rightArrow = document.getElementById('creator-tabs-right-arrow');
-
-            // Show left arrow when scrolled right
-            if (leftArrow) {
-              leftArrow.style.display = element.scrollLeft > 20 ? 'flex' : 'none';
-            }
-
-            // Show right arrow when not scrolled to the end
-            if (rightArrow) {
-              const isAtEnd =
-                Math.ceil(element.scrollLeft + element.clientWidth) >= element.scrollWidth - 10;
-              rightArrow.style.display = isAtEnd ? 'none' : 'flex';
-            }
-          }}
-        >
-          <Button
-            component={Link}
-            to={paths.dashboard.user.profileTabs.account}
-            sx={{
-              px: 2,
-              py: 1,
-              minHeight: '38px',
-              height: '38px',
-              minWidth: 'fit-content',
-              color: currentTab === 'general' ? '#ffffff' : '#666666',
-              bgcolor: currentTab === 'general' ? '#1340ff' : 'transparent',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              borderRadius: 0.75,
-              textTransform: 'none',
-              position: 'relative',
-              transition: 'all 0.2s ease',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: '1px',
-                left: '1px',
-                right: '1px',
-                bottom: '1px',
-                borderRadius: 0.75,
-                backgroundColor: 'transparent',
-                transition: 'background-color 0.2s ease',
-                zIndex: -1,
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            minWidth: 'fit-content',
+            color: currentTab === 'general' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'general' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'general' ? 1 : 0.5,
               },
-              '&:hover::before': {
-                backgroundColor:
-                  currentTab === 'general' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(19, 64, 255, 0.08)',
-              },
-              '&:hover': {
-                bgcolor: currentTab === 'general' ? '#1340ff' : 'transparent',
-                color: currentTab === 'general' ? '#ffffff' : '#1340ff',
-                transform: 'scale(0.98)',
-              },
-              '&:focus': {
-                outline: 'none',
-              },
-            }}
-          >
-            Accounts
-          </Button>
-
-          <Button
-            component={Link}
-            to={paths.dashboard.user.profileTabs.preference}
-            sx={{
-              px: 2,
-              py: 1,
-              minHeight: '38px',
-              height: '38px',
-              ml: 1,
-              minWidth: 'fit-content',
-              color: currentTab === 'preference' ? '#ffffff' : '#666666',
-              bgcolor: currentTab === 'preference' ? '#1340ff' : 'transparent',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              borderRadius: 0.75,
-              textTransform: 'none',
-              position: 'relative',
-              transition: 'all 0.2s ease',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: '1px',
-                left: '1px',
-                right: '1px',
-                bottom: '1px',
-                borderRadius: 0.75,
-                backgroundColor: 'transparent',
-                transition: 'background-color 0.2s ease',
-                zIndex: -1,
-              },
-              '&:hover::before': {
-                backgroundColor:
-                  currentTab === 'preference'
-                    ? 'rgba(255, 255, 255, 0.1)'
-                    : 'rgba(19, 64, 255, 0.08)',
-              },
-              '&:hover': {
-                bgcolor: currentTab === 'preference' ? '#1340ff' : 'transparent',
-                color: currentTab === 'preference' ? '#ffffff' : '#1340ff',
-                transform: 'scale(0.98)',
-              },
-              '&:focus': {
-                outline: 'none',
-              },
-            }}
-          >
-            Preferences
-          </Button>
-
-          <Button
-            component={Link}
-            to={paths.dashboard.user.profileTabs.security}
-            sx={{
-              px: 2,
-              py: 1,
-              minHeight: '38px',
-              height: '38px',
-              ml: 1,
-              minWidth: 'fit-content',
-              color: currentTab === 'security' ? '#ffffff' : '#666666',
-              bgcolor: currentTab === 'security' ? '#1340ff' : 'transparent',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              borderRadius: 0.75,
-              textTransform: 'none',
-              position: 'relative',
-              transition: 'all 0.2s ease',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: '1px',
-                left: '1px',
-                right: '1px',
-                bottom: '1px',
-                borderRadius: 0.75,
-                backgroundColor: 'transparent',
-                transition: 'background-color 0.2s ease',
-                zIndex: -1,
-              },
-              '&:hover::before': {
-                backgroundColor:
-                  currentTab === 'security'
-                    ? 'rgba(255, 255, 255, 0.1)'
-                    : 'rgba(19, 64, 255, 0.08)',
-              },
-              '&:hover': {
-                bgcolor: currentTab === 'security' ? '#1340ff' : 'transparent',
-                color: currentTab === 'security' ? '#ffffff' : '#1340ff',
-                transform: 'scale(0.98)',
-              },
-              '&:focus': {
-                outline: 'none',
-              },
-            }}
-          >
-            Security
-          </Button>
-
-          <Button
-            component={Link}
-            to={paths.dashboard.user.profileTabs.socials}
-            sx={{
-              px: 2,
-              py: 1,
-              minHeight: '38px',
-              height: '38px',
-              ml: 1,
-              minWidth: 'fit-content',
-              color: currentTab === 'Social Links' ? '#ffffff' : '#666666',
-              bgcolor: currentTab === 'Social Links' ? '#1340ff' : 'transparent',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              borderRadius: 0.75,
-              textTransform: 'none',
-              position: 'relative',
-              transition: 'all 0.2s ease',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: '1px',
-                left: '1px',
-                right: '1px',
-                bottom: '1px',
-                borderRadius: 0.75,
-                backgroundColor: 'transparent',
-                transition: 'background-color 0.2s ease',
-                zIndex: -1,
-              },
-              '&:hover::before': {
-                backgroundColor:
-                  currentTab === 'Social Links'
-                    ? 'rgba(255, 255, 255, 0.1)'
-                    : 'rgba(19, 64, 255, 0.08)',
-              },
-              '&:hover': {
-                bgcolor: currentTab === 'Social Links' ? '#1340ff' : 'transparent',
-                color: currentTab === 'Social Links' ? '#ffffff' : '#1340ff',
-                transform: 'scale(0.98)',
-              },
-              '&:focus': {
-                outline: 'none',
-              },
-            }}
-          >
-            Socials
-          </Button>
-
-          <Button
-            component={Link}
-            to={paths.dashboard.user.profileTabs.payment}
-            sx={{
-              px: 2,
-              py: 1,
-              minHeight: '38px',
-              height: '38px',
-              ml: 1,
-              minWidth: 'fit-content',
-              color: currentTab === 'paymentForm' ? '#ffffff' : '#666666',
-              bgcolor: currentTab === 'paymentForm' ? '#1340ff' : 'transparent',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              borderRadius: 0.75,
-              textTransform: 'none',
-              position: 'relative',
-              transition: 'all 0.2s ease',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: '1px',
-                left: '1px',
-                right: '1px',
-                bottom: '1px',
-                borderRadius: 0.75,
-                backgroundColor: 'transparent',
-                transition: 'background-color 0.2s ease',
-                zIndex: -1,
-              },
-              '&:hover::before': {
-                backgroundColor:
-                  currentTab === 'paymentForm'
-                    ? 'rgba(255, 255, 255, 0.1)'
-                    : 'rgba(19, 64, 255, 0.08)',
-              },
-              '&:hover': {
-                bgcolor: currentTab === 'paymentForm' ? '#1340ff' : 'transparent',
-                color: currentTab === 'paymentForm' ? '#ffffff' : '#1340ff',
-                transform: 'scale(0.98)',
-              },
-              '&:focus': {
-                outline: 'none',
-              },
-            }}
-          >
-            Payment
-          </Button>
-        </Stack>
-
-        {/* Left arrow indicator */}
-        <Box
-          id="creator-tabs-left-arrow"
-          sx={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            height: '100%',
-            background:
-              'linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 60%, rgba(255,255,255,0.3) 100%)',
-            width: { xs: '50px', sm: '60px' },
-            pointerEvents: 'none',
-            display: 'none',
-            zIndex: 1,
-            '@media (min-width: 900px)': {
-              display: 'none !important',
             },
           }}
         >
-          <Box
-            sx={{
+          Account
+        </Button>
+
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.preference}
+          disableRipple
+          size="large"
+          sx={{
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            ml: 2,
+            minWidth: 'fit-content',
+            color: currentTab === 'preference' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
               position: 'absolute',
-              left: { xs: 5, sm: 10 },
-              top: '50%',
-              transform: 'translateY(-50%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#f0f0f0',
-              borderRadius: '50%',
-              width: 24,
-              height: 24,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            }}
-          >
-            <Iconify icon="eva:arrow-ios-back-fill" width={16} color="#1340ff" />
-          </Box>
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'preference' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'preference' ? 1 : 0.5,
+              },
+            },
+          }}
+        >
+          Preferences
+        </Button>
+
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.security}
+          disableRipple
+          size="large"
+          sx={{
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            ml: 2,
+            minWidth: 'fit-content',
+            color: currentTab === 'security' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'security' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'security' ? 1 : 0.5,
+              },
+            },
+          }}
+        >
+          Security
+        </Button>
+
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.socials}
+          disableRipple
+          size="large"
+          sx={{
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            ml: 2,
+            minWidth: 'fit-content',
+            color: currentTab === 'Social Links' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'Social Links' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'Social Links' ? 1 : 0.5,
+              },
+            },
+          }}
+        >
+          Socials
+        </Button>
+
+        <Button
+          component={Link}
+          to={paths.dashboard.user.profileTabs.payment}
+          disableRipple
+          size="large"
+          sx={{
+            px: 0.5,
+            py: 0.5,
+            pb: 0.5,
+            ml: 2,
+            minWidth: 'fit-content',
+            color: currentTab === 'paymentForm' ? '#221f20' : '#8e8e93',
+            position: 'relative',
+            fontSize: '1.05rem',
+            fontWeight: 650,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            '&:focus': {
+              outline: 'none',
+              bgcolor: 'transparent',
+            },
+            '&:active': {
+              bgcolor: 'transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: -0.5,
+              left: 0,
+              right: 0,
+              height: '2px',
+              width: currentTab === 'paymentForm' ? '100%' : '0%',
+              bgcolor: '#1340ff',
+              transform: 'scaleX(1)',
+              transformOrigin: 'left',
+            },
+            '&:hover': {
+              bgcolor: 'transparent',
+              '&::after': {
+                width: '100%',
+                opacity: currentTab === 'paymentForm' ? 1 : 0.5,
+              },
+            },
+          }}
+        >
+          {user?.paymentForm?.status === 'rejected' && `⚠️`} Payment
+        </Button>
+      </Stack>
+
+      {/* Left arrow indicator */}
+      <Box
+        id="creator-tabs-left-arrow"
+        sx={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          height: '100%',
+          background:
+            'linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 60%, rgba(255,255,255,0.3) 100%)',
+          width: { xs: '50px', sm: '60px' },
+          pointerEvents: 'none',
+          display: 'none',
+          zIndex: 1,
+          '@media (min-width: 900px)': {
+            display: 'none !important',
+          },
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            left: { xs: 5, sm: 10 },
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '50%',
+            width: 24,
+            height: 24,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Iconify icon="eva:arrow-ios-back-fill" width={16} color="#1340ff" />
         </Box>
+      </Box>
 
-        {/* Right arrow indicator */}
+      {/* Right arrow indicator */}
+      <Box
+        id="creator-tabs-right-arrow"
+        sx={{
+          position: 'absolute',
+          right: { xs: '15px', sm: '20px', md: 0 },
+          top: 0,
+          height: '100%',
+          background:
+            'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,1) 100%)',
+          width: { xs: '80px', sm: '100px' },
+          pointerEvents: 'none',
+          display: { xs: 'flex', md: 'none' },
+          zIndex: 1,
+          '@media (min-width: 900px)': {
+            display: 'none !important',
+          },
+        }}
+      >
         <Box
-          id="creator-tabs-right-arrow"
           sx={{
             position: 'absolute',
-            right: { xs: '15px', sm: '20px', md: 0 },
-            top: 0,
-            height: '100%',
-            background:
-              'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,1) 100%)',
-            width: { xs: '80px', sm: '100px' },
-            pointerEvents: 'none',
-            display: { xs: 'flex', md: 'none' },
-            zIndex: 1,
-            '@media (min-width: 900px)': {
-              display: 'none !important',
-            },
+            right: { xs: 5, sm: 10 },
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '50%',
+            width: 24,
+            height: 24,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}
         >
-          <Box
-            sx={{
-              position: 'absolute',
-              right: { xs: 5, sm: 10 },
-              top: '50%',
-              transform: 'translateY(-50%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#f0f0f0',
-              borderRadius: '50%',
-              width: 24,
-              height: 24,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            }}
-          >
-            <Iconify icon="eva:arrow-ios-forward-fill" width={16} color="#1340ff" />
-          </Box>
+          <Iconify icon="eva:arrow-ios-forward-fill" width={16} color="#1340ff" />
         </Box>
       </Box>
     </Box>

@@ -14,8 +14,8 @@ import { useAuthContext } from 'src/auth/hooks';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import Photos from './firstDraft/photos';
-import RawFootages from './firstDraft/raw-footage';
 import DraftVideos from './firstDraft/draft-videos';
+import RawFootages from './firstDraft/raw-footage';
 // import StatusBanner from './firstDraft/status-banner';
 // import FeedbackDisplay from './firstDraft/feedback-display';
 import { VideoModal, PhotoModal } from './firstDraft/media-modals';
@@ -604,7 +604,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               {campaign?.rawFootage && deliverables?.rawFootages?.length > 0 && (
                 <Button
                   onClick={() => setSelectedTab('rawFootages')}
-                  // startIcon={<Iconify icon="eva:image-outline" />}
+                  // startIcon={<Iconify icon="solar:gallery-wide-bold" />}
                   fullWidth
                   sx={{
                     p: 1.5,
@@ -631,7 +631,7 @@ const FirstDraft = ({ campaign, submission, creator, deliverablesData }) => {
               {campaign?.photos && deliverables?.photos?.length > 0 && (
                 <Button
                   onClick={() => setSelectedTab('photos')}
-                  // startIcon={<Iconify icon="eva:film-outline" />}
+                  // startIcon={<Iconify icon="solar:camera-bold" />}
                   fullWidth
                   sx={{
                     p: 1.5,
