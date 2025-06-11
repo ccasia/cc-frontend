@@ -45,6 +45,19 @@ const ReportingView = () => {
     error: null,
   });
 
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      const formatted = (num / 1000000).toFixed(1);
+      // Remove .0 if the decimal part is zero
+      return `${formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted}M`;
+    } else if (num >= 1000) {
+      const formatted = (num / 1000).toFixed(1);
+      // Remove .0 if the decimal part is zero
+      return `${formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted}K`;
+    }
+    return num.toLocaleString();
+  };
+
   const parseContentUrl = (inputUrl) => {
     try {
       const urlObj = new URL(inputUrl);
@@ -336,7 +349,7 @@ const ReportingView = () => {
                 color: '#1340FF',
               }}
             >
-              {displayValue.toLocaleString()}
+              {formatNumber(displayValue)}
             </Typography>
             
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
@@ -475,14 +488,14 @@ const ReportingView = () => {
             <Iconify
               icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
               color={changeIsPositive ? '#4CAF50' : '#F44336'}
-              width={20}
-              height={20}
+              width={17}
+              height={17}
               sx={{ mr: 0.5 }}
             />
           )}
           <Typography
             sx={{
-              fontSize: 18,
+              fontSize: 17,
               mr: 1,
               color: (() => {
                 if (!content.hasCampaignData) return '#999';
@@ -495,7 +508,7 @@ const ReportingView = () => {
           </Typography>
           <Typography
             sx={{
-              fontSize: 18,
+              fontSize: 17,
               mr: 2,
               color: '#666',
               whiteSpace: 'nowrap',
@@ -525,7 +538,7 @@ const ReportingView = () => {
               color: '#000',
             }}
           >
-            {typeof value === 'number' ? value.toLocaleString() : value}
+            {typeof value === 'number' ? formatNumber(value) : value}
           </Typography>
         </Box>
       </Box>
