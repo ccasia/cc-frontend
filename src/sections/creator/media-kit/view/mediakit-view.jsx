@@ -1004,6 +1004,7 @@ const MediaKitCreator = () => {
             sx={{
               mt: { xs: 4, md: 0 },
               width: '100%',
+              ml: { xs: 0, md: 18 },
             }}
           >
             {/* Divider for mobile screens only */}
@@ -1036,7 +1037,7 @@ const MediaKitCreator = () => {
                 align="left"
                 sx={{ fontSize: { xs: '3rem', md: '4rem' } }}
               >
-                300,400 {/* Change to actual number later */}
+                0 {/* Change to actual number later */}
               </Typography>
               <Box
                 component="span"
@@ -1805,7 +1806,7 @@ const MediaKitCreator = () => {
 
         <Box sx={{ flexGrow: 1 }}>
           <Typography
-            fontWeight={600}
+            fontWeight={700}
             fontFamily="Aileron, sans-serif"
             fontSize="24px"
             mb={1}
@@ -1817,6 +1818,7 @@ const MediaKitCreator = () => {
           <MediaKitSocial
             currentTab={currentTab}
             className="desktop-screenshot-mediakit"
+            forceDesktop
             sx={{
               '& > div > div': {
                 flexDirection: 'row !important',

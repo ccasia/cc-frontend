@@ -1,7 +1,7 @@
 import React from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { keyframes } from '@emotion/react';
+// import { keyframes } from '@emotion/react';
 
 import {
   Box,
@@ -30,10 +30,10 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
-const typeAnimation = keyframes`
-  from { width: 0; }
-  to { width: 100%; }
-`;
+// const typeAnimation = keyframes`
+//   from { width: 0; }
+//   to { width: 100%; }
+// `;
 
 const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const theme = useTheme();
@@ -287,9 +287,9 @@ TopContentGrid.propTypes = {
   mobileCarousel: PropTypes.bool,
 };
 
-const MediaKitSocialContent = ({ instagramVideos }) => {
+const MediaKitSocialContent = ({ instagramVideos, forceDesktop = false }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
 
   if (!instagramVideos?.length)
     return (
@@ -356,4 +356,5 @@ export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
   instagramVideos: PropTypes.array,
+  forceDesktop: PropTypes.bool,
 };
