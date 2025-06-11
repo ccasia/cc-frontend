@@ -192,14 +192,13 @@ const CampaignDetailContent = ({ campaign }) => {
 
           <Box sx={{ ...BoxStyle, mt: 1 }}>
             <Box className="header">
-              <img
-                src="/assets/icons/overview/bluesmileyface.svg"
-                alt="Campaign Info"
-                style={{
-                  width: 20,
-                  height: 20,
-                  color: '#203ff5',
-                }}
+              <Iconify
+              icon="solar:info-circle-bold"
+              sx={{
+                width: 20,
+                height: 20,
+                color: '#203ff5',
+              }}
               />
               <Typography
                 variant="body2"
@@ -221,7 +220,7 @@ const CampaignDetailContent = ({ campaign }) => {
           <Box sx={BoxStyle}>
             <Box className="header">
               <Iconify
-                icon="mdi:emoticon-happy"
+                icon="solar:users-group-rounded-bold"
                 sx={{
                   color: '#203ff5',
                   width: 20,
@@ -547,7 +546,7 @@ const CampaignDetailContent = ({ campaign }) => {
           <Box sx={{ ...BoxStyle, mt: 0.9 }}>
             <Box className="header">
               <Iconify
-                icon="mdi:cube-outline"
+                icon="solar:box-bold"
                 sx={{
                   color: '#203ff5',
                   width: 18,
@@ -604,6 +603,14 @@ const CampaignDetailContent = ({ campaign }) => {
           {/* Campaign Admin Box */}
           <Box sx={{ ...CompactHeaderStyle }}>
             <Box className="header">
+              <Iconify
+                icon="solar:user-bold"
+                sx={{
+                  color: '#203ff5',
+                  width: 20,
+                  height: 20,
+                }}
+              />
               <Typography
                 variant="body2"
                 sx={{
@@ -687,6 +694,14 @@ const CampaignDetailContent = ({ campaign }) => {
           {/* Client Info Box */}
           <Box sx={CompactHeaderStyle}>
             <Box className="header">
+            <Iconify
+                icon="solar:buildings-bold"
+                sx={{
+                  color: '#1340ff',
+                  width: 18,
+                  height: 18,
+                }}
+              />
               <Typography
                 variant="body2"
                 sx={{
@@ -831,51 +846,6 @@ const CampaignDetailContent = ({ campaign }) => {
                   fontSize: '0.8rem',
                 }}
               >
-                DELIVERABLES
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {[
-                { label: 'UGC Videos', value: true },
-                { label: 'Raw Footage', value: campaign?.rawFootage },
-                { label: 'Photos', value: campaign?.photos },
-                { label: 'Ads', value: campaign?.ads },
-                { label: 'Cross Posting', value: campaign?.crossPosting },
-              ].map(
-                (deliverable) =>
-                  deliverable.value && (
-                    <Chip
-                      key={deliverable.label}
-                      label={deliverable.label}
-                      size="small"
-                      sx={ChipStyle}
-                    />
-                  )
-              )}
-            </Box>
-          </Box>
-
-          {/* Agreement Form Box */}
-          <Box sx={BoxStyle}>
-            <Box className="header">
-              <img
-                src="/assets/icons/overview/agreementFormIcon.svg"
-                alt="Agreement Form"
-                style={{
-                  width: 20,
-                  height: 20,
-                  color: '#203ff5',
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                }}
-              >
                 AGREEMENT FORM
               </Typography>
             </Box>
@@ -911,7 +881,7 @@ const CampaignDetailContent = ({ campaign }) => {
           <Box sx={BoxStyle}>
             <Box className="header">
               <Iconify
-                icon="mdi:files"
+                icon="solar:folder-bold"
                 sx={{
                   color: '#203ff5',
                   width: 18,
@@ -948,7 +918,7 @@ const CampaignDetailContent = ({ campaign }) => {
           <Box sx={BoxStyle}>
             <Box className="header">
               <Iconify
-                icon="ep:guide"
+                icon="eva:link-2-outline"
                 sx={{
                   color: '#203ff5',
                   width: 18,
