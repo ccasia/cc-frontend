@@ -75,6 +75,8 @@ const MediaKit = ({ id, noBigScreen }) => {
   const desktopShareButtonRef = useRef(null);
   const mobileShareButtonRef = useRef(null);
   const desktopLayoutRef = useRef(null);
+  const backButtonRef = useRef(null);
+  const logoContainerRef = useRef(null);
   const [captureLoading, setCaptureLoading] = useState(false);
   const [captureState, setCaptureState] = useState('idle');
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -250,12 +252,25 @@ const MediaKit = ({ id, noBigScreen }) => {
           // Save current scroll position
           const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-          // Hide share buttons during capture
+          // Hide share buttons and back button during capture
           let desktopButtonDisplay = null;
+          let backButtonDisplay = null;
+          let logoContainerOriginalMargin = null;
 
           if (desktopShareButtonRef.current) {
             desktopButtonDisplay = desktopShareButtonRef.current.style.display;
             desktopShareButtonRef.current.style.display = 'none';
+          }
+
+          if (backButtonRef.current) {
+            backButtonDisplay = backButtonRef.current.style.display;
+            backButtonRef.current.style.display = 'none';
+          }
+
+          // Add top margin to logo container to compensate for hidden back button
+          if (logoContainerRef.current) {
+            logoContainerOriginalMargin = logoContainerRef.current.style.marginTop;
+            logoContainerRef.current.style.marginTop = '32px';
           }
 
           // Scroll to top to ensure entire content is visible
@@ -274,9 +289,18 @@ const MediaKit = ({ id, noBigScreen }) => {
             cacheBust: true,
           });
 
-          // Restore share button visibility
+          // Restore share button and back button visibility
           if (desktopShareButtonRef.current) {
             desktopShareButtonRef.current.style.display = desktopButtonDisplay;
+          }
+
+          if (backButtonRef.current) {
+            backButtonRef.current.style.display = backButtonDisplay;
+          }
+
+          // Restore logo container margin
+          if (logoContainerRef.current) {
+            logoContainerRef.current.style.marginTop = logoContainerOriginalMargin;
           }
 
           // Restore scroll position
@@ -413,10 +437,25 @@ const MediaKit = ({ id, noBigScreen }) => {
       if (isDesktop) {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         let desktopButtonDisplay = null;
+        let backButtonDisplay = null;
+        let logoContainerOriginalMargin = null;
+        
         if (desktopShareButtonRef.current) {
           desktopButtonDisplay = desktopShareButtonRef.current.style.display;
           desktopShareButtonRef.current.style.display = 'none';
         }
+        
+        if (backButtonRef.current) {
+          backButtonDisplay = backButtonRef.current.style.display;
+          backButtonRef.current.style.display = 'none';
+        }
+        
+        // Add top margin to logo container to compensate for hidden back button
+        if (logoContainerRef.current) {
+          logoContainerOriginalMargin = logoContainerRef.current.style.marginTop;
+          logoContainerRef.current.style.marginTop = '32px';
+        }
+        
         window.scrollTo(0, 0);
 
         // Ensure all images and iframes are loaded
@@ -434,6 +473,16 @@ const MediaKit = ({ id, noBigScreen }) => {
         if (desktopShareButtonRef.current) {
           desktopShareButtonRef.current.style.display = desktopButtonDisplay;
         }
+        
+        if (backButtonRef.current) {
+          backButtonRef.current.style.display = backButtonDisplay;
+        }
+        
+        // Restore logo container margin
+        if (logoContainerRef.current) {
+          logoContainerRef.current.style.marginTop = logoContainerOriginalMargin;
+        }
+        
         window.scrollTo(0, scrollTop);
       } else {
         const styleFixForMedia = document.createElement('style');
@@ -619,7 +668,7 @@ const MediaKit = ({ id, noBigScreen }) => {
         ref={containerRef}
       >
         {/* Back Button */}
-        <Box sx={{ mb: 2, mt: 2 }}>
+        <Box sx={{ mb: 2, mt: 2 }} ref={backButtonRef}>
           <IconButton
             onClick={() => router.push(paths.dashboard.creator.mediaKitLists)}
             sx={{
@@ -752,6 +801,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           alignItems="center"
           width="100%"
           mb={{ xs: 3, sm: 4, md: 6 }}
+          ref={logoContainerRef}
         >
           <Box
             component="img"
@@ -956,6 +1006,7 @@ const MediaKit = ({ id, noBigScreen }) => {
             spacing={3}
             sx={{
               mt: { xs: 4, md: 0 },
+              ml: { xs: 0, md: 18 },
               width: '100%',
             }}
           >
@@ -1689,7 +1740,7 @@ const MediaKit = ({ id, noBigScreen }) => {
 
         <Box sx={{ flexGrow: 1 }}>
           <Typography
-            fontWeight={600}
+            fontWeight={700}
             fontFamily="Aileron, sans-serif"
             fontSize="24px"
             mb={1}
@@ -1701,6 +1752,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           <MediaKitSocial
             currentTab={currentTab}
             className="desktop-screenshot-mediakit"
+            forceDesktop
             sx={{
               '& > div > div': {
                 flexDirection: 'row !important',
