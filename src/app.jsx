@@ -52,6 +52,7 @@ export default function App() {
             themeStretch: false,
           }}
         >
+       
           <ThemeProvider>
             <PoppupProvider>
               <SnackbarProvider>
@@ -61,6 +62,7 @@ export default function App() {
                       {/* <CreatorOnBoardingForm /> */}
                       <SettingsDrawer />
                       <ProgressBar />
+                     
                       <Router />
                     </UnreadMessageCountProvider>
                   </SocketProvider>
