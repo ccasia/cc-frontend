@@ -1,7 +1,7 @@
 import React from 'react';
 import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { keyframes } from '@emotion/react';
+// import { keyframes } from '@emotion/react';
 
 import { Box, Stack, alpha, useTheme, Typography, useMediaQuery } from '@mui/material';
 
@@ -22,10 +22,10 @@ export const formatNumber = (num) => {
   return num.toString();
 };
 
-const typeAnimation = keyframes`
-  from { width: 0; }
-  to { width: 100%; }
-`;
+// const typeAnimation = keyframes`
+//   from { width: 0; }
+//   to { width: 100%; }
+// `;
 
 const TopContentGrid = ({ topContents, mobileCarousel }) => {
   const theme = useTheme();
@@ -277,9 +277,9 @@ TopContentGrid.defaultProps = {
   topContents: [],
 };
 
-const MediaKitSocialContent = ({ tiktokVideos }) => {
+const MediaKitSocialContent = ({ tiktokVideos, forceDesktop = false }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
 
   if (!tiktokVideos?.length)
     return (
@@ -348,4 +348,5 @@ export default MediaKitSocialContent;
 
 MediaKitSocialContent.propTypes = {
   tiktokVideos: PropTypes.array,
+  forceDesktop: PropTypes.bool,
 };
