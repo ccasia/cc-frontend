@@ -43,20 +43,29 @@ const calculateEngagementRate = (totalLikes, followers) => {
   return ((parseInt(totalLikes, 10) / parseInt(followers, 10)) * 100).toFixed(2);
 };
 
-// Utility function to format numbers
+// Format number function (conversion is like this: 50000 -> 50K, 50100 -> 50.1K)
 const formatNumber = (num) => {
   if (!num && num !== 0) return '0';
 
   if (num >= 1000000000) {
-    return `${(num / 1000000000).toFixed(1)}G`;
+    const formatted = (num / 1000000000).toFixed(1);
+    return formatted.endsWith('.0') ? `${Math.floor(num / 1000000000)}G` : `${formatted}G`;
   }
   if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
+    const formatted = (num / 1000000).toFixed(1);
+    return formatted.endsWith('.0') ? `${Math.floor(num / 1000000)}M` : `${formatted}M`;
   }
   if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
+    const formatted = (num / 1000).toFixed(1);
+    return formatted.endsWith('.0') ? `${Math.floor(num / 1000)}K` : `${formatted}K`;
   }
   return num.toString();
+};
+
+// Utility function to format total audience numbers with commas
+const formatTotalAudience = (num) => {
+  if (!num && num !== 0) return '0';
+  return num.toLocaleString();
 };
 
 // eslint-disable-next-line react/prop-types
@@ -129,6 +138,12 @@ const MediaKit = ({ id, noBigScreen }) => {
   // Helper function for screenshot styles
   const getScreenshotStyles = useCallback(
     () => `
+      .desktop-screenshot-view {
+        padding-bottom: 24px !important;
+        padding-right: 24px !important;
+        padding-left: 38px !important;
+        box-sizing: border-box !important;
+      }
       .desktop-screenshot-view .MuiBox-root[style*="border-radius: 2px"] {
         margin-bottom: 16px !important;
         padding-bottom: 16px !important;
@@ -142,9 +157,6 @@ const MediaKit = ({ id, noBigScreen }) => {
       }
       .desktop-screenshot-view .desktop-screenshot-mediakit .MuiGrid-item {
         padding-bottom: 8px !important;
-      }
-      .desktop-screenshot-view {
-        padding-bottom: 24px !important;
       }
       .desktop-screenshot-view .MuiContainer-root {
         padding-bottom: 16px !important;
@@ -188,12 +200,43 @@ const MediaKit = ({ id, noBigScreen }) => {
         line-height: 1.5 !important;
         font-weight: 500 !important;
       }
+      /* Simple placeholder for Instagram/TikTok not connected */
+      .desktop-screenshot-view .desktop-screenshot-mediakit [style*="height: 280px"] {
+        height: 550px !important;
+        width: 350px !important;
+        min-width: 350px !important;
+        max-width: 350px !important;
+        background-color: #f5f5f5 !important;
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 8px !important;
+        position: relative !important;
+      }
+      
+      /* Hide all existing content */
+      .desktop-screenshot-view .desktop-screenshot-mediakit [style*="height: 280px"] > * {
+        display: none !important;
+      }
+      
+      /* Add "Instagram not connected" text using ::after */
+      .desktop-screenshot-view .desktop-screenshot-mediakit [style*="height: 280px"]::after {
+        content: "Instagram not connected" !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        font-size: 16px !important;
+        color: #666 !important;
+        font-weight: 500 !important;
+        text-align: center !important;
+        font-family: 'Aileron, sans-serif' !important;
+      }
     `,
     []
   );
 
   // Helper function to ensure all content is loaded
   const ensureContentLoaded = useCallback(async (element) => {
+    setCaptureState('rendering');
     // Ensure images are loaded
     const images = element.querySelectorAll('img');
     const imageLoadPromises = Array.from(images).map((img) => {
@@ -236,7 +279,10 @@ const MediaKit = ({ id, noBigScreen }) => {
         setCaptureState('preparing');
 
         // Choose which element to capture based on screen size
-        const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
+        // const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
+
+        // Always use the hidden desktop layout for consistent output regardless of screen size
+        const element = desktopLayoutRef.current;
 
         if (!element) {
           setSnackbar({
@@ -247,141 +293,177 @@ const MediaKit = ({ id, noBigScreen }) => {
           return;
         }
 
-        if (isDesktop) {
-          // Desktop direct capture method
-          // Save current scroll position
-          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        // if (isDesktop) {
+        //   // Desktop direct capture method
+        //   // Save current scroll position
+        //   const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-          // Hide share buttons and back button during capture
-          let desktopButtonDisplay = null;
-          let backButtonDisplay = null;
-          let logoContainerOriginalMargin = null;
+        //   // Hide share buttons and back button during capture
+        //   let desktopButtonDisplay = null;
+        //   let backButtonDisplay = null;
+        //   let logoContainerOriginalMargin = null;
 
-          if (desktopShareButtonRef.current) {
-            desktopButtonDisplay = desktopShareButtonRef.current.style.display;
-            desktopShareButtonRef.current.style.display = 'none';
-          }
+        //   if (desktopShareButtonRef.current) {
+        //     desktopButtonDisplay = desktopShareButtonRef.current.style.display;
+        //     desktopShareButtonRef.current.style.display = 'none';
+        //   }
 
-          if (backButtonRef.current) {
-            backButtonDisplay = backButtonRef.current.style.display;
-            backButtonRef.current.style.display = 'none';
-          }
+        //   if (backButtonRef.current) {
+        //     backButtonDisplay = backButtonRef.current.style.display;
+        //     backButtonRef.current.style.display = 'none';
+        //   }
 
-          // Add top margin to logo container to compensate for hidden back button
-          if (logoContainerRef.current) {
-            logoContainerOriginalMargin = logoContainerRef.current.style.marginTop;
-            logoContainerRef.current.style.marginTop = '32px';
-          }
+        //   // Add top margin to logo container to compensate for hidden back button
+        //   if (logoContainerRef.current) {
+        //     logoContainerOriginalMargin = logoContainerRef.current.style.marginTop;
+        //     logoContainerRef.current.style.marginTop = '32px';
+        //   }
 
-          // Scroll to top to ensure entire content is visible
-          window.scrollTo(0, 0);
+        //   // Scroll to top to ensure entire content is visible
+        //   window.scrollTo(0, 0);
 
-          // Ensure all images and iframes are loaded
-          await ensureContentLoaded(element);
+        //   // Ensure all images and iframes are loaded
+        //   await ensureContentLoaded(element);
 
-          // Take the screenshot
-          const dataUrl = await toPng(element, {
-            quality: 0.95,
-            pixelRatio: 2,
-            backgroundColor: '#ffffff',
-            height: element.scrollHeight,
-            width: 1200,
-            cacheBust: true,
-          });
+        //   const elementWidth = element.scrollWidth;
+        //   const canvasWidth = 1200;
+        //   const horizontalPadding = (canvasWidth - elementWidth) / 2;
 
-          // Restore share button and back button visibility
-          if (desktopShareButtonRef.current) {
-            desktopShareButtonRef.current.style.display = desktopButtonDisplay;
-          }
+        //   // Take the screenshot
+        //   const dataUrl = await toPng(element, {
+        //     quality: 0.95,
+        //     pixelRatio: 2,
+        //     backgroundColor: '#ffffff',
+        //     height: element.scrollHeight + 80,
+        //     width: canvasWidth,
+        //     cacheBust: true,
+        //     style: {
+        //       transform: `translate(${horizontalPadding}px, 40px)`, // centering horizontally and add top margin
+        //       transformOrigin: 'top left',
+        //     },
+        //   });
 
-          if (backButtonRef.current) {
-            backButtonRef.current.style.display = backButtonDisplay;
-          }
+        //   // Restore share button and back button visibility
+        //   if (desktopShareButtonRef.current) {
+        //     desktopShareButtonRef.current.style.display = desktopButtonDisplay;
+        //   }
 
-          // Restore logo container margin
-          if (logoContainerRef.current) {
-            logoContainerRef.current.style.marginTop = logoContainerOriginalMargin;
-          }
+        //   if (backButtonRef.current) {
+        //     backButtonRef.current.style.display = backButtonDisplay;
+        //   }
 
-          // Restore scroll position
-          window.scrollTo(0, scrollTop);
+        //   // Restore logo container margin
+        //   if (logoContainerRef.current) {
+        //     logoContainerRef.current.style.marginTop = logoContainerOriginalMargin;
+        //   }
 
-          setCaptureState('processing');
+        //   // Restore scroll position
+        //   window.scrollTo(0, scrollTop);
 
-          if (!isMobile) {
-            // Create and trigger download for desktop
-            const link = document.createElement('a');
-            link.download = `${data?.creator?.mediaKit?.displayName || data?.name}_Media_Kit.png`;
-            link.href = dataUrl;
-            link.click();
-          } else {
-            // Open in-page preview for mobile
-            setMobilePreview({
-              open: true,
-              imageUrl: dataUrl,
-            });
-          }
+        //   setCaptureState('processing');
+
+        //   if (!isMobile) {
+        //     // Create and trigger download for desktop
+        //     const link = document.createElement('a');
+        //     link.download = `${data?.creator?.mediaKit?.displayName || data?.name}_Media_Kit.png`;
+        //     link.href = dataUrl;
+        //     link.click();
+        //   } else {
+        //     // Open in-page preview for mobile
+        //     setMobilePreview({
+        //       open: true,
+        //       imageUrl: dataUrl,
+        //     });
+        //   }
+        // } else {
+        //   // Small screen method using hidden desktop layout
+        //   // Temporarily apply a style fix to remove extra padding
+        //   const styleFixForMedia = document.createElement('style');
+        //   styleFixForMedia.textContent = getScreenshotStyles();
+        //   document.head.appendChild(styleFixForMedia);
+
+        // Use hidden desktop layout method for all captures
+        // Temporarily apply a style fix to remove extra padding
+        const styleFixForMedia = document.createElement('style');
+        styleFixForMedia.textContent = getScreenshotStyles();
+        document.head.appendChild(styleFixForMedia);
+
+        // Make the desktop layout visible just for the capture
+        const originalVisibility = element.style.visibility;
+        const originalPosition = element.style.position;
+        const originalLeft = element.style.left;
+        const originalZIndex = element.style.zIndex;
+
+        // Add class for CSS override
+        element.classList.add('desktop-screenshot-view');
+
+        // Temporarily make the element visible but off-screen for rendering
+        element.style.visibility = 'visible';
+        element.style.position = 'fixed';
+        element.style.left = '0';
+        element.style.top = '0';
+        element.style.zIndex = '-1';
+
+        // Ensure all images and iframes are loaded
+        await ensureContentLoaded(element);
+
+        // Calculate the actual width of the element to center it properly
+        const elementWidth = element.scrollWidth;
+        const canvasWidth = 1200;
+        const horizontalPadding = (canvasWidth - elementWidth) / 2;
+
+        // Take the screenshot with centering
+        const dataUrl = await toPng(element, {
+          quality: 0.95,
+          pixelRatio: 2,
+          backgroundColor: '#ffffff',
+          height: element.scrollHeight + 80, // padding top/bottom
+          width: canvasWidth, // canvas width
+          cacheBust: true,
+          style: {
+            transform: `translate(${horizontalPadding}px, 40px)`, // centering horizontally and add top margin
+            transformOrigin: 'top left',
+          },
+        });
+
+        // Restore original styles
+        element.style.visibility = originalVisibility;
+        element.style.position = originalPosition;
+        element.style.left = originalLeft;
+        element.style.zIndex = originalZIndex;
+        element.classList.remove('desktop-screenshot-view');
+
+        // Remove temporary style fix
+        document.head.removeChild(styleFixForMedia);
+
+        setCaptureState('processing');
+
+        // if (!isMobile) {
+        //   // Create and trigger download for desktop
+        //   const link = document.createElement('a');
+        //   link.download = `${data?.creator?.mediaKit?.displayName || data?.name}_Media_Kit.png`;
+        //   link.href = dataUrl;
+        //   link.click();
+        // } else {
+        //   // Open in-page preview for mobile
+        //   setMobilePreview({
+        //     open: true,
+        //     imageUrl: dataUrl,
+        //   });
+        // }
+
+        if (!isMobile) {
+          // Create and trigger download for desktop
+          const link = document.createElement('a');
+          link.download = `${data?.creator?.mediaKit?.displayName || data?.name}_Media_Kit.png`;
+          link.href = dataUrl;
+          link.click();
         } else {
-          // Small screen method using hidden desktop layout
-          // Temporarily apply a style fix to remove extra padding
-          const styleFixForMedia = document.createElement('style');
-          styleFixForMedia.textContent = getScreenshotStyles();
-          document.head.appendChild(styleFixForMedia);
-
-          // Make the desktop layout visible just for the capture
-          const originalVisibility = element.style.visibility;
-          const originalPosition = element.style.position;
-          const originalLeft = element.style.left;
-          const originalZIndex = element.style.zIndex;
-
-          // Add class for CSS override
-          element.classList.add('desktop-screenshot-view');
-
-          // Temporarily make the element visible but off-screen for rendering
-          element.style.visibility = 'visible';
-          element.style.position = 'fixed';
-          element.style.left = '0';
-          element.style.top = '0';
-          element.style.zIndex = '-1';
-
-          // Ensure all images and iframes are loaded
-          await ensureContentLoaded(element);
-
-          // Take the screenshot
-          const dataUrl = await toPng(element, {
-            quality: 0.95,
-            pixelRatio: 2,
-            backgroundColor: '#ffffff',
-            height: element.scrollHeight,
-            width: element.scrollWidth,
-            cacheBust: true,
+          // Open in-page preview for mobile
+          setMobilePreview({
+            open: true,
+            imageUrl: dataUrl,
           });
-
-          // Restore original styles
-          element.style.visibility = originalVisibility;
-          element.style.position = originalPosition;
-          element.style.left = originalLeft;
-          element.style.zIndex = originalZIndex;
-          element.classList.remove('desktop-screenshot-view');
-
-          // Remove temporary style fix
-          document.head.removeChild(styleFixForMedia);
-
-          setCaptureState('processing');
-
-          if (!isMobile) {
-            // Create and trigger download for desktop
-            const link = document.createElement('a');
-            link.download = `${data?.creator?.mediaKit?.displayName || data?.name}_Media_Kit.png`;
-            link.href = dataUrl;
-            link.click();
-          } else {
-            // Open in-page preview for mobile
-            setMobilePreview({
-              open: true,
-              imageUrl: dataUrl,
-            });
-          }
         }
 
         const successMessage = isMobile ? 'Done!' : 'Screenshot saved successfully!';
@@ -409,7 +491,7 @@ const MediaKit = ({ id, noBigScreen }) => {
     [
       data?.creator?.mediaKit?.displayName,
       data?.name,
-      isDesktop,
+      // isDesktop,
       getScreenshotStyles,
       ensureContentLoaded,
     ]
@@ -421,7 +503,10 @@ const MediaKit = ({ id, noBigScreen }) => {
       setCaptureLoading(true);
       setCaptureState('preparing');
 
-      const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
+      // const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
+
+      // Always use the hidden desktop layout for consistent output regardless of screen size
+      const element = desktopLayoutRef.current;
 
       if (!element) {
         setSnackbar({
@@ -432,94 +517,135 @@ const MediaKit = ({ id, noBigScreen }) => {
         return;
       }
 
-      let dataUrl;
+      // let dataUrl;
 
-      if (isDesktop) {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        let desktopButtonDisplay = null;
-        let backButtonDisplay = null;
-        let logoContainerOriginalMargin = null;
+      // if (isDesktop) {
+      //   const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      //   let desktopButtonDisplay = null;
+      //   let backButtonDisplay = null;
+      //   let logoContainerOriginalMargin = null;
+      //   
+      //   if (desktopShareButtonRef.current) {
+      //     desktopButtonDisplay = desktopShareButtonRef.current.style.display;
+      //     desktopShareButtonRef.current.style.display = 'none';
+      //   }
+      //   
+      //   if (backButtonRef.current) {
+      //     backButtonDisplay = backButtonRef.current.style.display;
+      //     backButtonRef.current.style.display = 'none';
+      //   }
+      //   
+      //   // Add top margin to logo container to compensate for hidden back button
+      //   if (logoContainerRef.current) {
+      //     logoContainerOriginalMargin = logoContainerRef.current.style.marginTop;
+      //     logoContainerRef.current.style.marginTop = '32px';
+      //   }
+      //   
+      //   window.scrollTo(0, 0);
+
+      //   // Ensure all images and iframes are loaded
+      //   await ensureContentLoaded(element);
+
+      //   const elementWidth = element.scrollWidth;
+      //   const canvasWidth = 1200;
+      //   const horizontalPadding = (canvasWidth - elementWidth) / 2;
+
+      //   dataUrl = await toPng(element, {
+      //     quality: 1.0,
+      //     pixelRatio: 4,
+      //     backgroundColor: '#ffffff',
+      //     height: element.scrollHeight + 80,
+      //     width: canvasWidth,
+      //     cacheBust: true,
+      //     style: {
+      //       transform: `translate(${horizontalPadding}px, 40px)`, // centering horizontally and add top margin
+      //       transformOrigin: 'top left',
+      //     },
+      //   });
+
+      //   if (desktopShareButtonRef.current) {
+      //     desktopShareButtonRef.current.style.display = desktopButtonDisplay;
+      //   }
+      //   
+      //   if (backButtonRef.current) {
+      //     backButtonRef.current.style.display = backButtonDisplay;
+      //   }
+      //   
+      //   // Restore logo container margin
+      //   if (logoContainerRef.current) {
+      //     logoContainerRef.current.style.marginTop = logoContainerOriginalMargin;
+      //   }
+      //   
+      //   window.scrollTo(0, scrollTop);
+      // } else {
+      //   const styleFixForMedia = document.createElement('style');
+      //   styleFixForMedia.textContent = getScreenshotStyles();
+      //   document.head.appendChild(styleFixForMedia);
         
-        if (desktopShareButtonRef.current) {
-          desktopButtonDisplay = desktopShareButtonRef.current.style.display;
-          desktopShareButtonRef.current.style.display = 'none';
-        }
-        
-        if (backButtonRef.current) {
-          backButtonDisplay = backButtonRef.current.style.display;
-          backButtonRef.current.style.display = 'none';
-        }
-        
-        // Add top margin to logo container to compensate for hidden back button
-        if (logoContainerRef.current) {
-          logoContainerOriginalMargin = logoContainerRef.current.style.marginTop;
-          logoContainerRef.current.style.marginTop = '32px';
-        }
-        
-        window.scrollTo(0, 0);
+      // Use hidden desktop layout method for all PDF captures
+      const styleFixForMedia = document.createElement('style');
+      styleFixForMedia.textContent = getScreenshotStyles();
+      document.head.appendChild(styleFixForMedia);
 
-        // Ensure all images and iframes are loaded
-        await ensureContentLoaded(element);
+      element.classList.add('desktop-screenshot-view');
+      const originalVisibility = element.style.visibility;
+      const originalPosition = element.style.position;
+      const originalLeft = element.style.left;
+      const originalZIndex = element.style.zIndex;
 
-        dataUrl = await toPng(element, {
-          quality: 1.0,
-          pixelRatio: 4,
-          backgroundColor: '#ffffff',
-          height: element.scrollHeight,
-          width: 1200,
-          cacheBust: true,
-        });
+      element.style.visibility = 'visible';
+      element.style.position = 'fixed';
+      element.style.left = '0';
+      element.style.top = '0';
+      element.style.zIndex = '-1';
 
-        if (desktopShareButtonRef.current) {
-          desktopShareButtonRef.current.style.display = desktopButtonDisplay;
-        }
-        
-        if (backButtonRef.current) {
-          backButtonRef.current.style.display = backButtonDisplay;
-        }
-        
-        // Restore logo container margin
-        if (logoContainerRef.current) {
-          logoContainerRef.current.style.marginTop = logoContainerOriginalMargin;
-        }
-        
-        window.scrollTo(0, scrollTop);
-      } else {
-        const styleFixForMedia = document.createElement('style');
-        styleFixForMedia.textContent = getScreenshotStyles();
-        document.head.appendChild(styleFixForMedia);
+      // Ensure all images and iframes are loaded
+      await ensureContentLoaded(element);
 
-        element.classList.add('desktop-screenshot-view');
-        const originalVisibility = element.style.visibility;
-        const originalPosition = element.style.position;
-        const originalLeft = element.style.left;
-        const originalZIndex = element.style.zIndex;
+      // Calculate the actual width of the element to center it properly
+      const elementWidth = element.scrollWidth;
+      const canvasWidth = 1200;
+      const horizontalPadding = (canvasWidth - elementWidth) / 2;
 
-        element.style.visibility = 'visible';
-        element.style.position = 'fixed';
-        element.style.left = '0';
-        element.style.top = '0';
-        element.style.zIndex = '-1';
+      // dataUrl = await toPng(element, {
+      //   quality: 1.0,
+      //   pixelRatio: 4,
+      //   backgroundColor: '#ffffff',
+      //   height: element.scrollHeight + 80,
+      //   width: canvasWidth,
+      //   cacheBust: true,
+      //   style: {
+      //     transform: `translate(${horizontalPadding}px, 40px)`,
+      //     transformOrigin: 'top left',
+      //   },
+      // });
 
-        // Ensure all images and iframes are loaded
-        await ensureContentLoaded(element);
+      const dataUrl = await toPng(element, {
+        quality: 1.0,
+        pixelRatio: 4,
+        backgroundColor: '#ffffff',
+        height: element.scrollHeight + 80,
+        width: canvasWidth,
+        cacheBust: true,
+        style: {
+          transform: `translate(${horizontalPadding}px, 40px)`,
+          transformOrigin: 'top left',
+        },
+      });
 
-        dataUrl = await toPng(element, {
-          quality: 1.0,
-          pixelRatio: 4,
-          backgroundColor: '#ffffff',
-          height: element.scrollHeight,
-          width: element.scrollWidth,
-          cacheBust: true,
-        });
+      // element.style.visibility = originalVisibility;
+      // element.style.position = originalPosition;
+      // element.style.left = originalLeft;
+      // element.style.zIndex = originalZIndex;
+      // element.classList.remove('desktop-screenshot-view');
+      // document.head.removeChild(styleFixForMedia);
 
-        element.style.visibility = originalVisibility;
-        element.style.position = originalPosition;
-        element.style.left = originalLeft;
-        element.style.zIndex = originalZIndex;
-        element.classList.remove('desktop-screenshot-view');
-        document.head.removeChild(styleFixForMedia);
-      }
+      element.style.visibility = originalVisibility;
+      element.style.position = originalPosition;
+      element.style.left = originalLeft;
+      element.style.zIndex = originalZIndex;
+      element.classList.remove('desktop-screenshot-view');
+      document.head.removeChild(styleFixForMedia);
 
       setCaptureState('processing');
       // Create a new image to get the dimensions
@@ -587,7 +713,7 @@ const MediaKit = ({ id, noBigScreen }) => {
   }, [
     data?.creator?.mediaKit?.displayName,
     data?.name,
-    isDesktop,
+    // isDesktop,
     getScreenshotStyles,
     ensureContentLoaded,
   ]);
@@ -1006,7 +1132,7 @@ const MediaKit = ({ id, noBigScreen }) => {
             spacing={3}
             sx={{
               mt: { xs: 4, md: 0 },
-              ml: { xs: 0, md: 18 },
+              ml: { xs: 0, md: 18, lg: -2, xl: -4 },
               width: '100%',
             }}
           >
@@ -1040,8 +1166,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                 align="left"
                 sx={{ fontSize: { xs: '3rem', md: '4rem' } }}
               >
-                {/* Total audience value - can be added later */}
-                {formatNumber(socialMediaAnalytics.followers)}
+                {formatTotalAudience(socialMediaAnalytics.followers)}
               </Typography>
               <Box
                 component="span"
@@ -1113,7 +1238,7 @@ const MediaKit = ({ id, noBigScreen }) => {
               </Button>
             </Stack>
 
-            {!smDown && (
+            {!mdDown && (
               <Stack width="100%">
                 <Stack
                   direction="row"
@@ -1187,7 +1312,8 @@ const MediaKit = ({ id, noBigScreen }) => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.averageLikes?.toFixed(2)}
+                        {formatNumber(socialMediaAnalytics.averageLikes)}
+                        {/* {socialMediaAnalytics.averageLikes?.toFixed(2)} */}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1221,7 +1347,8 @@ const MediaKit = ({ id, noBigScreen }) => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.averageComments?.toFixed(2)}
+                        {formatNumber(socialMediaAnalytics.averageComments)}
+                        {/* {socialMediaAnalytics.averageComments?.toFixed(2)} */}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1264,7 +1391,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                         align="left"
                         sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}
                       >
-                        {socialMediaAnalytics.engagement_rate}
+                        {formatNumber(socialMediaAnalytics.engagement_rate)}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -1284,7 +1411,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           </Stack>
         </Stack>
 
-        {smDown && (
+        {mdDown && (
           <Stack spacing={3} sx={{ py: 2, my: 2 }}>
             <Stack
               direction="row"
@@ -1328,7 +1455,8 @@ const MediaKit = ({ id, noBigScreen }) => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.averageLikes?.toFixed(2)}
+                  {formatNumber(socialMediaAnalytics.averageLikes)}
+                  {/* {socialMediaAnalytics.averageLikes?.toFixed(2)} */}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1353,7 +1481,8 @@ const MediaKit = ({ id, noBigScreen }) => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.averageComments?.toFixed(2)}
+                  {formatNumber(socialMediaAnalytics.averageComments)}
+                  {/* {socialMediaAnalytics.averageComments?.toFixed(2)} */}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1378,7 +1507,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                   align="left"
                   sx={{ fontSize: { xs: '2rem', sm: '2.5rem' } }}
                 >
-                  {socialMediaAnalytics.engagement_rate}
+                  {formatNumber(socialMediaAnalytics.engagement_rate)}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1420,6 +1549,7 @@ const MediaKit = ({ id, noBigScreen }) => {
           height: 'auto',
           overflow: 'visible',
           pb: 2,
+          px: 0,
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -1538,7 +1668,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                 align="left"
                 sx={{ fontSize: '4rem' }}
               >
-                {formatNumber(socialMediaAnalytics.followers)}
+                {formatTotalAudience(socialMediaAnalytics.followers)}
               </Typography>
               <Box
                 component="span"
@@ -1656,7 +1786,8 @@ const MediaKit = ({ id, noBigScreen }) => {
                       align="left"
                       sx={{ fontSize: '3.5rem' }}
                     >
-                      {socialMediaAnalytics.averageLikes?.toFixed(2)}
+                      {formatNumber(socialMediaAnalytics.averageLikes)}
+                      {/* {socialMediaAnalytics.averageLikes?.toFixed(2)} */}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -1683,7 +1814,8 @@ const MediaKit = ({ id, noBigScreen }) => {
                       align="left"
                       sx={{ fontSize: '3.5rem' }}
                     >
-                      {socialMediaAnalytics.averageComments?.toFixed(2)}
+                      {formatNumber(socialMediaAnalytics.averageComments)}
+                      {/* {socialMediaAnalytics.averageComments?.toFixed(2)} */}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -1719,7 +1851,7 @@ const MediaKit = ({ id, noBigScreen }) => {
                       align="left"
                       sx={{ fontSize: '3.5rem' }}
                     >
-                      {socialMediaAnalytics.engagement_rate}
+                      {formatNumber(socialMediaAnalytics.engagement_rate)}
                     </Typography>
                     <Typography
                       variant="caption"
