@@ -1,5 +1,4 @@
-import { debounce } from 'lodash';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import {
@@ -8,7 +7,6 @@ import {
   Stack,
   Button,
   Container,
-  TextField,
   Typography,
   CircularProgress,
 } from '@mui/material';
@@ -24,10 +22,10 @@ import InstagramLayout from '../components/InstagramLayout';
 import TikTokLayout from '../components/TikTokLayout';
 
 const ReportingView = () => {
-  const settings = useSettingsContext();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
+  const settings = useSettingsContext();
+  const [searchParams] = useSearchParams();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState({
@@ -44,6 +42,19 @@ const ReportingView = () => {
     hasCampaignData: false,
     error: null,
   });
+
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      const formatted = (num / 1000000).toFixed(1);
+      // Remove .0 if the decimal part is zero
+      return `${formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted}M`;
+    } else if (num >= 1000) {
+      const formatted = (num / 1000).toFixed(1);
+      // Remove .0 if the decimal part is zero
+      return `${formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted}K`;
+    }
+    return num.toLocaleString();
+  };
 
   const parseContentUrl = (inputUrl) => {
     try {
@@ -145,7 +156,7 @@ const ReportingView = () => {
             account: 'Instagram',
             contentType: parsedUrl.type,
             datePosted: fDate(video.timestamp),
-            mediaUrl: video.thumbnail_url,
+            mediaUrl: video.thumbnail_url || video.media_url,
             caption: video.caption,
             metrics: currentMetrics,
             campaignAverages: campaignAverages,
@@ -277,12 +288,11 @@ const ReportingView = () => {
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', sm: 'center', md: 'center' }, width: '100%' }}>
         <Typography
           sx={{
-            width: width ? width : '50%',
             fontSize: 24,
             fontWeight: 600,
             color: '#000',
-            mb: 2,
-            alignSelf: 'center'
+            mb: 1,
+            textAlign: 'center',
           }}
         >
           {label}
@@ -336,7 +346,7 @@ const ReportingView = () => {
                 color: '#1340FF',
               }}
             >
-              {displayValue.toLocaleString()}
+              {formatNumber(displayValue)}
             </Typography>
             
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
@@ -381,10 +391,10 @@ const ReportingView = () => {
     );
   };
 
-  const renderEngagementCard = ({ color, height, icon, title, value, metricKey }) => {
+  const renderEngagementCard = ({ height, title, value, metricKey }) => {
     let changeDisplay = '--';
     let changeIsPositive = false;
-    let comparisonText = 'from campaign avg';
+    let comparisonText = 'campaign average';
 
     // Use campaign comparison data if available
     if (content.hasCampaignData && content.campaignComparison && content.campaignComparison[metricKey]) {
@@ -399,134 +409,133 @@ const ReportingView = () => {
     return (
       <Box
         sx={{
-          height: height ? height : 116,
-          backgroundColor: color,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          py: 2,
+          px: { sm: 3, xs: 6 },
+          height: height || 116,
+          background: '#F5F5F5',
+          boxShadow: '0px 4px 4px rgba(142, 142, 147, 0.25)',
           borderRadius: '20px',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 2fr 1fr', // 4 columns: icon, title, comparison, value
-          gridTemplateRows: '1fr 1fr',
-          p: 2,
-          alignItems: 'center',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.08)',
         }}
       >
-        {/* Top Row - Icon */}
+        {/* Main content container */}
         <Box
           sx={{
-            gridColumn: { xs: '1 / 3', sm: '2 / 3' },
-            gridRow: '1',
             display: 'flex',
-            justifyContent: 'center',
+            flexDirection: 'row',
+            justifyContent: 'space-between'
           }}
         >
+          {/* Left side - Title and comparison info */}
           <Box
             sx={{
-              backgroundColor: '#1340FF',
-              borderRadius: 1,
-              width: 44,
-              height: 44,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
             }}
           >
-            <Iconify 
-              icon={icon} 
-              color="#fff" 
-              width={24} 
-              height={24} 
-            />
+            {/* Title */}
+            <Typography
+              sx={{
+                fontWeight: 400,
+                fontSize: 20,
+                color: '#636366',
+              }}
+            >
+              {title}
+            </Typography>
+
+            {/* Comparison section */}            
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center'
+              }}
+            >
+              {content.hasCampaignData && changeDisplay !== '--' && !changeDisplay.startsWith('0%') && (
+                <Iconify
+                  icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+                  sx={{
+                    width: 18,
+                    height: 17,
+                    color: changeIsPositive ? '#1ABF66' : '#F44336',
+                  }}
+                />
+              )}
+              <Typography
+                sx={{
+                  fontWeight: 500,
+                  fontSize: 16,
+                  color: (() => {
+                    if (!content.hasCampaignData) return '#999';
+                    if (changeDisplay.startsWith('0%')) return '#636366';
+                    return changeIsPositive ? '#1ABF66' : '#F44336';
+                  })(),
+                }}
+              >
+                {changeDisplay}
+              </Typography>
+              <Typography
+                sx={{
+                  fontWeight: 500,
+                  fontSize: 16,
+                  textAlign: 'right',
+                  color: '#636366',
+                  ml: 1,
+                }}
+              >
+                from
+              </Typography>
+            </Box>
+
+            {/* "campaign average" text */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                height: 20,
+              }}
+            >
+              <Typography
+                sx={{
+                  height: 20,
+                  fontWeight: 500,
+                  fontSize: 16,
+                  lineHeight: '20px',
+                  color: '#636366',
+                }}
+              >
+                {comparisonText}
+              </Typography>
+            </Box>
           </Box>
-        </Box>
 
-        {/* Top Row - Title */}
-        <Box
-          sx={{
-            gridColumn: '3 / -1', // Spans from column 3 to the end
-            gridRow: '1',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <Typography 
-            sx={{ 
-              fontSize: 24,
-              color: '#666',
-              fontWeight: 500,
-            }}
-          >
-            {title}
-          </Typography>
-        </Box>
-
-        {/* Bottom Row - Comparison Change */}
-        <Box
-          sx={{
-            gridColumn: '1 / 4', // Spans columns 1-3
-            gridRow: '2',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            mt: 1,
-          }}
-        >
-          {content.hasCampaignData && changeDisplay !== '--' && !changeDisplay.startsWith('0%') && (
-            <Iconify
-              icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
-              color={changeIsPositive ? '#4CAF50' : '#F44336'}
-              width={20}
-              height={20}
-              sx={{ mr: 0.5 }}
-            />
-          )}
-          <Typography
+          {/* Right side - Icon and value */}
+          <Box
             sx={{
-              fontSize: 18,
-              mr: 1,
-              color: (() => {
-                if (!content.hasCampaignData) return '#999';
-                if (changeDisplay.startsWith('0%')) return '#666';
-                return changeIsPositive ? '#4CAF50' : '#F44336';
-              })(),
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: 79,
+              height: 79,
+              background: '#1340FF',
+              borderRadius: '8px',
             }}
           >
-            {changeDisplay}
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: 18,
-              mr: 2,
-              color: '#666',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}
-          >
-            {comparisonText}
-          </Typography>
-        </Box>
-
-        {/* Bottom Row - Value */}
-        <Box
-          sx={{
-            mt: 1,
-            gridColumn: '3 / -1', // Spans from column 3 to the end
-            gridRow: '2',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <Typography 
-            sx={{ 
-              fontSize: 24,
-              fontWeight: 600, 
-              color: '#000',
-            }}
-          >
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </Typography>
+            <Typography
+              sx={{
+                fontWeight: 400,
+                fontSize: 24,
+                color: '#FFFFFF',
+              }}
+            >
+              {typeof value === 'number' ? formatNumber(value) : value}
+            </Typography>
+          </Box>
         </Box>
       </Box>
     );
@@ -536,7 +545,7 @@ const ReportingView = () => {
     if (!content.account) return null;
 
     return (
-      <Box sx={{ mt: 4 }}>
+      <Box sx={{ mt: 4, mr: { sm: 4, xs: 0 } }}>
         <Typography
           variant="h4"
           sx={{
@@ -594,6 +603,7 @@ const ReportingView = () => {
             fontSize: 14,
             fontWeight: 600,
             '&:hover': { backgroundColor: 'transparent' },
+            mb: 2
           }}
         >
           Back
@@ -604,18 +614,18 @@ const ReportingView = () => {
           sx={{ width: '100%' }}
           justifyContent='space-between'
           alignContent={{ xs: 'flex-start' }}
+          flexDirection={{ xs: 'column-reverse', md: 'row' }}
         >
           {/* Left side: Creator Name and Title */}
           <Box
             alignSelf={{ xs: 'flex-start', md: 'center' }}
-            mb={{ xs: 2 }}
           >
             <Typography
               sx={{
                 fontFamily: 'Aileron',
                 fontSize: { xs: 32, md: 48 },
                 fontWeight: 400,
-                lineHeight: '50px'
+                lineHeight: { xs: '35px', sm: '50px'}
               }}
             >
               {content.creatorName}
@@ -626,7 +636,7 @@ const ReportingView = () => {
                 fontFamily: 'Aileron',
                 fontSize: { xs: 32, md: 48 },
                 fontWeight: 400,
-                lineHeight: '50px'
+                lineHeight: { xs: '35px', sm: '50px'}
               }}
             >
               Content Performance Report
@@ -640,6 +650,7 @@ const ReportingView = () => {
             sx={{
               height: { xs: 50, sm: 100, md: 144 },
               alignSelf: { xs: 'flex-start', md: 'center' },
+              mb: { xs: 2, md: 0 }
             }}
           />
         </Stack>
