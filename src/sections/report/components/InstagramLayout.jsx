@@ -40,7 +40,7 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
                 sm: '1fr 1fr',
                 md: '1fr 1fr',
               },
-              gap: '28px',
+              gap: 3,
             }}
           >
             {renderEngagementCard({
@@ -48,7 +48,6 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
               title: 'Views',
               value: content.metrics?.views || 0,
               metricKey: 'views',
-              color: '#D3D3D3'
             })}
 
             {renderEngagementCard({
@@ -56,7 +55,6 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
               title: 'Likes',
               value: content.metrics?.likes || 0,
               metricKey: 'likes',
-              color: '#E7E7E7'
             })}
 
             {renderEngagementCard({
@@ -64,7 +62,6 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
               title: 'Comments',
               value: content.metrics?.comments || 0,
               metricKey: 'comments',
-              color: '#F5F5F5'
             })}
 
             {renderEngagementCard({
@@ -72,40 +69,43 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
               title: 'Saved',
               value: content.metrics?.saved || 0,
               metricKey: 'saved',
-              color: '#FFFFFF'
             })}
           </Box>
         </Box>
 
         {/* Circular Stats with Campaign Averages */}
-        <Grid container spacing={4} sx={{ py: 1 }}>
-          <Grid item xs={12} md={4}>
-            {renderCircularStat({
-              width: '75%',
-              label: 'Interactions',
-              value: content.metrics?.total_interactions || 0,
-              metricKey: 'totalInteractions'
-            })}
-          </Grid>
-          
-          <Grid item xs={12} md={4}>
-            {renderCircularStat({
-              width: '75%',
-              label: 'Reach',
-              value: content.metrics?.reach || 0,
-              metricKey: 'reach'
-            })}
-          </Grid>
+        <Box sx={{ overflowX: 'auto', mb: 2, display: { sm: 'flex' }, justifyContent: 'center' }}>
+          <Box sx={{ minWidth: 'min-content' }}>
+            <Grid container spacing={{ xs: 6, sm: 8, md: 12 }} sx={{ width: { xs: 'max-content', sm: 'auto' } }}>
+              <Grid item xs={4} md={4}>
+                {renderCircularStat({
+                  width: '75%',
+                  label: 'Interactions',
+                  value: content.metrics?.total_interactions || 0,
+                  metricKey: 'totalInteractions'
+                })}
+              </Grid>
+              
+              <Grid item xs={4} md={4}>
+                {renderCircularStat({
+                  width: '75%',
+                  label: 'Reach',
+                  value: content.metrics?.reach || 0,
+                  metricKey: 'reach'
+                })}
+              </Grid>
 
-          <Grid item xs={12} md={4}>
-            {renderCircularStat({
-              width: '75%',
-              label: 'Shares',
-              value: content.metrics?.shares || 0,
-              metricKey: 'shares'
-            })}
-          </Grid>
-        </Grid>
+              <Grid item xs={4} md={4}>
+                {renderCircularStat({
+                  width: '75%',
+                  label: 'Shares',
+                  value: content.metrics?.shares || 0,
+                  metricKey: 'shares'
+                })}
+              </Grid>
+            </Grid>
+          </Box>
+        </Box>
 
         <StatsLegend />
       </Grid>

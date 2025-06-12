@@ -42,7 +42,7 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 								flexDirection: 'column',
 								gap: { xs: '16px', sm: '20px' },
 								justifyContent: 'space-between',
-								pr: 5
+								pr: 2
 							}}
 						>
 							{renderEngagementCard({
@@ -76,23 +76,37 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 						{/* Right column: Circular stats */}
 						<Box
 							sx={{
-								display: 'flex',
-								flexDirection: 'column',
-								alignItems: 'center',
 								mt: { xs: 4, sm: 0 }
 							}}
 						>
-							{renderCircularStat({
-								label: 'Interactions',
-								value: content.metrics?.total_interactions || 0,
-								metricKey: 'totalInteractions'
-							})}
+							<Box
+								sx={{
+									overflowX: { xs: 'auto', md: 'visible' },
+									display: 'flex',
+									justifyContent: 'center',
+								}}
+							>
+								<Box
+									sx={{
+										display: 'flex',
+										gap: 3,
+										flexDirection: { xs: 'row', md: 'column' },
+										minWidth: { xs: 'min-content', md: 'auto' },
+									}}
+								>
+									{renderCircularStat({
+										label: 'Interactions',
+										value: content.metrics?.total_interactions || 0,
+										metricKey: 'totalInteractions'
+									})}
 
-							{renderCircularStat({
-								label: 'Shares',
-								value: content.metrics?.shares || 0,
-								metricKey: 'shares'
-							})}
+									{renderCircularStat({
+										label: 'Shares',
+										value: content.metrics?.shares || 0,
+										metricKey: 'shares'
+									})}
+								</Box>
+							</Box>
 
 							<StatsLegend />
 						</Box>
