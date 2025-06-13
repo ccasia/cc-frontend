@@ -85,7 +85,8 @@ const MediaKitCreator = () => {
       const formatted = (num / 1000).toFixed(1);
       return formatted.endsWith('.0') ? `${Math.floor(num / 1000)}K` : `${formatted}K`;
     }
-    return num.toString();
+    // For 1s, 10s, 100s: show as integer, no decimals
+    return Math.floor(num).toString();
   };
 
   // Utility function to format total audience numbers with commas
