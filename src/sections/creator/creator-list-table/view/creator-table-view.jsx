@@ -117,21 +117,22 @@ function CreatorTableView() {
       setIsExporting(true);
       const response = await axiosInstance.get(endpoints.creators.exportCreators);
 
-      if (response.data && response.data.url) {
-        // Open the spreadsheet in a new tab
-        const a = document.createElement('a');
-        a.href = response.data.url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        enqueueSnackbar('Creators exported to spreadsheet successfully', { variant: 'success' });
+      if (response.data?.success && response.data?.url) {
+        const newWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
+        
+        if (newWindow === null) {
+          // Pop-up was blocked
+          enqueueSnackbar('Please allow pop-ups to open the spreadsheet', { variant: 'warning' });
+          // Provide URL in console for manual copying
+          console.log('Spreadsheet URL:', response.data.url);
+        } else {
+          enqueueSnackbar('Creators exported to spreadsheet successfully', { variant: 'success' });
+        }
+      } else {
+        throw new Error('Invalid response from server');
       }
     } catch (error) {
-      console.log(`Spreadsheet url: ${process.env.REGISTERED_CREATORS_SPREADSHEET_ID}`);
-      console.error('Error exporting creators to spreadsheet: ', error);
+      console.error('Error exporting creators to spreadsheet:', error);
       enqueueSnackbar('Failed to export creators to spreadsheet', { variant: 'error' });
     } finally {
       setIsExporting(false);
