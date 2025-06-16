@@ -7,27 +7,55 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
+import { useGetAllCreators } from 'src/api/creator';
 import { useNavigate } from 'react-router';
+
 
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
 
-  const { data: submissionData, isLoading } = useGetAllSubmissions();
+  const { data: submissionData, isLoading: isLoadingSubmissions } = useGetAllSubmissions();
+  const { data: creatorData } = useGetAllCreators();
   
   const reportList = React.useMemo(() => {
-    if (!submissionData) return [];
-    
-    return submissionData?.submissions
-      ?.filter((submission) => {
-        if (!submission.content) return false;
-        
-        // More specific regex patterns for actual post links
-        const instagramPostRegex = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
-        const tiktokPostRegex = /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/(?:video|photo)\/\d+/i;
-        
-        return instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
+    if (!submissionData?.submissions || !creatorData) return [];
+
+    const urlValidators = {
+      instagram: {
+        regex: /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i,
+      },
+      tiktok: {
+        regex: /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/(?:video|photo)\/\d+/i,
+      }
+    };
+
+    // Create a map of creator social connections using creator id
+    const creatorConnections = new Map(
+      creatorData.map(creator => [
+        creator.id,
+        {
+          isInstagramConnected: creator.creator?.isFacebookConnected || false,
+          isTiktokConnected: creator.creator?.isTiktokConnected || false
+        }
+      ])
+    );
+
+    return submissionData.submissions
+      .filter(submission => {
+        if (!submission.content || !submission.user?.id) return false;
+
+        // Find the creator connection data using the user's creator data
+        const creator = creatorData.find(c => c.id === submission.user.id);
+        if (!creator?.creator) return false;
+
+        // Check for valid URLs and matching platform connections
+        const hasInstagramContent = urlValidators.instagram.regex.test(submission.content);
+        const hasTiktokContent = urlValidators.tiktok.regex.test(submission.content);
+
+        return (hasInstagramContent && creator.creator.isFacebookConnected) ||
+              (hasTiktokContent && creator.creator.isTiktokConnected);
       })
-      ?.map((submission) => ({
+      .map(submission => ({
         id: submission.id,
         creatorName: submission.user?.name || 'N/A',
         creatorEmail: submission.user?.email || 'N/A',
@@ -36,18 +64,16 @@ const CampaignPerformanceTable = () => {
         content: submission.content,
         submissionId: submission.id,
         campaignId: submission.campaignId,
-        userId: submission.user?.id,
+        userId: submission.user?.id
       }))
       .sort((a, b) => {
-        // First sort by campaign name
         const campaignCompare = a.campaignName.localeCompare(b.campaignName);
-        // If campaign names are the same, sort by creator name
         return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
       });
 
-  }, [submissionData]);
+  }, [submissionData, creatorData]);
 
-  if (isLoading) {
+  if (isLoadingSubmissions) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
         <CircularProgress />
@@ -298,7 +324,7 @@ const CampaignPerformanceTable = () => {
                   color: '#999',
                 }}
               >
-                Campaigns with completed submissions will appear here
+                Campaigns with completed submissions from creators with connected social accounts will appear here
               </Typography>
             </Box>
           )}
