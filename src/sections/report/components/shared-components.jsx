@@ -87,7 +87,7 @@ export const ContentImageCard = ({ content }) => (
     />
     <Box
       sx={{
-        height: 70,
+        height: 75,
         overflow: 'hidden'
       }}
     >
