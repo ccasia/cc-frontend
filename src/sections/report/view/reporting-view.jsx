@@ -392,8 +392,8 @@ const ReportingView = () => {
   };
 
   const renderEngagementCard = ({ height, title, value, metricKey }) => {
-    let changeDisplay = '--';
-    let changeIsPositive = false;
+    let changeDisplay = '+100%';
+    let changeIsPositive = true;
     let comparisonText = 'campaign average';
 
     // Use campaign comparison data if available
