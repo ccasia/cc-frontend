@@ -89,7 +89,7 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
 								<Box
 									sx={{
 										display: 'flex',
-										gap: 3,
+										gap: { xs: 4, md: 0 },
 										flexDirection: { xs: 'row', md: 'column' },
 										minWidth: { xs: 'min-content', md: 'auto' },
 									}}

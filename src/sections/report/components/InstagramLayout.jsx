@@ -74,9 +74,9 @@ const InstagramLayout = ({ content, renderEngagementCard, renderCircularStat }) 
         </Box>
 
         {/* Circular Stats with Campaign Averages */}
-        <Box sx={{ overflowX: 'auto', mb: 2, display: { sm: 'flex' }, justifyContent: 'center' }}>
+        <Box sx={{ overflowX: 'auto', display: { sm: 'flex' }, justifyContent: 'center' }}>
           <Box sx={{ minWidth: 'min-content' }}>
-            <Grid container spacing={{ xs: 6, sm: 8, md: 12 }} sx={{ width: { xs: 'max-content', sm: 'auto' } }}>
+            <Grid container spacing={4} sx={{ width: { xs: 'max-content', sm: 'auto' } }}>
               <Grid item xs={4} md={4}>
                 {renderCircularStat({
                   width: '75%',

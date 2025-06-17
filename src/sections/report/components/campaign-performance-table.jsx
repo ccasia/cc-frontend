@@ -158,7 +158,7 @@ const CampaignPerformanceTable = () => {
                 Creator
               </Typography>
             </Box>
-            <Box sx={{ flex: '0 0 30%' }}>
+            <Box sx={{ flex: '0 0 35%' }}>
               <Typography
                 sx={{
                   fontWeight: 600,
@@ -169,7 +169,7 @@ const CampaignPerformanceTable = () => {
                 Creator's Email
               </Typography>
             </Box>
-            <Box sx={{ flex: '0 0 30%' }}>
+            <Box sx={{ flex: '0 0 25%' }}>
               <Typography
                 sx={{
                   fontWeight: 600,
@@ -180,7 +180,7 @@ const CampaignPerformanceTable = () => {
                 Campaign Name
               </Typography>
             </Box>
-            <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
+            <Box sx={{ flex: '0 0 15%', textAlign: 'right' }}>
               {/* Empty space for action column */}
             </Box>
           </Box>
@@ -203,10 +203,10 @@ const CampaignPerformanceTable = () => {
               >
                 <Box sx={{ 
                   flex: '0 0 20%', 
-                  minWidth: 200, 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: 2 
+                  gap: 2,
+                  pr: 2
                 }}>
                   <Avatar
                     src={row.creatorAvatar}
@@ -234,7 +234,7 @@ const CampaignPerformanceTable = () => {
                     {row.creatorName}
                   </Typography>
                 </Box>
-                <Box sx={{ flex: '0 0 30%', pr: 2 }}>
+                <Box sx={{ flex: '0 0 35%', pr: 2 }}>
                   <Typography
                     sx={{
                       fontWeight: 400,
@@ -248,7 +248,7 @@ const CampaignPerformanceTable = () => {
                     {row.creatorEmail}
                   </Typography>
                 </Box>
-                <Box sx={{ flex: '0 0 30%', pr: 2 }}>
+                <Box sx={{ flex: '0 0 25%', pr: 2 }}>
                   <Typography
                     sx={{
                       fontSize: 14,
@@ -262,7 +262,7 @@ const CampaignPerformanceTable = () => {
                     {row.campaignName}
                   </Typography>
                 </Box>
-                <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
+                <Box sx={{ flex: '0 0 15%', textAlign: 'right' }}>
                   <Button
                     variant="text"
                     onClick={() => handleViewReport(row)}
