@@ -1,23 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Avatar,
   Button,
   Typography,
   Box,
-  CircularProgress
+  CircularProgress,
+  MenuItem,
+  Select,
+  FormControl,
 } from '@mui/material';
+import { ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
 import { useGetAllSubmissions } from 'src/hooks/use-get-submission';
 import { useGetAllCreators } from 'src/api/creator';
 import { useNavigate } from 'react-router';
 
-
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCampaign, setSelectedCampaign] = useState('all');
+  const itemsPerPage = 7;
 
   const { data: submissionData, isLoading: isLoadingSubmissions } = useGetAllSubmissions();
   const { data: creatorData } = useGetAllCreators();
   
-  const reportList = React.useMemo(() => {
+  const reportList = useMemo(() => {
     if (!submissionData?.submissions || !creatorData) return [];
 
     const urlValidators = {
@@ -73,6 +79,18 @@ const CampaignPerformanceTable = () => {
 
   }, [submissionData, creatorData]);
 
+  // Get unique campaigns for filter dropdown
+  const uniqueCampaigns = useMemo(() => {
+    const campaigns = [...new Set(reportList.map(item => item.campaignName))];
+    return campaigns.filter(name => name !== 'N/A').sort();
+  }, [reportList]);
+
+  // Filter reports based on selected campaign
+  const filteredReports = useMemo(() => {
+    if (selectedCampaign === 'all') return reportList;
+    return reportList.filter(report => report.campaignName === selectedCampaign);
+  }, [reportList, selectedCampaign]);
+
   if (isLoadingSubmissions) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
@@ -95,20 +113,90 @@ const CampaignPerformanceTable = () => {
     navigate(`/dashboard/report/view?${params.toString()}`);
   };
 
+  const handleNextPage = () => {
+    setCurrentPage(prev => prev + 1);
+  };
+
+  const handlePrevPage = () => {
+    setCurrentPage(prev => prev - 1);
+  };
+
+  const handleCampaignFilterChange = (event) => {
+    setSelectedCampaign(event.target.value);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const displayedReports = filteredReports.slice(startIndex, endIndex);
+  const hasNextPage = currentPage < totalPages;
+  const hasPrevPage = currentPage > 1;
+
   return (
     <Box sx={{ mt: 4 }}>
+      {/* Header with title */}
       <Typography
         variant="h5"
         sx={{
           fontFamily: 'Aileron',
           fontSize: { xs: 18, md: 24 },
           fontWeight: 600,
-          mb: 2,
           color: '#333',
+          mb: 2
         }}
       >
         Your Campaigns
       </Typography>
+
+      {/* Campaign Filter Dropdown - Left aligned above table */}
+      <Box sx={{ mb: 2 }}>
+        <FormControl sx={{ width: 400 }}>
+          <Select
+            
+            value={selectedCampaign}
+            onChange={handleCampaignFilterChange}
+            displayEmpty
+            sx={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '8px',
+              height: 48,
+              fontSize: '16px',
+              fontWeight: 400,
+              color: '#000000',
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#E7E7E7',
+                borderRadius: '8px',
+                borderWidth: '1px',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#E7E7E7',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#E7E7E7',
+              },
+              '& .MuiSelect-select': {
+                paddingTop: '12px',
+                paddingRight: '12px',
+                paddingBottom: '12px',
+                paddingLeft: '14px',
+                display: 'flex',
+                alignItems: 'center',
+              },
+            }}
+          >
+            <MenuItem value="all" sx={{ fontSize: '14px', fontWeight: 400 }}>
+              All Campaigns
+            </MenuItem>
+            {uniqueCampaigns.map((campaign) => (
+              <MenuItem key={campaign} value={campaign} sx={{ fontSize: '14px', fontWeight: 400 }}>
+                {campaign}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
       {/* Scrollable Container */}
       <Box
@@ -147,7 +235,7 @@ const CampaignPerformanceTable = () => {
               mb: 0,
             }}
           >
-            <Box sx={{ flex: '0 0 20%' }}>
+            <Box sx={{ flex: '0 0 25%' }}>
               <Typography
                 sx={{
                   fontWeight: 600,
@@ -158,7 +246,7 @@ const CampaignPerformanceTable = () => {
                 Creator
               </Typography>
             </Box>
-            <Box sx={{ flex: '0 0 35%' }}>
+            <Box sx={{ flex: '0 0 30%' }}>
               <Typography
                 sx={{
                   fontWeight: 600,
@@ -187,7 +275,7 @@ const CampaignPerformanceTable = () => {
 
           {/* Table Body */}
           <Box sx={{ width: '100%' }}>
-            {reportList.map((row, index) => (
+            {displayedReports.map((row, index) => (
               <Box
                 key={row.id}
                 sx={{
@@ -202,9 +290,10 @@ const CampaignPerformanceTable = () => {
                 }}
               >
                 <Box sx={{ 
-                  flex: '0 0 20%', 
+                  flex: '0 0 25%', 
                   display: 'flex', 
                   alignItems: 'center', 
+                  maxWidth: 300,
                   gap: 2,
                   pr: 2
                 }}>
@@ -234,13 +323,13 @@ const CampaignPerformanceTable = () => {
                     {row.creatorName}
                   </Typography>
                 </Box>
-                <Box sx={{ flex: '0 0 35%', pr: 2 }}>
+                <Box sx={{ flex: '0 0 30%', pr: 2 }}>
                   <Typography
                     sx={{
                       fontWeight: 400,
                       fontSize: 14,
+                      maxWidth: 260,
                       color: '#666',
-                      whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                     }}
@@ -297,8 +386,191 @@ const CampaignPerformanceTable = () => {
             ))}
           </Box>
 
+          {/* Pagination Controls - Clean minimal design */}
+          {totalPages > 1 && (
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              mt: 3,
+              pb: 2,
+              gap: 0.3
+            }}>
+              {/* Previous Button */}
+              <Button
+                onClick={handlePrevPage}
+                disabled={!hasPrevPage}
+                sx={{
+                  minWidth: 'auto',
+                  p: 0,
+                  backgroundColor: 'transparent',
+                  color: hasPrevPage ? '#000000' : '#8E8E93',
+                  border: 'none',
+                  fontSize: 20,
+                  fontWeight: 400,
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                  },
+                  '&:disabled': {
+                    backgroundColor: 'transparent',
+                    color: '#8E8E93',
+                  },
+                }}
+              >
+                <ChevronLeftRounded size={16} />
+              </Button>
+
+              {/* Page Numbers */}
+              {(() => {
+                const pageButtons = [];
+                const showEllipsis = totalPages > 3;
+                
+                if (!showEllipsis) {
+                  // Show all pages if 3 or fewer
+                  for (let i = 1; i <= totalPages; i++) {
+                    pageButtons.push(
+                      <Button
+                        key={i}
+                        onClick={() => setCurrentPage(i)}
+                        sx={{
+                          minWidth: 'auto',
+                          p: 0,
+                          mx: 1,
+                          backgroundColor: 'transparent',
+                          color: currentPage === i ? '#000000' : '#8E8E93',
+                          border: 'none',
+                          fontSize: 16,
+                          fontWeight: 400,
+                          '&:hover': {
+                            backgroundColor: 'transparent',
+                          },
+                        }}
+                      >
+                        {i}
+                      </Button>
+                    );
+                  }
+                } else {
+                  // Show 1, current-1, current, current+1, ..., last
+                  pageButtons.push(
+                    <Button
+                      key={1}
+                      onClick={() => setCurrentPage(1)}
+                      sx={{
+                        minWidth: 'auto',
+                        p: 0,
+                        mx: 1,
+                        backgroundColor: 'transparent',
+                        color: currentPage === 1 ? '#000000' : '#8E8E93',
+                        border: 'none',
+                        fontSize: 16,
+                        fontWeight: 400,
+                        '&:hover': {
+                          backgroundColor: 'transparent',
+                        },
+                      }}
+                    >
+                      1
+                    </Button>
+                  );
+
+                  if (currentPage > 3) {
+                    pageButtons.push(
+                      <Typography key="ellipsis1" sx={{ mx: 1, color: '#8E8E93', fontSize: 16 }}>
+                        ...
+                      </Typography>
+                    );
+                  }
+
+                  // Show current page and adjacent pages
+                  for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                    pageButtons.push(
+                      <Button
+                        key={i}
+                        onClick={() => setCurrentPage(i)}
+                        sx={{
+                          minWidth: 'auto',
+                          p: 0,
+                          mx: 1,
+                          backgroundColor: 'transparent',
+                          color: currentPage === i ? '#000000' : '#8E8E93',
+                          border: 'none',
+                          fontSize: 16,
+                          fontWeight: 400,
+                          '&:hover': {
+                            backgroundColor: 'transparent',
+                          },
+                        }}
+                      >
+                        {i}
+                      </Button>
+                    );
+                  }
+
+                  if (currentPage < totalPages - 2) {
+                    pageButtons.push(
+                      <Typography key="ellipsis2" sx={{ mx: 1, color: '#8E8E93', fontSize: 16 }}>
+                        ...
+                      </Typography>
+                    );
+                  }
+
+                  if (totalPages > 1) {
+                    pageButtons.push(
+                      <Button
+                        key={totalPages}
+                        onClick={() => setCurrentPage(totalPages)}
+                        sx={{
+                          minWidth: 'auto',
+                          p: 0,
+                          mx: 1,
+                          backgroundColor: 'transparent',
+                          color: currentPage === totalPages ? '#000000' : '#8E8E93',
+                          border: 'none',
+                          fontSize: 16,
+                          fontWeight: 400,
+                          '&:hover': {
+                            backgroundColor: 'transparent',
+                          },
+                        }}
+                      >
+                        {totalPages}
+                      </Button>
+                    );
+                  }
+                }
+
+                return pageButtons;
+              })()}
+
+              {/* Next Button */}
+              <Button
+                onClick={handleNextPage}
+                disabled={!hasNextPage}
+                sx={{
+                  minWidth: 'auto',
+                  p: 0,
+                  backgroundColor: 'transparent',
+                  color: hasNextPage ? '#000000' : '#8E8E93',
+                  border: 'none',
+                  fontSize: 16,
+                  fontWeight: 400,
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                  },
+                  '&:disabled': {
+                    backgroundColor: 'transparent',
+                    color: '#8E8E93',
+                  },
+                }}
+              >
+                <ChevronRightRounded size={16} />
+              </Button>
+            </Box>
+          )}
+
           {/* Empty state - show when no data */}
-          {reportList.length === 0 && (
+          {filteredReports.length === 0 && (
             <Box
               sx={{
                 p: 6,
@@ -316,7 +588,7 @@ const CampaignPerformanceTable = () => {
                   mb: 1,
                 }}
               >
-                No campaigns found
+                {selectedCampaign === 'all' ? 'No campaigns found' : `No results for "${selectedCampaign}"`}
               </Typography>
               <Typography
                 sx={{
@@ -324,7 +596,10 @@ const CampaignPerformanceTable = () => {
                   color: '#999',
                 }}
               >
-                Campaigns with completed submissions from creators with connected social accounts will appear here
+                {selectedCampaign === 'all' 
+                  ? 'Campaigns with completed submissions from creators with connected social accounts will appear here'
+                  : 'Try selecting a different campaign or check "All Campaigns"'
+                }
               </Typography>
             </Box>
           )}
