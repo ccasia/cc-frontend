@@ -35,17 +35,6 @@ const CampaignPerformanceTable = () => {
       }
     };
 
-    // Create a map of creator social connections using creator id
-    const creatorConnections = new Map(
-      creatorData.map(creator => [
-        creator.id,
-        {
-          isInstagramConnected: creator.creator?.isFacebookConnected || false,
-          isTiktokConnected: creator.creator?.isTiktokConnected || false
-        }
-      ])
-    );
-
     return submissionData.submissions
       .filter(submission => {
         if (!submission.content || !submission.user?.id) return false;
@@ -184,6 +173,11 @@ const CampaignPerformanceTable = () => {
                 display: 'flex',
                 alignItems: 'center',
               },
+              '& .MuiSelect-icon': {
+                color: '#231F20',
+                height: 20,
+                width: 20,
+              }
             }}
           >
             <MenuItem value="all" sx={{ fontSize: '14px', fontWeight: 400 }}>
