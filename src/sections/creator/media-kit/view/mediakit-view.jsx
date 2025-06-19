@@ -438,6 +438,11 @@ const MediaKitCreator = () => {
       open: false,
       imageUrl: '',
     });
+    
+    // Reset loading state when closing image preview
+    setCaptureLoading(false);
+    setCaptureState('idle');
+    setCaptureType('');
   };
 
   const capturePdf = useCallback(async () => {
@@ -2219,8 +2224,8 @@ const MediaKitCreator = () => {
             </Box>
           )}
           
-          {/* Default subtitle for non-iOS or early states */}
-          {(!isIOSSafari() || (captureState === 'preparing' || captureState === 'processing')) && !pdfReadyState.ready && (
+          {/* Default subtitle for non-iOS PDF or any image downloads */}
+          {(!isIOSSafari() || captureType === 'image' || (captureState === 'preparing' || captureState === 'processing')) && !pdfReadyState.ready && (
             <Typography
               variant="body2"
               sx={{
