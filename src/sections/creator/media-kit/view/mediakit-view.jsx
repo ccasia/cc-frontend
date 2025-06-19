@@ -50,6 +50,7 @@ const MediaKitCreator = () => {
   const mobileShareButtonRef = useRef(null);
   const [captureLoading, setCaptureLoading] = useState(false);
   const [captureState, setCaptureState] = useState('idle');
+  const [captureType, setCaptureType] = useState(''); // 'pdf' or 'image'
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [pdfReadyState, setPdfReadyState] = useState({ ready: false, pdfUrl: null });
   const menuOpen = Boolean(menuAnchorEl);
@@ -164,11 +165,14 @@ const MediaKitCreator = () => {
   //   setOpenSetting(!openSetting);
   // };
 
-  // Helper function to detect iOS Safari
+  // Helper function to detect iOS Safari specifically (not other browsers on iOS)
   const isIOSSafari = useCallback(() => {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-    const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+    
+    // Check if it's specifically Safari on iOS (not Chrome, Firefox, etc.)
+    const isSafari = /Safari/.test(userAgent) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(userAgent);
+    
     return isIOS && isSafari;
   }, []);
 
@@ -312,6 +316,7 @@ const MediaKitCreator = () => {
       try {
         setCaptureLoading(true);
         setCaptureState('preparing');
+        setCaptureType('image');
 
         // Always use the hidden desktop layout for consistent output regardless of screen size
         const element = desktopLayoutRef.current;
@@ -439,6 +444,7 @@ const MediaKitCreator = () => {
     try {
       setCaptureLoading(true);
       setCaptureState('preparing');
+      setCaptureType('pdf');
 
       // const element = isDesktop ? containerRef.current : desktopLayoutRef.current;
 
@@ -569,6 +575,7 @@ const MediaKitCreator = () => {
         setTimeout(() => {
           setCaptureLoading(false);
           setCaptureState('idle');
+          setCaptureType('');
         }, 500);
       }
 
@@ -632,7 +639,7 @@ const MediaKitCreator = () => {
       return 'Your PDF is ready!';
     }
 
-    if (isIOSSafari()) {
+    if (isIOSSafari() && captureType === 'pdf') {
       switch (captureState) {
         case 'preparing':
           return 'Preparing your Media Kit...';
@@ -656,14 +663,14 @@ const MediaKitCreator = () => {
         case 'capturing':
           return 'Capturing...';
         case 'processing':
-          return 'Finalizing download...';
+          return captureType === 'pdf' ? 'Finalizing download...' : 'Processing...';
         case 'complete':
-          return 'Download complete!';
+          return captureType === 'pdf' ? 'Download complete!' : 'Download complete!';
         default:
           return 'Working...';
       }
     }
-  }, [captureLoading, captureState, pdfReadyState.ready, isIOSSafari]);
+  }, [captureLoading, captureState, captureType, pdfReadyState.ready, isIOSSafari]);
 
   // Function to handle opening the PDF for iOS Safari
   const handleOpenPdf = useCallback(() => {
@@ -671,12 +678,13 @@ const MediaKitCreator = () => {
       window.location.href = pdfReadyState.pdfUrl;
       
       // Clean up
-      setTimeout(() => {
-        URL.revokeObjectURL(pdfReadyState.pdfUrl);
-        setPdfReadyState({ ready: false, pdfUrl: null });
-        setCaptureLoading(false);
-        setCaptureState('idle');
-      }, 1000);
+             setTimeout(() => {
+         URL.revokeObjectURL(pdfReadyState.pdfUrl);
+         setPdfReadyState({ ready: false, pdfUrl: null });
+         setCaptureLoading(false);
+         setCaptureState('idle');
+         setCaptureType('');
+       }, 1000);
     }
   }, [pdfReadyState.pdfUrl]);
 
@@ -2068,8 +2076,8 @@ const MediaKitCreator = () => {
             </Typography>
           )}
           
-          {/* iOS Safari Instructions - Show during rendering/capturing states */}
-          {isIOSSafari() && (captureState === 'rendering' || captureState === 'capturing') && (
+          {/* iOS Safari Instructions - Show during rendering/capturing states for PDF only */}
+          {isIOSSafari() && captureType === 'pdf' && (captureState === 'rendering' || captureState === 'capturing') && (
             <Box
               sx={{
                 mt: 2,
