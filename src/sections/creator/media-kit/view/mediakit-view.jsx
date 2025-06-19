@@ -51,6 +51,7 @@ const MediaKitCreator = () => {
   const [captureLoading, setCaptureLoading] = useState(false);
   const [captureState, setCaptureState] = useState('idle');
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const [pdfReadyState, setPdfReadyState] = useState({ ready: false, pdfUrl: null });
   const menuOpen = Boolean(menuAnchorEl);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -162,6 +163,14 @@ const MediaKitCreator = () => {
   // const handleClose = () => {
   //   setOpenSetting(!openSetting);
   // };
+
+  // Helper function to detect iOS Safari
+  const isIOSSafari = useCallback(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+    return isIOS && isSafari;
+  }, []);
 
   // Helper function to ensure all images and iframes are loaded
   const ensureContentLoaded = useCallback(async (element) => {
@@ -402,10 +411,10 @@ const MediaKitCreator = () => {
           severity: 'error',
         });
       } finally {
-        setTimeout(() => {
-          setCaptureLoading(false);
-          setCaptureState('idle');
-        }, 500);
+        // Don't reset loading state here for iOS Safari - it's handled in the PDF ready state
+        if (!isIOSSafari()) {
+          // Already handled above for non-iOS browsers
+        }
       }
     },
     [
@@ -414,6 +423,7 @@ const MediaKitCreator = () => {
       // isDesktop,
       getScreenshotStyles,
       ensureContentLoaded,
+      isIOSSafari,
     ]
   );
 
@@ -531,18 +541,37 @@ const MediaKitCreator = () => {
       // Add the image to the PDF with proper scaling and high quality
       pdf.addImage(dataUrl, 'PNG', xOffset, yOffset, imgWidth, imgHeight, undefined, 'FAST');
 
-      // Also make a higher resolution version available for download
-      const highResLink = document.createElement('a');
-      highResLink.download = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit_HighRes.png`;
-      highResLink.href = dataUrl;
+      const fileName = `${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.pdf`;
 
-      pdf.save(`${user?.creator?.mediaKit?.displayName || user?.name}_Media_Kit.pdf`);
+      // Check if iOS Safari and handle accordingly
+      if (isIOSSafari()) {
+        // For iOS Safari, prepare PDF and show instructions
+        setCaptureState('complete');
+        
+        const pdfBlob = pdf.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        
+        // Set PDF ready state to show instructions
+        setTimeout(() => {
+          setPdfReadyState({ ready: true, pdfUrl });
+        }, 500);
+      } else {
+        // For other browsers, use normal download
+        pdf.save(fileName);
+        
+        setSnackbar({
+          open: true,
+          message: 'PDF saved successfully!',
+          severity: 'success',
+        });
+        
+        setCaptureState('complete');
+        setTimeout(() => {
+          setCaptureLoading(false);
+          setCaptureState('idle');
+        }, 500);
+      }
 
-      setSnackbar({
-        open: true,
-        message: 'PDF saved successfully!',
-        severity: 'success',
-      });
       setCaptureState('complete');
     } catch (error) {
       console.error('Error capturing PDF:', error);
@@ -560,7 +589,7 @@ const MediaKitCreator = () => {
   }, [
     user?.creator?.mediaKit?.displayName,
     user?.name,
-    // isDesktop,
+    isIOSSafari,
     getScreenshotStyles,
     ensureContentLoaded,
   ]);
@@ -594,6 +623,62 @@ const MediaKitCreator = () => {
         return 'Working...';
     }
   }, [captureLoading, captureState]);
+
+  // Helper function to get loading message based on state and platform
+  const getLoadingMessage = useCallback(() => {
+    if (!captureLoading && !pdfReadyState.ready) return '';
+
+    if (pdfReadyState.ready) {
+      return 'Your PDF is ready!';
+    }
+
+    if (isIOSSafari()) {
+      switch (captureState) {
+        case 'preparing':
+          return 'Preparing your Media Kit...';
+        case 'rendering':
+          return 'Loading all content...';
+        case 'capturing':
+          return 'Capturing...';
+        case 'processing':
+          return 'Almost ready! PDF will open shortly...';
+        case 'complete':
+          return 'PDF is ready!';
+        default:
+          return 'Preparing your Media Kit...';
+      }
+    } else {
+      switch (captureState) {
+        case 'preparing':
+          return 'Preparing media kit...';
+        case 'rendering':
+          return 'Loading all content...';
+        case 'capturing':
+          return 'Capturing...';
+        case 'processing':
+          return 'Finalizing download...';
+        case 'complete':
+          return 'Download complete!';
+        default:
+          return 'Working...';
+      }
+    }
+  }, [captureLoading, captureState, pdfReadyState.ready, isIOSSafari]);
+
+  // Function to handle opening the PDF for iOS Safari
+  const handleOpenPdf = useCallback(() => {
+    if (pdfReadyState.pdfUrl) {
+      window.location.href = pdfReadyState.pdfUrl;
+      
+      // Clean up
+      setTimeout(() => {
+        URL.revokeObjectURL(pdfReadyState.pdfUrl);
+        setPdfReadyState({ ready: false, pdfUrl: null });
+        setCaptureLoading(false);
+        setCaptureState('idle');
+      }, 1000);
+    }
+  }, [pdfReadyState.pdfUrl]);
 
   useEffect(() => {
     getInstagram();
@@ -1830,7 +1915,7 @@ const MediaKitCreator = () => {
           backgroundColor: 'rgba(0, 0, 0, 0.65)',
           transition: 'all 0.3s ease-in-out',
         }}
-        open={captureLoading}
+        open={captureLoading || pdfReadyState.ready}
       >
         <Box
           sx={{
@@ -1895,6 +1980,9 @@ const MediaKitCreator = () => {
                   left: 0,
                   height: '100%',
                   width: (() => {
+                    if (pdfReadyState.ready) {
+                      return '100%';
+                    }
                     switch (captureState) {
                       case 'complete':
                         return '100%';
@@ -1925,7 +2013,7 @@ const MediaKitCreator = () => {
                 position: 'relative',
                 zIndex: 2,
                 filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))',
-                animation: captureLoading ? 'popIn 0.6s 0.2s ease-out forwards' : 'none',
+                animation: (captureLoading || pdfReadyState.ready) ? 'popIn 0.6s 0.2s ease-out forwards' : 'none',
                 opacity: 0,
                 '@keyframes popIn': {
                   '0%': { opacity: 0, transform: 'scale(0.8)' },
@@ -1946,7 +2034,7 @@ const MediaKitCreator = () => {
               fontFamily: 'Aileron, sans-serif',
               textAlign: 'center',
               letterSpacing: '0.01em',
-              animation: captureLoading ? 'slideUp 0.5s 0.3s ease-out forwards' : 'none',
+              animation: (captureLoading || pdfReadyState.ready) ? 'slideUp 0.5s 0.3s ease-out forwards' : 'none',
               opacity: 0,
               transform: 'translateY(10px)',
               '@keyframes slideUp': {
@@ -1954,30 +2042,196 @@ const MediaKitCreator = () => {
               },
             }}
           >
-            {captureState === 'preparing' && 'Preparing media kit...'}
-            {captureState === 'rendering' && 'Loading all content...'}
-            {captureState === 'capturing' && 'Capturing...'}
-            {captureState === 'processing' && 'Finalizing download...'}
-            {captureState === 'complete' && 'Download complete!'}
+            {getLoadingMessage()}
           </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'rgba(0, 0, 0, 0.6)',
-              fontFamily: 'Aileron, sans-serif',
-              textAlign: 'center',
-              maxWidth: '240px',
-              fontSize: 13,
-              lineHeight: 1.4,
-              animation: captureLoading ? 'fadeIn 0.5s 0.4s ease-out forwards' : 'none',
-              opacity: 0,
-              '@keyframes fadeIn': {
-                to: { opacity: 1 },
-              },
-            }}
-          >
-            Please wait while we prepare your Media Kit
-          </Typography>
+
+          {/* Open PDF and Save text for PDF ready state */}
+          {pdfReadyState.ready && (
+            <Typography
+              sx={{
+                mt: 1,
+                mb: 2,
+                fontWeight: 500,
+                fontSize: 14,
+                color: '#666',
+                fontFamily: 'Aileron, sans-serif',
+                textAlign: 'center',
+                animation: 'fadeInUp 0.5s 0.4s ease-out forwards',
+                opacity: 0,
+                transform: 'translateY(8px)',
+                '@keyframes fadeInUp': {
+                  to: { opacity: 1, transform: 'translateY(0)' },
+                },
+              }}
+            >
+              Open PDF and Save
+            </Typography>
+          )}
+          
+          {/* iOS Safari Instructions - Show during rendering/capturing states */}
+          {isIOSSafari() && (captureState === 'rendering' || captureState === 'capturing') && (
+            <Box
+              sx={{
+                mt: 2,
+                p: 2,
+                backgroundColor: 'rgba(19, 64, 255, 0.05)',
+                border: '1px solid rgba(19, 64, 255, 0.15)',
+                borderRadius: 2,
+                maxWidth: '280px',
+                animation: captureLoading ? 'slideInUp 0.5s 0.6s ease-out forwards' : 'none',
+                opacity: 0,
+                transform: 'translateY(15px)',
+                '@keyframes slideInUp': {
+                  to: { opacity: 1, transform: 'translateY(0)' },
+                },
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#1340FF',
+                  fontFamily: 'Aileron, sans-serif',
+                  textAlign: 'center',
+                  mb: 1,
+                }}
+              >
+                📱 How to save on iOS:
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  fontSize: 12,
+                  color: '#333',
+                  fontFamily: 'Aileron, sans-serif',
+                  textAlign: 'center',
+                  lineHeight: 1.4,
+                }}
+              >
+                <span>Tap the Share button</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ margin: '0 2px' }}>
+                  <path d="M0 0h24v24H0V0z" fill="none"/>
+                  <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/>
+                </svg>
+                <span>then &quot;Save to Files&quot;</span>
+                <svg width="14" height="14" viewBox="0 0 1024 1024" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '2px' }}>
+                  <path d="M914 192 430 192c-5.582 0-8.542-1.17-12.188-4.816l-45.002-45.002-0.336-0.324C362.73 132.666 354.722 128 338 128L114 128c-27.57 0-50 20.634-50 46l0 672c0 26.634 23.366 50 50 50l800 0c25.366 0 46-22.43 46-50L960 238C960 211.346 940.654 192 914 192zM114 160l224 0c6.994 0 7.474 0.378 12.35 4.976l44.834 44.836c9.68 9.68 20.744 14.188 34.816 14.188l484 0c8.896 0 14 5.104 14 14l0 84.752c-5.008-1.776-10.39-2.752-16-2.752L112 320c-5.61 0-10.992 0.976-16 2.752L96 174C96 165.354 105.344 160 114 160zM928 846c0 8.656-5.354 18-14 18L114 864c-8.916 0-18-9.084-18-18L96 368c0-8.822 7.178-16 16-16l800 0c8.822 0 16 7.178 16 16L928 846z"/>
+                </svg>
+              </Box>
+            </Box>
+          )}
+
+          {/* iOS Safari Open PDF Button - Show when PDF is ready */}
+          {pdfReadyState.ready && (
+            <Box
+              sx={{
+                mt: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+                animation: 'slideInUp 0.5s ease-out forwards',
+                '@keyframes slideInUp': {
+                  from: { opacity: 0, transform: 'translateY(15px)' },
+                  to: { opacity: 1, transform: 'translateY(0)' },
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  p: 2,
+                  backgroundColor: 'rgba(19, 64, 255, 0.05)',
+                  border: '1px solid rgba(19, 64, 255, 0.15)',
+                  borderRadius: 2,
+                  maxWidth: '280px',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#1340FF',
+                    fontFamily: 'Aileron, sans-serif',
+                    textAlign: 'center',
+                    mb: 1,
+                  }}
+                >
+                  📱 Remember to save:
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    fontSize: 12,
+                    color: '#333',
+                    fontFamily: 'Aileron, sans-serif',
+                    textAlign: 'center',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  <span>Tap Share</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ margin: '0 2px' }}>
+                    <path d="M0 0h24v24H0V0z" fill="none"/>
+                    <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/>
+                  </svg>
+                  <span>→ Save to Files</span>
+                  <svg width="14" height="14" viewBox="0 0 1024 1024" fill="#666" xmlns="http://www.w3.org/2000/svg" style={{ marginLeft: '2px' }}>
+                    <path d="M914 192 430 192c-5.582 0-8.542-1.17-12.188-4.816l-45.002-45.002-0.336-0.324C362.73 132.666 354.722 128 338 128L114 128c-27.57 0-50 20.634-50 46l0 672c0 26.634 23.366 50 50 50l800 0c25.366 0 46-22.43 46-50L960 238C960 211.346 940.654 192 914 192zM114 160l224 0c6.994 0 7.474 0.378 12.35 4.976l44.834 44.836c9.68 9.68 20.744 14.188 34.816 14.188l484 0c8.896 0 14 5.104 14 14l0 84.752c-5.008-1.776-10.39-2.752-16-2.752L112 320c-5.61 0-10.992 0.976-16 2.752L96 174C96 165.354 105.344 160 114 160zM928 846c0 8.656-5.354 18-14 18L114 864c-8.916 0-18-9.084-18-18L96 368c0-8.822 7.178-16 16-16l800 0c8.822 0 16 7.178 16 16L928 846z"/>
+                  </svg>
+                </Box>
+              </Box>
+
+              <Button
+                variant="contained"
+                onClick={handleOpenPdf}
+                sx={{
+                  backgroundColor: '#1340FF',
+                  color: '#FFFFFF',
+                  borderRadius: 1.25,
+                  borderBottom: '3px solid #10248c',
+                  '&:hover': {
+                    backgroundColor: '#1340FF',
+                    opacity: 0.9,
+                    borderBottom: '3px solid #10248c',
+                  },
+                  px: 4,
+                  py: 1.5,
+                  fontWeight: 600,
+                  fontSize: 16,
+                  textTransform: 'none',
+                }}
+              >
+                Open PDF
+              </Button>
+            </Box>
+          )}
+          
+          {/* Default subtitle for non-iOS or early states */}
+          {(!isIOSSafari() || (captureState === 'preparing' || captureState === 'processing')) && !pdfReadyState.ready && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'rgba(0, 0, 0, 0.6)',
+                fontFamily: 'Aileron, sans-serif',
+                textAlign: 'center',
+                maxWidth: '240px',
+                fontSize: 13,
+                lineHeight: 1.4,
+                animation: captureLoading ? 'fadeIn 0.5s 0.4s ease-out forwards' : 'none',
+                opacity: 0,
+                '@keyframes fadeIn': {
+                  to: { opacity: 1 },
+                },
+              }}
+            >
+              Please wait while we prepare your Media Kit
+            </Typography>
+          )}
         </Box>
       </Backdrop>
 
