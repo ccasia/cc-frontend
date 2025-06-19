@@ -346,7 +346,7 @@ const MediaKitCreator = () => {
         const canvasWidth = 1200;
         const horizontalPadding = (canvasWidth - elementWidth) / 2;
 
-        // Take the screenshot with centering
+        // Take the screenshot with centering (shifted 2px to the right)
         const dataUrl = await toPng(element, {
           quality: 0.95,
           pixelRatio: 2,
@@ -355,7 +355,7 @@ const MediaKitCreator = () => {
           width: canvasWidth, // canvas width
           cacheBust: true,
           style: {
-            transform: `translate(${horizontalPadding}px, 40px)`, // centering horizontally and add top margin
+            transform: `translate(${horizontalPadding + 3}px, 40px)`, // centering horizontally and add top margin, shifted 2px right
             transformOrigin: 'top left',
           },
         });
@@ -477,7 +477,7 @@ const MediaKitCreator = () => {
         width: canvasWidth,
         cacheBust: true,
         style: {
-          transform: `translate(${horizontalPadding}px, 40px)`,
+          transform: `translate(${horizontalPadding + 3}px, 40px)`,
           transformOrigin: 'top left',
         },
       });
