@@ -408,6 +408,13 @@ const MediaKitCreator = () => {
           severity: 'success',
         });
         setCaptureState('complete');
+        
+        // Reset loading state after a short delay
+        setTimeout(() => {
+          setCaptureLoading(false);
+          setCaptureState('idle');
+          setCaptureType('');
+        }, 500);
       } catch (error) {
         console.error('Error capturing screenshot:', error);
         setSnackbar({
@@ -415,11 +422,11 @@ const MediaKitCreator = () => {
           message: 'Failed to capture screenshot',
           severity: 'error',
         });
-      } finally {
-        // Don't reset loading state here for iOS Safari - it's handled in the PDF ready state
-        if (!isIOSSafari()) {
-          // Already handled above for non-iOS browsers
-        }
+        
+        // Reset loading state on error
+        setCaptureLoading(false);
+        setCaptureState('idle');
+        setCaptureType('');
       }
     },
     [
@@ -428,7 +435,7 @@ const MediaKitCreator = () => {
       // isDesktop,
       getScreenshotStyles,
       ensureContentLoaded,
-      isIOSSafari,
+      // isIOSSafari,
     ]
   );
 
@@ -653,7 +660,7 @@ const MediaKitCreator = () => {
         case 'capturing':
           return 'Capturing...';
         case 'processing':
-          return 'Almost ready! PDF will open shortly...';
+          return 'Almost ready! PDF will be available shortly...';
         case 'complete':
           return 'PDF is ready!';
         default:
@@ -2063,7 +2070,6 @@ const MediaKitCreator = () => {
             <Typography
               sx={{
                 mt: 1,
-                mb: 2,
                 fontWeight: 500,
                 fontSize: 14,
                 color: '#666',
@@ -2205,7 +2211,7 @@ const MediaKitCreator = () => {
                 sx={{
                   backgroundColor: '#1340FF',
                   color: '#FFFFFF',
-                  borderRadius: 1.25,
+                  borderRadius: 1.5,
                   borderBottom: '3px solid #10248c',
                   '&:hover': {
                     backgroundColor: '#1340FF',
