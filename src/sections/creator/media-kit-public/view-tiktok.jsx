@@ -147,13 +147,11 @@ TopContentGrid.propTypes = {
   ).isRequired,
 };
 
-
 const MediaKitSocialContent = ({ tiktokVideos, forceDesktop = false }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
 
-
-// const MediaKitSocialContent = ({ tiktokVideos }) => {
+  // const MediaKitSocialContent = ({ tiktokVideos }) => {
 
   if (!tiktokVideos?.length)
     return (
@@ -163,9 +161,9 @@ const MediaKitSocialContent = ({ tiktokVideos, forceDesktop = false }) => {
           height: 250,
           textAlign: 'center',
           borderStyle: 'dashed',
-          borderColor: (theme) => theme.palette.divider,
+          borderColor: theme.palette.divider,
           borderWidth: 1.5,
-          bgcolor: (theme) => alpha(theme.palette.warning.main, 0.16),
+          bgcolor: alpha(theme.palette.warning.main, 0.16),
           width: 1,
         }}
       >

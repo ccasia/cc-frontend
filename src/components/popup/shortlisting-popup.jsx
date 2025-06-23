@@ -1,18 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import {
-  Box,
-  Modal,
-  Stack,
-  Button,
-  Avatar,
-  Typography,
-  IconButton,
-} from '@mui/material';
+import { Box, Modal, Button, Avatar, Typography, IconButton } from '@mui/material';
 
-import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import Iconify from 'src/components/iconify';
 
@@ -106,7 +98,7 @@ const ShortlistingPopup = ({ open, onClose, campaignData }) => {
             color: '#666666', // Gray color
           }}
         >
-          You've been shortlisted for a campaign!
+          You&apos;ve been shortlisted for a campaign!
         </Typography>
 
         {/* Go to Campaign Button - Dark Gray */}
@@ -143,4 +135,4 @@ ShortlistingPopup.propTypes = {
   }),
 };
 
-export default ShortlistingPopup; 
+export default ShortlistingPopup;

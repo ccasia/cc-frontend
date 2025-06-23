@@ -168,7 +168,6 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
   const { user } = useAuthContext();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm')) && !forceDesktop;
 
-
   const tiktokData = useSocialMediaData((state) => state.tiktok);
 
   const connectTiktok = async () => {
@@ -189,9 +188,9 @@ const MediaKitSocialContent = ({ tiktok, forceDesktop = false }) => {
           height: 250,
           textAlign: 'center',
           borderStyle: 'dashed',
-          borderColor: (theme) => theme.palette.divider,
+          borderColor: theme.palette.divider,
           borderWidth: 1.5,
-          bgcolor: (theme) => alpha(theme.palette.warning.main, 0.16),
+          bgcolor: alpha(theme.palette.warning.main, 0.16),
           width: 1,
         }}
       >

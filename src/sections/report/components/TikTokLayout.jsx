@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 // components/reporting/TikTokLayout.jsx
+// components/reporting/TikTokLayout.jsx
 import { Box, Grid, Typography } from '@mui/material';
 
 import { StatsLegend, ContentImageCard, ContentInfoHeader } from './shared-components';
@@ -16,33 +17,17 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
       {/* Account, Content Type, Date Posted Row */}
       <ContentInfoHeader content={content} />
 
-					<Box
-						sx={{
-							height: 'auto',
-							display: 'grid',
-							gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr'},
-							alignContent: 'center'
-						}}
-					>
-						{/* Left column: Engagement cards */}
-						<Box
-							sx={{
-								display: 'flex',
-								flexDirection: 'column',
-								gap: { xs: '16px', sm: '20px' },
-								justifyContent: 'space-between',
-								pr: 2
-							}}
-						>
-							{renderEngagementCard({
-								height: 130,
-								icon: 'mdi:eye-outline',
-								title: 'Views',
-								value: content.metrics?.views || 0,
-								metricKey: 'views',
-								color: '#D3D3D3'
-							})}
-
+      {/* Content Engagement Section - TikTok Layout (3 cards in column, interactions and shares on right) */}
+      <Box sx={{ mb: 4 }}>
+        <Typography
+          sx={{
+            fontSize: { xs: 20, sm: 24 },
+            fontWeight: 600,
+            mb: 3,
+          }}
+        >
+          Content Engagement
+        </Typography>
 
         <Box
           sx={{
@@ -59,7 +44,7 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
               flexDirection: 'column',
               gap: { xs: '16px', sm: '20px' },
               justifyContent: 'space-between',
-              pr: 5,
+              pr: 2,
             }}
           >
             {renderEngagementCard({
@@ -80,47 +65,50 @@ const TikTokLayout = ({ height, content, renderEngagementCard, renderCircularSta
               color: '#E7E7E7',
             })}
 
-						{/* Right column: Circular stats */}
-						<Box
-							sx={{
-								mt: { xs: 4, sm: 0 }
-							}}
-						>
-							<Box
-								sx={{
-									overflowX: { xs: 'auto', md: 'visible' },
-									display: 'flex',
-									justifyContent: 'center',
-								}}
-							>
-								<Box
-									sx={{
-										display: 'flex',
-										gap: 3,
-										flexDirection: { xs: 'row', md: 'column' },
-										minWidth: { xs: 'min-content', md: 'auto' },
-									}}
-								>
-									{renderCircularStat({
-										label: 'Interactions',
-										value: content.metrics?.total_interactions || 0,
-										metricKey: 'totalInteractions'
-									})}
-
-									{renderCircularStat({
-										label: 'Shares',
-										value: content.metrics?.shares || 0,
-										metricKey: 'shares'
-									})}
-								</Box>
-							</Box>
-
-
-            {renderCircularStat({
-              label: 'Shares',
-              value: content.metrics?.shares || 0,
-              metricKey: 'shares',
+            {renderEngagementCard({
+              height: 130,
+              icon: 'mdi:comment-outline',
+              title: 'Comments',
+              value: content.metrics?.comments || 0,
+              metricKey: 'comments',
+              color: '#F5F5F5',
             })}
+          </Box>
+
+          {/* Right column: Circular stats */}
+          <Box
+            sx={{
+              mt: { xs: 4, sm: 0 },
+            }}
+          >
+            <Box
+              sx={{
+                overflowX: { xs: 'auto', md: 'visible' },
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: { xs: 4, md: 0 },
+                  flexDirection: { xs: 'row', md: 'column' },
+                  minWidth: { xs: 'min-content', md: 'auto' },
+                }}
+              >
+                {renderCircularStat({
+                  label: 'Interactions',
+                  value: content.metrics?.total_interactions || 0,
+                  metricKey: 'totalInteractions',
+                })}
+
+                {renderCircularStat({
+                  label: 'Shares',
+                  value: content.metrics?.shares || 0,
+                  metricKey: 'shares',
+                })}
+              </Box>
+            </Box>
 
             <StatsLegend />
           </Box>

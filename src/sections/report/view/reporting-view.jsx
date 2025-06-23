@@ -1,17 +1,8 @@
-
+/* eslint-disable no-nested-ternary */
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import {
-  Box,
-  Card,
-  Stack,
-  Button,
-  Container,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
-
+import { Box, Card, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -50,7 +41,8 @@ const ReportingView = () => {
       const formatted = (num / 1000000).toFixed(1);
       // Remove .0 if the decimal part is zero
       return `${formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted}M`;
-    } else if (num >= 1000) {
+    }
+    if (num >= 1000) {
       const formatted = (num / 1000).toFixed(1);
       // Remove .0 if the decimal part is zero
       return `${formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted}K`;
@@ -312,7 +304,6 @@ const ReportingView = () => {
             color: '#000',
             mb: 1,
             textAlign: 'center',
-
           }}
         >
           {label}
@@ -449,7 +440,7 @@ const ReportingView = () => {
           sx={{
             display: 'flex',
             flexDirection: 'row',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
           }}
         >
           {/* Left side - Title and comparison info */}
@@ -472,24 +463,26 @@ const ReportingView = () => {
               {title}
             </Typography>
 
-            {/* Comparison section */}            
+            {/* Comparison section */}
             <Box
               sx={{
                 display: 'flex',
                 flexDirection: 'row',
-                alignItems: 'center'
+                alignItems: 'center',
               }}
             >
-              {content.hasCampaignData && changeDisplay !== '--' && !changeDisplay.startsWith('0%') && (
-                <Iconify
-                  icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
-                  sx={{
-                    width: 18,
-                    height: 17,
-                    color: changeIsPositive ? '#1ABF66' : '#F44336',
-                  }}
-                />
-              )}
+              {content.hasCampaignData &&
+                changeDisplay !== '--' &&
+                !changeDisplay.startsWith('0%') && (
+                  <Iconify
+                    icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+                    sx={{
+                      width: 18,
+                      height: 17,
+                      color: changeIsPositive ? '#1ABF66' : '#F44336',
+                    }}
+                  />
+                )}
               <Typography
                 sx={{
                   fontWeight: 500,
@@ -623,7 +616,7 @@ const ReportingView = () => {
             fontSize: 14,
             fontWeight: 600,
             '&:hover': { backgroundColor: 'transparent' },
-            mb: 2
+            mb: 2,
           }}
         >
           Back
@@ -637,15 +630,13 @@ const ReportingView = () => {
           flexDirection={{ xs: 'column-reverse', md: 'row' }}
         >
           {/* Left side: Creator Name and Title */}
-          <Box
-            alignSelf={{ xs: 'flex-start', md: 'center' }}
-          >
+          <Box alignSelf={{ xs: 'flex-start', md: 'center' }}>
             <Typography
               sx={{
                 fontFamily: 'Aileron',
                 fontSize: { xs: 32, md: 48 },
                 fontWeight: 400,
-                lineHeight: { xs: '35px', sm: '50px'}
+                lineHeight: { xs: '35px', sm: '50px' },
               }}
             >
               {content.creatorName}
@@ -656,7 +647,7 @@ const ReportingView = () => {
                 fontFamily: 'Aileron',
                 fontSize: { xs: 32, md: 48 },
                 fontWeight: 400,
-                lineHeight: { xs: '35px', sm: '50px'}
+                lineHeight: { xs: '35px', sm: '50px' },
               }}
             >
               Content Performance Report
@@ -670,7 +661,7 @@ const ReportingView = () => {
             sx={{
               height: { xs: 50, sm: 100, md: 144 },
               alignSelf: { xs: 'flex-start', md: 'center' },
-              mb: { xs: 2, md: 0 }
+              mb: { xs: 2, md: 0 },
             }}
           />
         </Stack>
