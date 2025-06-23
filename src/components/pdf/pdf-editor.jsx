@@ -24,10 +24,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import Iconify from '../iconify';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 // eslint-disable-next-line react/prop-types
 const PDFEditor = ({ file, annotations, setAnnotations, signURL, setSignURL }) => {

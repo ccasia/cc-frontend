@@ -3,7 +3,6 @@ import useSWRInfinite from 'swr/infinite';
 import { enqueueSnackbar } from 'notistack';
 import { orderBy, debounce, throttle } from 'lodash';
 import { useMemo, useState, useEffect, useCallback } from 'react';
-
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -37,7 +36,8 @@ import { useSettingsContext } from 'src/components/settings';
 import CreatorForm from 'src/sections/creator/form/creatorForm';
 
 import CampaignLists from '../campaign-list';
-
+import { useShortlistedCreators } from '../../admin/campaign-detail-creator/hooks/shortlisted-creator';
+import { AuthContext } from 'src/auth/context/jwt';
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
@@ -50,7 +50,7 @@ export default function CampaignListView() {
 
   const { mainRef } = useMainContext();
 
-  const lgUp = useResponsive('up', 'lg');
+  const lgUp = useResponsive('up', 'lg');  
 
   const [search, setSearch] = useState({
     query: '',
