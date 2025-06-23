@@ -19,11 +19,14 @@ const CampaignPerformanceTable = () => {
 
         // More specific regex patterns for actual post links
 
-        const instagramPostRegex = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
-        const tiktokPostRegex = /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/(?:video|photo)\/\d+/i;
-        
-        return instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content);
+        const instagramPostRegex =
+          /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
+        const tiktokPostRegex =
+          /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
 
+        return (
+          instagramPostRegex.test(submission.content) || tiktokPostRegex.test(submission.content)
+        );
       })
       ?.map((submission) => ({
         id: submission.id,

@@ -1,18 +1,19 @@
 import * as Yup from 'yup';
 import { enqueueSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm, Controller } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
-import { Box, Grid, Fade, Stack, Paper, Popper, IconButton, Typography, InputAdornment, Button, Modal, Avatar } from '@mui/material';
+import { Box, Grid, Fade, Stack, Paper, Modal, Popper, Button, Avatar, IconButton, Typography, InputAdornment } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useAuthContext } from 'src/auth/hooks';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';

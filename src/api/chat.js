@@ -124,13 +124,13 @@ export const sendMessageInThread = async (threadId, messageData) => {
 
     mutate(endpoints.threads.getMessage(threadId));
     return response.data;
-  } else {
+  } 
     // For text-only messages, use the original format
     const response = await axios.post(endpoints.threads.sendMessage, { threadId, content });
 
     mutate(endpoints.threads.getMessage(threadId));
     return response.data;
-  }
+  
 };
 
 // Function to get unread message count

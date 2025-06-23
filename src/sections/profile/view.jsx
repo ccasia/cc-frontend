@@ -7,27 +7,23 @@ import { useTheme } from '@emotion/react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation, useNavigate } from 'react-router-dom';
 
 import { LoadingButton } from '@mui/lab';
 import {
-  alpha,
-  Avatar,
   Box,
-  Button,
   Card,
-  CircularProgress,
-  Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Grid,
-  InputAdornment,
-  ListItemText,
-  MenuItem,
+  alpha,
   Stack,
+  Avatar,
+  Button,
+  MenuItem,
+  Container,
   Typography,
+  ListItemText,
+  InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -894,9 +890,7 @@ const Profile = () => {
   const adminContents = (
     <>
       {currentTab === 'security' && (
-        <>
-          <AccountSecurity />
-        </>
+        <AccountSecurity />
       )}
 
       {currentTab === 'general' && (
@@ -913,9 +907,7 @@ const Profile = () => {
   const creatorContents = (
     <>
       {currentTab === 'security' && (
-        <>
-          <AccountSecurity />
-        </>
+        <AccountSecurity />
       )}
 
       {currentTab === 'paymentForm' && <PaymentFormProfile user={user} />}
