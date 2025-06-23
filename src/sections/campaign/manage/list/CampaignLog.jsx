@@ -95,7 +95,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
     row.action.includes('rejected') && row.action.includes('pitch') ||
     row.action.includes('sent the Agreement to') ||
     row.action.includes('withdrew') && row.action.includes('from the campaign') ||
-    row.action.includes('requested changes on') ||
+    (row.action.includes('requested changes on') || row.action.includes('requested changes to')) ||
     row.action.includes('changed the amount from') ||
     row.action.includes('resent the Agreement to') ||
     row.action.includes('created') && !row.action.includes('Created the Campaign') ||
@@ -121,6 +121,18 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
       submissionType = 'Campaign';
     } else if (row.action.includes('changed the amount')) {
       submissionType = 'Agreement';
+    } else if (row.action.includes('requested changes')) {
+      if (row.action.includes('First Draft')) {
+        submissionType = 'First Draft';
+      } else if (row.action.includes('Final Draft')) {
+        submissionType = 'Final Draft';
+      } else if (row.action.includes('Posting Link')) {
+        submissionType = 'Posting Link';
+      } else if (row.action.includes('Agreement')) {
+        submissionType = 'Agreement';
+      } else {
+        submissionType = 'Unknown';
+      }
     }
     
     return {
@@ -183,15 +195,10 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
             right: 16,
             top: 16,
             color: '#495057',
-            backgroundColor: '#f8f9fa',
-            border: '1px solid #e9ecef',
             '&:hover': {
-              backgroundColor: '#e9ecef',
-              transform: 'scale(1.05)',
+              color: '#212529',
             },
             transition: 'all 0.2s ease-in-out',
-            width: 40,
-            height: 40,
           }}
         >
           <Iconify icon="eva:close-fill" width={20} />
@@ -390,21 +397,12 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
       <DialogContent sx={{ p: 0, backgroundColor: '#ffffff' }}>
         <Scrollbar sx={{ maxHeight: '60vh', minHeight: '60vh' }}>
           {rows?.length > 0 ? (
-            <Box sx={{ p: 2 }}>
-              <Box
-                sx={{
-                  backgroundColor: 'white',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                }}
-              >
+            <Box>
                 <Table sx={{ minWidth: 650 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell
-                        width={(currentTab === 'creator' || currentTab === 'admin') ? '20%' : '25%'}
+                        width={(currentTab === 'creator' || currentTab === 'admin') ? '25%' : '30%'}
                         sx={{
                           pl: 2,
                           py: 2,
@@ -437,7 +435,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                         </TableCell>
                       )}
                       <TableCell
-                        width={(currentTab === 'creator' || currentTab === 'admin') ? '40%' : '50%'}
+                        width={(currentTab === 'creator' || currentTab === 'admin') ? '38%' : '50%'}
                         sx={{
                           py: 2,
                           fontWeight: 700,
@@ -452,7 +450,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                         ⚡ Action
                       </TableCell>
                       <TableCell
-                        width={(currentTab === 'creator' || currentTab === 'admin') ? '25%' : '25%'}
+                        width={(currentTab === 'creator' || currentTab === 'admin') ? '22%' : '20%'}
                         sx={{
                           pr: 2,
                           py: 2,
@@ -542,7 +540,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                                 variant="body2"
                                 sx={{
                                   color: '#212529',
-                                  fontWeight: 600,
+                                  fontWeight: 400,
                                   fontSize: '0.8rem',
                                 }}
                               >
@@ -566,10 +564,10 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                                   display: 'inline-block',
                                   px: 1.5,
                                   py: 0.5,
-                                  fontSize: '0.7rem',
-                                  borderRadius: 2,
-                                  background: 'linear-gradient(45deg, white, #f8fafc)',
-                                  border: '2px solid',
+                                  fontSize: '0.75rem',
+                                  borderRadius: 0.8,
+                                  bgcolor: 'white',
+                                  border: '1px solid',
                                   borderBottom: '3px solid',
                                   // Creator activity colors
                                   ...(currentTab === 'creator' && row.submissionType === 'Agreement' && {
@@ -751,7 +749,7 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                                 variant="body2"
                                 sx={{
                                   color: '#212529',
-                                  fontWeight: 600,
+                                  fontWeight: 400,
                                   fontSize: '0.8rem',
                                 }}
                               >
@@ -764,7 +762,6 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
                     })}
                   </TableBody>
                 </Table>
-              </Box>
             </Box>
           ) : (
             <Box
@@ -830,34 +827,6 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
           )}
         </Scrollbar>
       </DialogContent>
-
-      <DialogActions
-        sx={{
-          px: 3,
-          py: 2,
-          bgcolor: 'background.neutral',
-          borderTop: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Button
-          variant="contained"
-          onClick={onClose}
-          sx={{
-            bgcolor: 'grey.200',
-            color: 'grey.800',
-            '&:hover': {
-              bgcolor: 'grey.300',
-            },
-            borderRadius: 1,
-            boxShadow: 'none',
-            textTransform: 'none',
-            px: 3,
-          }}
-        >
-          Close
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };
