@@ -18,7 +18,7 @@ import { LocalizationProvider } from './locales';
 import { SnackbarProvider } from './components/snackbar';
 import { UnreadMessageCountProvider } from './context/UnreadMessageCountContext';
 import SocketProvider from './socket/context/socket';
-import PoppupProvider from './components/popup/popup-provider';
+import PopupProvider from './components/popup/popup-provider';
 import 'core-js/stable';
 // import CreatorOnBoardingForm from './components/CreatorOnBoardingForm';
 
@@ -53,20 +53,20 @@ export default function App() {
           }}
         >
           <ThemeProvider>
-            <PoppupProvider>
-              <SnackbarProvider>
-                <MotionLazy>
-                  <SocketProvider>
+            <SnackbarProvider>
+              <MotionLazy>
+                <SocketProvider>
+                  <PopupProvider>
                     <UnreadMessageCountProvider>
                       {/* <CreatorOnBoardingForm /> */}
                       <SettingsDrawer />
                       <ProgressBar />
                       <Router />
                     </UnreadMessageCountProvider>
-                  </SocketProvider>
-                </MotionLazy>
-              </SnackbarProvider>
-            </PoppupProvider>
+                  </PopupProvider>
+                </SocketProvider>
+              </MotionLazy>
+            </SnackbarProvider>
           </ThemeProvider>
         </SettingsProvider>
       </LocalizationProvider>

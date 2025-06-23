@@ -1,49 +1,83 @@
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useContext, useCallback, createContext } from 'react';
+import React, { useMemo, useState, useContext, useCallback, createContext, useEffect } from 'react';
 
-import { Box } from '@mui/material';
+import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
 
-import { useBoolean } from 'src/hooks/use-boolean';
+import ShortlistingPopup from './shortlisting-popup';
 
-const Poppup = createContext();
+const PopupContext = createContext();
 
-export const useNotification = () => useContext(Poppup);
+export const usePopup = () => useContext(PopupContext);
 
-const PoppupProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState('adssa');
-  const bool = useBoolean();
+const PopupProvider = ({ children }) => {
+  const [shortlistingPopup, setShortlistingPopup] = useState({
+    open: false,
+    campaignData: null,
+  });
 
-  const test = useCallback((text) => {
-    alert(text);
+  const { user } = useAuthContext();
+  const { socket } = useSocketContext();
+
+  const showShortlistingPopup = useCallback((campaignData) => {
+    setShortlistingPopup({
+      open: true,
+      campaignData,
+    });
   }, []);
 
-  const memoizedValue = useMemo(() => ({ notifications, bool, test }), [notifications, bool, test]);
+  const hideShortlistingPopup = useCallback(() => {
+    setShortlistingPopup({
+      open: false,
+      campaignData: null,
+    });
+  }, []);
+
+  // Listen for shortlisting socket events
+  useEffect(() => {
+    if (socket && user?.role === 'creator') {
+      const handleShortlisted = (data) => {
+        // Show popup only for creators when they get shortlisted
+        if (data?.campaignId && data?.campaignName) {
+          showShortlistingPopup({
+            campaignId: data.campaignId,
+            campaignName: data.campaignName,
+          });
+        }
+      };
+
+      socket.on('shortlisted', handleShortlisted);
+
+      return () => {
+        socket.off('shortlisted', handleShortlisted);
+      };
+    }
+  }, [socket, user, showShortlistingPopup]);
+
+  const memoizedValue = useMemo(
+    () => ({
+      showShortlistingPopup,
+      hideShortlistingPopup,
+    }),
+    [showShortlistingPopup, hideShortlistingPopup]
+  );
 
   return (
-    <Poppup.Provider value={memoizedValue}>
-      {bool.value && (
-        <Box
-          sx={{
-            width: 400,
-            height: 300,
-            position: 'fixed',
-            bgcolor: '#F4F4F4',
-            zIndex: 1000,
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            borderRadius: 2,
-          }}
-        />
-      )}
-
+    <PopupContext.Provider value={memoizedValue}>
       {children}
-    </Poppup.Provider>
+      
+      {/* Shortlisting Popup */}
+      <ShortlistingPopup
+        open={shortlistingPopup.open}
+        onClose={hideShortlistingPopup}
+        campaignData={shortlistingPopup.campaignData}
+      />
+    </PopupContext.Provider>
   );
 };
 
-export default PoppupProvider;
+export default PopupProvider;
 
-PoppupProvider.propTypes = {
+PopupProvider.propTypes = {
   children: PropTypes.node,
 };
